@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,11 @@ public class CheckOrigin {
             ProcessBuilder pb = ProcessTools.
                 createJavaProcessBuilder(
                     "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
-                    "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
+                    "-XX:+UseConcMarkSweepGC",  // this will cause MaxNewSize to be FLAG_SET_ERGO
                     "-XX:+UseCodeAging",
                     "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
+                    "-Djdk.attach.allowAttachSelf",
                     "-cp", System.getProperty("test.class.path"),
                     "CheckOrigin",
                     "-runtests");
@@ -109,7 +110,7 @@ public class CheckOrigin {
             // Set through j.l.m
             checkOrigin("HeapDumpOnOutOfMemoryError", Origin.MANAGEMENT);
             // Should be set by the VM, when we set UseConcMarkSweepGC
-            checkOrigin("UseParNewGC", Origin.ERGONOMIC);
+            checkOrigin("MaxNewSize", Origin.ERGONOMIC);
             // Set using attach
             checkOrigin("HeapDumpPath", Origin.ATTACH_ON_DEMAND);
         }

@@ -23,6 +23,8 @@
 
 package transform.util;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.InputStream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -34,7 +36,7 @@ public abstract class TransformerUtil {
 
     protected String type;
 
-    protected final String TEMP_FILE = "tmp.xml";
+    protected final String TEMP_FILE = USER_DIR + "tmp.xml";
 
     public abstract Source prepareSource(InputStream is) throws Exception;
 

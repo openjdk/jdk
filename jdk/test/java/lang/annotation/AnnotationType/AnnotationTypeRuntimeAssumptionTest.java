@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @summary Test consistent parsing of ex-RUNTIME annotations that
  *          were changed and separately compiled to have CLASS retention
- * @library /lib/testlibrary
- * @build jdk.testlibrary.IOUtils
  * @run main AnnotationTypeRuntimeAssumptionTest
  */
 
@@ -34,8 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
-import jdk.testlibrary.IOUtils;
 
 import static java.lang.annotation.RetentionPolicy.CLASS;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -140,7 +136,7 @@ public class AnnotationTypeRuntimeAssumptionTest {
                 String altPath = altName.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(altPath)) {
                     if (is != null) {
-                        byte[] bytes = IOUtils.readFully(is);
+                        byte[] bytes = is.readAllBytes();
                         // patch class bytes to contain original name
                         for (int i = 0; i < bytes.length - 2; i++) {
                             if (bytes[i] == '_' &&
@@ -163,7 +159,7 @@ public class AnnotationTypeRuntimeAssumptionTest {
                 String path = name.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(path)) {
                     if (is != null) {
-                        byte[] bytes = IOUtils.readFully(is);
+                        byte[] bytes = is.readAllBytes();
                         return defineClass(name, bytes, 0, bytes.length);
                     }
                     else {

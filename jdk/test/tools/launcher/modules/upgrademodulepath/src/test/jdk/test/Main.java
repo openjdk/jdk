@@ -24,7 +24,6 @@
 package jdk.test;
 
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Layer;
 import java.net.URI;
 
 import javax.enterprise.context.Scope;
@@ -53,7 +52,7 @@ public class Main {
 
         // javax.transaction should be found in boot layer.
         ModuleReference ref =
-                Layer.boot().configuration().findModule(TRANSACTION_MODULE).get().reference();
+                ModuleLayer.boot().configuration().findModule(TRANSACTION_MODULE).get().reference();
         // check uri of java.transaction found on the upgrade module path.
         URI uri = ref.location().get();
         System.out.println("uri: " + uri);

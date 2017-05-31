@@ -440,7 +440,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-# $3 = list of compiler names to search for
+# $3 = compiler name to search for
 AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
@@ -482,15 +482,15 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      AC_PATH_PROGS(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
+      AC_PATH_TOOL(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
       $1=$TOOLCHAIN_PATH_$1
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x[$]$1" = x; then
-      AC_PATH_PROGS(POTENTIAL_$1, $SEARCH_LIST)
+      AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
       $1=$POTENTIAL_$1
     fi
 
@@ -926,41 +926,82 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
 AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
 [
   AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg],
-      [Regression Test Harness @<:@probed@:>@])],
-      [],
-      [with_jtreg=no])
+      [Regression Test Harness @<:@probed@:>@])])
 
   if test "x$with_jtreg" = xno; then
     # jtreg disabled
-    AC_MSG_CHECKING([for jtreg])
-    AC_MSG_RESULT(no)
-  else
-    if test "x$with_jtreg" != xyes; then
-      # with path specified.
-      JT_HOME="$with_jtreg"
+    AC_MSG_CHECKING([for jtreg test harness])
+    AC_MSG_RESULT([no, disabled])
+  elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
+    # An explicit path is specified, use it.
+    JT_HOME="$with_jtreg"
+    if test ! -d "$JT_HOME"; then
+      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
     fi
 
+    if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home])
+    fi
+
+    JTREGEXE="$JT_HOME/bin/jtreg"
+    if test ! -x "$JTREGEXE"; then
+      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not contain valid jtreg executable])
+    fi
+
+    AC_MSG_CHECKING([for jtreg test harness])
+    AC_MSG_RESULT([$JT_HOME])
+  else
+    # Try to locate jtreg
     if test "x$JT_HOME" != x; then
-      AC_MSG_CHECKING([for jtreg])
-
-      # use JT_HOME enviroment var.
-      BASIC_FIXUP_PATH([JT_HOME])
-
-      # jtreg win32 script works for everybody
-      JTREGEXE="$JT_HOME/bin/jtreg"
-
-      if test ! -f "$JTREGEXE"; then
-        AC_MSG_ERROR([JTReg executable does not exist: $JTREGEXE])
+      # JT_HOME set in environment, use it
+      if test ! -d "$JT_HOME"; then
+        AC_MSG_WARN([Ignoring JT_HOME pointing to invalid directory: $JT_HOME])
+        JT_HOME=
+      else
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          AC_MSG_WARN([Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME])
+          JT_HOME=
+        elif test ! -x "$JT_HOME/bin/jtreg"; then
+          AC_MSG_WARN([Ignoring JT_HOME which does not contain valid jtreg executable: $JT_HOME])
+          JT_HOME=
+        else
+          JTREGEXE="$JT_HOME/bin/jtreg"
+          AC_MSG_NOTICE([Located jtreg using JT_HOME from environment])
+        fi
       fi
+    fi
 
-      AC_MSG_RESULT($JTREGEXE)
+    if test "x$JT_HOME" = x; then
+      # JT_HOME is not set in environment, or was deemed invalid.
+      # Try to find jtreg on path
+      BASIC_PATH_PROGS(JTREGEXE, jtreg)
+      if test "x$JTREGEXE" != x; then
+        # That's good, now try to derive JT_HOME
+        JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          AC_MSG_WARN([Ignoring jtreg from path since a valid jtreg home cannot be found])
+          JT_HOME=
+          JTREGEXE=
+        else
+          AC_MSG_NOTICE([Located jtreg using jtreg executable in path])
+        fi
+      fi
+    fi
+
+    AC_MSG_CHECKING([for jtreg test harness])
+    if test "x$JT_HOME" != x; then
+      AC_MSG_RESULT([$JT_HOME])
     else
-      # try to find jtreg on path
-      BASIC_REQUIRE_PROGS(JTREGEXE, jtreg)
-      JT_HOME="`$DIRNAME $JTREGEXE`"
+      AC_MSG_RESULT([no, not found])
+
+      if test "x$with_jtreg" = xyes; then
+        AC_MSG_ERROR([--with-jtreg was specified, but no jtreg found.])
+      fi
     fi
   fi
 
+  BASIC_FIXUP_EXECUTABLE(JTREGEXE)
+  BASIC_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
   AC_SUBST(JTREGEXE)
 ])
