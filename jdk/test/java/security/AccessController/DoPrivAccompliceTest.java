@@ -25,7 +25,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.nio.file.Paths;
  * Run DoPrivTest.jar and try to access user.name property using
  * DoPrivAccmplice.jar.
  *
- * @library /test/lib /lib/testlibrary
+ * @library /test/lib
  *
  * @run main/othervm DoPrivAccompliceTest
  */
