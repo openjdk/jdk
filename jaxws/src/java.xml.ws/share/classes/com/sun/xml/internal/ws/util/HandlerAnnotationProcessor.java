@@ -234,17 +234,15 @@ public class HandlerAnnotationProcessor {
     }
 
     private static InputStream moduleResource(Class resolvingClass, String name) {
-        java.lang.reflect.Module module = resolvingClass.getModule();
-        if (module != null) {
-            try {
-                InputStream stream = module.getResourceAsStream(name);
-                if (stream != null) {
-                    return stream;
-                }
-            } catch(IOException e) {
-                throw new UtilException("util.failed.to.find.handlerchain.file",
-                        resolvingClass.getName(), name);
+        Module module = resolvingClass.getModule();
+        try {
+            InputStream stream = module.getResourceAsStream(name);
+            if (stream != null) {
+                return stream;
             }
+        } catch(IOException e) {
+            throw new UtilException("util.failed.to.find.handlerchain.file",
+                    resolvingClass.getName(), name);
         }
         return null;
     }

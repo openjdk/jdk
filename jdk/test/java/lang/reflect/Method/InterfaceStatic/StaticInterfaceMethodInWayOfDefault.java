@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,13 @@
  * @summary Test that a static method on an interface doesn't hide a default
  *          method with the same name and signature in a separate compilation
  *          scenario.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.IOUtils
  * @run main StaticInterfaceMethodInWayOfDefault
  */
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
-
-import jdk.testlibrary.IOUtils;
 
 public class StaticInterfaceMethodInWayOfDefault {
     public interface A_v1 {
@@ -147,7 +142,7 @@ public class StaticInterfaceMethodInWayOfDefault {
                 String altPath = altName.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(altPath)) {
                     if (is != null) {
-                        byte[] bytes = IOUtils.readFully(is);
+                        byte[] bytes = is.readAllBytes();
                         // patch class bytes to contain original name
                         for (int i = 0; i < bytes.length - 2; i++) {
                             if (bytes[i] == '_' &&
@@ -170,7 +165,7 @@ public class StaticInterfaceMethodInWayOfDefault {
                 String path = name.replace('.', '/').concat(".class");
                 try (InputStream is = getResourceAsStream(path)) {
                     if (is != null) {
-                        byte[] bytes = IOUtils.readFully(is);
+                        byte[] bytes = is.readAllBytes();
                         return defineClass(name, bytes, 0, bytes.length);
                     }
                     else {

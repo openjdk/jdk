@@ -26,7 +26,6 @@
  * @bug 6448042
  * @summary Test that MXBeans can define their own names in preRegister
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.lang.management.ManagementFactory;

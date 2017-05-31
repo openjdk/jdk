@@ -67,7 +67,7 @@ import sun.util.spi.CalendarProvider;
  * <code>DAY_OF_MONTH</code>, <code>HOUR</code>, and so on, and for
  * manipulating the calendar fields, such as getting the date of the next
  * week. An instant in time can be represented by a millisecond value that is
- * an offset from the <a name="Epoch"><em>Epoch</em></a>, January 1, 1970
+ * an offset from the <a id="Epoch"><em>Epoch</em></a>, January 1, 1970
  * 00:00:00.000 GMT (Gregorian).
  *
  * <p>The class also provides additional fields and methods for
@@ -124,7 +124,7 @@ import sun.util.spi.CalendarProvider;
  * calculating its time or calendar field values if any out-of-range field
  * value has been set.
  *
- * <h4><a name="first_week">First Week</a></h4>
+ * <h4><a id="first_week">First Week</a></h4>
  *
  * <code>Calendar</code> defines a locale-specific seven day week using two
  * parameters: the first day of the week and the minimal days in first week
@@ -154,13 +154,13 @@ import sun.util.spi.CalendarProvider;
  * calendar field values to determine the date and time in the
  * following way.
  *
- * <p><a name="resolution">If there is any conflict in calendar field values,
+ * <p><a id="resolution">If there is any conflict in calendar field values,
  * <code>Calendar</code> gives priorities to calendar fields that have been set
  * more recently.</a> The following are the default combinations of the
  * calendar fields. The most recent combination, as determined by the
  * most recently set single field, will be used.
  *
- * <p><a name="date_resolution">For the date fields</a>:
+ * <p><a id="date_resolution">For the date fields</a>:
  * <blockquote>
  * <pre>
  * YEAR + MONTH + DAY_OF_MONTH
@@ -170,7 +170,7 @@ import sun.util.spi.CalendarProvider;
  * YEAR + DAY_OF_WEEK + WEEK_OF_YEAR
  * </pre></blockquote>
  *
- * <a name="time_resolution">For the time of day fields</a>:
+ * <a id="time_resolution">For the time of day fields</a>:
  * <blockquote>
  * <pre>
  * HOUR_OF_DAY
