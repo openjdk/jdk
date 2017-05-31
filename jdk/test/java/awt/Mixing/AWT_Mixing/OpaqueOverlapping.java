@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 
-import com.sun.awt.AWTUtilities;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
@@ -44,11 +43,10 @@ import test.java.awt.regtesthelpers.Util;
 /*
  * @test
  * @key headful
- * @bug 6776743
+ * @bug 6776743 8173409
  * @summary Opaque overlapping test for each AWT component
  * @library /java/awt/patchlib  ../../regtesthelpers
- * @modules java.desktop/com.sun.awt
- *          java.desktop/java.awt.peer
+ * @modules java.desktop/java.awt.peer
  *          java.desktop/sun.awt
  * @build java.desktop/java.awt.Helper
  * @build Util
@@ -134,12 +132,10 @@ public class OpaqueOverlapping extends OverlappingTestBase {
         // flag value.
         for (int i = 0; i < 9; ++i) {
             if (i == 3) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        new Rectangle());
+                light.setMixingCutoutShape(new Rectangle());
             }
             if (i == 6) {
-                AWTUtilities.setComponentMixingCutoutShape(light,
-                        null);
+                light.setMixingCutoutShape(null);
             }
 
             robot.mousePress(InputEvent.BUTTON1_MASK);

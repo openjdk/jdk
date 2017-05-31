@@ -170,7 +170,12 @@ class CallGenerator : public ResourceObj {
     }
   }
 
-  static bool is_inlined_mh_linker(JVMState* jvms, ciMethod* m);
+  static void print_inlining_failure(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
+    print_inlining(C, callee, inline_level, bci, msg);
+    C->log_inline_failure(msg);
+  }
+
+  static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
 };
 
 

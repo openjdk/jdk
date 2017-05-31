@@ -278,20 +278,20 @@ public interface Processor {
      * <dd><code>*</code>
      *
      * <dt><i>ModulePrefix:</i>
-     * <dd><i>TypeName</i> <code>/</code>
+     * <dd><i>ModuleName</i> <code>/</code>
      *
      * <dt><i>DotStar:</i>
      * <dd><code>.</code> <code>*</code>
      * </dl>
      * </blockquote>
      *
-     * where <i>TypeName</i> is as defined in
+     * where <i>TypeName</i> and <i>ModuleName</i> are as defined in
      * <cite>The Java&trade; Language Specification</cite>.
      *
      * @apiNote When running in an environment which supports modules,
      * processors are encouraged to include the module prefix when
      * describing their supported annotation types. The method {@link
-     * AbstractProcessor.getSupportedAnnotationTypes
+     * AbstractProcessor#getSupportedAnnotationTypes
      * AbstractProcessor.getSupportedAnnotationTypes} provides support
      * for stripping off the module prefix when running in an
      * environment without modules.
@@ -299,7 +299,7 @@ public interface Processor {
      * @return the names of the annotation types supported by this processor
      * @see javax.annotation.processing.SupportedAnnotationTypes
      * @jls 3.8 Identifiers
-     * @jls 6.5.5 Meaning of Type Names
+     * @jls 6.5 Determining the Meaning of a Name
      */
     Set<String> getSupportedAnnotationTypes();
 

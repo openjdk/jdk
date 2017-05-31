@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,17 @@ public class CreateMultiReleaseTestJars {
 
     public void buildCustomMultiReleaseJar(String filename, String multiReleaseValue,
             Map<String, String> extraAttributes) throws IOException {
+        buildCustomMultiReleaseJar(filename, multiReleaseValue, extraAttributes, false);
+    }
+
+    public void buildCustomMultiReleaseJar(String filename, String multiReleaseValue,
+            Map<String, String> extraAttributes, boolean addEntries) throws IOException {
         JarBuilder jb = new JarBuilder(filename);
         extraAttributes.entrySet()
                 .forEach(entry -> jb.addAttribute(entry.getKey(), entry.getValue()));
+        if (addEntries) {
+            addEntries(jb);
+        }
         jb.addAttribute("Multi-Release", multiReleaseValue);
         jb.build();
     }

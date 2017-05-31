@@ -28,11 +28,11 @@
  * @requires vm.jvmci
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @modules java.base/java.lang.invoke:+open
- * @modules jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
- * @modules         jdk.vm.ci/jdk.vm.ci.hotspot:+open
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
+ *      -Djvmci.Compiler=null jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;

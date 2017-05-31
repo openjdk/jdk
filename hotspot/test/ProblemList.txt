@@ -73,12 +73,11 @@ runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 serviceability/jdwp/AllModulesCommandTest.java 8168478 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
+serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook/MAAClassFileLoadHook.java 8173936 generic-all
 
 #############################################################################
 
 # :hotspot_misc
-
-testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
 
 #############################################################################
 
