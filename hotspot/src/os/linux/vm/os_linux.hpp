@@ -170,6 +170,7 @@ class Linux {
   static const char *libpthread_version()     { return _libpthread_version; }
 
   static void libpthread_init();
+  static void sched_getcpu_init();
   static bool libnuma_init();
   static void* libnuma_dlsym(void* handle, const char* name);
   // libnuma v2 (libnuma_1.2) symbols
