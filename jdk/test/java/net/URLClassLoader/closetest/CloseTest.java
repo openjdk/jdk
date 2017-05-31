@@ -29,7 +29,8 @@
  *          jdk.compiler
  * @library ../../../../com/sun/net/httpserver
  *          /lib/testlibrary
- * @build FileServerHandler jdk.testlibrary.FileUtils JarUtils CompilerUtils
+ *          /test/lib
+ * @build FileServerHandler JarUtils CompilerUtils
  * @run main/othervm CloseTest
  * @summary URL-downloaded jar files can consume all available file descriptors
  */
