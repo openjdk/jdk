@@ -25,9 +25,8 @@
  * @test
  * @bug 8168836
  * @summary Basic argument validation for --add-exports
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddExportsTestWarningError CompilerUtils ModuleInfoMaker
  * @build jdk.testlibrary.*
  * @run testng AddExportsTestWarningError
  */
@@ -40,6 +39,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.ModuleInfoMaker;
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -47,7 +47,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class AddExportsTestWarningError {
@@ -134,16 +133,16 @@ public class AddExportsTestWarningError {
         return new Object[][]{
 
             // source not found
-            {"DoesNotExist/p=m1",  "WARNING: Unknown module: DoesNotExist specified in --add-exports"},
+            {"DoesNotExist/p=m1",  "WARNING: Unknown module: DoesNotExist specified to --add-exports"},
             {"m1/DoesNotExist=m2", "WARNING: package DoesNotExist not in m1"},
 
             // target not found
-            {"m1/p1=DoesNotExist", "WARNING: Unknown module: DoesNotExist specified in --add-exports"},
+            {"m1/p1=DoesNotExist", "WARNING: Unknown module: DoesNotExist specified to --add-exports"},
 
             // bad names
-            {"m*/p1=m2",           "WARNING: Unknown module: m* specified in --add-exports"},
+            {"m*/p1=m2",           "WARNING: Unknown module: m* specified to --add-exports"},
             {"m1/p!=m2",           "WARNING: package p! not in m1"},
-            {"m1/p1=m!",           "WARNING: Unknown module: m! specified in --add-exports"},
+            {"m1/p1=m!",           "WARNING: Unknown module: m! specified to --add-exports"},
 
         };
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4780441 4874845 4978816 8014017 8016328 8025633 8026567
+ * @bug      4780441 4874845 4978816 8014017 8016328 8025633 8026567 8175200
  * @summary  Make sure that when the -private flag is not used, members
  *           inherited from package private class are documented in the child.
  *
@@ -74,7 +74,7 @@ public class TestPrivateClasses extends JavadocTester {
                 + "</li>\n"
                 + "</ul>",
                 // Method is documented as though it is declared in the inheriting method.
-                "<pre>public&nbsp;void&nbsp;methodInheritedFromParent(int&nbsp;p1)",
+                "<pre>public&nbsp;void&nbsp;methodInheritedFromParent&#8203;(int&nbsp;p1)",
                 "<dl>\n"
                 + "<dt>All Implemented Interfaces:</dt>\n"
                 + "<dd><code><a href=\"../pkg/PublicInterface.html\" title=\"interface in pkg\">"
@@ -96,12 +96,12 @@ public class TestPrivateClasses extends JavadocTester {
                 // Should not document comments from private inherited interfaces
                 "<td class=\"colLast\"><code><span class=\"memberNameLink\">" +
                 "<a href=\"../pkg/PublicChild.html#methodInterface-int-\">" +
-                "methodInterface</a></span>(int&nbsp;p1)</code>\n" +
+                "methodInterface</a></span>&#8203;(int&nbsp;p1)</code>\n" +
                 "<div class=\"block\">Comment from interface.</div>\n</td>",
                 // and similarly one more
                 "<td class=\"colLast\"><code><span class=\"memberNameLink\">" +
                 "<a href=\"../pkg/PublicChild.html#methodInterface2-int-\">" +
-                "methodInterface2</a></span>(int&nbsp;p1)</code>\n" +
+                "methodInterface2</a></span>&#8203;(int&nbsp;p1)</code>\n" +
                 "<div class=\"block\">Comment from interface.</div>\n</td>"
         );
 

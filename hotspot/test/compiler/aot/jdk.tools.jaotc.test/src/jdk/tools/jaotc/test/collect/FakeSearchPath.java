@@ -22,6 +22,8 @@
  */
 package jdk.tools.jaotc.test.collect;
 
+import jdk.tools.jaotc.collect.SearchPath;
+
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;

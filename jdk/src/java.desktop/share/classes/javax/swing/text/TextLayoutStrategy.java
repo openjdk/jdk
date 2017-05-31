@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,8 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      * Gives notification from the document that attributes were changed
      * in a location that this view is responsible for.
      *
-     * @param changes the change information from the associated document
-     * @param a the current allocation of the view
-     * @param f the factory to use to rebuild if the view has children
+     * @param e the change information from the associated document
+     * @param alloc the current allocation of the view inside of the insets.
      * @see View#changedUpdate
      */
     public void changedUpdate(FlowView fv, DocumentEvent e, Rectangle alloc) {
@@ -117,9 +116,9 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      * views or view fragments) and follow that with bidi reordering
      * of the unidirectional view fragments.
      *
-     * @param row the row to fill in with views.  This is assumed
+     * @param rowIndex the row to fill in with views.  This is assumed
      *   to be empty on entry.
-     * @param pos  The current position in the children of
+     * @param p0  The current position in the children of
      *   this views element from which to start.
      * @return the position to start the next row
      */
@@ -157,7 +156,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      * calculated by the LineBreakMeasurer, this is implemented
      * to do nothing.
      *
-     * @param r the row to adjust to the current layout
+     * @param rowIndex the row to adjust to the current layout
      *  span.
      * @param desiredSpan the current layout span >= 0
      * @param x the location r starts at.

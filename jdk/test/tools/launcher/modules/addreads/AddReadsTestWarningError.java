@@ -25,9 +25,9 @@
  * @test
  * @bug 8168836
  * @summary  Basic argument validation for --add-reads
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddReadsTestWarningError CompilerUtils ModuleInfoMaker
+ * @build AddReadsTestWarningError
  * @build jdk.testlibrary.*
  * @run testng AddReadsTestWarningError
  */
@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.ModuleInfoMaker;
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -47,7 +48,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class AddReadsTestWarningError {
@@ -168,14 +168,14 @@ public class AddReadsTestWarningError {
         return new Object[][]{
 
             // source not found
-            {"DoesNotExist=m2",    "WARNING: Unknown module: DoesNotExist specified in --add-reads"},
+            {"DoesNotExist=m2",    "WARNING: Unknown module: DoesNotExist specified to --add-reads"},
 
             // target not found
-            {"m2=DoesNotExist",    "WARNING: Unknown module: DoesNotExist specified in --add-reads"},
+            {"m2=DoesNotExist",    "WARNING: Unknown module: DoesNotExist specified to --add-reads"},
 
             // bad names
-            {"m*=m2",              "WARNING: Unknown module: m* specified in --add-reads"},
-            {"m2=m!",              "WARNING: Unknown module: m! specified in --add-reads"},
+            {"m*=m2",              "WARNING: Unknown module: m* specified to --add-reads"},
+            {"m2=m!",              "WARNING: Unknown module: m! specified to --add-reads"},
 
         };
     }

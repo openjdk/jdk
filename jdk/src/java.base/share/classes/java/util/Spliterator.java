@@ -62,7 +62,7 @@ import java.util.function.LongConsumer;
  * New characteristics may be defined in the future, so implementors should not
  * assign meanings to unlisted values.
  *
- * <p><a name="binding">A Spliterator that does not report {@code IMMUTABLE} or
+ * <p><a id="binding">A Spliterator that does not report {@code IMMUTABLE} or
  * {@code CONCURRENT} is expected to have a documented policy concerning:
  * when the spliterator <em>binds</em> to the element source; and detection of
  * structural interference of the element source detected after binding.</a>  A

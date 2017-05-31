@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786690 6820360 8025633 8026567
+ * @bug 6786690 6820360 8025633 8026567 8175200
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib
@@ -367,12 +367,12 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // Test with -nocomment and -nodeprecated options. The ClassDocs whould
         // not display definition lists for any member details.
         checkOutput("pkg1/C1.html", expectFound,
-                "<pre>public&nbsp;void&nbsp;readObject()\n" +
+                "<pre>public&nbsp;void&nbsp;readObject&#8203;()\n" +
                 "                throws java.io.IOException</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C2.html", expectFound,
-                "<pre>public&nbsp;C2()</pre>\n" +
+                "<pre>public&nbsp;C2&#8203;()</pre>\n" +
                 "</li>");
 
         checkOutput("pkg1/C1.ModalExclusionType.html", expectFound,

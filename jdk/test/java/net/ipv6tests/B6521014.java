@@ -25,13 +25,14 @@
  * @test
  * @bug 6521014 6543428
  * @summary IOException thrown when Socket tries to bind to an local IPv6 address on SuSE Linux
+ * @library /test/lib
+ * @run main B6521014
  */
-
 
 import java.net.*;
 import java.io.*;
 import java.util.*;
-
+import jdk.test.lib.NetworkConfiguration;
 
 /*
  *
@@ -52,38 +53,26 @@ import java.util.*;
  */
 public class B6521014 {
 
-    static InetAddress sin;
-
-    static Inet6Address getLocalAddr () throws Exception {
-        Enumeration e = NetworkInterface.getNetworkInterfaces();
-        while (e.hasMoreElements()) {
-            NetworkInterface ifc = (NetworkInterface) e.nextElement();
-            if (!ifc.isUp())
-                continue;
-            Enumeration addrs = ifc.getInetAddresses();
-            while (addrs.hasMoreElements()) {
-                InetAddress a = (InetAddress)addrs.nextElement();
-                if (a instanceof Inet6Address) {
-                    Inet6Address ia6 = (Inet6Address) a;
-                    if (ia6.isLinkLocalAddress()) {
-                        // remove %scope suffix
-                        return (Inet6Address)InetAddress.getByAddress(ia6.getAddress());
-                    }
-                }
-            }
+    static Inet6Address removeScope(Inet6Address addr) {
+        try {
+            return (Inet6Address)InetAddress.getByAddress(addr.getAddress());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        return null;
     }
 
-    static void test1() throws Exception {
-        ServerSocket ssock;
-        Socket sock;
-        int port;
+    static Optional<Inet6Address> getLocalAddr() throws Exception {
+        return NetworkConfiguration.probe()
+                .ip6Addresses()
+                .filter(Inet6Address::isLinkLocalAddress)
+                .map(B6521014::removeScope)
+                .findFirst();
+    }
 
-        ssock = new ServerSocket(0);
-        port = ssock.getLocalPort();
-        sock = new Socket();
-        try {
+    static void test1(Inet6Address sin) throws Exception {
+        try (ServerSocket ssock = new ServerSocket(0);
+             Socket sock = new Socket()) {
+            int port = ssock.getLocalPort();
             sock.connect(new InetSocketAddress(sin, port), 100);
         } catch (SocketTimeoutException e) {
             // time out exception is okay
@@ -91,36 +80,29 @@ public class B6521014 {
         }
     }
 
-    static void test2() throws Exception {
-        Socket sock;
-        ServerSocket ssock;
-        int port;
-
-        ssock = new ServerSocket(0);
-        ssock.setSoTimeout(100);
-        port = ssock.getLocalPort();
-        sock = new Socket();
-        sock.bind(new InetSocketAddress(sin, 0));
-        try {
+    static void test2(Inet6Address sin) throws Exception {
+        try (ServerSocket ssock = new ServerSocket(0);
+             Socket sock = new Socket()) {
+            int port = ssock.getLocalPort();
+            ssock.setSoTimeout(100);
+            sock.bind(new InetSocketAddress(sin, 0));
             sock.connect(new InetSocketAddress(sin, port), 100);
-        } catch (SocketTimeoutException e) {
+        } catch (SocketTimeoutException expected) {
             // time out exception is okay
             System.out.println("timed out when connecting.");
         }
     }
 
     public static void main(String[] args) throws Exception {
-        sin = getLocalAddr();
-        if (sin == null) {
+        Optional<Inet6Address> oaddr = getLocalAddr();
+        if (!oaddr.isPresent()) {
             System.out.println("Cannot find a link-local address.");
             return;
         }
 
-        try {
-            test1();
-            test2();
-        } catch (IOException e) {
-            throw new RuntimeException("Test failed: cannot create socket.", e);
-        }
+        Inet6Address addr = oaddr.get();
+        System.out.println("Using " + addr);
+        test1(addr);
+        test2(addr);
     }
 }

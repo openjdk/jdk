@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -38,7 +39,6 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
-import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -67,10 +67,9 @@ public class Gen extends JCTree.Visitor {
     private final TreeMaker make;
     private final Names names;
     private final Target target;
-    private Name accessDollar;
+    private final Name accessDollar;
     private final Types types;
     private final Lower lower;
-    private final Flow flow;
     private final Annotate annotate;
     private final StringConcat concat;
 
@@ -95,7 +94,7 @@ public class Gen extends JCTree.Visitor {
 
     /** Constant pool, reset by genClass.
      */
-    private Pool pool;
+    private final Pool pool;
 
     protected Gen(Context context) {
         context.put(genKey, this);
@@ -113,7 +112,6 @@ public class Gen extends JCTree.Visitor {
         methodType = new MethodType(null, null, null, syms.methodClass);
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
-        flow = Flow.instance(context);
         lower = Lower.instance(context);
 
         Options options = Options.instance(context);
@@ -1402,12 +1400,16 @@ public class Gen extends JCTree.Visitor {
                                   catchallpc, 0);
                     startseg = env.info.gaps.next().intValue();
                 }
-                code.statBegin(TreeInfo.finalizerPos(env.tree));
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                 code.markStatBegin();
 
                 Item excVar = makeTemp(syms.throwableType);
                 excVar.store();
                 genFinalizer(env);
+                code.resolvePending();
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.END_POS));
+                code.markStatBegin();
+
                 excVar.load();
                 registerCatch(body.pos(), startseg,
                               env.info.gaps.next().intValue(),
@@ -1421,7 +1423,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(env.info.cont);
 
                     // Mark statement line number
-                    code.statBegin(TreeInfo.finalizerPos(env.tree));
+                    code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                     code.markStatBegin();
 
                     // Save return address.
@@ -1580,14 +1582,18 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addExit(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
 
     public void visitContinue(JCContinue tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addCont(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
