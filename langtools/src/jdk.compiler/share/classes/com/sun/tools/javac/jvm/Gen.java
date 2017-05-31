@@ -1894,7 +1894,7 @@ public class Gen extends JCTree.Visitor {
             case NULLCHK:
                 result = od.load();
                 code.emitop0(dup);
-                genNullCheck(tree.pos());
+                genNullCheck(tree);
                 break;
             default:
                 Assert.error();
@@ -1903,12 +1903,13 @@ public class Gen extends JCTree.Visitor {
     }
 
     /** Generate a null check from the object value at stack top. */
-    private void genNullCheck(DiagnosticPosition pos) {
+    private void genNullCheck(JCTree tree) {
+        code.statBegin(tree.pos);
         if (allowBetterNullChecks) {
-            callMethod(pos, syms.objectsType, names.requireNonNull,
+            callMethod(tree.pos(), syms.objectsType, names.requireNonNull,
                     List.of(syms.objectType), true);
         } else {
-            callMethod(pos, syms.objectType, names.getClass,
+            callMethod(tree.pos(), syms.objectType, names.getClass,
                     List.nil(), false);
         }
         code.emitop0(pop);
@@ -2087,7 +2088,7 @@ public class Gen extends JCTree.Visitor {
                 base.drop();
             } else {
                 base.load();
-                genNullCheck(tree.selected.pos());
+                genNullCheck(tree.selected);
             }
             result = items.
                 makeImmediateItem(sym.type, ((VarSymbol) sym).getConstValue());
