@@ -26,7 +26,7 @@
  * @bug 5021246
  * @summary Check that class downloading is supported by RMI connector
  * @author Eamonn McManus
- * @modules java.management.rmi
+ *
  * @run main RMIDownloadTest receive without
  * @run main RMIDownloadTest send without
  * @run main RMIDownloadTest receive with

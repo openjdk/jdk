@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
@@ -124,6 +123,26 @@ public class PrivateLookupInTests {
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(clazz, "obj", Object.class);
         Object obj = mh.invokeExact();
+    }
+
+    // test target class in unnamed module
+    public void testTargetClassInUnnamedModule() throws Throwable {
+        Class<?> clazz = Class.forName("Unnamed");
+        assertFalse(clazz.getModule().isNamed());
+
+        // thisModule does not read the unnamed module
+        Module thisModule = getClass().getModule();
+        assertFalse(thisModule.canRead(clazz.getModule()));
+        try {
+            MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
+            assertTrue(false);
+        } catch (IllegalAccessException expected) { }
+
+        // thisModule reads the unnamed module
+        thisModule.addReads(clazz.getModule());
+        Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
+        assertTrue(lookup.lookupClass() == clazz);
+        assertTrue(lookup.hasPrivateAccess());
     }
 
     // test does not read m2, m2 opens p2 to test

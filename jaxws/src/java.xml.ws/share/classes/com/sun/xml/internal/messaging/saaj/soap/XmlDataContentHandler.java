@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class XmlDataContentHandler implements DataContentHandler {
      * return the DataFlavors for this <code>DataContentHandler</code>
      * @return The DataFlavors.
      */
+    @Override
     public DataFlavor[] getTransferDataFlavors() { // throws Exception;
         DataFlavor flavors[] = new DataFlavor[2];
 
@@ -69,10 +70,11 @@ public class XmlDataContentHandler implements DataContentHandler {
 
     /**
      * return the Transfer Data of type DataFlavor from InputStream
-     * @param df The DataFlavor.
-     * @param ins The InputStream corresponding to the data.
+     * @param flavor The DataFlavor.
+     * @param dataSource The DataSource.
      * @return The constructed Object.
      */
+    @Override
     public Object getTransferData(DataFlavor flavor, DataSource dataSource)
         throws IOException {
         if (flavor.getMimeType().startsWith("text/xml") ||
@@ -87,6 +89,7 @@ public class XmlDataContentHandler implements DataContentHandler {
     /**
      *
      */
+    @Override
     public Object getContent(DataSource dataSource) throws IOException {
         return new StreamSource(dataSource.getInputStream());
     }
@@ -96,6 +99,7 @@ public class XmlDataContentHandler implements DataContentHandler {
      * (similar semantically to previous method, we are deciding
      *  which one to support)
      */
+    @Override
     public void writeTo(Object obj, String mimeType, OutputStream os)
         throws IOException {
         if (!mimeType.startsWith("text/xml") && !mimeType.startsWith("application/xml"))

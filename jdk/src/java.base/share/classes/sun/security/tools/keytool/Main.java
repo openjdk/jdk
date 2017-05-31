@@ -27,6 +27,7 @@ package sun.security.tools.keytool;
 
 import java.io.*;
 import java.security.CodeSigner;
+import java.security.CryptoPrimitive;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -156,6 +157,7 @@ public final class Main {
     private boolean protectedPath = false;
     private boolean srcprotectedPath = false;
     private boolean cacerts = false;
+    private boolean nowarn = false;
     private CertificateFactory cf = null;
     private KeyStore caks = null; // "cacerts" keystore
     private char[] srcstorePass = null;
@@ -165,6 +167,16 @@ public final class Main {
 
     private List<String> ids = new ArrayList<>();   // used in GENCRL
     private List<String> v3ext = new ArrayList<>();
+
+    // Warnings on weak algorithms
+    private List<String> weakWarnings = new ArrayList<>();
+
+    private static final DisabledAlgorithmConstraints DISABLED_CHECK =
+            new DisabledAlgorithmConstraints(
+                    DisabledAlgorithmConstraints.PROPERTY_CERTPATH_DISABLED_ALGS);
+
+    private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
+            .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     enum Command {
         CERTREQ("Generates.a.certificate.request",
@@ -351,7 +363,7 @@ public final class Main {
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";
     private static final String P12KEYSTORE = "PKCS12";
-    private final String keyAlias = "mykey";
+    private static final String keyAlias = "mykey";
 
     // for i18n
     private static final java.util.ResourceBundle rb =
@@ -387,6 +399,7 @@ public final class Main {
                 throw e;
             }
         } finally {
+            printWeakWarnings(false);
             for (char[] pass : passwords) {
                 if (pass != null) {
                     Arrays.fill(pass, ' ');
@@ -472,10 +485,14 @@ public final class Main {
 
             if (c != null) {
                 command = c;
-            } else if (collator.compare(flags, "-help") == 0) {
+            } else if (collator.compare(flags, "-help") == 0 ||
+                    collator.compare(flags, "-h") == 0 ||
+                    collator.compare(flags, "-?") == 0) {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;
+            } else if (collator.compare(flags, "-nowarn") == 0) {
+                nowarn = true;
             } else if (collator.compare(flags, "-keystore") == 0) {
                 ksfname = args[++i];
                 if (new File(ksfname).getCanonicalPath().equals(
@@ -1010,6 +1027,13 @@ public final class Main {
             cf = CertificateFactory.getInstance("X509");
         }
 
+        // -trustcacerts can only be specified on -importcert.
+        // Reset it so that warnings on CA cert will remain for
+        // -printcert, etc.
+        if (command != IMPORTCERT) {
+            trustcacerts = false;
+        }
+
         if (trustcacerts) {
             caks = KeyStoreUtil.getCacertsKeyStore();
         }
@@ -1152,11 +1176,11 @@ public final class Main {
         } else if (command == LIST) {
             if (storePass == null
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
-                printWarning();
+                printNoIntegrityWarning();
             }
 
             if (alias != null) {
-                doPrintEntry(alias, out);
+                doPrintEntry(rb.getString("the.certificate"), alias, out);
             } else {
                 doPrintEntries(out);
             }
@@ -1253,6 +1277,12 @@ public final class Main {
             throws Exception {
 
 
+        if (keyStore.containsAlias(alias) == false) {
+            MessageFormat form = new MessageFormat
+                    (rb.getString("Alias.alias.does.not.exist"));
+            Object[] source = {alias};
+            throw new Exception(form.format(source));
+        }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
@@ -1306,6 +1336,8 @@ public final class Main {
         byte[] rawReq = Pem.decode(new String(sb));
         PKCS10 req = new PKCS10(rawReq);
 
+        checkWeak(rb.getString("the.certificate.request"), req);
+
         info.set(X509CertInfo.KEY, new CertificateX509Key(req.getSubjectPublicKeyInfo()));
         info.set(X509CertInfo.SUBJECT,
                     dname==null?req.getSubjectName():new X500Name(dname));
@@ -1335,6 +1367,9 @@ public final class Main {
                 }
             }
         }
+
+        checkWeak(rb.getString("the.issuer"), keyStore.getCertificateChain(alias));
+        checkWeak(rb.getString("the.generated.certificate"), cert);
     }
 
     private void doGenCRL(PrintStream out)
@@ -1385,6 +1420,7 @@ public final class Main {
         } else {
             out.write(crl.getEncodedInternal());
         }
+        checkWeak(rb.getString("the.generated.crl"), crl, privateKey);
     }
 
     /**
@@ -1431,6 +1467,8 @@ public final class Main {
         // Sign the request and base-64 encode it
         request.encodeAndSign(subject, signature);
         request.print(out);
+
+        checkWeak(rb.getString("the.generated.certificate.request"), request);
     }
 
     /**
@@ -1454,7 +1492,7 @@ public final class Main {
     {
         if (storePass == null
                 && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
-            printWarning();
+            printNoIntegrityWarning();
         }
         if (alias == null) {
             alias = keyAlias;
@@ -1474,6 +1512,7 @@ public final class Main {
             throw new Exception(form.format(source));
         }
         dumpCert(cert, out);
+        checkWeak(rb.getString("the.certificate"), cert);
     }
 
     /**
@@ -1728,6 +1767,7 @@ public final class Main {
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
+        checkWeak(rb.getString("the.generated.certificate"), chain[0]);
         keyStore.setKeyEntry(alias, privKey, keyPass, chain);
     }
 
@@ -1810,7 +1850,7 @@ public final class Main {
     /**
      * Prints a single keystore entry.
      */
-    private void doPrintEntry(String alias, PrintStream out)
+    private void doPrintEntry(String label, String alias, PrintStream out)
         throws Exception
     {
         if (keyStore.containsAlias(alias) == false) {
@@ -1881,12 +1921,14 @@ public final class Main {
                         } else {
                             dumpCert(chain[i], out);
                         }
+                        checkWeak(label, chain[i]);
                     }
                 } else {
                     // Print the digest of the user cert only
                     out.println
                         (rb.getString("Certificate.fingerprint.SHA.256.") +
                         getCertFingerPrint("SHA-256", chain[0]));
+                    checkWeak(label, chain);
                 }
             }
         } else if (keyStore.entryInstanceOf(alias,
@@ -1909,6 +1951,7 @@ public final class Main {
                 out.println(rb.getString("Certificate.fingerprint.SHA.256.")
                             + getCertFingerPrint("SHA-256", cert));
             }
+            checkWeak(label, cert);
         } else {
             out.println(rb.getString("Unknown.Entry.Type"));
         }
@@ -1992,7 +2035,7 @@ public final class Main {
 
         if (srcstorePass == null
                 && !KeyStoreUtil.isWindowsKeyStore(srcstoretype)) {
-            // anti refactoring, copied from printWarning(),
+            // anti refactoring, copied from printNoIntegrityWarning(),
             // but change 2 lines
             System.err.println();
             System.err.println(rb.getString
@@ -2083,6 +2126,10 @@ public final class Main {
         }
 
         try {
+            Certificate c = srckeystore.getCertificate(alias);
+            if (c != null) {
+                checkWeak("<" + newAlias + ">", c);
+            }
             keyStore.setEntry(newAlias, entry, pp);
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
@@ -2154,7 +2201,7 @@ public final class Main {
         for (Enumeration<String> e = keyStore.aliases();
                                         e.hasMoreElements(); ) {
             String alias = e.nextElement();
-            doPrintEntry(alias, out);
+            doPrintEntry("<" + alias + ">", alias, out);
             if (verbose || rfc) {
                 out.println(rb.getString("NEWLINE"));
                 out.println(rb.getString
@@ -2300,19 +2347,28 @@ public final class Main {
         for (CRL crl: loadCRLs(src)) {
             printCRL(crl, out);
             String issuer = null;
+            Certificate signer = null;
             if (caks != null) {
                 issuer = verifyCRL(caks, crl);
                 if (issuer != null) {
+                    signer = caks.getCertificate(issuer);
                     out.printf(rb.getString(
-                            "verified.by.s.in.s"), issuer, "cacerts");
+                            "verified.by.s.in.s.weak"),
+                            issuer,
+                            "cacerts",
+                            withWeak(signer.getPublicKey()));
                     out.println();
                 }
             }
             if (issuer == null && keyStore != null) {
                 issuer = verifyCRL(keyStore, crl);
                 if (issuer != null) {
+                    signer = keyStore.getCertificate(issuer);
                     out.printf(rb.getString(
-                            "verified.by.s.in.s"), issuer, "keystore");
+                            "verified.by.s.in.s.weak"),
+                            issuer,
+                            "keystore",
+                            withWeak(signer.getPublicKey()));
                     out.println();
                 }
             }
@@ -2324,18 +2380,26 @@ public final class Main {
                 out.println(rb.getString
                         ("STARNN"));
             }
+            checkWeak(rb.getString("the.crl"), crl, signer == null ? null : signer.getPublicKey());
         }
     }
 
     private void printCRL(CRL crl, PrintStream out)
             throws Exception {
+        X509CRL xcrl = (X509CRL)crl;
         if (rfc) {
-            X509CRL xcrl = (X509CRL)crl;
             out.println("-----BEGIN X509 CRL-----");
             out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(xcrl.getEncoded()));
             out.println("-----END X509 CRL-----");
         } else {
-            out.println(crl.toString());
+            String s;
+            if (crl instanceof X509CRLImpl) {
+                X509CRLImpl x509crl = (X509CRLImpl) crl;
+                s = x509crl.toStringWithAlgName(withWeak("" + x509crl.getSigAlgId()));
+            } else {
+                s = crl.toString();
+            }
+            out.println(s);
         }
     }
 
@@ -2362,8 +2426,11 @@ public final class Main {
         PKCS10 req = new PKCS10(Pem.decode(new String(sb)));
 
         PublicKey pkey = req.getSubjectPublicKeyInfo();
-        out.printf(rb.getString("PKCS.10.Certificate.Request.Version.1.0.Subject.s.Public.Key.s.format.s.key."),
-                req.getSubjectName(), pkey.getFormat(), pkey.getAlgorithm());
+        out.printf(rb.getString("PKCS.10.with.weak"),
+                req.getSubjectName(),
+                pkey.getFormat(),
+                withWeak(pkey),
+                withWeak(req.getSigAlg()));
         for (PKCS10Attribute attr: req.getAttributes().getAttributes()) {
             ObjectIdentifier oid = attr.getAttributeId();
             if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
@@ -2386,6 +2453,7 @@ public final class Main {
         if (debug) {
             out.println(req);   // Just to see more, say, public key length...
         }
+        checkWeak(rb.getString("the.certificate.request"), req);
     }
 
     /**
@@ -2425,6 +2493,15 @@ public final class Main {
             if (i < (certs.length-1)) {
                 out.println();
             }
+            checkWeak(oneInMany(rb.getString("the.certificate"), i, certs.length), x509Cert);
+        }
+    }
+
+    private static String oneInMany(String label, int i, int num) {
+        if (num == 1) {
+            return label;
+        } else {
+            return String.format(rb.getString("one.in.many"), label, i+1, num);
         }
     }
 
@@ -2458,7 +2535,11 @@ public final class Main {
                             out.println();
                             out.println(rb.getString("Signature."));
                             out.println();
-                            for (Certificate cert: signer.getSignerCertPath().getCertificates()) {
+
+                            List<? extends Certificate> certs
+                                    = signer.getSignerCertPath().getCertificates();
+                            int cc = 0;
+                            for (Certificate cert: certs) {
                                 X509Certificate x = (X509Certificate)cert;
                                 if (rfc) {
                                     out.println(rb.getString("Certificate.owner.") + x.getSubjectDN() + "\n");
@@ -2467,12 +2548,15 @@ public final class Main {
                                     printX509Cert(x, out);
                                 }
                                 out.println();
+                                checkWeak(oneInMany(rb.getString("the.certificate"), cc++, certs.size()), x);
                             }
                             Timestamp ts = signer.getTimestamp();
                             if (ts != null) {
                                 out.println(rb.getString("Timestamp."));
                                 out.println();
-                                for (Certificate cert: ts.getSignerCertPath().getCertificates()) {
+                                certs = ts.getSignerCertPath().getCertificates();
+                                cc = 0;
+                                for (Certificate cert: certs) {
                                     X509Certificate x = (X509Certificate)cert;
                                     if (rfc) {
                                         out.println(rb.getString("Certificate.owner.") + x.getSubjectDN() + "\n");
@@ -2481,6 +2565,7 @@ public final class Main {
                                         printX509Cert(x, out);
                                     }
                                     out.println();
+                                    checkWeak(oneInMany(rb.getString("the.tsa.certificate"), cc++, certs.size()), x);
                                 }
                             }
                         }
@@ -2523,6 +2608,7 @@ public final class Main {
                         printX509Cert((X509Certificate)cert, out);
                         out.println();
                     }
+                    checkWeak(oneInMany(rb.getString("the.certificate"), i, chain.size()), cert);
                 } catch (Exception e) {
                     if (debug) {
                         e.printStackTrace();
@@ -2698,7 +2784,7 @@ public final class Main {
         }
 
         // Now store the newly established chain in the keystore. The new
-        // chain replaces the old one.
+        // chain replaces the old one. The chain can be null if user chooses no.
         if (newChain != null) {
             keyStore.setKeyEntry(alias, privKey,
                                  (keyPass != null) ? keyPass : storePass,
@@ -2735,16 +2821,17 @@ public final class Main {
             throw new Exception(rb.getString("Input.not.an.X.509.certificate"));
         }
 
+        if (noprompt) {
+            checkWeak(rb.getString("the.input"), cert);
+            keyStore.setCertificateEntry(alias, cert);
+            return true;
+        }
+
         // if certificate is self-signed, make sure it verifies
         boolean selfSigned = false;
         if (KeyStoreUtil.isSelfSigned(cert)) {
             cert.verify(cert.getPublicKey());
             selfSigned = true;
-        }
-
-        if (noprompt) {
-            keyStore.setCertificateEntry(alias, cert);
-            return true;
         }
 
         // check if cert already exists in keystore
@@ -2755,6 +2842,8 @@ public final class Main {
                 ("Certificate.already.exists.in.keystore.under.alias.trustalias."));
             Object[] source = {trustalias};
             System.err.println(form.format(source));
+            checkWeak(rb.getString("the.input"), cert);
+            printWeakWarnings(true);
             reply = getYesNoReply
                 (rb.getString("Do.you.still.want.to.add.it.no."));
         } else if (selfSigned) {
@@ -2764,6 +2853,8 @@ public final class Main {
                         ("Certificate.already.exists.in.system.wide.CA.keystore.under.alias.trustalias."));
                 Object[] source = {trustalias};
                 System.err.println(form.format(source));
+                checkWeak(rb.getString("the.input"), cert);
+                printWeakWarnings(true);
                 reply = getYesNoReply
                         (rb.getString("Do.you.still.want.to.add.it.to.your.own.keystore.no."));
             }
@@ -2771,6 +2862,8 @@ public final class Main {
                 // Print the cert and ask user if they really want to add
                 // it to their keystore
                 printX509Cert(cert, System.out);
+                checkWeak(rb.getString("the.input"), cert);
+                printWeakWarnings(true);
                 reply = getYesNoReply
                         (rb.getString("Trust.this.certificate.no."));
             }
@@ -2784,6 +2877,7 @@ public final class Main {
             }
         }
 
+        // Not found in this keystore and not self-signed
         // Try to establish trust chain
         try {
             Certificate[] chain = establishCertChain(null, cert);
@@ -2795,6 +2889,8 @@ public final class Main {
             // Print the cert and ask user if they really want to add it to
             // their keystore
             printX509Cert(cert, System.out);
+            checkWeak(rb.getString("the.input"), cert);
+            printWeakWarnings(true);
             reply = getYesNoReply
                 (rb.getString("Trust.this.certificate.no."));
             if ("YES".equals(reply)) {
@@ -2933,6 +3029,24 @@ public final class Main {
         return keyPass;
     }
 
+    private String withWeak(String alg) {
+        if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, alg, null)) {
+            return alg;
+        } else {
+            return String.format(rb.getString("with.weak"), alg);
+        }
+    }
+
+    private String withWeak(PublicKey key) {
+        if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
+            return String.format(rb.getString("key.bit"),
+                    KeyUtil.getKeySize(key), key.getAlgorithm());
+        } else {
+            return String.format(rb.getString("key.bit.weak"),
+                    KeyUtil.getKeySize(key), key.getAlgorithm());
+        }
+    }
+
     /**
      * Prints a certificate in a human readable format.
      */
@@ -2941,8 +3055,13 @@ public final class Main {
     {
 
         MessageFormat form = new MessageFormat
-                (rb.getString(".PATTERN.printX509Cert"));
+                (rb.getString(".PATTERN.printX509Cert.with.weak"));
         PublicKey pkey = cert.getPublicKey();
+        String sigName = cert.getSigAlgName();
+        // No need to warn about sigalg of a trust anchor
+        if (!isTrustedCert(cert)) {
+            sigName = withWeak(sigName);
+        }
         Object[] source = {cert.getSubjectDN().toString(),
                         cert.getIssuerDN().toString(),
                         cert.getSerialNumber().toString(16),
@@ -2950,10 +3069,9 @@ public final class Main {
                         cert.getNotAfter().toString(),
                         getCertFingerPrint("SHA-1", cert),
                         getCertFingerPrint("SHA-256", cert),
-                        cert.getSigAlgName(),
-                        pkey.getAlgorithm(),
-                        KeyUtil.getKeySize(pkey),
-                        cert.getVersion(),
+                        sigName,
+                        withWeak(pkey),
+                        cert.getVersion()
                         };
         out.println(form.format(source));
 
@@ -3003,12 +3121,12 @@ public final class Main {
      * @param ks the keystore to search with, not null
      * @return <code>cert</code> itself if it's already inside <code>ks</code>,
      * or a certificate inside <code>ks</code> who signs <code>cert</code>,
-     * or null otherwise.
+     * or null otherwise. A label is added.
      */
-    private static Certificate getTrustedSigner(Certificate cert, KeyStore ks)
-            throws Exception {
+    private static Pair<String,Certificate>
+            getSigner(Certificate cert, KeyStore ks) throws Exception {
         if (ks.getCertificateAlias(cert) != null) {
-            return cert;
+            return new Pair<>("", cert);
         }
         for (Enumeration<String> aliases = ks.aliases();
                 aliases.hasMoreElements(); ) {
@@ -3017,7 +3135,7 @@ public final class Main {
             if (trustedCert != null) {
                 try {
                     cert.verify(trustedCert.getPublicKey());
-                    return trustedCert;
+                    return new Pair<>(name, trustedCert);
                 } catch (Exception e) {
                     // Not verified, skip to the next one
                 }
@@ -3281,7 +3399,7 @@ public final class Main {
     /**
      * Prints warning about missing integrity check.
      */
-    private void printWarning() {
+    private void printNoIntegrityWarning() {
         System.err.println();
         System.err.println(rb.getString
             (".WARNING.WARNING.WARNING."));
@@ -3306,6 +3424,9 @@ public final class Main {
                                         Certificate[] replyCerts)
         throws Exception
     {
+
+        checkWeak(rb.getString("reply"), replyCerts);
+
         // order the certs in the reply (bottom-up).
         // we know that all certs in the reply are of type X.509, because
         // we parsed them using an X.509 certificate factory
@@ -3358,9 +3479,11 @@ public final class Main {
 
         // do we trust the cert at the top?
         Certificate topCert = replyCerts[replyCerts.length-1];
-        Certificate root = getTrustedSigner(topCert, keyStore);
+        boolean fromKeyStore = true;
+        Pair<String,Certificate> root = getSigner(topCert, keyStore);
         if (root == null && trustcacerts && caks != null) {
-            root = getTrustedSigner(topCert, caks);
+            root = getSigner(topCert, caks);
+            fromKeyStore = false;
         }
         if (root == null) {
             System.err.println();
@@ -3369,33 +3492,42 @@ public final class Main {
             printX509Cert((X509Certificate)topCert, System.out);
             System.err.println();
             System.err.print(rb.getString(".is.not.trusted."));
+            printWeakWarnings(true);
             String reply = getYesNoReply
                     (rb.getString("Install.reply.anyway.no."));
             if ("NO".equals(reply)) {
                 return null;
             }
         } else {
-            if (root != topCert) {
+            if (root.snd != topCert) {
                 // append the root CA cert to the chain
                 Certificate[] tmpCerts =
                     new Certificate[replyCerts.length+1];
                 System.arraycopy(replyCerts, 0, tmpCerts, 0,
                                  replyCerts.length);
-                tmpCerts[tmpCerts.length-1] = root;
+                tmpCerts[tmpCerts.length-1] = root.snd;
                 replyCerts = tmpCerts;
+                checkWeak(String.format(rb.getString(fromKeyStore ?
+                                            "alias.in.keystore" :
+                                            "alias.in.cacerts"),
+                                        root.fst),
+                          root.snd);
             }
         }
-
         return replyCerts;
     }
 
     /**
      * Establishes a certificate chain (using trusted certificates in the
-     * keystore), starting with the user certificate
+     * keystore and cacerts), starting with the reply (certToVerify)
      * and ending at a self-signed certificate found in the keystore.
      *
-     * @param userCert the user certificate of the alias
-     * @param certToVerify the single certificate provided in the reply
+     * @param userCert optional existing certificate, mostly likely be the
+     *                 original self-signed cert created by -genkeypair.
+     *                 It must have the same public key as certToVerify
+     *                 but cannot be the same cert.
+     * @param certToVerify the starting certificate to build the chain
+     * @returns the established chain, might be null if user decides not
      */
     private Certificate[] establishCertChain(Certificate userCert,
                                              Certificate certToVerify)
@@ -3423,30 +3555,37 @@ public final class Main {
         // Use the subject distinguished name as the key into the hash table.
         // All certificates associated with the same subject distinguished
         // name are stored in the same hash table entry as a vector.
-        Hashtable<Principal, Vector<Certificate>> certs = null;
+        Hashtable<Principal, Vector<Pair<String,X509Certificate>>> certs = null;
         if (keyStore.size() > 0) {
-            certs = new Hashtable<Principal, Vector<Certificate>>(11);
+            certs = new Hashtable<>(11);
             keystorecerts2Hashtable(keyStore, certs);
         }
         if (trustcacerts) {
             if (caks!=null && caks.size()>0) {
                 if (certs == null) {
-                    certs = new Hashtable<Principal, Vector<Certificate>>(11);
+                    certs = new Hashtable<>(11);
                 }
                 keystorecerts2Hashtable(caks, certs);
             }
         }
 
         // start building chain
-        Vector<Certificate> chain = new Vector<>(2);
-        if (buildChain((X509Certificate)certToVerify, chain, certs)) {
-            Certificate[] newChain = new Certificate[chain.size()];
+        Vector<Pair<String,X509Certificate>> chain = new Vector<>(2);
+        if (buildChain(
+                new Pair<>(rb.getString("the.input"),
+                           (X509Certificate) certToVerify),
+                chain, certs)) {
+            for (Pair<String,X509Certificate> p : chain) {
+                checkWeak(p.fst, p.snd);
+            }
+            Certificate[] newChain =
+                    new Certificate[chain.size()];
             // buildChain() returns chain with self-signed root-cert first and
             // user-cert last, so we need to invert the chain before we store
             // it
             int j=0;
             for (int i=chain.size()-1; i>=0; i--) {
-                newChain[j] = chain.elementAt(i);
+                newChain[j] = chain.elementAt(i).snd;
                 j++;
             }
             return newChain;
@@ -3457,7 +3596,17 @@ public final class Main {
     }
 
     /**
-     * Recursively tries to establish chain from pool of trusted certs.
+     * Recursively tries to establish chain from pool of certs starting from
+     * certToVerify until a self-signed cert is found, and fill the certs found
+     * into chain. Each cert in the chain signs the next one.
+     *
+     * This method is able to recover from an error, say, if certToVerify
+     * is signed by certA but certA has no issuer in certs and itself is not
+     * self-signed, the method can try another certB that also signs
+     * certToVerify and look for signer of certB, etc, etc.
+     *
+     * Each cert in chain comes with a label showing its origin. The label is
+     * used in the warning message when the cert is considered a risk.
      *
      * @param certToVerify the cert that needs to be verified.
      * @param chain the chain that's being built.
@@ -3465,19 +3614,20 @@ public final class Main {
      *
      * @return true if successful, false otherwise.
      */
-    private boolean buildChain(X509Certificate certToVerify,
-                        Vector<Certificate> chain,
-                        Hashtable<Principal, Vector<Certificate>> certs) {
-        Principal issuer = certToVerify.getIssuerDN();
-        if (KeyStoreUtil.isSelfSigned(certToVerify)) {
+    private boolean buildChain(Pair<String,X509Certificate> certToVerify,
+            Vector<Pair<String,X509Certificate>> chain,
+            Hashtable<Principal, Vector<Pair<String,X509Certificate>>> certs) {
+        if (KeyStoreUtil.isSelfSigned(certToVerify.snd)) {
             // reached self-signed root cert;
             // no verification needed because it's trusted.
             chain.addElement(certToVerify);
             return true;
         }
 
+        Principal issuer = certToVerify.snd.getIssuerDN();
+
         // Get the issuer's certificate(s)
-        Vector<Certificate> vec = certs.get(issuer);
+        Vector<Pair<String,X509Certificate>> vec = certs.get(issuer);
         if (vec == null) {
             return false;
         }
@@ -3485,13 +3635,12 @@ public final class Main {
         // Try out each certificate in the vector, until we find one
         // whose public key verifies the signature of the certificate
         // in question.
-        for (Enumeration<Certificate> issuerCerts = vec.elements();
-             issuerCerts.hasMoreElements(); ) {
-            X509Certificate issuerCert
-                = (X509Certificate)issuerCerts.nextElement();
-            PublicKey issuerPubKey = issuerCert.getPublicKey();
+        for (Enumeration<Pair<String,X509Certificate>> issuerCerts = vec.elements();
+                issuerCerts.hasMoreElements(); ) {
+            Pair<String,X509Certificate> issuerCert = issuerCerts.nextElement();
+            PublicKey issuerPubKey = issuerCert.snd.getPublicKey();
             try {
-                certToVerify.verify(issuerPubKey);
+                certToVerify.snd.verify(issuerPubKey);
             } catch (Exception e) {
                 continue;
             }
@@ -3541,10 +3690,11 @@ public final class Main {
     /**
      * Stores the (leaf) certificates of a keystore in a hashtable.
      * All certs belonging to the same CA are stored in a vector that
-     * in turn is stored in the hashtable, keyed by the CA's subject DN
+     * in turn is stored in the hashtable, keyed by the CA's subject DN.
+     * Each cert comes with a string label that shows its origin and alias.
      */
     private void keystorecerts2Hashtable(KeyStore ks,
-                Hashtable<Principal, Vector<Certificate>> hash)
+                Hashtable<Principal, Vector<Pair<String,X509Certificate>>> hash)
         throws Exception {
 
         for (Enumeration<String> aliases = ks.aliases();
@@ -3553,13 +3703,20 @@ public final class Main {
             Certificate cert = ks.getCertificate(alias);
             if (cert != null) {
                 Principal subjectDN = ((X509Certificate)cert).getSubjectDN();
-                Vector<Certificate> vec = hash.get(subjectDN);
+                Pair<String,X509Certificate> pair = new Pair<>(
+                        String.format(
+                                rb.getString(ks == caks ?
+                                        "alias.in.cacerts" :
+                                        "alias.in.keystore"),
+                                alias),
+                        (X509Certificate)cert);
+                Vector<Pair<String,X509Certificate>> vec = hash.get(subjectDN);
                 if (vec == null) {
-                    vec = new Vector<Certificate>();
-                    vec.addElement(cert);
+                    vec = new Vector<>();
+                    vec.addElement(pair);
                 } else {
-                    if (!vec.contains(cert)) {
-                        vec.addElement(cert);
+                    if (!vec.contains(pair)) {
+                        vec.addElement(pair);
                     }
                 }
                 hash.put(subjectDN, vec);
@@ -4155,6 +4312,81 @@ public final class Main {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    private boolean isTrustedCert(Certificate cert) throws KeyStoreException {
+        if (caks != null && caks.getCertificateAlias(cert) != null) {
+            return true;
+        } else {
+            String inKS = keyStore.getCertificateAlias(cert);
+            return inKS != null && keyStore.isCertificateEntry(inKS);
+        }
+    }
+
+    private void checkWeak(String label, String sigAlg, Key key) {
+
+        if (sigAlg != null && !DISABLED_CHECK.permits(
+                SIG_PRIMITIVE_SET, sigAlg, null)) {
+            weakWarnings.add(String.format(
+                    rb.getString("whose.sigalg.risk"), label, sigAlg));
+        }
+        if (key != null && !DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
+            weakWarnings.add(String.format(
+                    rb.getString("whose.key.risk"),
+                    label,
+                    String.format(rb.getString("key.bit"),
+                            KeyUtil.getKeySize(key), key.getAlgorithm())));
+        }
+    }
+
+    private void checkWeak(String label, Certificate[] certs)
+            throws KeyStoreException {
+        for (int i = 0; i < certs.length; i++) {
+            Certificate cert = certs[i];
+            if (cert instanceof X509Certificate) {
+                X509Certificate xc = (X509Certificate)cert;
+                String fullLabel = label;
+                if (certs.length > 1) {
+                    fullLabel = oneInMany(label, i, certs.length);
+                }
+                checkWeak(fullLabel, xc);
+            }
+        }
+    }
+
+    private void checkWeak(String label, Certificate cert)
+            throws KeyStoreException {
+        if (cert instanceof X509Certificate) {
+            X509Certificate xc = (X509Certificate)cert;
+            // No need to check the sigalg of a trust anchor
+            String sigAlg = isTrustedCert(cert) ? null : xc.getSigAlgName();
+            checkWeak(label, sigAlg, xc.getPublicKey());
+        }
+    }
+
+    private void checkWeak(String label, PKCS10 p10) {
+        checkWeak(label, p10.getSigAlg(), p10.getSubjectPublicKeyInfo());
+    }
+
+    private void checkWeak(String label, CRL crl, Key key) {
+        if (crl instanceof X509CRLImpl) {
+            X509CRLImpl impl = (X509CRLImpl)crl;
+            checkWeak(label, impl.getSigAlgName(), key);
+        }
+    }
+
+    private void printWeakWarnings(boolean newLine) {
+        if (!weakWarnings.isEmpty() && !nowarn) {
+            System.err.println("\nWarning:");
+            for (String warning : weakWarnings) {
+                System.err.println(warning);
+            }
+            if (newLine) {
+                // When calling before a yes/no prompt, add a new line
+                System.err.println();
+            }
+        }
+        weakWarnings.clear();
     }
 
     /**

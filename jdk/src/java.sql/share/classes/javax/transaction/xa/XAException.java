@@ -29,6 +29,7 @@ package javax.transaction.xa;
  * The XAException is thrown by the Resource Manager (RM) to inform the
  * Transaction Manager of an error encountered by the involved transaction.
  *
+ * @since 1.4
  */
 public class XAException extends Exception {
 

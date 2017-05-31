@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ import com.sun.imageio.plugins.tiff.TIFFImageMetadata;
  * <p>A {@code TIFFDirectory} is aware of the tag numbers in the
  * group of {@link TIFFTagSet}s associated with it. When
  * a {@code TIFFDirectory} is created from a native image metadata
- * object, these tag sets are derived from the <tt>tagSets</tt> attribute
- * of the <tt>TIFFIFD</tt> node.</p>
+ * object, these tag sets are derived from the {@code tagSets} attribute
+ * of the {@code TIFFIFD} node.</p>
  *
  * <p>A {@code TIFFDirectory} might also have a parent {@link TIFFTag}.
  * This will occur if the directory represents an IFD other than the root
@@ -73,8 +73,8 @@ import com.sun.imageio.plugins.tiff.TIFFImageMetadata;
  * {@link TIFFTag#isIFDPointer} method of this parent {@code TIFFTag}
  * must return {@code true}.  When a {@code TIFFDirectory} is
  * created from a native image metadata object, the parent tag set is set
- * from the <tt>parentTagName</tt> attribute of the corresponding
- * <tt>TIFFIFD</tt> node. Note that a {@code TIFFDirectory} instance
+ * from the {@code parentTagName} attribute of the corresponding
+ * {@code TIFFIFD} node. Note that a {@code TIFFDirectory} instance
  * which has a non-{@code null} parent tag will be contained in the
  * data field of a {@code TIFFField} instance which has a tag field
  * equal to the contained directory's parent tag.</p>
@@ -133,8 +133,8 @@ public class TIFFDirectory implements Cloneable {
      * an image metadata object. The supplied object must support an image
      * metadata format supported by the TIFF {@link javax.imageio.ImageWriter}
      * plug-in. This will usually be either the TIFF native image metadata
-     * format <tt>javax_imageio_tiff_image_1.0</tt> or the Java
-     * Image I/O standard metadata format <tt>javax_imageio_1.0</tt>.
+     * format {@code javax_imageio_tiff_image_1.0} or the Java
+     * Image I/O standard metadata format {@code javax_imageio_1.0}.
      *
      * @param tiffImageMetadata A metadata object which supports a compatible
      * image metadata format.

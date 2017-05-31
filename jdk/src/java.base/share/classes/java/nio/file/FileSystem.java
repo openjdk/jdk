@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,9 @@ public abstract class FileSystem
      * that resembles regular expressions but with a simpler syntax. For example:
      *
      * <blockquote>
-     * <table border="0" summary="Pattern Language">
+     * <table class="borderless">
+     * <caption style="display:none">Pattern Language</caption>
+     * <tbody>
      * <tr>
      *   <td>{@code *.java}</td>
      *   <td>Matches a path that represents a file name ending in {@code .java}</td>
@@ -348,7 +350,7 @@ public abstract class FileSystem
      *   platform (note that the backslash is escaped; as a string literal in the
      *   Java Language the pattern would be <code>"C:&#92;&#92;&#92;&#92;*"</code>) </td>
      * </tr>
-     *
+     * </tbody>
      * </table>
      * </blockquote>
      *
