@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
  *       8014217 8025003 8026330 8028397 8129544 8165243
  * @summary tests java.util.Base64
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main TestBase64
  * @key randomness
  */
@@ -43,7 +42,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class TestBase64 {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@
  * 6328855 6192895 6345469 6988218 6693451 7006761 8140212 8143282 8158482
  * 8176029
  *
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main RegExTest
  * @key randomness
  */
@@ -52,7 +51,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.nio.CharBuffer;
 import java.util.function.Predicate;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 /**
  * This is a test class created to check the operation of
