@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -872,7 +872,7 @@ public final class Unsafe {
     public final boolean compareAndSwapObject(Object o, long offset,
                                               Object expected,
                                               Object x) {
-        return theInternalUnsafe.compareAndSwapObject(o, offset, expected, x);
+        return theInternalUnsafe.compareAndSetObject(o, offset, expected, x);
     }
 
     /**
@@ -888,7 +888,7 @@ public final class Unsafe {
     public final boolean compareAndSwapInt(Object o, long offset,
                                            int expected,
                                            int x) {
-        return theInternalUnsafe.compareAndSwapInt(o, offset, expected, x);
+        return theInternalUnsafe.compareAndSetInt(o, offset, expected, x);
     }
 
     /**
@@ -904,7 +904,7 @@ public final class Unsafe {
     public final boolean compareAndSwapLong(Object o, long offset,
                                             long expected,
                                             long x) {
-        return theInternalUnsafe.compareAndSwapLong(o, offset, expected, x);
+        return theInternalUnsafe.compareAndSetLong(o, offset, expected, x);
     }
 
     /**

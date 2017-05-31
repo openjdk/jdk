@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /* @test
  * @bug 8038491
  * @summary Crash in ZipFile.read() when ZipFileInputStream is shared between threads
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library /test/lib
  * @run main MultiThreadedReadTest
  * @key randomness
  */
@@ -38,7 +37,7 @@ import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class MultiThreadedReadTest extends Thread {
 

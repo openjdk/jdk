@@ -25,8 +25,7 @@
  * @test
  * @bug 4091811 4148753 4102731
  * @summary Test java.net.MulticastSocket joinGroup and leaveGroup
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
  * @run main JoinLeave
  */
 
@@ -35,7 +34,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 
 public class JoinLeave {
 
