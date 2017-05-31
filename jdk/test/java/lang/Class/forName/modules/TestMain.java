@@ -21,13 +21,11 @@
  * questions.
  */
 
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
 
 public class TestMain {
     public static void main(String[] args) throws Exception {
-        Layer boot = Layer.boot();
+        ModuleLayer boot = ModuleLayer.boot();
         Module m1 = boot.findModule("m1").get();
         Module m2 = boot.findModule("m2").get();
 

@@ -175,18 +175,6 @@ public final class HToolkit extends SunToolkit implements ComponentFactory {
     }
 
     @Override
-    public int getScreenHeight()
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    @Override
-    public int getScreenWidth()
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    @Override
     public Dimension getScreenSize()
         throws HeadlessException {
         throw new HeadlessException();

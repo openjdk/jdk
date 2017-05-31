@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.xml.crypto.XMLCryptoContext;
  * (for example, you should not use the same <code>XMLValidateContext</code>
  * instance to validate two different {@link XMLSignature} objects).
  * <p>
- * <b><a name="SupportedProperties"></a>Supported Properties</b>
+ * <b><a id="SupportedProperties"></a>Supported Properties</b>
  * <p>The following properties can be set by an application using the
  * {@link #setProperty setProperty} method.
  * <ul>

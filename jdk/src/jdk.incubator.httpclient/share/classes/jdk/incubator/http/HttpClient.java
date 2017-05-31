@@ -154,9 +154,9 @@ public abstract class HttpClient {
 
         /**
          * Requests a specific HTTP protocol version where possible. If not set,
-         * the version defaults to {@link HttpClient.Version#HTTP_1_1}. If
+         * the version defaults to {@link HttpClient.Version#HTTP_2}. If
          * {@link HttpClient.Version#HTTP_2} is set, then each request will
-         * attempt to upgrade to HTTP/2.  If the upgrade succeeds, then the
+         * attempt to upgrade to HTTP/2. If the upgrade succeeds, then the
          * response to this request will use HTTP/2 and all subsequent requests
          * and responses to the same
          * <a href="https://tools.ietf.org/html/rfc6454#section-4">origin server</a>
@@ -267,7 +267,7 @@ public abstract class HttpClient {
 
     /**
      * Returns the HTTP protocol version requested for this client. The default
-     * value is {@link HttpClient.Version#HTTP_1_1}
+     * value is {@link HttpClient.Version#HTTP_2}
      *
      * @return the HTTP protocol version requested
      */
