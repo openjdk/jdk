@@ -115,7 +115,7 @@ abstract class HttpConnection implements Closeable {
     }
 
     /* Returns either a plain HTTP connection or a plain tunnelling connection
-     * for proxied websockets */
+     * for proxied WebSocket */
     private static HttpConnection getPlainConnection(InetSocketAddress addr,
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
@@ -152,15 +152,16 @@ abstract class HttpConnection implements Closeable {
             HttpClientImpl client,
             HttpRequestImpl request, boolean isHttp2)
     {
-        HttpConnection c;
+        HttpConnection c = null;
         InetSocketAddress proxy = request.proxy(client);
         boolean secure = request.secure();
         ConnectionPool pool = client.connectionPool();
         String[] alpn =  null;
 
-        if (secure && client.version() == HttpClient.Version.HTTP_2) {
-            alpn = new String[1];
+        if (secure && isHttp2) {
+            alpn = new String[2];
             alpn[0] = "h2";
+            alpn[1] = "http/1.1";
         }
 
         if (!secure) {
@@ -171,7 +172,9 @@ abstract class HttpConnection implements Closeable {
                 return getPlainConnection(addr, proxy, request, client);
             }
         } else {
-            c = pool.getConnection(true, addr, proxy);
+            if (!isHttp2) { // if http2 we don't cache connections
+                c = pool.getConnection(true, addr, proxy);
+            }
             if (c != null) {
                 return c;
             } else {

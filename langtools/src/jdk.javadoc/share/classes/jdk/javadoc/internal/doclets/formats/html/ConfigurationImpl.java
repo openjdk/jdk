@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,8 @@ public class ConfigurationImpl extends Configuration {
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
-    public ConfigurationImpl() {
+    public ConfigurationImpl(Doclet doclet) {
+        super(doclet);
         resources = new Resources(this,
                 Configuration.sharedResourceBundleName,
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard");

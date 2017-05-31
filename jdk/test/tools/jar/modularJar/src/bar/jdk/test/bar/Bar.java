@@ -28,7 +28,6 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Module;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.HashSet;

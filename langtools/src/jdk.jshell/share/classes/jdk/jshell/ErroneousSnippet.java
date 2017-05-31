@@ -34,6 +34,8 @@ import jdk.jshell.Key.ErroneousKey;
  * <code>ErroneousSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
+ * @since 9
  */
 public class ErroneousSnippet extends Snippet {
 

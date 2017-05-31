@@ -26,9 +26,15 @@
  * @bug 4469866
  * @summary Connecting to a link-local IPv6 address should not
  *          causes a SocketException to be thrown.
+ * @library /test/lib
+ * @run main LinkLocal
  */
+
+import jdk.test.lib.NetworkConfiguration;
+
 import java.net.*;
-import java.util.Enumeration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class LinkLocal {
 
@@ -134,22 +140,13 @@ public class LinkLocal {
          * IPv6 address.
          */
         if (args.length == 0) {
-            Enumeration nifs = NetworkInterface.getNetworkInterfaces();
-            while (nifs.hasMoreElements()) {
-                NetworkInterface ni = (NetworkInterface)nifs.nextElement();
-                if (!ni.isUp())
-                    continue;
+            List<Inet6Address> addrs = NetworkConfiguration.probe()
+                    .ip6Addresses()
+                    .filter(Inet6Address::isLinkLocalAddress)
+                    .collect(Collectors.toList());
 
-                Enumeration addrs = ni.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = (InetAddress)addrs.nextElement();
-
-                    if (addr instanceof Inet6Address &&
-                        addr.isLinkLocalAddress()) {
-
-                        TestAddress(addr);
-                    }
-                }
+            for (Inet6Address addr : addrs) {
+                TestAddress(addr);
             }
         }
 

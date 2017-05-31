@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,25 +33,26 @@
  */
 
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 
 public class bug4458079 extends JFrame implements PopupMenuListener {
     public JMenu menu;
 
     static volatile boolean itemASelected = false;
     public static void main(String[] args) throws Exception {
+        Robot robot = new Robot();
+        robot.waitForIdle();
+        // move mouse outside menu to prevent auto selection
+        robot.mouseMove(100,100);
+
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 new bug4458079().createAndShowGUI();
             }
         });
-        Robot robot = new Robot();
-        robot.waitForIdle();
 
         robot.setAutoDelay(50);
 
@@ -84,6 +85,7 @@ public class bug4458079 extends JFrame implements PopupMenuListener {
         setSize(300, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
+        setLocationRelativeTo(null);
         setVisible(true);
     }
 

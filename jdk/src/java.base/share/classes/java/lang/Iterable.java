@@ -31,16 +31,13 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
- * Implementing this interface allows an object to be the target of
- * the "for-each loop" statement. See
- * <strong>
- * <a href="{@docRoot}/../technotes/guides/language/foreach.html">For-each Loop</a>
- * </strong>
+ * Implementing this interface allows an object to be the target of the enhanced
+ * {@code for} statement (sometimes called the "for-each loop" statement).
  *
  * @param <T> the type of elements returned by the iterator
  *
  * @since 1.5
- * @jls 14.14.2 The enhanced for statement
+ * @jls 14.14.2 The enhanced {@code for} statement
  */
 public interface Iterable<T> {
     /**

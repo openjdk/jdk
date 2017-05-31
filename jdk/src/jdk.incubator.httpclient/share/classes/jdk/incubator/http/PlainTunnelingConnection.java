@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.incubator.http;
 
 import jdk.incubator.http.internal.common.ByteBufferReference;
 import jdk.incubator.http.internal.common.MinimalFuture;
+import jdk.incubator.http.HttpResponse.BodyHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A plain text socket tunnel through a proxy. Uses "CONNECT" but does not
- * encrypt. Used by WebSockets. Subclassed in SSLTunnelConnection for encryption.
+ * encrypt. Used by WebSocket. Subclassed in SSLTunnelConnection for encryption.
  */
 class PlainTunnelingConnection extends HttpConnection {
 
@@ -50,7 +51,7 @@ class PlainTunnelingConnection extends HttpConnection {
             .thenCompose((Void v) -> {
                 HttpRequestImpl req = new HttpRequestImpl("CONNECT", client, address);
                 MultiExchange<Void,Void> mconnectExchange = new MultiExchange<>(req, client, this::ignore);
-                return mconnectExchange.responseAsync(null)
+                return mconnectExchange.responseAsync()
                     .thenCompose((HttpResponseImpl<Void> resp) -> {
                         CompletableFuture<Void> cf = new MinimalFuture<>();
                         if (resp.statusCode() != 200) {
@@ -72,7 +73,8 @@ class PlainTunnelingConnection extends HttpConnection {
     public void connect() throws IOException, InterruptedException {
         delegate.connect();
         HttpRequestImpl req = new HttpRequestImpl("CONNECT", client, address);
-        Exchange<?> connectExchange = new Exchange<>(req, null);
+        MultiExchange<Void,Void> mul = new MultiExchange<>(req, client, BodyHandler.<Void>discard(null));
+        Exchange<Void> connectExchange = new Exchange<>(req, mul);
         Response r = connectExchange.responseImpl(delegate);
         if (r.statusCode() != 200) {
             throw new IOException("Tunnel failed");

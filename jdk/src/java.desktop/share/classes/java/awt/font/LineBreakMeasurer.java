@@ -115,26 +115,27 @@ import java.awt.font.FontRenderContext;
  * <pre>{@code
  * public void paint(Graphics graphics) {
  *
- *     Point2D pen = new Point2D(10, 20);
+ *     float dx = 0f, dy = 5f;
  *     Graphics2D g2d = (Graphics2D)graphics;
  *     FontRenderContext frc = g2d.getFontRenderContext();
  *
- *     // let styledText be an AttributedCharacterIterator containing at least
- *     // one character
+ *     AttributedString text = new AttributedString(".....");
+ *     AttributedCharacterIterator paragraph = text.getIterator();
  *
- *     LineBreakMeasurer measurer = new LineBreakMeasurer(styledText, frc);
- *     float wrappingWidth = getSize().width - 15;
+ *     LineBreakMeasurer measurer = new LineBreakMeasurer(paragraph, frc);
+ *     measurer.setPosition(paragraph.getBeginIndex());
+ *     float wrappingWidth = (float)getSize().width;
  *
- *     while (measurer.getPosition() < fStyledText.length()) {
+ *     while (measurer.getPosition() < paragraph.getEndIndex()) {
  *
  *         TextLayout layout = measurer.nextLayout(wrappingWidth);
  *
- *         pen.y += (layout.getAscent());
+ *         dy += (layout.getAscent());
  *         float dx = layout.isLeftToRight() ?
  *             0 : (wrappingWidth - layout.getAdvance());
  *
- *         layout.draw(graphics, pen.x + dx, pen.y);
- *         pen.y += layout.getDescent() + layout.getLeading();
+ *         layout.draw(graphics, dx, dy);
+ *         dy += layout.getDescent() + layout.getLeading();
  *     }
  * }
  * }</pre>
