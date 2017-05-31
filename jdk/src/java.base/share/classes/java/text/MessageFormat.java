@@ -68,7 +68,7 @@ import java.util.Locale;
  * behavior is defined by the pattern that you provide as well as the
  * subformats used for inserted arguments.
  *
- * <h3><a name="patterns">Patterns and Their Interpretation</a></h3>
+ * <h3><a id="patterns">Patterns and Their Interpretation</a></h3>
  *
  * <code>MessageFormat</code> uses patterns of the following form:
  * <blockquote><pre>
@@ -146,11 +146,15 @@ import java.util.Locale;
  * shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
  *
- * <table border=1 summary="Shows how FormatType and FormatStyle values map to Format instances">
+ * <table class="plain">
+ * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
+ * <thead>
  *    <tr>
  *       <th id="ft" class="TableHeadingColor">FormatType
  *       <th id="fs" class="TableHeadingColor">FormatStyle
  *       <th id="sc" class="TableHeadingColor">Subformat Created
+ * </thead>
+ * <tbody>
  *    <tr>
  *       <td headers="ft"><i>(none)</i>
  *       <td headers="fs"><i>(none)</i>
@@ -213,6 +217,7 @@ import java.util.Locale;
  *       <td headers="ft"><code>choice</code>
  *       <td headers="fs"><i>SubformatPattern</i>
  *       <td headers="sc">{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
+ * </tbody>
  * </table>
  *
  * <h4>Usage Information</h4>
@@ -321,7 +326,7 @@ import java.util.Locale;
  * // result now equals {new String("z")}
  * </pre></blockquote>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Message formats are not synchronized.
@@ -766,11 +771,15 @@ public class MessageFormat extends Format {
      * argument is <i>unavailable</i> if <code>arguments</code> is
      * <code>null</code> or has fewer than argumentIndex+1 elements.
      *
-     * <table border=1 summary="Examples of subformat,argument,and formatted text">
+     * <table class="plain">
+     * <caption style="display:none">Examples of subformat,argument,and formatted text</caption>
+     * <thead>
      *    <tr>
      *       <th>Subformat
      *       <th>Argument
      *       <th>Formatted Text
+     * </thead>
+     * <tbody>
      *    <tr>
      *       <td><i>any</i>
      *       <td><i>unavailable</i>
@@ -805,6 +814,7 @@ public class MessageFormat extends Format {
      *       <td><code>null</code>
      *       <td><i>any</i>
      *       <td><code>argument.toString()</code>
+     * </tbody>
      * </table>
      * <p>
      * If <code>pos</code> is non-null, and refers to

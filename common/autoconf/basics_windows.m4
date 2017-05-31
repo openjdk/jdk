@@ -329,8 +329,8 @@ AC_DEFUN([BASIC_CHECK_PATHS_WINDOWS],
       AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
     fi
     AC_MSG_CHECKING([cygwin root directory as unix-style path])
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    cygwin_winpath_root=`cd / ; cmd /c cd | $GREP ".*"`
+    # The cmd output ends with Windows line endings (CR/LF)
+    cygwin_winpath_root=`cd / ; cmd /c cd | $TR -d '\r\n'`
     # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
     CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
     AC_MSG_RESULT([$CYGWIN_ROOT_PATH])
