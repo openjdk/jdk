@@ -2815,6 +2815,18 @@ int os::Linux::sched_getcpu_syscall(void) {
   return (retval == -1) ? retval : cpu;
 }
 
+void os::Linux::sched_getcpu_init() {
+  // sched_getcpu() should be in libc.
+  set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
+                                  dlsym(RTLD_DEFAULT, "sched_getcpu")));
+
+  // If it's not, try a direct syscall.
+  if (sched_getcpu() == -1) {
+    set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
+                                    (void*)&sched_getcpu_syscall));
+  }
+}
+
 // Something to do with the numa-aware allocator needs these symbols
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
@@ -2836,17 +2848,7 @@ void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
 }
 
 bool os::Linux::libnuma_init() {
-  // sched_getcpu() should be in libc.
-  set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
-                                  dlsym(RTLD_DEFAULT, "sched_getcpu")));
-
-  // If it's not, try a direct syscall.
-  if (sched_getcpu() == -1) {
-    set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
-                                    (void*)&sched_getcpu_syscall));
-  }
-
-  if (sched_getcpu() != -1) { // Does it work?
+  if (sched_getcpu() != -1) { // Requires sched_getcpu() support
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
@@ -4875,6 +4877,7 @@ jint os::init_2(void) {
 #endif
 
   Linux::libpthread_init();
+  Linux::sched_getcpu_init();
   log_info(os)("HotSpot is running with %s, %s",
                Linux::glibc_version(), Linux::libpthread_version());
 
