@@ -112,6 +112,7 @@ import java.util.Objects;
  * @author      Blake Sullivan
  * @author      Laurence P. G. Cable
  * @author      Jeff Dunn
+ * @since 1.1
  */
 public class DataFlavor implements Externalizable, Cloneable {
 
