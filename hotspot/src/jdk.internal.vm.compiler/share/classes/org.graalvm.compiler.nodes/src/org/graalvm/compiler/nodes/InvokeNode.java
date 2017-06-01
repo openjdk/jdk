@@ -22,20 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
-import static org.graalvm.compiler.nodeinfo.InputType.Extension;
-import static org.graalvm.compiler.nodeinfo.InputType.Memory;
-import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
-
-import java.util.Map;
-
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
@@ -55,7 +42,19 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.UncheckedInterfaceProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import jdk.vm.ci.meta.JavaKind;
+import java.util.Map;
+
+import static org.graalvm.compiler.nodeinfo.InputType.Extension;
+import static org.graalvm.compiler.nodeinfo.InputType.Memory;
+import static org.graalvm.compiler.nodeinfo.InputType.State;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 /**
  * The {@code InvokeNode} represents all kinds of method calls.

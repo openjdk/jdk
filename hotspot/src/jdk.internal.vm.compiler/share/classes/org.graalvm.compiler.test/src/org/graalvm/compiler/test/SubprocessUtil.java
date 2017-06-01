@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.test;
 
+import org.graalvm.util.CollectionsUtil;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -31,10 +33,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.graalvm.util.CollectionsUtil;
 
 /**
  * Utility methods for spawning a VM in a subprocess during unit tests.
@@ -184,9 +185,46 @@ public final class SubprocessUtil {
      * @param mainClassAndArgs the main class and its arguments
      */
     public static Subprocess java(List<String> vmArgs, List<String> mainClassAndArgs) throws IOException, InterruptedException {
+        return javaHelper(vmArgs, null, mainClassAndArgs);
+    }
+
+    /**
+     * Executes a Java subprocess.
+     *
+     * @param vmArgs the VM arguments
+     * @param env the environment variables
+     * @param mainClassAndArgs the main class and its arguments
+     */
+    public static Subprocess java(List<String> vmArgs, Map<String, String> env, String... mainClassAndArgs) throws IOException, InterruptedException {
+        return java(vmArgs, env, Arrays.asList(mainClassAndArgs));
+    }
+
+    /**
+     * Executes a Java subprocess.
+     *
+     * @param vmArgs the VM arguments
+     * @param env the environment variables
+     * @param mainClassAndArgs the main class and its arguments
+     */
+    public static Subprocess java(List<String> vmArgs, Map<String, String> env, List<String> mainClassAndArgs) throws IOException, InterruptedException {
+        return javaHelper(vmArgs, env, mainClassAndArgs);
+    }
+
+    /**
+     * Executes a Java subprocess.
+     *
+     * @param vmArgs the VM arguments
+     * @param env the environment variables
+     * @param mainClassAndArgs the main class and its arguments
+     */
+    private static Subprocess javaHelper(List<String> vmArgs, Map<String, String> env, List<String> mainClassAndArgs) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(vmArgs);
         command.addAll(mainClassAndArgs);
         ProcessBuilder processBuilder = new ProcessBuilder(command);
+        if (env != null) {
+            Map<String, String> processBuilderEnv = processBuilder.environment();
+            processBuilderEnv.putAll(env);
+        }
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
         BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));

@@ -22,19 +22,10 @@
  */
 package org.graalvm.compiler.graph;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.function.Consumer;
-
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.DebugTimer;
-import org.graalvm.compiler.debug.Fingerprint;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -45,6 +36,14 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.function.Consumer;
+
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 /**
  * This class is a graph container, it contains the set of nodes that belong to this graph.
@@ -981,9 +980,6 @@ public class Graph {
 
         if (nodeEventListener != null) {
             nodeEventListener.nodeAdded(node);
-        }
-        if (Fingerprint.ENABLED) {
-            Fingerprint.submit("%s: %s", NodeEvent.NODE_ADDED, node);
         }
         afterRegister(node);
     }

@@ -70,7 +70,7 @@ public class DebugEnvironment {
             return null;
         }
         GraalDebugConfig debugConfig = (GraalDebugConfig) DebugScope.getConfig();
-        if (debugConfig == null || forceInit) {
+        if (debugConfig == null || forceInit || options != debugConfig.getOptions()) {
             // Initialize JVMCI before loading class Debug
             JVMCI.initialize();
             List<DebugDumpHandler> dumpHandlers = new ArrayList<>();

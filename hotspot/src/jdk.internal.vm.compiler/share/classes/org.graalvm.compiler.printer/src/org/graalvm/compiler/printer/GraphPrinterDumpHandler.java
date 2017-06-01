@@ -120,7 +120,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
 
     @Override
     @SuppressWarnings("try")
-    public void dump(Object object, final String message) {
+    public void dump(Object object, final String format, Object... arguments) {
         if (object instanceof Graph && Options.PrintGraph.getValue(DebugScope.getConfig().getOptions())) {
             ensureInitialized();
             if (printer == null) {
@@ -184,7 +184,7 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
                     }
                 }
                 addCFGFileName(properties);
-                printer.print(graph, nextDumpId() + ":" + message, properties);
+                printer.print(graph, properties, nextDumpId(), format, arguments);
             } catch (IOException e) {
                 handleException(e);
             } catch (Throwable e) {

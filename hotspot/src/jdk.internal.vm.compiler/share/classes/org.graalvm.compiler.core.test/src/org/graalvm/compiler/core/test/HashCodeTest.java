@@ -22,18 +22,18 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.phases.MidTier;
 import org.graalvm.compiler.nodes.InvokeNode;
+import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class HashCodeTest extends GraalCompilerTest {
 
@@ -144,7 +144,9 @@ public class HashCodeTest extends GraalCompilerTest {
 
     private void checkForGuardedIntrinsicPattern(String name) {
         StructuredGraph g = parseForCompile(getResolvedJavaMethod(name));
-        Assert.assertEquals(1, g.getNodes().filter(InvokeNode.class).count());
+        int invokeNodeCount = g.getNodes().filter(InvokeNode.class).count();
+        int invokeWithExceptionNodeCount = g.getNodes().filter(InvokeWithExceptionNode.class).count();
+        Assert.assertEquals(1, invokeNodeCount + invokeWithExceptionNodeCount);
         Assert.assertEquals(1, g.getNodes().filter(LoadHubNode.class).count());
         Assert.assertEquals(1, g.getNodes().filter(LoadMethodNode.class).count());
     }

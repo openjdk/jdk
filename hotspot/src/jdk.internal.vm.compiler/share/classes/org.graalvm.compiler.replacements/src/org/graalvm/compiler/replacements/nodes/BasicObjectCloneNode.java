@@ -64,7 +64,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
         return updateStamp(computeStamp(getObject()));
     }
 
-    private static Stamp computeStamp(ValueNode object) {
+    protected Stamp computeStamp(ValueNode object) {
         Stamp objectStamp = object.stamp();
         if (objectStamp instanceof ObjectStamp) {
             objectStamp = objectStamp.join(StampFactory.objectNonNull());
@@ -82,15 +82,17 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
      *
      * If yes, then the exact type is returned, otherwise it returns null.
      */
-    protected static ResolvedJavaType getConcreteType(Stamp stamp) {
-        if (!(stamp instanceof ObjectStamp)) {
+    protected ResolvedJavaType getConcreteType(Stamp forStamp) {
+        if (!(forStamp instanceof ObjectStamp)) {
             return null;
         }
-        ObjectStamp objectStamp = (ObjectStamp) stamp;
+        ObjectStamp objectStamp = (ObjectStamp) forStamp;
         if (objectStamp.type() == null) {
             return null;
         } else if (objectStamp.isExactType()) {
             return objectStamp.type().isCloneableWithAllocation() ? objectStamp.type() : null;
+        } else if (objectStamp.type().isArray()) {
+            return objectStamp.type();
         }
         return null;
     }

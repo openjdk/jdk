@@ -25,6 +25,7 @@ package org.graalvm.compiler.lir.alloc.trace.lsra;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
@@ -190,13 +191,13 @@ final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocatio
                 // no need to handle virtual stack slots
                 return;
             }
-            TraceInterval toParent = allocator.intervalFor(phiTo);
+            TraceInterval toParent = allocator.intervalFor(asVariable(phiTo));
             if (isConstantValue(phiFrom)) {
                 numResolutionMoves.increment();
                 TraceInterval toInterval = allocator.splitChildAtOpId(toParent, toId, LIRInstruction.OperandMode.DEF);
                 moveResolver.addMapping(asConstant(phiFrom), toInterval);
             } else {
-                addMapping(allocator.intervalFor(phiFrom), toParent, fromId, toId, moveResolver);
+                addMapping(allocator.intervalFor(asVariable(phiFrom)), toParent, fromId, toId, moveResolver);
             }
         }
 

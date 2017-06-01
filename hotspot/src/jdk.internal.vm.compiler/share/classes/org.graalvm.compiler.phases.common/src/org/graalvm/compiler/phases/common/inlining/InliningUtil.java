@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.phases.common.inlining;
 
-import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
-import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
-import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
-
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
-
+import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.Fingerprint;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsImpl;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsInlineeScopeInfo;
@@ -48,6 +47,7 @@ import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
+import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.NodeWorkList;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -58,6 +58,7 @@ import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
+import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -69,6 +70,7 @@ import org.graalvm.compiler.nodes.KillingBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -95,14 +97,14 @@ import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
 import org.graalvm.util.UnmodifiableMapCursor;
 
-import jdk.vm.ci.code.BytecodeFrame;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import java.lang.reflect.Constructor;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+
+import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
+import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
+import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
 
 public class InliningUtil extends ValueMergeUtil {
 
@@ -277,9 +279,6 @@ public class InliningUtil extends ValueMergeUtil {
         StructuredGraph graph = invokeNode.graph();
         MethodMetricsInlineeScopeInfo m = MethodMetricsInlineeScopeInfo.create(graph.getOptions());
         try (Debug.Scope s = Debug.methodMetricsScope("InlineEnhancement", m, false)) {
-            if (Fingerprint.ENABLED) {
-                Fingerprint.submit("inlining %s into %s: %s", formatGraph(inlineGraph), formatGraph(invoke.asNode().graph()), inlineGraph.getNodes().snapshot());
-            }
             final NodeInputList<ValueNode> parameters = invoke.callTarget().arguments();
 
             assert inlineGraph.getGuardsStage().ordinal() >= graph.getGuardsStage().ordinal();
@@ -291,7 +290,7 @@ public class InliningUtil extends ValueMergeUtil {
 
             ArrayList<Node> nodes = new ArrayList<>(inlineGraph.getNodes().count());
             ArrayList<ReturnNode> returnNodes = new ArrayList<>(4);
-            ArrayList<InvokeNode> partialIntrinsicExits = new ArrayList<>();
+            ArrayList<Invoke> partialIntrinsicExits = new ArrayList<>();
             UnwindNode unwindNode = null;
             final StartNode entryPointNode = inlineGraph.start();
             FixedNode firstCFGNode = entryPointNode.next();
@@ -305,10 +304,10 @@ public class InliningUtil extends ValueMergeUtil {
                     nodes.add(node);
                     if (node instanceof ReturnNode) {
                         returnNodes.add((ReturnNode) node);
-                    } else if (node instanceof InvokeNode) {
-                        InvokeNode invokeInInlineGraph = (InvokeNode) node;
+                    } else if (node instanceof Invoke) {
+                        Invoke invokeInInlineGraph = (Invoke) node;
                         if (invokeInInlineGraph.bci() == BytecodeFrame.UNKNOWN_BCI) {
-                            ResolvedJavaMethod target1 = invoke.callTarget().targetMethod();
+                            ResolvedJavaMethod target1 = inlineeMethod;
                             ResolvedJavaMethod target2 = invokeInInlineGraph.callTarget().targetMethod();
                             assert target1.equals(target2) : String.format("invoke in inlined method expected to be partial intrinsic exit (i.e., call to %s), not a call to %s",
                                             target1.format("%H.%n(%p)"), target2.format("%H.%n(%p)"));
@@ -338,7 +337,7 @@ public class InliningUtil extends ValueMergeUtil {
             assert invokeNode.successors().first() != null : invoke;
             assert invokeNode.predecessor() != null;
 
-            UnmodifiableEconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
+            EconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
 
             FrameState stateAfter = invoke.stateAfter();
             assert stateAfter == null || stateAfter.isAlive();
@@ -370,12 +369,16 @@ public class InliningUtil extends ValueMergeUtil {
             for (int i = 0; i < returnNodes.size(); i++) {
                 returnNodes.set(i, (ReturnNode) duplicates.get(returnNodes.get(i)));
             }
-            for (InvokeNode exit : partialIntrinsicExits) {
+            for (Invoke exit : partialIntrinsicExits) {
                 // A partial intrinsic exit must be replaced with a call to
                 // the intrinsified method.
-                InvokeNode dup = (InvokeNode) duplicates.get(exit);
-                InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
-                dup.intrinsify(repl);
+                Invoke dup = (Invoke) duplicates.get(exit.asNode());
+                if (dup instanceof InvokeNode) {
+                    InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
+                    dup.intrinsify(repl.asNode());
+                } else {
+                    ((InvokeWithExceptionNode) dup).replaceWithNewBci(invoke.bci());
+                }
             }
             if (unwindNode != null) {
                 unwindNode = (UnwindNode) duplicates.get(unwindNode);
@@ -392,7 +395,7 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     /**
-     * Inline {@code inlineGraph} into the current replacoing the node {@code Invoke} and return the
+     * Inline {@code inlineGraph} into the current replacing the node {@code Invoke} and return the
      * set of nodes which should be canonicalized. The set should only contain nodes which modified
      * by the inlining since the current graph and {@code inlineGraph} are expected to already be
      * canonical.
@@ -467,10 +470,13 @@ public class InliningUtil extends ValueMergeUtil {
                 invokeNode.replaceAtUsages(returnValue);
                 returnNode.replaceAndDelete(n);
             } else {
-                AbstractMergeNode merge = graph.add(new MergeNode());
+                MergeNode merge = graph.add(new MergeNode());
                 merge.setStateAfter(stateAfter);
                 returnValue = mergeReturns(merge, returnNodes);
                 invokeNode.replaceAtUsages(returnValue);
+                if (merge.isPhiAtMerge(returnValue)) {
+                    fixFrameStates(graph, merge, (PhiNode) returnValue);
+                }
                 merge.setNext(n);
             }
         } else {
@@ -505,11 +511,56 @@ public class InliningUtil extends ValueMergeUtil {
         return returnValue;
     }
 
-    private static String formatGraph(StructuredGraph graph) {
-        if (graph.method() == null) {
-            return graph.name;
+    private static void fixFrameStates(StructuredGraph graph, MergeNode originalMerge, PhiNode returnPhi) {
+        // It is possible that some of the frame states that came from AFTER_BCI reference a Phi
+        // node that was created to merge multiple returns. This can create cycles
+        // (see GR-3949 and GR-3957).
+        // To detect this, we follow the control paths starting from the merge node,
+        // split the Phi node inputs at merges and assign the proper input to each frame state.
+        NodeMap<Node> seen = new NodeMap<>(graph);
+        ArrayDeque<Node> workList = new ArrayDeque<>();
+        ArrayDeque<ValueNode> valueList = new ArrayDeque<>();
+        workList.push(originalMerge);
+        valueList.push(returnPhi);
+        while (!workList.isEmpty()) {
+            Node current = workList.pop();
+            ValueNode currentValue = valueList.pop();
+            if (seen.containsKey(current)) {
+                continue;
+            }
+            seen.put(current, current);
+            if (current instanceof StateSplit && current != originalMerge) {
+                StateSplit stateSplit = (StateSplit) current;
+                FrameState state = stateSplit.stateAfter();
+                if (state != null && state.values().contains(returnPhi)) {
+                    int index = 0;
+                    FrameState duplicate = state.duplicate();
+                    for (ValueNode value : state.values()) {
+                        if (value == returnPhi) {
+                            duplicate.values().set(index, currentValue);
+                        }
+                        index++;
+                    }
+                    stateSplit.setStateAfter(duplicate);
+                    GraphUtil.tryKillUnused(state);
+                }
+            }
+            if (current instanceof AbstractMergeNode) {
+                AbstractMergeNode currentMerge = (AbstractMergeNode) current;
+                for (EndNode pred : currentMerge.cfgPredecessors()) {
+                    ValueNode newValue = currentValue;
+                    if (currentMerge.isPhiAtMerge(currentValue)) {
+                        PhiNode currentPhi = (PhiNode) currentValue;
+                        newValue = currentPhi.valueAt(pred);
+                    }
+                    workList.push(pred);
+                    valueList.push(newValue);
+                }
+            } else if (current.predecessor() != null) {
+                workList.push(current.predecessor());
+                valueList.push(currentValue);
+            }
         }
-        return graph.method().format("%H.%n(%p)");
     }
 
     @SuppressWarnings("try")
@@ -546,58 +597,35 @@ public class InliningUtil extends ValueMergeUtil {
         }
     }
 
-    protected static void processFrameStates(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, FrameState stateAtExceptionEdge,
+    protected static void processFrameStates(Invoke invoke, StructuredGraph inlineGraph, EconomicMap<Node, Node> duplicates, FrameState stateAtExceptionEdge,
                     boolean alwaysDuplicateStateAfter) {
         FrameState stateAtReturn = invoke.stateAfter();
         FrameState outerFrameState = null;
         JavaKind invokeReturnKind = invoke.asNode().getStackKind();
+        EconomicMap<Node, Node> replacements = EconomicMap.create();
         for (FrameState original : inlineGraph.getNodes(FrameState.TYPE)) {
             FrameState frameState = (FrameState) duplicates.get(original);
             if (frameState != null && frameState.isAlive()) {
                 if (outerFrameState == null) {
                     outerFrameState = stateAtReturn.duplicateModifiedDuringCall(invoke.bci(), invokeReturnKind);
                 }
-                processFrameState(frameState, invoke, inlineGraph.method(), stateAtExceptionEdge, outerFrameState, alwaysDuplicateStateAfter, invoke.callTarget().targetMethod(),
+                processFrameState(frameState, invoke, replacements, inlineGraph.method(), stateAtExceptionEdge, outerFrameState, alwaysDuplicateStateAfter, invoke.callTarget().targetMethod(),
                                 invoke.callTarget().arguments());
             }
         }
+        // If processing the frame states replaced any nodes, update the duplicates map.
+        duplicates.replaceAll((key, value) -> replacements.containsKey(value) ? replacements.get(value) : value);
     }
 
-    public static FrameState processFrameState(FrameState frameState, Invoke invoke, ResolvedJavaMethod inlinedMethod, FrameState stateAtExceptionEdge, FrameState outerFrameState,
+    public static FrameState processFrameState(FrameState frameState, Invoke invoke, EconomicMap<Node, Node> replacements, ResolvedJavaMethod inlinedMethod, FrameState stateAtExceptionEdge,
+                    FrameState outerFrameState,
                     boolean alwaysDuplicateStateAfter, ResolvedJavaMethod invokeTargetMethod, List<ValueNode> invokeArgsList) {
-
         assert outerFrameState == null || !outerFrameState.isDeleted() : outerFrameState;
-        FrameState stateAtReturn = invoke.stateAfter();
+        final FrameState stateAtReturn = invoke.stateAfter();
         JavaKind invokeReturnKind = invoke.asNode().getStackKind();
 
         if (frameState.bci == BytecodeFrame.AFTER_BCI) {
-            FrameState stateAfterReturn = stateAtReturn;
-            if (frameState.getCode() == null) {
-                // This is a frame state for a side effect within an intrinsic
-                // that was parsed for post-parse intrinsification
-                for (Node usage : frameState.usages()) {
-                    if (usage instanceof ForeignCallNode) {
-                        // A foreign call inside an intrinsic needs to have
-                        // the BCI of the invoke being intrinsified
-                        ForeignCallNode foreign = (ForeignCallNode) usage;
-                        foreign.setBci(invoke.bci());
-                    }
-                }
-            }
-
-            // pop return kind from invoke's stateAfter and replace with this frameState's return
-            // value (top of stack)
-            if (frameState.stackSize() > 0 && (alwaysDuplicateStateAfter || stateAfterReturn.stackAt(0) != frameState.stackAt(0))) {
-                stateAfterReturn = stateAtReturn.duplicateModified(invokeReturnKind, invokeReturnKind, frameState.stackAt(0));
-            }
-
-            // Return value does no longer need to be limited by the monitor exit.
-            for (MonitorExitNode n : frameState.usages().filter(MonitorExitNode.class)) {
-                n.clearEscapedReturnValue();
-            }
-
-            frameState.replaceAndDelete(stateAfterReturn);
-            return stateAfterReturn;
+            return handleAfterBciFrameState(frameState, invoke, alwaysDuplicateStateAfter);
         } else if (stateAtExceptionEdge != null && isStateAfterException(frameState)) {
             // pop exception object from invoke's stateAfter and replace with this frameState's
             // exception object (top of stack)
@@ -608,7 +636,8 @@ public class InliningUtil extends ValueMergeUtil {
             frameState.replaceAndDelete(stateAfterException);
             return stateAfterException;
         } else if (frameState.bci == BytecodeFrame.UNWIND_BCI || frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI) {
-            return handleMissingAfterExceptionFrameState(frameState);
+            handleMissingAfterExceptionFrameState(frameState, invoke, replacements, alwaysDuplicateStateAfter);
+            return frameState;
         } else if (frameState.bci == BytecodeFrame.BEFORE_BCI) {
             // This is an intrinsic. Deoptimizing within an intrinsic
             // must re-execute the intrinsified invocation
@@ -626,6 +655,44 @@ public class InliningUtil extends ValueMergeUtil {
             }
             return frameState;
         }
+    }
+
+    private static FrameState handleAfterBciFrameState(FrameState frameState, Invoke invoke, boolean alwaysDuplicateStateAfter) {
+        FrameState stateAtReturn = invoke.stateAfter();
+        JavaKind invokeReturnKind = invoke.asNode().getStackKind();
+        FrameState stateAfterReturn = stateAtReturn;
+        if (frameState.getCode() == null) {
+            // This is a frame state for a side effect within an intrinsic
+            // that was parsed for post-parse intrinsification
+            for (Node usage : frameState.usages()) {
+                if (usage instanceof ForeignCallNode) {
+                    // A foreign call inside an intrinsic needs to have
+                    // the BCI of the invoke being intrinsified
+                    ForeignCallNode foreign = (ForeignCallNode) usage;
+                    foreign.setBci(invoke.bci());
+                }
+            }
+        }
+
+        // pop return kind from invoke's stateAfter and replace with this frameState's return
+        // value (top of stack)
+        assert !frameState.rethrowException() : frameState;
+        if (frameState.stackSize() > 0 && (alwaysDuplicateStateAfter || stateAfterReturn.stackAt(0) != frameState.stackAt(0))) {
+            // A non-void return value.
+            stateAfterReturn = stateAtReturn.duplicateModified(invokeReturnKind, invokeReturnKind, frameState.stackAt(0));
+        } else {
+            // A void return value.
+            stateAfterReturn = stateAtReturn.duplicate();
+        }
+        assert stateAfterReturn.bci != BytecodeFrame.UNKNOWN_BCI;
+
+        // Return value does no longer need to be limited by the monitor exit.
+        for (MonitorExitNode n : frameState.usages().filter(MonitorExitNode.class)) {
+            n.clearEscapedReturnValue();
+        }
+
+        frameState.replaceAndDelete(stateAfterReturn);
+        return stateAfterReturn;
     }
 
     static boolean checkInlineeFrameState(Invoke invoke, ResolvedJavaMethod inlinedMethod, FrameState frameState) {
@@ -663,7 +730,7 @@ public class InliningUtil extends ValueMergeUtil {
         return frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI || (frameState.bci == BytecodeFrame.UNWIND_BCI && !frameState.getMethod().isSynchronized());
     }
 
-    public static FrameState handleMissingAfterExceptionFrameState(FrameState nonReplaceableFrameState) {
+    public static FrameState handleMissingAfterExceptionFrameState(FrameState nonReplaceableFrameState, Invoke invoke, EconomicMap<Node, Node> replacements, boolean alwaysDuplicateStateAfter) {
         Graph graph = nonReplaceableFrameState.graph();
         NodeWorkList workList = graph.createNodeWorkList();
         workList.add(nonReplaceableFrameState);
@@ -686,6 +753,20 @@ public class InliningUtil extends ValueMergeUtil {
                             end.replaceAtPredecessor(deoptimizeNode);
                             GraphUtil.killCFG(end);
                         }
+                    } else if (fixedStateSplit instanceof ExceptionObjectNode) {
+                        // The target invoke does not have an exception edge. This means that the
+                        // bytecode parser made the wrong assumption of making an
+                        // InvokeWithExceptionNode for the partial intrinsic exit. We therefore
+                        // replace the InvokeWithExceptionNode with a normal
+                        // InvokeNode -- the deoptimization occurs when the invoke throws.
+                        InvokeWithExceptionNode oldInvoke = (InvokeWithExceptionNode) fixedStateSplit.predecessor();
+                        FrameState oldFrameState = oldInvoke.stateAfter();
+                        InvokeNode newInvoke = oldInvoke.replaceWithInvoke();
+                        newInvoke.setStateAfter(oldFrameState.duplicate());
+                        if (replacements != null) {
+                            replacements.put(oldInvoke, newInvoke);
+                        }
+                        handleAfterBciFrameState(newInvoke.stateAfter(), invoke, alwaysDuplicateStateAfter);
                     } else {
                         FixedNode deoptimizeNode = graph.add(new DeoptimizeNode(DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler));
                         if (fixedStateSplit instanceof AbstractBeginNode) {

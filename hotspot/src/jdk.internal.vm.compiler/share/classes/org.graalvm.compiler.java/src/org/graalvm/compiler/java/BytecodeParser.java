@@ -248,6 +248,7 @@ import static org.graalvm.compiler.core.common.type.StampFactory.objectNonNull;
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static org.graalvm.compiler.debug.GraalError.shouldNotReachHere;
 import static org.graalvm.compiler.java.BytecodeParserOptions.DumpWithInfopoints;
+import static org.graalvm.compiler.java.BytecodeParserOptions.InlinePartialIntrinsicExitDuringParsing;
 import static org.graalvm.compiler.java.BytecodeParserOptions.TraceBytecodeParserLevel;
 import static org.graalvm.compiler.java.BytecodeParserOptions.TraceInlineDuringParsing;
 import static org.graalvm.compiler.java.BytecodeParserOptions.TraceParserPlugins;
@@ -264,6 +265,7 @@ import java.util.Formatter;
 import java.util.List;
 
 import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
 import org.graalvm.compiler.bytecode.BytecodeLookupSwitch;
@@ -463,6 +465,7 @@ public class BytecodeParser implements GraphBuilderContext {
         FrameState stateBefore;
         final Mark mark;
         final BytecodeParser parser;
+        List<ReturnToCallerData> returnDataList;
 
         /**
          * Creates a scope for root parsing an intrinsic.
@@ -504,46 +507,50 @@ public class BytecodeParser implements GraphBuilderContext {
          * added to the graph while parsing/inlining the intrinsic for which this object exists.
          */
         private void processPlaceholderFrameStates(IntrinsicContext intrinsic) {
-            FrameState stateAfterReturn = null;
             StructuredGraph graph = parser.getGraph();
             for (Node node : graph.getNewNodes(mark)) {
                 if (node instanceof FrameState) {
                     FrameState frameState = (FrameState) node;
                     if (BytecodeFrame.isPlaceholderBci(frameState.bci)) {
                         if (frameState.bci == BytecodeFrame.AFTER_BCI) {
-                            FrameStateBuilder frameStateBuilder = parser.frameState;
-                            if (frameState.stackSize() != 0) {
-                                assert frameState.usages().count() == 1;
-                                ValueNode returnVal = frameState.stackAt(0);
-                                assert returnVal == frameState.usages().first();
+                            if (parser.getInvokeReturnType() == null) {
+                                // A frame state in a root compiled intrinsic.
+                                assert intrinsic.isCompilationRoot();
+                                FrameState newFrameState = graph.add(new FrameState(BytecodeFrame.INVALID_FRAMESTATE_BCI));
+                                frameState.replaceAndDelete(newFrameState);
+                            } else {
+                                JavaKind returnKind = parser.getInvokeReturnType().getJavaKind();
+                                FrameStateBuilder frameStateBuilder = parser.frameState;
+                                assert !frameState.rethrowException();
+                                if (frameState.stackSize() != 0) {
+                                    ValueNode returnVal = frameState.stackAt(0);
+                                    if (!ReturnToCallerData.containsReturnValue(returnDataList, returnVal)) {
+                                        throw new GraalError("AFTER_BCI frame state within an intrinsic has a non-return value on the stack: %s", returnVal);
+                                    }
 
-                                if (parser.currentInvokeReturnType == null) {
-                                    assert intrinsic.isCompilationRoot();
-                                    FrameState newFrameState = graph.add(new FrameState(BytecodeFrame.INVALID_FRAMESTATE_BCI));
-                                    frameState.replaceAndDelete(newFrameState);
-                                } else {
-                                    /*
-                                     * Swap the top-of-stack value with the side-effect return value
-                                     * using the frame state.
-                                     */
-                                    JavaKind returnKind = parser.currentInvokeReturnType.getJavaKind();
+                                    // Swap the top-of-stack value with the return value
                                     ValueNode tos = frameStateBuilder.pop(returnKind);
                                     assert tos.getStackKind() == returnVal.getStackKind();
                                     FrameState newFrameState = frameStateBuilder.create(parser.stream.nextBCI(), parser.getNonIntrinsicAncestor(), false, new JavaKind[]{returnKind},
                                                     new ValueNode[]{returnVal});
                                     frameState.replaceAndDelete(newFrameState);
+                                    newFrameState.setNodeSourcePosition(frameState.getNodeSourcePosition());
                                     frameStateBuilder.push(returnKind, tos);
+                                } else if (returnKind != JavaKind.Void) {
+                                    // If the intrinsic returns a non-void value, then any frame
+                                    // state with an empty stack is invalid as it cannot
+                                    // be used to deoptimize to just after the call returns.
+                                    // These invalid frame states are expected to be removed
+                                    // by later compilation stages.
+                                    FrameState newFrameState = graph.add(new FrameState(BytecodeFrame.INVALID_FRAMESTATE_BCI));
+                                    newFrameState.setNodeSourcePosition(frameState.getNodeSourcePosition());
+                                    frameState.replaceAndDelete(newFrameState);
+                                } else {
+                                    // An intrinsic for a void method.
+                                    FrameState newFrameState = frameStateBuilder.create(parser.stream.nextBCI(), null);
+                                    newFrameState.setNodeSourcePosition(frameState.getNodeSourcePosition());
+                                    frameState.replaceAndDelete(newFrameState);
                                 }
-                            } else {
-                                if (stateAfterReturn == null) {
-                                    if (intrinsic != null) {
-                                        assert intrinsic.isCompilationRoot();
-                                        stateAfterReturn = graph.add(new FrameState(BytecodeFrame.INVALID_FRAMESTATE_BCI));
-                                    } else {
-                                        stateAfterReturn = frameStateBuilder.create(parser.stream.nextBCI(), null);
-                                    }
-                                }
-                                frameState.replaceAndDelete(stateAfterReturn);
                             }
                         } else if (frameState.bci == BytecodeFrame.BEFORE_BCI) {
                             if (stateBefore == null) {
@@ -552,6 +559,24 @@ public class BytecodeParser implements GraphBuilderContext {
                             if (stateBefore != frameState) {
                                 frameState.replaceAndDelete(stateBefore);
                             }
+                        } else if (frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI) {
+                            // This is a frame state for the entry point to an exception
+                            // dispatcher in an intrinsic. For example, the invoke denoting
+                            // a partial intrinsic exit will have an edge to such a
+                            // dispatcher if the profile for the original invoke being
+                            // intrinsified indicates an exception was seen. As per JVM
+                            // bytecode semantics, the interpreter expects a single
+                            // value on the stack on entry to an exception handler,
+                            // namely the exception object.
+                            assert frameState.rethrowException();
+                            ExceptionObjectNode exceptionObject = (ExceptionObjectNode) frameState.stackAt(0);
+                            FrameStateBuilder dispatchState = parser.frameState.copy();
+                            dispatchState.clearStack();
+                            dispatchState.push(JavaKind.Object, exceptionObject);
+                            dispatchState.setRethrowException(true);
+                            FrameState newFrameState = dispatchState.create(parser.bci(), exceptionObject);
+                            frameState.replaceAndDelete(newFrameState);
+                            newFrameState.setNodeSourcePosition(frameState.getNodeSourcePosition());
                         } else {
                             assert frameState.bci == BytecodeFrame.INVALID_FRAMESTATE_BCI;
                         }
@@ -590,6 +615,15 @@ public class BytecodeParser implements GraphBuilderContext {
         protected ReturnToCallerData(ValueNode returnValue, FixedWithNextNode beforeReturnNode) {
             this.returnValue = returnValue;
             this.beforeReturnNode = beforeReturnNode;
+        }
+
+        static boolean containsReturnValue(List<ReturnToCallerData> list, ValueNode value) {
+            for (ReturnToCallerData e : list) {
+                if (e.returnValue == value) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -1333,8 +1367,19 @@ public class BytecodeParser implements GraphBuilderContext {
         }
     }
 
-    private InvokeKind currentInvokeKind;
-    private JavaType currentInvokeReturnType;
+    static class CurrentInvoke {
+        final ValueNode[] args;
+        final InvokeKind kind;
+        final JavaType returnType;
+
+        CurrentInvoke(ValueNode[] args, InvokeKind kind, JavaType returnType) {
+            this.args = args;
+            this.kind = kind;
+            this.returnType = returnType;
+        }
+    }
+
+    private CurrentInvoke currentInvoke;
     protected FrameStateBuilder frameState;
     protected BciBlock currentBlock;
     protected final BytecodeStream stream;
@@ -1353,12 +1398,12 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @Override
     public InvokeKind getInvokeKind() {
-        return currentInvokeKind;
+        return currentInvoke == null ? null : currentInvoke.kind;
     }
 
     @Override
     public JavaType getInvokeReturnType() {
-        return currentInvokeReturnType;
+        return currentInvoke == null ? null : currentInvoke.returnType;
     }
 
     private boolean forceInliningEverything;
@@ -1376,7 +1421,9 @@ public class BytecodeParser implements GraphBuilderContext {
 
     @Override
     public void handleReplacedInvoke(CallTargetNode callTarget, JavaKind resultType) {
-        createNonInlinedInvoke(bci(), callTarget, resultType, null);
+        BytecodeParser intrinsicCallSiteParser = getNonIntrinsicAncestor();
+        boolean withExceptionEdge = intrinsicCallSiteParser == null ? false : intrinsicCallSiteParser.omitInvokeExceptionEdge(null);
+        createNonInlinedInvoke(withExceptionEdge, bci(), callTarget, resultType);
     }
 
     private Invoke appendInvoke(InvokeKind initialInvokeKind, ResolvedJavaMethod initialTargetMethod, ValueNode[] args) {
@@ -1408,8 +1455,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
         InlineInfo inlineInfo = null;
         try {
-            currentInvokeReturnType = returnType;
-            currentInvokeKind = invokeKind;
+            currentInvoke = new CurrentInvoke(args, invokeKind, returnType);
             if (tryNodePluginForInvocation(args, targetMethod)) {
                 if (TraceParserPlugins.getValue(options)) {
                     traceWithContext("used node plugin for %s", targetMethod.format("%h.%n(%p)"));
@@ -1438,15 +1484,35 @@ public class BytecodeParser implements GraphBuilderContext {
                 }
             }
         } finally {
-            currentInvokeReturnType = null;
-            currentInvokeKind = null;
+            currentInvoke = null;
         }
 
-        int bci = bci();
+        int invokeBci = bci();
+        JavaTypeProfile profile = getProfileForInvoke(invokeKind);
+        boolean withExceptionEdge = !omitInvokeExceptionEdge(inlineInfo);
         boolean partialIntrinsicExit = false;
         if (intrinsicContext != null && intrinsicContext.isCallToOriginal(targetMethod)) {
             partialIntrinsicExit = true;
             ResolvedJavaMethod originalMethod = intrinsicContext.getOriginalMethod();
+            BytecodeParser intrinsicCallSiteParser = getNonIntrinsicAncestor();
+            if (intrinsicCallSiteParser != null) {
+                // When exiting a partial intrinsic, the invoke to the original
+                // must use the same context as the call to the intrinsic.
+                invokeBci = intrinsicCallSiteParser.bci();
+                profile = intrinsicCallSiteParser.getProfileForInvoke(invokeKind);
+                withExceptionEdge = !intrinsicCallSiteParser.omitInvokeExceptionEdge(inlineInfo);
+            } else {
+                // We are parsing the intrinsic for the root compilation or for inlining,
+                // This call is a partial intrinsic exit, and we do not have profile information
+                // for this callsite. We also have to assume that the call needs an exception
+                // edge. Finally, we know that this intrinsic is parsed for late inlining,
+                // so the bci must be set to unknown, so that the inliner patches it later.
+                assert intrinsicContext.isPostParseInlined();
+                invokeBci = BytecodeFrame.UNKNOWN_BCI;
+                profile = null;
+                withExceptionEdge = graph.method().getAnnotation(Snippet.class) == null;
+            }
+
             if (originalMethod.isStatic()) {
                 invokeKind = InvokeKind.Static;
             } else {
@@ -1457,15 +1523,10 @@ public class BytecodeParser implements GraphBuilderContext {
             Signature sig = originalMethod.getSignature();
             returnType = sig.getReturnType(method.getDeclaringClass());
             resultType = sig.getReturnKind();
-            bci = intrinsicContext.bci();
-            assert checkPartialIntrinsicExit(args);
+            assert checkPartialIntrinsicExit(intrinsicCallSiteParser == null ? null : intrinsicCallSiteParser.currentInvoke.args, args);
             targetMethod = originalMethod;
         }
-        JavaTypeProfile profile = null;
-        if (invokeKind.isIndirect() && profilingInfo != null && this.optimisticOpts.useTypeCheckHints(getOptions())) {
-            profile = profilingInfo.getTypeProfile(bci());
-        }
-        Invoke invoke = createNonInlinedInvoke(args, bci, targetMethod, invokeKind, resultType, returnType, inlineInfo, profile);
+        Invoke invoke = createNonInlinedInvoke(withExceptionEdge, invokeBci, args, targetMethod, invokeKind, resultType, returnType, profile);
         if (partialIntrinsicExit) {
             // This invoke must never be later inlined as it might select the intrinsic graph.
             // Until there is a mechanism to guarantee that any late inlining will not select
@@ -1475,24 +1536,30 @@ public class BytecodeParser implements GraphBuilderContext {
         return invoke;
     }
 
+    protected JavaTypeProfile getProfileForInvoke(InvokeKind invokeKind) {
+        if (invokeKind.isIndirect() && profilingInfo != null && this.optimisticOpts.useTypeCheckHints(getOptions())) {
+            return profilingInfo.getTypeProfile(bci());
+        }
+        return null;
+    }
+
     /**
      * A partial intrinsic exits by (effectively) calling the intrinsified method. This call must
      * use exactly the arguments to the call being intrinsified.
      *
-     * @param args arguments of recursive call to intrinsified method
+     * @param originalArgs arguments of original call to intrinsified method
+     * @param recursiveArgs arguments of recursive call to intrinsified method
      */
-    private boolean checkPartialIntrinsicExit(ValueNode[] args) {
-        if (intrinsicContext.getArgs() != null) {
-            assert intrinsicContext.bci() >= 0;
-            ValueNode[] icArgs = intrinsicContext.getArgs();
-            for (int i = 0; i < icArgs.length; i++) {
-                ValueNode arg = GraphUtil.unproxify(args[i]);
-                ValueNode icArg = GraphUtil.unproxify(icArgs[i]);
+    private static boolean checkPartialIntrinsicExit(ValueNode[] originalArgs, ValueNode[] recursiveArgs) {
+        if (originalArgs != null) {
+            for (int i = 0; i < originalArgs.length; i++) {
+                ValueNode arg = GraphUtil.unproxify(recursiveArgs[i]);
+                ValueNode icArg = GraphUtil.unproxify(originalArgs[i]);
                 assert arg == icArg : String.format("argument %d of call denoting partial intrinsic exit should be %s, not %s", i, icArg, arg);
             }
         } else {
-            for (int i = 0; i < args.length; i++) {
-                ValueNode arg = GraphUtil.unproxify(args[i]);
+            for (int i = 0; i < recursiveArgs.length; i++) {
+                ValueNode arg = GraphUtil.unproxify(recursiveArgs[i]);
                 assert arg instanceof ParameterNode && ((ParameterNode) arg).index() == i : String.format("argument %d of call denoting partial intrinsic exit should be a %s with index %d, not %s", i,
                                 ParameterNode.class.getSimpleName(), i, arg);
             }
@@ -1500,8 +1567,8 @@ public class BytecodeParser implements GraphBuilderContext {
         return true;
     }
 
-    protected Invoke createNonInlinedInvoke(ValueNode[] invokeArgs, int invokeBci, ResolvedJavaMethod targetMethod,
-                    InvokeKind invokeKind, JavaKind resultType, JavaType returnType, InlineInfo inlineInfo, JavaTypeProfile profile) {
+    protected Invoke createNonInlinedInvoke(boolean withExceptionEdge, int invokeBci, ValueNode[] invokeArgs, ResolvedJavaMethod targetMethod,
+                    InvokeKind invokeKind, JavaKind resultType, JavaType returnType, JavaTypeProfile profile) {
 
         StampPair returnStamp = graphBuilderConfig.getPlugins().getOverridingStamp(this, returnType, false);
         if (returnStamp == null) {
@@ -1509,7 +1576,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         MethodCallTargetNode callTarget = graph.add(createMethodCallTarget(invokeKind, targetMethod, invokeArgs, returnStamp, profile));
-        Invoke invoke = createNonInlinedInvoke(invokeBci, callTarget, resultType, inlineInfo);
+        Invoke invoke = createNonInlinedInvoke(withExceptionEdge, invokeBci, callTarget, resultType);
 
         for (InlineInvokePlugin plugin : graphBuilderConfig.getPlugins().getInlineInvokePlugins()) {
             plugin.notifyNotInlined(this, targetMethod, invoke);
@@ -1518,8 +1585,8 @@ public class BytecodeParser implements GraphBuilderContext {
         return invoke;
     }
 
-    protected Invoke createNonInlinedInvoke(int invokeBci, CallTargetNode callTarget, JavaKind resultType, InlineInfo inlineInfo) {
-        if (omitInvokeExceptionEdge(callTarget, inlineInfo)) {
+    protected Invoke createNonInlinedInvoke(boolean withExceptionEdge, int invokeBci, CallTargetNode callTarget, JavaKind resultType) {
+        if (!withExceptionEdge) {
             return createInvoke(invokeBci, callTarget, resultType);
         } else {
             Invoke invoke = createInvokeWithException(invokeBci, callTarget, resultType);
@@ -1533,10 +1600,8 @@ public class BytecodeParser implements GraphBuilderContext {
     /**
      * If the method returns true, the invocation of the given {@link MethodCallTargetNode call
      * target} does not need an exception edge.
-     *
-     * @param callTarget The call target.
      */
-    protected boolean omitInvokeExceptionEdge(CallTargetNode callTarget, InlineInfo lastInlineInfo) {
+    protected boolean omitInvokeExceptionEdge(InlineInfo lastInlineInfo) {
         if (lastInlineInfo == InlineInfo.DO_NOT_INLINE_WITH_EXCEPTION) {
             return false;
         } else if (lastInlineInfo == InlineInfo.DO_NOT_INLINE_NO_EXCEPTION) {
@@ -1551,8 +1616,17 @@ public class BytecodeParser implements GraphBuilderContext {
             assert graphBuilderConfig.getBytecodeExceptionMode() == BytecodeExceptionMode.Profile;
             // be conservative if information was not recorded (could result in endless
             // recompiles otherwise)
-            return (!StressInvokeWithExceptionNode.getValue(options) && optimisticOpts.useExceptionProbability(getOptions()) && profilingInfo != null &&
-                            profilingInfo.getExceptionSeen(bci()) == TriState.FALSE);
+            if (!StressInvokeWithExceptionNode.getValue(options)) {
+                if (optimisticOpts.useExceptionProbability(getOptions())) {
+                    if (profilingInfo != null) {
+                        TriState exceptionSeen = profilingInfo.getExceptionSeen(bci());
+                        if (exceptionSeen == TriState.FALSE) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
     }
 
@@ -1754,7 +1828,7 @@ public class BytecodeParser implements GraphBuilderContext {
                     }
 
                     lastInstr = intrinsicGuard.nonIntrinsicBranch;
-                    createNonInlinedInvoke(args, bci(), targetMethod, invokeKind, resultType, returnType, null, intrinsicGuard.profile);
+                    createNonInlinedInvoke(omitInvokeExceptionEdge(null), bci(), args, targetMethod, invokeKind, resultType, returnType, intrinsicGuard.profile);
 
                     EndNode nonIntrinsicEnd = append(new EndNode());
                     AbstractMergeNode mergeNode = graph.add(new MergeNode());
@@ -1851,6 +1925,7 @@ public class BytecodeParser implements GraphBuilderContext {
                     if (inline(targetMethod, inlineInfo.getMethodToInline(), inlineInfo.getIntrinsicBytecodeProvider(), args)) {
                         return SUCCESSFULLY_INLINED;
                     }
+                    inlineInfo = null;
                 }
                 /* Do not inline, and do not ask the remaining plugins. */
                 return inlineInfo;
@@ -1922,10 +1997,10 @@ public class BytecodeParser implements GraphBuilderContext {
                     printInlining(targetMethod, inlinedMethod, false, "native method (bytecode parsing)");
                     return false;
                 }
-                if (inlinePartialIntrinsicExit()) {
+                if (canInlinePartialIntrinsicExit() && InlinePartialIntrinsicExitDuringParsing.getValue(options)) {
                     // Otherwise inline the original method. Any frame state created
                     // during the inlining will exclude frame(s) in the
-                    // intrinsic method (see HIRFrameStateBuilder.create(int bci)).
+                    // intrinsic method (see FrameStateBuilder.create(int bci)).
                     notifyBeforeInline(inlinedMethod);
                     printInlining(targetMethod, inlinedMethod, true, "partial intrinsic exit (bytecode parsing)");
                     parseAndInlineCallee(intrinsic.getOriginalMethod(), args, null);
@@ -1940,7 +2015,7 @@ public class BytecodeParser implements GraphBuilderContext {
             boolean isIntrinsic = intrinsicBytecodeProvider != null;
             if (intrinsic == null && isIntrinsic) {
                 assert !inlinedMethod.equals(targetMethod);
-                intrinsic = new IntrinsicContext(targetMethod, inlinedMethod, intrinsicBytecodeProvider, INLINE_DURING_PARSING, args, bci());
+                intrinsic = new IntrinsicContext(targetMethod, inlinedMethod, intrinsicBytecodeProvider, INLINE_DURING_PARSING);
             }
             if (inlinedMethod.hasBytecodes()) {
                 notifyBeforeInline(inlinedMethod);
@@ -1969,9 +2044,9 @@ public class BytecodeParser implements GraphBuilderContext {
 
     /**
      * Determines if a partial intrinsic exit (i.e., a call to the original method within an
-     * intrinsic) should be inlined.
+     * intrinsic) can be inlined.
      */
-    protected boolean inlinePartialIntrinsicExit() {
+    protected boolean canInlinePartialIntrinsicExit() {
         return true;
     }
 
@@ -2031,7 +2106,6 @@ public class BytecodeParser implements GraphBuilderContext {
         return res;
     }
 
-    @SuppressWarnings("try")
     protected void parseAndInlineCallee(ResolvedJavaMethod targetMethod, ValueNode[] args, IntrinsicContext calleeIntrinsicContext) {
         try (IntrinsicScope s = calleeIntrinsicContext != null && !parsingIntrinsic() ? new IntrinsicScope(this, targetMethod.getSignature().toParameterKinds(!targetMethod.isStatic()), args) : null) {
 
@@ -2049,6 +2123,9 @@ public class BytecodeParser implements GraphBuilderContext {
             } else {
                 ValueNode calleeReturnValue;
                 MergeNode returnMergeNode = null;
+                if (s != null) {
+                    s.returnDataList = parser.returnDataList;
+                }
                 if (parser.returnDataList.size() == 1) {
                     /* Callee has a single return, we can continue parsing at that point. */
                     ReturnToCallerData singleReturnData = parser.returnDataList.get(0);
@@ -2091,7 +2168,6 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     protected InvokeWithExceptionNode createInvokeWithException(int invokeBci, CallTargetNode callTarget, JavaKind resultType) {
-        assert bci() == invokeBci;
         if (currentBlock != null && stream.nextBCI() > currentBlock.endBci) {
             /*
              * Clear non-live locals early so that the exception handler entry gets the cleared
@@ -2101,7 +2177,7 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         AbstractBeginNode exceptionEdge = handleException(null, bci());
-        InvokeWithExceptionNode invoke = append(new InvokeWithExceptionNode(callTarget, exceptionEdge, bci()));
+        InvokeWithExceptionNode invoke = append(new InvokeWithExceptionNode(callTarget, exceptionEdge, invokeBci));
         frameState.pushReturn(resultType, invoke);
         invoke.setStateAfter(createFrameState(stream.nextBCI(), invoke));
         return invoke;
@@ -3632,9 +3708,9 @@ public class BytecodeParser implements GraphBuilderContext {
         ResolvedJavaType resolvedType = (ResolvedJavaType) type;
 
         ClassInitializationPlugin classInitializationPlugin = this.graphBuilderConfig.getPlugins().getClassInitializationPlugin();
-        if (classInitializationPlugin != null && classInitializationPlugin.shouldApply(this, resolvedType.getArrayClass())) {
+        if (classInitializationPlugin != null && classInitializationPlugin.shouldApply(this, resolvedType)) {
             FrameState stateBefore = frameState.create(bci(), getNonIntrinsicAncestor(), false, null, null);
-            classInitializationPlugin.apply(this, resolvedType.getArrayClass(), stateBefore);
+            classInitializationPlugin.apply(this, resolvedType, stateBefore);
         }
 
         for (int i = rank - 1; i >= 0; i--) {

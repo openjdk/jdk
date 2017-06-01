@@ -25,14 +25,12 @@ package org.graalvm.compiler.hotspot;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.DynamicMBean;
 import javax.management.InstanceAlreadyExistsException;
-import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
@@ -49,12 +47,14 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.UnmodifiableEconomicMap;
 
 public final class HotSpotGraalMBean implements DynamicMBean {
     private static Object mBeanServerField;
     private final OptionValues options;
     private final EconomicMap<OptionKey<?>, Object> changes;
     private ObjectName registered;
+    private OptionValues cachedOptions;
 
     private HotSpotGraalMBean(OptionValues options) {
         this.options = options;
@@ -112,27 +112,51 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     }
 
     @SuppressWarnings("unused")
-    OptionValues optionsFor(OptionValues values, ResolvedJavaMethod forMethod) {
+    public OptionValues optionsFor(OptionValues initialValues, ResolvedJavaMethod forMethod) {
         ensureRegistered(true);
+        return currentMap(initialValues);
+    }
+
+    private OptionValues currentMap(OptionValues initialValues) {
         if (changes.isEmpty()) {
-            return values;
+            return initialValues;
         }
-        return new OptionValues(values, changes);
+        OptionValues current = cachedOptions;
+        if (current == null) {
+            current = new OptionValues(initialValues, changes);
+            cachedOptions = current;
+        }
+        return current;
     }
 
     @Override
     public Object getAttribute(String attribute) {
-        for (OptionKey<?> k : options.getMap().getKeys()) {
+        UnmodifiableEconomicMap<OptionKey<?>, Object> map = currentMap(options).getMap();
+        for (OptionKey<?> k : map.getKeys()) {
             if (k.getName().equals(attribute)) {
-                return options.getMap().get(k);
+                return map.get(k);
             }
         }
         return null;
     }
 
     @Override
-    public void setAttribute(Attribute attribute) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
-        throw new InvalidAttributeValueException();
+    public void setAttribute(Attribute attribute) throws AttributeNotFoundException {
+        Attribute newAttr = setImpl(attribute);
+        if (newAttr == null) {
+            throw new AttributeNotFoundException();
+        }
+    }
+
+    private Attribute setImpl(Attribute attribute) {
+        cachedOptions = null;
+        for (OptionDescriptor option : allOptionDescriptors()) {
+            if (option.getName().equals(attribute.getName())) {
+                changes.put(option.getOptionKey(), attribute.getValue());
+                return attribute;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -149,7 +173,14 @@ public final class HotSpotGraalMBean implements DynamicMBean {
 
     @Override
     public AttributeList setAttributes(AttributeList attributes) {
-        throw new IllegalStateException();
+        AttributeList setOk = new AttributeList();
+        for (Attribute attr : attributes.asList()) {
+            Attribute newAttr = setImpl(attr);
+            if (newAttr != null) {
+                setOk.add(newAttr);
+            }
+        }
+        return setOk;
     }
 
     @Override
@@ -161,10 +192,8 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     public MBeanInfo getMBeanInfo() {
         List<MBeanAttributeInfo> attrs = new ArrayList<>();
         if (registered != null) {
-            for (Iterator<OptionDescriptors> it = OptionsParser.getOptionsLoader().iterator(); it.hasNext();) {
-                for (OptionDescriptor descr : it.next()) {
-                    attrs.add(new MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, false, false));
-                }
+            for (OptionDescriptor descr : allOptionDescriptors()) {
+                attrs.add(new MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, true, false));
             }
         }
         return new MBeanInfo(
@@ -172,6 +201,16 @@ public final class HotSpotGraalMBean implements DynamicMBean {
                         "Graal",
                         attrs.toArray(new MBeanAttributeInfo[attrs.size()]),
                         null, null, null);
+    }
+
+    private static Iterable<OptionDescriptor> allOptionDescriptors() {
+        List<OptionDescriptor> arr = new ArrayList<>();
+        for (OptionDescriptors set : OptionsParser.getOptionsLoader()) {
+            for (OptionDescriptor descr : set) {
+                arr.add(descr);
+            }
+        }
+        return arr;
     }
 
 }

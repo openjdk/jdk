@@ -52,6 +52,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
+import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
@@ -96,7 +97,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
     /**
      * @see BytecodeFrame#rethrowException
      */
-    protected boolean rethrowException;
+    protected final boolean rethrowException;
 
     protected final boolean duringCall;
 
@@ -184,15 +185,17 @@ public final class FrameState extends VirtualState implements IterableNodeType {
 
     /**
      * Creates a placeholder frame state with a single element on the stack representing a return
-     * value. This allows the parsing of an intrinsic to communicate the returned value in a
-     * {@link StateSplit#stateAfter() stateAfter} to the inlining call site.
+     * value or thrown exception. This allows the parsing of an intrinsic to communicate the
+     * returned or thrown value in a {@link StateSplit#stateAfter() stateAfter} to the inlining call
+     * site.
      *
      * @param bci this must be {@link BytecodeFrame#AFTER_BCI}
      */
-    public FrameState(int bci, ValueNode returnValue) {
-        this(null, null, bci, 0, returnValue.getStackKind().getSlotCount(), 0, false, false, null, Collections.<EscapeObjectState> emptyList());
-        assert bci == BytecodeFrame.AFTER_BCI;
-        this.values.initialize(0, returnValue);
+    public FrameState(int bci, ValueNode returnValueOrExceptionObject) {
+        this(null, null, bci, 0, returnValueOrExceptionObject.getStackKind().getSlotCount(), 0, returnValueOrExceptionObject instanceof ExceptionObjectNode, false, null,
+                        Collections.<EscapeObjectState> emptyList());
+        assert (bci == BytecodeFrame.AFTER_BCI && !rethrowException()) || (bci == BytecodeFrame.AFTER_EXCEPTION_BCI && rethrowException());
+        this.values.initialize(0, returnValueOrExceptionObject);
     }
 
     public FrameState(FrameState outerFrameState, Bytecode code, int bci, ValueNode[] locals, ValueNode[] stack, int stackSize, ValueNode[] locks, List<MonitorIdNode> monitorIds,

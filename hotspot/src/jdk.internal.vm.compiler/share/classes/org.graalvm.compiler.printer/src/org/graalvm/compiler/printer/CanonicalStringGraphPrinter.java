@@ -258,7 +258,7 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
     }
 
     @Override
-    public void print(Graph graph, String title, Map<Object, Object> properties) throws IOException {
+    public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
         if (graph instanceof StructuredGraph) {
             OptionValues options = graph.getOptions();
             StructuredGraph structuredGraph = (StructuredGraph) graph;
@@ -267,6 +267,7 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
                 TTY.println("Dumping string graphs in %s", this.root);
                 this.root = null;
             }
+            String title = id + ": " + String.format(format, args);
             Path filePath = currentDirectory.resolve(escapeFileName(title));
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath.toFile())))) {
                 switch (PrintCanonicalGraphStringFlavor.getValue(options)) {
