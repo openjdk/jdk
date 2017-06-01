@@ -65,6 +65,7 @@ import java.util.Set;
  * be handled by a <em>Class</em> that understands the extension.
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 
 public interface X509Extension {

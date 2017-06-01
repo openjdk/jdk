@@ -78,6 +78,7 @@ import sun.security.util.SecurityConstants;
  *
  * @author Roland Schemers
  * @author Gary Ellison
+ * @since 1.2
  * @see java.security.Provider
  * @see java.security.ProtectionDomain
  * @see java.security.Permission
