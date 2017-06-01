@@ -57,6 +57,7 @@ import sun.security.x509.X509CertImpl;
  * @see CertificateFactory
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 
 public abstract class Certificate implements java.io.Serializable {

@@ -43,6 +43,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * of 1024 bits.
  *
  * @author Benjamin Renaud
+ * @since 1.2
  *
  *
  * @see KeyPairGenerator

@@ -74,6 +74,7 @@ import sun.security.util.SecurityConstants;
  * @see AccessController
  *
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class AccessControlContext {

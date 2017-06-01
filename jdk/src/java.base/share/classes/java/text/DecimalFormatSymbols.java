@@ -60,6 +60,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @see          DecimalFormat
  * @author       Mark Davis
  * @author       Alan Liu
+ * @since 1.1
  */
 
 public class DecimalFormatSymbols implements Cloneable, Serializable {

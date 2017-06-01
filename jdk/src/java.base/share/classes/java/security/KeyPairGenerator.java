@@ -121,6 +121,7 @@ import sun.security.util.Debug;
  * other algorithms are supported.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @see java.security.spec.AlgorithmParameterSpec
  */
