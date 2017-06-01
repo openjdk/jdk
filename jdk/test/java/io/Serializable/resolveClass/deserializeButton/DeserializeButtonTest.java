@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,38 @@
  */
 
 /*
+ * @test
  * @bug 4413434
+ * @library /lib/testlibrary
+ * @build JarUtils Foo
+ * @run main DeserializeButtonTest
  * @summary Verify that class loaded outside of application class loader is
  *          correctly resolved during deserialization when read in by custom
  *          readObject() method of a bootstrap class (in this case,
  *          java.util.Vector).
  */
 
-import java.io.*;
-import java.net.*;
+import java.net.URLClassLoader;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class Test {
+public class DeserializeButtonTest {
     public static void main(String[] args) throws Exception {
-        ClassLoader ldr =
-            new URLClassLoader(new URL[]{ new URL("file:cb.jar") });
-        Runnable r = (Runnable) Class.forName("Foo", true, ldr).newInstance();
-        r.run();
+        setup();
+
+        try (URLClassLoader ldr =
+            new URLClassLoader(new URL[]{ new URL("file:cb.jar") })) {
+            Runnable r = (Runnable) Class.forName("Foo", true, ldr).newInstance();
+            r.run();
+        }
+    }
+
+    private static void setup() throws Exception {
+        Path classes = Paths.get(System.getProperty("test.classes", ""));
+        JarUtils.createJarFile(Paths.get("cb.jar"),
+                               classes,
+                               classes.resolve("Foo.class"),
+                               classes.resolve("Foo$TestElement.class"));
     }
 }

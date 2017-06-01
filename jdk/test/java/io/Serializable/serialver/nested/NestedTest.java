@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,42 @@
  */
 
 /*
- *
- * @bug 4312217
+ * @test
+ * @bug 4312217 4785473
+ * @library /test/lib
+ * @build jdk.test.lib.JDKToolLauncher
+ * @build jdk.test.lib.process.ProcessTools
+ * @build NestedTest
+ * @run main serialver.NestedTest
  * @summary  To test the use of nested class specification using the '.'
  *           notation instead of the '$' notation.
  */
+
 package serialver;
 
-import java.io.*;
+import java.io.Serializable;
 
-public class Test implements Serializable {
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.process.ProcessTools;
+
+public class NestedTest implements Serializable {
     public static class Test1 implements Serializable {
         public static class Test2 implements Serializable{
             private static final long serialVersionUID = 100L;
+        }
+    }
+
+    public static void main(String args[]) throws Exception {
+        JDKToolLauncher serialver =
+                JDKToolLauncher.create("serialver")
+                               .addToolArg("-classpath")
+                               .addToolArg(System.getProperty("test.class.path"))
+                               .addToolArg("serialver.NestedTest.Test1.Test2");
+        Process p = ProcessTools.startProcess("serialver",
+                        new ProcessBuilder(serialver.getCommand()));
+        p.waitFor();
+        if (p.exitValue() != 0) {
+            throw new RuntimeException("error occurs in serialver.");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,32 @@
  * @bug 4100915
  * @summary Verify that [write/read]ObjectOverride methods get called.
  *          Test verifies that ALL methods to write an object can
- *          be overridden. Howver, the testing for reading an object
+ *          be overridden. However, the testing for reading an object
  *          is incomplete. Only test that readObjectOverride is called.
  *          An entire protocol would need to be implemented and written
  *          out before being able to test the input side of the API.
  *
  *          Also, would be appropriate that this program verify
- *          that if SerializablePermission "enableSubclassImplamentation"
+ *          that if SerializablePermission "enableSubclassImplementation"
  *          is not in the security policy and security is enabled, that
- *          a security excepiton is thrown when constructing the
+ *          a security exception is thrown when constructing the
  *          ObjectOutputStream subclass.
  *
  *
- * @compile AbstractObjectInputStream.java AbstractObjectOutputStream.java XObjectInputStream.java XObjectOutputStream.java Test.java
- * @run main  Test
+ * @compile AbstractObjectInputStream.java AbstractObjectOutputStream.java
+ * @compile XObjectInputStream.java XObjectOutputStream.java
+ * @compile SubclassTest.java
+ * @run main SubclassTest
+ * @run main/othervm/policy=Allow.policy SubclassTest -expectSecurityException
  */
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serializable;
 
 /**
  * Test if customized readObject and writeObject are called.
@@ -111,7 +120,7 @@ class A implements Serializable {
     }
 };
 
-public class Test {
+public class SubclassTest {
     public static void main(String argv[])
         throws IOException, ClassNotFoundException
     {
@@ -129,10 +138,11 @@ public class Test {
                 throw new Error("Assertion failure. " +
                                 "Expected a security exception on previous line.");
         } catch (SecurityException e) {
-            if (expectSecurityException)
+            if (expectSecurityException) {
+                System.err.println("Caught expected security exception.");
                 return;
-            else
-                throw e;
+            }
+            throw e;
         }
         os.writeObject(new A());
         os.close();

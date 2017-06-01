@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,58 +22,55 @@
  */
 
 /*
- * @bug 4325590
- * @summary Verify that superclass data is not lost when incoming superclass
- *          descriptor is matched with local class that is not a superclass of
- *          the deserialized instance's class.
+ * @test
+ * @bug 4348213
+ * @build UnnamedPackageSwitchTest pkg.A
+ * @run main UnnamedPackageSwitchTest
+ * @summary Verify that deserialization allows an incoming class descriptor
+ *          representing a class in the unnamed package to be resolved to a
+ *          local class with the same name in a named package, and vice-versa.
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.Serializable;
 
-class MixedSuperclassStream extends ObjectInputStream {
-    MixedSuperclassStream(InputStream in) throws IOException { super(in); }
+class A implements Serializable {
+    private static final long serialVersionUID = 0L;
+}
 
+class TestObjectInputStream extends ObjectInputStream {
+    TestObjectInputStream(InputStream in) throws IOException { super(in); }
     protected Class resolveClass(ObjectStreamClass desc)
         throws IOException, ClassNotFoundException
     {
-        // resolve A's classdesc to class != B's superclass
         String name = desc.getName();
         if (name.equals("A")) {
-            return Class.forName(name, true, Test.ldr1);
-        } else if (name.equals("B")) {
-            return Class.forName(name, true, Test.ldr2);
+            return pkg.A.class;
+        } else if (name.equals("pkg.A")) {
+            return A.class;
         } else {
             return super.resolveClass(desc);
         }
     }
 }
 
-public class Test {
-
-    static URLClassLoader ldr1, ldr2;
-    static {
-        try {
-            ldr1 = new URLClassLoader(new URL[] { new URL("file:cb1.jar") });
-            ldr2 = new URLClassLoader(new URL[] { new URL("file:cb2.jar") });
-        } catch (MalformedURLException ex) {
-            throw new Error();
-        }
-    }
-
+public class UnnamedPackageSwitchTest {
     public static void main(String[] args) throws Exception {
-        Runnable a = (Runnable) Class.forName("B", true, ldr1).newInstance();
-        a.run();
-
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(a);
+        oout.writeObject(new A());
+        oout.writeObject(new pkg.A());
         oout.close();
 
-        ByteArrayInputStream bin =
-            new ByteArrayInputStream(bout.toByteArray());
-        ObjectInputStream oin = new MixedSuperclassStream(bin);
-        a = (Runnable) oin.readObject();
-        a.run();
+        ObjectInputStream oin = new TestObjectInputStream(
+            new ByteArrayInputStream(bout.toByteArray()));
+        oin.readObject();
+        oin.readObject();
     }
 }
