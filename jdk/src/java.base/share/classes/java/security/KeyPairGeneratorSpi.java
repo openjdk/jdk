@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,15 @@ import java.security.spec.AlgorithmParameterSpec;
  * <p> In case the client does not explicitly initialize the KeyPairGenerator
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
- * For example, the <i>Sun</i> provider uses a default modulus size (keysize)
- * of 1024 bits.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the KeyPairGenerator defaults used by
+ * JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * KeyPairGenerator instead of relying on provider-specific defaults.
  *
  * @author Benjamin Renaud
  * @since 1.2
