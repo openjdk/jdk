@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,31 @@
  */
 
 /*
- * @bug 4413434
- * @summary Verify that generated java.lang.reflect implementation classes do
- *          not interfere with serialization's class resolution mechanism.
+ * @test
+ * @bug 4897937
+ * @run main MaskSyntheticModifierTest
+ * @summary Verify that the presence of the JVM_ACC_SYNTHETIC bit in the
+ *          modifiers of fields and methods does not affect default
+ *          serialVersionUID calculation.
  */
 
-import java.io.*;
-import java.lang.reflect.*;
+import java.io.ObjectStreamClass;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
-public class Test implements Serializable {
+public class MaskSyntheticModifierTest {
     public static void main(String[] args) throws Exception {
-        Constructor cons = Boot.class.getConstructor(
-            new Class[] { ObjectInputStream.class });
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(new Test());
-        oout.close();
+        setup();
 
-        for (int i = 0; i < 100; i++) {
-            ObjectInputStream oin = new ObjectInputStream(
-                new ByteArrayInputStream(bout.toByteArray()));
-            cons.newInstance(new Object[]{ oin });
+        long suid = ObjectStreamClass.lookup(Foo.class).getSerialVersionUID();
+        if (suid != 8027844768744011556L) {
+            throw new Error("incorrect serialVersionUID: " + suid);
         }
+    }
+
+    private static void setup() throws Exception {
+        Files.copy(Paths.get(System.getProperty("test.src"), "Foo.class"),
+                Paths.get("Foo.class"), StandardCopyOption.REPLACE_EXISTING);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,14 @@
  * questions.
  */
 
-/*
- * @bug 4897937
- * @summary Verify that the presence of the JVM_ACC_SYNTHETIC bit in the
- *          modifiers of fields and methods does not affect default
- *          serialVersionUID calculation.
- */
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import java.io.ObjectStreamClass;
+public class SetupJar {
 
-public class Test {
-    public static void main(String[] args) {
-        long suid = ObjectStreamClass.lookup(Foo.class).getSerialVersionUID();
-        if (suid != 8027844768744011556L) {
-            throw new Error("incorrect serialVersionUID: " + suid);
-        }
+    public static void main(String args[]) throws Exception {
+        Path classes = Paths.get(System.getProperty("test.classes", ""));
+        JarUtils.createJarFile(Paths.get("boot.jar"), classes,
+                classes.resolve("Boot.class"));
     }
 }

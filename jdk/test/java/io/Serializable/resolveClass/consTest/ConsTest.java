@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,45 +22,36 @@
  */
 
 /*
- * @bug 4348213
- * @summary Verify that deserialization allows an incoming class descriptor
- *          representing a class in the unnamed package to be resolved to a
- *          local class with the same name in a named package, and vice-versa.
+ * @test
+ * @bug 4413434
+ * @library /lib/testlibrary
+ * @build JarUtils SetupJar Boot
+ * @run driver SetupJar
+ * @run main/othervm -Xbootclasspath/a:boot.jar ConsTest
+ * @summary Verify that generated java.lang.reflect implementation classes do
+ *          not interfere with serialization's class resolution mechanism.
  */
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
 
-class A implements Serializable {
-    private static final long serialVersionUID = 0L;
-}
-
-class TestObjectInputStream extends ObjectInputStream {
-    TestObjectInputStream(InputStream in) throws IOException { super(in); }
-    protected Class resolveClass(ObjectStreamClass desc)
-        throws IOException, ClassNotFoundException
-    {
-        String name = desc.getName();
-        if (name.equals("A")) {
-            return pkg.A.class;
-        } else if (name.equals("pkg.A")) {
-            return A.class;
-        } else {
-            return super.resolveClass(desc);
-        }
-    }
-}
-
-public class Test {
+public class ConsTest implements Serializable {
     public static void main(String[] args) throws Exception {
+        Constructor cons = Boot.class.getConstructor(
+            new Class[] { ObjectInputStream.class });
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(new A());
-        oout.writeObject(new pkg.A());
+        oout.writeObject(new ConsTest());
         oout.close();
 
-        ObjectInputStream oin = new TestObjectInputStream(
-            new ByteArrayInputStream(bout.toByteArray()));
-        oin.readObject();
-        oin.readObject();
+        for (int i = 0; i < 100; i++) {
+            ObjectInputStream oin = new ObjectInputStream(
+                new ByteArrayInputStream(bout.toByteArray()));
+            cons.newInstance(new Object[]{ oin });
+        }
     }
 }
