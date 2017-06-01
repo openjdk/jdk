@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,30 @@
  * questions.
  */
 
-package jdk.test.resources.classes;
+package p.internal;
 
+import p.resources.spi.MyResourceProvider;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Locale;
+import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.spi.AbstractResourceBundleProvider;
 
-public class MyResourcesProvider extends AbstractResourceBundleProvider {
-    public MyResourcesProvider() {
-        super("java.class");
+public class BundleProvider extends AbstractResourceBundleProvider
+    implements MyResourceProvider {
+    public BundleProvider() {
+        super();
     }
-
-    @Override
-    protected String toBundleName(String baseName, Locale locale) {
-        StringBuilder sb = new StringBuilder(baseName);
-        String lang = locale.getLanguage();
-        if (!lang.isEmpty()) {
-            sb.append('_').append(lang);
-            String country = locale.getCountry();
-            if (!country.isEmpty()) {
-                sb.append('_').append(country);
-            }
-        }
-        return sb.toString();
-    }
-
     @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
-        ResourceBundle rb = super.getBundle(baseName, locale);
-        String tag = locale.toLanguageTag();
-        if (tag.equals("und")) {
-            tag = "ROOT"; // to a human friendly name
+        if (locale.equals(Locale.ENGLISH) || locale.equals(Locale.ROOT)) {
+            return super.getBundle(baseName, locale);
         }
-        System.out.printf("    MyResourcesProvider.getBundle(%s, %s)%n         -> %s%n",
-                          baseName, tag, rb);
-        return rb;
+
+        return null;
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,25 @@
  * questions.
  */
 
-package jdk.test.resources;
+package jdk.test.resources.spi;
+
 
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.spi.AbstractResourceBundleProvider;
 
-public class MyResourcesProvider extends AbstractResourceBundleProvider {
-    public MyResourcesProvider() {
-        super("java.class", "java.properties");
-        System.err.println("MyResourcesProvider called " + this);
+public abstract class MyResourcesProvider extends AbstractResourceBundleProvider {
+    protected MyResourcesProvider(String... formats) {
+        super(formats);
     }
 
     @Override
-    protected String toBundleName(String baseName, Locale locale) {
-        StringBuilder sb = new StringBuilder(baseName);
-        String lang = locale.getLanguage();
-        if (!lang.isEmpty()) {
-            sb.append('_').append(lang);
-            String country = locale.getCountry();
-            if (!country.isEmpty()) {
-                sb.append('_').append(country);
-            }
+    public ResourceBundle getBundle(String baseName, Locale locale) {
+        if (isSupportedInModule(locale)) {
+            return super.getBundle(baseName, locale);
         }
-        return sb.toString();
+        return null;
     }
+
+    protected abstract boolean isSupportedInModule(Locale locale);
 }

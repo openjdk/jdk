@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-module asiabundles {
-    requires mainbundles;
-
-    provides jdk.test.resources.spi.MyResourcesProvider
-        with jdk.test.resources.asia.MyResourcesAsia;
+module m1 {
+    exports p;
+    exports p.resources.spi;
+    uses p.resources.spi.MyResourceProvider;
+    provides p.resources.spi.MyResourceProvider with p.internal.BundleProvider;
 }

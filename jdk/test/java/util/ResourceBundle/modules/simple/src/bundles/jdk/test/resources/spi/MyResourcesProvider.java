@@ -21,9 +21,28 @@
  * questions.
  */
 
-module asiabundles {
-    requires mainbundles;
+package jdk.test.resources.spi;
 
-    provides jdk.test.resources.spi.MyResourcesProvider
-        with jdk.test.resources.asia.MyResourcesAsia;
+import java.util.Locale;
+import java.util.spi.AbstractResourceBundleProvider;
+
+public class MyResourcesProvider extends AbstractResourceBundleProvider {
+    public MyResourcesProvider() {
+        super("java.class", "java.properties");
+        System.err.println("MyResourcesProvider called " + this);
+    }
+
+    @Override
+    protected String toBundleName(String baseName, Locale locale) {
+        StringBuilder sb = new StringBuilder(baseName);
+        String lang = locale.getLanguage();
+        if (!lang.isEmpty()) {
+            sb.append('_').append(lang);
+            String country = locale.getCountry();
+            if (!country.isEmpty()) {
+                sb.append('_').append(country);
+            }
+        }
+        return sb.toString();
+    }
 }

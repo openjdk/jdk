@@ -21,26 +21,40 @@
  * questions.
  */
 
-package jdk.test.resources.eu;
+package jdk.test.resources.classes.spi;
 
 import java.util.Locale;
-import jdk.test.resources.spi.MyResourcesProvider;
+import java.util.ResourceBundle;
+import java.util.spi.AbstractResourceBundleProvider;
 
-public class MyResourcesEU extends MyResourcesProvider {
-    public MyResourcesEU() {
+public class MyResourcesProvider extends AbstractResourceBundleProvider {
+    public MyResourcesProvider() {
         super("java.class");
     }
 
     @Override
     protected String toBundleName(String baseName, Locale locale) {
-        int index = baseName.lastIndexOf('.');
-        String bundleName = baseName.substring(0, index) + ".eu" + baseName.substring(index)
-                                + '_' + locale.getLanguage();
-        return bundleName;
+        StringBuilder sb = new StringBuilder(baseName);
+        String lang = locale.getLanguage();
+        if (!lang.isEmpty()) {
+            sb.append('_').append(lang);
+            String country = locale.getCountry();
+            if (!country.isEmpty()) {
+                sb.append('_').append(country);
+            }
+        }
+        return sb.toString();
     }
 
     @Override
-    protected boolean isSupportedInModule(Locale locale) {
-        return locale.equals(Locale.GERMAN) || locale.equals(Locale.FRENCH);
+    public ResourceBundle getBundle(String baseName, Locale locale) {
+        ResourceBundle rb = super.getBundle(baseName, locale);
+        String tag = locale.toLanguageTag();
+        if (tag.equals("und")) {
+            tag = "ROOT"; // to a human friendly name
+        }
+        System.out.printf("    MyResourcesProvider.getBundle(%s, %s)%n         -> %s%n",
+                          baseName, tag, rb);
+        return rb;
     }
 }
