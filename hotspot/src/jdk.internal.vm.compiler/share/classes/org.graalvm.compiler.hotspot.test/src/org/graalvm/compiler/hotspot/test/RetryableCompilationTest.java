@@ -63,6 +63,9 @@ public class RetryableCompilationTest extends GraalCompilerTest {
 
     private static void testHelper(List<String> extraVmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
         List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
+        vmArgs.removeIf(a -> a.startsWith("-Dgraal."));
+        // Force output to a file even if there's a running IGV instance available.
+        vmArgs.add("-Dgraal.PrintGraphFile=true");
         vmArgs.addAll(extraVmArgs);
 
         Subprocess proc = SubprocessUtil.java(vmArgs, mainClassAndArgs);

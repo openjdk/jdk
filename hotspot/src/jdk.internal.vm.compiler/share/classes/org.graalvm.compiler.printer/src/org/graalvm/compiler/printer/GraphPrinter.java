@@ -53,7 +53,7 @@ interface GraphPrinter extends Closeable {
      * Prints an entire {@link Graph} with the specified title, optionally using short names for
      * nodes.
      */
-    void print(Graph graph, String title, Map<Object, Object> properties) throws IOException;
+    void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException;
 
     SnippetReflectionProvider getSnippetReflectionProvider();
 

@@ -80,7 +80,7 @@ public class GraalDebugConfigCustomizer implements DebugConfigCustomizer {
 
     private static class NodeDumper implements DebugDumpHandler {
         @Override
-        public void dump(Object object, String message) {
+        public void dump(Object object, String format, Object... arguments) {
             if (object instanceof Node) {
                 String location = GraphUtil.approxSourceLocation((Node) object);
                 String node = ((Node) object).toString(Verbosity.Debugger);

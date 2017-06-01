@@ -51,7 +51,7 @@ public class OptionsInFileTest extends GraalCompilerTest {
         File optionsFile = File.createTempFile("options", ".properties").getAbsoluteFile();
         try {
             Assert.assertFalse(methodFilterValue.equals(MethodFilter.getDefaultValue()));
-            Assert.assertFalse(debugFilterValue.equals(PrintGraph.getDefaultValue()));
+            Assert.assertFalse(debugFilterValue.equals(Dump.getDefaultValue()));
             Assert.assertTrue(PrintGraph.getDefaultValue());
 
             try (PrintStream out = new PrintStream(new FileOutputStream(optionsFile))) {
@@ -61,6 +61,7 @@ public class OptionsInFileTest extends GraalCompilerTest {
             }
 
             List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
+            vmArgs.removeIf(a -> a.startsWith("-Dgraal."));
             vmArgs.add("-Dgraal.options.file=" + optionsFile);
             vmArgs.add("-XX:+JVMCIPrintProperties");
             Subprocess proc = SubprocessUtil.java(vmArgs);

@@ -400,6 +400,14 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                 MapCursor<ValuePhiNode, PhiInfoElement> entries = mergeMap.getEntries();
                 while (entries.advance()) {
                     ValuePhiNode phi = entries.getKey();
+                    assert phi.isAlive() || phi.isDeleted();
+                    /*
+                     * Phi might have been killed already via a conditional elimination in another
+                     * branch.
+                     */
+                    if (phi.isDeleted()) {
+                        continue;
+                    }
                     PhiInfoElement phiInfoElements = entries.getValue();
                     Stamp bestPossibleStamp = null;
                     for (int i = 0; i < phi.valueCount(); ++i) {

@@ -24,6 +24,7 @@ package org.graalvm.compiler.lir.alloc.trace.lsra;
 
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 
@@ -121,11 +122,10 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
                                     if (Debug.isLogEnabled()) {
                                         if (ValueMoveOp.isValueMoveOp(op)) {
                                             ValueMoveOp vmove = ValueMoveOp.asValueMoveOp(op);
-                                            Debug.log("eliminating move from interval %d (%s) to %d (%s) in block %s", allocator.operandNumber(vmove.getInput()), vmove.getInput(),
-                                                            allocator.operandNumber(vmove.getResult()), vmove.getResult(), block);
+                                            Debug.log("eliminating move from interval %s to %s in block %s", vmove.getInput(), vmove.getResult(), block);
                                         } else {
                                             LoadConstantOp load = LoadConstantOp.asLoadConstantOp(op);
-                                            Debug.log("eliminating constant load from %s to %d (%s) in block %s", load.getConstant(), allocator.operandNumber(load.getResult()), load.getResult(),
+                                            Debug.log("eliminating constant load from %s to %s in block %s", load.getConstant(), load.getResult(),
                                                             block);
                                         }
                                     }
@@ -200,7 +200,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
         assert isVariable(move.getResult()) : "LinearScan inserts only moves to variables: " + move;
         assert lastOpId >= 0 : "Invalid lastOpId: " + lastOpId;
 
-        TraceInterval curInterval = allocator.intervalFor(move.getResult());
+        TraceInterval curInterval = allocator.intervalFor(asVariable(move.getResult()));
 
         if (!isRegister(curInterval.location()) && curInterval.inMemoryAt(lastOpId) && !isPhiResolutionMove(allocator, move)) {
             /* Phi resolution moves cannot be removed because they define the value. */
@@ -221,7 +221,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
      */
     private static boolean isPhiResolutionMove(TraceLinearScan allocator, MoveOp move) {
         assert ((LIRInstruction) move).id() == -1 : "Not a spill move: " + move;
-        TraceInterval curInterval = allocator.intervalFor(move.getResult());
+        TraceInterval curInterval = allocator.intervalFor(asVariable(move.getResult()));
         return curInterval.isSplitParent();
     }
 

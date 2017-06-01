@@ -24,6 +24,8 @@ package org.graalvm.compiler.hotspot.replacements;
 
 import java.lang.reflect.Method;
 
+import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
@@ -60,6 +62,18 @@ public final class ObjectCloneNode extends BasicObjectCloneNode implements Virtu
     }
 
     @Override
+    protected Stamp computeStamp(ValueNode object) {
+        if (getConcreteType(object.stamp()) != null) {
+            return AbstractPointerStamp.pointerNonNull(object.stamp());
+        }
+        /*
+         * If this call can't be intrinsified don't report a non-null stamp, otherwise the stamp
+         * would change when this is lowered back to an invoke and we might lose a null check.
+         */
+        return AbstractPointerStamp.pointerMaybeNull(object.stamp());
+    }
+
+    @Override
     @SuppressWarnings("try")
     protected StructuredGraph getLoweredSnippetGraph(LoweringTool tool) {
         ResolvedJavaType type = StampTool.typeOrNull(getObject());
@@ -77,6 +91,7 @@ public final class ObjectCloneNode extends BasicObjectCloneNode implements Virtu
                     }
 
                     assert snippetGraph != null : "ObjectCloneSnippets should be installed";
+                    assert getConcreteType(stamp()) != null;
                     return lowerReplacement((StructuredGraph) snippetGraph.copy(), tool);
                 }
                 assert false : "unhandled array type " + type.getComponentType().getJavaKind();
@@ -96,10 +111,12 @@ public final class ObjectCloneNode extends BasicObjectCloneNode implements Virtu
                         newGraph.addBeforeFixed(returnNode, load);
                         newGraph.addBeforeFixed(returnNode, newGraph.add(new StoreFieldNode(newInstance, field, load)));
                     }
+                    assert getConcreteType(stamp()) != null;
                     return lowerReplacement(newGraph, tool);
                 }
             }
         }
+        assert getConcreteType(stamp()) == null;
         return null;
     }
 }

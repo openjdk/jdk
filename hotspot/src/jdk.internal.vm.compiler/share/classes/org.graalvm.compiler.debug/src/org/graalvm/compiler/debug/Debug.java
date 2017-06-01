@@ -770,7 +770,7 @@ public class Debug {
      * @param object object to verify
      * @param message description of verification context
      *
-     * @see DebugVerifyHandler#verify(Object, String)
+     * @see DebugVerifyHandler#verify(java.lang.Object, java.lang.String, java.lang.Object...)
      */
     public static void verify(Object object, String message) {
         if (ENABLED && DebugScope.getInstance().isVerifyEnabled()) {
@@ -786,7 +786,7 @@ public class Debug {
      * @param format a format string for the description of the verification context
      * @param arg the argument referenced by the format specifiers in {@code format}
      *
-     * @see DebugVerifyHandler#verify(Object, String)
+     * @see DebugVerifyHandler#verify(java.lang.Object, java.lang.String, java.lang.Object...)
      */
     public static void verify(Object object, String format, Object arg) {
         if (ENABLED && DebugScope.getInstance().isVerifyEnabled()) {

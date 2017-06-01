@@ -63,7 +63,7 @@ public class NoDeadCodeVerifyHandler implements DebugVerifyHandler {
     private static final Map<String, Boolean> discovered = new ConcurrentHashMap<>();
 
     @Override
-    public void verify(Object object, String message) {
+    public void verify(Object object, String format, Object... args) {
         OptionValues options = DebugScope.getConfig().getOptions();
         if (Options.NDCV.getValue(options) != OFF && object instanceof StructuredGraph) {
             StructuredGraph graph = (StructuredGraph) object;
@@ -72,9 +72,9 @@ public class NoDeadCodeVerifyHandler implements DebugVerifyHandler {
             List<Node> after = graph.getNodes().snapshot();
             assert after.size() <= before.size();
             if (before.size() != after.size()) {
-                if (discovered.put(message, Boolean.TRUE) == null) {
+                if (discovered.put(format, Boolean.TRUE) == null) {
                     before.removeAll(after);
-                    String prefix = message == null ? "" : message + ": ";
+                    String prefix = format == null ? "" : format + ": ";
                     GraalError error = new GraalError("%sfound dead nodes in %s: %s", prefix, graph, before);
                     if (Options.NDCV.getValue(options) == INFO) {
                         System.out.println(error.getMessage());

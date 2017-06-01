@@ -31,7 +31,8 @@ public interface DebugVerifyHandler {
      * Verifies that a given object satisfies some invariants.
      *
      * @param object object to verify
-     * @param message description of verification context
+     * @param format description of verification context
+     * @param args arguments for the format
      */
-    void verify(Object object, String message);
+    void verify(Object object, String format, Object... args);
 }

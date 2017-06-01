@@ -170,7 +170,9 @@ public class SPARCArithmetic {
                 assert !y.equals(scratch1);
                 switch (opcode) {
                     case LUREM:
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(x, XWORD), crb.asIntConst(y), asRegister(scratch1, XWORD));
                         masm.mulx(asRegister(scratch1, XWORD), crb.asIntConst(y), asRegister(scratch2, XWORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);
@@ -192,7 +194,9 @@ public class SPARCArithmetic {
                         }
                         assert !asRegister(xLeft, XWORD).equals(asRegister(scratch1, XWORD));
                         assert !asRegister(y, XWORD).equals(asRegister(scratch1, XWORD));
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(xLeft, XWORD), asRegister(y, XWORD), asRegister(scratch1, XWORD));
                         masm.mulx(asRegister(scratch1, XWORD), asRegister(y, XWORD), asRegister(scratch1, XWORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);
@@ -203,7 +207,9 @@ public class SPARCArithmetic {
                         assert !asRegister(result, WORD).equals(asRegister(scratch2, WORD));
                         masm.srl(asRegister(x, WORD), 0, asRegister(scratch1, WORD));
                         masm.srl(asRegister(y, WORD), 0, asRegister(result, WORD));
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(scratch1, WORD), asRegister(result, WORD), asRegister(scratch2, WORD));
                         masm.mulx(asRegister(scratch2, WORD), asRegister(result, WORD), asRegister(result, WORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);

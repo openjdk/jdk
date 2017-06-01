@@ -113,12 +113,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Variable emitBitCount(Value operand) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(SPARCKind.WORD));
-        AllocatableValue usedOperand = getLIRGen().asAllocatable(operand);
-        if (operand.getPlatformKind() == SPARCKind.WORD) { // Zero extend
-            AllocatableValue intermediateOperand = getLIRGen().newVariable(operand.getValueKind());
-            getLIRGen().append(new SPARCOP3Op(Op3s.Srl, usedOperand, g0.asValue(), intermediateOperand));
-            usedOperand = intermediateOperand;
-        }
+        AllocatableValue usedOperand = getLIRGen().asAllocatable(emitZeroExtend(operand));
         getLIRGen().append(new SPARCOP3Op(Op3s.Popc, g0.asValue(), usedOperand, result));
         return result;
     }
@@ -275,7 +270,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
                 }
                 return result;
             } else {
-                return emitBinary(resultKind, setFlags ? Op3s.Mulscc : Op3s.Mulx, a, b);
+                return emitBinary(resultKind, Op3s.Mulx, a, b);
             }
         } else {
             boolean isDouble = a.getPlatformKind().equals(DOUBLE);
@@ -303,9 +298,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     public Value emitUMulHigh(Value a, Value b) {
         switch (((SPARCKind) a.getPlatformKind())) {
             case WORD:
-                Value aExtended = emitBinary(LIRKind.combine(a), Srl, a, 0);
-                Value bExtended = emitBinary(LIRKind.combine(b), Srl, b, 0);
-                Value result = emitBinary(LIRKind.combine(a, b), Mulx, aExtended, bExtended);
+                Value result = emitBinary(LIRKind.combine(a, b), Mulx, emitZeroExtend(a), emitZeroExtend(b));
                 return emitBinary(LIRKind.combine(a, b), Srax, result, WORD.getSizeInBits());
             case XWORD:
                 return emitBinary(LIRKind.combine(a, b), UMulxhi, a, b);
@@ -324,17 +317,13 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
         LIRKind resultKind = LIRKind.combine(a, b);
-        PlatformKind aKind = a.getPlatformKind();
-        PlatformKind bKind = b.getPlatformKind();
         if (isJavaConstant(b) && asJavaConstant(b).isDefaultForKind()) { // Div by zero
             Value zero = SPARC.g0.asValue(LIRKind.value(SPARCKind.WORD));
             return emitBinary(resultKind, Op3s.Sdivx, zero, zero, state);
-        } else if (isNumericInteger(aKind)) {
-            Value fixedA = emitSignExtend(a, aKind.getSizeInBytes() * 8, 64);
-            Value fixedB = emitSignExtend(b, bKind.getSizeInBytes() * 8, 64);
-            return emitBinary(resultKind, Op3s.Sdivx, fixedA, fixedB, state);
+        } else if (isNumericInteger(a.getPlatformKind())) {
+            return emitBinary(resultKind, Op3s.Sdivx, emitSignExtend(a), emitSignExtend(b), state);
         } else {
-            boolean isDouble = a.getPlatformKind().equals(DOUBLE);
+            boolean isDouble = a.getPlatformKind() == DOUBLE;
             return emitBinary(resultKind, isDouble ? Opfs.Fdivd : Opfs.Fdivs, a, b, state);
         }
     }
@@ -342,24 +331,21 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(a, b));
-        Value aLoaded;
         Variable q1; // Intermediate values
         Variable q2;
-        SPARCKind aKind = (SPARCKind) a.getPlatformKind();
-        switch (aKind) {
+        switch ((SPARCKind) a.getPlatformKind()) {
             case WORD:
                 // Sign extend a and b
-                Variable as = emitBinary(result.getValueKind(), Sra, a, g0.asValue(LIRKind.value(WORD)));
-                Variable bs = emitBinary(result.getValueKind(), Sra, b, g0.asValue(LIRKind.value(WORD)));
+                Value as = emitSignExtend(a);
+                Value bs = emitSignExtend(b);
                 q1 = emitBinary(as.getValueKind(), Sdivx, as, bs, state);
-                q2 = emitBinary(q1.getValueKind(), Mulx, q1, bs);
+                q2 = emitBinary(as.getValueKind(), Mulx, q1, bs);
                 result = emitSub(as, q2, false);
                 break;
             case XWORD:
-                aLoaded = getLIRGen().load(a); // Reuse the loaded value
-                q1 = emitBinary(result.getValueKind(), Sdivx, aLoaded, b, state);
+                q1 = emitBinary(result.getValueKind(), Sdivx, a, b, state);
                 q2 = emitBinary(result.getValueKind(), Mulx, q1, b);
-                result = emitSub(aLoaded, q2, false);
+                result = emitSub(a, q2, false);
                 break;
             case SINGLE:
                 ForeignCallLinkage fremCall = getLIRGen().getForeignCalls().lookupForeignCall(ARITHMETIC_FREM);
@@ -391,26 +377,14 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere();
         }
-        getLIRGen().append(new RemOp(opcode, result, getLIRGen().load(a), getLIRGen().load(b), scratch1, scratch2, state));
+        getLIRGen().append(new RemOp(opcode, result, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b), scratch1, scratch2, state));
         return result;
 
     }
 
     @Override
     public Value emitUDiv(Value a, Value b, LIRFrameState state) {
-        Value actualA = a;
-        Value actualB = b;
-        switch (((SPARCKind) a.getPlatformKind())) {
-            case WORD:
-                actualA = emitZeroExtend(actualA, 32, 64);
-                actualB = emitZeroExtend(actualB, 32, 64);
-                break;
-            case XWORD:
-                break;
-            default:
-                throw GraalError.shouldNotReachHere();
-        }
-        return emitBinary(LIRKind.combine(actualA, actualB), Udivx, actualA, actualB, state);
+        return emitBinary(LIRKind.combine(a, b), Udivx, emitZeroExtend(a), emitZeroExtend(b), state);
     }
 
     @Override
@@ -601,6 +575,11 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
         }
     }
 
+    private Value emitSignExtend(Value inputValue) {
+        int inputBits = inputValue.getPlatformKind().getSizeInBytes() * 8;
+        return emitNarrow(emitSignExtend(inputValue, inputBits, XWORD.getSizeInBits()), inputBits);
+    }
+
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
         assert fromBits <= toBits && toBits <= XWORD.getSizeInBits();
@@ -630,6 +609,11 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             }
             return result;
         }
+    }
+
+    private Value emitZeroExtend(Value inputValue) {
+        int inputBits = inputValue.getPlatformKind().getSizeInBytes() * 8;
+        return emitNarrow(emitZeroExtend(inputValue, inputBits, XWORD.getSizeInBits()), inputBits);
     }
 
     @Override

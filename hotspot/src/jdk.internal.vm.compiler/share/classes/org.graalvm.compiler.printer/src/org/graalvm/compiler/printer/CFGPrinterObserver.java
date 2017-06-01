@@ -79,7 +79,8 @@ public class CFGPrinterObserver implements DebugDumpHandler {
     }
 
     @Override
-    public void dump(Object object, String message) {
+    public void dump(Object object, String format, Object... arguments) {
+        String message = String.format(format, arguments);
         try {
             dumpSandboxed(object, message);
         } catch (Throwable ex) {

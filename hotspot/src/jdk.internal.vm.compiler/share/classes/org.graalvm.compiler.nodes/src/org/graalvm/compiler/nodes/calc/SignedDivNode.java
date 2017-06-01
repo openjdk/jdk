@@ -96,7 +96,9 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
                 SignedRemNode integerRemNode = (SignedRemNode) integerSubNode.getY();
                 if (integerSubNode.stamp().isCompatible(this.stamp()) && integerRemNode.stamp().isCompatible(this.stamp()) && integerSubNode.getX() == integerRemNode.getX() &&
                                 forY == integerRemNode.getY()) {
-                    return new SignedDivNode(integerSubNode.getX(), forY);
+                    SignedDivNode sd = new SignedDivNode(integerSubNode.getX(), forY);
+                    sd.stateBefore = this.stateBefore;
+                    return sd;
                 }
             }
         }
