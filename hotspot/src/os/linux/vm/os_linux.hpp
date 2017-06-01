@@ -172,6 +172,8 @@ class Linux {
   static void libpthread_init();
   static bool libnuma_init();
   static void* libnuma_dlsym(void* handle, const char* name);
+  // libnuma v2 (libnuma_1.2) symbols
+  static void* libnuma_v2_dlsym(void* handle, const char* name);
 
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
@@ -218,6 +220,8 @@ class Linux {
   typedef int (*numa_available_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
+  typedef void (*numa_interleave_memory_v2_func_t)(void *start, size_t size, struct bitmask* mask);
+
   typedef void (*numa_set_bind_policy_func_t)(int policy);
   typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
   typedef int (*numa_distance_func_t)(int node1, int node2);
@@ -229,6 +233,7 @@ class Linux {
   static numa_available_func_t _numa_available;
   static numa_tonode_memory_func_t _numa_tonode_memory;
   static numa_interleave_memory_func_t _numa_interleave_memory;
+  static numa_interleave_memory_v2_func_t _numa_interleave_memory_v2;
   static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static numa_bitmask_isbitset_func_t _numa_bitmask_isbitset;
   static numa_distance_func_t _numa_distance;
@@ -243,6 +248,7 @@ class Linux {
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
+  static void set_numa_interleave_memory_v2(numa_interleave_memory_v2_func_t func) { _numa_interleave_memory_v2 = func; }
   static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_bitmask_isbitset(numa_bitmask_isbitset_func_t func) { _numa_bitmask_isbitset = func; }
   static void set_numa_distance(numa_distance_func_t func) { _numa_distance = func; }
@@ -264,7 +270,10 @@ class Linux {
     return _numa_tonode_memory != NULL ? _numa_tonode_memory(start, size, node) : -1;
   }
   static void numa_interleave_memory(void *start, size_t size) {
-    if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
+    // Use v2 api if available
+    if (_numa_interleave_memory_v2 != NULL && _numa_all_nodes_ptr != NULL) {
+      _numa_interleave_memory_v2(start, size, _numa_all_nodes_ptr);
+    } else if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
     }
   }
