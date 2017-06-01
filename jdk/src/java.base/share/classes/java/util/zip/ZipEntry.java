@@ -39,6 +39,7 @@ import static java.util.zip.ZipConstants64.*;
  * This class is used to represent a ZIP file entry.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class ZipEntry implements ZipConstants, Cloneable {
