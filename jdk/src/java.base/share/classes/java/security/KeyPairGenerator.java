@@ -95,8 +95,15 @@ import sun.security.util.Debug;
  * <p>In case the client does not explicitly initialize the KeyPairGenerator
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
- * For example, the <i>Sun</i> provider uses a default modulus size (keysize)
- * of 1024 bits for DSA key pairs.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the KeyPairGenerator defaults used by
+ * JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * KeyPairGenerator instead of relying on provider-specific defaults.
  *
  * <p>Note that this class is abstract and extends from
  * {@code KeyPairGeneratorSpi} for historical reasons.
