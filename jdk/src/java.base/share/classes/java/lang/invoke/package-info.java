@@ -77,7 +77,8 @@
  * <p>
  * The bootstrap method is invoked on at least three values:
  * <ul>
- * <li>a {@code MethodHandles.Lookup}, a lookup object on the <em>caller class</em> in which dynamic call site occurs </li>
+ * <li>a {@code MethodHandles.Lookup}, a lookup object on the <em>caller class</em>
+ *     in which dynamic call site occurs </li>
  * <li>a {@code String}, the method name mentioned in the call site </li>
  * <li>a {@code MethodType}, the resolved type descriptor of the call </li>
  * <li>optionally, between 1 and 251 additional static arguments taken from the constant pool </li>
@@ -165,17 +166,27 @@
  * Given these rules, here are examples of legal bootstrap method declarations,
  * given various numbers {@code N} of extra arguments.
  * The first rows (marked {@code *}) will work for any number of extra arguments.
- * <table border=1 cellpadding=5 summary="Static argument types">
- * <tr><th>N</th><th>sample bootstrap method</th></tr>
- * <tr><td>*</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
- * <tr><td>*</td><td><code>CallSite bootstrap(Object... args)</code></td></tr>
- * <tr><td>*</td><td><code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code></td></tr>
- * <tr><td>0</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code></td></tr>
- * <tr><td>0</td><td><code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code></td></tr>
- * <tr><td>1</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)</code></td></tr>
- * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
- * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code></td></tr>
- * <tr><td>2</td><td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code></td></tr>
+ * <table class="plain">
+ * <caption style="display:none">Static argument types</caption>
+ * <tr><th>N</th><th>Sample bootstrap method</th></tr>
+ * <tr><td>*</td>
+ *     <td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
+ * <tr><td>*</td><td>
+ *     <code>CallSite bootstrap(Object... args)</code></td></tr>
+ * <tr><td>*</td><td>
+ *     <code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code></td></tr>
+ * <tr><td>0</td><td>
+ *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code></td></tr>
+ * <tr><td>0</td><td>
+ *     <code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code></td></tr>
+ * <tr><td>1</td><td>
+ *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)</code></td></tr>
+ * <tr><td>2</td><td>
+ *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
+ * <tr><td>2</td><td>
+ *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code></td></tr>
+ * <tr><td>2</td>
+ *     <td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code></td></tr>
  * </table>
  * The last example assumes that the extra arguments are of type
  * {@code CONSTANT_String} and {@code CONSTANT_Integer}, respectively.
