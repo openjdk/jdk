@@ -1699,13 +1699,13 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 }
 
 
-const void* ClassFileParser::parse_exception_table(const ClassFileStream* const cfs,
-                                                   u4 code_length,
-                                                   u4 exception_table_length,
-                                                   TRAPS) {
+const ClassFileParser::unsafe_u2* ClassFileParser::parse_exception_table(const ClassFileStream* const cfs,
+                                                                         u4 code_length,
+                                                                         u4 exception_table_length,
+                                                                         TRAPS) {
   assert(cfs != NULL, "invariant");
 
-  const void* const exception_table_start = cfs->current();
+  const unsafe_u2* const exception_table_start = cfs->current();
   assert(exception_table_start != NULL, "null exception table");
 
   cfs->guarantee_more(8 * exception_table_length, CHECK_NULL); // start_pc,
@@ -1823,13 +1823,13 @@ static void copy_lvt_element(const Classfile_LVT_Element* const src,
 
 // Function is used to parse both attributes:
 // LocalVariableTable (LVT) and LocalVariableTypeTable (LVTT)
-const void* ClassFileParser::parse_localvariable_table(const ClassFileStream* cfs,
-                                                       u4 code_length,
-                                                       u2 max_locals,
-                                                       u4 code_attribute_length,
-                                                       u2* const localvariable_table_length,
-                                                       bool isLVTT,
-                                                       TRAPS) {
+const ClassFileParser::unsafe_u2* ClassFileParser::parse_localvariable_table(const ClassFileStream* cfs,
+                                                                             u4 code_length,
+                                                                             u2 max_locals,
+                                                                             u4 code_attribute_length,
+                                                                             u2* const localvariable_table_length,
+                                                                             bool isLVTT,
+                                                                             TRAPS) {
   const char* const tbl_name = (isLVTT) ? "LocalVariableTypeTable" : "LocalVariableTable";
   *localvariable_table_length = cfs->get_u2(CHECK_NULL);
   const unsigned int size =
@@ -1843,7 +1843,7 @@ const void* ClassFileParser::parse_localvariable_table(const ClassFileStream* cf
                        "%s has wrong length in class file %s", tbl_name, CHECK_NULL);
   }
 
-  const void* const localvariable_table_start = cfs->current();
+  const unsafe_u2* const localvariable_table_start = cfs->current();
   assert(localvariable_table_start != NULL, "null local variable table");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -1959,10 +1959,10 @@ static const u1* parse_stackmap_table(const ClassFileStream* const cfs,
   return stackmap_table_start;
 }
 
-const void* ClassFileParser::parse_checked_exceptions(const ClassFileStream* const cfs,
-                                                      u2* const checked_exceptions_length,
-                                                      u4 method_attribute_length,
-                                                      TRAPS) {
+const ClassFileParser::unsafe_u2* ClassFileParser::parse_checked_exceptions(const ClassFileStream* const cfs,
+                                                                            u2* const checked_exceptions_length,
+                                                                            u4 method_attribute_length,
+                                                                            TRAPS) {
   assert(cfs != NULL, "invariant");
   assert(checked_exceptions_length != NULL, "invariant");
 
@@ -1970,7 +1970,7 @@ const void* ClassFileParser::parse_checked_exceptions(const ClassFileStream* con
   *checked_exceptions_length = cfs->get_u2_fast();
   const unsigned int size =
     (*checked_exceptions_length) * sizeof(CheckedExceptionElement) / sizeof(u2);
-  const void* const checked_exceptions_start = cfs->current();
+  const unsafe_u2* const checked_exceptions_start = cfs->current();
   assert(checked_exceptions_start != NULL, "null checked exceptions");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -2137,10 +2137,10 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
 void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
                                                int lvt_cnt,
                                                u2* const localvariable_table_length,
-                                               const void** const localvariable_table_start,
+                                               const unsafe_u2** const localvariable_table_start,
                                                int lvtt_cnt,
                                                u2* const localvariable_type_table_length,
-                                               const void** const localvariable_type_table_start,
+                                               const unsafe_u2** const localvariable_type_table_start,
                                                TRAPS) {
 
   ResourceMark rm(THREAD);
@@ -2335,10 +2335,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   u4 code_length = 0;
   const u1* code_start = 0;
   u2 exception_table_length = 0;
-  const void* exception_table_start = NULL; // (potentially unaligned) pointer to array of u2 elements
+  const unsafe_u2* exception_table_start = NULL; // (potentially unaligned) pointer to array of u2 elements
   Array<int>* exception_handlers = Universe::the_empty_int_array();
   u2 checked_exceptions_length = 0;
-  const void* checked_exceptions_start = NULL; // (potentially unaligned) pointer to array of u2 elements
+  const unsafe_u2* checked_exceptions_start = NULL; // (potentially unaligned) pointer to array of u2 elements
   CompressedLineNumberWriteStream* linenumber_table = NULL;
   int linenumber_table_length = 0;
   int total_lvt_length = 0;
@@ -2348,9 +2348,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   u2 max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2 max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2* localvariable_table_length = NULL;
-  const void** localvariable_table_start = NULL; // (potentially unaligned) pointer to array of LVT attributes
+  const unsafe_u2** localvariable_table_start = NULL; // (potentially unaligned) pointer to array of LVT attributes
   u2* localvariable_type_table_length = NULL;
-  const void** localvariable_type_table_start = NULL; // (potentially unaligned) pointer to LVTT attributes
+  const unsafe_u2** localvariable_type_table_start = NULL; // (potentially unaligned) pointer to LVTT attributes
   int method_parameters_length = -1;
   const u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
@@ -2491,17 +2491,17 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const unsafe_u2*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const unsafe_u2*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
             localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const void*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(cfs,
@@ -2520,18 +2520,18 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const unsafe_u2*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const unsafe_u2*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
             localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const void*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const unsafe_u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(cfs,
