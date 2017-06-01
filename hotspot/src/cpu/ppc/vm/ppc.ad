@@ -11048,6 +11048,29 @@ instruct cmpL_reg_imm16(flagsReg crx, iRegLsrc src1, immL16 src2) %{
   ins_pipe(pipe_class_compare);
 %}
 
+// Added CmpUL for LoopPredicate.
+instruct cmpUL_reg_reg(flagsReg crx, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set crx (CmpUL src1 src2));
+  format %{ "CMPLD   $crx, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
+    __ cmpld($crx$$CondRegister, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpUL_reg_imm16(flagsReg crx, iRegLsrc src1, uimmL16 src2) %{
+  match(Set crx (CmpUL src1 src2));
+  format %{ "CMPLDI  $crx, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_cmpli);
+    __ cmpldi($crx$$CondRegister, $src1$$Register, $src2$$constant);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct testL_reg_reg(flagsRegCR0 cr0, iRegLsrc src1, iRegLsrc src2, immL_0 zero) %{
   match(Set cr0 (CmpL (AndL src1 src2) zero));
   // r0 is killed
