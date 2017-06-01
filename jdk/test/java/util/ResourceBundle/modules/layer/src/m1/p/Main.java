@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,33 @@
  * questions.
  */
 
-package jdk.test.resources;
+package p;
 
 import java.util.Locale;
-import jdk.test.resources.spi.MyResourcesProvider;
+import java.util.ResourceBundle;
+import java.io.InputStream;
 
-public class MyResourcesMain extends MyResourcesProvider {
-    public MyResourcesMain() {
-        super("java.class", "", Locale.ROOT, Locale.ENGLISH);
+public class Main {
+    public static void main(String... args) {
+        run();
+    }
+
+    public static void run() {
+        ClassLoader loader =
+            Main.class.getModule().getLayer().findLoader("m1");
+        ClassLoader loader2 =
+            Main.class.getModule().getLayer().findLoader("m2");
+
+        ResourceBundle bundle =
+            ResourceBundle.getBundle("p.resources.MyResource", Locale.US);
+        ResourceBundle bundle1 =
+            ResourceBundle.getBundle("p.resources.MyResource", Locale.JAPANESE);
+
+        String enResult = bundle.getString("key");
+        String jaResult = bundle1.getString("key");
+        if (!"hi".equals(enResult) || !"ja".equals(jaResult)) {
+            throw new RuntimeException("Unexpected resources loaded: en: " +
+                                        enResult + ", ja: " + jaResult);
+        }
     }
 }
