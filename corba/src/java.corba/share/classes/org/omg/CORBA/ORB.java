@@ -184,6 +184,8 @@ import java.security.PrivilegedAction;
  * Therefore, the implementation first checks the ${java.home}/conf directory for orb.properties,
  * and thereafter the ${java.home}/lib directory.
  *
+ * <p>See also {@extLink idl_guides IDL developer's guide}.</p>
+ *
  * @since   JDK1.2
  */
 abstract public class ORB {
