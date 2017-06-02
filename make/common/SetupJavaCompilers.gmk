@@ -69,7 +69,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
     JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -source 10 -target 10 \
+    FLAGS := -source 10 -target 10 --doclint-format html5 \
         -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))

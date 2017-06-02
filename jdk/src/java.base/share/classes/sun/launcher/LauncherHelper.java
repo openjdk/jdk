@@ -363,10 +363,6 @@ public final class LauncherHelper {
     static void initHelpMessage(String progname) {
         outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.header",
                 (progname == null) ? "java" : progname ));
-        outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.datamodel",
-                32));
-        outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.datamodel",
-                64));
     }
 
     /**

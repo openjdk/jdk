@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -55,8 +55,8 @@ import static java.util.Arrays.asList;
  * @bug 8064924
  * @modules jdk.compiler
  * @summary Basic test for URLStreamHandlerProvider
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder
+ * @library /lib/testlibrary /test/lib
+ * @build jdk.testlibrary.JDKToolFinder
  * @compile Basic.java Child.java
  * @run main Basic
  */
