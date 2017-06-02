@@ -146,12 +146,14 @@ public:
   void scrub(uint worker_num, HeapRegionClaimer* hrclaimer);
 
   // Refine the card corresponding to "card_ptr".
-  // If oops_in_heap_closure is not NULL, a true result is returned
-  // if the given card contains oops that have references into the
-  // current collection set.
-  bool refine_card(jbyte* card_ptr,
-                   uint worker_i,
-                   G1ParPushHeapRSClosure* oops_in_heap_closure);
+  void refine_card_concurrently(jbyte* card_ptr,
+                                uint worker_i);
+
+  // Refine the card corresponding to "card_ptr". Returns "true" if the given card contains
+  // oops that have references into the current collection set.
+  bool refine_card_during_gc(jbyte* card_ptr,
+                             uint worker_i,
+                             G1ParPushHeapRSClosure* oops_in_heap_closure);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

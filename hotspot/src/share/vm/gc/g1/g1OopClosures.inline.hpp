@@ -111,6 +111,54 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
+inline static void check_obj_during_refinement(T* p, oop const obj) {
+#ifdef ASSERT
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  // can't do because of races
+  // assert(obj == NULL || obj->is_oop(), "expected an oop");
+  assert(check_obj_alignment(obj), "not oop aligned");
+  assert(g1->is_in_reserved(obj), "must be in heap");
+
+  HeapRegion* from = g1->heap_region_containing(p);
+
+  assert(from != NULL, "from region must be non-NULL");
+  assert(from->is_in_reserved(p) ||
+         (from->is_humongous() &&
+          g1->heap_region_containing(p)->is_humongous() &&
+          from->humongous_start_region() == g1->heap_region_containing(p)->humongous_start_region()),
+         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
+         p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
+#endif // ASSERT
+}
+
+template <class T>
+inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
+  T o = oopDesc::load_heap_oop(p);
+  if (oopDesc::is_null(o)) {
+    return;
+  }
+  oop obj = oopDesc::decode_heap_oop_not_null(o);
+
+  check_obj_during_refinement(p, obj);
+
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    // Normally this closure should only be called with cross-region references.
+    // But since Java threads are manipulating the references concurrently and we
+    // reload the values things may have changed.
+    // This check lets slip through references from a humongous continues region
+    // to its humongous start region, as they are in different regions, and adds a
+    // remembered set entry. This is benign (apart from memory usage), as this
+    // closure is never called during evacuation.
+    return;
+  }
+
+  HeapRegion* to = _g1->heap_region_containing(obj);
+
+  assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
+  to->rem_set()->add_reference(p, _worker_i);
+}
+
+template <class T>
 inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (obj == NULL) {
@@ -161,9 +209,9 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
     // we have already visited/tried to copy this object
     // there is no need to retry.
     if (!self_forwarded(obj)) {
-      assert(_push_ref_cl != NULL, "should not be null");
-      // Push the reference in the refs queue of the G1ParScanThreadState
-      // instance for this worker thread.
+    assert(_push_ref_cl != NULL, "should not be null");
+    // Push the reference in the refs queue of the G1ParScanThreadState
+    // instance for this worker thread.
       _push_ref_cl->do_oop(p);
     }
     _has_refs_into_cset = true;
