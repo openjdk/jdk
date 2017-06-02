@@ -30,12 +30,6 @@
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
-#ifdef __APPLE__
-// Mac OS X doesn't support clock_gettime. Stub out the type, it is
-// unused
-typedef int clockid_t;
-#endif
-
 class Bsd {
   friend class os;
 
