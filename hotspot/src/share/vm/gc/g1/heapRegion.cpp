@@ -827,7 +827,6 @@ void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
 
 void G1ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  _scan_top = bottom();
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
@@ -859,40 +858,13 @@ HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
   return _bot_part.threshold();
 }
 
-HeapWord* G1ContiguousSpace::scan_top() const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapWord* local_top = top();
-  OrderAccess::loadload();
-  const unsigned local_time_stamp = _gc_time_stamp;
-  assert(local_time_stamp <= g1h->get_gc_time_stamp(), "invariant");
-  if (local_time_stamp < g1h->get_gc_time_stamp()) {
-    return local_top;
-  } else {
-    return _scan_top;
-  }
-}
-
 void G1ContiguousSpace::record_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   uint curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
   if (_gc_time_stamp < curr_gc_time_stamp) {
-    // Setting the time stamp here tells concurrent readers to look at
-    // scan_top to know the maximum allowed address to look at.
-
-    // scan_top should be bottom for all regions except for the
-    // retained old alloc region which should have scan_top == top
-    HeapWord* st = _scan_top;
-    guarantee(st == _bottom || st == _top, "invariant");
-
     _gc_time_stamp = curr_gc_time_stamp;
   }
-}
-
-void G1ContiguousSpace::record_retained_region() {
-  // scan_top is the maximum address where it's safe for the next gc to
-  // scan this region.
-  _scan_top = top();
 }
 
 void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
@@ -919,7 +891,6 @@ G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
 void G1ContiguousSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
   _top = bottom();
-  _scan_top = bottom();
   set_saved_mark_word(NULL);
   reset_bot();
 }

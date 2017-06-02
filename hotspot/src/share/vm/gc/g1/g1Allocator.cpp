@@ -109,9 +109,6 @@ void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_inf
   // want either way so no reason to check explicitly for either
   // condition.
   _retained_old_gc_alloc_region = old_gc_alloc_region(context)->release();
-  if (_retained_old_gc_alloc_region != NULL) {
-    _retained_old_gc_alloc_region->record_retained_region();
-  }
 }
 
 void G1DefaultAllocator::abandon_gc_alloc_regions() {

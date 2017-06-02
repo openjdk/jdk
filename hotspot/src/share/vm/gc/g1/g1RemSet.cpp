@@ -116,6 +116,32 @@ private:
   // to avoid duplicates. Uses jbyte since there are no atomic instructions for bools.
   IsDirtyRegionState* _in_dirty_region_buffer;
   size_t _cur_dirty_region;
+
+  // Creates a snapshot of the current _top values at the start of collection to
+  // filter out card marks that we do not want to scan.
+  class G1ResetScanTopClosure : public HeapRegionClosure {
+  private:
+    HeapWord** _scan_top;
+  public:
+    G1ResetScanTopClosure(HeapWord** scan_top) : _scan_top(scan_top) { }
+
+    virtual bool doHeapRegion(HeapRegion* r) {
+      uint hrm_index = r->hrm_index();
+      if (!r->in_collection_set() && r->is_old_or_humongous()) {
+        _scan_top[hrm_index] = r->top();
+      } else {
+        _scan_top[hrm_index] = r->bottom();
+      }
+      return false;
+    }
+  };
+
+  // For each region, contains the maximum top() value to be used during this garbage
+  // collection. Subsumes common checks like filtering out everything but old and
+  // humongous regions outside the collection set.
+  // This is valid because we are not interested in scanning stray remembered set
+  // entries from free or archive regions.
+  HeapWord** _scan_top;
 public:
   G1RemSetScanState() :
     _max_regions(0),
@@ -123,8 +149,8 @@ public:
     _iter_claims(NULL),
     _dirty_region_buffer(NULL),
     _in_dirty_region_buffer(NULL),
-    _cur_dirty_region(0) {
-
+    _cur_dirty_region(0),
+    _scan_top(NULL) {
   }
 
   ~G1RemSetScanState() {
@@ -140,6 +166,9 @@ public:
     if (_in_dirty_region_buffer != NULL) {
       FREE_C_HEAP_ARRAY(IsDirtyRegionState, _in_dirty_region_buffer);
     }
+    if (_scan_top != NULL) {
+      FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
+    }
   }
 
   void initialize(uint max_regions) {
@@ -150,12 +179,17 @@ public:
     _iter_claims = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
     _dirty_region_buffer = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
     _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(IsDirtyRegionState, max_regions, mtGC);
+    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
   }
 
   void reset() {
     for (uint i = 0; i < _max_regions; i++) {
       _iter_states[i] = Unclaimed;
     }
+
+    G1ResetScanTopClosure cl(_scan_top);
+    G1CollectedHeap::heap()->heap_region_iterate(&cl);
+
     memset((void*)_iter_claims, 0, _max_regions * sizeof(size_t));
     memset(_in_dirty_region_buffer, Clean, _max_regions * sizeof(IsDirtyRegionState));
     _cur_dirty_region = 0;
@@ -210,6 +244,10 @@ public:
       size_t allocated = Atomic::add(1, &_cur_dirty_region) - 1;
       _dirty_region_buffer[allocated] = region;
     }
+  }
+
+  HeapWord* scan_top(uint region_idx) const {
+    return _scan_top[region_idx];
   }
 
   // Clear the card table of "dirty" regions.
@@ -307,7 +345,7 @@ G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
 
 void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
   MemRegion card_region(card_start, BOTConstants::N_words);
-  MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
+  MemRegion pre_gc_allocated(r->bottom(), _scan_state->scan_top(r->hrm_index()));
   MemRegion mr = pre_gc_allocated.intersection(card_region);
   if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
     // We make the card as "claimed" lazily (so races are possible
@@ -710,72 +748,25 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
     return false;
   }
 
+  // During GC we can immediately clean the card since we will not re-enqueue stale
+  // cards as we know they can be disregarded.
+  *card_ptr = CardTableModRefBS::clean_card_val();
+
   // Construct the region representing the card.
-  HeapWord* start = _ct_bs->addr_for(card_ptr);
+  HeapWord* card_start = _ct_bs->addr_for(card_ptr);
   // And find the region containing it.
-  HeapRegion* r = _g1->heap_region_containing(start);
+  HeapRegion* r = _g1->heap_region_containing(card_start);
 
-  // This check is needed for some uncommon cases where we should
-  // ignore the card.
-  //
-  // The region could be young.  Cards for young regions are
-  // distinctly marked (set to g1_young_gen), so the post-barrier will
-  // filter them out.  However, that marking is performed
-  // concurrently.  A write to a young object could occur before the
-  // card has been marked young, slipping past the filter.
-  //
-  // The card could be stale, because the region has been freed since
-  // the card was recorded. In this case the region type could be
-  // anything.  If (still) free or (reallocated) young, just ignore
-  // it.  If (reallocated) old or humongous, the later card trimming
-  // and additional checks in iteration may detect staleness.  At
-  // worst, we end up processing a stale card unnecessarily.
-  //
-  // In the normal (non-stale) case, the synchronization between the
-  // enqueueing of the card and processing it here will have ensured
-  // we see the up-to-date region type here.
-  if (!r->is_old_or_humongous()) {
+  HeapWord* scan_limit = _scan_state->scan_top(r->hrm_index());
+  if (scan_limit <= card_start) {
+    // If the card starts above the area in the region containing objects to scan, skip it.
     return false;
   }
-
-  // While we are processing RSet buffers during the collection, we
-  // actually don't want to scan any cards on the collection set,
-  // since we don't want to update remembered sets with entries that
-  // point into the collection set, given that live objects from the
-  // collection set are about to move and such entries will be stale
-  // very soon. This change also deals with a reliability issue which
-  // involves scanning a card in the collection set and coming across
-  // an array that was being chunked and looking malformed. Note,
-  // however, that if evacuation fails, we have to scan any objects
-  // that were not moved and create any missing entries.
-  if (r->in_collection_set()) {
-    return false;
-  }
-
-  // Trim the region designated by the card to what's been allocated
-  // in the region.  The card could be stale, or the card could cover
-  // (part of) an object at the end of the allocated space and extend
-  // beyond the end of allocation.
-
-  // If we're in a STW GC, then a card might be in a GC alloc region
-  // and extend onto a GC LAB, which may not be parsable.  Stop such
-  // at the "scan_top" of the region.
-  HeapWord* scan_limit = r->scan_top();
-
-  if (scan_limit <= start) {
-    // If the trimmed region is empty, the card must be stale.
-    return false;
-  }
-
-  // Okay to clean and process the card now.  There are still some
-  // stale card cases that may be detected by iteration and dealt with
-  // as iteration failure.
-  *const_cast<volatile jbyte*>(card_ptr) = CardTableModRefBS::clean_card_val();
 
   // Don't use addr_for(card_ptr + 1) which can ask for
   // a card beyond the heap.
-  HeapWord* end = start + CardTableModRefBS::card_size_in_words;
-  MemRegion dirty_region(start, MIN2(scan_limit, end));
+  HeapWord* card_end = card_start + CardTableModRefBS::card_size_in_words;
+  MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
   assert(!dirty_region.is_empty(), "sanity");
 
   G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,

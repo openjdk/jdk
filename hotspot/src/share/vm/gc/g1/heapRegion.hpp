@@ -96,7 +96,6 @@ class nmethod;
 class G1ContiguousSpace: public CompactibleSpace {
   friend class VMStructs;
   HeapWord* volatile _top;
-  HeapWord* volatile _scan_top;
  protected:
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
@@ -147,11 +146,9 @@ class G1ContiguousSpace: public CompactibleSpace {
   void mangle_unused_area() PRODUCT_RETURN;
   void mangle_unused_area_complete() PRODUCT_RETURN;
 
-  HeapWord* scan_top() const;
   void record_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
   uint get_gc_time_stamp() { return _gc_time_stamp; }
-  void record_retained_region();
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
