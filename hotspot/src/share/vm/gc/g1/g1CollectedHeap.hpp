@@ -1348,7 +1348,6 @@ public:
   // bitmap off to the side.
   void doConcurrentMark();
 
-  bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
   // Determine if an object is dead, given the object and also
@@ -1357,8 +1356,7 @@ public:
   // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
-      !hr->obj_allocated_since_prev_marking(obj) &&
-      !isMarkedPrev(obj) &&
+      hr->is_obj_dead(obj, _cm->prevMarkBitMap()) &&
       !hr->is_archive();
   }
 
