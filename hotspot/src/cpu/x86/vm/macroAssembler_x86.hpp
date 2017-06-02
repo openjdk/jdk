@@ -1232,6 +1232,9 @@ public:
   void punpcklbw(XMMRegister dst, XMMRegister src);
   void punpcklbw(XMMRegister dst, Address src) { Assembler::punpcklbw(dst, src); }
 
+  void pshufd(XMMRegister dst, Address src, int mode);
+  void pshufd(XMMRegister dst, XMMRegister src, int mode) { Assembler::pshufd(dst, src, mode); }
+
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src, int mode) { Assembler::pshuflw(dst, src, mode); }
 
