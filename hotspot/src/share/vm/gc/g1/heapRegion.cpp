@@ -48,56 +48,6 @@ size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
 
-HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
-                                 HeapRegion* hr,
-                                 G1ParPushHeapRSClosure* cl,
-                                 CardTableModRefBS::PrecisionStyle precision) :
-  DirtyCardToOopClosure(hr, cl, precision, NULL),
-  _hr(hr), _rs_scan(cl), _g1(g1) { }
-
-void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
-                                      HeapWord* bottom,
-                                      HeapWord* top) {
-  G1CollectedHeap* g1h = _g1;
-  size_t oop_size;
-  HeapWord* cur = bottom;
-
-  // Start filtering what we add to the remembered set. If the object is
-  // not considered dead, either because it is marked (in the mark bitmap)
-  // or it was allocated after marking finished, then we add it. Otherwise
-  // we can safely ignore the object.
-  if (!g1h->is_obj_dead(oop(cur))) {
-    oop_size = oop(cur)->oop_iterate_size(_rs_scan, mr);
-  } else {
-    oop_size = _hr->block_size(cur);
-  }
-
-  cur += oop_size;
-
-  if (cur < top) {
-    oop cur_oop = oop(cur);
-    oop_size = _hr->block_size(cur);
-    HeapWord* next_obj = cur + oop_size;
-    while (next_obj < top) {
-      // Keep filtering the remembered set.
-      if (!g1h->is_obj_dead(cur_oop)) {
-        // Bottom lies entirely below top, so we can call the
-        // non-memRegion version of oop_iterate below.
-        cur_oop->oop_iterate(_rs_scan);
-      }
-      cur = next_obj;
-      cur_oop = oop(cur);
-      oop_size = _hr->block_size(cur);
-      next_obj = cur + oop_size;
-    }
-
-    // Last object. Need to do dead-obj filtering here too.
-    if (!g1h->is_obj_dead(oop(cur))) {
-      oop(cur)->oop_iterate(_rs_scan, mr);
-    }
-  }
-}
-
 size_t HeapRegion::max_region_size() {
   return HeapRegionBounds::max_size();
 }
