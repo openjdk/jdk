@@ -36,6 +36,8 @@ class G1ParScanClosure;
 class G1ParPushHeapRSClosure;
 
 class G1UpdateRSOrPushRefOopClosure;
+class G1ConcurrentRefineOopClosure;
+
 class G1CMOopClosure;
 class G1RootRegionScanClosure;
 
@@ -43,6 +45,7 @@ class G1RootRegionScanClosure;
       f(G1ParScanClosure,_nv)                      \
       f(G1ParPushHeapRSClosure,_nv)                \
       f(G1UpdateRSOrPushRefOopClosure,_nv)         \
+      f(G1ConcurrentRefineOopClosure,_nv)          \
       f(G1CMOopClosure,_nv)                        \
       f(G1RootRegionScanClosure,_nv)
 

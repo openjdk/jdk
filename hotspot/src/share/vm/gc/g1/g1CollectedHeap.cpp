@@ -101,11 +101,7 @@ public:
   RefineCardTableEntryClosure() : _concurrent(true) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    bool oops_into_cset = G1CollectedHeap::heap()->g1_rem_set()->refine_card(card_ptr, worker_i, NULL);
-    // This path is executed by the concurrent refine or mutator threads,
-    // concurrently, and so we do not care if card_ptr contains references
-    // that point into the collection set.
-    assert(!oops_into_cset, "should be");
+    G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
 
     if (_concurrent && SuspendibleThreadSet::should_yield()) {
       // Caller will actually yield.
