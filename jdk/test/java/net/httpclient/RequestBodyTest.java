@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/
+ * @library /lib/testlibrary/ /test/lib
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @build LightWeightHttpServer
@@ -52,7 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import static java.nio.charset.StandardCharsets.*;
 import static java.nio.file.StandardOpenOption.*;
 import static jdk.incubator.http.HttpRequest.BodyProcessor.*;

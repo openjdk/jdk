@@ -24,8 +24,7 @@
 /* @test
  * @bug 4313887 6838333 8132497
  * @summary Unit test for java.nio.file.FileSystem
- * @library .. /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library .. /test/lib
  * @run main/othervm Basic
  */
 
@@ -41,7 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
 import java.util.HashMap;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 /**
  * Simple sanity checks for java.nio.file.FileSystem

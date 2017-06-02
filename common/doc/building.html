@@ -1,21 +1,23 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta http-equiv="Content-Style-Type" content="text/css" />
-  <meta name="generator" content="pandoc" />
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>OpenJDK Build README</title>
   <style type="text/css">code{white-space: pre;}</style>
-  <link rel="stylesheet" href=" ../../jdk/make/data/docs-resources/specs/resources/jdk-default.css" type="text/css" />
+  <link rel="stylesheet" href="../../jdk/make/data/docs-resources/specs/resources/jdk-default.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
 </head>
 <body>
-<div id="header">
+<header>
 <h1 class="title">OpenJDK Build README</h1>
-</div>
-<div class="figure">
-<img src="http://openjdk.java.net/images/openjdk.png" alt="OpenJDK" />
-<p class="caption">OpenJDK</p>
-</div>
+</header>
+<figure>
+<img src="http://openjdk.java.net/images/openjdk.png" alt="OpenJDK" /><figcaption>OpenJDK</figcaption>
+</figure>
 <hr />
 <h2 id="introduction">Introduction</h2>
 <p>This README file contains build instructions for the <a href="http://openjdk.java.net">OpenJDK</a>. Building the source code for the OpenJDK requires a certain degree of technical expertise.</p>
@@ -149,50 +151,50 @@
 <table>
 <thead>
 <tr class="header">
-<th align="left">Package</th>
-<th align="left">Version</th>
+<th style="text-align: left;">Package</th>
+<th style="text-align: left;">Version</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">developer/solarisstudio-124/backend</td>
-<td align="left">12.4-1.0.6.0</td>
+<td style="text-align: left;">developer/solarisstudio-124/backend</td>
+<td style="text-align: left;">12.4-1.0.6.0</td>
 </tr>
 <tr class="even">
-<td align="left">developer/solarisstudio-124/c++</td>
-<td align="left">12.4-1.0.10.0</td>
+<td style="text-align: left;">developer/solarisstudio-124/c++</td>
+<td style="text-align: left;">12.4-1.0.10.0</td>
 </tr>
 <tr class="odd">
-<td align="left">developer/solarisstudio-124/cc</td>
-<td align="left">12.4-1.0.4.0</td>
+<td style="text-align: left;">developer/solarisstudio-124/cc</td>
+<td style="text-align: left;">12.4-1.0.4.0</td>
 </tr>
 <tr class="even">
-<td align="left">developer/solarisstudio-124/library/c++-libs</td>
-<td align="left">12.4-1.0.10.0</td>
+<td style="text-align: left;">developer/solarisstudio-124/library/c++-libs</td>
+<td style="text-align: left;">12.4-1.0.10.0</td>
 </tr>
 <tr class="odd">
-<td align="left">developer/solarisstudio-124/library/math-libs</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/library/math-libs</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 <tr class="even">
-<td align="left">developer/solarisstudio-124/library/studio-gccrt</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/library/studio-gccrt</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 <tr class="odd">
-<td align="left">developer/solarisstudio-124/studio-common</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/studio-common</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 <tr class="even">
-<td align="left">developer/solarisstudio-124/studio-ja</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/studio-ja</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 <tr class="odd">
-<td align="left">developer/solarisstudio-124/studio-legal</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/studio-legal</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 <tr class="even">
-<td align="left">developer/solarisstudio-124/studio-zhCN</td>
-<td align="left">12.4-1.0.0.1</td>
+<td style="text-align: left;">developer/solarisstudio-124/studio-zhCN</td>
+<td style="text-align: left;">12.4-1.0.0.1</td>
 </tr>
 </tbody>
 </table>
@@ -211,66 +213,66 @@
 <table>
 <thead>
 <tr class="header">
-<th align="left">Binary Name</th>
-<th align="left">Category</th>
-<th align="left">Package</th>
-<th align="left">Description</th>
+<th style="text-align: left;">Binary Name</th>
+<th style="text-align: left;">Category</th>
+<th style="text-align: left;">Package</th>
+<th style="text-align: left;">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">ar.exe</td>
-<td align="left">Devel</td>
-<td align="left">binutils</td>
-<td align="left">The GNU assembler, linker and binary utilities</td>
+<td style="text-align: left;">ar.exe</td>
+<td style="text-align: left;">Devel</td>
+<td style="text-align: left;">binutils</td>
+<td style="text-align: left;">The GNU assembler, linker and binary utilities</td>
 </tr>
 <tr class="even">
-<td align="left">make.exe</td>
-<td align="left">Devel</td>
-<td align="left">make</td>
-<td align="left">The GNU version of the 'make' utility built for CYGWIN</td>
+<td style="text-align: left;">make.exe</td>
+<td style="text-align: left;">Devel</td>
+<td style="text-align: left;">make</td>
+<td style="text-align: left;">The GNU version of the 'make' utility built for CYGWIN</td>
 </tr>
 <tr class="odd">
-<td align="left">m4.exe</td>
-<td align="left">Interpreters</td>
-<td align="left">m4</td>
-<td align="left">GNU implementation of the traditional Unix macro processor</td>
+<td style="text-align: left;">m4.exe</td>
+<td style="text-align: left;">Interpreters</td>
+<td style="text-align: left;">m4</td>
+<td style="text-align: left;">GNU implementation of the traditional Unix macro processor</td>
 </tr>
 <tr class="even">
-<td align="left">cpio.exe</td>
-<td align="left">Utils</td>
-<td align="left">cpio</td>
-<td align="left">A program to manage archives of files</td>
+<td style="text-align: left;">cpio.exe</td>
+<td style="text-align: left;">Utils</td>
+<td style="text-align: left;">cpio</td>
+<td style="text-align: left;">A program to manage archives of files</td>
 </tr>
 <tr class="odd">
-<td align="left">gawk.exe</td>
-<td align="left">Utils</td>
-<td align="left">awk</td>
-<td align="left">Pattern-directed scanning and processing language</td>
+<td style="text-align: left;">gawk.exe</td>
+<td style="text-align: left;">Utils</td>
+<td style="text-align: left;">awk</td>
+<td style="text-align: left;">Pattern-directed scanning and processing language</td>
 </tr>
 <tr class="even">
-<td align="left">file.exe</td>
-<td align="left">Utils</td>
-<td align="left">file</td>
-<td align="left">Determines file type using 'magic' numbers</td>
+<td style="text-align: left;">file.exe</td>
+<td style="text-align: left;">Utils</td>
+<td style="text-align: left;">file</td>
+<td style="text-align: left;">Determines file type using 'magic' numbers</td>
 </tr>
 <tr class="odd">
-<td align="left">zip.exe</td>
-<td align="left">Archive</td>
-<td align="left">zip</td>
-<td align="left">Package and compress (archive) files</td>
+<td style="text-align: left;">zip.exe</td>
+<td style="text-align: left;">Archive</td>
+<td style="text-align: left;">zip</td>
+<td style="text-align: left;">Package and compress (archive) files</td>
 </tr>
 <tr class="even">
-<td align="left">unzip.exe</td>
-<td align="left">Archive</td>
-<td align="left">unzip</td>
-<td align="left">Extract compressed files in a ZIP archive</td>
+<td style="text-align: left;">unzip.exe</td>
+<td style="text-align: left;">Archive</td>
+<td style="text-align: left;">unzip</td>
+<td style="text-align: left;">Extract compressed files in a ZIP archive</td>
 </tr>
 <tr class="odd">
-<td align="left">free.exe</td>
-<td align="left">System</td>
-<td align="left">procps</td>
-<td align="left">Display amount of free and used memory in the system</td>
+<td style="text-align: left;">free.exe</td>
+<td style="text-align: left;">System</td>
+<td style="text-align: left;">procps</td>
+<td style="text-align: left;">Display amount of free and used memory in the system</td>
 </tr>
 </tbody>
 </table>
@@ -561,14 +563,14 @@ This is caused by a missing libstdc++.a library. This is installed as part of a 
 This is probably an issue with SELinux (See <a href="http://en.wikipedia.org/wiki/SELinux">SELinux on Wikipedia</a>). Parts of the VM is built without the <code>-fPIC</code> for performance reasons.</p></li>
 </ul>
 <p>To completely disable SELinux:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li><code>$ su root</code></li>
 <li><code># system-config-securitylevel</code></li>
 <li><code>In the window that appears, select the SELinux tab</code></li>
 <li><code>Disable SELinux</code></li>
 </ol>
 <p>Alternatively, instead of completely disabling it you could disable just this one check.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Select System-&gt;Administration-&gt;SELinux Management</li>
 <li>In the SELinux Management Tool which appears, select &quot;Boolean&quot; from the menu on the left</li>
 <li>Expand the &quot;Memory Protection&quot; group</li>
@@ -616,62 +618,62 @@ Try rebooting the system, or there could be some kind of issue with the disk or 
 <table>
 <thead>
 <tr class="header">
-<th align="left">Base OS and Architecture</th>
-<th align="left">OS</th>
-<th align="left">C/C++ Compiler</th>
-<th align="left">Processors</th>
-<th align="left">RAM Minimum</th>
-<th align="left">DISK Needs</th>
+<th style="text-align: left;">Base OS and Architecture</th>
+<th style="text-align: left;">OS</th>
+<th style="text-align: left;">C/C++ Compiler</th>
+<th style="text-align: left;">Processors</th>
+<th style="text-align: left;">RAM Minimum</th>
+<th style="text-align: left;">DISK Needs</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Linux X86 (32-bit) and X64 (64-bit)</td>
-<td align="left">Oracle Enterprise Linux 6.4</td>
-<td align="left">gcc 4.9.2</td>
-<td align="left">2 or more</td>
-<td align="left">1 GB</td>
-<td align="left">6 GB</td>
+<td style="text-align: left;">Linux X86 (32-bit) and X64 (64-bit)</td>
+<td style="text-align: left;">Oracle Enterprise Linux 6.4</td>
+<td style="text-align: left;">gcc 4.9.2</td>
+<td style="text-align: left;">2 or more</td>
+<td style="text-align: left;">1 GB</td>
+<td style="text-align: left;">6 GB</td>
 </tr>
 <tr class="even">
-<td align="left">Solaris SPARCV9 (64-bit)</td>
-<td align="left">Solaris 11 Update 1</td>
-<td align="left">Studio 12 Update 4 + patches</td>
-<td align="left">4 or more</td>
-<td align="left">4 GB</td>
-<td align="left">8 GB</td>
+<td style="text-align: left;">Solaris SPARCV9 (64-bit)</td>
+<td style="text-align: left;">Solaris 11 Update 1</td>
+<td style="text-align: left;">Studio 12 Update 4 + patches</td>
+<td style="text-align: left;">4 or more</td>
+<td style="text-align: left;">4 GB</td>
+<td style="text-align: left;">8 GB</td>
 </tr>
 <tr class="odd">
-<td align="left">Solaris X64 (64-bit)</td>
-<td align="left">Solaris 11 Update 1</td>
-<td align="left">Studio 12 Update 4 + patches</td>
-<td align="left">4 or more</td>
-<td align="left">4 GB</td>
-<td align="left">8 GB</td>
+<td style="text-align: left;">Solaris X64 (64-bit)</td>
+<td style="text-align: left;">Solaris 11 Update 1</td>
+<td style="text-align: left;">Studio 12 Update 4 + patches</td>
+<td style="text-align: left;">4 or more</td>
+<td style="text-align: left;">4 GB</td>
+<td style="text-align: left;">8 GB</td>
 </tr>
 <tr class="even">
-<td align="left">Windows X86 (32-bit)</td>
-<td align="left">Windows Server 2012 R2 x64</td>
-<td align="left">Microsoft Visual Studio C++ 2013 Professional Edition</td>
-<td align="left">2 or more</td>
-<td align="left">2 GB</td>
-<td align="left">6 GB</td>
+<td style="text-align: left;">Windows X86 (32-bit)</td>
+<td style="text-align: left;">Windows Server 2012 R2 x64</td>
+<td style="text-align: left;">Microsoft Visual Studio C++ 2013 Professional Edition</td>
+<td style="text-align: left;">2 or more</td>
+<td style="text-align: left;">2 GB</td>
+<td style="text-align: left;">6 GB</td>
 </tr>
 <tr class="odd">
-<td align="left">Windows X64 (64-bit)</td>
-<td align="left">Windows Server 2012 R2 x64</td>
-<td align="left">Microsoft Visual Studio C++ 2013 Professional Edition</td>
-<td align="left">2 or more</td>
-<td align="left">2 GB</td>
-<td align="left">6 GB</td>
+<td style="text-align: left;">Windows X64 (64-bit)</td>
+<td style="text-align: left;">Windows Server 2012 R2 x64</td>
+<td style="text-align: left;">Microsoft Visual Studio C++ 2013 Professional Edition</td>
+<td style="text-align: left;">2 or more</td>
+<td style="text-align: left;">2 GB</td>
+<td style="text-align: left;">6 GB</td>
 </tr>
 <tr class="even">
-<td align="left">Mac OS X X64 (64-bit)</td>
-<td align="left">Mac OS X 10.9 &quot;Mavericks&quot;</td>
-<td align="left">Xcode 6.3 or newer</td>
-<td align="left">2 or more</td>
-<td align="left">4 GB</td>
-<td align="left">6 GB</td>
+<td style="text-align: left;">Mac OS X X64 (64-bit)</td>
+<td style="text-align: left;">Mac OS X 10.9 &quot;Mavericks&quot;</td>
+<td style="text-align: left;">Xcode 6.3 or newer</td>
+<td style="text-align: left;">2 or more</td>
+<td style="text-align: left;">4 GB</td>
+<td style="text-align: left;">6 GB</td>
 </tr>
 </tbody>
 </table>
