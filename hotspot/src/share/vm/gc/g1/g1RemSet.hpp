@@ -197,7 +197,7 @@ class G1ScanRSClosure : public HeapRegionClosure {
   uint   _worker_i;
   size_t _block_size;
 
-  void scan_card(size_t index, HeapRegion *r);
+  void scan_card(size_t index, HeapWord* card_start, HeapRegion *r);
   void scan_strong_code_roots(HeapRegion* r);
 public:
   G1ScanRSClosure(G1RemSetScanState* scan_state,

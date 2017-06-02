@@ -72,32 +72,6 @@ class nmethod;
 // sentinel value for hrm_index
 #define G1_NO_HRM_INDEX ((uint) -1)
 
-// A dirty card to oop closure for heap regions. It
-// knows how to get the G1 heap and how to use the bitmap
-// in the concurrent marker used by G1 to filter remembered
-// sets.
-
-class HeapRegionDCTOC : public DirtyCardToOopClosure {
-private:
-  HeapRegion* _hr;
-  G1ParPushHeapRSClosure* _rs_scan;
-  G1CollectedHeap* _g1;
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-public:
-  HeapRegionDCTOC(G1CollectedHeap* g1,
-                  HeapRegion* hr,
-                  G1ParPushHeapRSClosure* cl,
-                  CardTableModRefBS::PrecisionStyle precision);
-};
-
 // The complicating factor is that BlockOffsetTable diverged
 // significantly, and we need functionality that is only in the G1 version.
 // So I copied that code, which led to an alternate G1 version of

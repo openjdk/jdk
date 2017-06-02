@@ -305,13 +305,8 @@ G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
   _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
 }
 
-void G1ScanRSClosure::scan_card(size_t index, HeapRegion *r) {
-  // Stack allocate the DirtyCardToOopClosure instance
-  HeapRegionDCTOC cl(_g1h, r, _push_heap_cl, CardTableModRefBS::Precise);
-
-  // Set the "from" region in the closure.
-  _push_heap_cl->set_region(r);
-  MemRegion card_region(_bot->address_for_index(index), BOTConstants::N_words);
+void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
+  MemRegion card_region(card_start, BOTConstants::N_words);
   MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
   MemRegion mr = pre_gc_allocated.intersection(card_region);
   if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
@@ -319,8 +314,9 @@ void G1ScanRSClosure::scan_card(size_t index, HeapRegion *r) {
     // but they're benign), which reduces the number of duplicate
     // scans (the rsets of the regions in the cset can intersect).
     _ct_bs->set_card_claimed(index);
+    _push_heap_cl->set_region(r);
+    r->oops_on_card_seq_iterate_careful<true>(mr, _push_heap_cl);
     _cards_done++;
-    cl.do_MemRegion(mr);
   }
 }
 
@@ -367,7 +363,7 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     // If the card is dirty, then we will scan it during updateRS.
     if (!card_region->in_collection_set() &&
         !_ct_bs->is_card_dirty(card_index)) {
-      scan_card(card_index, card_region);
+      scan_card(card_index, card_start, card_region);
     }
   }
   if (_scan_state->set_iter_complete(region_idx)) {
