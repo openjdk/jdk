@@ -134,10 +134,6 @@ inline RefToScanQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 
-inline bool G1CollectedHeap::isMarkedPrev(oop obj) const {
-  return _cm->prevMarkBitMap()->isMarked((HeapWord *)obj);
-}
-
 inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
   return _cm->nextMarkBitMap()->isMarked((HeapWord *)obj);
 }
