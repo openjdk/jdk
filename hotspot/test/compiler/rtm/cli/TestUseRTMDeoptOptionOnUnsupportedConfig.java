@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires !(vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os)
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,21 +40,14 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestUseRTMDeoptOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {
     private static final String DEFAULT_VALUE = "false";
 
     private TestUseRTMDeoptOptionOnUnsupportedConfig() {
-        super(new NotPredicate(
-                new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM())),
-                "UseRTMDeopt", true, false,
+        super("UseRTMDeopt", true, false,
                 TestUseRTMDeoptOptionOnUnsupportedConfig.DEFAULT_VALUE,
                 "true");
     }
@@ -77,6 +70,6 @@ public class TestUseRTMDeoptOptionOnUnsupportedConfig
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMDeoptOptionOnUnsupportedConfig().test();
+        new TestUseRTMDeoptOptionOnUnsupportedConfig().runTestCases();
     }
 }

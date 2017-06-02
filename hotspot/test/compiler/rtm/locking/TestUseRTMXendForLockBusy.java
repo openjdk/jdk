@@ -29,6 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -44,13 +45,9 @@ import compiler.testlibrary.rtm.BusyLock;
 import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -58,14 +55,9 @@ import java.util.List;
  * Test verifies that with +UseRTMXendForLockBusy there will be no aborts
  * forced by the test.
  */
-public class TestUseRTMXendForLockBusy extends CommandLineOptionTest {
+public class TestUseRTMXendForLockBusy {
     private final static int LOCKING_TIME = 5000;
 
-    private TestUseRTMXendForLockBusy() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         // inflated lock, xabort on lock busy
         verifyXendForLockBusy(true, false);
@@ -117,6 +109,6 @@ public class TestUseRTMXendForLockBusy extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMXendForLockBusy().test();
+        new TestUseRTMXendForLockBusy().runTestCases();
     }
 }
