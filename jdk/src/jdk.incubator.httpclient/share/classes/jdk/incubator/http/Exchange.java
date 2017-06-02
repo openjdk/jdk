@@ -33,7 +33,6 @@ import java.net.SocketPermission;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLPermission;
-import java.nio.ByteBuffer;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -76,9 +75,6 @@ final class Exchange<T> {
     boolean upgrading; // to HTTP/2
     final PushGroup<?,T> pushGroup;
 
-    // buffer for receiving response headers
-    private volatile ByteBuffer rxBuffer;
-
     Exchange(HttpRequestImpl request, MultiExchange<?,T> multi) {
         this.request = request;
         this.upgrading = false;
@@ -119,17 +115,6 @@ final class Exchange<T> {
 
     HttpClientImpl client() {
         return client;
-    }
-
-    ByteBuffer getBuffer() {
-        if(rxBuffer == null) {
-            synchronized (this) {
-                if(rxBuffer == null) {
-                    rxBuffer = Utils.getExchangeBuffer();
-                }
-            }
-        }
-        return rxBuffer;
     }
 
     public Response response() throws IOException, InterruptedException {

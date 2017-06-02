@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
 /* @test
  * @bug 8058779 8054307
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.RandomFactory
+ * @library /test/lib
  * @run testng LiteralReplace
  * @summary Basic tests of String.replace(CharSequence, CharSequence)
  * @key randomness
@@ -37,7 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Random;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
