@@ -376,10 +376,12 @@ class Assembler : public AbstractAssembler {
     STWX_OPCODE  = (31u << OPCODE_SHIFT | 151u << 1),
     STWU_OPCODE  = (37u << OPCODE_SHIFT),
     STWUX_OPCODE = (31u << OPCODE_SHIFT | 183u << 1),
+    STWBRX_OPCODE = (31u << OPCODE_SHIFT | 662u << 1),
 
     STH_OPCODE   = (44u << OPCODE_SHIFT),
     STHX_OPCODE  = (31u << OPCODE_SHIFT | 407u << 1),
     STHU_OPCODE  = (45u << OPCODE_SHIFT),
+    STHBRX_OPCODE = (31u << OPCODE_SHIFT | 918u << 1),
 
     STB_OPCODE   = (38u << OPCODE_SHIFT),
     STBX_OPCODE  = (31u << OPCODE_SHIFT | 215u << 1),
@@ -401,11 +403,13 @@ class Assembler : public AbstractAssembler {
     LD_OPCODE     = (58u << OPCODE_SHIFT |   0u << XO_30_31_SHIFT), // DS-FORM
     LDU_OPCODE    = (58u << OPCODE_SHIFT |   1u << XO_30_31_SHIFT), // DS-FORM
     LDX_OPCODE    = (31u << OPCODE_SHIFT |  21u << XO_21_30_SHIFT), // X-FORM
+    LDBRX_OPCODE  = (31u << OPCODE_SHIFT | 532u << 1),              // X-FORM
 
     STD_OPCODE    = (62u << OPCODE_SHIFT |   0u << XO_30_31_SHIFT), // DS-FORM
     STDU_OPCODE   = (62u << OPCODE_SHIFT |   1u << XO_30_31_SHIFT), // DS-FORM
-    STDUX_OPCODE  = (31u << OPCODE_SHIFT | 181u << 1),                  // X-FORM
+    STDUX_OPCODE  = (31u << OPCODE_SHIFT | 181u << 1),              // X-FORM
     STDX_OPCODE   = (31u << OPCODE_SHIFT | 149u << XO_21_30_SHIFT), // X-FORM
+    STDBRX_OPCODE = (31u << OPCODE_SHIFT | 660u << 1),              // X-FORM
 
     RLDICR_OPCODE = (30u << OPCODE_SHIFT |   1u << XO_27_29_SHIFT), // MD-FORM
     RLDICL_OPCODE = (30u << OPCODE_SHIFT |   0u << XO_27_29_SHIFT), // MD-FORM
@@ -1552,6 +1556,9 @@ class Assembler : public AbstractAssembler {
   inline void ld(   Register d, int si16,    Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
+  // 8 bytes reversed
+  inline void ldbrx( Register d, Register s1, Register s2);
+
   // For convenience. Load pointer into d from b+s1.
   inline void ld_ptr(Register d, int b, Register s1);
   DEBUG_ONLY(inline void ld_ptr(Register d, ByteSize b, Register s1);)
@@ -1560,10 +1567,12 @@ class Assembler : public AbstractAssembler {
   inline void stwx( Register d, Register s1, Register s2);
   inline void stw(  Register d, int si16,    Register s1);
   inline void stwu( Register d, int si16,    Register s1);
+  inline void stwbrx( Register d, Register s1, Register s2);
 
   inline void sthx( Register d, Register s1, Register s2);
   inline void sth(  Register d, int si16,    Register s1);
   inline void sthu( Register d, int si16,    Register s1);
+  inline void sthbrx( Register d, Register s1, Register s2);
 
   inline void stbx( Register d, Register s1, Register s2);
   inline void stb(  Register d, int si16,    Register s1);
@@ -1573,6 +1582,7 @@ class Assembler : public AbstractAssembler {
   inline void std(  Register d, int si16,    Register s1);
   inline void stdu( Register d, int si16,    Register s1);
   inline void stdux(Register s, Register a,  Register b);
+  inline void stdbrx( Register d, Register s1, Register s2);
 
   inline void st_ptr(Register d, int si16,    Register s1);
   DEBUG_ONLY(inline void st_ptr(Register d, ByteSize b, Register s1);)
@@ -2182,14 +2192,18 @@ class Assembler : public AbstractAssembler {
   inline void lbz(  Register d, int si16);
   inline void ldx(  Register d, Register s2);
   inline void ld(   Register d, int si16);
+  inline void ldbrx(Register d, Register s2);
   inline void stwx( Register d, Register s2);
   inline void stw(  Register d, int si16);
+  inline void stwbrx( Register d, Register s2);
   inline void sthx( Register d, Register s2);
   inline void sth(  Register d, int si16);
+  inline void sthbrx( Register d, Register s2);
   inline void stbx( Register d, Register s2);
   inline void stb(  Register d, int si16);
   inline void stdx( Register d, Register s2);
   inline void std(  Register d, int si16);
+  inline void stdbrx( Register d, Register s2);
 
   // PPC 2, section 3.2.1 Instruction Cache Instructions
   inline void icbi(    Register s2);
