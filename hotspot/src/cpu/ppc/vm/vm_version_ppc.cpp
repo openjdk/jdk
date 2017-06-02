@@ -111,7 +111,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -126,7 +126,9 @@ void VM_Version::initialize() {
                (has_vpmsumb() ? " vpmsumb" : ""),
                (has_tcheck()  ? " tcheck"  : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
-               (has_vsx()     ? " vsx"     : "")
+               (has_vsx()     ? " vsx"     : ""),
+               (has_ldbrx()   ? " ldbrx"   : ""),
+               (has_stdbrx()  ? " stdbrx"  : "")
                // Make sure number of %s matches num_features!
               );
   _features_string = os::strdup(buf);
@@ -663,6 +665,8 @@ void VM_Version::determine_features() {
   a->tcheck(0);                                // code[12] -> tcheck
   a->mfdscr(R0);                               // code[13] -> mfdscr
   a->lxvd2x(VSR0, R3_ARG1);                    // code[14] -> vsx
+  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[15] -> ldbrx
+  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[16] -> stdbrx
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -712,6 +716,8 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= tcheck_m;
   if (code[feature_cntr++]) features |= mfdscr_m;
   if (code[feature_cntr++]) features |= vsx_m;
+  if (code[feature_cntr++]) features |= ldbrx_m;
+  if (code[feature_cntr++]) features |= stdbrx_m;
 
   // Print the detection code.
   if (PrintAssembly) {
