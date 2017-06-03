@@ -23,6 +23,7 @@
 
 package sax;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 
@@ -69,7 +70,7 @@ public class Bug7057778Test {
     @Test
     public void testParse() {
         File src = new File(getClass().getResource(xml).getFile());
-        File dst = new File(xml1);
+        File dst = new File(USER_DIR + xml1);
         try {
             copyFile(src, dst);
             SAXParserFactory spf = SAXParserFactory.newInstance();

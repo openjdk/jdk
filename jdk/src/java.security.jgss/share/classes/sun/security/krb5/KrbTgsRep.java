@@ -88,7 +88,7 @@ public class KrbTgsRep extends KrbKdcRep {
 
         this.creds = new Credentials(rep.ticket,
                                 rep.cname,
-                                rep.ticket.sname,
+                                enc_part.sname,
                                 enc_part.key,
                                 enc_part.flags,
                                 enc_part.authtime,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -175,7 +176,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     protected void addOverviewHeader(Content body) {
     }
 
-    protected void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
+    protected void addModulesList(Collection<ModuleElement> modules, String text,
             String tableSummary, Content body) {
     }
 

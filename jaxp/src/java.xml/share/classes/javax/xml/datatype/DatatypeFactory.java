@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,14 +774,10 @@ public abstract class DatatypeFactory {
     /**
      * Create an {@code XMLGregorianCalendar} from a {@link GregorianCalendar}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Field by Field Conversion from
+     *          {@link GregorianCalendar} to an {@link XMLGregorianCalendar}</caption>
      *   <thead>
-     *     <tr>
-     *       <th align="center" colspan="2">
-     *          Field by Field Conversion from
-     *          {@link GregorianCalendar} to an {@link XMLGregorianCalendar}
-     *       </th>
-     *     </tr>
      *     <tr>
      *        <th>{@code java.util.GregorianCalendar} field</th>
      *        <th>{@code javax.xml.datatype.XMLGregorianCalendar} field</th>

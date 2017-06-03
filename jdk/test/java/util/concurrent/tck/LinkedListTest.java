@@ -40,7 +40,6 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class LinkedListTest extends JSR166TestCase {
     public static void main(String[] args) {
@@ -70,7 +69,7 @@ public class LinkedListTest extends JSR166TestCase {
      * Returns a new queue of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private LinkedList<Integer> populatedQueue(int n) {
+    private static LinkedList<Integer> populatedQueue(int n) {
         LinkedList<Integer> q = new LinkedList<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)

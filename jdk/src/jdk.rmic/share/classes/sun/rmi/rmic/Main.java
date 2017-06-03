@@ -145,12 +145,14 @@ public class Main implements sun.rmi.rmic.Constants {
          * in parseArgs, so that none of the arguments will be nulled
          * before delegating to the new implementation.
          */
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-Xnew")) {
-                return (new sun.rmi.rmic.newrmic.Main(out,
-                                                      program)).compile(argv);
-            }
-        }
+        // disable the -Xnew option as per JDK-8146299 and JDK-8145980
+        // to allow further discussion how to progress with this feature
+        //for (int i = 0; i < argv.length; i++) {
+        //    if (argv[i].equals("-Xnew")) {
+        //        return (new sun.rmi.rmic.newrmic.Main(out,
+        //                                              program)).compile(argv);
+        //    }
+        //}
 
         if (!parseArgs(argv)) {
             return false;

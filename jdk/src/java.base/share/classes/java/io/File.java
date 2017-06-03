@@ -113,7 +113,7 @@ import sun.security.action.GetPropertyAction;
  * operating system-specific portion of storage for a file system.  A single
  * storage device (e.g. a physical disk-drive, flash memory, CD-ROM) may
  * contain multiple partitions.  The object, if any, will reside on the
- * partition <a name="partName">named</a> by some ancestor of the absolute
+ * partition <a id="partName">named</a> by some ancestor of the absolute
  * form of this pathname.
  *
  * <p> A file system may implement restrictions to certain operations on the
@@ -922,6 +922,12 @@ public class File
      * access or the creation time are required, then the {@link
      * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
      * Files.readAttributes} method may be used.
+     *
+     * @apiNote
+     * While the unit of time of the return value is milliseconds,
+     * the granularity of the value depends on the underlying
+     * file system and may be larger.  For example, some
+     * file systems use time stamps in units of seconds.
      *
      * @return  A <code>long</code> value representing the time the file was
      *          last modified, measured in milliseconds since the epoch

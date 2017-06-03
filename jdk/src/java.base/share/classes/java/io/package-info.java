@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@
  *
  * <h2>Package Specification</h2>
  * <ul>
- *   <li><a href="../../../platform/serialization/spec/serialTOC.html"> Java Object Serialization Specification </a>
+ *   <li><a href="{@docRoot}/../specs/serialization/index.html">
+ *       Java Object Serialization Specification </a>
  * </ul>
  *
  * <h2>Related Documentation</h2>
@@ -41,7 +42,8 @@
  * For overviews, tutorials, examples, guides, and tool documentation,
  * please see:
  * <ul>
- *   <li><a href="../../../technotes/guides/serialization">Serialization Enhancements</a>
+ *     <li>{@extLink serialver_tool_reference The serialver tool}</li>
+ *     <li>{@extLink serialization_guide Serialization Documentation}</li>
  * </ul>
  *
  * @since 1.0
