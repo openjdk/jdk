@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,10 +303,11 @@ public abstract class HttpRequest {
         public abstract Builder expectContinue(boolean enable);
 
         /**
-         * Overrides the {@link HttpClient#version()  } setting for this
-         * request. This sets the version requested. The corresponding
-         * {@link HttpResponse} should be checked for the version that was
-         * used.
+         * Sets the preferred {@link HttpClient.Version} for this
+         * request. The corresponding {@link HttpResponse} should be checked
+         * for the version that was used. If the version is not set
+         * in a request, then the version requested will be that of the
+         * sending {@link HttpClient}.
          *
          * @param version the HTTP protocol version requested
          * @return this request builder
@@ -355,7 +356,7 @@ public abstract class HttpRequest {
          * of not setting a timeout is the same as setting an infinite Duration, ie.
          * block forever.
          *
-         * @param duration
+         * @param duration the timeout duration
          * @return this request builder
          */
         public abstract Builder timeout(Duration duration);
@@ -497,13 +498,16 @@ public abstract class HttpRequest {
     public abstract URI uri();
 
     /**
-     * Returns the HTTP protocol version that will be requested for this
-     * {@code HttpRequest}. The corresponding {@link HttpResponse} should be
+     * Returns an {@code Optional} containing the HTTP protocol version that
+     * will be requested for this {@code HttpRequest}. If the version was not
+     * set in the request's builder, then the {@code Optional} is empty.
+     * In that case, the version requested will be that of the sending
+     * {@link HttpClient}. The corresponding {@link HttpResponse} should be
      * queried to determine the version that was actually used.
      *
      * @return HTTP protocol version
      */
-    public abstract HttpClient.Version version();
+    public abstract Optional<HttpClient.Version> version();
 
     /**
      * The (user-accessible) request headers that this request was (or will be)

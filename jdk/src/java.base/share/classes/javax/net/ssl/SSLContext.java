@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ import sun.security.jca.GetInstance;
  * <li>{@code TLSv1.2}</li>
  * </ul>
  * These protocols are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
+ * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
  * SSLContext section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -147,9 +147,8 @@ public class SSLContext {
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
-     *          Java Cryptography Architecture Standard Algorithm Name
-     *          Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
+     *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard protocol names.
      *
      * @return the new {@code SSLContext} object
@@ -185,9 +184,8 @@ public class SSLContext {
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
-     *          Java Cryptography Architecture Standard Algorithm Name
-     *          Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
+     *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard protocol names.
      *
      * @param provider the name of the provider.
@@ -228,9 +226,8 @@ public class SSLContext {
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
-     *          Java Cryptography Architecture Standard Algorithm Name
-     *          Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
+     *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard protocol names.
      *
      * @param provider an instance of the provider.
