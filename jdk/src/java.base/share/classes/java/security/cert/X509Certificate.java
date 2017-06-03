@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,7 +647,7 @@ implements X509Extension {
         return X509CertImpl.getIssuerAlternativeNames(this);
     }
 
-     /**
+    /**
      * Verifies that this certificate was signed using the
      * private key that corresponds to the specified public key.
      * This method uses the signature verification engine
@@ -673,6 +673,16 @@ implements X509Extension {
     public void verify(PublicKey key, Provider sigProvider)
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException {
-        X509CertImpl.verify(this, key, sigProvider);
+        Signature sig = (sigProvider == null)
+            ? Signature.getInstance(getSigAlgName())
+            : Signature.getInstance(getSigAlgName(), sigProvider);
+        sig.initVerify(key);
+
+        byte[] tbsCert = getTBSCertificate();
+        sig.update(tbsCert, 0, tbsCert.length);
+
+        if (sig.verify(getSignature()) == false) {
+            throw new SignatureException("Signature does not match.");
+        }
     }
 }

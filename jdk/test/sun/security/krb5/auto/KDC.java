@@ -828,7 +828,9 @@ public class KDC {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
             }
             Ticket t = new Ticket(
-                    service,
+                    System.getProperty("test.kdc.diff.sname") != null ?
+                        new PrincipalName("xx" + service.toString()) :
+                        service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
             EncTGSRepPart enc_part = new EncTGSRepPart(

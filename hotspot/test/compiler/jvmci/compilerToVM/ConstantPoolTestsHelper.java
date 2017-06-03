@@ -206,7 +206,7 @@ public class ConstantPoolTestsHelper {
                                       "stringFieldEmpty",
                                       "Ljava/lang/String;",
                                       new byte[] {(byte) Opcodes.PUTFIELD | (byte) Opcodes.GETFIELD},
-                                      0L),
+                                      0),
                 }
         );
         CP_MAP_FOR_CLASS.put(CONSTANT_METHODREF,
@@ -362,7 +362,7 @@ public class ConstantPoolTestsHelper {
                                       "stringFieldEmpty",
                                       "Ljava/lang/String;",
                                       new byte[] {(byte) Opcodes.PUTFIELD | (byte) Opcodes.GETFIELD},
-                                      0L),
+                                      0),
                 }
         );
         CP_MAP_FOR_ABS_CLASS.put(CONSTANT_METHODREF,

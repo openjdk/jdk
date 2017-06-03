@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -866,7 +866,7 @@ public abstract class SSLEngine {
      * <P>
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation, and may also
      * include other cipher suites that the provider supports.
@@ -892,7 +892,7 @@ public abstract class SSLEngine {
      * <P>
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation, and may also
      * include other cipher suites that the provider supports.
@@ -914,7 +914,7 @@ public abstract class SSLEngine {
      * <P>
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation.  Providers
      * may support cipher suite names not found in this list or might not

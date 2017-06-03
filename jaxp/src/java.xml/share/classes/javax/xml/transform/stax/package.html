@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -23,48 +22,45 @@ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 or visit www.oracle.com if you need additional information or have any
 questions. 
-
 -->
 
 <!DOCTYPE html
-     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<head>
-		<title>javax.xml.transform.stax</title>
+    <head>
+        <title>javax.xml.transform.stax</title>
 
-		<meta name="CVS"
-			content="$Id: package.html,v 1.2 2005/11/03 19:34:28 jeffsuttor Exp $" />
-		<meta name="AUTHOR"
-			content="Jeff.Suttor@Sun.com" />
-		<meta name="AUTHOR"
-			content="Neeraj.Bajaj@Sun.com" />
-	</head>
-	<body>
-		<p>
-			Provides for StAX-specific transformation APIs.
-			TODO: better description(s).
-		</p>
+        <meta name="CVS"
+              content="$Id: package.html,v 1.2 2005/11/03 19:34:28 jeffsuttor Exp $" />
+        <meta name="AUTHOR"
+              content="Jeff.Suttor@Sun.com" />
+        <meta name="AUTHOR"
+              content="Neeraj.Bajaj@Sun.com" />
+    </head>
+    <body>
+        <p>
+            This package implements StAX-specific transformation APIs. It provides
+            classes which allow input from a StAX reader, that is, 
+            {@link javax.xml.stream.XMLStreamReader} or {@link javax.xml.stream.XMLEventReader}, 
+            and output to a StAX writer, that is, 
+            {@link javax.xml.stream.XMLStreamWriter} or {@link javax.xml.stream.XMLEventWriter}.
+        </p>
+        <p>
+            The {@link javax.xml.transform.stax.StAXSource} class encapsulates a 
+            {@link javax.xml.stream.XMLStreamReader} or {@link javax.xml.stream.XMLEventReader} 
+            and can be used as an input where a {@link javax.xml.transform.Source}
+            object is accepted.
+        </p>
+        <p>
+            The {@link javax.xml.transform.stax.StAXResult} class encapsulates a 
+            {@link javax.xml.stream.XMLStreamWriter} or {@link javax.xml.stream.XMLEventWriter} 
+            and can be used as an output where a {@link javax.xml.transform.Result}
+            object is accepted.
+        </p>
 
-		<h2>Package Specification</h2>
-		<ul>
-			<li><a href="http://jcp.org/en/jsr/detail?id=173">JSR 173: Streaming API for XML</a></li>
-		</ul>
-
-		<h2>Related Documentation</h2>
-
-		<p>For overviews, tutorials, examples, guides, and tool documentation, please see:</p>
-		<ul>
-			<li><a href="">TODO: Refer to non-spec documentation</a></li>
-		</ul>
-
-		<!-- Put @see and @since tags down here. -->
-		<ul>
-			<li>@see XMLStreamReader</li>
-			<li>@see XMLEventReader</li>
-		</ul>
-		
-		@since 1.6
-	</body>
+        @since 1.6
+    </body>
 </html>
+

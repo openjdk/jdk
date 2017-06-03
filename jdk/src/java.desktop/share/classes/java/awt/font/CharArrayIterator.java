@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class CharArrayIterator implements CharacterIterator {
      * Sets the position to getBeginIndex() and returns the character at that
      * position.
      * @return the first character in the text, or DONE if the text is empty
-     * @see getBeginIndex
+     * @see #getBeginIndex
      */
     public char first() {
 
@@ -59,7 +59,7 @@ class CharArrayIterator implements CharacterIterator {
      * Sets the position to getEndIndex()-1 (getEndIndex() if the text is empty)
      * and returns the character at that position.
      * @return the last character in the text, or DONE if the text is empty
-     * @see getEndIndex
+     * @see #getEndIndex
      */
     public char last() {
 
@@ -76,7 +76,7 @@ class CharArrayIterator implements CharacterIterator {
      * Gets the character at the current position (as returned by getIndex()).
      * @return the character at the current position or DONE if the current
      * position is off the end of the text.
-     * @see getIndex
+     * @see #getIndex
      */
     public char current() {
 

@@ -27,7 +27,7 @@
  * @summary Test that Open MBean attributes and parameters cannot have
  * illegal constraints like min greater than max
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean BadConstraintTest
  * @run build BadConstraintTest
  * @run main BadConstraintTest
