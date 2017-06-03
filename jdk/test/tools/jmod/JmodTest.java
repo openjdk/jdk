@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
  * @test
  * @bug 8142968 8166568 8166286 8170618 8168149
  * @summary Basic test for jmod
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build jdk.testlibrary.FileUtils CompilerUtils
+ * @build CompilerUtils
  * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 
@@ -40,9 +40,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -66,7 +65,7 @@ public class JmodTest {
 
     static final String CLASSES_PREFIX = "classes/";
     static final String CMDS_PREFIX = "bin/";
-    static final String LIBS_PREFIX = "native/";
+    static final String LIBS_PREFIX = "lib/";
     static final String CONFIGS_PREFIX = "conf/";
 
     @BeforeTest
@@ -393,16 +392,17 @@ public class JmodTest {
              MODS_DIR.resolve("describeFoo.jmod").toString())
              .assertSuccess()
              .resultChecker(r -> {
-                 // Expect similar output: "foo,  requires mandated java.base
-                 // exports jdk.test.foo,  contains jdk.test.foo.internal"
-                 Pattern p = Pattern.compile("\\s+foo\\s+requires\\s+mandated\\s+java.base");
+                 // Expect similar output: "foo... exports jdk.test.foo ...
+                 //   ... requires java.base mandated... contains jdk.test.foo.internal"
+                 Pattern p = Pattern.compile("foo\\s+exports\\s+jdk.test.foo");
                  assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"foo, requires java.base\"" +
+                           "Expecting to find \"foo... exports jdk.test.foo\"" +
                                 "in output, but did not: [" + r.output + "]");
                  p = Pattern.compile(
-                        "exports\\s+jdk.test.foo\\s+contains\\s+jdk.test.foo.internal");
+                        "requires\\s+java.base\\s+mandated\\s+contains\\s+jdk.test.foo.internal");
                  assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"exports ..., contains ...\"" +
+                           "Expecting to find \"requires java.base mandated..., " +
+                                "contains jdk.test.foo.internal ...\"" +
                                 "in output, but did not: [" + r.output + "]");
              });
     }

@@ -24,7 +24,6 @@
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassFileTransformer;
 
-import java.lang.reflect.Module;
 import java.security.*;
 
 /*

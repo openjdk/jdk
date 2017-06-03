@@ -64,7 +64,7 @@ package org.xml.sax.helpers;
  * @version 2.0.1 (sax2r2)
  */
 @SuppressWarnings( "deprecation" )
-@Deprecated(since="5")
+@Deprecated(since="1.5")
 public class ParserFactory {
     private static SecuritySupport ss = new SecuritySupport();
 

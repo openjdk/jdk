@@ -136,7 +136,7 @@ static NSObject *sAttributeNamesLOCK = nil;
         fJavaRole = [javaRole retain];
 
         fAccessible = (*env)->NewWeakGlobalRef(env, accessible);
-        
+        (*env)->ExceptionClear(env); // in case of OOME
         jobject jcomponent = [(AWTView *)fView awtComponent:env];
         fComponent = (*env)->NewWeakGlobalRef(env, jcomponent);
         (*env)->DeleteLocalRef(env, jcomponent);
