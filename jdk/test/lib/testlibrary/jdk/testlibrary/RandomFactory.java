@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,12 @@ import java.util.SplittableRandom;
  * Factory class which generates and prints to STDOUT a long-valued seed
  * for use in initializing a PRNG.  An instance of {@code Random} or
  * {@code SplittableRandom} may likewise be obtained.
+ *
+ * @deprecated  This class is deprecated. Use the one from
+ *              {@code <root>/test/lib/jdk/test/lib}
+ *
  */
+@Deprecated
 public class RandomFactory {
     /**
      * Attempt to obtain the seed from the value of the "seed" property.

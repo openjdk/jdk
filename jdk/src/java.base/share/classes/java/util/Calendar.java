@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2216,7 +2216,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                                    Locale locale, int fieldMask) {
         int baseStyle = getBaseStyle(style); // Ignore the standalone mask
         if (field < 0 || field >= fields.length ||
-            baseStyle < minStyle || baseStyle > maxStyle) {
+            baseStyle < minStyle || baseStyle > maxStyle || baseStyle == 3) {
             throw new IllegalArgumentException();
         }
         if (locale == null) {

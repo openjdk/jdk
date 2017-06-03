@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,21 @@
  * questions.
  */
 
-import java.nio.channels.AsynchronousChannelGroup;
-import java.util.concurrent.*;
-
-/**
- * Test that arbitrary tasks can be submitted to a channel group's thread pool.
+/*
+ * @test
+ * @bug 4607272
+ * @summary tests tasks can be submitted to a channel group's thread pool.
+ * @library /lib/testlibrary bootlib
+ * @build JarUtils PrivilegedThreadFactory Attack
+ * @run driver SetupJar
+ * @run main/othervm -Xbootclasspath/a:privileged.jar AsExecutor
  */
+
+import java.nio.channels.AsynchronousChannelGroup;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class AsExecutor {
 
