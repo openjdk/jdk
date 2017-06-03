@@ -33,6 +33,11 @@
  * @library /javax/net/ssl/templates
  * @summary Negotiated Finite Field Diffie-Hellman Ephemeral Parameters for TLS
  * @run main/othervm UseStrongDHSizes 2048
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe2048 UseStrongDHSizes 2048
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe3072 UseStrongDHSizes 2048
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe4096 UseStrongDHSizes 2048
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 2048
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 2048
  */
 
 import java.io.InputStream;
