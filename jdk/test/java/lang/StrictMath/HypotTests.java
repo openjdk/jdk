@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 4851638
  * @key randomness
  * @summary Tests for StrictMath.hypot
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.RandomFactory
+ * @library /test/lib
  * @build Tests
  * @build FdlibmTranslit
  * @build HypotTests
@@ -35,7 +34,7 @@
  * @author Joseph D. Darcy
  */
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 /**
  * The tests in ../Math/HypotTests.java test properties that should

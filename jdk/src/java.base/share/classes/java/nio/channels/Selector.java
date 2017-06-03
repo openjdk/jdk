@@ -42,7 +42,7 @@ import java.util.Set;
  * method of a custom selector provider.  A selector remains open until it is
  * closed via its {@link #close close} method.
  *
- * <a name="ks"></a>
+ * <a id="ks"></a>
  *
  * <p> A selectable channel's registration with a selector is represented by a
  * {@link SelectionKey} object.  A selector maintains three sets of selection
@@ -80,7 +80,7 @@ import java.util.Set;
  * during the next selection operation, at which time the key will removed from
  * all of the selector's key sets.
  *
- * <a name="sks"></a><p> Keys are added to the selected-key set by selection
+ * <a id="sks"></a><p> Keys are added to the selected-key set by selection
  * operations.  A key may be removed directly from the selected-key set by
  * invoking the set's {@link java.util.Set#remove(java.lang.Object) remove}
  * method or by invoking the {@link java.util.Iterator#remove() remove} method
@@ -90,7 +90,7 @@ import java.util.Set;
  * operations.  Keys may not be added directly to the selected-key set. </p>
  *
  *
- * <a name="selop"></a>
+ * <a id="selop"></a>
  * <h2>Selection</h2>
  *
  * <p> During each selection operation, keys may be added to and removed from a
@@ -183,7 +183,7 @@ import java.util.Set;
  * <p> The {@link #close close} method synchronizes on the selector and all
  * three key sets in the same order as in a selection operation.
  *
- * <a name="ksc"></a>
+ * <a id="ksc"></a>
  *
  * <p> A selector's key and selected-key sets are not, in general, safe for use
  * by multiple concurrent threads.  If such a thread might modify one of these

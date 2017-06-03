@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.regex.Pattern;
 
 import javax.lang.model.element.Name;
 import javax.tools.StandardLocation;
@@ -148,9 +147,15 @@ public class DocLint implements Plugin {
 
         JavacFileManager fm = new JavacFileManager(new Context(), false, null);
         fm.setSymbolFileEnabled(false);
-        fm.setLocation(StandardLocation.PLATFORM_CLASS_PATH, javacBootClassPath);
-        fm.setLocation(StandardLocation.CLASS_PATH, javacClassPath);
-        fm.setLocation(StandardLocation.SOURCE_PATH, javacSourcePath);
+        if (javacBootClassPath != null) {
+            fm.setLocation(StandardLocation.PLATFORM_CLASS_PATH, javacBootClassPath);
+        }
+        if (javacClassPath != null) {
+            fm.setLocation(StandardLocation.CLASS_PATH, javacClassPath);
+        }
+        if (javacSourcePath != null) {
+            fm.setLocation(StandardLocation.SOURCE_PATH, javacSourcePath);
+        }
 
         JavacTask task = tool.getTask(out, fm, null, javacOpts, null,
                 fm.getJavaFileObjectsFromFiles(javacFiles));

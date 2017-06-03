@@ -84,18 +84,18 @@ public class JStack {
             params = new String[0];
         }
         ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg);
-        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JStack.class);
+        Collection<String> pids = ap.getVirtualMachinePids(JStack.class);
 
-        if (vids.isEmpty()) {
+        if (pids.isEmpty()) {
             System.err.println("Could not find any processes matching : '" + pidArg + "'");
             System.exit(1);
         }
 
-        for (VirtualMachineDescriptor vid : vids) {
-            if (vids.size() > 1) {
-                System.out.println("Pid:" + vid.id());
+        for (String pid : pids) {
+            if (pids.size() > 1) {
+                System.out.println("Pid:" + pid);
             }
-            runThreadDump(vid.id(), params);
+            runThreadDump(pid, params);
         }
     }
 

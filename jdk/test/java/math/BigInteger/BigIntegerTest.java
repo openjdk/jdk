@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main BigIntegerTest
  * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
@@ -47,7 +46,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 /**
  * This is a simple test class created to ensure that the results
