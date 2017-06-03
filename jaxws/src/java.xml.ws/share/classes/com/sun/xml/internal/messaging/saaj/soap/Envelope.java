@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,25 @@ import javax.xml.transform.Source;
 public interface Envelope extends SOAPEnvelope {
     /**
      * Get the content as a JAXP Source.
+     *
+     * @return source
      */
     Source getContent();
 
     /**
      * Output the content.
+     *
+     * @param out output stream.
+     * @exception IOException in case of an I/O error.
      */
     void output(OutputStream out) throws IOException;
 
     /**
      * Output the content.
+     *
+     * @param out output stream
+     * @param isFastInfoset true if it is fast infoset.
+     * @exception IOException in case of an I/O error.
      */
     void output(OutputStream out, boolean isFastInfoset) throws IOException;
 

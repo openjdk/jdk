@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import javax.net.ssl.*;
  *      explicitly support.
  *  . ServerNameExtension: the server_name extension.
  *  . SignatureAlgorithmsExtension: the signature_algorithms extension.
- *  . EllipticCurvesExtension: the ECC supported curves extension.
+ *  . SupportedGroupsExtension: the supported groups extension.
  *  . EllipticPointFormatsExtension: the ECC supported point formats
  *      (compressed/uncompressed) extension.
  *  . ALPNExtension: the application_layer_protocol_negotiation extension.
@@ -79,8 +79,8 @@ final class HelloExtensions {
                 extension = new ServerNameExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_SIGNATURE_ALGORITHMS) {
                 extension = new SignatureAlgorithmsExtension(s, extlen);
-            } else if (extType == ExtensionType.EXT_ELLIPTIC_CURVES) {
-                extension = new EllipticCurvesExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_SUPPORTED_GROUPS) {
+                extension = new SupportedGroupsExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_EC_POINT_FORMATS) {
                 extension = new EllipticPointFormatsExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_RENEGOTIATION_INFO) {

@@ -27,8 +27,6 @@ package jdk.internal.loader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -62,8 +60,7 @@ public class BootLoader {
     private static final String JAVA_HOME = System.getProperty("java.home");
 
     static {
-        UNNAMED_MODULE
-            = SharedSecrets.getJavaLangReflectModuleAccess().defineUnnamedModule(null);
+        UNNAMED_MODULE = SharedSecrets.getJavaLangAccess().defineUnnamedModule(null);
         setBootLoaderUnnamedModule0(UNNAMED_MODULE);
     }
 
@@ -93,6 +90,14 @@ public class BootLoader {
      */
     public static ConcurrentHashMap<?, ?> getClassLoaderValueMap() {
         return CLASS_LOADER_VALUE_MAP;
+    }
+
+    /**
+     * Returns {@code true} if there is a class path associated with the
+     * BootLoader.
+     */
+    public static boolean hasClassPath() {
+        return ClassLoaders.bootLoader().hasClassPath();
     }
 
     /**
@@ -247,7 +252,7 @@ public class BootLoader {
 
             if (mn != null) {
                 // named module from runtime image or exploded module
-                Optional<Module> om = Layer.boot().findModule(mn);
+                Optional<Module> om = ModuleLayer.boot().findModule(mn);
                 if (!om.isPresent())
                     throw new InternalError(mn + " not in boot layer");
                 return om.get();

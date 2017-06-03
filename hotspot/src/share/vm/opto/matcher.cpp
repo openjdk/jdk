@@ -1000,7 +1000,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (C->failing())  return NULL;
             if (m == NULL) { Matcher::soft_match_failure(); return NULL; }
           } else {                  // Nothing the matcher cares about
-            if( n->is_Proj() && n->in(0)->is_Multi()) {       // Projections?
+            if (n->is_Proj() && n->in(0) != NULL && n->in(0)->is_Multi()) {       // Projections?
               // Convert to machine-dependent projection
               m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
 #ifdef ASSERT
@@ -1645,6 +1645,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
 
   // Build the object to represent this state & prepare for recursive calls
   MachNode *mach = s->MachNodeGenerator(rule);
+  guarantee(mach != NULL, "Missing MachNode");
   mach->_opnds[0] = s->MachOperGenerator(_reduceOp[rule]);
   assert( mach->_opnds[0] != NULL, "Missing result operand" );
   Node *leaf = s->_leaf;
