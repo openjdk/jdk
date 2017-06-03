@@ -30,10 +30,9 @@
  * @run main PatchModule2Dirs
  */
 
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import java.io.File;
 
 public class PatchModule2Dirs {
 

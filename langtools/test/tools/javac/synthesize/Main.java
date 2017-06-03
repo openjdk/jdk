@@ -92,12 +92,17 @@ public class Main
         File empty = new File("empty");
         empty.mkdirs();
 
+        // files to compile are in a separate directory from test to avoid
+        // confusing jtreg
+        File src = new File(testSrc, "src");
+
         List<String> args = new ArrayList<String>();
         args.add("-classpath");
         args.add("empty");
 
         if (stdBootClassPath) {
-            args.add("-Xmodule:java.base");
+            args.add("--patch-module");
+            args.add("java.base=" + testSrc.getAbsolutePath());
         } else {
             args.add("--system");
             args.add("none");
@@ -108,9 +113,6 @@ public class Main
         args.add("-d");
         args.add(".");
 
-        // files to compile are in a separate directory from test to avoid
-        // confusing jtreg
-        File src = new File(testSrc, "src");
         for (String f: files)
             args.add(new File(src, f).getPath());
 
