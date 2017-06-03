@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -35,6 +35,7 @@
  * @run testng/timeout=600 ToolBasicTest
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -189,8 +190,8 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testRerun() {
         test(false, new String[] {"--no-startup"},
-                (a) -> assertCommand(a, "/0", "|  No such command or snippet id: /0\n|  Type /help for help."),
-                (a) -> assertCommand(a, "/5", "|  No such command or snippet id: /5\n|  Type /help for help.")
+                (a) -> assertCommand(a, "/0", "|  No snippet with id: 0"),
+                (a) -> assertCommand(a, "/5", "|  No snippet with id: 5")
         );
         String[] codes = new String[] {
                 "int a = 0;", // var
@@ -251,9 +252,9 @@ public class ToolBasicTest extends ReplToolTesting {
         );
 
         test(false, new String[] {"--no-startup"},
-                (a) -> assertCommand(a, "/s1", "|  No such command or snippet id: /s1\n|  Type /help for help."),
-                (a) -> assertCommand(a, "/1", "|  No such command or snippet id: /1\n|  Type /help for help."),
-                (a) -> assertCommand(a, "/e1", "|  No such command or snippet id: /e1\n|  Type /help for help.")
+                (a) -> assertCommand(a, "/s1", "|  No snippet with id: s1"),
+                (a) -> assertCommand(a, "/1", "|  No snippet with id: 1"),
+                (a) -> assertCommand(a, "/e1", "|  No snippet with id: e1")
         );
     }
 
@@ -272,20 +273,81 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
-    public void testClasspathJar() {
+    public void testEnvInStartUp() {
+        Compiler compiler = new Compiler();
+        Path outDir = Paths.get("testClasspathDirectory");
+        compiler.compile(outDir, "package pkg; public class A { public String toString() { return \"A\"; } }");
+        Path classpath = compiler.getPath(outDir);
+        Path sup = compiler.getPath("startup.jsh");
+        compiler.writeToFile(sup,
+                "int xxx;\n" +
+                "/env -class-path " + classpath + "\n" +
+                "int aaa = 735;\n"
+        );
+        test(
+                (a) -> assertCommand(a, "/set start -retain " + sup, ""),
+                (a) -> assertCommand(a, "/reset",
+                        "|  Resetting state."),
+                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A"),
+                (a) -> assertCommand(a, "aaa", "aaa ==> 735")
+        );
+        test(
+                (a) -> assertCommandOutputContains(a, "/env", "--class-path"),
+                (a) -> assertCommandOutputContains(a, "xxx", "cannot find symbol", "variable xxx"),
+                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A"),
+                (a) -> assertCommand(a, "aaa", "aaa ==> 735")
+        );
+    }
+
+    private String makeSimpleJar() {
         Compiler compiler = new Compiler();
         Path outDir = Paths.get("testClasspathJar");
         compiler.compile(outDir, "package pkg; public class A { public String toString() { return \"A\"; } }");
         String jarName = "test.jar";
         compiler.jar(outDir, jarName, "pkg/A.class");
-        Path jarPath = compiler.getPath(outDir).resolve(jarName);
+        return compiler.getPath(outDir).resolve(jarName).toString();
+    }
+
+    public void testClasspathJar() {
+        String jarPath = makeSimpleJar();
         test(
                 (a) -> assertCommand(a, "/env --class-path " + jarPath,
                         "|  Setting new options and restoring state."),
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
-        test(new String[] { "--class-path", jarPath.toString() },
+        test(new String[] { "--class-path", jarPath },
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
+        );
+    }
+
+    public void testClasspathUserHomeExpansion() {
+        String jarPath = makeSimpleJar();
+        String tilde = "~" + File.separator;
+        test(
+                (a) -> assertCommand(a, "/env --class-path " + tilde + "forblato",
+                        "|  File '" + System.getProperty("user.home") + File.separator
+                                + "forblato' for '--class-path' is not found."),
+                (a) -> assertCommand(a, "/env --class-path " + jarPath + File.pathSeparator
+                                                            + tilde + "forblato",
+                        "|  File '" + System.getProperty("user.home") + File.separator
+                                + "forblato' for '--class-path' is not found.")
+        );
+    }
+
+    public void testBadClasspath() {
+        String jarPath = makeSimpleJar();
+        Compiler compiler = new Compiler();
+        Path t1 = compiler.getPath("whatever/thing.zip");
+        compiler.writeToFile(t1, "");
+        Path t2 = compiler.getPath("whatever/thing.jmod");
+        compiler.writeToFile(t2, "");
+        test(
+                (a) -> assertCommand(a, "/env --class-path " + t1.toString(),
+                        "|  Invalid '--class-path' argument: " + t1.toString()),
+                (a) -> assertCommand(a, "/env --class-path " + jarPath + File.pathSeparator + t1.toString(),
+                        "|  Invalid '--class-path' argument: " + t1.toString()),
+                (a) -> assertCommand(a, "/env --class-path " + t2.toString(),
+                        "|  Invalid '--class-path' argument: " + t2.toString())
         );
     }
 
@@ -301,6 +363,25 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> evaluateExpression(a, "String",
                         "String.format(\"Greetings %s!\", World.name());",
                         "\"Greetings world!\"")
+        );
+    }
+
+    public void testModulePathUserHomeExpansion() {
+        String tilde = "~" + File.separatorChar;
+        test(
+                (a) -> assertCommand(a, "/env --module-path " + tilde + "snardugol",
+                        "|  File '" + System.getProperty("user.home")
+                                + File.separatorChar + "snardugol' for '--module-path' is not found.")
+        );
+    }
+
+    public void testBadModulePath() {
+        Compiler compiler = new Compiler();
+        Path t1 = compiler.getPath("whatever/thing.zip");
+        compiler.writeToFile(t1, "");
+        test(
+                (a) -> assertCommand(a, "/env --module-path " + t1.toString(),
+                        "|  Invalid '--module-path' argument: " + t1.toString())
         );
     }
 
@@ -400,17 +481,19 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testSave() throws IOException {
         Compiler compiler = new Compiler();
         Path path = compiler.getPath("testSave.repl");
-        List<String> list = Arrays.asList(
-                "int a;",
-                "class A { public String toString() { return \"A\"; } }"
-        );
-        test(
-                (a) -> assertVariable(a, "int", "a"),
-                (a) -> assertCommand(a, "()", null, null, null, "", ""),
-                (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
-                (a) -> assertCommand(a, "/save " + path.toString(), "")
-        );
-        assertEquals(Files.readAllLines(path), list);
+        {
+            List<String> list = Arrays.asList(
+                    "int a;",
+                    "class A { public String toString() { return \"A\"; } }"
+            );
+            test(
+                    (a) -> assertVariable(a, "int", "a"),
+                    (a) -> assertCommand(a, "()", null, null, null, "", ""),
+                    (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
+                    (a) -> assertCommand(a, "/save " + path.toString(), "")
+            );
+            assertEquals(Files.readAllLines(path), list);
+        }
         {
             List<String> output = new ArrayList<>();
             test(
@@ -418,28 +501,47 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "()", null, null, null, "", ""),
                     (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
                     (a) -> assertCommandCheckOutput(a, "/list -all", (out) ->
-                            output.addAll(Stream.of(out.split("\n"))
-                                    .filter(str -> !str.isEmpty())
-                                    .map(str -> str.substring(str.indexOf(':') + 2))
-                                    .filter(str -> !str.startsWith("/"))
-                                    .collect(Collectors.toList()))),
+                                    output.addAll(Stream.of(out.split("\n"))
+                            .filter(str -> !str.isEmpty())
+                            .map(str -> str.substring(str.indexOf(':') + 2))
+                            .filter(str -> !str.startsWith("/"))
+                            .collect(Collectors.toList()))),
                     (a) -> assertCommand(a, "/save -all " + path.toString(), "")
             );
             assertEquals(Files.readAllLines(path), output);
         }
-        List<String> output = new ArrayList<>();
-        test(
-                (a) -> assertVariable(a, "int", "a"),
-                (a) -> assertCommand(a, "()", null, null, null, "", ""),
-                (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
-                (a) -> assertCommandCheckOutput(a, "/history", (out) ->
-                        output.addAll(Stream.of(out.split("\n"))
-                                .filter(str -> !str.isEmpty())
-                                .collect(Collectors.toList()))),
-                (a) -> assertCommand(a, "/save -history " + path.toString(), "")
-        );
-        output.add("/save -history " + path.toString());
-        assertEquals(Files.readAllLines(path), output);
+        {
+            List<String> output = new ArrayList<>();
+            test(
+                    (a) -> assertCommand(a, "int a;", null),
+                    (a) -> assertCommand(a, "int b;", null),
+                    (a) -> assertCommand(a, "int c;", null),
+                    (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
+                    (a) -> assertCommandCheckOutput(a, "/list b c a A", (out) ->
+                                    output.addAll(Stream.of(out.split("\n"))
+                            .filter(str -> !str.isEmpty())
+                            .map(str -> str.substring(str.indexOf(':') + 2))
+                            .filter(str -> !str.startsWith("/"))
+                            .collect(Collectors.toList()))),
+                    (a) -> assertCommand(a, "/save 2-3 1 4 " + path.toString(), "")
+            );
+            assertEquals(Files.readAllLines(path), output);
+        }
+        {
+            List<String> output = new ArrayList<>();
+            test(
+                    (a) -> assertVariable(a, "int", "a"),
+                    (a) -> assertCommand(a, "()", null, null, null, "", ""),
+                    (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
+                    (a) -> assertCommandCheckOutput(a, "/history", (out) ->
+                                output.addAll(Stream.of(out.split("\n"))
+                            .filter(str -> !str.isEmpty())
+                            .collect(Collectors.toList()))),
+                    (a) -> assertCommand(a, "/save -history " + path.toString(), "")
+            );
+            output.add("/save -history " + path.toString());
+            assertEquals(Files.readAllLines(path), output);
+        }
     }
 
     public void testStartRetain() {
@@ -568,6 +670,64 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertCommand(a, "/!", "System.err.println(2)", "", null, "", "2\n"),
                 a -> assertCommand(a, "/2", "System.err.println(2)", "", null, "", "2\n"),
                 a -> assertCommand(a, "/1", "System.err.println(1)", "", null, "", "1\n")
+        );
+    }
+
+    public void testRerunIdRange() {
+        Compiler compiler = new Compiler();
+        Path startup = compiler.getPath("rangeStartup");
+        String[] startupSources = new String[] {
+            "boolean go = false",
+            "void println(String s) { if (go) System.out.println(s); }",
+            "void println(int i) { if (go) System.out.println(i); }",
+            "println(\"s4\")",
+            "println(\"s5\")",
+            "println(\"s6\")"
+        };
+        String[] sources = new String[] {
+            "frog",
+            "go = true",
+            "println(2)",
+            "println(3)",
+            "println(4)",
+            "querty"
+        };
+        compiler.writeToFile(startup, startupSources);
+        test(false, new String[]{"--startup", startup.toString()},
+                a -> assertCommandOutputStartsWith(a, sources[0], "|  Error:"),
+                a -> assertCommand(a, sources[1], "go ==> true", "", null, "", ""),
+                a -> assertCommand(a, sources[2], "", "", null, "2\n", ""),
+                a -> assertCommand(a, sources[3], "", "", null, "3\n", ""),
+                a -> assertCommand(a, sources[4], "", "", null, "4\n", ""),
+                a -> assertCommandOutputStartsWith(a, sources[5], "|  Error:"),
+                a -> assertCommand(a, "/3", "println(3)", "", null, "3\n", ""),
+                a -> assertCommand(a, "/s4", "println(\"s4\")", "", null, "s4\n", ""),
+                a -> assertCommandOutputStartsWith(a, "/e1", "frog\n|  Error:"),
+                a -> assertCommand(a, "/2-4",
+                        "println(2)\nprintln(3)\nprintln(4)",
+                        "", null, "2\n3\n4\n", ""),
+                a -> assertCommand(a, "/s4-s6",
+                        startupSources[3] + "\n" +startupSources[4] + "\n" +startupSources[5],
+                        "", null, "s4\ns5\ns6\n", ""),
+                a -> assertCommand(a, "/s4-4", null,
+                        "", null, "s4\ns5\ns6\n2\n3\n4\n", ""),
+                a -> assertCommandCheckOutput(a, "/e1-e2",
+                        s -> {
+                            assertTrue(s.trim().startsWith("frog\n|  Error:"),
+                                    "Output: \'" + s + "' does not start with: " + "|  Error:");
+                            assertTrue(s.trim().lastIndexOf("|  Error:") > 10,
+                                    "Output: \'" + s + "' does not have second: " + "|  Error:");
+                        }),
+                a -> assertCommand(a, "/4  s4 2",
+                        "println(4)\nprintln(\"s4\")\nprintln(2)",
+                        "", null, "4\ns4\n2\n", ""),
+                a -> assertCommand(a, "/s5 2-4 3",
+                        "println(\"s5\")\nprintln(2)\nprintln(3)\nprintln(4)\nprintln(3)",
+                        "", null, "s5\n2\n3\n4\n3\n", ""),
+                a -> assertCommand(a, "/2 ff", "|  No such snippet: ff"),
+                a -> assertCommand(a, "/4-2", "|  End of snippet range less than start: 4 - 2"),
+                a -> assertCommand(a, "/s5-s3", "|  End of snippet range less than start: s5 - s3"),
+                a -> assertCommand(a, "/4-s5", "|  End of snippet range less than start: 4 - s5")
         );
     }
 

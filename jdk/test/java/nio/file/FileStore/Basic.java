@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
 /* @test
  * @bug 4313887 6873621 6979526 7006126 7020517
  * @summary Unit test for java.nio.file.FileStore
- * @library ..
  * @key intermittent
+ * @library .. /test/lib
+ * @run main Basic
  */
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+
+import jdk.test.lib.util.FileUtils;
+
 
 public class Basic {
 
@@ -110,31 +113,36 @@ public class Basic {
         /**
          * Test: Enumerate all FileStores
          */
-        FileStore prev = null;
-        for (FileStore store: FileSystems.getDefault().getFileStores()) {
-            System.out.format("%s (name=%s type=%s)\n", store, store.name(),
-                store.type());
+        if (FileUtils.areFileSystemsAccessible()) {
+            FileStore prev = null;
+            for (FileStore store: FileSystems.getDefault().getFileStores()) {
+                System.out.format("%s (name=%s type=%s)\n", store, store.name(),
+                    store.type());
 
-            // check space attributes are accessible
-            try {
-                store.getTotalSpace();
-                store.getUnallocatedSpace();
-                store.getUsableSpace();
-            } catch (NoSuchFileException nsfe) {
-                // ignore exception as the store could have been
-                // deleted since the iterator was instantiated
-                System.err.format("%s was not found\n", store);
-            } catch (AccessDeniedException ade) {
-                // ignore exception as the lack of ability to access the
-                // store due to lack of file permission or similar does not
-                // reflect whether the space attributes would be accessible
-                // were access to be permitted
-                System.err.format("%s is inaccessible\n", store);
+                // check space attributes are accessible
+                try {
+                    store.getTotalSpace();
+                    store.getUnallocatedSpace();
+                    store.getUsableSpace();
+                } catch (NoSuchFileException nsfe) {
+                    // ignore exception as the store could have been
+                    // deleted since the iterator was instantiated
+                    System.err.format("%s was not found\n", store);
+                } catch (AccessDeniedException ade) {
+                    // ignore exception as the lack of ability to access the
+                    // store due to lack of file permission or similar does not
+                    // reflect whether the space attributes would be accessible
+                    // were access to be permitted
+                    System.err.format("%s is inaccessible\n", store);
+                }
+
+                // two distinct FileStores should not be equal
+                assertTrue(!store.equals(prev));
+                prev = store;
             }
-
-            // two distinct FileStores should not be equal
-            assertTrue(!store.equals(prev));
-            prev = store;
+        } else {
+            System.err.println
+                ("Skipping FileStore check due to file system access failure");
         }
     }
 }

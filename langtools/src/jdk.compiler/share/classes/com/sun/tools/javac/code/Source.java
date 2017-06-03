@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,11 @@ public enum Source {
     /** 1.8 lambda expressions and default methods. */
     JDK1_8("1.8"),
 
-    /** 1.9 covers the to be determined language features that will be added in JDK 9. */
-    JDK1_9("1.9");
+    /** 1.9 modularity. */
+    JDK1_9("1.9"),
+
+    /** 1.10 covers the to be determined language features that will be added in JDK 10. */
+    JDK1_10("1.10");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -99,6 +102,7 @@ public enum Source {
         tab.put("7", JDK1_7); // Make 7 an alias for 1.7
         tab.put("8", JDK1_8); // Make 8 an alias for 1.8
         tab.put("9", JDK1_9); // Make 9 an alias for 1.9
+        tab.put("10", JDK1_10); // Make 10 an alias for 1.10
     }
 
     private Source(String name) {
@@ -116,6 +120,7 @@ public enum Source {
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK1_10) >= 0) return Target.JDK1_10;
         if (this.compareTo(JDK1_9) >= 0) return Target.JDK1_9;
         if (this.compareTo(JDK1_8) >= 0) return Target.JDK1_8;
         if (this.compareTo(JDK1_7) >= 0) return Target.JDK1_7;
@@ -240,6 +245,8 @@ public enum Source {
             return RELEASE_8;
         case JDK1_9:
             return RELEASE_9;
+        case JDK1_10:
+            return RELEASE_10;
         default:
             return null;
         }

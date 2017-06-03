@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.incubator.http.internal.websocket;
 
 import jdk.incubator.http.WebSocket;
+import jdk.incubator.http.internal.common.Log;
 import jdk.incubator.http.internal.common.Pair;
 import jdk.incubator.http.internal.websocket.OpeningHandshake.Result;
 import jdk.incubator.http.internal.websocket.OutgoingMessage.Binary;
@@ -47,21 +48,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.lang.System.Logger.Level.ERROR;
-import static java.lang.System.Logger.Level.TRACE;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.failedFuture;
 import static jdk.incubator.http.internal.common.Pair.pair;
+import static jdk.incubator.http.internal.websocket.StatusCodes.CLOSED_ABNORMALLY;
 import static jdk.incubator.http.internal.websocket.StatusCodes.NO_STATUS_CODE;
-import static jdk.incubator.http.internal.websocket.StatusCodes.TLS_HANDSHAKE_FAILURE;
-import static jdk.incubator.http.internal.websocket.StatusCodes.checkOutgoingCode;
+import static jdk.incubator.http.internal.websocket.StatusCodes.isLegalToSendFromClient;
 
 /*
  * A WebSocket client.
  */
 final class WebSocketImpl implements WebSocket {
-
-    static final System.Logger logger = System.getLogger("jdk.httpclient.WebSocket");
 
     private final URI uri;
     private final String subprotocol;
@@ -77,8 +74,8 @@ final class WebSocketImpl implements WebSocket {
     private final AtomicBoolean outstandingSend = new AtomicBoolean();
     private final CooperativeHandler sendHandler =
               new CooperativeHandler(this::sendFirst);
-    private final Queue<Pair<OutgoingMessage, Consumer<Exception>>> queue =
-              new ConcurrentLinkedQueue<>();
+    private final Queue<Pair<OutgoingMessage, CompletableFuture<WebSocket>>>
+            queue = new ConcurrentLinkedQueue<>();
     private final Context context = new OutgoingMessage.Context();
     private final Transmitter transmitter;
     private final Receiver receiver;
@@ -113,6 +110,9 @@ final class WebSocketImpl implements WebSocket {
                                                  r.subprotocol,
                                                  r.channel,
                                                  b.getListener());
+            // The order of calls might cause a subtle effects, like CF will be
+            // returned from the buildAsync _after_ onOpen has been signalled.
+            // This means if onOpen is lengthy, it might cause some problems.
             ws.signalOpen();
             return ws;
         };
@@ -128,7 +128,8 @@ final class WebSocketImpl implements WebSocket {
     WebSocketImpl(URI uri,
                   String subprotocol,
                   RawChannel channel,
-                  Listener listener) {
+                  Listener listener)
+    {
         this.uri = requireNonNull(uri);
         this.subprotocol = requireNonNull(subprotocol);
         this.channel = requireNonNull(channel);
@@ -142,7 +143,7 @@ final class WebSocketImpl implements WebSocket {
                     try {
                         channel.close();
                     } catch (IOException e) {
-                        logger.log(ERROR, e);
+                        Log.logError(e);
                     } finally {
                         closed.set(true);
                     }
@@ -168,14 +169,14 @@ final class WebSocketImpl implements WebSocket {
     private void signalError(Throwable error) {
         synchronized (lock) {
             if (lastMethodInvoked) {
-                logger.log(ERROR, error);
+                Log.logError(error);
             } else {
                 lastMethodInvoked = true;
                 receiver.close();
                 try {
                     listener.onError(this, error);
                 } catch (Exception e) {
-                    logger.log(ERROR, e);
+                    Log.logError(e);
                 }
             }
         }
@@ -185,15 +186,17 @@ final class WebSocketImpl implements WebSocket {
      * Processes a Close event that came from the channel. Invoked at most once.
      */
     private void processClose(int statusCode, String reason) {
-        assert statusCode != TLS_HANDSHAKE_FAILURE; // TLS problems happen long before WebSocket is alive
         receiver.close();
         try {
             channel.shutdownInput();
         } catch (IOException e) {
-            logger.log(ERROR, e);
+            Log.logError(e);
         }
-        boolean wasComplete = !closeReceived.complete(null);
-        if (wasComplete) {
+        boolean alreadyCompleted = !closeReceived.complete(null);
+        if (alreadyCompleted) {
+            // This CF is supposed to be completed only once, the first time a
+            // Close message is received. No further messages are pulled from
+            // the socket.
             throw new InternalError();
         }
         int code;
@@ -210,7 +213,7 @@ final class WebSocketImpl implements WebSocket {
             enqueueClose(new Close(code, ""))
                     .whenComplete((r1, error1) -> {
                         if (error1 != null) {
-                            logger.log(ERROR, error1);
+                            Log.logError(error1);
                         }
                     });
         });
@@ -223,14 +226,14 @@ final class WebSocketImpl implements WebSocket {
     private CompletionStage<?> signalClose(int statusCode, String reason) {
         synchronized (lock) {
             if (lastMethodInvoked) {
-                logger.log(TRACE, "Close: {0}, ''{1}''", statusCode, reason);
+                Log.logTrace("Close: {0}, ''{1}''", statusCode, reason);
             } else {
                 lastMethodInvoked = true;
                 receiver.close();
                 try {
                     return listener.onClose(this, statusCode, reason);
                 } catch (Exception e) {
-                    logger.log(ERROR, e);
+                    Log.logError(e);
                 }
             }
         }
@@ -264,19 +267,17 @@ final class WebSocketImpl implements WebSocket {
     @Override
     public CompletableFuture<WebSocket> sendClose(int statusCode,
                                                   String reason) {
-        try {
-            checkOutgoingCode(statusCode);
-        } catch (CheckFailedException e) {
-            IllegalArgumentException ex = new IllegalArgumentException(
-                    "Bad status code: " + statusCode, e);
-            failedFuture(ex);
+        if (!isLegalToSendFromClient(statusCode)) {
+            return failedFuture(
+                    new IllegalArgumentException("statusCode: " + statusCode));
         }
-        return enqueueClose(new Close(statusCode, reason));
-    }
-
-    @Override
-    public CompletableFuture<WebSocket> sendClose() {
-        return enqueueClose(new Close());
+        Close msg;
+        try {
+            msg = new Close(statusCode, reason);
+        } catch (IllegalArgumentException e) {
+            return failedFuture(e);
+        }
+        return enqueueClose(msg);
     }
 
     /*
@@ -289,10 +290,10 @@ final class WebSocketImpl implements WebSocket {
             try {
                 channel.shutdownOutput();
             } catch (IOException e) {
-                logger.log(ERROR, e);
+                Log.logError(e);
             }
-            boolean wasComplete = !closeSent.complete(null);
-            if (wasComplete) {
+            boolean alreadyCompleted = !closeSent.complete(null);
+            if (alreadyCompleted) {
                 // Shouldn't happen as this callback must run at most once
                 throw new InternalError();
             }
@@ -319,40 +320,41 @@ final class WebSocketImpl implements WebSocket {
 
     private CompletableFuture<WebSocket> enqueue(OutgoingMessage m) {
         CompletableFuture<WebSocket> cf = new CompletableFuture<>();
-        Consumer<Exception> h = e -> {
-            if (e == null) {
-                cf.complete(WebSocketImpl.this);
-                sendHandler.startOrContinue();
-            } else {
-
-//                what if this is not a users message? (must be different entry points for different messages)
-
-                // TODO: think about correct behaviour in the face of error in
-                // the queue, for now it seems like the best solution is to
-                // deliver the error and stop
-                cf.completeExceptionally(e);
-            }
-        };
-        queue.add(pair(m, h)); // Always returns true
-        sendHandler.startOrContinue();
+        boolean added = queue.add(pair(m, cf));
+        if (!added) {
+            // The queue is supposed to be unbounded
+            throw new InternalError();
+        }
+        sendHandler.handle();
         return cf;
     }
 
-    private void sendFirst() {
-        Pair<OutgoingMessage, Consumer<Exception>> p = queue.poll();
+    /*
+     * This is the main sending method. It may be run in different threads,
+     * but never concurrently.
+     */
+    private void sendFirst(Runnable whenSent) {
+        Pair<OutgoingMessage, CompletableFuture<WebSocket>> p = queue.poll();
         if (p == null) {
+            whenSent.run();
             return;
         }
         OutgoingMessage message = p.first;
-        Consumer<Exception> h = p.second;
+        CompletableFuture<WebSocket> cf = p.second;
         try {
-            // At this point messages are finally ordered and will be written
-            // one by one in a mutually exclusive fashion; thus it's a pretty
-            // convenient place to contextualize them
             message.contextualize(context);
+            Consumer<Exception> h = e -> {
+                if (e == null) {
+                    cf.complete(WebSocketImpl.this);
+                } else {
+                    cf.completeExceptionally(e);
+                }
+                sendHandler.handle();
+                whenSent.run();
+            };
             transmitter.send(message, h);
         } catch (Exception t) {
-            h.accept(t);
+            cf.completeExceptionally(t);
         }
     }
 
@@ -384,7 +386,7 @@ final class WebSocketImpl implements WebSocket {
     @Override
     public String toString() {
         return super.toString()
-                + "[" + (closed.get() ? "OPEN" : "CLOSED") + "]: " + uri
+                + "[" + (closed.get() ? "CLOSED" : "OPEN") + "]: " + uri
                 + (!subprotocol.isEmpty() ? ", subprotocol=" + subprotocol : "");
     }
 
@@ -479,7 +481,9 @@ final class WebSocketImpl implements WebSocket {
                     int code = ((FailWebSocketException) error).getStatusCode();
                     enqueueClose(new Close(code, ""))
                             .whenComplete((r, e) -> {
-                                ex.addSuppressed(e);
+                                if (e != null) {
+                                    ex.addSuppressed(e);
+                                }
                                 try {
                                     channel.close();
                                 } catch (IOException e1) {

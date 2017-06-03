@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 
@@ -39,9 +39,9 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build CompiledVersionTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
+ * @build CompiledVersionTest CompilerUtils jdk.testlibrary.ProcessTools
  * @run testng CompiledVersionTest
  */
 
@@ -81,9 +81,13 @@ public class CompiledVersionTest {
             Path msrc = SRC_DIR.resolve(mn);
             if (version.equals("0")) {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
+                    "--add-exports", "java.base/jdk.internal.module=m1",
+                    "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1",
                     "--module-source-path", SRC_DIR.toString()));
             } else {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
+                    "--add-exports", "java.base/jdk.internal.module=m1",
+                    "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1",
                     "--module-source-path", SRC_DIR.toString(),
                     "--module-version", version));
             }
