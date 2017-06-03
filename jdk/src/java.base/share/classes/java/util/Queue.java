@@ -47,12 +47,12 @@ package java.util;
  * implementations; in most implementations, insert operations cannot
  * fail.
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of Queue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Returns special value</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Returns special value</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
@@ -125,7 +125,7 @@ package java.util;
  * ordering properties.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5

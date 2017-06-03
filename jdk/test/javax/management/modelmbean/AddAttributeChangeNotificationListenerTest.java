@@ -30,7 +30,7 @@
  * no other attributes.
  * @author Yves Joan
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean AddAttributeChangeNotificationListenerTest
  * @run build AddAttributeChangeNotificationListenerTest
  * @run main AddAttributeChangeNotificationListenerTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,10 @@ public class SetOutgoingIf {
         return osname.contains("Windows");
     }
 
+    static boolean isMacOS() {
+        return System.getProperty("os.name").contains("OS X");
+    }
+
     private static boolean hasIPv6() throws Exception {
         List<NetworkInterface> nics = Collections.list(
                                         NetworkInterface.getNetworkInterfaces());
@@ -71,7 +75,7 @@ public class SetOutgoingIf {
         int index = 1;
         for (NetworkInterface nic : Collections.list(NetworkInterface.getNetworkInterfaces())) {
             // we should use only network interfaces with multicast support which are in "up" state
-            if (!nic.isLoopback() && nic.supportsMulticast() && nic.isUp()) {
+            if (!nic.isLoopback() && nic.supportsMulticast() && nic.isUp() && !isTestExcludedInterface(nic)) {
                 NetIf netIf = NetIf.create(nic);
 
                 // now determine what (if any) type of addresses are assigned to this interface
@@ -91,6 +95,8 @@ public class SetOutgoingIf {
                     netIfs.add(netIf);
                     debug("Using: " + nic);
                 }
+            } else {
+                System.out.println("Ignore NetworkInterface nic == " + nic);
             }
         }
         if (netIfs.size() <= 1) {
@@ -168,6 +174,15 @@ public class SetOutgoingIf {
                 mcastsock.leaveGroup(new InetSocketAddress(group, PORT), nic);
             }
         }
+    }
+
+    private static boolean isTestExcludedInterface(NetworkInterface nif) {
+        if (isMacOS() && nif.getName().contains("awdl"))
+            return true;
+        String dName = nif.getDisplayName();
+        if (isWindows() && dName != null && dName.contains("Teredo"))
+            return true;
+        return false;
     }
 
     private static boolean debug = true;

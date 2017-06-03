@@ -31,6 +31,8 @@ package java.sql;
  * who need to interact with a Driver via the method
  * <code>getDriverProperties</code> to discover
  * and supply properties for connections.
+ *
+ * @since 1.1
  */
 
 public class DriverPropertyInfo {
