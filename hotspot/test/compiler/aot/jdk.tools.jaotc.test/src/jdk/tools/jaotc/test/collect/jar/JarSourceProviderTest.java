@@ -20,9 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @modules jdk.aot/jdk.tools.jaotc
+ *          jdk.aot/jdk.tools.jaotc.collect
+ *          jdk.aot/jdk.tools.jaotc.collect.jar
+ * @compile ../Utils.java
+ * @compile ../FakeFileSupport.java
+ * @compile ../FakeSearchPath.java
+ *
+ * @run junit/othervm jdk.tools.jaotc.test.collect.jar.JarSourceProviderTest
+ */
+
 package jdk.tools.jaotc.test.collect.jar;
 
 import jdk.tools.jaotc.collect.ClassSource;
+import jdk.tools.jaotc.collect.jar.JarSourceProvider;
 import jdk.tools.jaotc.test.collect.FakeFileSupport;
 import jdk.tools.jaotc.test.collect.FakeSearchPath;
 import org.junit.Assert;

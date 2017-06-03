@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines the Java linker tool, jlink.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;

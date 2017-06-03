@@ -24,14 +24,18 @@ Currently defined standard feature URIs have the prefix
 <em>setFeature</em>.  Those standard identifiers are: </p>
 
 
-<table border="1" cellpadding="3" cellspacing="0" width="100%">
-    <tr align="center" bgcolor="#ccccff">
+<table class="striped">
+    <caption>SAX2 Standard Features </caption>
+    <thead>
+    <tr>
 	<th>Feature ID</th>
 	<th>Access</th>
 	<th>Default</th>
 	<th>Description</th>
 	</tr>
-
+    </thead>
+   	
+    <tbody>
     <tr>
 	<td>external-general-entities</td>
 	<td><em>read/write</em></td>
@@ -208,7 +212,7 @@ Currently defined standard feature URIs have the prefix
         Returns "false" if the parser supports only XML 1.0.
 		</td>
     </tr>
-
+    </tbody>
 </table>
 
 <p> Support for the default values of the
@@ -236,11 +240,15 @@ the standard property URIs have the prefix
 <code>dom-node</code>.  Manage those properties using
 <em>setProperty()</em>.  Those identifiers are: </p>
 
-<table border="1" cellpadding="3" cellspacing="0" width="100%">
-    <tr align="center" bgcolor="#ccccff">
+<table class="striped">
+<caption>SAX2 Standard Properties </caption>
+<thead>
+    <tr>
 	<th>Property ID</th>
 	<th>Description</th>
 	</tr>
+</thead>
+<tbody>
 
     <tr>
 	<td>declaration-handler</td>
@@ -287,7 +295,7 @@ the standard property URIs have the prefix
 	<td> Readable only during a parser callback, this exposes a <b>TBS</b>
 	    chunk of characters responsible for the current event. </td>
 	</tr>
-
+</tbody>
 </table>
 
 <p> All of these standard properties are optional;
