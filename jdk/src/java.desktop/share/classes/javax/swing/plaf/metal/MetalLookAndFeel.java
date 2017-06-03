@@ -292,85 +292,85 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * added to {@code table}:
      * <table border="1" cellpadding="1" cellspacing="0"
      *         summary="Metal's system color mapping">
-     *  <tr valign="top"  align="left">
-     *    <th style="background-color:#CCCCFF" align="left">Key
-     *    <th style="background-color:#CCCCFF" align="left">Value
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
+     *    <th style="background-color:#CCCCFF;text-align:left">Key
+     *    <th style="background-color:#CCCCFF;text-align:left">Value
+     *  <tr valign="top" style="text-align:left">
      *    <td>"desktop"
      *    <td>{@code theme.getDesktopColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"activeCaption"
      *    <td>{@code theme.getWindowTitleBackground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"activeCaptionText"
      *    <td>{@code theme.getWindowTitleForeground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"activeCaptionBorder"
      *    <td>{@code theme.getPrimaryControlShadow()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"inactiveCaption"
      *    <td>{@code theme.getWindowTitleInactiveBackground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"inactiveCaptionText"
      *    <td>{@code theme.getWindowTitleInactiveForeground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"inactiveCaptionBorder"
      *    <td>{@code theme.getControlShadow()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"window"
      *    <td>{@code theme.getWindowBackground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"windowBorder"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"windowText"
      *    <td>{@code theme.getUserTextColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"menu"
      *    <td>{@code theme.getMenuBackground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"menuText"
      *    <td>{@code theme.getMenuForeground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"text"
      *    <td>{@code theme.getWindowBackground()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"textText"
      *    <td>{@code theme.getUserTextColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"textHighlight"
      *    <td>{@code theme.getTextHighlightColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"textHighlightText"
      *    <td>{@code theme.getHighlightedTextColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"textInactiveText"
      *    <td>{@code theme.getInactiveSystemTextColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"control"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"controlText"
      *    <td>{@code theme.getControlTextColor()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"controlHighlight"
      *    <td>{@code theme.getControlHighlight()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"controlLtHighlight"
      *    <td>{@code theme.getControlHighlight()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"controlShadow"
      *    <td>{@code theme.getControlShadow()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"controlDkShadow"
      *    <td>{@code theme.getControlDarkShadow()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"scrollbar"
      *    <td>{@code theme.getControl()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"info"
      *    <td>{@code theme.getPrimaryControl()}
-     *  <tr valign="top"  align="left">
+     *  <tr valign="top" style="text-align:left">
      *    <td>"infoText"
      *    <td>{@code theme.getPrimaryControlInfo()}
      * </table>

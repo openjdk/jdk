@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,16 +54,21 @@ import sun.security.action.GetPropertyAction;
  * read from and to write to the resource referenced by the URL. In
  * general, creating a connection to a URL is a multistep process:
  *
- * <center><table border=2 summary="Describes the process of creating a connection to a URL: openConnection() and connect() over time.">
+ * <div style="text-align:center"><table class="plain" style="margin:0 auto">
+ * <caption style="display:none">Describes the process of creating a connection to a URL: openConnection() and connect() over time.</caption>
+ * <thead>
  * <tr><th>{@code openConnection()}</th>
  *     <th>{@code connect()}</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>Manipulate parameters that affect the connection to the remote
  *         resource.</td>
  *     <td>Interact with the resource; query header fields and
  *         contents.</td></tr>
+ * </tbody>
  * </table>
  * ----------------------------&gt;
- * <br>time</center>
+ * <br>time</div>
  *
  * <ol>
  * <li>The connection object is created by invoking the
@@ -876,7 +881,7 @@ public abstract class URLConnection {
      * Sets the value of the {@code doInput} field for this
      * {@code URLConnection} to the specified value.
      * <p>
-     * A URL connection can be used for input and/or output.  Set the DoInput
+     * A URL connection can be used for input and/or output.  Set the doInput
      * flag to true if you intend to use the URL connection for input,
      * false if not.  The default is true.
      *
@@ -906,7 +911,7 @@ public abstract class URLConnection {
      * Sets the value of the {@code doOutput} field for this
      * {@code URLConnection} to the specified value.
      * <p>
-     * A URL connection can be used for input and/or output.  Set the DoOutput
+     * A URL connection can be used for input and/or output.  Set the doOutput
      * flag to true if you intend to use the URL connection for output,
      * false if not.  The default is false.
      *
@@ -972,7 +977,7 @@ public abstract class URLConnection {
      * Returns the default value of the {@code allowUserInteraction}
      * field.
      * <p>
-     * Ths default is "sticky", being a part of the static state of all
+     * This default is "sticky", being a part of the static state of all
      * URLConnections.  This flag applies to the next, and all following
      * URLConnections that are created.
      *
@@ -993,7 +998,7 @@ public abstract class URLConnection {
      * "reload" button in a browser).  If the UseCaches flag on a connection
      * is true, the connection is allowed to use whatever caches it can.
      *  If false, caches are to be ignored.
-     *  The default value comes from DefaultUseCaches, which defaults to
+     *  The default value comes from defaultUseCaches, which defaults to
      * true. A default value can also be set per-protocol using
      * {@link #setDefaultUseCaches(String,boolean)}.
      *
@@ -1252,7 +1257,7 @@ public abstract class URLConnection {
      * application. It can be called at most once by an application.
      * <p>
      * The {@code ContentHandlerFactory} instance is used to
-     * construct a content handler from a content type
+     * construct a content handler from a content type.
      * <p>
      * If there is a security manager, this method first calls
      * the security manager's {@code checkSetFactory} method

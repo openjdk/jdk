@@ -37,7 +37,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaLabelUI extends BasicLabelUI {
-    protected static final  RecyclableSingleton<AquaLabelUI> aquaLabelUI = new RecyclableSingletonFromDefaultConstructor<AquaLabelUI>(AquaLabelUI.class);
+    private static final RecyclableSingleton<AquaLabelUI> aquaLabelUI = new RecyclableSingletonFromDefaultConstructor<AquaLabelUI>(AquaLabelUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
         return aquaLabelUI.get();

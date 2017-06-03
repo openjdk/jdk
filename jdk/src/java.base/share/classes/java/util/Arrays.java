@@ -62,7 +62,7 @@ import java.util.stream.StreamSupport;
  * a MergeSort, but it does have to be <i>stable</i>.)
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author Josh Bloch
