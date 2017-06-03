@@ -66,17 +66,17 @@ public class MergedTabShiftTabCommandTest extends UITesting {
                             Pattern.quote(getResource("jshell.console.see.next.command.doc")) + "\n" +
                             "\r\u0005/");
 
-            inputSink.write("lis\011");
-            waitOutput(out, "list $");
+            inputSink.write("ed\011");
+            waitOutput(out, "edit $");
 
             inputSink.write("\011");
             waitOutput(out, ".*-all.*" +
                             "\n\n" + Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n\r\u0005/");
             inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.list.summary")) + "\n\n" +
-                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/list ");
+            waitOutput(out, Pattern.quote(getResource("help.edit.summary")) + "\n\n" +
+                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/edit ");
             inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.list").replaceAll("\t", "    ")));
+            waitOutput(out, Pattern.quote(getResource("help.edit").replaceAll("\t", "    ")));
 
             inputSink.write("\u0003/env \011");
             waitOutput(out, "\u0005/env -\n" +

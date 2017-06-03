@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,11 @@ private:
 
   static volatile int _parallel_claimed_idx;
 
-  // Release any dead symbols
-  static void buckets_unlink(int start_idx, int end_idx, int* processed, int* removed);
+  typedef SymbolTable::BucketUnlinkContext BucketUnlinkContext;
+  // Release any dead symbols. Unlinked bucket entries are collected in the given
+  // context to be freed later.
+  // This allows multiple threads to work on the table at once.
+  static void buckets_unlink(int start_idx, int end_idx, BucketUnlinkContext* context);
 public:
   enum {
     symbol_alloc_batch_size = 8,

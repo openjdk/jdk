@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -1399,12 +1400,16 @@ public class Gen extends JCTree.Visitor {
                                   catchallpc, 0);
                     startseg = env.info.gaps.next().intValue();
                 }
-                code.statBegin(TreeInfo.finalizerPos(env.tree));
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                 code.markStatBegin();
 
                 Item excVar = makeTemp(syms.throwableType);
                 excVar.store();
                 genFinalizer(env);
+                code.resolvePending();
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.END_POS));
+                code.markStatBegin();
+
                 excVar.load();
                 registerCatch(body.pos(), startseg,
                               env.info.gaps.next().intValue(),
@@ -1418,7 +1423,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(env.info.cont);
 
                     // Mark statement line number
-                    code.statBegin(TreeInfo.finalizerPos(env.tree));
+                    code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                     code.markStatBegin();
 
                     // Save return address.
@@ -1577,14 +1582,18 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addExit(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
 
     public void visitContinue(JCContinue tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addCont(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
@@ -1885,7 +1894,7 @@ public class Gen extends JCTree.Visitor {
             case NULLCHK:
                 result = od.load();
                 code.emitop0(dup);
-                genNullCheck(tree.pos());
+                genNullCheck(tree);
                 break;
             default:
                 Assert.error();
@@ -1894,12 +1903,13 @@ public class Gen extends JCTree.Visitor {
     }
 
     /** Generate a null check from the object value at stack top. */
-    private void genNullCheck(DiagnosticPosition pos) {
+    private void genNullCheck(JCTree tree) {
+        code.statBegin(tree.pos);
         if (allowBetterNullChecks) {
-            callMethod(pos, syms.objectsType, names.requireNonNull,
+            callMethod(tree.pos(), syms.objectsType, names.requireNonNull,
                     List.of(syms.objectType), true);
         } else {
-            callMethod(pos, syms.objectType, names.getClass,
+            callMethod(tree.pos(), syms.objectType, names.getClass,
                     List.nil(), false);
         }
         code.emitop0(pop);
@@ -2078,7 +2088,7 @@ public class Gen extends JCTree.Visitor {
                 base.drop();
             } else {
                 base.load();
-                genNullCheck(tree.selected.pos());
+                genNullCheck(tree.selected);
             }
             result = items.
                 makeImmediateItem(sym.type, ((VarSymbol) sym).getConstValue());

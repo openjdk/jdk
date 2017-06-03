@@ -1,2 +1,2 @@
-T6476118b.java:12:20: compiler.err.name.clash.same.erasure.no.override.1: compareTo(T6476118b.B), T6476118b.B, compareTo(java.lang.Object), T6476118b, compareTo(T), java.lang.Comparable
+T6476118b.java:12:20: compiler.err.name.clash.same.erasure.no.override.1: class, B, compareTo, T6476118b.B, java.lang.Comparable, compareTo, java.lang.Object, T6476118b
 1 error
