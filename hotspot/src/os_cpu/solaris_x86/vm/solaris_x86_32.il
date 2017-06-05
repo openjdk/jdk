@@ -107,7 +107,7 @@
       .end
 
   // Support for jlong Atomic::load and Atomic::store.
-  // void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+  // void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst)
       .inline _Atomic_move_long,2
       movl     0(%esp), %eax   // src
       fildll    (%eax)

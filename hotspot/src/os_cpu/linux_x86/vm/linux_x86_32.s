@@ -634,7 +634,7 @@ _Atomic_cmpxchg_long:
 
 
         # Support for jlong Atomic::load and Atomic::store.
-        # void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+        # void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst)
         .p2align 4,,15
 	.type    _Atomic_move_long,@function
 _Atomic_move_long:
