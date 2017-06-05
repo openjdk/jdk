@@ -52,7 +52,7 @@ inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); 
 
 inline void Atomic::store(jlong store_value, jlong* dest) { *dest = store_value; }
 inline void Atomic::store(jlong store_value, volatile jlong* dest) { *dest = store_value; }
-inline jlong Atomic::load(volatile jlong* src) { return *src; }
+inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #ifdef _GNU_SOURCE
 

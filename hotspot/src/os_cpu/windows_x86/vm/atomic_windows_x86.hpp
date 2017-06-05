@@ -130,7 +130,7 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
 }
 
-inline jlong Atomic::load(volatile jlong* src) { return *src; }
+inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #else // !AMD64
 
@@ -249,7 +249,7 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value, order);
 }
 
-inline jlong Atomic::load(volatile jlong* src) {
+inline jlong Atomic::load(const volatile jlong* src) {
   volatile jlong dest;
   volatile jlong* pdest = &dest;
   __asm {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,6 +157,6 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void
                               order);
 }
 
-inline jlong Atomic::load(volatile jlong* src) { return *src; }
+inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #endif // OS_CPU_LINUX_AARCH64_VM_ATOMIC_LINUX_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,30 +50,28 @@ inline void OrderAccess::fence() {
   FULL_MEM_BARRIER;
 }
 
-inline jbyte    OrderAccess::load_acquire(volatile jbyte*   p)
+inline jbyte    OrderAccess::load_acquire(const volatile jbyte*   p)
 { jbyte data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jshort   OrderAccess::load_acquire(volatile jshort*  p)
+inline jshort   OrderAccess::load_acquire(const volatile jshort*  p)
 { jshort data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jint     OrderAccess::load_acquire(volatile jint*    p)
+inline jint     OrderAccess::load_acquire(const volatile jint*    p)
 { jint data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jlong    OrderAccess::load_acquire(volatile jlong*   p)
+inline jlong    OrderAccess::load_acquire(const volatile jlong*   p)
 { jlong data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jubyte    OrderAccess::load_acquire(volatile jubyte*   p)
+inline jubyte    OrderAccess::load_acquire(const volatile jubyte*   p)
 { jubyte data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jushort   OrderAccess::load_acquire(volatile jushort*  p)
+inline jushort   OrderAccess::load_acquire(const volatile jushort*  p)
 { jushort data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline juint     OrderAccess::load_acquire(volatile juint*    p)
+inline juint     OrderAccess::load_acquire(const volatile juint*    p)
 { juint data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline julong   OrderAccess::load_acquire(volatile julong*  p)
+inline julong   OrderAccess::load_acquire(const volatile julong*  p)
 { julong data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p)
+inline jfloat   OrderAccess::load_acquire(const volatile jfloat*  p)
 { jfloat data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline jdouble  OrderAccess::load_acquire(volatile jdouble* p)
+inline jdouble  OrderAccess::load_acquire(const volatile jdouble* p)
 { jdouble data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline intptr_t OrderAccess::load_ptr_acquire(volatile intptr_t*   p)
+inline intptr_t OrderAccess::load_ptr_acquire(const volatile intptr_t*   p)
 { intptr_t data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline void*    OrderAccess::load_ptr_acquire(volatile void*       p)
-{ void* data; __atomic_load((void* volatile *)p, &data, __ATOMIC_ACQUIRE); return data; }
 inline void*    OrderAccess::load_ptr_acquire(const volatile void* p)
 { void* data; __atomic_load((void* const volatile *)p, &data, __ATOMIC_ACQUIRE); return data; }
 

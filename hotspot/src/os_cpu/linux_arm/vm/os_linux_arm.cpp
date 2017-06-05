@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -618,11 +618,11 @@ jlong os::atomic_cmpxchg_long_bootstrap(jlong compare_value, jlong exchange_valu
     *dest = exchange_value;
   return old_value;
 }
-typedef jlong load_long_func_t(volatile jlong*);
+typedef jlong load_long_func_t(const volatile jlong*);
 
 load_long_func_t* os::atomic_load_long_func = os::atomic_load_long_bootstrap;
 
-jlong os::atomic_load_long_bootstrap(volatile jlong* src) {
+jlong os::atomic_load_long_bootstrap(const volatile jlong* src) {
   // try to use the stub:
   load_long_func_t* func = CAST_TO_FN_PTR(load_long_func_t*, StubRoutines::atomic_load_long_entry());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); 
 inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
 inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
 
-inline jlong Atomic::load(volatile jlong* src) { return *src; }
+inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
   intptr_t rv;

@@ -72,7 +72,7 @@ class Atomic : AllStatic {
   inline static void store_ptr(void*    store_value, volatile void*     dest);
 
   // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong load(volatile jlong* src);
+  inline static jlong load(const volatile jlong* src);
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
