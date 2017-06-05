@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,29 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+/*
+ * @test
+ * @bug 6824477
+ * @summary Selector.select can fail with IOException "Invalid argument" on
+ *     Solaris if maximum number of file descriptors is less than 10000
+ * @requires (os.family != "windows")
+ * @library /test/lib
+ * @build LotsOfUpdates
+ * @run main LotsOfUpdatesTest
+ */
 
-public class LotsOfUpdates {
-    public static void main(String[] args) throws IOException {
-        Selector sel = Selector.open();
-        SocketChannel sc = SocketChannel.open();
-        sc.configureBlocking(false);
-        SelectionKey key = sc.register(sel, 0);
-        for (int i=0; i<50000; i++) {
-            key.interestOps(0);
-        }
-        sel.selectNow();
+import jdk.test.lib.process.ProcessTools;
+
+public class LotsOfUpdatesTest {
+
+    //hard limit needs to be less than 10000 for this bug
+    private static final String ULIMIT_SET_CMD = "ulimit -n 2048";
+
+    private static final String JAVA_CMD = ProcessTools.getCommandLine(
+            ProcessTools.createJavaProcessBuilder(LotsOfUpdates.class.getName()));
+
+    public static void main(String[] args) throws Throwable {
+        ProcessTools.executeCommand("sh", "-c", ULIMIT_SET_CMD + " && " + JAVA_CMD)
+                    .shouldHaveExitValue(0);
     }
 }
