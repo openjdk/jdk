@@ -79,7 +79,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @param prevType the previous class that was documented.
      * @param nextType the next class being documented.
      */
-    public AnnotationTypeWriterImpl(ConfigurationImpl configuration,
+    public AnnotationTypeWriterImpl(HtmlConfiguration configuration,
             TypeElement annotationType, TypeMirror prevType, TypeMirror nextType) {
         super(configuration, DocPath.forClass(configuration.utils, annotationType));
         this.annotationType = annotationType;

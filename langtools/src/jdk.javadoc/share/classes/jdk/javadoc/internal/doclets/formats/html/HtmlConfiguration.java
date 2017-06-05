@@ -42,7 +42,7 @@ import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -77,7 +77,7 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
  */
-public class ConfigurationImpl extends Configuration {
+public class HtmlConfiguration extends BaseConfiguration {
 
     /**
      * The build date.  Note: For now, we will use
@@ -240,10 +240,10 @@ public class ConfigurationImpl extends Configuration {
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
      */
-    public ConfigurationImpl(Doclet doclet) {
+    public HtmlConfiguration(Doclet doclet) {
         super(doclet);
         resources = new Resources(this,
-                Configuration.sharedResourceBundleName,
+                BaseConfiguration.sharedResourceBundleName,
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard");
 
         messages = new Messages(this);

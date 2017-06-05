@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -94,9 +94,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.AttributeTree.ValueKind.*;
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CONTENT_TYPE;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
 
 
@@ -141,7 +139,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * The global configuration information for this run.
      */
-    public final ConfigurationImpl configuration;
+    public final HtmlConfiguration configuration;
 
     protected final Utils utils;
 
@@ -180,7 +178,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param path File to be generated.
      */
-    public HtmlDocletWriter(ConfigurationImpl configuration, DocPath path) {
+    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         super(configuration, path);
         this.configuration = configuration;
         this.contents = configuration.contents;
@@ -2601,7 +2599,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return the configuration for this doclet.
      */
     @Override
-    public Configuration configuration() {
+    public BaseConfiguration configuration() {
         return configuration;
     }
 }

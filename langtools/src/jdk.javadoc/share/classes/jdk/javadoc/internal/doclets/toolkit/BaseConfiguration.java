@@ -63,7 +63,7 @@ import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Configure the output based on the options. Doclets should sub-class
- * Configuration, to configure and add their own options. This class contains
+ * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the 1.1 doclet and the standard
  * doclet.
  *
@@ -76,7 +76,7 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Atul Dambalkar.
  * @author Jamie Ho
  */
-public abstract class Configuration {
+public abstract class BaseConfiguration {
     /**
      * The doclet that created this configuration.
      */
@@ -313,7 +313,7 @@ public abstract class Configuration {
 
     /**
      * This method should be defined in all those doclets (configurations),
-     * which want to derive themselves from this Configuration. This method
+     * which want to derive themselves from this BaseConfiguration. This method
      * can be used to finish up the options setup.
      *
      * @return true if successful and false otherwise
@@ -353,7 +353,7 @@ public abstract class Configuration {
      * Constructs the configurations needed by the doclet.
      * @param doclet the doclet that created this configuration
      */
-    public Configuration(Doclet doclet) {
+    public BaseConfiguration(Doclet doclet) {
         this.doclet = doclet;
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
@@ -1045,7 +1045,7 @@ public abstract class Configuration {
      */
     public InputStream getBuilderXML() throws DocFileIOException {
         return builderXMLPath == null ?
-            Configuration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
+            BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
             DocFile.createFileForInput(this, builderXMLPath).openInputStream();
     }
 

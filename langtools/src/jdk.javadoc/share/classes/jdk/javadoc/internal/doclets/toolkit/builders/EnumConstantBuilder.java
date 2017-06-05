@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
@@ -175,7 +175,7 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the enum constant.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
      * @param node the XML element that specifies which components to document
      * @param enumConstantsTree the content tree to which the documentation will be added
