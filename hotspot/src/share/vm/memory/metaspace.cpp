@@ -3569,7 +3569,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   assert(!SafepointSynchronize::is_at_safepoint()
          || Thread::current()->is_VM_thread(), "should be the VM thread");
 
-  if (DumpSharedSpaces && PrintSharedSpaces) {
+  if (DumpSharedSpaces && log_is_enabled(Info, cds)) {
     record_deallocation(ptr, vsm()->get_allocation_word_size(word_size));
   }
 
@@ -3603,7 +3603,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     if (result == NULL) {
       report_out_of_shared_space(read_only ? SharedReadOnly : SharedReadWrite);
     }
-    if (PrintSharedSpaces) {
+    if (log_is_enabled(Info, cds)) {
       space->record_allocation(result, type, space->vsm()->get_allocation_word_size(word_size));
     }
 

@@ -44,6 +44,7 @@
   LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
+  LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
   LOG_TAG(classhisto) \

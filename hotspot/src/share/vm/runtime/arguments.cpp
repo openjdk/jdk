@@ -416,6 +416,7 @@ static AliasedFlag const aliased_jvm_flags[] = {
 // NOTE: A compatibility request will be necessary for each alias to be removed.
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
+  { "PrintSharedSpaces",         LogLevel::Info,  true,  LOG_TAGS(cds) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
   { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
@@ -1298,7 +1299,7 @@ void Arguments::check_unsupported_dumping_properties() {
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array with index less than the info_idx,
   // vm will exit with an error message. Otherwise, it will print an informational message if
-  // PrintSharedSpaces is enabled.
+  // -Xlog:cds is enabled.
   uint info_idx = 1;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
@@ -1308,10 +1309,8 @@ void Arguments::check_unsupported_dumping_properties() {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
         } else {
-          if (PrintSharedSpaces) {
-            tty->print_cr(
-              "Info: the %s option is ignored when dumping the shared archive", unsupported_options[i]);
-          }
+          log_info(cds)("Info: the %s option is ignored when dumping the shared archive",
+                        unsupported_options[i]);
         }
       }
     }
@@ -4402,10 +4401,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) || PrintSharedSpaces) {
+  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+      log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
-    FLAG_SET_DEFAULT(PrintSharedSpaces, false);
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
