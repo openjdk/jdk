@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,32 +198,32 @@ public class JdkInternalMiscUnsafeAccessTestShort {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapShort(base, offset, (short)0x0123, (short)0x4567);
-            assertEquals(r, true, "success compareAndSwap short");
+            boolean r = UNSAFE.compareAndSetShort(base, offset, (short)0x0123, (short)0x4567);
+            assertEquals(r, true, "success compareAndSet short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "success compareAndSwap short value");
+            assertEquals(x, (short)0x4567, "success compareAndSet short value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapShort(base, offset, (short)0x0123, (short)0x89AB);
-            assertEquals(r, false, "failing compareAndSwap short");
+            boolean r = UNSAFE.compareAndSetShort(base, offset, (short)0x0123, (short)0x89AB);
+            assertEquals(r, false, "failing compareAndSet short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "failing compareAndSwap short value");
+            assertEquals(x, (short)0x4567, "failing compareAndSet short value");
         }
 
         // Advanced compare
         {
-            short r = UNSAFE.compareAndExchangeShortVolatile(base, offset, (short)0x4567, (short)0x0123);
-            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short r = UNSAFE.compareAndExchangeShort(base, offset, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchange short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "success compareAndExchange short value");
         }
 
         {
-            short r = UNSAFE.compareAndExchangeShortVolatile(base, offset, (short)0x4567, (short)0x89AB);
-            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short r = UNSAFE.compareAndExchangeShort(base, offset, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchange short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+            assertEquals(x, (short)0x0123, "failing compareAndExchange short value");
         }
 
         {
@@ -257,41 +257,41 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapShort(base, offset, (short)0x0123, (short)0x4567);
+                success = UNSAFE.weakCompareAndSetShortPlain(base, offset, (short)0x0123, (short)0x4567);
             }
-            assertEquals(success, true, "weakCompareAndSwap short");
+            assertEquals(success, true, "weakCompareAndSetPlain short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "weakCompareAndSwap short value");
+            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapShortAcquire(base, offset, (short)0x4567, (short)0x0123);
+                success = UNSAFE.weakCompareAndSetShortAcquire(base, offset, (short)0x4567, (short)0x0123);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire short");
+            assertEquals(success, true, "weakCompareAndSetAcquire short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "weakCompareAndSwapAcquire short");
+            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapShortRelease(base, offset, (short)0x0123, (short)0x4567);
+                success = UNSAFE.weakCompareAndSetShortRelease(base, offset, (short)0x0123, (short)0x4567);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease short");
+            assertEquals(success, true, "weakCompareAndSetRelease short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x4567, "weakCompareAndSwapRelease short");
+            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapShortVolatile(base, offset, (short)0x4567, (short)0x0123);
+                success = UNSAFE.weakCompareAndSetShort(base, offset, (short)0x4567, (short)0x0123);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile short");
+            assertEquals(success, true, "weakCompareAndSet short");
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)0x0123, "weakCompareAndSwapVolatile short");
+            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
         }
 
         UNSAFE.putShort(base, offset, (short)0x4567);
@@ -324,4 +324,3 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
     }
 }
-
