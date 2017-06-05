@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
@@ -193,7 +193,7 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
 
     /**
      * Build the comments for the member.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
      * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added

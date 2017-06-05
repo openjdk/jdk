@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public abstract class AbstractDoclet implements Doclet {
     /**
      * The global configuration information for this run.
      */
-    private Configuration configuration;
+    private BaseConfiguration configuration;
 
     protected Messages messages;
 
@@ -181,7 +181,7 @@ public abstract class AbstractDoclet implements Doclet {
      *
      * @return the configuration of the doclet.
      */
-    public abstract Configuration getConfiguration();
+    public abstract BaseConfiguration getConfiguration();
 
     /**
      * Start the generation of files. Call generate methods in the individual
