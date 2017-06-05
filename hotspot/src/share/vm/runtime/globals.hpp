@@ -3874,9 +3874,6 @@ public:
           "shared spaces, and dumps the shared spaces to a file to be "     \
           "used in future JVM runs")                                        \
                                                                             \
-  product(bool, PrintSharedSpaces, false,                                   \
-          "Print usage of shared spaces")                                   \
-                                                                            \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \

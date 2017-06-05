@@ -52,7 +52,7 @@ public class SharedStrings {
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
             "-XX:+UseG1GC",
             "-XX:+UseCompressedOops",
-            "-XX:+PrintSharedSpaces",
+            "-Xlog:cds,cds+hashtables",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");

@@ -36,6 +36,8 @@
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "logging/log.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -330,9 +332,7 @@ intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  if (PrintSharedSpaces) {
-    tty->print_cr("Copying %3d vtable entries for %s", n, name);
-  }
+  log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
   return dstvtable + n;
 }
@@ -383,9 +383,7 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
       break;
     }
   }
-  if (PrintSharedSpaces) {
-    tty->print_cr("Found   %3d vtable entries for %s", vtable_len, name);
-  }
+  log_debug(cds, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
 
   return vtable_len;
 }
@@ -628,9 +626,13 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
   const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
 
-  tty->print_cr("Detailed metadata info (rw includes md and mc):");
-  tty->print_cr("%s", hdr);
-  tty->print_cr("%s", sep);
+  ResourceMark rm;
+  LogMessage(cds) msg;
+  stringStream info_stream;
+
+  info_stream.print_cr("Detailed metadata info (rw includes md and mc):");
+  info_stream.print_cr("%s", hdr);
+  info_stream.print_cr("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
     const char *name = type_name((Type)type);
     int ro_count = _counts[RO][type];
@@ -644,10 +646,10 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
     double rw_perc = 100.0 * double(rw_bytes) / double(rw_all);
     double perc    = 100.0 * double(bytes)    / double(ro_all + rw_all);
 
-    tty->print_cr(fmt_stats, name,
-                  ro_count, ro_bytes, ro_perc,
-                  rw_count, rw_bytes, rw_perc,
-                  count, bytes, perc);
+    info_stream.print_cr(fmt_stats, name,
+                         ro_count, ro_bytes, ro_perc,
+                         rw_count, rw_bytes, rw_perc,
+                         count, bytes, perc);
 
     all_ro_count += ro_count;
     all_ro_bytes += ro_bytes;
@@ -662,14 +664,16 @@ void DumpAllocClosure::dump_stats(int ro_all, int rw_all, int md_all, int mc_all
   double all_rw_perc = 100.0 * double(all_rw_bytes) / double(rw_all);
   double all_perc    = 100.0 * double(all_bytes)    / double(ro_all + rw_all);
 
-  tty->print_cr("%s", sep);
-  tty->print_cr(fmt_stats, "Total",
-                all_ro_count, all_ro_bytes, all_ro_perc,
-                all_rw_count, all_rw_bytes, all_rw_perc,
-                all_count, all_bytes, all_perc);
+  info_stream.print_cr("%s", sep);
+  info_stream.print_cr(fmt_stats, "Total",
+                       all_ro_count, all_ro_bytes, all_ro_perc,
+                       all_rw_count, all_rw_bytes, all_rw_perc,
+                       all_count, all_bytes, all_perc);
 
   assert(all_ro_bytes == ro_all, "everything should have been counted");
   assert(all_rw_bytes == rw_all, "everything should have been counted");
+
+  msg.info("%s", info_stream.as_string());
 #undef fmt_stats
 }
 
@@ -897,7 +901,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Restore the vtable in case we invoke any virtual methods.
   MetaspaceShared::clone_cpp_vtables((intptr_t*)vtbl_list);
 
-  if (PrintSharedSpaces) {
+  if (log_is_enabled(Info, cds)) {
     DumpAllocClosure dac;
     dac.iterate_metaspace(_loader_data->ro_metaspace(), DumpAllocClosure::RO);
     dac.iterate_metaspace(_loader_data->rw_metaspace(), DumpAllocClosure::RW);
@@ -1064,9 +1068,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     }
     tty->print_cr("Loading classes to share: done.");
 
-    if (PrintSharedSpaces) {
-      tty->print_cr("Shared spaces: preloaded %d classes", class_count);
-    }
+    log_info(cds)("Shared spaces: preloaded %d classes", class_count);
 
     // Rewrite and link classes
     tty->print_cr("Rewriting and linking classes ...");
@@ -1102,9 +1104,9 @@ int MetaspaceShared::preload_and_dump(const char* class_list_path,
 
       CLEAR_PENDING_EXCEPTION;
       if (klass != NULL) {
-        if (PrintSharedSpaces && Verbose && WizardMode) {
+        if (log_is_enabled(Trace, cds)) {
           ResourceMark rm;
-          tty->print_cr("Shared spaces preloaded: %s", klass->external_name());
+          log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
         }
 
         InstanceKlass* ik = InstanceKlass::cast(klass);

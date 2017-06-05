@@ -48,6 +48,6 @@ public class DefaultUseWithClient {
         }
 
         CDSTestUtils.createArchiveAndCheck();
-        CDSTestUtils.runWithArchiveAndCheck("-client", "-XX:+PrintSharedSpaces");
+        CDSTestUtils.runWithArchiveAndCheck("-client", "-Xlog:cds");
    }
 }
