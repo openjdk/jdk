@@ -333,6 +333,7 @@ import java.util.StringTokenizer;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class SecurityPermission extends BasicPermission {

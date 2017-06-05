@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+/**
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,10 @@
  * questions.
  */
 
-package jdk.test.resources;
+package p1;
 
-
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.spi.AbstractResourceBundleProvider;
-
-public abstract class MyResourcesProvider extends AbstractResourceBundleProvider {
-    protected MyResourcesProvider(String... formats) {
-        super(formats);
+public class Main {
+    public static void main(String[] args) throws Exception {
+        throw new RuntimeException("should not reach here");
     }
-
-    @Override
-    public ResourceBundle getBundle(String baseName, Locale locale) {
-        if (isSupportedInModule(locale)) {
-            return super.getBundle(baseName, locale);
-        }
-        return null;
-    }
-
-    protected abstract boolean isSupportedInModule(Locale locale);
 }

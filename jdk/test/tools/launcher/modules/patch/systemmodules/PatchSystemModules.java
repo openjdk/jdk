@@ -51,7 +51,6 @@ public class PatchSystemModules {
     private static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final Path TEST_SRC = Paths.get(System.getProperty("test.src"));
-    private static final Path PATCH_SRC_DIR = TEST_SRC.resolve("src1");
 
     private static final Path JMODS = Paths.get(JAVA_HOME, "jmods");
     private static final Path MODS_DIR = Paths.get("mods");
@@ -66,6 +65,8 @@ public class PatchSystemModules {
     @BeforeTest
     private void setup() throws Throwable {
         Path src = TEST_SRC.resolve("src");
+        Path src1 = TEST_SRC.resolve("src1");
+
         for (String name : modules) {
             assertTrue(CompilerUtils.compile(src.resolve(name),
                                              MODS_DIR,
@@ -73,11 +74,11 @@ public class PatchSystemModules {
         }
 
         // compile patched source
-        String patchDir = PATCH_SRC_DIR.resolve(JAVA_BASE).toString();
-        assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve(JAVA_BASE),
+        String patchDir = src1.resolve(JAVA_BASE).toString();
+        assertTrue(CompilerUtils.compile(src1.resolve(JAVA_BASE),
                                          PATCH_DIR.resolve(JAVA_BASE),
                                          "--patch-module", "java.base=" + patchDir));
-        assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve("m2"),
+        assertTrue(CompilerUtils.compile(src1.resolve("m2"),
                                          PATCH_DIR.resolve("m2")));
 
         createJars();
@@ -88,10 +89,16 @@ public class PatchSystemModules {
             createImage();
         }
 
-        // create new copy of m1.jar
+        // compile a different version of m1
+        Path tmp = Paths.get("tmp");
+        assertTrue(CompilerUtils.compile(src1.resolve("m1"), tmp,
+                                         "--module-path", MODS_DIR.toString(),
+                                         "--module-source-path", src1.toString()));
+
+        // package new_m1.jar
         jar("--create",
             "--file=" + NEW_M1_JAR.toString(),
-            "-C", MODS_DIR.resolve("m1").toString(), ".");
+            "-C", tmp.resolve("m1").toString(), ".");
     }
 
     /*
@@ -150,13 +157,13 @@ public class PatchSystemModules {
         // Fail to upgrade m1.jar with mismatched hash
         runTestWithExitCode(getJava(IMAGE),
                 "--upgrade-module-path", NEW_M1_JAR.toString(),
-                "-m", "m1/p1.Main", "ShouldNeverRun");
+                "-m", "m1/p1.Main");
 
         // test when SystemModules fast path is not enabled, i.e. exploded image
         runTestWithExitCode(getJava(IMAGE),
                 "--patch-module", "java.base=" + PATCH_DIR.resolve(JAVA_BASE),
                 "--upgrade-module-path", NEW_M1_JAR.toString(),
-                "-m", "m1/p1.Main", "ShouldNeverRun");
+                "-m", "m1/p1.Main");
     }
 
     /*
@@ -173,14 +180,14 @@ public class PatchSystemModules {
         runTestWithExitCode(getJava(IMAGE),
                 "--patch-module", "m1=.jar",
                 "--upgrade-module-path", NEW_M1_JAR.toString(),
-                "-m", "m1/p1.Main", "ShouldNeverRun");
+                "-m", "m1/p1.Main");
 
         // test when SystemModules fast path is not enabled, i.e. exploded image
         runTestWithExitCode(getJava(IMAGE),
                 "--patch-module", "java.base=" + PATCH_DIR.resolve(JAVA_BASE),
                 "--patch-module", "m1=.jar",
                 "--upgrade-module-path", NEW_M1_JAR.toString(),
-                "-m", "m1/p1.Main", "ShouldNeverRun");
+                "-m", "m1/p1.Main");
     }
 
     private void runTestWithExitCode(String... options) throws Throwable {
