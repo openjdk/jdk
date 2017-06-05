@@ -65,7 +65,7 @@ public class CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:dump");
-        cmd.add("-XX:+PrintSharedSpaces");
+        cmd.add("-Xlog:cds,cds+hashtables");
         cmd.add("-XX:+UnlockDiagnosticVMOptions");
         if (opts.archiveName == null)
             opts.archiveName = getDefaultArchiveName();
