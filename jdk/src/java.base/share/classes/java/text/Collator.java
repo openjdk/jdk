@@ -123,6 +123,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * @see         CollationElementIterator
  * @see         Locale
  * @author      Helena Shih, Laura Werner, Richard Gillam
+ * @since 1.1
  */
 
 public abstract class Collator
