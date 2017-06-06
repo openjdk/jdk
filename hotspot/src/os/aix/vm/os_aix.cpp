@@ -1538,6 +1538,64 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
 
+  if (Arguments::sun_java_launcher_is_altjvm()) {
+    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
+    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
+    // If "/jre/lib/" appears at the right place in the string, then
+    // assume we are installed in a JDK and we're done. Otherwise, check
+    // for a JAVA_HOME environment variable and fix up the path so it
+    // looks like libjvm.so is installed there (append a fake suffix
+    // hotspot/libjvm.so).
+    const char *p = buf + strlen(buf) - 1;
+    for (int count = 0; p > buf && count < 4; ++count) {
+      for (--p; p > buf && *p != '/'; --p)
+        /* empty */ ;
+    }
+
+    if (strncmp(p, "/jre/lib/", 9) != 0) {
+      // Look for JAVA_HOME in the environment.
+      char* java_home_var = ::getenv("JAVA_HOME");
+      if (java_home_var != NULL && java_home_var[0] != 0) {
+        char* jrelib_p;
+        int len;
+
+        // Check the current module name "libjvm.so".
+        p = strrchr(buf, '/');
+        if (p == NULL) {
+          return;
+        }
+        assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        if (rp == NULL) {
+          return;
+        }
+
+        // determine if this is a legacy image or modules image
+        // modules image doesn't have "jre" subdirectory
+        len = strlen(buf);
+        assert(len < buflen, "Ran out of buffer room");
+        jrelib_p = buf + len;
+        snprintf(jrelib_p, buflen-len, "/jre/lib");
+        if (0 != access(buf, F_OK)) {
+          snprintf(jrelib_p, buflen-len, "/lib");
+        }
+
+        if (0 == access(buf, F_OK)) {
+          // Use current module name "libjvm.so"
+          len = strlen(buf);
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
+        } else {
+          // Go back to path of .so
+          rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
+          if (rp == NULL) {
+            return;
+          }
+        }
+      }
+    }
+  }
+
   strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
   saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
