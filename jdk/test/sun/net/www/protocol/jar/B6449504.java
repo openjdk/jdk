@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 6449504
- * @run main B6449504 caching
- * @run main B6449504 no_caching
+ * @run main/othervm B6449504 caching
+ * @run main/othervm B6449504 no_caching
  * @summary REGRESSION: ZipException throws when try to read a XML file
  */
 
