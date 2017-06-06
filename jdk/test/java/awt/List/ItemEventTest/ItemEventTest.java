@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 8033936
+ * @bug 8033936 8172510
  * @summary Verify that correct ItemEvent is received while selection &
  *          deselection of multi select List items.
  */
@@ -109,14 +109,16 @@ public class ItemEventTest extends Frame
         boolean isMac = osName.contains("Mac") || osName.contains("mac");
         if(isMac) {
             robot.keyPress(KeyEvent.VK_META);
+            robot.waitForIdle();
         }
 
         // First loop to select & Second loop to deselect the list items.
         for (int j = 0; j < 2; ++j) {
             for (int i = 0; i < list.getItemCount(); ++i) {
                 robot.mouseMove(loc.x, loc.y + i * dY);
+                robot.waitForIdle();
                 robot.mousePress(InputEvent.BUTTON1_MASK);
-                robot.delay(100);
+                robot.waitForIdle();
                 robot.mouseRelease(InputEvent.BUTTON1_MASK);
                 robot.waitForIdle();
             }
