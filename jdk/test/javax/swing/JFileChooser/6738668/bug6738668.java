@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009,2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,25 @@
  */
 
 /* @test
-   @bug 6738668
+   @bug 6738668 6962725
    @summary JFileChooser cannot be created under SecurityManager
    @author Pavel Porvatov
    @run main/othervm/policy=security.policy bug6738668
 */
 
-import javax.swing.*;
 import java.io.File;
+import javax.swing.JFileChooser;
+import javax.swing.UIManager;
 
 public class bug6738668 {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo lookAndFeelInfo : UIManager.getInstalledLookAndFeels()) {
             UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
 
-            new JFileChooser(new File("c:/temp"));
+            String tmpdir = System.getProperty("java.io.tmpdir");
+            System.out.println("tmp dir " + tmpdir);
+            new JFileChooser(new File(tmpdir+"/temp"));
+
 
             System.out.println("Test passed for LookAndFeel " + lookAndFeelInfo.getClassName());
         }
