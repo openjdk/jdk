@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,16 @@
  * @summary Enable serialize of nonSerializable Class descriptor.
  */
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
-class Test {
+class TestEntry {
     public static void main(String args[]) throws Exception {
         File f = new File("tmp.ser");
         if (args[0].compareTo("-s") == 0) {
@@ -73,6 +80,8 @@ class Test {
             }
             ois.close();
             System.out.println("DeSerialized Class " + cl.getName());
+        } else {
+            throw new RuntimeException("Unrecognized argument");
         }
     }
 }
