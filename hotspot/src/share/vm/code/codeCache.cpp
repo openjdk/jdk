@@ -620,7 +620,7 @@ nmethod* CodeCache::find_nmethod(void* start) {
 
 void CodeCache::blobs_do(void f(CodeBlob* nm)) {
   assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
       f(cb);
     }
