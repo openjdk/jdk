@@ -732,7 +732,7 @@ public:
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
   static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
-  static bool supports_fma()        { return (_features & CPU_FMA) != 0; }
+  static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
 
   // Intel features

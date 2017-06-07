@@ -3165,8 +3165,37 @@ void MacroAssembler::fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegi
   }
 }
 
+// dst = c = a * b + c
+void MacroAssembler::vfmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231pd(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
+// dst = c = a * b + c
+void MacroAssembler::vfmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231ps(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
+// dst = c = a * b + c
+void MacroAssembler::vfmad(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231pd(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
+
+// dst = c = a * b + c
+void MacroAssembler::vfmaf(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231ps(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
 void MacroAssembler::incrementl(AddressLiteral dst) {
   if (reachable(dst)) {

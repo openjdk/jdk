@@ -1906,6 +1906,11 @@ private:
   void vmulpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vmulps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
+  void vfmadd231pd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vfmadd231ps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vfmadd231pd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vfmadd231ps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
   // Divide Packed Floating-Point Values
   void divpd(XMMRegister dst, XMMRegister src);
   void divps(XMMRegister dst, XMMRegister src);

@@ -10520,3 +10520,161 @@ instruct vxor64B_mem(vecZ dst, vecZ src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+// --------------------------------- FMA --------------------------------------
+
+// a * b + c
+instruct vfma2D_reg(vecX a, vecX b, vecX c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set c (FmaVD  c (Binary a b)));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed2D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 0;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma2D_mem(vecX a, memory b, vecX c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set c (FmaVD  c (Binary a (LoadVector b))));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed2D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 0;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+// a * b + c
+instruct vfma4D_reg(vecY a, vecY b, vecY c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set c (FmaVD  c (Binary a b)));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed4D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 1;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma4D_mem(vecY a, memory b, vecY c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set c (FmaVD  c (Binary a (LoadVector b))));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed4D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 1;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma8D_reg(vecZ a, vecZ b, vecZ c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 8);
+  match(Set c (FmaVD  c (Binary a b)));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed8D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 2;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma8D_mem(vecZ a, memory b, vecZ c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 8);
+  match(Set c (FmaVD  c (Binary a (LoadVector b))));
+  format %{ "fmapd $a,$b,$c\t# $c = $a * $b + $c fma packed8D" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 2;
+    __ vfmad($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma4F_reg(vecX a, vecX b, vecX c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set c (FmaVF  c (Binary a b)));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed4F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 0;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma4F_mem(vecX a, memory b, vecX c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set c (FmaVF  c (Binary a (LoadVector b))));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed4F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 0;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma8F_reg(vecY a, vecY b, vecY c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 8);
+  match(Set c (FmaVF  c (Binary a b)));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed8F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 1;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma8F_mem(vecY a, memory b, vecY c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 8);
+  match(Set c (FmaVF  c (Binary a (LoadVector b))));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed8F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 1;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma16F_reg(vecZ a, vecZ b, vecZ c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 16);
+  match(Set c (FmaVF  c (Binary a b)));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed16F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 2;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// a * b + c
+instruct vfma16F_mem(vecZ a, memory b, vecZ c) %{
+  predicate(UseFMA && n->as_Vector()->length() == 16);
+  match(Set c (FmaVF  c (Binary a (LoadVector b))));
+  format %{ "fmaps $a,$b,$c\t# $c = $a * $b + $c fma packed16F" %}
+  ins_cost(150);
+  ins_encode %{
+    int vector_len = 2;
+    __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
