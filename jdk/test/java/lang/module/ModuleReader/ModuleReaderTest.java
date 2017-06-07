@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.module
  *          jdk.compiler
- * @build ModuleReaderTest CompilerUtils JarUtils
+ * @build ModuleReaderTest jdk.test.lib.compiler.CompilerUtils JarUtils
  * @run testng ModuleReaderTest
  * @summary Basic tests for java.lang.module.ModuleReader
  */
@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
 import java.util.spi.ToolProvider;
 
 import jdk.internal.module.ModulePath;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

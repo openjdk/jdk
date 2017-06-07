@@ -27,7 +27,7 @@
  * @summary Patch java.base and user module with ModuleHashes attribute
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchSystemModules
  */
 
@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;

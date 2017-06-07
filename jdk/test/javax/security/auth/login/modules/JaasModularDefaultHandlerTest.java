@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
 import org.testng.annotations.BeforeTest;
@@ -37,9 +38,9 @@ import org.testng.annotations.BeforeTest;
 /**
  * @test
  * @bug 8151654
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @library /java/security/modules
- * @build CompilerUtils JarUtils
+ * @build jdk.test.lib.compiler.CompilerUtils JarUtils
  * @summary Test custom JAAS callback handler with all possible modular option.
  * @run testng JaasModularDefaultHandlerTest
  */

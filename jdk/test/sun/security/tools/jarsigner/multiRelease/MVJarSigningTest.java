@@ -26,7 +26,6 @@
  * @bug 8047305 8075618
  * @summary Tests jarsigner tool and JarSigner API work with multi-release JAR files.
  * @library /test/lib
- * @library /lib/testlibrary
  * @run main MVJarSigningTest
  */
 
@@ -59,6 +58,7 @@ import java.util.zip.ZipOutputStream;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

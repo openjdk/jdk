@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeClass;
@@ -42,7 +43,8 @@ import static org.testng.Assert.assertTrue;
  * @summary Tests for Class.forName(Module,String)
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build TestDriver CompilerUtils jdk.testlibrary.ProcessTools TestMain TestLayer
+ * @build jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.ProcessTools
+ *        TestDriver TestMain TestLayer
  * @run testng TestDriver
  */
 
