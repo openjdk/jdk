@@ -23,8 +23,8 @@
 
 package test.java.lang.invoke.MethodHandles;
 
+import jdk.test.lib.TimeLimitedRunner;
 import jdk.testlibrary.Asserts;
-import jdk.testlibrary.TimeLimitedRunner;
 import jdk.testlibrary.Utils;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 import test.java.lang.invoke.lib.Helper;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /* @test
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /lib/testlibrary /java/lang/invoke/common /test/lib
  * @compile CatchExceptionTest.java
  * @run main/othervm -esa test.java.lang.invoke.MethodHandles.CatchExceptionTest
  * @key intermittent randomness

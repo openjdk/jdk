@@ -27,7 +27,7 @@
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with multiple threads
  * @author kshefov
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /lib/testlibrary /java/lang/invoke/common /test/lib
  * @modules java.base/java.lang.invoke:open
  *          java.base/java.lang.ref:open
  *          java.management
