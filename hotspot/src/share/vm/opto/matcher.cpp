@@ -977,7 +977,6 @@ Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
   MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
-
   while (mstack.is_nonempty()) {
     C->check_node_count(NodeLimitFudgeFactor, "too many nodes matching instructions");
     if (C->failing()) return NULL;
@@ -2122,6 +2121,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_EncodeISOArray:
       case Op_FmaD:
       case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2311,7 +2312,9 @@ void Matcher::find_shared( Node *n ) {
         break;
       }
       case Op_FmaD:
-      case Op_FmaF: {
+      case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF: {
         // Restructure into a binary tree for Matching.
         Node* pair = new BinaryNode(n->in(1), n->in(2));
         n->set_req(2, pair);
