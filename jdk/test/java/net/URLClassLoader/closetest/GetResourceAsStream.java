@@ -26,7 +26,7 @@
  * @bug 6899919
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build JarUtils CompilerUtils
+ * @build JarUtils jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm GetResourceAsStream
  */
 
@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import jdk.test.lib.compiler.CompilerUtils;
 
 public class GetResourceAsStream extends Common {
     private static  final String WORK_DIR = System.getProperty("user.dir");

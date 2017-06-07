@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 8177980
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build CompilerUtils jdk.testlibrary.ProcessTools CaseInsensitiveNameClash
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.testlibrary.ProcessTools CaseInsensitiveNameClash
  * @run testng CaseInsensitiveNameClash
  */
 
@@ -34,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

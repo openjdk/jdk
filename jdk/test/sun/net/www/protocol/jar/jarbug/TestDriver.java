@@ -27,7 +27,8 @@
  * @library /test/lib
  *          /lib/testlibrary
  * @modules jdk.compiler
- * @build src.test.src.TestDriver CompilerUtils JarUtils
+ * @build src.test.src.TestDriver JarUtils
+ *        jdk.test.lib.CompilerUtils
  *        jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.process.*
  * @summary various resource and classloading bugs related to jar files
