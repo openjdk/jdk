@@ -38,6 +38,20 @@
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe4096 UseStrongDHSizes 2048
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 2048
  * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 2048
+ * @run main/othervm UseStrongDHSizes 3072
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe3072 UseStrongDHSizes 3072
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe4096 UseStrongDHSizes 3072
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 3072
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 3072
+ * @run main/othervm UseStrongDHSizes 4096
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe4096 UseStrongDHSizes 4096
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 4096
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 4096
+ * @run main/othervm UseStrongDHSizes 6144
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe6144 UseStrongDHSizes 6144
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 6144
+ * @run main/othervm UseStrongDHSizes 8192
+ * @run main/othervm -Djdk.tls.namedGroups=ffdhe8192 UseStrongDHSizes 8192
  */
 
 import java.io.InputStream;
