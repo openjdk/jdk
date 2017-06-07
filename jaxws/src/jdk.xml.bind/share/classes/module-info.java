@@ -23,6 +23,14 @@
  * questions.
  */
 
+/**
+ * Defines tools for JAXB classes and XML schema generation.
+ *
+ * @moduleGraph
+ * @since 9
+ *
+ */
+@Deprecated(since="9", forRemoval=true)
 module jdk.xml.bind {
     requires java.activation;
     requires java.compiler;

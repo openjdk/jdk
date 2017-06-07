@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines tools for JAXWS classes and WSDL generation
+ *
+ * @moduleGraph
+ * @since 9
+ */
+@Deprecated(since="9", forRemoval=true)
 module jdk.xml.ws {
     requires java.compiler;
     requires java.logging;
