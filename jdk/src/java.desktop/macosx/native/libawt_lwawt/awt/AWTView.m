@@ -986,6 +986,13 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         // We also don't want to send the character that triggered the insertText, usually a return. [3337563]
         fKeyEventsNeeded = NO;
     }
+    else {
+        // Need to set back the fKeyEventsNeeded flag so that the string following the
+        // marked text is not ignored by keyDown
+        if ([useString length] > 0) {
+            fKeyEventsNeeded = YES;
+        }
+    }
     fPAHNeedsToSelect = NO;
 }
 
