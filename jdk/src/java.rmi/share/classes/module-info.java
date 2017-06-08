@@ -26,6 +26,21 @@
 /**
  * Defines the Remote Method Invocation (RMI) API.
  *
+ * <p> The JDK implementation of this module includes
+ * the <em>{@index rmiregistry rmiregistry tool}</em> tool to start a remote
+ * object registry, and the <em>{@index rmid rmid tool}</em> tool to start
+ * the activation system daemon.
+ *
+ * <p>
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:</dt>
+ * <dd> {@extLink rmiregistry_tool_reference rmiregistry},
+ *      {@extLink rmid_tool_reference rmid}
+ * </dd>
+ * </dl>
+ *
+ * @uses java.rmi.server.RMIClassLoaderSpi
+ *
  * @moduleGraph
  * @since 9
  */

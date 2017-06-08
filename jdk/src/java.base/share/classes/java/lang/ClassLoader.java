@@ -2146,8 +2146,6 @@ public abstract class ClassLoader {
      * @revised 9
      * @spec JPMS
      *
-     * @see <a href="../../../technotes/guides/jar/jar.html#versioning">
-     *      The JAR File Specification: Package Versioning</a>
      * @see <a href="../../../technotes/guides/jar/jar.html#sealing">
      *      The JAR File Specification: Package Sealing</a>
      */
@@ -2884,7 +2882,7 @@ public abstract class ClassLoader {
         } catch (NoSuchFieldException e) {
             throw new InternalError(e);
         }
-        return unsafe.compareAndSwapObject(this, offset, null, obj);
+        return unsafe.compareAndSetObject(this, offset, null, obj);
     }
 }
 
