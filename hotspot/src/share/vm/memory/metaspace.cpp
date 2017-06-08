@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,22 @@ enum ChunkIndex {
   NumberOfInUseLists = 4
 };
 
+// Helper, returns a descriptive name for the given index.
+static const char* chunk_size_name(ChunkIndex index) {
+  switch (index) {
+    case SpecializedIndex:
+      return "specialized";
+    case SmallIndex:
+      return "small";
+    case MediumIndex:
+      return "medium";
+    case HumongousIndex:
+      return "humongous";
+    default:
+      return "Invalid index";
+  }
+}
+
 enum ChunkSizes {    // in words.
   ClassSpecializedChunk = 128,
   SpecializedChunk = 128,
@@ -102,24 +118,30 @@ class ChunkManager : public CHeapObj<mtInternal> {
   //   SpecializedChunk
   //   SmallChunk
   //   MediumChunk
-  //   HumongousChunk
   ChunkList _free_chunks[NumberOfFreeLists];
+
+  // Return non-humongous chunk list by its index.
+  ChunkList* free_chunks(ChunkIndex index);
+
+  // Returns non-humongous chunk list for the given chunk word size.
+  ChunkList* find_free_chunks_list(size_t word_size);
 
   //   HumongousChunk
   ChunkTreeDictionary _humongous_dictionary;
 
-  // ChunkManager in all lists of this type
+  // Returns the humongous chunk dictionary.
+  ChunkTreeDictionary* humongous_dictionary() {
+    return &_humongous_dictionary;
+  }
+
+  // Size, in metaspace words, of all chunks managed by this ChunkManager
   size_t _free_chunks_total;
+  // Number of chunks in this ChunkManager
   size_t _free_chunks_count;
 
-  void dec_free_chunks_total(size_t v) {
-    assert(_free_chunks_count > 0 &&
-             _free_chunks_total > 0,
-             "About to go negative");
-    Atomic::add_ptr(-1, &_free_chunks_count);
-    jlong minus_v = (jlong) - (jlong) v;
-    Atomic::add_ptr(minus_v, &_free_chunks_total);
-  }
+  // Update counters after a chunk was added or removed removed.
+  void account_for_added_chunk(const Metachunk* c);
+  void account_for_removed_chunk(const Metachunk* c);
 
   // Debug support
 
@@ -156,13 +178,20 @@ class ChunkManager : public CHeapObj<mtInternal> {
   // for special, small, medium, and humongous chunks.
   ChunkIndex list_index(size_t size);
 
-  // Remove the chunk from its freelist.  It is
-  // expected to be on one of the _free_chunks[] lists.
+  // Map a given index to the chunk size.
+  size_t size_by_index(ChunkIndex index);
+
+  // Take a chunk from the ChunkManager. The chunk is expected to be in
+  // the chunk manager (the freelist if non-humongous, the dictionary if
+  // humongous).
   void remove_chunk(Metachunk* chunk);
+
+  // Return a single chunk of type index to the ChunkManager.
+  void return_single_chunk(ChunkIndex index, Metachunk* chunk);
 
   // Add the simple linked list of chunks to the freelist of chunks
   // of type index.
-  void return_chunks(ChunkIndex index, Metachunk* chunks);
+  void return_chunk_list(ChunkIndex index, Metachunk* chunk);
 
   // Total of the space in the free chunks list
   size_t free_chunks_total_words();
@@ -170,19 +199,6 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
   // Number of chunks in the free chunks list
   size_t free_chunks_count();
-
-  void inc_free_chunks_total(size_t v, size_t count = 1) {
-    Atomic::add_ptr(count, &_free_chunks_count);
-    Atomic::add_ptr(v, &_free_chunks_total);
-  }
-  ChunkTreeDictionary* humongous_dictionary() {
-    return &_humongous_dictionary;
-  }
-
-  ChunkList* free_chunks(ChunkIndex index);
-
-  // Returns the list for the given chunk word size.
-  ChunkList* find_free_chunks_list(size_t word_size);
 
   // Remove from a list by size.  Selects list based on size of chunk.
   Metachunk* free_chunks_get(size_t chunk_word_size);
@@ -735,8 +751,6 @@ class SpaceManager : public CHeapObj<mtClass> {
 
   Mutex* lock() const { return _lock; }
 
-  const char* chunk_size_name(ChunkIndex index) const;
-
  protected:
   void initialize();
 
@@ -1161,8 +1175,8 @@ void ChunkManager::remove_chunk(Metachunk* chunk) {
     humongous_dictionary()->remove_chunk(chunk);
   }
 
-  // Chunk is being removed from the chunks free list.
-  dec_free_chunks_total(chunk->word_size());
+  // Chunk has been removed from the chunks free list, update counters.
+  account_for_removed_chunk(chunk);
 }
 
 // Walk the list of VirtualSpaceNodes and delete
@@ -1246,14 +1260,13 @@ void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
   DEBUG_ONLY(verify_container_count();)
   for (int i = (int)MediumIndex; i >= (int)ZeroIndex; --i) {
     ChunkIndex index = (ChunkIndex)i;
-    size_t chunk_size = chunk_manager->free_chunks(index)->size();
+    size_t chunk_size = chunk_manager->size_by_index(index);
 
     while (free_words_in_vs() >= chunk_size) {
       Metachunk* chunk = get_chunk_vs(chunk_size);
       assert(chunk != NULL, "allocation should have been successful");
 
-      chunk_manager->return_chunks(index, chunk);
-      chunk_manager->inc_free_chunks_total(chunk_size);
+      chunk_manager->return_single_chunk(index, chunk);
     }
     DEBUG_ONLY(verify_container_count();)
   }
@@ -1730,6 +1743,25 @@ size_t ChunkManager::free_chunks_total_bytes() {
   return free_chunks_total_words() * BytesPerWord;
 }
 
+// Update internal accounting after a chunk was added
+void ChunkManager::account_for_added_chunk(const Metachunk* c) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _free_chunks_count ++;
+  _free_chunks_total += c->word_size();
+}
+
+// Update internal accounting after a chunk was removed
+void ChunkManager::account_for_removed_chunk(const Metachunk* c) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  assert(_free_chunks_count >= 1,
+    "ChunkManager::_free_chunks_count: about to go negative (" SIZE_FORMAT ").", _free_chunks_count);
+  assert(_free_chunks_total >= c->word_size(),
+    "ChunkManager::_free_chunks_total: about to go negative"
+     "(now: " SIZE_FORMAT ", decrement value: " SIZE_FORMAT ").", _free_chunks_total, c->word_size());
+  _free_chunks_count --;
+  _free_chunks_total -= c->word_size();
+}
+
 size_t ChunkManager::free_chunks_count() {
 #ifdef ASSERT
   if (!UseConcMarkSweepGC && !SpaceManager::expand_lock()->is_locked()) {
@@ -1741,6 +1773,28 @@ size_t ChunkManager::free_chunks_count() {
   }
 #endif
   return _free_chunks_count;
+}
+
+ChunkIndex ChunkManager::list_index(size_t size) {
+  if (size_by_index(SpecializedIndex) == size) {
+    return SpecializedIndex;
+  }
+  if (size_by_index(SmallIndex) == size) {
+    return SmallIndex;
+  }
+  const size_t med_size = size_by_index(MediumIndex);
+  if (med_size == size) {
+    return MediumIndex;
+  }
+
+  assert(size > med_size, "Not a humongous chunk");
+  return HumongousIndex;
+}
+
+size_t ChunkManager::size_by_index(ChunkIndex index) {
+  index_bounds_check(index);
+  assert(index != HumongousIndex, "Do not call for humongous chunks.");
+  return free_chunks(index)->size();
 }
 
 void ChunkManager::locked_verify_free_chunks_total() {
@@ -1875,8 +1929,8 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
                                     chunk->word_size(), word_size, chunk->word_size() - word_size);
   }
 
-  // Chunk is being removed from the chunks free list.
-  dec_free_chunks_total(chunk->word_size());
+  // Chunk has been removed from the chunk manager; update counters.
+  account_for_removed_chunk(chunk);
 
   // Remove it from the links to this freelist
   chunk->set_next(NULL);
@@ -1921,6 +1975,76 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   }
 
   return chunk;
+}
+
+void ChunkManager::return_single_chunk(ChunkIndex index, Metachunk* chunk) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  assert(chunk != NULL, "Expected chunk.");
+  assert(chunk->container() != NULL, "Container should have been set.");
+  assert(chunk->is_tagged_free() == false, "Chunk should be in use.");
+  index_bounds_check(index);
+
+  // Note: mangle *before* returning the chunk to the freelist or dictionary. It does not
+  // matter for the freelist (non-humongous chunks), but the humongous chunk dictionary
+  // keeps tree node pointers in the chunk payload area which mangle will overwrite.
+  NOT_PRODUCT(chunk->mangle(badMetaWordVal);)
+
+  if (index != HumongousIndex) {
+    // Return non-humongous chunk to freelist.
+    ChunkList* list = free_chunks(index);
+    assert(list->size() == chunk->word_size(), "Wrong chunk type.");
+    list->return_chunk_at_head(chunk);
+    log_trace(gc, metaspace, freelist)("returned one %s chunk at " PTR_FORMAT " to freelist.",
+        chunk_size_name(index), p2i(chunk));
+  } else {
+    // Return humongous chunk to dictionary.
+    assert(chunk->word_size() > free_chunks(MediumIndex)->size(), "Wrong chunk type.");
+    assert(chunk->word_size() % free_chunks(SpecializedIndex)->size() == 0,
+           "Humongous chunk has wrong alignment.");
+    _humongous_dictionary.return_chunk(chunk);
+    log_trace(gc, metaspace, freelist)("returned one %s chunk at " PTR_FORMAT " (word size " SIZE_FORMAT ") to freelist.",
+        chunk_size_name(index), p2i(chunk), chunk->word_size());
+  }
+  chunk->container()->dec_container_count();
+  DEBUG_ONLY(chunk->set_is_tagged_free(true);)
+
+  // Chunk has been added; update counters.
+  account_for_added_chunk(chunk);
+
+}
+
+void ChunkManager::return_chunk_list(ChunkIndex index, Metachunk* chunks) {
+  index_bounds_check(index);
+  if (chunks == NULL) {
+    return;
+  }
+  LogTarget(Trace, gc, metaspace, freelist) log;
+  if (log.is_enabled()) { // tracing
+    log.print("returning list of %s chunks...", chunk_size_name(index));
+  }
+  unsigned num_chunks_returned = 0;
+  size_t size_chunks_returned = 0;
+  Metachunk* cur = chunks;
+  while (cur != NULL) {
+    // Capture the next link before it is changed
+    // by the call to return_chunk_at_head();
+    Metachunk* next = cur->next();
+    if (log.is_enabled()) { // tracing
+      num_chunks_returned ++;
+      size_chunks_returned += cur->word_size();
+    }
+    return_single_chunk(index, cur);
+    cur = next;
+  }
+  if (log.is_enabled()) { // tracing
+    log.print("returned %u %s chunks to freelist, total word size " SIZE_FORMAT ".",
+        num_chunks_returned, chunk_size_name(index), size_chunks_returned);
+    if (index != HumongousIndex) {
+      log.print("updated freelist count: " SIZE_FORMAT ".", free_chunks(index)->size());
+    } else {
+      log.print("updated dictionary count " SIZE_FORMAT ".", _humongous_dictionary.total_count());
+    }
+  }
 }
 
 void ChunkManager::print_on(outputStream* out) const {
@@ -2256,32 +2380,6 @@ void SpaceManager::initialize() {
   log_trace(gc, metaspace, freelist)("SpaceManager(): " PTR_FORMAT, p2i(this));
 }
 
-void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
-  if (chunks == NULL) {
-    return;
-  }
-  ChunkList* list = free_chunks(index);
-  assert(list->size() == chunks->word_size(), "Mismatch in chunk sizes");
-  assert_lock_strong(SpaceManager::expand_lock());
-  Metachunk* cur = chunks;
-
-  // This returns chunks one at a time.  If a new
-  // class List can be created that is a base class
-  // of FreeList then something like FreeList::prepend()
-  // can be used in place of this loop
-  while (cur != NULL) {
-    assert(cur->container() != NULL, "Container should have been set");
-    cur->container()->dec_container_count();
-    // Capture the next link before it is changed
-    // by the call to return_chunk_at_head();
-    Metachunk* next = cur->next();
-    DEBUG_ONLY(cur->set_is_tagged_free(true);)
-    NOT_PRODUCT(cur->mangle(badMetaWordVal);)
-    list->return_chunk_at_head(cur);
-    cur = next;
-  }
-}
-
 SpaceManager::~SpaceManager() {
   // This call this->_lock which can't be done while holding expand_lock()
   assert(sum_capacity_in_chunks_in_use() == allocated_chunks_words(),
@@ -2306,88 +2404,23 @@ SpaceManager::~SpaceManager() {
   }
   }
 
-  // Have to update before the chunks_in_use lists are emptied
-  // below.
-  chunk_manager()->inc_free_chunks_total(allocated_chunks_words(),
-                                         sum_count_in_chunks_in_use());
-
   // Add all the chunks in use by this space manager
   // to the global list of free chunks.
 
   // Follow each list of chunks-in-use and add them to the
   // free lists.  Each list is NULL terminated.
 
-  for (ChunkIndex i = ZeroIndex; i < HumongousIndex; i = next_chunk_index(i)) {
-    log.trace("returned " SIZE_FORMAT " %s chunks to freelist", sum_count_in_chunks_in_use(i), chunk_size_name(i));
+  for (ChunkIndex i = ZeroIndex; i <= HumongousIndex; i = next_chunk_index(i)) {
     Metachunk* chunks = chunks_in_use(i);
-    chunk_manager()->return_chunks(i, chunks);
+    chunk_manager()->return_chunk_list(i, chunks);
     set_chunks_in_use(i, NULL);
-    log.trace("updated freelist count " SSIZE_FORMAT " %s", chunk_manager()->free_chunks(i)->count(), chunk_size_name(i));
-    assert(i != HumongousIndex, "Humongous chunks are handled explicitly later");
   }
 
-  // The medium chunk case may be optimized by passing the head and
-  // tail of the medium chunk list to add_at_head().  The tail is often
-  // the current chunk but there are probably exceptions.
-
-  // Humongous chunks
-  log.trace("returned " SIZE_FORMAT " %s humongous chunks to dictionary",
-            sum_count_in_chunks_in_use(HumongousIndex), chunk_size_name(HumongousIndex));
-  log.trace("Humongous chunk dictionary: ");
-  // Humongous chunks are never the current chunk.
-  Metachunk* humongous_chunks = chunks_in_use(HumongousIndex);
-
-  while (humongous_chunks != NULL) {
-    DEBUG_ONLY(humongous_chunks->set_is_tagged_free(true);)
-    NOT_PRODUCT(humongous_chunks->mangle(badMetaWordVal);)
-    log.trace(PTR_FORMAT " (" SIZE_FORMAT ") ", p2i(humongous_chunks), humongous_chunks->word_size());
-    assert(humongous_chunks->word_size() == (size_t)
-           align_size_up(humongous_chunks->word_size(),
-                             smallest_chunk_size()),
-           "Humongous chunk size is wrong: word size " SIZE_FORMAT
-           " granularity " SIZE_FORMAT,
-           humongous_chunks->word_size(), smallest_chunk_size());
-    Metachunk* next_humongous_chunks = humongous_chunks->next();
-    humongous_chunks->container()->dec_container_count();
-    chunk_manager()->humongous_dictionary()->return_chunk(humongous_chunks);
-    humongous_chunks = next_humongous_chunks;
-  }
-  log.trace("updated dictionary count " SIZE_FORMAT " %s", chunk_manager()->humongous_dictionary()->total_count(), chunk_size_name(HumongousIndex));
   chunk_manager()->slow_locked_verify();
 
   if (_block_freelists != NULL) {
     delete _block_freelists;
   }
-}
-
-const char* SpaceManager::chunk_size_name(ChunkIndex index) const {
-  switch (index) {
-    case SpecializedIndex:
-      return "Specialized";
-    case SmallIndex:
-      return "Small";
-    case MediumIndex:
-      return "Medium";
-    case HumongousIndex:
-      return "Humongous";
-    default:
-      return NULL;
-  }
-}
-
-ChunkIndex ChunkManager::list_index(size_t size) {
-  if (free_chunks(SpecializedIndex)->size() == size) {
-    return SpecializedIndex;
-  }
-  if (free_chunks(SmallIndex)->size() == size) {
-    return SmallIndex;
-  }
-  if (free_chunks(MediumIndex)->size() == size) {
-    return MediumIndex;
-  }
-
-  assert(size > free_chunks(MediumIndex)->size(), "Not a humongous chunk");
-  return HumongousIndex;
 }
 
 void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
@@ -3536,7 +3569,7 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   assert(!SafepointSynchronize::is_at_safepoint()
          || Thread::current()->is_VM_thread(), "should be the VM thread");
 
-  if (DumpSharedSpaces && PrintSharedSpaces) {
+  if (DumpSharedSpaces && log_is_enabled(Info, cds)) {
     record_deallocation(ptr, vsm()->get_allocation_word_size(word_size));
   }
 
@@ -3570,7 +3603,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     if (result == NULL) {
       report_out_of_shared_space(read_only ? SharedReadOnly : SharedReadWrite);
     }
-    if (PrintSharedSpaces) {
+    if (log_is_enabled(Info, cds)) {
       space->record_allocation(result, type, space->vsm()->get_allocation_word_size(word_size));
     }
 
@@ -3781,7 +3814,10 @@ bool Metaspace::contains(const void* ptr) {
   if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(ptr)) {
     return true;
   }
+  return contains_non_shared(ptr);
+}
 
+bool Metaspace::contains_non_shared(const void* ptr) {
   if (using_class_space() && get_space_list(ClassType)->contains(ptr)) {
      return true;
   }
@@ -4070,6 +4106,265 @@ void ChunkManager_test_list_index() {
   }
 }
 
+// ChunkManagerReturnTest stresses taking/returning chunks from the ChunkManager. It takes and
+// returns chunks from/to the ChunkManager while keeping track of the expected ChunkManager
+// content.
+class ChunkManagerReturnTestImpl {
+
+  VirtualSpaceNode _vsn;
+  ChunkManager _cm;
+
+  // The expected content of the chunk manager.
+  unsigned _chunks_in_chunkmanager;
+  size_t _words_in_chunkmanager;
+
+  // A fixed size pool of chunks. Chunks may be in the chunk manager (free) or not (in use).
+  static const int num_chunks = 256;
+  Metachunk* _pool[num_chunks];
+
+  // Helper, return a random position into the chunk pool.
+  static int get_random_position() {
+    return os::random() % num_chunks;
+  }
+
+  // Asserts that ChunkManager counters match expectations.
+  void assert_counters() {
+    assert(_vsn.container_count() == num_chunks - _chunks_in_chunkmanager, "vsn counter mismatch.");
+    assert(_cm.free_chunks_count() == _chunks_in_chunkmanager, "cm counter mismatch.");
+    assert(_cm.free_chunks_total_words() == _words_in_chunkmanager, "cm counter mismatch.");
+  }
+
+  // Get a random chunk size. Equal chance to get spec/med/small chunk size or
+  // a humongous chunk size. The latter itself is random in the range of [med+spec..4*med).
+  size_t get_random_chunk_size() {
+    const size_t sizes [] = { SpecializedChunk, SmallChunk, MediumChunk };
+    const int rand = os::random() % 4;
+    if (rand < 3) {
+      return sizes[rand];
+    } else {
+      // Note: this affects the max. size of space (see _vsn initialization in ctor).
+      return align_size_up(MediumChunk + 1 + (os::random() % (MediumChunk * 4)), SpecializedChunk);
+    }
+  }
+
+  // Starting at pool index <start>+1, find the next chunk tagged as either free or in use, depending
+  // on <is_free>. Search wraps. Returns its position, or -1 if no matching chunk was found.
+  int next_matching_chunk(int start, bool is_free) const {
+    assert(start >= 0 && start < num_chunks, "invalid parameter");
+    int pos = start;
+    do {
+      if (++pos == num_chunks) {
+        pos = 0;
+      }
+      if (_pool[pos]->is_tagged_free() == is_free) {
+        return pos;
+      }
+    } while (pos != start);
+    return -1;
+  }
+
+  // A structure to keep information about a chunk list including which
+  // chunks are part of this list. This is needed to keep information about a chunk list
+  // we will to return to the ChunkManager, because the original list will be destroyed.
+  struct AChunkList {
+    Metachunk* head;
+    Metachunk* all[num_chunks];
+    size_t size;
+    int num;
+    ChunkIndex index;
+  };
+
+  // Assemble, from the in-use chunks (not in the chunk manager) in the pool,
+  // a random chunk list of max. length <list_size> of chunks with the same
+  // ChunkIndex (chunk size).
+  // Returns false if list cannot be assembled. List is returned in the <out>
+  // structure. Returned list may be smaller than <list_size>.
+  bool assemble_random_chunklist(AChunkList* out, int list_size) {
+    // Choose a random in-use chunk from the pool...
+    const int headpos = next_matching_chunk(get_random_position(), false);
+    if (headpos == -1) {
+      return false;
+    }
+    Metachunk* const head = _pool[headpos];
+    out->all[0] = head;
+    assert(head->is_tagged_free() == false, "Chunk state mismatch");
+    // ..then go from there, chain it up with up to list_size - 1 number of other
+    // in-use chunks of the same index.
+    const ChunkIndex index = _cm.list_index(head->word_size());
+    int num_added = 1;
+    size_t size_added = head->word_size();
+    int pos = headpos;
+    Metachunk* tail = head;
+    do {
+      pos = next_matching_chunk(pos, false);
+      if (pos != headpos) {
+        Metachunk* c = _pool[pos];
+        assert(c->is_tagged_free() == false, "Chunk state mismatch");
+        if (index == _cm.list_index(c->word_size())) {
+          tail->set_next(c);
+          c->set_prev(tail);
+          tail = c;
+          out->all[num_added] = c;
+          num_added ++;
+          size_added += c->word_size();
+        }
+      }
+    } while (num_added < list_size && pos != headpos);
+    out->head = head;
+    out->index = index;
+    out->size = size_added;
+    out->num = num_added;
+    return true;
+  }
+
+  // Take a single random chunk from the ChunkManager.
+  bool take_single_random_chunk_from_chunkmanager() {
+    assert_counters();
+    _cm.locked_verify();
+    int pos = next_matching_chunk(get_random_position(), true);
+    if (pos == -1) {
+      return false;
+    }
+    Metachunk* c = _pool[pos];
+    assert(c->is_tagged_free(), "Chunk state mismatch");
+    // Note: instead of using ChunkManager::remove_chunk on this one chunk, we call
+    // ChunkManager::free_chunks_get() with this chunk's word size. We really want
+    // to exercise ChunkManager::free_chunks_get() because that one gets called for
+    // normal chunk allocation.
+    Metachunk* c2 = _cm.free_chunks_get(c->word_size());
+    assert(c2 != NULL, "Unexpected.");
+    assert(!c2->is_tagged_free(), "Chunk state mismatch");
+    assert(c2->next() == NULL && c2->prev() == NULL, "Chunk should be outside of a list.");
+    _chunks_in_chunkmanager --;
+    _words_in_chunkmanager -= c->word_size();
+    assert_counters();
+    _cm.locked_verify();
+    return true;
+  }
+
+  // Returns a single random chunk to the chunk manager. Returns false if that
+  // was not possible (all chunks are already in the chunk manager).
+  bool return_single_random_chunk_to_chunkmanager() {
+    assert_counters();
+    _cm.locked_verify();
+    int pos = next_matching_chunk(get_random_position(), false);
+    if (pos == -1) {
+      return false;
+    }
+    Metachunk* c = _pool[pos];
+    assert(c->is_tagged_free() == false, "wrong chunk information");
+    _cm.return_single_chunk(_cm.list_index(c->word_size()), c);
+    _chunks_in_chunkmanager ++;
+    _words_in_chunkmanager += c->word_size();
+    assert(c->is_tagged_free() == true, "wrong chunk information");
+    assert_counters();
+    _cm.locked_verify();
+    return true;
+  }
+
+  // Return a random chunk list to the chunk manager. Returns the length of the
+  // returned list.
+  int return_random_chunk_list_to_chunkmanager(int list_size) {
+    assert_counters();
+    _cm.locked_verify();
+    AChunkList aChunkList;
+    if (!assemble_random_chunklist(&aChunkList, list_size)) {
+      return 0;
+    }
+    // Before returning chunks are returned, they should be tagged in use.
+    for (int i = 0; i < aChunkList.num; i ++) {
+      assert(!aChunkList.all[i]->is_tagged_free(), "chunk state mismatch.");
+    }
+    _cm.return_chunk_list(aChunkList.index, aChunkList.head);
+    _chunks_in_chunkmanager += aChunkList.num;
+    _words_in_chunkmanager += aChunkList.size;
+    // After all chunks are returned, check that they are now tagged free.
+    for (int i = 0; i < aChunkList.num; i ++) {
+      assert(aChunkList.all[i]->is_tagged_free(), "chunk state mismatch.");
+    }
+    assert_counters();
+    _cm.locked_verify();
+    return aChunkList.num;
+  }
+
+public:
+
+  ChunkManagerReturnTestImpl()
+    : _vsn(align_size_up(MediumChunk * num_chunks * 5 * sizeof(MetaWord), Metaspace::reserve_alignment()))
+    , _cm(SpecializedChunk, SmallChunk, MediumChunk)
+    , _chunks_in_chunkmanager(0)
+    , _words_in_chunkmanager(0)
+  {
+    MutexLockerEx ml(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+    // Allocate virtual space and allocate random chunks. Keep these chunks in the _pool. These chunks are
+    // "in use", because not yet added to any chunk manager.
+    _vsn.initialize();
+    _vsn.expand_by(_vsn.reserved_words(), _vsn.reserved_words());
+    for (int i = 0; i < num_chunks; i ++) {
+      const size_t size = get_random_chunk_size();
+      _pool[i] = _vsn.get_chunk_vs(size);
+      assert(_pool[i] != NULL, "allocation failed");
+    }
+    assert_counters();
+    _cm.locked_verify();
+  }
+
+  // Test entry point.
+  // Return some chunks to the chunk manager (return phase). Take some chunks out (take phase). Repeat.
+  // Chunks are choosen randomly. Number of chunks to return or taken are choosen randomly, but affected
+  // by the <phase_length_factor> argument: a factor of 0.0 will cause the test to quickly alternate between
+  // returning and taking, whereas a factor of 1.0 will take/return all chunks from/to the
+  // chunks manager, thereby emptying or filling it completely.
+  void do_test(float phase_length_factor) {
+    MutexLockerEx ml(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
+    assert_counters();
+    // Execute n operations, and operation being the move of a single chunk to/from the chunk manager.
+    const int num_max_ops = num_chunks * 100;
+    int num_ops = num_max_ops;
+    const int average_phase_length = (int)(phase_length_factor * num_chunks);
+    int num_ops_until_switch = MAX2(1, (int)(average_phase_length + os::random() % 8 - 4));
+    bool return_phase = true;
+    while (num_ops > 0) {
+      int chunks_moved = 0;
+      if (return_phase) {
+        // Randomly switch between returning a single chunk or a random length chunk list.
+        if (os::random() % 2 == 0) {
+          if (return_single_random_chunk_to_chunkmanager()) {
+            chunks_moved = 1;
+          }
+        } else {
+          const int list_length = MAX2(1, (int)(os::random() % num_ops_until_switch));
+          chunks_moved = return_random_chunk_list_to_chunkmanager(list_length);
+        }
+      } else {
+        // Breath out.
+        if (take_single_random_chunk_from_chunkmanager()) {
+          chunks_moved = 1;
+        }
+      }
+      num_ops -= chunks_moved;
+      num_ops_until_switch -= chunks_moved;
+      if (chunks_moved == 0 || num_ops_until_switch <= 0) {
+        return_phase = !return_phase;
+        num_ops_until_switch = MAX2(1, (int)(average_phase_length + os::random() % 8 - 4));
+      }
+    }
+  }
+};
+
+void* setup_chunkmanager_returntests() {
+  ChunkManagerReturnTestImpl* p = new ChunkManagerReturnTestImpl();
+  return p;
+}
+
+void teardown_chunkmanager_returntests(void* p) {
+  delete (ChunkManagerReturnTestImpl*) p;
+}
+
+void run_chunkmanager_returntests(void* p, float phase_length) {
+  ChunkManagerReturnTestImpl* test = (ChunkManagerReturnTestImpl*) p;
+  test->do_test(phase_length);
+}
 
 // The following test is placed here instead of a gtest / unittest file
 // because the ChunkManager class is only available in this file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_DICTIONARY_HPP
 #define SHARE_VM_CLASSFILE_DICTIONARY_HPP
 
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
@@ -32,16 +33,13 @@
 #include "utilities/ostream.hpp"
 
 class DictionaryEntry;
-class PSPromotionManager;
-class ProtectionDomainCacheTable;
-class ProtectionDomainCacheEntry;
 class BoolObjectClosure;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the system dictionary (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable<Klass*, mtClass> {
+class Dictionary : public TwoOopHashtable<InstanceKlass*, mtClass> {
   friend class VMStructs;
 private:
   // current iteration index.
@@ -56,16 +54,16 @@ private:
 
 protected:
   DictionaryEntry* bucket(int i) const {
-    return (DictionaryEntry*)Hashtable<Klass*, mtClass>::bucket(i);
+    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<Klass*, mtClass>::bucket_addr(i);
+    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<Klass*, mtClass>::add_entry(index, (HashtableEntry<Klass*, mtClass>*)new_entry);
+    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
   }
 
   static size_t entry_size();
@@ -73,34 +71,27 @@ public:
   Dictionary(int table_size);
   Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
 
-  DictionaryEntry* new_entry(unsigned int hash, Klass* klass, ClassLoaderData* loader_data);
-
-  DictionaryEntry* new_entry();
+  DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass, ClassLoaderData* loader_data);
 
   void free_entry(DictionaryEntry* entry);
 
-  void add_klass(Symbol* class_name, ClassLoaderData* loader_data,KlassHandle obj);
+  void add_klass(Symbol* class_name, ClassLoaderData* loader_data, InstanceKlass* obj);
 
-  Klass* find_class(int index, unsigned int hash,
-                      Symbol* name, ClassLoaderData* loader_data);
+  InstanceKlass* find_class(int index, unsigned int hash,
+                            Symbol* name, ClassLoaderData* loader_data);
 
-  Klass* find_shared_class(int index, unsigned int hash, Symbol* name);
+  InstanceKlass* find_shared_class(int index, unsigned int hash, Symbol* name);
 
   // Compiler support
-  Klass* try_get_next_class();
+  InstanceKlass* try_get_next_class();
 
   // GC support
   void oops_do(OopClosure* f);
-  void always_strong_oops_do(OopClosure* blk);
   void roots_oops_do(OopClosure* strong, OopClosure* weak);
-
-  void always_strong_classes_do(KlassClosure* closure);
 
   void classes_do(void f(Klass*));
   void classes_do(void f(Klass*, TRAPS), TRAPS);
   void classes_do(void f(Klass*, ClassLoaderData*));
-
-  void methods_do(void f(Method*));
 
   void unlink(BoolObjectClosure* is_alive);
   void remove_classes_in_error_state();
@@ -116,19 +107,19 @@ public:
   void do_unloading();
 
   // Protection domains
-  Klass* find(int index, unsigned int hash, Symbol* name,
-                ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  InstanceKlass* find(int index, unsigned int hash, Symbol* name,
+                      ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
   bool is_valid_protection_domain(int index, unsigned int hash,
                                   Symbol* name, ClassLoaderData* loader_data,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
-                             instanceKlassHandle klass, ClassLoaderData* loader_data,
+                             InstanceKlass* klass, ClassLoaderData* loader_data,
                              Handle protection_domain, TRAPS);
 
   // Sharing support
   void reorder_dictionary();
 
-  ProtectionDomainCacheEntry* cache_get(oop protection_domain);
+  ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
 
   void print(bool details = true);
 #ifdef ASSERT
@@ -137,115 +128,10 @@ public:
   void verify();
 };
 
-// The following classes can be in dictionary.cpp, but we need these
-// to be in header file so that SA's vmStructs can access them.
-class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
-  friend class VMStructs;
- private:
-  // Flag indicating whether this protection domain entry is strongly reachable.
-  // Used during iterating over the system dictionary to remember oops that need
-  // to be updated.
-  bool _strongly_reachable;
- public:
-  oop protection_domain() { return literal(); }
-
-  void init() {
-    _strongly_reachable = false;
-  }
-
-  ProtectionDomainCacheEntry* next() {
-    return (ProtectionDomainCacheEntry*)HashtableEntry<oop, mtClass>::next();
-  }
-
-  ProtectionDomainCacheEntry** next_addr() {
-    return (ProtectionDomainCacheEntry**)HashtableEntry<oop, mtClass>::next_addr();
-  }
-
-  void oops_do(OopClosure* f) {
-    f->do_oop(literal_addr());
-  }
-
-  void set_strongly_reachable()   { _strongly_reachable = true; }
-  bool is_strongly_reachable()    { return _strongly_reachable; }
-  void reset_strongly_reachable() { _strongly_reachable = false; }
-
-  void print() PRODUCT_RETURN;
-  void verify();
-};
-
-// The ProtectionDomainCacheTable contains all protection domain oops. The system
-// dictionary entries reference its entries instead of having references to oops
-// directly.
-// This is used to speed up system dictionary iteration: the oops in the
-// protection domain are the only ones referring the Java heap. So when there is
-// need to update these, instead of going over every entry of the system dictionary,
-// we only need to iterate over this set.
-// The amount of different protection domains used is typically magnitudes smaller
-// than the number of system dictionary entries (loaded classes).
-class ProtectionDomainCacheTable : public Hashtable<oop, mtClass> {
-  friend class VMStructs;
-private:
-  ProtectionDomainCacheEntry* bucket(int i) {
-    return (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::bucket(i);
-  }
-
-  // The following method is not MT-safe and must be done under lock.
-  ProtectionDomainCacheEntry** bucket_addr(int i) {
-    return (ProtectionDomainCacheEntry**) Hashtable<oop, mtClass>::bucket_addr(i);
-  }
-
-  ProtectionDomainCacheEntry* new_entry(unsigned int hash, oop protection_domain) {
-    ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::new_entry(hash, protection_domain);
-    entry->init();
-    return entry;
-  }
-
-  static unsigned int compute_hash(oop protection_domain);
-
-  int index_for(oop protection_domain);
-  ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, oop protection_domain);
-  ProtectionDomainCacheEntry* find_entry(int index, oop protection_domain);
-
-public:
-
-  ProtectionDomainCacheTable(int table_size);
-
-  ProtectionDomainCacheEntry* get(oop protection_domain);
-  void free(ProtectionDomainCacheEntry* entry);
-
-  void unlink(BoolObjectClosure* cl);
-
-  // GC support
-  void oops_do(OopClosure* f);
-  void always_strong_oops_do(OopClosure* f);
-  void roots_oops_do(OopClosure* strong, OopClosure* weak);
-
-  static uint bucket_size();
-
-  void print() PRODUCT_RETURN;
-  void verify();
-};
-
-
-class ProtectionDomainEntry :public CHeapObj<mtClass> {
-  friend class VMStructs;
- public:
-  ProtectionDomainEntry* _next;
-  ProtectionDomainCacheEntry* _pd_cache;
-
-  ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache, ProtectionDomainEntry* next) {
-    _pd_cache = pd_cache;
-    _next     = next;
-  }
-
-  ProtectionDomainEntry* next() { return _next; }
-  oop protection_domain() { return _pd_cache->protection_domain(); }
-};
-
 // An entry in the system dictionary, this describes a class as
-// { Klass*, loader, protection_domain }.
+// { InstanceKlass*, loader, protection_domain }.
 
-class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
+class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
@@ -275,17 +161,16 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   // Tells whether a protection is in the approved set.
   bool contains_protection_domain(oop protection_domain) const;
   // Adds a protection domain to the approved set.
-  void add_protection_domain(Dictionary* dict, oop protection_domain);
+  void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
-  Klass* klass() const { return (Klass*)literal(); }
-  Klass** klass_addr() { return (Klass**)literal_addr(); }
+  InstanceKlass* klass() const { return (InstanceKlass*)literal(); }
 
   DictionaryEntry* next() const {
-    return (DictionaryEntry*)HashtableEntry<Klass*, mtClass>::next();
+    return (DictionaryEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
   }
 
   DictionaryEntry** next_addr() {
-    return (DictionaryEntry**)HashtableEntry<Klass*, mtClass>::next_addr();
+    return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
   ClassLoaderData* loader_data() const { return _loader_data; }
@@ -293,8 +178,6 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
 
   ProtectionDomainEntry* pd_set() const { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
-
-  bool has_protection_domain() { return _pd_set != NULL; }
 
   // Tells whether the initiating class' protection can access the this _klass
   bool is_valid_protection_domain(Handle protection_domain) {
@@ -306,14 +189,6 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
          : contains_protection_domain(protection_domain());
   }
 
-  void set_strongly_reachable() {
-    for (ProtectionDomainEntry* current = _pd_set;
-                                current != NULL;
-                                current = current->_next) {
-      current->_pd_cache->set_strongly_reachable();
-    }
-  }
-
   void verify_protection_domain_set() {
     for (ProtectionDomainEntry* current = _pd_set;
                                 current != NULL;
@@ -323,7 +198,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   }
 
   bool equals(const Symbol* class_name, ClassLoaderData* loader_data) const {
-    Klass* klass = (Klass*)literal();
+    InstanceKlass* klass = (InstanceKlass*)literal();
     return (klass->name() == class_name && _loader_data == loader_data);
   }
 
@@ -336,6 +211,8 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
     }
     st->print_cr("pd set count = #%d", count);
   }
+
+  void verify();
 };
 
 // Entry in a SymbolPropertyTable, mapping a single Symbol*

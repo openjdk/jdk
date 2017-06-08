@@ -105,4 +105,9 @@ public abstract class Loop<T extends AbstractBlockBase<T>> {
         }
         return false;
     }
+
+    @Override
+    public int hashCode() {
+        return index + depth * 31;
+    }
 }

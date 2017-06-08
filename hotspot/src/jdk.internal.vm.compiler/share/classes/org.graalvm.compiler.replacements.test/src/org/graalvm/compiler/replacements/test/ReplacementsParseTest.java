@@ -22,45 +22,86 @@
  */
 package org.graalvm.compiler.replacements.test;
 
+import static org.graalvm.compiler.java.BytecodeParserOptions.InlinePartialIntrinsicExitDuringParsing;
+
 import java.util.function.Function;
 
-import org.junit.Test;
-
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugConfigScope;
+import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
+import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests for expected behavior when parsing snippets and intrinsics.
  */
-public class ReplacementsParseTest extends GraalCompilerTest {
+public class ReplacementsParseTest extends ReplacementsTest {
 
-    @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
-        Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // manually register generated factory, jvmci service providers don't work from unit tests
-        new PluginFactory_ReplacementsParseTest().registerPlugins(ret.getInvocationPlugins(), null);
-        return ret;
+    private static final String IN_COMPILED_HANDLER_MARKER = "*** in compiled handler ***";
+
+    /**
+     * Marker value to indicate an exception handler was interpreted. We cannot use a complex string
+     * expression in this context without risking non-deterministic behavior dependent on whether
+     * String intrinsics are applied or whether String expression evaluation hit an uncommon trap
+     * when executed by C1 or C2 (and thus potentially altering the profile such that the exception
+     * handler is *not* compiled by Graal even when we want it to be).
+     */
+    private static final String IN_INTERPRETED_HANDLER_MARKER = "*** in interpreted handler ***";
+
+    private InlineInvokePlugin.InlineInfo inlineInvokeDecision;
+
+    @SuppressWarnings("serial")
+    static class CustomError extends Error {
+        CustomError(String message) {
+            super(message);
+        }
     }
 
-    private static final Object THROW_EXCEPTION_MARKER = new Object() {
+    static final Object THROW_EXCEPTION_MARKER = new Object() {
         @Override
         public String toString() {
             return "THROW_EXCEPTION_MARKER";
         }
     };
 
-    static class TestMethods {
+    static int copyFirstBody(byte[] left, byte[] right, boolean left2right) {
+        if (left2right) {
+            byte e = left[0];
+            right[0] = e;
+            return e;
+        } else {
+            byte e = right[0];
+            left[0] = e;
+            return e;
+        }
+    }
+
+    static int copyFirstL2RBody(byte[] left, byte[] right) {
+        byte e = left[0];
+        right[0] = e;
+        return e;
+    }
+
+    static class TestObject {
         static double next(double v) {
             return Math.nextAfter(v, 1.0);
         }
@@ -73,22 +114,55 @@ public class ReplacementsParseTest extends GraalCompilerTest {
             return Math.nextAfter(x, d);
         }
 
-        static String stringize(Object obj) {
-            String res = String.valueOf(obj);
-            if (res.equals(THROW_EXCEPTION_MARKER.toString())) {
+        TestObject() {
+            this(null);
+        }
+
+        TestObject(Object id) {
+            this.id = id;
+        }
+
+        final Object id;
+
+        String stringizeId() {
+            Object res = id;
+            if (res == THROW_EXCEPTION_MARKER) {
                 // Tests exception throwing from partial intrinsification
-                throw new RuntimeException("ex: " + obj);
+                throw new CustomError("ex");
             }
-            return res;
+            return String.valueOf(res);
+        }
+
+        static String stringize(Object obj) {
+            Object res = obj;
+            if (res == THROW_EXCEPTION_MARKER) {
+                // Tests exception throwing from partial intrinsification
+                throw new CustomError("ex");
+            }
+            return String.valueOf(res);
         }
 
         static String identity(String s) {
             return s;
         }
+
+        /**
+         * @see TestObjectSubstitutions#copyFirst(byte[], byte[], boolean)
+         */
+        static int copyFirst(byte[] left, byte[] right, boolean left2right) {
+            return copyFirstBody(left, right, left2right);
+        }
+
+        /**
+         * @see TestObjectSubstitutions#copyFirstL2R(byte[], byte[])
+         */
+        static int copyFirstL2R(byte[] left, byte[] right) {
+            return copyFirstL2RBody(left, right);
+        }
     }
 
-    @ClassSubstitution(TestMethods.class)
-    static class TestMethodsSubstitutions {
+    @ClassSubstitution(TestObject.class)
+    static class TestObjectSubstitutions {
 
         @MethodSubstitution(isStatic = true)
         static double nextAfter(double x, double d) {
@@ -97,7 +171,7 @@ public class ReplacementsParseTest extends GraalCompilerTest {
         }
 
         /**
-         * Tests partial intrinsification.
+         * Tests conditional intrinsification of a static method.
          */
         @MethodSubstitution
         static String stringize(Object obj) {
@@ -111,12 +185,50 @@ public class ReplacementsParseTest extends GraalCompilerTest {
             }
         }
 
+        /**
+         * Tests conditional intrinsification of a non-static method.
+         */
+        @MethodSubstitution(isStatic = false)
+        static String stringizeId(TestObject thisObj) {
+            if (thisObj.id != null && thisObj.id.getClass() == String.class) {
+                return asNonNullString(thisObj.id);
+            } else {
+                // A recursive call denotes exiting/deoptimizing
+                // out of the partial intrinsification to the
+                // slow/uncommon case.
+                return outOfLinePartialIntrinsification(thisObj);
+            }
+        }
+
+        static String outOfLinePartialIntrinsification(TestObject thisObj) {
+            return stringizeId(thisObj);
+        }
+
         public static String asNonNullString(Object object) {
             return asNonNullStringIntrinsic(object, String.class, true, true);
         }
 
         @NodeIntrinsic(PiNode.class)
         private static native String asNonNullStringIntrinsic(Object object, @ConstantNodeParameter Class<?> toType, @ConstantNodeParameter boolean exactType, @ConstantNodeParameter boolean nonNull);
+
+        /**
+         * An valid intrinsic as the frame state associated with the merge should prevent the frame
+         * states associated with the array stores from being associated with subsequent
+         * deoptimizing nodes.
+         */
+        @MethodSubstitution
+        static int copyFirst(byte[] left, byte[] right, boolean left2right) {
+            return copyFirstBody(left, right, left2right);
+        }
+
+        /**
+         * An invalid intrinsic as the frame state associated with the array assignment can leak out
+         * to subsequent deoptimizing nodes.
+         */
+        @MethodSubstitution
+        static int copyFirstL2R(byte[] left, byte[] right) {
+            return copyFirstL2RBody(left, right);
+        }
 
         /**
          * Tests that non-capturing lambdas are folded away.
@@ -132,16 +244,28 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
-        BytecodeProvider replacementBytecodeProvider = getReplacements().getReplacementBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, TestMethods.class, replacementBytecodeProvider);
-        r.registerMethodSubstitution(TestMethodsSubstitutions.class, "nextAfter", double.class, double.class);
-        r.registerMethodSubstitution(TestMethodsSubstitutions.class, "stringize", Object.class);
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
+        Registration r = new Registration(invocationPlugins, TestObject.class, replacementBytecodeProvider);
+        new PluginFactory_ReplacementsParseTest().registerPlugins(invocationPlugins, null);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "nextAfter", double.class, double.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringize", Object.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringizeId", Receiver.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "copyFirst", byte[].class, byte[].class, boolean.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "copyFirstL2R", byte[].class, byte[].class);
+
         if (replacementBytecodeProvider.supportsInvokedynamic()) {
-            r.registerMethodSubstitution(TestMethodsSubstitutions.class, "identity", String.class);
+            r.registerMethodSubstitution(TestObjectSubstitutions.class, "identity", String.class);
         }
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
+    }
+
+    @BeforeClass
+    public static void warmupProfiles() {
+        for (int i = 0; i < 40000; i++) {
+            callCopyFirst(new byte[16], new byte[16], true);
+            callCopyFirstL2R(new byte[16], new byte[16]);
+        }
     }
 
     /**
@@ -153,7 +277,7 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     }
 
     public double test1Snippet(double d) {
-        return TestMethods.next(d);
+        return TestObject.next(d);
     }
 
     /**
@@ -165,7 +289,7 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     }
 
     public double test2Snippet(double d) {
-        return TestMethods.next2(d);
+        return TestObject.next2(d);
     }
 
     /**
@@ -186,24 +310,109 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     public void doNextAfter(double[] outArray, double[] inArray) {
         for (int i = 0; i < inArray.length; i++) {
             double direction = (i & 1) == 0 ? Double.POSITIVE_INFINITY : -Double.NEGATIVE_INFINITY;
-            outArray[i] = TestMethods.nextAfter(inArray[i], direction);
+            outArray[i] = TestObject.nextAfter(inArray[i], direction);
         }
     }
+
+    private void testWithDifferentReturnValues(OptionValues options, String standardReturnValue, String compiledReturnValue, String name, Object... args) {
+        ResolvedJavaMethod method = getResolvedJavaMethod(name);
+        Object receiver = null;
+
+        Result expect = executeExpected(method, receiver, args);
+        Assert.assertEquals(standardReturnValue, expect.returnValue);
+        expect = new Result(compiledReturnValue, null);
+        testAgainstExpected(options, method, expect, receiver, args);
+    }
+
+    @Override
+    protected InstalledCode getCode(final ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, boolean forceCompile, boolean installAsDefault, OptionValues options) {
+        return super.getCode(installedCodeOwner, graph, forceCompileOverride, installAsDefault, options);
+    }
+
+    boolean forceCompileOverride;
 
     @Test
     public void testCallStringize() {
         test("callStringize", "a string");
-        test("callStringize", THROW_EXCEPTION_MARKER);
         test("callStringize", Boolean.TRUE);
+        // Unset 'exception seen' bit if testCallStringizeWithoutInlinePartialIntrinsicExit
+        // is executed before this test
+        getResolvedJavaMethod("callStringize").reprofile();
+        forceCompileOverride = true;
+        String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
+        String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
+        testWithDifferentReturnValues(getInitialOptions(), standardReturnValue, compiledReturnValue, "callStringize", THROW_EXCEPTION_MARKER);
+    }
+
+    @Test
+    public void testCallStringizeWithoutInlinePartialIntrinsicExit() {
+        OptionValues options = new OptionValues(getInitialOptions(), InlinePartialIntrinsicExitDuringParsing, false);
+        test(options, "callStringize", "a string");
+        test(options, "callStringize", Boolean.TRUE);
+        String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
+        String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
+        for (int i = 0; i < 1000; i++) {
+            // Ensures 'exception seen' bit is set for call to stringize
+            callStringize(THROW_EXCEPTION_MARKER);
+        }
+        forceCompileOverride = true;
+        testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringize", THROW_EXCEPTION_MARKER);
+    }
+
+    @Test
+    public void testCallStringizeId() {
+        test("callStringizeId", new TestObject("a string"));
+        test("callStringizeId", new TestObject(Boolean.TRUE));
+        // Unset 'exception seen' bit if testCallStringizeIdWithoutInlinePartialIntrinsicExit
+        // is executed before this test
+        getResolvedJavaMethod("callStringize").reprofile();
+        forceCompileOverride = true;
+        String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
+        String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
+        testWithDifferentReturnValues(getInitialOptions(), standardReturnValue, compiledReturnValue, "callStringizeId", new TestObject(THROW_EXCEPTION_MARKER));
+    }
+
+    @Test
+    public void testCallStringizeIdWithoutInlinePartialIntrinsicExit() {
+        OptionValues options = new OptionValues(getInitialOptions(), InlinePartialIntrinsicExitDuringParsing, false);
+        test(options, "callStringizeId", new TestObject("a string"));
+        test(options, "callStringizeId", new TestObject(Boolean.TRUE));
+        TestObject exceptionTestObject = new TestObject(THROW_EXCEPTION_MARKER);
+        for (int i = 0; i < 1000; i++) {
+            // Ensures 'exception seen' bit is set for call to stringizeId
+            callStringizeId(exceptionTestObject);
+        }
+        String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
+        String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
+        forceCompileOverride = true;
+        testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringizeId", exceptionTestObject);
     }
 
     public static Object callStringize(Object obj) {
-        return TestMethods.stringize(obj);
+        try {
+            return TestObject.stringize(obj);
+        } catch (CustomError e) {
+            if (GraalDirectives.inCompiledCode()) {
+                return IN_COMPILED_HANDLER_MARKER;
+            }
+            return IN_INTERPRETED_HANDLER_MARKER;
+        }
+    }
+
+    public static Object callStringizeId(TestObject testObj) {
+        try {
+            return testObj.stringizeId();
+        } catch (CustomError e) {
+            if (GraalDirectives.inCompiledCode()) {
+                return IN_COMPILED_HANDLER_MARKER;
+            }
+            return IN_INTERPRETED_HANDLER_MARKER;
+        }
     }
 
     @Test
     public void testRootCompileStringize() {
-        ResolvedJavaMethod method = getResolvedJavaMethod(TestMethods.class, "stringize");
+        ResolvedJavaMethod method = getResolvedJavaMethod(TestObject.class, "stringize");
         test(method, null, "a string");
         test(method, null, Boolean.TRUE);
         test(method, null, THROW_EXCEPTION_MARKER);
@@ -216,6 +425,69 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     }
 
     public static String callLambda(String value) {
-        return TestMethods.identity(value);
+        return TestObject.identity(value);
+    }
+
+    public static int callCopyFirst(byte[] in, byte[] out, boolean left2right) {
+        int res = TestObject.copyFirst(in, out, left2right);
+        if (res == 17) {
+            // A node after the intrinsic that needs a frame state.
+            GraalDirectives.deoptimize();
+        }
+        return res;
+    }
+
+    public static int callCopyFirstWrapper(byte[] in, byte[] out, boolean left2right) {
+        return callCopyFirst(in, out, left2right);
+    }
+
+    public static int callCopyFirstL2R(byte[] in, byte[] out) {
+        int res = TestObject.copyFirstL2R(in, out);
+        if (res == 17) {
+            // A node after the intrinsic that needs a frame state.
+            GraalDirectives.deoptimize();
+        }
+        return res;
+    }
+
+    @Test
+    public void testCallCopyFirst() {
+        byte[] in = {0, 1, 2, 3, 4};
+        byte[] out = new byte[in.length];
+        test("callCopyFirst", in, out, true);
+        test("callCopyFirst", in, out, false);
+    }
+
+    @SuppressWarnings("try")
+    @Test
+    public void testCallCopyFirstL2R() {
+        byte[] in = {0, 1, 2, 3, 4};
+        byte[] out = new byte[in.length];
+        try {
+            try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
+                test("callCopyFirstL2R", in, out);
+            }
+        } catch (GraalGraphError e) {
+            assertTrue(e.getMessage().startsWith("Invalid frame state"));
+        }
+    }
+
+    @Override
+    protected InlineInvokePlugin.InlineInfo bytecodeParserShouldInlineInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+        return inlineInvokeDecision;
+    }
+
+    @Test
+    public void testCallCopyFirstWithoutInlinePartialIntrinsicExit() {
+        OptionValues options = new OptionValues(getInitialOptions(), InlinePartialIntrinsicExitDuringParsing, false);
+        inlineInvokeDecision = InlineInvokePlugin.InlineInfo.DO_NOT_INLINE_WITH_EXCEPTION;
+        try {
+            byte[] in = {0, 1, 2, 3, 4};
+            byte[] out = new byte[in.length];
+            test(options, "callCopyFirstWrapper", in, out, true);
+            test(options, "callCopyFirstWrapper", in, out, false);
+        } finally {
+            inlineInvokeDecision = null;
+        }
     }
 }

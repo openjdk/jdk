@@ -45,6 +45,7 @@ public class MonitorIdNode extends ValueNode implements IterableNodeType, LIRLow
 
     public static final NodeClass<MonitorIdNode> TYPE = NodeClass.create(MonitorIdNode.class);
     protected int lockDepth;
+    protected boolean eliminated;
 
     public MonitorIdNode(int lockDepth) {
         this(TYPE, lockDepth);
@@ -61,6 +62,14 @@ public class MonitorIdNode extends ValueNode implements IterableNodeType, LIRLow
 
     public void setLockDepth(int lockDepth) {
         this.lockDepth = lockDepth;
+    }
+
+    public boolean isEliminated() {
+        return eliminated;
+    }
+
+    public void setEliminated() {
+        eliminated = true;
     }
 
     @Override

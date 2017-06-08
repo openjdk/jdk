@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -714,7 +714,8 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
   if (xtty == NULL) {
     return;
   }
-  ResourceMark rm;
+  Thread* thread = Thread::current();
+  HandleMark rm(thread);
   ttyLocker ttyl;
   int ctxkj = dep_context_arg(dept);  // -1 if no context arg
   if (witness != NULL) {
@@ -732,14 +733,14 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
     DepArgument arg = args->at(j);
     if (j == 1) {
       if (arg.is_oop()) {
-        xtty->object("x", arg.oop_value());
+        xtty->object("x", Handle(thread, arg.oop_value()));
       } else {
         xtty->object("x", arg.metadata_value());
       }
     } else {
       char xn[10]; sprintf(xn, "x%d", j);
       if (arg.is_oop()) {
-        xtty->object(xn, arg.oop_value());
+        xtty->object(xn, Handle(thread, arg.oop_value()));
       } else {
         xtty->object(xn, arg.metadata_value());
       }

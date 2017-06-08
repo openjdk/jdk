@@ -28,6 +28,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -155,4 +156,6 @@ public interface VirtualizerTool {
      * @return true if materialization happened, false if not.
      */
     boolean ensureMaterialized(VirtualObjectNode virtualObject);
+
+    OptionValues getOptions();
 }

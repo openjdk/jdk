@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -126,7 +126,9 @@ void VM_Version::initialize() {
                (has_vpmsumb() ? " vpmsumb" : ""),
                (has_tcheck()  ? " tcheck"  : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
-               (has_vsx()     ? " vsx"     : "")
+               (has_vsx()     ? " vsx"     : ""),
+               (has_ldbrx()   ? " ldbrx"   : ""),
+               (has_stdbrx()  ? " stdbrx"  : "")
                // Make sure number of %s matches num_features!
               );
   _features_string = os::strdup(buf);
@@ -172,18 +174,27 @@ void VM_Version::initialize() {
 
   assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
 
-  // Implementation does not use any of the vector instructions
-  // available with Power8. Their exploitation is still pending.
+  // If defined(VM_LITTLE_ENDIAN) and running on Power8 or newer hardware,
+  // the implementation uses the vector instructions available with Power8.
+  // In all other cases, the implementation uses only generally available instructions.
   if (!UseCRC32Intrinsics) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   }
 
-  if (UseCRC32CIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
-      warning("CRC32C intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  // Implementation does not use any of the vector instructions available with Power8.
+  // Their exploitation is still pending (aka "work in progress").
+  if (!UseCRC32CIntrinsics) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  }
+
+  // TODO: Provide implementation.
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   // The AES intrinsic stubs require AES instruction support.
@@ -243,11 +254,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
@@ -659,6 +665,8 @@ void VM_Version::determine_features() {
   a->tcheck(0);                                // code[12] -> tcheck
   a->mfdscr(R0);                               // code[13] -> mfdscr
   a->lxvd2x(VSR0, R3_ARG1);                    // code[14] -> vsx
+  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[15] -> ldbrx
+  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[16] -> stdbrx
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -708,6 +716,8 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= tcheck_m;
   if (code[feature_cntr++]) features |= mfdscr_m;
   if (code[feature_cntr++]) features |= vsx_m;
+  if (code[feature_cntr++]) features |= ldbrx_m;
+  if (code[feature_cntr++]) features |= stdbrx_m;
 
   // Print the detection code.
   if (PrintAssembly) {

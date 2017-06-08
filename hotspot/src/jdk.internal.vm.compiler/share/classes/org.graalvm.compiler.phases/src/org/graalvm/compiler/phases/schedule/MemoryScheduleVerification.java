@@ -23,12 +23,11 @@
 package org.graalvm.compiler.phases.schedule;
 
 import java.util.List;
-import java.util.Set;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.cfg.Loop;
+import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -42,8 +41,10 @@ import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClosure;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicSet;
 
-public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<FloatingReadNode>> {
+public final class MemoryScheduleVerification extends BlockIteratorClosure<EconomicSet<FloatingReadNode>> {
 
     private final BlockMap<List<Node>> blockToNodesMap;
 
@@ -57,12 +58,12 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
     }
 
     @Override
-    protected Set<FloatingReadNode> getInitialState() {
-        return CollectionsFactory.newSet();
+    protected EconomicSet<FloatingReadNode> getInitialState() {
+        return EconomicSet.create(Equivalence.IDENTITY);
     }
 
     @Override
-    protected Set<FloatingReadNode> processBlock(Block block, Set<FloatingReadNode> currentState) {
+    protected EconomicSet<FloatingReadNode> processBlock(Block block, EconomicSet<FloatingReadNode> currentState) {
         AbstractBeginNode beginNode = block.getBeginNode();
         if (beginNode instanceof AbstractMergeNode) {
             AbstractMergeNode abstractMergeNode = (AbstractMergeNode) beginNode;
@@ -105,7 +106,7 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
         return currentState;
     }
 
-    private static void addFloatingReadUsages(Set<FloatingReadNode> currentState, Node n) {
+    private static void addFloatingReadUsages(EconomicSet<FloatingReadNode> currentState, Node n) {
         for (FloatingReadNode read : n.usages().filter(FloatingReadNode.class)) {
             if (read.getLastLocationAccess() == n && read.getLocationIdentity().isMutable()) {
                 currentState.add(read);
@@ -113,7 +114,7 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
         }
     }
 
-    private void processLocation(Node n, LocationIdentity location, Set<FloatingReadNode> currentState) {
+    private void processLocation(Node n, LocationIdentity location, EconomicSet<FloatingReadNode> currentState) {
         assert n != null;
         if (location.isImmutable()) {
             return;
@@ -122,14 +123,15 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
         for (FloatingReadNode r : cloneState(currentState)) {
             if (r.getLocationIdentity().overlaps(location)) {
                 // This read is killed by this location.
+                Debug.log(Debug.VERBOSE_LEVEL, "%s removing %s from state", n, r);
                 currentState.remove(r);
             }
         }
     }
 
     @Override
-    protected Set<FloatingReadNode> merge(Block merge, List<Set<FloatingReadNode>> states) {
-        Set<FloatingReadNode> result = states.get(0);
+    protected EconomicSet<FloatingReadNode> merge(Block merge, List<EconomicSet<FloatingReadNode>> states) {
+        EconomicSet<FloatingReadNode> result = states.get(0);
         for (int i = 1; i < states.size(); ++i) {
             result.retainAll(states.get(i));
         }
@@ -137,8 +139,8 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
     }
 
     @Override
-    protected Set<FloatingReadNode> cloneState(Set<FloatingReadNode> oldState) {
-        Set<FloatingReadNode> result = CollectionsFactory.newSet();
+    protected EconomicSet<FloatingReadNode> cloneState(EconomicSet<FloatingReadNode> oldState) {
+        EconomicSet<FloatingReadNode> result = EconomicSet.create(Equivalence.IDENTITY);
         if (oldState != null) {
             result.addAll(oldState);
         }
@@ -146,9 +148,9 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Set<F
     }
 
     @Override
-    protected List<Set<FloatingReadNode>> processLoop(Loop<Block> loop, Set<FloatingReadNode> initialState) {
+    protected List<EconomicSet<FloatingReadNode>> processLoop(Loop<Block> loop, EconomicSet<FloatingReadNode> initialState) {
         HIRLoop l = (HIRLoop) loop;
-        for (MemoryPhiNode memoryPhi : ((LoopBeginNode) l.getHeader().getBeginNode()).phis().filter(MemoryPhiNode.class)) {
+        for (MemoryPhiNode memoryPhi : ((LoopBeginNode) l.getHeader().getBeginNode()).memoryPhis()) {
             for (FloatingReadNode r : cloneState(initialState)) {
                 if (r.getLocationIdentity().overlaps(memoryPhi.getLocationIdentity())) {
                     initialState.remove(r);

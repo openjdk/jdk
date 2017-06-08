@@ -22,17 +22,15 @@
  */
 package org.graalvm.compiler.core.common.alloc;
 
-import static org.graalvm.compiler.core.common.GraalOptions.RegisterPressure;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.PlatformKind;
-
-import org.graalvm.compiler.core.common.GraalOptions;
 
 /**
  * Configuration for register allocation. This is different to {@link RegisterConfig} as it only
@@ -82,11 +80,10 @@ public class RegisterAllocationConfig {
     }
 
     protected RegisterArray initAllocatable(RegisterArray registers) {
-        if (RegisterPressure.getValue() != null && !RegisterPressure.getValue().equals(ALL_REGISTERS)) {
-            String[] names = RegisterPressure.getValue().split(",");
-            Register[] regs = new Register[names.length];
-            for (int i = 0; i < names.length; i++) {
-                regs[i] = findRegister(names[i], registers);
+        if (allocationRestrictedTo != null) {
+            Register[] regs = new Register[allocationRestrictedTo.length];
+            for (int i = 0; i < allocationRestrictedTo.length; i++) {
+                regs[i] = findRegister(allocationRestrictedTo[i], registers);
             }
             return new RegisterArray(regs);
         }
@@ -95,12 +92,18 @@ public class RegisterAllocationConfig {
     }
 
     protected final RegisterConfig registerConfig;
-    private final Map<PlatformKind.Key, AllocatableRegisters> categorized = new HashMap<>();
+    private final EconomicMap<PlatformKind.Key, AllocatableRegisters> categorized = EconomicMap.create(Equivalence.DEFAULT);
+    private final String[] allocationRestrictedTo;
     private RegisterArray cachedRegisters;
 
-    public RegisterAllocationConfig(RegisterConfig registerConfig) {
+    /**
+     * @param allocationRestrictedTo if not {@code null}, register allocation will be restricted to
+     *            registers whose names appear in this array
+     */
+    public RegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
         assert registerConfig != null;
         this.registerConfig = registerConfig;
+        this.allocationRestrictedTo = allocationRestrictedTo;
     }
 
     /**
@@ -116,6 +119,13 @@ public class RegisterAllocationConfig {
         AllocatableRegisters ret = createAllocatableRegisters(registerConfig.filterAllocatableRegisters(kind, getAllocatableRegisters()));
         categorized.put(key, ret);
         return ret;
+    }
+
+    /**
+     * Gets the {@link RegisterCategory} for the given {@link PlatformKind}.
+     */
+    public RegisterCategory getRegisterCategory(PlatformKind kind) {
+        return getAllocatableRegisters(kind).allocatableRegisters[0].getRegisterCategory();
     }
 
     protected AllocatableRegisters createAllocatableRegisters(RegisterArray registers) {

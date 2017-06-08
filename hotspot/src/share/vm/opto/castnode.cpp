@@ -121,6 +121,9 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
   if (is_CastII() && as_CastII()->has_range_check()) {
     return NULL;
   }
+  if (type()->isa_rawptr() && (phase->type_or_null(val) == NULL || phase->type(val)->isa_oopptr())) {
+    return NULL;
+  }
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
     Node* u = val->fast_out(i);
     if (u != this &&
@@ -308,11 +311,15 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
     if (in_ptr == TypePtr::Null) {
       result = in_type;
     } else if (in_ptr == TypePtr::Constant) {
-      const TypeOopPtr *jptr = my_type->isa_oopptr();
-      assert(jptr, "");
-      result = !in_type->higher_equal(_type)
-      ? my_type->cast_to_ptr_type(TypePtr::NotNull)
-      : in_type;
+      if (my_type->isa_rawptr()) {
+        result = my_type;
+      } else {
+        const TypeOopPtr *jptr = my_type->isa_oopptr();
+        assert(jptr, "");
+        result = !in_type->higher_equal(_type)
+          ? my_type->cast_to_ptr_type(TypePtr::NotNull)
+          : in_type;
+      }
     } else {
       result =  my_type->cast_to_ptr_type( my_type->join_ptr(in_ptr) );
     }

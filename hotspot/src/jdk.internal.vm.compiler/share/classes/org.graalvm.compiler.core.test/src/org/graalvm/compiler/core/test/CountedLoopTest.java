@@ -35,9 +35,9 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -242,10 +242,8 @@ public class CountedLoopTest extends GraalCompilerTest {
     }
 
     @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
-        Plugins plugins = super.getDefaultGraphBuilderPlugins();
-        Registration r = new Registration(plugins.getInvocationPlugins(), CountedLoopTest.class);
-
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        Registration r = new Registration(invocationPlugins, CountedLoopTest.class);
         r.register2("get", IVProperty.class, int.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg1, ValueNode arg2) {
@@ -261,8 +259,7 @@ public class CountedLoopTest extends GraalCompilerTest {
                 }
             }
         });
-
-        return plugins;
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,26 +46,26 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
-ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS) {
+ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
 
-  return new (loader_data, size, THREAD) ObjArrayKlass(n, klass_handle, name);
+  return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
 }
 
 Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                int n, KlassHandle element_klass, TRAPS) {
+                                                int n, Klass* element_klass, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
-  KlassHandle super_klass = KlassHandle();
+  Klass* super_klass = NULL;
   if (!Universe::is_bootstrapping() || SystemDictionary::Object_klass_loaded()) {
-    KlassHandle element_super (THREAD, element_klass->super());
-    if (element_super.not_null()) {
+    Klass* element_super = element_klass->super();
+    if (element_super != NULL) {
       // The element type has a direct super.  E.g., String[] has direct super of Object[].
-      super_klass = KlassHandle(THREAD, element_super->array_klass_or_null());
-      bool supers_exist = super_klass.not_null();
+      super_klass = element_super->array_klass_or_null();
+      bool supers_exist = super_klass != NULL;
       // Also, see if the element has secondary supertypes.
       // We need an array type for each.
       Array<Klass*>* element_supers = element_klass->secondary_supers();
@@ -78,34 +78,30 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       }
       if (!supers_exist) {
         // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-        KlassHandle ek;
+        Klass* ek = NULL;
         {
           MutexUnlocker mu(MultiArray_lock);
           MutexUnlocker mc(Compile_lock);   // for vtables
-          Klass* sk = element_super->array_klass(CHECK_0);
-          super_klass = KlassHandle(THREAD, sk);
+          super_klass = element_super->array_klass(CHECK_0);
           for( int i = element_supers->length()-1; i >= 0; i-- ) {
-            KlassHandle elem_super (THREAD, element_supers->at(i));
+            Klass* elem_super = element_supers->at(i);
             elem_super->array_klass(CHECK_0);
           }
           // Now retry from the beginning
-          Klass* klass_oop = element_klass->array_klass(n, CHECK_0);
-          // Create a handle because the enclosing brace, when locking
-          // can cause a gc.  Better to have this function return a Handle.
-          ek = KlassHandle(THREAD, klass_oop);
+          ek = element_klass->array_klass(n, CHECK_0);
         }  // re-lock
-        return ek();
+        return ek;
       }
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
-      super_klass = KlassHandle(THREAD, SystemDictionary::Object_klass());
+      super_klass = SystemDictionary::Object_klass();
     }
   }
 
   // Create type name for klass.
   Symbol* name = NULL;
   if (!element_klass->is_instance_klass() ||
-      (name = InstanceKlass::cast(element_klass())->array_name()) == NULL) {
+      (name = InstanceKlass::cast(element_klass)->array_name()) == NULL) {
 
     ResourceMark rm(THREAD);
     char *name_str = element_klass->name()->as_C_string();
@@ -124,7 +120,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
     new_str[idx++] = '\0';
     name = SymbolTable::new_permanent_symbol(new_str, CHECK_0);
     if (element_klass->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(element_klass());
+      InstanceKlass* ik = InstanceKlass::cast(element_klass);
       ik->set_array_name(name);
     }
   }
@@ -146,9 +142,9 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
   return oak;
 }
 
-ObjArrayKlass::ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name) : ArrayKlass(name) {
+ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayKlass(name) {
   this->set_dimension(n);
-  this->set_element_klass(element_klass());
+  this->set_element_klass(element_klass);
   // decrement refcount because object arrays are not explicitly freed.  The
   // InstanceKlass array_name() keeps the name counted while the klass is
   // loaded.
@@ -156,9 +152,9 @@ ObjArrayKlass::ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name) : A
 
   Klass* bk;
   if (element_klass->is_objArray_klass()) {
-    bk = ObjArrayKlass::cast(element_klass())->bottom_klass();
+    bk = ObjArrayKlass::cast(element_klass)->bottom_klass();
   } else {
-    bk = element_klass();
+    bk = element_klass;
   }
   assert(bk != NULL && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
   this->set_bottom_klass(bk);
@@ -178,8 +174,7 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
   if (length >= 0) {
     if (length <= arrayOopDesc::max_array_length(T_OBJECT)) {
       int size = objArrayOopDesc::object_size(length);
-      KlassHandle h_k(THREAD, this);
-      return (objArrayOop)CollectedHeap::array_allocate(h_k, size, length, THREAD);
+      return (objArrayOop)CollectedHeap::array_allocate(this, size, length, THREAD);
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();
@@ -196,14 +191,14 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
   // Call to lower_dimension uses this pointer, so most be called before a
   // possible GC
-  KlassHandle h_lower_dimension(THREAD, lower_dimension());
+  Klass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
   objArrayOop array = allocate(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
   if (rank > 1) {
     if (length != 0) {
       for (int index = 0; index < length; index++) {
-        ArrayKlass* ak = ArrayKlass::cast(h_lower_dimension());
+        ArrayKlass* ak = ArrayKlass::cast(ld_klass);
         oop sub_array = ak->multi_allocate(rank-1, &sizes[1], CHECK_NULL);
         h_array->obj_at_put(index, sub_array);
       }

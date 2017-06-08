@@ -35,7 +35,7 @@ groups=TEST.groups [closed/TEST.groups]
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs code will be located in the folder 'bootClasses'
 requires.extraPropDefns = ../../test/jtreg-ext/requires/VMProps.java [../../closed/test/jtreg-ext/requires/VMPropsExt.java]
-requires.extraPropDefns.bootlibs = ../../test/lib/sun
+requires.extraPropDefns.bootlibs = ../../test/lib/sun ../../test/lib/jdk/test/lib/Platform.java
 requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:bootClasses
 requires.properties= \
     sun.arch.data.model \
@@ -48,7 +48,9 @@ requires.properties= \
     vm.jvmci \
     vm.emulatedClient \
     vm.cpu.features \
-    vm.debug
+    vm.debug \
+    vm.rtm.cpu \
+    vm.rtm.os
 
 # Tests using jtreg 4.2 b07 features
 requiredVersion=4.2 b07

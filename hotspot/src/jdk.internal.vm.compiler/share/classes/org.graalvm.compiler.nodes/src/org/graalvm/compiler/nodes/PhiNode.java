@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
-
-import java.util.Iterator;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
@@ -154,32 +152,19 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
         return values().subList(merge().forwardEndCount());
     }
 
-    @NodeInfo
-    static final class MultipleValuesNode extends ValueNode {
-
-        public static final NodeClass<MultipleValuesNode> TYPE = NodeClass.create(MultipleValuesNode.class);
-
-        protected MultipleValuesNode() {
-            super(TYPE, null);
-        }
-
-    }
-
-    public static final ValueNode MULTIPLE_VALUES = new MultipleValuesNode();
-
     /**
-     * If all inputs are the same value, this value is returned, otherwise {@link #MULTIPLE_VALUES}.
-     * Note that {@code null} is a valid return value, since {@link GuardPhiNode}s can have
-     * {@code null} inputs.
+     * If all inputs are the same value, this value is returned, otherwise {@code this}. Note that
+     * {@code null} is a valid return value, since {@link GuardPhiNode}s can have {@code null}
+     * inputs.
      */
-    public ValueNode singleValue() {
+    public ValueNode singleValueOrThis() {
         ValueNode singleValue = valueAt(0);
         int count = valueCount();
         for (int i = 1; i < count; ++i) {
             ValueNode value = valueAt(i);
             if (value != this) {
                 if (value != singleValue) {
-                    return MULTIPLE_VALUES;
+                    return this;
                 }
             }
         }
@@ -187,18 +172,19 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
     }
 
     /**
-     * If all inputs (but the first one) are the same value, this value is returned, otherwise
-     * {@link #MULTIPLE_VALUES}. Note that {@code null} is a valid return value, since
-     * {@link GuardPhiNode}s can have {@code null} inputs.
+     * If all inputs (but the first one) are the same value, the value is returned, otherwise
+     * {@code this}. Note that {@code null} is a valid return value, since {@link GuardPhiNode}s can
+     * have {@code null} inputs.
      */
-    public ValueNode singleBackValue() {
-        assert merge() instanceof LoopBeginNode;
-        Iterator<ValueNode> iterator = values().iterator();
-        iterator.next();
-        ValueNode singleValue = iterator.next();
-        while (iterator.hasNext()) {
-            if (iterator.next() != singleValue) {
-                return MULTIPLE_VALUES;
+    public ValueNode singleBackValueOrThis() {
+        int valueCount = valueCount();
+        assert merge() instanceof LoopBeginNode && valueCount >= 2;
+        // Skip first value, assume second value as single value.
+        ValueNode singleValue = valueAt(1);
+        for (int i = 2; i < valueCount; ++i) {
+            ValueNode value = valueAt(i);
+            if (value != singleValue) {
+                return this;
             }
         }
         return singleValue;
@@ -208,7 +194,19 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
     public ValueNode canonical(CanonicalizerTool tool) {
 
         if (isLoopPhi()) {
-            if (singleBackValue() == this) {
+
+            int valueCount = valueCount();
+            assert valueCount >= 2;
+            int i;
+            for (i = 1; i < valueCount; ++i) {
+                ValueNode value = valueAt(i);
+                if (value != this) {
+                    break;
+                }
+            }
+
+            // All back edges are self-references => return forward edge input value.
+            if (i == valueCount) {
                 return firstValue();
             }
 
@@ -225,11 +223,7 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
             }
         }
 
-        ValueNode singleValue = singleValue();
-        if (singleValue != MULTIPLE_VALUES) {
-            return singleValue;
-        }
-        return this;
+        return singleValueOrThis();
     }
 
     public ValueNode firstValue() {
@@ -238,14 +232,5 @@ public abstract class PhiNode extends FloatingNode implements Canonicalizable {
 
     public boolean isLoopPhi() {
         return merge() instanceof LoopBeginNode;
-    }
-
-    public boolean hasValidInput() {
-        for (ValueNode n : values()) {
-            if (n != null) {
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,26 +40,26 @@
 
 // Inline allocation implementations.
 
-void CollectedHeap::post_allocation_setup_common(KlassHandle klass,
+void CollectedHeap::post_allocation_setup_common(Klass* klass,
                                                  HeapWord* obj_ptr) {
   post_allocation_setup_no_klass_install(klass, obj_ptr);
   oop obj = (oop)obj_ptr;
 #if ! INCLUDE_ALL_GCS
-  obj->set_klass(klass());
+  obj->set_klass(klass);
 #else
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-NULL, for
   // concurrent collectors.
-  obj->release_set_klass(klass());
+  obj->release_set_klass(klass);
 #endif
 }
 
-void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
+void CollectedHeap::post_allocation_setup_no_klass_install(Klass* klass,
                                                            HeapWord* obj_ptr) {
   oop obj = (oop)obj_ptr;
 
   assert(obj != NULL, "NULL object pointer");
-  if (UseBiasedLocking && (klass() != NULL)) {
+  if (UseBiasedLocking && (klass != NULL)) {
     obj->set_mark(klass->prototype_header());
   } else {
     // May be bootstrapping
@@ -68,7 +68,7 @@ void CollectedHeap::post_allocation_setup_no_klass_install(KlassHandle klass,
 }
 
 // Support for jvmti and dtrace
-inline void post_allocation_notify(KlassHandle klass, oop obj, int size) {
+inline void post_allocation_notify(Klass* klass, oop obj, int size) {
   // support low memory notifications (no-op if not enabled)
   LowMemoryDetector::detect_low_memory_for_collected_pools();
 
@@ -77,13 +77,13 @@ inline void post_allocation_notify(KlassHandle klass, oop obj, int size) {
 
   if (DTraceAllocProbes) {
     // support for Dtrace object alloc event (no-op most of the time)
-    if (klass() != NULL && klass()->name() != NULL) {
+    if (klass != NULL && klass->name() != NULL) {
       SharedRuntime::dtrace_object_alloc(obj, size);
     }
   }
 }
 
-void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
+void CollectedHeap::post_allocation_setup_obj(Klass* klass,
                                               HeapWord* obj_ptr,
                                               int size) {
   post_allocation_setup_common(klass, obj_ptr);
@@ -94,7 +94,7 @@ void CollectedHeap::post_allocation_setup_obj(KlassHandle klass,
   post_allocation_notify(klass, obj, size);
 }
 
-void CollectedHeap::post_allocation_setup_class(KlassHandle klass,
+void CollectedHeap::post_allocation_setup_class(Klass* klass,
                                                 HeapWord* obj_ptr,
                                                 int size) {
   // Set oop_size field before setting the _klass field because a
@@ -110,7 +110,7 @@ void CollectedHeap::post_allocation_setup_class(KlassHandle klass,
   post_allocation_notify(klass, new_cls, size);
 }
 
-void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
+void CollectedHeap::post_allocation_setup_array(Klass* klass,
                                                 HeapWord* obj_ptr,
                                                 int length) {
   // Set array length before setting the _klass field because a
@@ -125,7 +125,7 @@ void CollectedHeap::post_allocation_setup_array(KlassHandle klass,
   post_allocation_notify(klass, new_obj, new_obj->size());
 }
 
-HeapWord* CollectedHeap::common_mem_allocate_noinit(KlassHandle klass, size_t size, TRAPS) {
+HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, TRAPS) {
 
   // Clear unhandled oops for memory allocation.  Memory allocation might
   // not take out a lock if from tlab, so clear here.
@@ -186,13 +186,13 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(KlassHandle klass, size_t si
   }
 }
 
-HeapWord* CollectedHeap::common_mem_allocate_init(KlassHandle klass, size_t size, TRAPS) {
+HeapWord* CollectedHeap::common_mem_allocate_init(Klass* klass, size_t size, TRAPS) {
   HeapWord* obj = common_mem_allocate_noinit(klass, size, CHECK_NULL);
   init_obj(obj, size);
   return obj;
 }
 
-HeapWord* CollectedHeap::allocate_from_tlab(KlassHandle klass, Thread* thread, size_t size) {
+HeapWord* CollectedHeap::allocate_from_tlab(Klass* klass, Thread* thread, size_t size) {
   assert(UseTLAB, "should use UseTLAB");
 
   HeapWord* obj = thread->tlab().allocate(size);
@@ -211,7 +211,7 @@ void CollectedHeap::init_obj(HeapWord* obj, size_t size) {
   Copy::fill_to_aligned_words(obj + hs, size - hs);
 }
 
-oop CollectedHeap::obj_allocate(KlassHandle klass, int size, TRAPS) {
+oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
@@ -221,7 +221,7 @@ oop CollectedHeap::obj_allocate(KlassHandle klass, int size, TRAPS) {
   return (oop)obj;
 }
 
-oop CollectedHeap::class_allocate(KlassHandle klass, int size, TRAPS) {
+oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
@@ -231,7 +231,7 @@ oop CollectedHeap::class_allocate(KlassHandle klass, int size, TRAPS) {
   return (oop)obj;
 }
 
-oop CollectedHeap::array_allocate(KlassHandle klass,
+oop CollectedHeap::array_allocate(Klass* klass,
                                   int size,
                                   int length,
                                   TRAPS) {
@@ -244,7 +244,7 @@ oop CollectedHeap::array_allocate(KlassHandle klass,
   return (oop)obj;
 }
 
-oop CollectedHeap::array_allocate_nozero(KlassHandle klass,
+oop CollectedHeap::array_allocate_nozero(Klass* klass,
                                          int size,
                                          int length,
                                          TRAPS) {

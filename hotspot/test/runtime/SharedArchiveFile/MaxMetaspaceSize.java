@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,16 @@
  *          java.management
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 public class MaxMetaspaceSize {
   public static void main(String[] args) throws Exception {
+      String msg = "is not large enough.\n" +
+          "Either don't specify the -XX:MaxMetaspaceSize=<size>\n" +
+          "or increase the size to at least";
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
         "-XX:MaxMetaspaceSize=10m", "-Xshare:dump");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.shouldContain("is not large enough.\nEither don't specify the -XX:MaxMetaspaceSize=<size>\nor increase the size to at least");
-      output.shouldHaveExitValue(2);
+    CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(2);
   }
 }

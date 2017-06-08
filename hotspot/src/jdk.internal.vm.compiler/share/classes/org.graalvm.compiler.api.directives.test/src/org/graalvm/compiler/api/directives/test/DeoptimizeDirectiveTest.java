@@ -70,7 +70,7 @@ public class DeoptimizeDirectiveTest extends GraalCompilerTest {
         Result actual;
         try {
             actual = new Result(code.executeVarargs(), null);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             actual = new Result(null, e);
         }
 

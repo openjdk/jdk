@@ -22,24 +22,24 @@
  */
 package org.graalvm.compiler.lir.alloc.trace;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
-import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.asShadowedRegisterValue;
-import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isShadowedRegisterValue;
 import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
+import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.asShadowedRegisterValue;
+import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isShadowedRegisterValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.GraalError;
@@ -52,6 +52,7 @@ import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilderTool;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterArray;
@@ -69,15 +70,17 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
     private int insertIdx;
     private LIRInsertionBuffer insertionBuffer; // buffer where moves are inserted
 
-    private final List<Value> mappingFrom;
-    private final List<Value> mappingFromStack;
-    private final List<AllocatableValue> mappingTo;
+    private final ArrayList<Value> mappingFrom;
+    private final ArrayList<Value> mappingFromStack;
+    private final ArrayList<AllocatableValue> mappingTo;
     private final int[] registerBlocked;
     private static final int STACK_SLOT_IN_CALLER_FRAME_IDX = -1;
     private int[] stackBlocked;
     private final int firstVirtualStackIndex;
     private final MoveFactory spillMoveFactory;
     private final FrameMapBuilder frameMapBuilder;
+    private final OptionValues options;
+    private final RegisterAllocationConfig registerAllocationConfig;
 
     private void setValueBlocked(Value location, int direction) {
         assert direction == 1 || direction == -1 : "out of bounds";
@@ -135,7 +138,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         return frameMapBuilder.getRegisterConfig().getAllocatableRegisters();
     }
 
-    public TraceGlobalMoveResolver(LIRGenerationResult res, MoveFactory spillMoveFactory, Architecture arch) {
+    public TraceGlobalMoveResolver(LIRGenerationResult res, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig, Architecture arch) {
 
         this.mappingFrom = new ArrayList<>(8);
         this.mappingFromStack = new ArrayList<>(8);
@@ -146,12 +149,14 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         this.frameMapBuilder = res.getFrameMapBuilder();
         this.spillMoveFactory = spillMoveFactory;
         this.registerBlocked = new int[arch.getRegisters().size()];
+        this.registerAllocationConfig = registerAllocationConfig;
 
         FrameMapBuilderTool frameMapBuilderTool = (FrameMapBuilderTool) frameMapBuilder;
         this.stackBlocked = new int[frameMapBuilderTool.getNumberOfStackSlots()];
 
         FrameMap frameMap = frameMapBuilderTool.getFrameMap();
         this.firstVirtualStackIndex = !frameMap.frameNeedsAllocating() ? 0 : frameMap.currentFrameSize() + 1;
+        this.options = res.getLIR().getOptions();
     }
 
     private boolean checkEmpty() {
@@ -286,7 +291,6 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
         if (isRegister(from) && isRegister(to) && asRegister(from).equals(asRegister(to))) {
             // Values differ but Registers are the same
-            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
             return true;
         }
         return false;
@@ -296,7 +300,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         return isRegister(location) || isStackSlotValue(location);
     }
 
-    private void createInsertionBuffer(List<LIRInstruction> list) {
+    private void createInsertionBuffer(ArrayList<LIRInstruction> list) {
         assert !insertionBuffer.initialized() : "overwriting existing buffer";
         insertionBuffer.init(list);
     }
@@ -312,7 +316,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
 
     private void insertMove(Value fromOperand, AllocatableValue toOperand) {
         assert !fromOperand.equals(toOperand) : "from and to are equal: " + fromOperand + " vs. " + toOperand;
-        assert LIRKind.verifyMoveKinds(fromOperand.getValueKind(), fromOperand.getValueKind()) : "move between different types";
+        assert LIRKind.verifyMoveKinds(fromOperand.getValueKind(), fromOperand.getValueKind(), registerAllocationConfig) : "move between different types";
         assert insertIdx != -1 : "must setup insert position first";
 
         insertionBuffer.append(insertIdx, createMove(fromOperand, toOperand));
@@ -404,7 +408,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         Value from = mappingFrom.get(spillCandidate);
         try (Indent indent = Debug.logAndIndent("BreakCycle: %s", from)) {
             AllocatableValue spillSlot = null;
-            if (TraceRegisterAllocationPhase.Options.TraceRAreuseStackSlotsForMoveResolutionCycleBreaking.getValue() && !isStackSlotValue(from)) {
+            if (TraceRegisterAllocationPhase.Options.TraceRAreuseStackSlotsForMoveResolutionCycleBreaking.getValue(options) && !isStackSlotValue(from)) {
                 // don't use the stack slot if from is already the stack slot
                 Value fromStack = mappingFromStack.get(spillCandidate);
                 if (fromStack != null) {
@@ -435,7 +439,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
     }
 
-    public void setInsertPosition(List<LIRInstruction> insertList, int insertIdx) {
+    public void setInsertPosition(ArrayList<LIRInstruction> insertList, int insertIdx) {
         assert this.insertIdx == -1 : "use moveInsertPosition instead of setInsertPosition when data already set";
 
         createInsertionBuffer(insertList);
@@ -449,8 +453,10 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
 
         assert !from.equals(to) : "from and to interval equal: " + from;
-        assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", from.getValueKind(), to.getValueKind(), from, to);
-        assert fromStack == null || LIRKind.verifyMoveKinds(to.getValueKind(), fromStack.getValueKind()) : String.format("Kind mismatch: %s vs. %s, fromStack=%s, to=%s", fromStack.getValueKind(),
+        assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind(), registerAllocationConfig) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", from.getValueKind(),
+                        to.getValueKind(), from, to);
+        assert fromStack == null || LIRKind.verifyMoveKinds(to.getValueKind(), fromStack.getValueKind(), registerAllocationConfig) : String.format("Kind mismatch: %s vs. %s, fromStack=%s, to=%s",
+                        fromStack.getValueKind(),
                         to.getValueKind(), fromStack, to);
         mappingFrom.add(from);
         mappingFromStack.add(fromStack);

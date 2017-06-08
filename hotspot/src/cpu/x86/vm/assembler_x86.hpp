@@ -1554,6 +1554,9 @@ private:
 
   void pause();
 
+  // Undefined Instruction
+  void ud2();
+
   // SSE4.2 string instructions
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
@@ -1902,6 +1905,11 @@ private:
   void vmulps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vmulpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vmulps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vfmadd231pd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vfmadd231ps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vfmadd231pd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vfmadd231ps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // Divide Packed Floating-Point Values
   void divpd(XMMRegister dst, XMMRegister src);

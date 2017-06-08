@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,10 +78,10 @@ inline void OrderAccess::acquire()    { inlasm_lwsync(); }
 inline void OrderAccess::release()    { inlasm_lwsync(); }
 inline void OrderAccess::fence()      { inlasm_sync();   }
 
-template<> inline jbyte  OrderAccess::specialized_load_acquire<jbyte> (volatile jbyte*  p) { register jbyte t = load(p);  inlasm_acquire_reg(t); return t; }
-template<> inline jshort OrderAccess::specialized_load_acquire<jshort>(volatile jshort* p) { register jshort t = load(p); inlasm_acquire_reg(t); return t; }
-template<> inline jint   OrderAccess::specialized_load_acquire<jint>  (volatile jint*   p) { register jint t = load(p);   inlasm_acquire_reg(t); return t; }
-template<> inline jlong  OrderAccess::specialized_load_acquire<jlong> (volatile jlong*  p) { register jlong t = load(p);  inlasm_acquire_reg(t); return t; }
+template<> inline jbyte  OrderAccess::specialized_load_acquire<jbyte> (const volatile jbyte*  p) { register jbyte t = load(p);  inlasm_acquire_reg(t); return t; }
+template<> inline jshort OrderAccess::specialized_load_acquire<jshort>(const volatile jshort* p) { register jshort t = load(p); inlasm_acquire_reg(t); return t; }
+template<> inline jint   OrderAccess::specialized_load_acquire<jint>  (const volatile jint*   p) { register jint t = load(p);   inlasm_acquire_reg(t); return t; }
+template<> inline jlong  OrderAccess::specialized_load_acquire<jlong> (const volatile jlong*  p) { register jlong t = load(p);  inlasm_acquire_reg(t); return t; }
 
 #undef inlasm_sync
 #undef inlasm_lwsync

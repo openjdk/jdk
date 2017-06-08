@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -3564,7 +3564,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
 }
 
 // Vector ideal reg.
-const int Matcher::vector_ideal_reg(int len) {
+const uint Matcher::vector_ideal_reg(int len) {
   switch(len) {
     case  8: return Op_VecD;
     case 16: return Op_VecX;
@@ -3573,7 +3573,7 @@ const int Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::vector_shift_count_ideal_reg(int size) {
+const uint Matcher::vector_shift_count_ideal_reg(int size) {
   return Op_VecX;
 }
 
@@ -15387,9 +15387,9 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
 
   ins_encode %{
-    // TODO
-    // implement proper trap call here
-    __ brk(999);
+    // +1 so NativeInstruction::is_sigill_zombie_not_entrant() doesn't
+    // return true
+    __ dpcs1(0xdead + 1);
   %}
 
   ins_pipe(pipe_class_default);

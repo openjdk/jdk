@@ -32,8 +32,8 @@ import java.util.function.BooleanSupplier;
 /**
  * Base for all RTM-related CLI tests.
  */
-public abstract class RTMGenericCommandLineOptionTest
-        extends CommandLineOptionTest {
+public abstract class RTMGenericCommandLineOptionTest {
+
     protected static final String RTM_INSTR_ERROR
             = "RTM instructions are not available on this CPU";
     protected static final String RTM_UNSUPPORTED_VM_ERROR
@@ -66,17 +66,15 @@ public abstract class RTMGenericCommandLineOptionTest
      * Test constructed using this ctor will be started on any cpu regardless
      * it's architecture and supported/unsupported features.
      *
-     * @param predicate predicate responsible for test's preconditions check
      * @param optionName name of option to be tested
      * @param isBoolean {@code true} if option is binary
      * @param isExperimental {@code true} if option is experimental
      * @param defaultValue default value of tested option
      * @param optionValues different option values
      */
-    public RTMGenericCommandLineOptionTest(BooleanSupplier predicate,
+    public RTMGenericCommandLineOptionTest(
             String optionName, boolean isBoolean, boolean isExperimental,
             String defaultValue, String... optionValues) {
-        super(predicate);
         this.optionName = optionName;
         this.isExperimental = isExperimental;
         this.isBoolean = isBoolean;
@@ -88,7 +86,6 @@ public abstract class RTMGenericCommandLineOptionTest
                 getExperimentalOptionErrorMessage(optionName);
     }
 
-    @Override
     public void runTestCases() throws Throwable {
         if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
             if (Platform.isServer()) {

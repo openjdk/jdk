@@ -65,6 +65,7 @@ private:
   bool _can_read_all_unnamed;
   bool _has_default_read_edges;        // JVMTI redefine/retransform support
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
+  bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
   TRACE_DEFINE_TRACE_ID_FIELD;
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
@@ -81,6 +82,7 @@ public:
     _has_default_read_edges = false;
     _must_walk_reads = false;
     _is_patched = false;
+    _is_open = false;
   }
 
   Symbol*          name() const                        { return literal(); }
@@ -108,9 +110,12 @@ public:
   bool             is_non_jdk_module();
 
   bool             can_read(ModuleEntry* m) const;
-  bool             has_reads() const;
+  bool             has_reads_list() const;
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
+
+  bool             is_open() const                     { return _is_open; }
+  void             set_is_open(bool is_open);
 
   bool             is_named() const                    { return (name() != NULL); }
 
@@ -158,6 +163,12 @@ public:
   void purge_reads();
   void delete_reads();
 
+  // Special handling for unnamed module, one per class loader
+  static ModuleEntry* create_unnamed_module(ClassLoaderData* cld);
+  static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
+  static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
+  void delete_unnamed_module();
+
   void print(outputStream* st = tty);
   void verify();
 };
@@ -191,10 +202,9 @@ public:
 
 private:
   static ModuleEntry* _javabase_module;
-  ModuleEntry* _unnamed_module;
 
-  ModuleEntry* new_entry(unsigned int hash, Handle module_handle, Symbol* name, Symbol* version,
-                         Symbol* location, ClassLoaderData* loader_data);
+  ModuleEntry* new_entry(unsigned int hash, Handle module_handle, bool is_open,
+                         Symbol* name, Symbol* version, Symbol* location, ClassLoaderData* loader_data);
   void add_entry(int index, ModuleEntry* new_entry);
 
   int entry_size() const { return BasicHashtable<mtModule>::entry_size(); }
@@ -217,6 +227,7 @@ public:
   // Create module in loader's module entry table, if already exists then
   // return null.  Assume Module_lock has been locked by caller.
   ModuleEntry* locked_create_entry_or_null(Handle module_handle,
+                                           bool is_open,
                                            Symbol* module_name,
                                            Symbol* module_version,
                                            Symbol* module_location,
@@ -227,10 +238,6 @@ public:
 
   // purge dead weak references out of reads list
   void purge_all_module_reads();
-
-  // Special handling for unnamed module, one per class loader's ModuleEntryTable
-  void create_unnamed_module(ClassLoaderData* loader_data);
-  ModuleEntry* unnamed_module()                                { return _unnamed_module; }
 
   // Special handling for java.base
   static ModuleEntry* javabase_moduleEntry()                   { return _javabase_module; }

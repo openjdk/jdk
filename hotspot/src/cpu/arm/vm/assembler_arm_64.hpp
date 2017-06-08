@@ -1083,6 +1083,7 @@ class Assembler : public AbstractAssembler  {
 
   F(brk, 0b001, 0b000, 0b00)
   F(hlt, 0b010, 0b000, 0b00)
+  F(dpcs1, 0b101, 0b000, 0b01)
 #undef F
 
   enum SystemRegister { // o0<1> op1<3> CRn<4> CRm<4> op2<3>

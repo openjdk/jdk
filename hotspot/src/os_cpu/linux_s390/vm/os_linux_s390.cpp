@@ -505,6 +505,14 @@ JVM_handle_linux_signal(int sig,
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
 
+  // Hand down correct pc for SIGILL, SIGFPE. pc from context
+  // usually points to the instruction after the failing instruction.
+  // Note: this should be combined with the trap_pc handling above,
+  // because it handles the same issue.
+  if (sig == SIGILL || sig == SIGFPE) {
+    pc = (address) info->si_addr;
+  }
+
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();

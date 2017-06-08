@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -659,7 +659,7 @@ SYMBOL(_Atomic_cmpxchg_long):
 
 
         # Support for jlong Atomic::load and Atomic::store.
-        # void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+        # void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst)
         .p2align 4,,15
         ELF_TYPE(_Atomic_move_long,@function)
 SYMBOL(_Atomic_move_long):

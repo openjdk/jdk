@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -643,8 +643,7 @@ mmx_acs_CopyLeft:
 
         / Support for jlong Atomic::cmpxchg(jlong exchange_value,
         /                                   volatile jlong* dest,
-        /                                   jlong compare_value,
-        /                                   bool is_MP)
+        /                                   jlong compare_value)
         / Used only for Solaris/gcc builds
         .align 16
 _Atomic_cmpxchg_long_gcc:
@@ -656,10 +655,7 @@ _Atomic_cmpxchg_long_gcc:
         movl     24(%esp), %eax    / 24(%esp) : compare_value (low)
         movl     28(%esp), %edx    / 28(%esp) : compare_value (high)
         movl     20(%esp), %edi    / 20(%esp) : dest
-        cmpl     $0, 32(%esp)      / 32(%esp) : is_MP
-        je       1f
-        lock
-1:      cmpxchg8b (%edi)
+        lock cmpxchg8b (%edi)
         popl     %edi
         popl     %ebx
         ret

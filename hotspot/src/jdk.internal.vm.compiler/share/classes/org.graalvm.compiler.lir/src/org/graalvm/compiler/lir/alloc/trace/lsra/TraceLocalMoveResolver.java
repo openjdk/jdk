@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,9 +66,9 @@ final class TraceLocalMoveResolver {
     private int insertIdx;
     private LIRInsertionBuffer insertionBuffer; // buffer where moves are inserted
 
-    private final List<TraceInterval> mappingFrom;
-    private final List<Constant> mappingFromOpr;
-    private final List<TraceInterval> mappingTo;
+    private final ArrayList<TraceInterval> mappingFrom;
+    private final ArrayList<Constant> mappingFromOpr;
+    private final ArrayList<TraceInterval> mappingTo;
     private final int[] registerBlocked;
 
     private int[] stackBlocked;
@@ -293,7 +293,6 @@ final class TraceLocalMoveResolver {
             return true;
         }
         if (from != null && isRegister(from) && isRegister(to) && asRegister(from).equals(asRegister(to))) {
-            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
             return true;
         }
         return false;
@@ -324,11 +323,11 @@ final class TraceLocalMoveResolver {
     }
 
     private void insertMove(TraceInterval fromInterval, TraceInterval toInterval) {
-        assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : "move between different types";
+        assert fromInterval.operandNumber != toInterval.operandNumber : "from and to interval equal: " + fromInterval;
+        assert LIRKind.verifyMoveKinds(allocator.getKind(toInterval), allocator.getKind(fromInterval), allocator.getRegisterAllocationConfig()) : "move between different types";
         assert insertIdx != -1 : "must setup insert position first";
 
-        insertionBuffer.append(insertIdx, createMove(fromInterval.operand, toInterval.operand, fromInterval.location(), toInterval.location()));
+        insertionBuffer.append(insertIdx, createMove(allocator.getOperand(fromInterval), allocator.getOperand(toInterval), fromInterval.location(), toInterval.location()));
 
         if (Debug.isLogEnabled()) {
             Debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
@@ -336,8 +335,8 @@ final class TraceLocalMoveResolver {
     }
 
     /**
-     * @param fromOpr {@link TraceInterval#operand operand} of the {@code from} interval
-     * @param toOpr {@link TraceInterval#operand operand} of the {@code to} interval
+     * @param fromOpr {@link TraceInterval operand} of the {@code from} interval
+     * @param toOpr {@link TraceInterval operand} of the {@code to} interval
      * @param fromLocation {@link TraceInterval#location() location} of the {@code to} interval
      * @param toLocation {@link TraceInterval#location() location} of the {@code to} interval
      */
@@ -351,7 +350,7 @@ final class TraceLocalMoveResolver {
     private void insertMove(Constant fromOpr, TraceInterval toInterval) {
         assert insertIdx != -1 : "must setup insert position first";
 
-        AllocatableValue toOpr = toInterval.operand;
+        AllocatableValue toOpr = allocator.getOperand(toInterval);
         LIRInstruction move = getAllocator().getSpillMoveFactory().createLoad(toOpr, fromOpr);
         insertionBuffer.append(insertIdx, move);
 
@@ -437,7 +436,7 @@ final class TraceLocalMoveResolver {
             // one stack slot to another can happen (not allowed by LIRAssembler
             AllocatableValue spillSlot1 = fromInterval1.spillSlot();
             if (spillSlot1 == null) {
-                spillSlot1 = getAllocator().getFrameMapBuilder().allocateSpillSlot(fromInterval1.kind());
+                spillSlot1 = getAllocator().getFrameMapBuilder().allocateSpillSlot(allocator.getKind(fromInterval1));
                 fromInterval1.setSpillSlot(spillSlot1);
                 cycleBreakingSlotsAllocated.increment();
             }
@@ -449,7 +448,7 @@ final class TraceLocalMoveResolver {
         int stackSpillCandidate = 0;
         TraceInterval fromInterval = getMappingFrom(stackSpillCandidate);
         // allocate new stack slot
-        VirtualStackSlot spillSlot = getAllocator().getFrameMapBuilder().allocateSpillSlot(fromInterval.kind());
+        VirtualStackSlot spillSlot = getAllocator().getFrameMapBuilder().allocateSpillSlot(allocator.getKind(fromInterval));
         spillInterval(stackSpillCandidate, fromInterval, spillSlot);
     }
 
@@ -536,9 +535,9 @@ final class TraceLocalMoveResolver {
             Debug.log("add move mapping from %s to %s", fromInterval, toInterval);
         }
 
-        assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", fromInterval.kind(), toInterval.kind(), fromInterval,
-                        toInterval);
+        assert fromInterval.operandNumber != toInterval.operandNumber : "from and to interval equal: " + fromInterval;
+        assert LIRKind.verifyMoveKinds(allocator.getKind(toInterval), allocator.getKind(fromInterval), allocator.getRegisterAllocationConfig()) : String.format(
+                        "Kind mismatch: %s vs. %s, from=%s, to=%s", allocator.getKind(fromInterval), allocator.getKind(toInterval), fromInterval, toInterval);
         mappingFrom.add(fromInterval);
         mappingFromOpr.add(null);
         mappingTo.add(toInterval);

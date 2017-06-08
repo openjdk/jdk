@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,12 +287,12 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
   Thread *thread = Thread::current();
-  instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
+  InstanceKlass* ik = _method->method_holder();
   Symbol* m_name = _method->name();
   Symbol* m_signature = _method->signature();
 
   // search previous versions if they exist
-  for (InstanceKlass* pv_node = ikh->previous_versions();
+  for (InstanceKlass* pv_node = ik->previous_versions();
        pv_node != NULL;
        pv_node = pv_node->previous_versions()) {
     Array<Method*>* methods = pv_node->methods();
@@ -694,12 +694,12 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
     JavaThread* cur_thread = JavaThread::current();
     HandleMark hm(cur_thread);
 
-    Handle obj = Handle(cur_thread, JNIHandles::resolve_external_guard(jobj));
+    Handle obj(cur_thread, JNIHandles::resolve_external_guard(jobj));
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
-    KlassHandle ob_kh = KlassHandle(cur_thread, obj->klass());
-    NULL_CHECK(ob_kh, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
+    Klass* ob_k = obj->klass();
+    NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
-    if (!is_assignable(signature, ob_kh(), cur_thread)) {
+    if (!is_assignable(signature, ob_k, cur_thread)) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }
@@ -777,7 +777,7 @@ void VM_GetOrSetLocal::doit() {
       case T_FLOAT:  locals->set_float_at (_index, _value.f); break;
       case T_DOUBLE: locals->set_double_at(_index, _value.d); break;
       case T_OBJECT: {
-        Handle ob_h(JNIHandles::resolve_external_guard(_value.l));
+        Handle ob_h(Thread::current(), JNIHandles::resolve_external_guard(_value.l));
         locals->set_obj_at (_index, ob_h);
         break;
       }
@@ -974,18 +974,13 @@ void JvmtiDeferredEvent::post() {
 JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_tail = NULL;
 JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_head = NULL;
 
-volatile JvmtiDeferredEventQueue::QueueNode*
-    JvmtiDeferredEventQueue::_pending_list = NULL;
-
 bool JvmtiDeferredEventQueue::has_events() {
   assert(Service_lock->owned_by_self(), "Must own Service_lock");
-  return _queue_head != NULL || _pending_list != NULL;
+  return _queue_head != NULL;
 }
 
 void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
   assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
-  process_pending_events();
 
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
@@ -1004,8 +999,6 @@ void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
   assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
-  process_pending_events();
 
   assert(_queue_head != NULL, "Nothing to dequeue");
 
@@ -1026,63 +1019,4 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
   JvmtiDeferredEvent event = node->event();
   delete node;
   return event;
-}
-
-void JvmtiDeferredEventQueue::add_pending_event(
-    const JvmtiDeferredEvent& event) {
-
-  QueueNode* node = new QueueNode(event);
-
-  bool success = false;
-  QueueNode* prev_value = (QueueNode*)_pending_list;
-  do {
-    node->set_next(prev_value);
-    prev_value = (QueueNode*)Atomic::cmpxchg_ptr(
-        (void*)node, (volatile void*)&_pending_list, (void*)node->next());
-  } while (prev_value != node->next());
-}
-
-// This method transfers any events that were added by someone NOT holding
-// the lock into the mainline queue.
-void JvmtiDeferredEventQueue::process_pending_events() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
-  if (_pending_list != NULL) {
-    QueueNode* head =
-        (QueueNode*)Atomic::xchg_ptr(NULL, (volatile void*)&_pending_list);
-
-    assert((_queue_head == NULL) == (_queue_tail == NULL),
-           "Inconsistent queue markers");
-
-    if (head != NULL) {
-      // Since we've treated the pending list as a stack (with newer
-      // events at the beginning), we need to join the bottom of the stack
-      // with the 'tail' of the queue in order to get the events in the
-      // right order.  We do this by reversing the pending list and appending
-      // it to the queue.
-
-      QueueNode* new_tail = head;
-      QueueNode* new_head = NULL;
-
-      // This reverses the list
-      QueueNode* prev = new_tail;
-      QueueNode* node = new_tail->next();
-      new_tail->set_next(NULL);
-      while (node != NULL) {
-        QueueNode* next = node->next();
-        node->set_next(prev);
-        prev = node;
-        node = next;
-      }
-      new_head = prev;
-
-      // Now append the new list to the queue
-      if (_queue_tail != NULL) {
-        _queue_tail->set_next(new_head);
-      } else { // _queue_head == NULL
-        _queue_head = new_head;
-      }
-      _queue_tail = new_tail;
-    }
-  }
 }

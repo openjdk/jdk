@@ -368,6 +368,9 @@ class GraphKit : public Phase {
     return null_check_common(value, type, true);
   }
 
+  // Check if value is null and abort if it is
+  Node* must_be_not_null(Node* value, bool do_replace_in_map);
+
   // Null check oop.  Return null-path control into (*null_control).
   // Return a cast-not-null node which depends on the not-null control.
   // If never_see_null, use an uncommon trap (*null_control sees a top).

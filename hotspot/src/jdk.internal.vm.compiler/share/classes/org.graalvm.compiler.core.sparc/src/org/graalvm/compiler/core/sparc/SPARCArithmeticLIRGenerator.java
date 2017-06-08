@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,12 +113,8 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Variable emitBitCount(Value operand) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(SPARCKind.WORD));
-        Value usedOperand = operand;
-        if (operand.getPlatformKind() == SPARCKind.WORD) { // Zero extend
-            usedOperand = getLIRGen().newVariable(operand.getValueKind());
-            getLIRGen().append(new SPARCOP3Op(Op3s.Srl, operand, SPARC.g0.asValue(), usedOperand));
-        }
-        getLIRGen().append(new SPARCOP3Op(Op3s.Popc, SPARC.g0.asValue(), usedOperand, result));
+        AllocatableValue usedOperand = getLIRGen().asAllocatable(emitZeroExtend(operand));
+        getLIRGen().append(new SPARCOP3Op(Op3s.Popc, g0.asValue(), usedOperand, result));
         return result;
     }
 
@@ -141,9 +137,9 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitMathAbs(Value input) {
-        Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        SPARCKind kind = (SPARCKind) input.getPlatformKind();
+    public Value emitMathAbs(Value inputValue) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue));
+        SPARCKind kind = (SPARCKind) inputValue.getPlatformKind();
         Opfs opf;
         switch (kind) {
             case SINGLE:
@@ -155,14 +151,14 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere("Input kind: " + kind);
         }
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), input, result));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
         return result;
     }
 
     @Override
-    public Value emitMathSqrt(Value input) {
-        Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        SPARCKind kind = (SPARCKind) input.getPlatformKind();
+    public Value emitMathSqrt(Value inputValue) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue));
+        SPARCKind kind = (SPARCKind) inputValue.getPlatformKind();
         Opfs opf;
         switch (kind) {
             case SINGLE:
@@ -174,7 +170,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere("Input kind: " + kind);
         }
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), input, result));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
         return result;
     }
 
@@ -193,15 +189,15 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
         return emitUnary(Xnor, input);
     }
 
-    private Variable emitUnary(Opfs opf, Value input) {
-        Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), input, result));
+    private Variable emitUnary(Opfs opf, Value inputValue) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
         return result;
     }
 
     private Variable emitUnary(Op3s op3, Value input) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        getLIRGen().append(SPARCOP3Op.newUnary(op3, input, result));
+        getLIRGen().append(SPARCOP3Op.newUnary(op3, getLIRGen().loadSimm13(input), result));
         return result;
     }
 
@@ -211,11 +207,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
 
     private Variable emitBinary(ValueKind<?> resultKind, Opfs opf, Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(resultKind);
-        if (opf.isCommutative() && isJavaConstant(a) && getLIRGen().getMoveFactory().canInlineConstant(asJavaConstant(a))) {
-            getLIRGen().append(new SPARCOPFOp(opf, b, a, result, state));
-        } else {
-            getLIRGen().append(new SPARCOPFOp(opf, a, b, result, state));
-        }
+        getLIRGen().append(new SPARCOPFOp(opf, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b), result, state));
         return result;
     }
 
@@ -230,9 +222,9 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     private Variable emitBinary(ValueKind<?> resultKind, Op3s op3, Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(resultKind);
         if (op3.isCommutative() && isJavaConstant(a) && getLIRGen().getMoveFactory().canInlineConstant(asJavaConstant(a))) {
-            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(b), a, result, state));
+            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(b), getLIRGen().loadSimm13(a), result, state));
         } else {
-            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(a), b, result, state));
+            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(a), getLIRGen().loadSimm13(b), result, state));
         }
         return result;
     }
@@ -278,7 +270,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
                 }
                 return result;
             } else {
-                return emitBinary(resultKind, setFlags ? Op3s.Mulscc : Op3s.Mulx, a, b);
+                return emitBinary(resultKind, Op3s.Mulx, a, b);
             }
         } else {
             boolean isDouble = a.getPlatformKind().equals(DOUBLE);
@@ -306,9 +298,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     public Value emitUMulHigh(Value a, Value b) {
         switch (((SPARCKind) a.getPlatformKind())) {
             case WORD:
-                Value aExtended = emitBinary(LIRKind.combine(a), Srl, a, 0);
-                Value bExtended = emitBinary(LIRKind.combine(b), Srl, b, 0);
-                Value result = emitBinary(LIRKind.combine(a, b), Mulx, aExtended, bExtended);
+                Value result = emitBinary(LIRKind.combine(a, b), Mulx, emitZeroExtend(a), emitZeroExtend(b));
                 return emitBinary(LIRKind.combine(a, b), Srax, result, WORD.getSizeInBits());
             case XWORD:
                 return emitBinary(LIRKind.combine(a, b), UMulxhi, a, b);
@@ -327,17 +317,13 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
         LIRKind resultKind = LIRKind.combine(a, b);
-        PlatformKind aKind = a.getPlatformKind();
-        PlatformKind bKind = b.getPlatformKind();
         if (isJavaConstant(b) && asJavaConstant(b).isDefaultForKind()) { // Div by zero
             Value zero = SPARC.g0.asValue(LIRKind.value(SPARCKind.WORD));
             return emitBinary(resultKind, Op3s.Sdivx, zero, zero, state);
-        } else if (isNumericInteger(aKind)) {
-            Value fixedA = emitSignExtend(a, aKind.getSizeInBytes() * 8, 64);
-            Value fixedB = emitSignExtend(b, bKind.getSizeInBytes() * 8, 64);
-            return emitBinary(resultKind, Op3s.Sdivx, fixedA, fixedB, state);
+        } else if (isNumericInteger(a.getPlatformKind())) {
+            return emitBinary(resultKind, Op3s.Sdivx, emitSignExtend(a), emitSignExtend(b), state);
         } else {
-            boolean isDouble = a.getPlatformKind().equals(DOUBLE);
+            boolean isDouble = a.getPlatformKind() == DOUBLE;
             return emitBinary(resultKind, isDouble ? Opfs.Fdivd : Opfs.Fdivs, a, b, state);
         }
     }
@@ -345,24 +331,21 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(a, b));
-        Value aLoaded;
         Variable q1; // Intermediate values
         Variable q2;
-        SPARCKind aKind = (SPARCKind) a.getPlatformKind();
-        switch (aKind) {
+        switch ((SPARCKind) a.getPlatformKind()) {
             case WORD:
                 // Sign extend a and b
-                Variable as = emitBinary(result.getValueKind(), Sra, a, g0.asValue(LIRKind.value(WORD)));
-                Variable bs = emitBinary(result.getValueKind(), Sra, b, g0.asValue(LIRKind.value(WORD)));
+                Value as = emitSignExtend(a);
+                Value bs = emitSignExtend(b);
                 q1 = emitBinary(as.getValueKind(), Sdivx, as, bs, state);
-                q2 = emitBinary(q1.getValueKind(), Mulx, q1, bs);
+                q2 = emitBinary(as.getValueKind(), Mulx, q1, bs);
                 result = emitSub(as, q2, false);
                 break;
             case XWORD:
-                aLoaded = getLIRGen().load(a); // Reuse the loaded value
-                q1 = emitBinary(result.getValueKind(), Sdivx, aLoaded, b, state);
+                q1 = emitBinary(result.getValueKind(), Sdivx, a, b, state);
                 q2 = emitBinary(result.getValueKind(), Mulx, q1, b);
-                result = emitSub(aLoaded, q2, false);
+                result = emitSub(a, q2, false);
                 break;
             case SINGLE:
                 ForeignCallLinkage fremCall = getLIRGen().getForeignCalls().lookupForeignCall(ARITHMETIC_FREM);
@@ -394,26 +377,14 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere();
         }
-        getLIRGen().append(new RemOp(opcode, result, getLIRGen().load(a), getLIRGen().load(b), scratch1, scratch2, state));
+        getLIRGen().append(new RemOp(opcode, result, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b), scratch1, scratch2, state));
         return result;
 
     }
 
     @Override
     public Value emitUDiv(Value a, Value b, LIRFrameState state) {
-        Value actualA = a;
-        Value actualB = b;
-        switch (((SPARCKind) a.getPlatformKind())) {
-            case WORD:
-                actualA = emitZeroExtend(actualA, 32, 64);
-                actualB = emitZeroExtend(actualB, 32, 64);
-                break;
-            case XWORD:
-                break;
-            default:
-                throw GraalError.shouldNotReachHere();
-        }
-        return emitBinary(LIRKind.combine(actualA, actualB), Udivx, actualA, actualB, state);
+        return emitBinary(LIRKind.combine(a, b), Udivx, emitZeroExtend(a), emitZeroExtend(b), state);
     }
 
     @Override
@@ -495,78 +466,78 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitFloatConvert(FloatConvert op, Value inputVal) {
-        AllocatableValue input = getLIRGen().asAllocatable(inputVal);
-        Value result;
+    public Value emitFloatConvert(FloatConvert op, Value inputValue) {
+        AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputValue);
+        AllocatableValue result;
         switch (op) {
             case D2F:
-                result = getLIRGen().newVariable(LIRKind.combine(inputVal).changeType(SINGLE));
-                getLIRGen().append(new SPARCOPFOp(Fdtos, inputVal, result));
+                result = getLIRGen().newVariable(LIRKind.combine(inputValue).changeType(SINGLE));
+                getLIRGen().append(new SPARCOPFOp(Fdtos, inputAllocatable, result));
                 break;
             case F2D:
-                result = getLIRGen().newVariable(LIRKind.combine(inputVal).changeType(DOUBLE));
-                getLIRGen().append(new SPARCOPFOp(Fstod, inputVal, result));
+                result = getLIRGen().newVariable(LIRKind.combine(inputValue).changeType(DOUBLE));
+                getLIRGen().append(new SPARCOPFOp(Fstod, inputAllocatable, result));
                 break;
             case I2F: {
-                AllocatableValue intEncodedFloatReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(SINGLE));
+                AllocatableValue intEncodedFloatReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(SINGLE));
                 result = getLIRGen().newVariable(intEncodedFloatReg.getValueKind());
-                moveBetweenFpGp(intEncodedFloatReg, input);
+                moveBetweenFpGp(intEncodedFloatReg, inputAllocatable);
                 getLIRGen().append(new SPARCOPFOp(Fitos, intEncodedFloatReg, result));
                 break;
             }
             case I2D: {
                 // Unfortunately we must do int -> float -> double because fitod has float
                 // and double encoding in one instruction
-                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(SINGLE));
-                result = getLIRGen().newVariable(LIRKind.combine(input).changeType(DOUBLE));
-                moveBetweenFpGp(convertedFloatReg, input);
+                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(SINGLE));
+                result = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(DOUBLE));
+                moveBetweenFpGp(convertedFloatReg, inputAllocatable);
                 getLIRGen().append(new SPARCOPFOp(Fitod, convertedFloatReg, result));
                 break;
             }
             case L2D: {
-                AllocatableValue longEncodedDoubleReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(DOUBLE));
-                moveBetweenFpGp(longEncodedDoubleReg, input);
+                AllocatableValue longEncodedDoubleReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(DOUBLE));
+                moveBetweenFpGp(longEncodedDoubleReg, inputAllocatable);
                 AllocatableValue convertedDoubleReg = getLIRGen().newVariable(longEncodedDoubleReg.getValueKind());
                 getLIRGen().append(new SPARCOPFOp(Fxtod, longEncodedDoubleReg, convertedDoubleReg));
                 result = convertedDoubleReg;
                 break;
             }
             case D2I: {
-                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(SINGLE));
-                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.D2I, input, convertedFloatReg));
+                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(SINGLE));
+                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.D2I, inputAllocatable, convertedFloatReg));
                 AllocatableValue convertedIntReg = getLIRGen().newVariable(LIRKind.combine(convertedFloatReg).changeType(WORD));
                 moveBetweenFpGp(convertedIntReg, convertedFloatReg);
                 result = convertedIntReg;
                 break;
             }
             case F2L: {
-                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(DOUBLE));
-                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.F2L, input, convertedDoubleReg));
+                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(DOUBLE));
+                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.F2L, inputAllocatable, convertedDoubleReg));
                 AllocatableValue convertedLongReg = getLIRGen().newVariable(LIRKind.combine(convertedDoubleReg).changeType(XWORD));
                 moveBetweenFpGp(convertedLongReg, convertedDoubleReg);
                 result = convertedLongReg;
                 break;
             }
             case F2I: {
-                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(SINGLE));
-                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.F2I, input, convertedFloatReg));
+                AllocatableValue convertedFloatReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(SINGLE));
+                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.F2I, inputAllocatable, convertedFloatReg));
                 AllocatableValue convertedIntReg = getLIRGen().newVariable(LIRKind.combine(convertedFloatReg).changeType(WORD));
                 moveBetweenFpGp(convertedIntReg, convertedFloatReg);
                 result = convertedIntReg;
                 break;
             }
             case D2L: {
-                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(DOUBLE));
-                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.D2L, input, convertedDoubleReg));
+                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(DOUBLE));
+                getLIRGen().append(new SPARCArithmetic.FloatConvertOp(FloatConvertOp.FloatConvert.D2L, inputAllocatable, convertedDoubleReg));
                 AllocatableValue convertedLongReg = getLIRGen().newVariable(LIRKind.combine(convertedDoubleReg).changeType(XWORD));
                 moveBetweenFpGp(convertedLongReg, convertedDoubleReg);
                 result = convertedLongReg;
                 break;
             }
             case L2F: {
-                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(input).changeType(DOUBLE));
-                result = getLIRGen().newVariable(LIRKind.combine(input).changeType(SINGLE));
-                moveBetweenFpGp(convertedDoubleReg, input);
+                AllocatableValue convertedDoubleReg = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(DOUBLE));
+                result = getLIRGen().newVariable(LIRKind.combine(inputAllocatable).changeType(SINGLE));
+                moveBetweenFpGp(convertedDoubleReg, inputAllocatable);
                 getLIRGen().append(new SPARCOPFOp(Opfs.Fxtos, convertedDoubleReg, result));
                 break;
             }
@@ -604,15 +575,19 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
         }
     }
 
+    private Value emitSignExtend(Value inputValue) {
+        int inputBits = inputValue.getPlatformKind().getSizeInBytes() * 8;
+        return emitNarrow(emitSignExtend(inputValue, inputBits, XWORD.getSizeInBits()), inputBits);
+    }
+
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
         assert fromBits <= toBits && toBits <= XWORD.getSizeInBits();
         LIRKind shiftKind = LIRKind.value(WORD);
         LIRKind resultKind = LIRKind.combine(inputVal).changeType(toBits > 32 ? XWORD : WORD);
-        Value result;
         int shiftCount = XWORD.getSizeInBits() - fromBits;
         if (fromBits == toBits) {
-            result = inputVal;
+            return inputVal;
         } else if (isJavaConstant(inputVal)) {
             JavaConstant javaConstant = asJavaConstant(inputVal);
             long constant;
@@ -622,30 +597,38 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
                 constant = javaConstant.asLong();
             }
             return new ConstantValue(resultKind, JavaConstant.forLong((constant << shiftCount) >> shiftCount));
-        } else if (fromBits == WORD.getSizeInBits() && toBits == XWORD.getSizeInBits()) {
-            result = getLIRGen().newVariable(resultKind);
-            getLIRGen().append(new SPARCOP3Op(Sra, inputVal, SPARC.g0.asValue(LIRKind.value(WORD)), result));
         } else {
-            Variable tmp = getLIRGen().newVariable(resultKind.changeType(XWORD));
-            result = getLIRGen().newVariable(resultKind);
-            getLIRGen().append(new SPARCOP3Op(Sllx, inputVal, new ConstantValue(shiftKind, JavaConstant.forInt(shiftCount)), tmp));
-            getLIRGen().append(new SPARCOP3Op(Srax, tmp, new ConstantValue(shiftKind, JavaConstant.forInt(shiftCount)), result));
+            AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputVal);
+            Variable result = getLIRGen().newVariable(resultKind);
+            if (fromBits == WORD.getSizeInBits() && toBits == XWORD.getSizeInBits()) {
+                getLIRGen().append(new SPARCOP3Op(Sra, inputAllocatable, g0.asValue(LIRKind.value(WORD)), result));
+            } else {
+                Variable tmp = getLIRGen().newVariable(resultKind.changeType(XWORD));
+                getLIRGen().append(new SPARCOP3Op(Sllx, inputAllocatable, new ConstantValue(shiftKind, JavaConstant.forInt(shiftCount)), tmp));
+                getLIRGen().append(new SPARCOP3Op(Srax, tmp, new ConstantValue(shiftKind, JavaConstant.forInt(shiftCount)), result));
+            }
+            return result;
         }
-        return result;
+    }
+
+    private Value emitZeroExtend(Value inputValue) {
+        int inputBits = inputValue.getPlatformKind().getSizeInBytes() * 8;
+        return emitNarrow(emitZeroExtend(inputValue, inputBits, XWORD.getSizeInBits()), inputBits);
     }
 
     @Override
-    public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
+    public Value emitZeroExtend(Value inputValue, int fromBits, int toBits) {
         assert fromBits <= toBits && toBits <= 64;
         if (fromBits == toBits) {
-            return inputVal;
+            return inputValue;
         }
-        Variable result = getLIRGen().newVariable(LIRKind.combine(inputVal).changeType(toBits > WORD.getSizeInBits() ? XWORD : WORD));
+        Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue).changeType(toBits > WORD.getSizeInBits() ? XWORD : WORD));
+        AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputValue);
         if (fromBits == 32) {
-            getLIRGen().append(new SPARCOP3Op(Srl, inputVal, g0.asValue(), result));
+            getLIRGen().append(new SPARCOP3Op(Srl, inputAllocatable, g0.asValue(), result));
         } else {
             Value mask = getLIRGen().emitConstant(LIRKind.value(XWORD), forLong(mask(fromBits)));
-            getLIRGen().append(new SPARCOP3Op(And, inputVal, mask, result));
+            getLIRGen().append(new SPARCOP3Op(And, inputAllocatable, mask, result));
         }
         return result;
     }

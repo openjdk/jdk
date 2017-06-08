@@ -26,6 +26,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.cpu.features ~= ".*aes.*"
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,18 +41,11 @@ package compiler.cpuflags;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import sun.hotspot.WhiteBox;
+import static jdk.test.lib.cli.CommandLineOptionTest.*;
 
 public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
-    /**
-     * Constructs new TestAESIntrinsicsOnSupportedConfig that will be executed
-     * only if AESSupportPredicate returns true
-     */
-    private TestAESIntrinsicsOnSupportedConfig() {
-        super(AESIntrinsicsBase.AES_SUPPORTED_PREDICATE);
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         testUseAES();
         testUseAESUseSSE2();
@@ -60,6 +54,16 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
         testNoUseAESUseSSE2();
         testNoUseAESUseVIS2();
         testNoUseAESIntrinsic();
+    }
+
+    /**
+     * Check if value of TieredStopAtLevel flag is greater than specified level.
+     *
+     * @param level tiered compilation level to compare with
+     */
+    private boolean isTieredLevelGreaterThan(int level) {
+        Long val = WhiteBox.getWhiteBox().getIntxVMFlag("TieredStopAtLevel");
+        return (val != null && val > level);
     }
 
     /**
@@ -75,7 +79,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES, true)));
         final String errorMessage = "Case testUseAES failed";
-        if (Platform.isServer() && !Platform.isEmulatedClient()) {
+        if (Platform.isServer() && !Platform.isEmulatedClient() && isTieredLevelGreaterThan(3)) {
             verifyOutput(new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                     AESIntrinsicsBase.AES_INTRINSIC}, null, errorMessage,
                     outputAnalyzer);
@@ -252,6 +256,6 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestAESIntrinsicsOnSupportedConfig().test();
+        new TestAESIntrinsicsOnSupportedConfig().runTestCases();
     }
 }

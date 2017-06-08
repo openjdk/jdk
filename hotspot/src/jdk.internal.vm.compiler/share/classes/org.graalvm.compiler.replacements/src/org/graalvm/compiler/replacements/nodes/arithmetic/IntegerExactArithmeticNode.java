@@ -25,7 +25,7 @@ package org.graalvm.compiler.replacements.nodes.arithmetic;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 
-interface IntegerExactArithmeticNode extends Lowerable {
+public interface IntegerExactArithmeticNode extends Lowerable {
 
     IntegerExactArithmeticSplitNode createSplit(AbstractBeginNode next, AbstractBeginNode deopt);
 }

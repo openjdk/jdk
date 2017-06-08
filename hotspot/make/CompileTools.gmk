@@ -47,11 +47,10 @@ ifeq ($(INCLUDE_GRAAL), true)
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_MATCH_PROCESSOR, \
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := \
-          $(SRC_DIR)/org.graalvm.compiler.common/src \
+          $(SRC_DIR)/org.graalvm.api.word/src \
           $(SRC_DIR)/org.graalvm.compiler.core/src \
           $(SRC_DIR)/org.graalvm.compiler.core.common/src \
           $(SRC_DIR)/org.graalvm.compiler.core.match.processor/src \
-          $(SRC_DIR)/org.graalvm.compiler.api.collections/src \
           $(SRC_DIR)/org.graalvm.compiler.api.replacements/src \
           $(SRC_DIR)/org.graalvm.compiler.asm/src \
           $(SRC_DIR)/org.graalvm.compiler.bytecode/src \
@@ -68,6 +67,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           $(SRC_DIR)/org.graalvm.compiler.phases.common/src \
           $(SRC_DIR)/org.graalvm.compiler.serviceprovider/src \
           $(SRC_DIR)/org.graalvm.compiler.virtual/src \
+          $(SRC_DIR)/org.graalvm.util/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.code/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.common/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.meta/src \
@@ -102,6 +102,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       SRC := \
           $(SRC_DIR)/org.graalvm.compiler.options/src \
           $(SRC_DIR)/org.graalvm.compiler.options.processor/src \
+          $(SRC_DIR)/org.graalvm.util/src \
           , \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.options.processor, \
       JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.options.processor.jar, \
@@ -114,9 +115,8 @@ ifeq ($(INCLUDE_GRAAL), true)
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_REPLACEMENTS_VERIFIER, \
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := \
-          $(SRC_DIR)/org.graalvm.compiler.common/src \
+          $(SRC_DIR)/org.graalvm.api.word/src \
           $(SRC_DIR)/org.graalvm.compiler.replacements.verifier/src \
-          $(SRC_DIR)/org.graalvm.compiler.api.collections/src \
           $(SRC_DIR)/org.graalvm.compiler.api.replacements/src \
           $(SRC_DIR)/org.graalvm.compiler.code/src \
           $(SRC_DIR)/org.graalvm.compiler.core.common/src \
@@ -125,6 +125,7 @@ ifeq ($(INCLUDE_GRAAL), true)
           $(SRC_DIR)/org.graalvm.compiler.nodeinfo/src \
           $(SRC_DIR)/org.graalvm.compiler.options/src \
           $(SRC_DIR)/org.graalvm.compiler.serviceprovider/src \
+          $(SRC_DIR)/org.graalvm.util/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.code/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.common/src \
           $(VM_CI_SRC_DIR)/jdk.vm.ci.meta/src \

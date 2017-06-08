@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,17 @@ public class CompileTheWorld {
                 await(executor);
             }
             CompileTheWorld.OUT.printf("Done (%d classes, %d methods, %d ms)%n",
-                    PathHandler.getClassCount(),
+                    PathHandler.getProcessedClassCount(),
                     Compiler.getMethodCount(),
                     System.currentTimeMillis() - start);
             passed = true;
+        } catch (Throwable t){
+            t.printStackTrace(ERR);
         } finally {
+            try {
+                OUT.close();
+            } catch (Throwable ignore) {
+            }
             // <clinit> might have started new threads
             System.exit(passed ? 0 : 1);
         }

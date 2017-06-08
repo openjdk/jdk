@@ -23,14 +23,8 @@
 package org.graalvm.compiler.debug.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.lang.management.ThreadMXBean;
-
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
 
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -38,6 +32,11 @@ import org.graalvm.compiler.debug.DebugConfig;
 import org.graalvm.compiler.debug.DebugConfigScope;
 import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.Management;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 
 @SuppressWarnings("try")
 public class DebugTimerTest {
@@ -66,35 +65,14 @@ public class DebugTimerTest {
         } while (true);
     }
 
-    @Test
-    public void test1() {
-        DebugConfig debugConfig = Debug.fixedConfig(0, 0, false, false, true, false, false, null, null, System.out);
-        try (DebugConfigScope dcs = new DebugConfigScope(debugConfig); Debug.Scope s = Debug.scope("DebugTimerTest")) {
-
-            DebugTimer timerA = Debug.timer("TimerA");
-            DebugTimer timerB = Debug.timer("TimerB");
-
-            long spinA;
-            long spinB;
-
-            try (DebugCloseable a1 = timerA.start()) {
-                spinA = spin(50);
-                try (DebugCloseable b1 = timerB.start()) {
-                    spinB = spin(50);
-                }
-            }
-
-            Assert.assertTrue(timerB.getCurrentValue() < timerA.getCurrentValue());
-            if (timerA.getFlat() != null && timerB.getFlat() != null) {
-                assertTrue(spinB >= spinA || timerB.getFlat().getCurrentValue() < timerA.getFlat().getCurrentValue());
-                assertEquals(timerA.getFlat().getCurrentValue(), timerA.getCurrentValue() - timerB.getFlat().getCurrentValue(), 10D);
-            }
-        }
-    }
-
+    /**
+     * Asserts that a timer replied recursively without any other interleaving timers has the same
+     * flat and accumulated times.
+     */
     @Test
     public void test2() {
-        DebugConfig debugConfig = Debug.fixedConfig(0, 0, false, false, true, false, false, null, null, System.out);
+        OptionValues options = new OptionValues(EconomicMap.create());
+        DebugConfig debugConfig = Debug.fixedConfig(options, 0, 0, false, false, true, false, false, null, null, System.out);
         try (DebugConfigScope dcs = new DebugConfigScope(debugConfig); Debug.Scope s = Debug.scope("DebugTimerTest")) {
             DebugTimer timerC = Debug.timer("TimerC");
             try (DebugCloseable c1 = timerC.start()) {
@@ -114,38 +92,6 @@ public class DebugTimerTest {
             }
             if (timerC.getFlat() != null) {
                 assertEquals(timerC.getFlat().getCurrentValue(), timerC.getCurrentValue());
-            }
-        }
-    }
-
-    @Test
-    public void test3() {
-        DebugConfig debugConfig = Debug.fixedConfig(0, 0, false, false, true, false, false, null, null, System.out);
-        try (DebugConfigScope dcs = new DebugConfigScope(debugConfig); Debug.Scope s = Debug.scope("DebugTimerTest")) {
-
-            DebugTimer timerD = Debug.timer("TimerD");
-            DebugTimer timerE = Debug.timer("TimerE");
-
-            long spinD1;
-            long spinE;
-
-            try (DebugCloseable d1 = timerD.start()) {
-                spinD1 = spin(50);
-                try (DebugCloseable e1 = timerE.start()) {
-                    spinE = spin(50);
-                    try (DebugCloseable d2 = timerD.start()) {
-                        spin(50);
-                        try (DebugCloseable d3 = timerD.start()) {
-                            spin(50);
-                        }
-                    }
-                }
-            }
-
-            Assert.assertTrue(timerE.getCurrentValue() < timerD.getCurrentValue());
-            if (timerD.getFlat() != null && timerE.getFlat() != null) {
-                assertTrue(spinE >= spinD1 || timerE.getFlat().getCurrentValue() < timerD.getFlat().getCurrentValue());
-                assertEquals(timerD.getFlat().getCurrentValue(), timerD.getCurrentValue() - timerE.getFlat().getCurrentValue(), 10D);
             }
         }
     }

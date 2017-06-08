@@ -54,11 +54,16 @@ public class MethodMetricsRootScopeInfo implements ExtraInfo {
      *         is already an existing one on the scope
      */
     public static Debug.Scope createRootScopeIfAbsent(ResolvedJavaMethod method) {
-        /*
-         * if the current compilation is not triggered from JVMCI we need a valid context root
-         * method for method metrics
-         */
-        return DebugScope.getInstance().getExtraInfo() instanceof MethodMetricsRootScopeInfo ? null : Debug.methodMetricsScope("GraalCompilerRoot", MethodMetricsRootScopeInfo.create(method), true);
+        if (Debug.isEnabled()) {
+            /*
+             * if the current compilation is not triggered from JVMCI we need a valid context root
+             * method for method metrics
+             */
+            return DebugScope.getInstance().getExtraInfo() instanceof MethodMetricsRootScopeInfo ? null
+                            : Debug.methodMetricsScope("GraalCompilerRoot", MethodMetricsRootScopeInfo.create(method), true);
+        } else {
+            return null;
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,30 +35,35 @@ import sun.jvm.hotspot.utilities.*;
 // as described in the class file
 
 public class ConstantPool extends Metadata implements ClassConstants {
-  public class CPSlot {
+  private class CPSlot {
     private Address ptr;
 
     CPSlot(Address ptr) {
       this.ptr = ptr;
     }
-    CPSlot(Symbol sym) {
-      this.ptr = sym.getAddress().orWithMask(1);
-    }
-
-    public boolean isResolved() {
-      return (ptr.minus(null) & 1) == 0;
-    }
-    public boolean isUnresolved() {
-      return (ptr.minus(null) & 1) == 1;
-    }
 
     public Symbol getSymbol() {
-      if (!isUnresolved()) throw new InternalError("not a symbol");
-        return Symbol.create(ptr.xorWithMask(1));
+      // (Lowest bit == 1) -> this is an pseudo string.
+      return Symbol.create(ptr.andWithMask(~1));
+    }
+  }
+  private class CPKlassSlot {
+    private int name_index;
+    private int resolved_klass_index;
+    private static final int temp_resolved_klass_index = 0xffff;
+
+    public CPKlassSlot(int n, int rk) {
+      name_index = n;
+      resolved_klass_index = rk;
+    }
+    public int getNameIndex() {
+      return name_index;
+    }
+    public int getResolvedKlassIndex() {
+      if (Assert.ASSERTS_ENABLED) {
+        Assert.that(resolved_klass_index != temp_resolved_klass_index, "constant pool merging was incomplete");
       }
-    public Klass getKlass() {
-      if (!isResolved()) throw new InternalError("not klass");
-      return (Klass)Metadata.instantiateWrapperFor(ptr);
+      return resolved_klass_index;
     }
   }
 
@@ -84,8 +89,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     cache       = type.getAddressField("_cache");
     poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
-    resolvedReferences      = type.getAddressField("_resolved_references");
-    referenceMap = type.getAddressField("_reference_map");
+    resolved_klasses = type.getAddressField("_resolved_klasses");
     headerSize  = type.getSize();
     elementSize = 0;
     // fetch constants:
@@ -103,10 +107,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField tags;
   private static AddressField operands;
   private static AddressField cache;
+  private static AddressField resolved_klasses;
   private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
-  private static AddressField  resolvedReferences;
-  private static AddressField  referenceMap;
 
   private static long headerSize;
   private static long elementSize;
@@ -124,17 +127,14 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public InstanceKlass     getPoolHolder() { return (InstanceKlass)poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(getAddress()); }
   public Oop               getResolvedReferences() {
-    Address handle = resolvedReferences.getValue(getAddress());
-    if (handle != null) {
-      // Load through the handle
-      OopHandle refs = handle.getOopHandleAt(0);
-      return VM.getVM().getObjectHeap().newOop(refs);
-    }
-    return null;
+    return getCache().getResolvedReferences();
+  }
+  public KlassArray        getResolvedKlasses() {
+    return new KlassArray(resolved_klasses.getValue(getAddress()));
   }
 
   public U2Array referenceMap() {
-    return new U2Array(referenceMap.getValue(getAddress()));
+    return getCache().referenceMap();
   }
 
   public int objectToCPIndex(int index) {
@@ -163,6 +163,16 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   public CPSlot getSlotAt(long index) {
     return new CPSlot(getAddressAtRaw(index));
+  }
+
+  public CPKlassSlot getKlassSlotAt(long index) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(index).isUnresolvedKlass() || getTagAt(index).isKlass(), "Corrupted constant pool");
+    }
+    int value = getIntAt(index);
+    int name_index = extractHighShortFromInt(value);
+    int resolved_klass_index = extractLowShortFromInt(value);
+    return new CPKlassSlot(name_index, resolved_klass_index);
   }
 
   public Address getAddressAtRaw(long index) {
@@ -315,16 +325,14 @@ public class ConstantPool extends Metadata implements ClassConstants {
   // returns null, if not resolved.
   public Klass getKlassAt(int which) {
     if( ! getTagAt(which).isKlass()) return null;
-    return (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(which));
+    int resolved_klass_index = getKlassSlotAt(which).getResolvedKlassIndex();
+    KlassArray resolved_klasses = getResolvedKlasses();
+    return resolved_klasses.getAt(resolved_klass_index);
   }
 
   public Symbol getKlassNameAt(int which) {
-    CPSlot entry = getSlotAt(which);
-    if (entry.isResolved()) {
-      return entry.getKlass().getName();
-    } else {
-      return entry.getSymbol();
-    }
+    int name_index = getKlassSlotAt(which).getNameIndex();
+    return getSymbolAt(name_index);
   }
 
   public Symbol getUnresolvedStringAt(int which) {

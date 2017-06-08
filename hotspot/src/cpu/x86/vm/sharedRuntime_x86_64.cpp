@@ -47,6 +47,7 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
+#include "vm_version_x86.hpp"
 
 #define __ masm->
 
@@ -151,8 +152,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   }
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (save_vectors) {
-    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
-    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
+    assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
+    assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
   }
 #else
   assert(!save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -206,6 +207,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
     }
   }
+  __ vzeroupper();
   if (frame::arg_reg_save_area_bytes != 0) {
     // Allocate argument register save area
     __ subptr(rsp, frame::arg_reg_save_area_bytes);
@@ -322,12 +324,14 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (restore_vectors) {
-    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
-    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
+    assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
+    assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
   }
 #else
   assert(!restore_vectors, "vectors are generated only by C2");
 #endif
+
+  __ vzeroupper();
 
   // On EVEX enabled targets everything is handled in pop fpu state
   if (restore_vectors) {
@@ -528,7 +532,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   // align stack so push_CPU_state doesn't fault
   __ andptr(rsp, -(StackAlignmentInBytes));
   __ push_CPU_state();
-
+  __ vzeroupper();
   // VM needs caller's callsite
   // VM needs target method
   // This needs to be a long call since we will relocate this adapter to
@@ -547,6 +551,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
     __ addptr(rsp, frame::arg_reg_save_area_bytes);
   }
 
+  __ vzeroupper();
   __ pop_CPU_state();
   // restore sp
   __ mov(rsp, r13);
@@ -1465,7 +1470,6 @@ static void check_needs_gc_for_critical_native(MacroAssembler* masm,
 
   save_or_restore_arguments(masm, stack_slots, total_in_args,
                             arg_save_area, NULL, in_regs, in_sig_bt);
-
   __ bind(cont);
 #ifdef ASSERT
   if (StressCriticalJNINatives) {
@@ -2368,7 +2372,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movl(swap_reg, 1);
 
     // Load (object->mark() | 1) into swap_reg %rax
-    __ orptr(swap_reg, Address(obj_reg, 0));
+    __ orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // Save (object->mark() | 1) into BasicLock's displaced header
     __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
@@ -2378,7 +2382,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     // src -> dest iff dest == rax else rax <- dest
-    __ cmpxchgptr(lock_reg, Address(obj_reg, 0));
+    __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::equal, lock_done);
 
     // Hmm should this move to the slow path code area???
@@ -2485,6 +2489,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // preserved and correspond to the bcp/locals pointers. So we do a runtime call
     // by hand.
     //
+    __ vzeroupper();
     save_native_result(masm, ret_type, stack_slots);
     __ mov(c_rarg0, r15_thread);
     __ mov(r12, rsp); // remember sp
@@ -2555,7 +2560,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (os::is_MP()) {
       __ lock();
     }
-    __ cmpxchgptr(old_hdr, Address(obj_reg, 0));
+    __ cmpxchgptr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::notEqual, slow_path_unlock);
 
     // slow path re-enters here
@@ -2658,7 +2663,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // If we haven't already saved the native result we must save it now as xmm registers
     // are still exposed.
-
+    __ vzeroupper();
     if (ret_type == T_FLOAT || ret_type == T_DOUBLE ) {
       save_native_result(masm, ret_type, stack_slots);
     }
@@ -2704,6 +2709,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // SLOW PATH Reguard the stack if needed
 
   __ bind(reguard);
+  __ vzeroupper();
   save_native_result(masm, ret_type, stack_slots);
   __ mov(r12, rsp); // remember sp
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows

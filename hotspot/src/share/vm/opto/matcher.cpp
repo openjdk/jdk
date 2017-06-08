@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ void Matcher::match( ) {
   const TypeTuple *range = C->tf()->range();
   if( range->cnt() > TypeFunc::Parms ) { // If not a void function
     // Get ideal-register return type
-    int ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
+    uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
     OptoRegPair regs = return_value(ireg, false);
@@ -977,7 +977,6 @@ Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
   MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
-
   while (mstack.is_nonempty()) {
     C->check_node_count(NodeLimitFudgeFactor, "too many nodes matching instructions");
     if (C->failing()) return NULL;
@@ -2123,6 +2122,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_EncodeISOArray:
       case Op_FmaD:
       case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2312,7 +2313,9 @@ void Matcher::find_shared( Node *n ) {
         break;
       }
       case Op_FmaD:
-      case Op_FmaF: {
+      case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF: {
         // Restructure into a binary tree for Matching.
         Node* pair = new BinaryNode(n->in(1), n->in(2));
         n->set_req(2, pair);

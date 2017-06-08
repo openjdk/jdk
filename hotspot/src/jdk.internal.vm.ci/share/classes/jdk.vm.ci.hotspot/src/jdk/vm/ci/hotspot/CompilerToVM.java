@@ -459,9 +459,9 @@ final class CompilerToVM {
     native long getLocalVariableTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Determines if {@code method} should not be inlined or compiled.
+     * Sets flags on {@code method} indicating that it should never be inlined or compiled by the VM.
      */
-    native void doNotInlineOrCompile(HotSpotResolvedJavaMethodImpl method);
+    native void setNotInlineableOrCompileable(HotSpotResolvedJavaMethodImpl method);
 
     /**
      * Invalidates the profiling information for {@code method} and (re)initializes it such that

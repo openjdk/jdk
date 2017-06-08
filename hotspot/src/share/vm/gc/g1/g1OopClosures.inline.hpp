@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,31 +35,6 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-
-/*
- * This really ought to be an inline function, but apparently the C++
- * compiler sometimes sees fit to ignore inline declarations.  Sigh.
- */
-
-template <class T>
-inline void FilterIntoCSClosure::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop) &&
-      _g1->is_in_cset_or_humongous(oopDesc::decode_heap_oop_not_null(heap_oop))) {
-    _oc->do_oop(p);
-  }
-}
-
-template <class T>
-inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    HeapWord* obj_hw = (HeapWord*)oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (obj_hw < _r_bottom || obj_hw >= _r_end) {
-      _oc->do_oop(p);
-    }
-  }
-}
 
 // This closure is applied to the fields of the objects that have just been copied.
 template <class T>
@@ -114,7 +89,7 @@ inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
     } else if (state.is_ext()) {
       _par_scan_state->do_oop_ext(p);
     } else {
-      assert(!_g1->obj_in_cs(obj), "checking");
+      assert(!_g1->is_in_cset(obj), "checking");
     }
   }
 }
@@ -136,33 +111,55 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
-inline void G1Mux2Closure::do_oop_work(T* p) {
-  // Apply first closure; then apply the second.
-  _c1->do_oop(p);
-  _c2->do_oop(p);
+inline static void check_obj_during_refinement(T* p, oop const obj) {
+#ifdef ASSERT
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  // can't do because of races
+  // assert(obj == NULL || obj->is_oop(), "expected an oop");
+  assert(check_obj_alignment(obj), "not oop aligned");
+  assert(g1->is_in_reserved(obj), "must be in heap");
+
+  HeapRegion* from = g1->heap_region_containing(p);
+
+  assert(from != NULL, "from region must be non-NULL");
+  assert(from->is_in_reserved(p) ||
+         (from->is_humongous() &&
+          g1->heap_region_containing(p)->is_humongous() &&
+          from->humongous_start_region() == g1->heap_region_containing(p)->humongous_start_region()),
+         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
+         p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
+#endif // ASSERT
 }
-void G1Mux2Closure::do_oop(oop* p)       { do_oop_work(p); }
-void G1Mux2Closure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
-inline void G1TriggerClosure::do_oop_work(T* p) {
-  // Record that this closure was actually applied (triggered).
-  _triggered = true;
-}
-void G1TriggerClosure::do_oop(oop* p)       { do_oop_work(p); }
-void G1TriggerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
-
-template <class T>
-inline void G1InvokeIfNotTriggeredClosure::do_oop_work(T* p) {
-  if (!_trigger_cl->triggered()) {
-    _oop_cl->do_oop(p);
+inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
+  T o = oopDesc::load_heap_oop(p);
+  if (oopDesc::is_null(o)) {
+    return;
   }
+  oop obj = oopDesc::decode_heap_oop_not_null(o);
+
+  check_obj_during_refinement(p, obj);
+
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    // Normally this closure should only be called with cross-region references.
+    // But since Java threads are manipulating the references concurrently and we
+    // reload the values things may have changed.
+    // This check lets slip through references from a humongous continues region
+    // to its humongous start region, as they are in different regions, and adds a
+    // remembered set entry. This is benign (apart from memory usage), as this
+    // closure is never called during evacuation.
+    return;
+  }
+
+  HeapRegion* to = _g1->heap_region_containing(obj);
+
+  assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
+  to->rem_set()->add_reference(p, _worker_i);
 }
-void G1InvokeIfNotTriggeredClosure::do_oop(oop* p)       { do_oop_work(p); }
-void G1InvokeIfNotTriggeredClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
-inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
+inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (obj == NULL) {
     return;
@@ -212,11 +209,12 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
     // we have already visited/tried to copy this object
     // there is no need to retry.
     if (!self_forwarded(obj)) {
-      assert(_push_ref_cl != NULL, "should not be null");
-      // Push the reference in the refs queue of the G1ParScanThreadState
-      // instance for this worker thread.
+    assert(_push_ref_cl != NULL, "should not be null");
+    // Push the reference in the refs queue of the G1ParScanThreadState
+    // instance for this worker thread.
       _push_ref_cl->do_oop(p);
     }
+    _has_refs_into_cset = true;
 
     // Deferred updates to the CSet are either discarded (in the normal case),
     // or processed (if an evacuation failure occurs) at the end
@@ -232,8 +230,8 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
     to->rem_set()->add_reference(p, _worker_i);
   }
 }
-void G1UpdateRSOrPushRefOopClosure::do_oop(oop* p)       { do_oop_work(p); }
-void G1UpdateRSOrPushRefOopClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+void G1UpdateRSOrPushRefOopClosure::do_oop(oop* p)       { do_oop_nv(p); }
+void G1UpdateRSOrPushRefOopClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
 
 template <class T>
 void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {

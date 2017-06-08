@@ -97,6 +97,18 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
         assert !isPlaceholderBci(bci);
     }
 
+    public ValueNode getArgument(int i) {
+        return arguments.get(i);
+    }
+
+    public int getArgumentCount() {
+        return arguments.size();
+    }
+
+    public ValueNode[] toArgumentArray() {
+        return arguments.toArray(new ValueNode[0]);
+    }
+
     public int getBci() {
         return bci;
     }
@@ -126,7 +138,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
     @SuppressWarnings("try")
     protected StructuredGraph lowerReplacement(final StructuredGraph replacementGraph, LoweringTool tool) {
         final PhaseContext c = new PhaseContext(tool.getMetaAccess(), tool.getConstantReflection(), tool.getConstantFieldProvider(), tool.getLowerer(), tool.getReplacements(),
-                        tool.getStampProvider(), tool.getNodeCostProvider());
+                        tool.getStampProvider());
         if (!graph().hasValueProxies()) {
             new RemoveValueProxyPhase().apply(replacementGraph);
         }
@@ -161,8 +173,8 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
                     ((Lowerable) nonNullReceiver).lower(tool);
                 }
             }
-            InliningUtil.inline(invoke, replacementGraph, false, null, targetMethod);
-            Debug.dump(Debug.INFO_LOG_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
+            InliningUtil.inline(invoke, replacementGraph, false, targetMethod);
+            Debug.dump(Debug.DETAILED_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
         } else {
             if (isPlaceholderBci(invoke.bci())) {
                 throw new GraalError("%s: cannot lower to invoke with placeholder BCI: %s", graph(), this);
@@ -184,7 +196,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
         }
     }
 
-    protected InvokeNode replaceWithInvoke() {
+    public InvokeNode replaceWithInvoke() {
         InvokeNode invoke = createInvoke();
         graph().replaceFixedWithFixed(this, invoke);
         return invoke;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055 8177059 8166191
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -38,6 +38,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 public class TestGCLogMessages {
 
@@ -70,7 +71,21 @@ public class TestGCLogMessages {
             this.message = message;
             this.level = level;
         }
+
+        public boolean isAvailable() {
+            return true;
+        }
     };
+
+    private class LogMessageWithLevelC2OrJVMCIOnly extends LogMessageWithLevel {
+        public LogMessageWithLevelC2OrJVMCIOnly(String message, Level level) {
+            super(message, level);
+        }
+
+        public boolean isAvailable() {
+            return Platform.isGraal() || Platform.isServer();
+        }
+    }
 
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
@@ -115,11 +130,17 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
         // Merge PSS
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
+        // TLAB handling
+        new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+
+        new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
+        new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
         for (LogMessageWithLevel l : messages) {
-            if (level.lessThan(l.level)) {
+            if (level.lessThan(l.level) || !l.isAvailable()) {
                 output.shouldNotContain(l.message);
             } else {
                 output.shouldMatch("\\[" + l.level + ".*" + l.message);
@@ -131,6 +152,7 @@ public class TestGCLogMessages {
         new TestGCLogMessages().testNormalLogs();
         new TestGCLogMessages().testWithToSpaceExhaustionLogs();
         new TestGCLogMessages().testWithInitialMark();
+        new TestGCLogMessages().testExpandHeap();
     }
 
     private void testNormalLogs() throws Exception {
@@ -205,6 +227,22 @@ public class TestGCLogMessages {
         output.shouldContain("Clear Claimed Marks");
         output.shouldHaveExitValue(0);
     }
+
+    private void testExpandHeap() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx10M",
+                                                                  "-Xbootclasspath/a:.",
+                                                                  "-Xlog:gc+ergo+heap=debug",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:+WhiteBoxAPI",
+                                                                  GCTest.class.getName());
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Expand the heap. requested expansion amount: ");
+        output.shouldContain("B expansion amount: ");
+        output.shouldHaveExitValue(0);
+    }
+
 
     static class GCTest {
         private static byte[] garbage;

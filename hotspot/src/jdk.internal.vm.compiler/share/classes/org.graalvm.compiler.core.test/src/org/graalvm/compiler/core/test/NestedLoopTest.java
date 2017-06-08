@@ -142,7 +142,7 @@ public class NestedLoopTest extends GraalCompilerTest {
 
     private void test(String snippet, int rootExits, int nestedExits, int innerExits) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, true, true);
 
         Assert.assertEquals(3, cfg.getLoops().size());
@@ -162,7 +162,7 @@ public class NestedLoopTest extends GraalCompilerTest {
         Assert.assertEquals(rootExits, rootLoop.getExits().size());
         Assert.assertEquals(nestedExits, nestedLoop.getExits().size());
         Assert.assertEquals(innerExits, innerMostLoop.getExits().size());
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
     }
 
     private static boolean contains(Loop<Block> loop, Invoke node, ControlFlowGraph cfg) {
