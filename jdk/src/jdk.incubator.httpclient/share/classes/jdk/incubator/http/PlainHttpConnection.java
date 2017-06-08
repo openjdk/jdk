@@ -62,6 +62,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
     private volatile Consumer<ByteBufferReference> asyncReceiver;
     private volatile Consumer<Throwable> errorReceiver;
     private volatile Supplier<ByteBufferReference> readBufferSupplier;
+    private boolean asyncReading;
 
     private final AsyncWriteQueue asyncOutputQ = new AsyncWriteQueue(this::asyncOutput);
 
@@ -70,6 +71,9 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
     @Override
     public void startReading() {
         try {
+            synchronized(reading) {
+                asyncReading = true;
+            }
             client.registerEvent(new ReadEvent());
         } catch (IOException e) {
             shutdown();
@@ -78,6 +82,9 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
 
     @Override
     public void stopAsyncReading() {
+        synchronized(reading) {
+            asyncReading = false;
+        }
         client.cancelRegistration(chan);
     }
 
@@ -279,7 +286,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
     void asyncRead() {
         synchronized (reading) {
             try {
-                while (true) {
+                while (asyncReading) {
                     ByteBufferReference buf = readBufferSupplier.get();
                     int n = chan.read(buf.get());
                     if (n == -1) {
@@ -325,7 +332,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
             return -1;
         }
         Utils.flipToMark(buf, mark);
-        String s = "Receive (" + n + " bytes) ";
+        // String s = "Receive (" + n + " bytes) ";
         //debugPrint(s, buf);
         return n;
     }
@@ -393,6 +400,10 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
             shutdown();
         }
 
+        @Override
+        public String toString() {
+            return super.toString() + "/" + chan;
+        }
     }
 
     // used in blocking channels only
@@ -422,6 +433,11 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         public void abort() {
             close();
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "/" + chan;
+        }
     }
 
     @Override
@@ -447,7 +463,8 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
     CompletableFuture<Void> whenReceivingResponse() {
         CompletableFuture<Void> cf = new MinimalFuture<>();
         try {
-            client.registerEvent(new ReceiveResponseEvent(cf));
+            ReceiveResponseEvent evt = new ReceiveResponseEvent(cf);
+            client.registerEvent(evt);
         } catch (IOException e) {
             cf.completeExceptionally(e);
         }
