@@ -27,6 +27,12 @@
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
  *
+ * @uses javax.xml.soap.MessageFactory
+ * @uses javax.xml.soap.SAAJMetaFactory
+ * @uses javax.xml.soap.SOAPConnectionFactory
+ * @uses javax.xml.soap.SOAPFactory
+ * @uses javax.xml.ws.spi.Provider
+ *
  * @moduleGraph
  * @since 9
  */
