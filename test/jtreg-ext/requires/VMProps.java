@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import sun.hotspot.cpuinfo.CPUInfo;
 import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.Platform;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
@@ -66,6 +67,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.jvmci", vmJvmci());
         map.put("vm.emulatedClient", vmEmulatedClient());
         map.put("vm.cpu.features", cpuFeatures());
+        map.put("vm.rtm.cpu", vmRTMCPU());
+        map.put("vm.rtm.os", vmRTMOS());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -203,6 +206,36 @@ public class VMProps implements Callable<Map<String, String>> {
             boolean isAcceptable = isSupported && (gc == currentGC || isByErgo);
             map.put("vm.gc." + gc.name(), "" + isAcceptable);
         }
+    }
+
+    /**
+     * @return true if VM runs RTM supported OS and false otherwise.
+     */
+    protected String vmRTMOS() {
+        boolean isRTMOS = true;
+
+        if (Platform.isAix()) {
+            // Actually, this works since AIX 7.1.3.30, but os.version property
+            // is set to 7.1.
+            isRTMOS = (Platform.getOsVersionMajor()  > 7) ||
+                      (Platform.getOsVersionMajor() == 7 && Platform.getOsVersionMinor() > 1);
+
+        } else if (Platform.isLinux()) {
+            if (Platform.isPPC()) {
+                isRTMOS = (Platform.getOsVersionMajor()  > 4) ||
+                          (Platform.getOsVersionMajor() == 4 && Platform.getOsVersionMinor() > 1);
+            }
+        }
+        return "" + isRTMOS;
+    }
+
+    /**
+     * @return true if VM runs RTM supported CPU and false otherwise.
+     */
+    protected String vmRTMCPU() {
+        boolean vmRTMCPU = (Platform.isPPC() ? CPUInfo.hasFeature("tcheck") : CPUInfo.hasFeature("rtm"));
+
+        return "" + vmRTMCPU;
     }
 
     /**
