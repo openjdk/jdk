@@ -24,6 +24,8 @@ package org.graalvm.compiler.graph;
 
 import static org.graalvm.compiler.graph.Graph.isModificationCountsEnabled;
 
+import java.util.Iterator;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 
 class NodeUsageIterable implements NodeIterable<Node> {
@@ -61,5 +63,24 @@ class NodeUsageIterable implements NodeIterable<Node> {
     @Override
     public int count() {
         return node.getUsageCount();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Node> iterator = iterator();
+        boolean first = true;
+        sb.append("usages=");
+        sb.append('[');
+        while (iterator.hasNext()) {
+            Node input = iterator.next();
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(input);
+            first = false;
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }

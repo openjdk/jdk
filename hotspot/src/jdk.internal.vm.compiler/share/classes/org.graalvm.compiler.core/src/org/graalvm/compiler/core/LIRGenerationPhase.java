@@ -57,6 +57,7 @@ public class LIRGenerationPhase extends LIRPhase<LIRGenerationPhase.LIRGeneratio
     }
 
     private static final DebugCounter instructionCounter = Debug.counter("GeneratedLIRInstructions");
+    private static final DebugCounter nodeCount = Debug.counter("FinalNodeCount");
 
     @Override
     protected final void run(TargetDescription target, LIRGenerationResult lirGenRes, LIRGenerationPhase.LIRGenerationContext context) {
@@ -68,6 +69,9 @@ public class LIRGenerationPhase extends LIRPhase<LIRGenerationPhase.LIRGeneratio
         }
         context.lirGen.beforeRegisterAllocation();
         assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
+        if (nodeCount.isEnabled()) {
+            nodeCount.add(graph.getNodeCount());
+        }
     }
 
     private static void emitBlock(NodeLIRBuilderTool nodeLirGen, LIRGenerationResult lirGenRes, Block b, StructuredGraph graph, BlockMap<List<Node>> blockMap) {

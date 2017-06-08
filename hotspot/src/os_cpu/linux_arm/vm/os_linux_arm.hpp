@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
                                            jlong exchange_value,
                                            volatile jlong *dest);
 
-  static jlong (*atomic_load_long_func)(volatile jlong*);
+  static jlong (*atomic_load_long_func)(const volatile jlong*);
 
   static void (*atomic_store_long_func)(jlong, volatile jlong*);
 
@@ -63,7 +63,7 @@
 
   static jlong atomic_cmpxchg_long_bootstrap(jlong, jlong, volatile jlong*);
 
-  static jlong atomic_load_long_bootstrap(volatile jlong*);
+  static jlong atomic_load_long_bootstrap(const volatile jlong*);
 
   static void atomic_store_long_bootstrap(jlong, volatile jlong*);
 

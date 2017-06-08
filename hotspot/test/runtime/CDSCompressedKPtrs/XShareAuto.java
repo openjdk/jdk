@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class XShareAuto {
 
         pb = ProcessTools.createJavaProcessBuilder(
             "-server", "-Xshare:auto", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-XX:+PrintSharedSpaces", "-version");
+            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xlog:cds", "-version");
         output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("sharing");

@@ -487,7 +487,7 @@ inline bool is_size_aligned(size_t size, size_t alignment) {
   return align_size_up_(size, alignment) == size;
 }
 
-inline bool is_ptr_aligned(void* ptr, size_t alignment) {
+inline bool is_ptr_aligned(const void* ptr, size_t alignment) {
   return align_size_up_((intptr_t)ptr, (intptr_t)alignment) == (intptr_t)ptr;
 }
 

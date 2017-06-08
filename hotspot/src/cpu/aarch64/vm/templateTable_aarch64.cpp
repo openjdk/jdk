@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3418,8 +3418,7 @@ void TemplateTable::_new() {
   __ br(Assembler::NE, slow_case);
 
   // get InstanceKlass
-  __ lea(r4, Address(r4, r3, Address::lsl(3)));
-  __ ldr(r4, Address(r4, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(r4, r3, r4, rscratch1);
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -3572,8 +3571,7 @@ void TemplateTable::checkcast()
   // Get superklass in r0 and subklass in r3
   __ bind(quicked);
   __ mov(r3, r0); // Save object in r3; r0 needed for subtype check
-  __ lea(r0, Address(r2, r19, Address::lsl(3)));
-  __ ldr(r0, Address(r0, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(r2, r19, r0, rscratch1); // r0 = klass
 
   __ bind(resolved);
   __ load_klass(r19, r3);
@@ -3629,8 +3627,7 @@ void TemplateTable::instanceof() {
   // Get superklass in r0 and subklass in r3
   __ bind(quicked);
   __ load_klass(r3, r0);
-  __ lea(r0, Address(r2, r19, Address::lsl(3)));
-  __ ldr(r0, Address(r0, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(r2, r19, r0, rscratch1);
 
   __ bind(resolved);
 

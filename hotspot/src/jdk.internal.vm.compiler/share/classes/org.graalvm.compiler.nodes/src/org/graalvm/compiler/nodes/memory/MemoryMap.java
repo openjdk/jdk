@@ -22,9 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import java.util.Collection;
-
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 
 /**
  * Maps a {@linkplain LocationIdentity location} to the last node that (potentially) wrote to the
@@ -40,5 +38,5 @@ public interface MemoryMap {
     /**
      * Gets the location identities in the domain of this map.
      */
-    Collection<LocationIdentity> getLocations();
+    Iterable<LocationIdentity> getLocations();
 }

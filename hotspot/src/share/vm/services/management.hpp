@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,19 +42,19 @@ private:
   static TimeStamp          _stamp; // Timestamp since vm init done time
 
   // Management klasses
-  static Klass*             _diagnosticCommandImpl_klass;
-  static Klass*             _garbageCollectorExtImpl_klass;
-  static Klass*             _garbageCollectorMXBean_klass;
-  static Klass*             _gcInfo_klass;
-  static Klass*             _managementFactoryHelper_klass;
-  static Klass*             _memoryManagerMXBean_klass;
-  static Klass*             _memoryPoolMXBean_klass;
-  static Klass*             _memoryUsage_klass;
-  static Klass*             _sensor_klass;
-  static Klass*             _threadInfo_klass;
-  static Klass* load_and_initialize_klass(Symbol* sh, TRAPS);
-  static Klass* load_and_initialize_klass_or_null(Symbol* sh, TRAPS);
-  static Klass* initialize_klass(Klass* k, TRAPS);
+  static InstanceKlass*     _diagnosticCommandImpl_klass;
+  static InstanceKlass*     _garbageCollectorExtImpl_klass;
+  static InstanceKlass*     _garbageCollectorMXBean_klass;
+  static InstanceKlass*     _gcInfo_klass;
+  static InstanceKlass*     _managementFactoryHelper_klass;
+  static InstanceKlass*     _memoryManagerMXBean_klass;
+  static InstanceKlass*     _memoryPoolMXBean_klass;
+  static InstanceKlass*     _memoryUsage_klass;
+  static InstanceKlass*     _sensor_klass;
+  static InstanceKlass*     _threadInfo_klass;
+  static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS);
+  static InstanceKlass* load_and_initialize_klass_or_null(Symbol* sh, TRAPS);
+  static InstanceKlass* initialize_klass(Klass* k, TRAPS);
 
 public:
   static void init();
@@ -67,7 +67,7 @@ public:
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
 
-  static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<KlassHandle>* klass_handle_array);
+  static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<Klass*>* klass_array);
 
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;
@@ -87,21 +87,21 @@ public:
   }
 
   // methods to return a Klass*.
-  static Klass* java_lang_management_ThreadInfo_klass(TRAPS);
-  static Klass* java_lang_management_MemoryUsage_klass(TRAPS)
+  static InstanceKlass* java_lang_management_ThreadInfo_klass(TRAPS);
+  static InstanceKlass* java_lang_management_MemoryUsage_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
-  static Klass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
-  static Klass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
-  static Klass* sun_management_ManagementFactoryHelper_klass(TRAPS)
+  static InstanceKlass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
+  static InstanceKlass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
+  static InstanceKlass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
+  static InstanceKlass* sun_management_ManagementFactoryHelper_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* sun_management_Sensor_klass(TRAPS)
+  static InstanceKlass* sun_management_Sensor_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS)
+  static InstanceKlass* com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* com_sun_management_GcInfo_klass(TRAPS)
+  static InstanceKlass* com_sun_management_GcInfo_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS)
+  static InstanceKlass* com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);

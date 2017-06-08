@@ -80,6 +80,14 @@ public class ObjectStamp extends AbstractObjectStamp {
 
     @Override
     public Constant readConstant(MemoryAccessProvider provider, Constant base, long displacement) {
-        return provider.readObjectConstant(base, displacement);
+        try {
+            return provider.readObjectConstant(base, displacement);
+        } catch (IllegalArgumentException e) {
+            /*
+             * It's possible that the base and displacement aren't valid together so simply return
+             * null.
+             */
+            return null;
+        }
     }
 }

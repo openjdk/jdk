@@ -22,24 +22,17 @@
  */
 package org.graalvm.compiler.nodes;
 
-import static org.graalvm.compiler.nodeinfo.InputType.Extension;
-import static org.graalvm.compiler.nodeinfo.InputType.Guard;
-import static org.graalvm.compiler.nodeinfo.InputType.Memory;
-import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
-
-import java.util.Map;
-
-import org.graalvm.compiler.core.common.LocationIdentity;
+import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
@@ -49,7 +42,19 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.UncheckedInterfaceProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import jdk.vm.ci.meta.JavaKind;
+import java.util.Map;
+
+import static org.graalvm.compiler.nodeinfo.InputType.Extension;
+import static org.graalvm.compiler.nodeinfo.InputType.Memory;
+import static org.graalvm.compiler.nodeinfo.InputType.State;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 /**
  * The {@code InvokeNode} represents all kinds of method calls.
@@ -70,7 +75,6 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     @OptionalInput ValueNode classInit;
     @Input(Extension) CallTargetNode callTarget;
     @OptionalInput(State) FrameState stateDuring;
-    @OptionalInput(Guard) GuardingNode guard;
     protected final int bci;
     protected boolean polymorphic;
     protected boolean useForInlining;
@@ -216,17 +220,6 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     }
 
     @Override
-    public GuardingNode getGuard() {
-        return guard;
-    }
-
-    @Override
-    public void setGuard(GuardingNode guard) {
-        updateUsagesInterface(this.guard, guard);
-        this.guard = guard;
-    }
-
-    @Override
     public Stamp uncheckedStamp() {
         return this.callTarget.returnStamp().getUncheckedStamp();
     }
@@ -240,5 +233,35 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     @Override
     public ValueNode classInit() {
         return classInit;
+    }
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        switch (callTarget().invokeKind()) {
+            case Interface:
+                return CYCLES_64;
+            case Special:
+            case Static:
+                return CYCLES_2;
+            case Virtual:
+                return CYCLES_8;
+            default:
+                return CYCLES_UNKNOWN;
+        }
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        switch (callTarget().invokeKind()) {
+            case Interface:
+                return SIZE_64;
+            case Special:
+            case Static:
+                return SIZE_2;
+            case Virtual:
+                return SIZE_8;
+            default:
+                return SIZE_UNKNOWN;
+        }
     }
 }

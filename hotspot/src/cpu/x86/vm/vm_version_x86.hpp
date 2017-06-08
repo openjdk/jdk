@@ -291,6 +291,7 @@ protected:
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
+#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))      // Vzeroupper instruction
 
   enum Extended_Family {
     // AMD
@@ -468,6 +469,7 @@ protected:
         _cpuid_info.xem_xcr0_eax.bits.sse != 0 &&
         _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
       result |= CPU_AVX;
+      result |= CPU_VZEROUPPER;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
         result |= CPU_AVX2;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
@@ -605,8 +607,8 @@ public:
   static address  cpuinfo_cont_addr()           { return _cpuinfo_cont_addr; }
 
   static void clean_cpuFeatures()   { _features = 0; }
-  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
-  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 ); }
+  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
+  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
 
 
   // Initialization
@@ -730,7 +732,9 @@ public:
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
   static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
-  static bool supports_fma()        { return (_features & CPU_FMA) != 0; }
+  static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
+  static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
+
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

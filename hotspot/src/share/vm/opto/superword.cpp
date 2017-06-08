@@ -2324,6 +2324,13 @@ void SuperWord::output() {
         const TypeVect* vt = TypeVect::make(bt, vlen);
         vn = new CMoveVDNode(cc, src1, src2, vt);
         NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created new CMove node %d: ", vn->_idx); vn->dump();})
+      } else if (opc == Op_FmaD || opc == Op_FmaF) {
+        // Promote operands to vector
+        Node* in1 = vector_opd(p, 1);
+        Node* in2 = vector_opd(p, 2);
+        Node* in3 = vector_opd(p, 3);
+        vn = VectorNode::make(opc, in1, in2, in3, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         if (do_reserve_copy()) {
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: ShouldNotReachHere, exiting SuperWord");})

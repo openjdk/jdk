@@ -38,7 +38,7 @@ import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64MultiStackMove;
 import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64StackMove;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
 
@@ -58,7 +58,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
     public static class Options {
         // @formatter:off
         @Option(help = "", type = OptionType.Debug)
-        public static final NestedBooleanOptionValue LIROptStackMoveOptimizer = new NestedBooleanOptionValue(LIROptimization, true);
+        public static final NestedBooleanOptionKey LIROptStackMoveOptimizer = new NestedBooleanOptionKey(LIROptimization, true);
         // @formatter:on
     }
 
@@ -68,7 +68,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, PostAllocationOptimizationContext context) {
         LIR lir = lirGenRes.getLIR();
         for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             new Closure().process(instructions);
         }
     }

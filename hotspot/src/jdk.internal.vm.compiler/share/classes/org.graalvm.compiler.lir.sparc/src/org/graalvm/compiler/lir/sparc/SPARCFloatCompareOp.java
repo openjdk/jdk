@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.lir.sparc;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import org.graalvm.compiler.asm.sparc.SPARCAssembler;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.CC;
@@ -33,7 +33,7 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.AllocatableValue;
 
 public class SPARCFloatCompareOp extends SPARCLIRInstruction implements SPARCTailDelayedLIRInstruction {
     public static final LIRInstructionClass<SPARCFloatCompareOp> TYPE = LIRInstructionClass.create(SPARCFloatCompareOp.class);
@@ -41,10 +41,10 @@ public class SPARCFloatCompareOp extends SPARCLIRInstruction implements SPARCTai
 
     private final CC cc;
     @Opcode protected final Opfs opf;
-    @Use({REG}) protected Value a;
-    @Use({REG}) protected Value b;
+    @Use({REG}) protected AllocatableValue a;
+    @Use({REG}) protected AllocatableValue b;
 
-    public SPARCFloatCompareOp(Opfs opf, CC cc, Value a, Value b) {
+    public SPARCFloatCompareOp(Opfs opf, CC cc, AllocatableValue a, AllocatableValue b) {
         super(TYPE, SIZE);
         this.cc = cc;
         this.opf = opf;

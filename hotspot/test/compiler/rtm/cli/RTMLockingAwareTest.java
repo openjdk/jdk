@@ -23,12 +23,8 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -66,8 +62,7 @@ public abstract class RTMLockingAwareTest
             boolean isExperimental, String defaultValue,
             String[] correctValues, String[] incorrectValues,
             String warningMessage) {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()),
-                optionName, isBoolean, isExperimental, defaultValue);
+        super(optionName, isBoolean, isExperimental, defaultValue);
         this.correctValues = correctValues;
         this.incorrectValues = incorrectValues;
         this.warningMessage = warningMessage;

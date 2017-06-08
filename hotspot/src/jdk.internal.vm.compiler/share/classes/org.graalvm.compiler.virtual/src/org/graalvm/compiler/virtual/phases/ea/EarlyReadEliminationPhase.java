@@ -38,7 +38,7 @@ public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
 
     @Override
     protected void run(StructuredGraph graph, PhaseContext context) {
-        if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue())) {
+        if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue(graph.getOptions()))) {
             runAnalysis(graph, context);
         }
     }
@@ -47,5 +47,10 @@ public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
     protected Closure<?> createEffectsClosure(PhaseContext context, ScheduleResult schedule, ControlFlowGraph cfg) {
         assert schedule == null;
         return new ReadEliminationClosure(cfg);
+    }
+
+    @Override
+    public float codeSizeIncrease() {
+        return 2f;
     }
 }

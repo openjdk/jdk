@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@ package org.graalvm.compiler.virtual.phases.ea;
 import static org.graalvm.compiler.debug.Debug.isEnabled;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
-import java.util.Set;
-
 import org.graalvm.compiler.core.common.util.CompilationAlarm;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
@@ -43,12 +41,15 @@ import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.util.EconomicSet;
 
 public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends BasePhase<PhaseContextT> {
 
     public abstract static class Closure<T> extends ReentrantBlockIterator.BlockIteratorClosure<T> {
 
         public abstract boolean hasChanged();
+
+        public abstract boolean needsApplyEffects();
 
         public abstract void applyEffects();
     }
@@ -73,10 +74,10 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
     }
 
     @SuppressWarnings("try")
-    public boolean runAnalysis(final StructuredGraph graph, final PhaseContextT context) {
+    public boolean runAnalysis(StructuredGraph graph, PhaseContextT context) {
         boolean changed = false;
-        boolean stop = false;
-        for (int iteration = 0; !stop && iteration < maxIterations && !CompilationAlarm.hasExpired(); iteration++) {
+        CompilationAlarm compilationAlarm = CompilationAlarm.current();
+        for (int iteration = 0; iteration < maxIterations && !compilationAlarm.hasExpired(); iteration++) {
             try (Scope s = Debug.scope(isEnabled() ? "iteration " + iteration : null)) {
                 ScheduleResult schedule;
                 ControlFlowGraph cfg;
@@ -92,31 +93,33 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
                     Closure<?> closure = createEffectsClosure(context, schedule, cfg);
                     ReentrantBlockIterator.apply(closure, cfg.getStartBlock());
 
+                    if (closure.needsApplyEffects()) {
+                        // apply the effects collected during this iteration
+                        HashSetNodeEventListener listener = new HashSetNodeEventListener();
+                        try (NodeEventScope nes = graph.trackNodeEvents(listener)) {
+                            closure.applyEffects();
+                        }
+
+                        if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+                            Debug.dump(Debug.DETAILED_LEVEL, graph, "%s iteration", getName());
+                        }
+
+                        new DeadCodeEliminationPhase(Required).apply(graph);
+
+                        EconomicSet<Node> changedNodes = listener.getNodes();
+                        for (Node node : graph.getNodes()) {
+                            if (node instanceof Simplifiable) {
+                                changedNodes.add(node);
+                            }
+                        }
+                        postIteration(graph, context, changedNodes);
+                    }
+
                     if (closure.hasChanged()) {
                         changed = true;
                     } else {
-                        stop = true;
+                        break;
                     }
-
-                    // apply the effects collected during this iteration
-                    HashSetNodeEventListener listener = new HashSetNodeEventListener();
-                    try (NodeEventScope nes = graph.trackNodeEvents(listener)) {
-                        closure.applyEffects();
-                    }
-
-                    if (Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
-                        Debug.dump(Debug.INFO_LOG_LEVEL, graph, "%s iteration", getName());
-                    }
-
-                    new DeadCodeEliminationPhase(Required).apply(graph);
-
-                    Set<Node> changedNodes = listener.getNodes();
-                    for (Node node : graph.getNodes()) {
-                        if (node instanceof Simplifiable) {
-                            changedNodes.add(node);
-                        }
-                    }
-                    postIteration(graph, context, changedNodes);
                 } catch (Throwable t) {
                     throw Debug.handle(t);
                 }
@@ -125,7 +128,7 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
         return changed;
     }
 
-    protected void postIteration(final StructuredGraph graph, final PhaseContextT context, Set<Node> changedNodes) {
+    protected void postIteration(final StructuredGraph graph, final PhaseContextT context, EconomicSet<Node> changedNodes) {
         if (canonicalizer != null) {
             canonicalizer.applyIncremental(graph, context, changedNodes);
         }

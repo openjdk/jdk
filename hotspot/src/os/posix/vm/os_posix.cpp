@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,14 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-#include <signal.h>
-#include <unistd.h>
-#include <sys/resource.h>
-#include <sys/utsname.h>
+#include <dlfcn.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <sys/resource.h>
+#include <sys/utsname.h>
+#include <time.h>
+#include <unistd.h>
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -83,7 +84,7 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
         success = false;
         break;
       default:
-        jio_snprintf(buffer, bufferSize, "%s (max size %lu kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, (unsigned long)(rlim.rlim_cur >> 10));
+        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / 1024);
         success = true;
         break;
     }
@@ -207,30 +208,44 @@ void os::Posix::print_rlimit_info(outputStream* st) {
   st->print(" STACK ");
   getrlimit(RLIMIT_STACK, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
 
   st->print(", CORE ");
   getrlimit(RLIMIT_CORE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
 
   // Isn't there on solaris
-#if !defined(SOLARIS) && !defined(AIX)
+#if defined(AIX)
+  st->print(", NPROC ");
+  st->print("%d", sysconf(_SC_CHILD_MAX));
+#elif !defined(SOLARIS)
   st->print(", NPROC ");
   getrlimit(RLIMIT_NPROC, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%lu", rlim.rlim_cur);
+  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
 #endif
 
   st->print(", NOFILE ");
   getrlimit(RLIMIT_NOFILE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%lu", rlim.rlim_cur);
+  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
 
   st->print(", AS ");
   getrlimit(RLIMIT_AS, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+
+  st->print(", DATA ");
+  getrlimit(RLIMIT_DATA, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+
+  st->print(", FSIZE ");
+  getrlimit(RLIMIT_FSIZE, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024);
+
   st->cr();
 }
 
@@ -1105,6 +1120,48 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   return buf;
 }
 
+char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == NULL || outbuf == NULL || outbuflen < 1) {
+    assert(false, "os::Posix::realpath: invalid arguments.");
+    errno = EINVAL;
+    return NULL;
+  }
+
+  char* result = NULL;
+
+  // This assumes platform realpath() is implemented according to POSIX.1-2008.
+  // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
+  // output buffer is dynamically allocated and must be ::free()'d by the caller.
+  char* p = ::realpath(filename, NULL);
+  if (p != NULL) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ::free(p); // *not* os::free
+  } else {
+    // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
+    // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
+    // that it complains about the NULL we handed down as user buffer.
+    // In this case, use the user provided buffer but at least check whether realpath caused
+    // a memory overwrite.
+    if (errno == EINVAL) {
+      outbuf[outbuflen - 1] = '\0';
+      p = ::realpath(filename, outbuf);
+      if (p != NULL) {
+        guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
+        result = p;
+      }
+    }
+  }
+  return result;
+
+}
+
+
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
 // size.
@@ -1116,11 +1173,14 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
 // page size which again depends on the concrete system the VM is running
 // on. Space for libc guard pages is not included in this size.
 jint os::Posix::set_minimum_stack_sizes() {
+  size_t os_min_stack_allowed = SOLARIS_ONLY(thr_min_stack()) NOT_SOLARIS(PTHREAD_STACK_MIN);
+
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
                                    JavaThread::stack_guard_zone_size() +
                                    JavaThread::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_size_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
 
   size_t stack_size_in_bytes = ThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1144,6 +1204,7 @@ jint os::Posix::set_minimum_stack_sizes() {
                                        JavaThread::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_size_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = CompilerThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1155,6 +1216,7 @@ jint os::Posix::set_minimum_stack_sizes() {
   }
 
   _vm_internal_thread_min_stack_allowed = align_size_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = VMThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1208,6 +1270,14 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
     stack_size = MAX2(stack_size,
                       _vm_internal_thread_min_stack_allowed);
     break;
+  }
+
+  // pthread_attr_setstacksize() may require that the size be rounded up to the OS page size.
+  // Be careful not to round up to 0. Align down in that case.
+  if (stack_size <= SIZE_MAX - vm_page_size()) {
+    stack_size = align_size_up(stack_size, vm_page_size());
+  } else {
+    stack_size = align_size_down(stack_size, vm_page_size());
   }
 
   return stack_size;
@@ -1339,3 +1409,557 @@ bool PosixSemaphore::timedwait(struct timespec ts) {
 }
 
 #endif // __APPLE__
+
+
+// Shared pthread_mutex/cond based PlatformEvent implementation.
+// Not currently usable by Solaris.
+
+#ifndef SOLARIS
+
+// Shared condattr object for use with relative timed-waits. Will be associated
+// with CLOCK_MONOTONIC if available to avoid issues with time-of-day changes,
+// but otherwise whatever default is used by the platform - generally the
+// time-of-day clock.
+static pthread_condattr_t _condAttr[1];
+
+// Shared mutexattr to explicitly set the type to PTHREAD_MUTEX_NORMAL as not
+// all systems (e.g. FreeBSD) map the default to "normal".
+static pthread_mutexattr_t _mutexAttr[1];
+
+// common basic initialization that is always supported
+static void pthread_init_common(void) {
+  int status;
+  if ((status = pthread_condattr_init(_condAttr)) != 0) {
+    fatal("pthread_condattr_init: %s", os::strerror(status));
+  }
+  if ((status = pthread_mutexattr_init(_mutexAttr)) != 0) {
+    fatal("pthread_mutexattr_init: %s", os::strerror(status));
+  }
+  if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
+    fatal("pthread_mutexattr_settype: %s", os::strerror(status));
+  }
+}
+
+// Not all POSIX types and API's are available on all notionally "posix"
+// platforms. If we have build-time support then we will check for actual
+// runtime support via dlopen/dlsym lookup. This allows for running on an
+// older OS version compared to the build platform. But if there is no
+// build time support then there cannot be any runtime support as we do not
+// know what the runtime types would be (for example clockid_t might be an
+// int or int64_t).
+//
+#ifdef SUPPORTS_CLOCK_MONOTONIC
+
+// This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
+
+static int (*_clock_gettime)(clockid_t, struct timespec *);
+static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t);
+
+static bool _use_clock_monotonic_condattr;
+
+// Determine what POSIX API's are present and do appropriate
+// configuration.
+void os::Posix::init(void) {
+
+  // NOTE: no logging available when this is called. Put logging
+  // statements in init_2().
+
+  // Copied from os::Linux::clock_init(). The duplication is temporary.
+
+  // 1. Check for CLOCK_MONOTONIC support.
+
+  void* handle = NULL;
+
+  // For linux we need librt, for other OS we can find
+  // this function in regular libc.
+#ifdef NEEDS_LIBRT
+  // We do dlopen's in this particular order due to bug in linux
+  // dynamic loader (see 6348968) leading to crash on exit.
+  handle = dlopen("librt.so.1", RTLD_LAZY);
+  if (handle == NULL) {
+    handle = dlopen("librt.so", RTLD_LAZY);
+  }
+#endif
+
+  if (handle == NULL) {
+    handle = RTLD_DEFAULT;
+  }
+
+  _clock_gettime = NULL;
+
+  int (*clock_getres_func)(clockid_t, struct timespec*) =
+    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
+  int (*clock_gettime_func)(clockid_t, struct timespec*) =
+    (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
+  if (clock_getres_func != NULL && clock_gettime_func != NULL) {
+    // We assume that if both clock_gettime and clock_getres support
+    // CLOCK_MONOTONIC then the OS provides true high-res monotonic clock.
+    struct timespec res;
+    struct timespec tp;
+    if (clock_getres_func(CLOCK_MONOTONIC, &res) == 0 &&
+        clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
+      // Yes, monotonic clock is supported.
+      _clock_gettime = clock_gettime_func;
+    } else {
+#ifdef NEEDS_LIBRT
+      // Close librt if there is no monotonic clock.
+      if (handle != RTLD_DEFAULT) {
+        dlclose(handle);
+      }
+#endif
+    }
+  }
+
+  // 2. Check for pthread_condattr_setclock support.
+
+  _pthread_condattr_setclock = NULL;
+
+  // libpthread is already loaded.
+  int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
+    (int (*)(pthread_condattr_t*, clockid_t))dlsym(RTLD_DEFAULT,
+                                                   "pthread_condattr_setclock");
+  if (condattr_setclock_func != NULL) {
+    _pthread_condattr_setclock = condattr_setclock_func;
+  }
+
+  // Now do general initialization.
+
+  pthread_init_common();
+
+  int status;
+  if (_pthread_condattr_setclock != NULL && _clock_gettime != NULL) {
+    if ((status = _pthread_condattr_setclock(_condAttr, CLOCK_MONOTONIC)) != 0) {
+      if (status == EINVAL) {
+        _use_clock_monotonic_condattr = false;
+        warning("Unable to use monotonic clock with relative timed-waits" \
+                " - changes to the time-of-day clock may have adverse affects");
+      } else {
+        fatal("pthread_condattr_setclock: %s", os::strerror(status));
+      }
+    } else {
+      _use_clock_monotonic_condattr = true;
+    }
+  } else {
+    _use_clock_monotonic_condattr = false;
+  }
+}
+
+void os::Posix::init_2(void) {
+  log_info(os)("Use of CLOCK_MONOTONIC is%s supported",
+               (_clock_gettime != NULL ? "" : " not"));
+  log_info(os)("Use of pthread_condattr_setclock is%s supported",
+               (_pthread_condattr_setclock != NULL ? "" : " not"));
+  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with %s",
+               _use_clock_monotonic_condattr ? "CLOCK_MONOTONIC" : "the default clock");
+}
+
+#else // !SUPPORTS_CLOCK_MONOTONIC
+
+void os::Posix::init(void) {
+  pthread_init_common();
+}
+
+void os::Posix::init_2(void) {
+  log_info(os)("Use of CLOCK_MONOTONIC is not supported");
+  log_info(os)("Use of pthread_condattr_setclock is not supported");
+  log_info(os)("Relative timed-wait using pthread_cond_timedwait is associated with the default clock");
+}
+
+#endif // SUPPORTS_CLOCK_MONOTONIC
+
+os::PlatformEvent::PlatformEvent() {
+  int status = pthread_cond_init(_cond, _condAttr);
+  assert_status(status == 0, status, "cond_init");
+  status = pthread_mutex_init(_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+  _event   = 0;
+  _nParked = 0;
+}
+
+// Utility to convert the given timeout to an absolute timespec
+// (based on the appropriate clock) to use with pthread_cond_timewait.
+// The clock queried here must be the clock used to manage the
+// timeout of the condition variable.
+//
+// The passed in timeout value is either a relative time in nanoseconds
+// or an absolute time in milliseconds. A relative timeout will be
+// associated with CLOCK_MONOTONIC if available; otherwise, or if absolute,
+// the default time-of-day clock will be used.
+
+// Given time is a 64-bit value and the time_t used in the timespec is
+// sometimes a signed-32-bit value we have to watch for overflow if times
+// way in the future are given. Further on Solaris versions
+// prior to 10 there is a restriction (see cond_timedwait) that the specified
+// number of seconds, in abstime, is less than current_time + 100000000.
+// As it will be over 20 years before "now + 100000000" will overflow we can
+// ignore overflow and just impose a hard-limit on seconds using the value
+// of "now + 100000000". This places a limit on the timeout of about 3.17
+// years from "now".
+//
+#define MAX_SECS 100000000
+
+// Calculate a new absolute time that is "timeout" nanoseconds from "now".
+// "unit" indicates the unit of "now_part_sec" (may be nanos or micros depending
+// on which clock is being used).
+static void calc_rel_time(timespec* abstime, jlong timeout, jlong now_sec,
+                          jlong now_part_sec, jlong unit) {
+  time_t max_secs = now_sec + MAX_SECS;
+
+  jlong seconds = timeout / NANOUNITS;
+  timeout %= NANOUNITS; // remaining nanos
+
+  if (seconds >= MAX_SECS) {
+    // More seconds than we can add, so pin to max_secs.
+    abstime->tv_sec = max_secs;
+    abstime->tv_nsec = 0;
+  } else {
+    abstime->tv_sec = now_sec  + seconds;
+    long nanos = (now_part_sec * (NANOUNITS / unit)) + timeout;
+    if (nanos >= NANOUNITS) { // overflow
+      abstime->tv_sec += 1;
+      nanos -= NANOUNITS;
+    }
+    abstime->tv_nsec = nanos;
+  }
+}
+
+// Unpack the given deadline in milliseconds since the epoch, into the given timespec.
+// The current time in seconds is also passed in to enforce an upper bound as discussed above.
+static void unpack_abs_time(timespec* abstime, jlong deadline, jlong now_sec) {
+  time_t max_secs = now_sec + MAX_SECS;
+
+  jlong seconds = deadline / MILLIUNITS;
+  jlong millis = deadline % MILLIUNITS;
+
+  if (seconds >= max_secs) {
+    // Absolute seconds exceeds allowed max, so pin to max_secs.
+    abstime->tv_sec = max_secs;
+    abstime->tv_nsec = 0;
+  } else {
+    abstime->tv_sec = seconds;
+    abstime->tv_nsec = millis * (NANOUNITS / MILLIUNITS);
+  }
+}
+
+static void to_abstime(timespec* abstime, jlong timeout, bool isAbsolute) {
+  DEBUG_ONLY(int max_secs = MAX_SECS;)
+
+  if (timeout < 0) {
+    timeout = 0;
+  }
+
+#ifdef SUPPORTS_CLOCK_MONOTONIC
+
+  if (_use_clock_monotonic_condattr && !isAbsolute) {
+    struct timespec now;
+    int status = _clock_gettime(CLOCK_MONOTONIC, &now);
+    assert_status(status == 0, status, "clock_gettime");
+    calc_rel_time(abstime, timeout, now.tv_sec, now.tv_nsec, NANOUNITS);
+    DEBUG_ONLY(max_secs += now.tv_sec;)
+  } else {
+
+#else
+
+  { // Match the block scope.
+
+#endif // SUPPORTS_CLOCK_MONOTONIC
+
+    // Time-of-day clock is all we can reliably use.
+    struct timeval now;
+    int status = gettimeofday(&now, NULL);
+    assert_status(status == 0, errno, "gettimeofday");
+    if (isAbsolute) {
+      unpack_abs_time(abstime, timeout, now.tv_sec);
+    } else {
+      calc_rel_time(abstime, timeout, now.tv_sec, now.tv_usec, MICROUNITS);
+    }
+    DEBUG_ONLY(max_secs += now.tv_sec;)
+  }
+
+  assert(abstime->tv_sec >= 0, "tv_sec < 0");
+  assert(abstime->tv_sec <= max_secs, "tv_sec > max_secs");
+  assert(abstime->tv_nsec >= 0, "tv_nsec < 0");
+  assert(abstime->tv_nsec < NANOUNITS, "tv_nsec >= NANOUNITS");
+}
+
+// PlatformEvent
+//
+// Assumption:
+//    Only one parker can exist on an event, which is why we allocate
+//    them per-thread. Multiple unparkers can coexist.
+//
+// _event serves as a restricted-range semaphore.
+//   -1 : thread is blocked, i.e. there is a waiter
+//    0 : neutral: thread is running or ready,
+//        could have been signaled after a wait started
+//    1 : signaled - thread is running or ready
+//
+//    Having three states allows for some detection of bad usage - see
+//    comments on unpark().
+
+void os::PlatformEvent::park() {       // AKA "down()"
+  // Transitions for _event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _event to 0 before returning
+
+  // Invariant: Only the thread associated with the PlatformEvent
+  // may call park().
+  assert(_nParked == 0, "invariant");
+
+  int v;
+
+  // atomically decrement _event
+  for (;;) {
+    v = _event;
+    if (Atomic::cmpxchg(v - 1, &_event, v) == v) break;
+  }
+  guarantee(v >= 0, "invariant");
+
+  if (v == 0) { // Do this the hard way by blocking ...
+    int status = pthread_mutex_lock(_mutex);
+    assert_status(status == 0, status, "mutex_lock");
+    guarantee(_nParked == 0, "invariant");
+    ++_nParked;
+    while (_event < 0) {
+      // OS-level "spurious wakeups" are ignored
+      status = pthread_cond_wait(_cond, _mutex);
+      assert_status(status == 0, status, "cond_wait");
+    }
+    --_nParked;
+
+    _event = 0;
+    status = pthread_mutex_unlock(_mutex);
+    assert_status(status == 0, status, "mutex_unlock");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other.
+    OrderAccess::fence();
+  }
+  guarantee(_event >= 0, "invariant");
+}
+
+int os::PlatformEvent::park(jlong millis) {
+  // Transitions for _event:
+  //   -1 => -1 : illegal
+  //    1 =>  0 : pass - return immediately
+  //    0 => -1 : block; then set _event to 0 before returning
+
+  // Invariant: Only the thread associated with the Event/PlatformEvent
+  // may call park().
+  assert(_nParked == 0, "invariant");
+
+  int v;
+  // atomically decrement _event
+  for (;;) {
+    v = _event;
+    if (Atomic::cmpxchg(v - 1, &_event, v) == v) break;
+  }
+  guarantee(v >= 0, "invariant");
+
+  if (v == 0) { // Do this the hard way by blocking ...
+    struct timespec abst;
+    to_abstime(&abst, millis * (NANOUNITS / MILLIUNITS), false);
+
+    int ret = OS_TIMEOUT;
+    int status = pthread_mutex_lock(_mutex);
+    assert_status(status == 0, status, "mutex_lock");
+    guarantee(_nParked == 0, "invariant");
+    ++_nParked;
+
+    while (_event < 0) {
+      status = pthread_cond_timedwait(_cond, _mutex, &abst);
+      assert_status(status == 0 || status == ETIMEDOUT,
+                    status, "cond_timedwait");
+      // OS-level "spurious wakeups" are ignored unless the archaic
+      // FilterSpuriousWakeups is set false. That flag should be obsoleted.
+      if (!FilterSpuriousWakeups) break;
+      if (status == ETIMEDOUT) break;
+    }
+    --_nParked;
+
+    if (_event >= 0) {
+      ret = OS_OK;
+    }
+
+    _event = 0;
+    status = pthread_mutex_unlock(_mutex);
+    assert_status(status == 0, status, "mutex_unlock");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other.
+    OrderAccess::fence();
+    return ret;
+  }
+  return OS_OK;
+}
+
+void os::PlatformEvent::unpark() {
+  // Transitions for _event:
+  //    0 => 1 : just return
+  //    1 => 1 : just return
+  //   -1 => either 0 or 1; must signal target thread
+  //         That is, we can safely transition _event from -1 to either
+  //         0 or 1.
+  // See also: "Semaphores in Plan 9" by Mullender & Cox
+  //
+  // Note: Forcing a transition from "-1" to "1" on an unpark() means
+  // that it will take two back-to-back park() calls for the owning
+  // thread to block. This has the benefit of forcing a spurious return
+  // from the first park() call after an unpark() call which will help
+  // shake out uses of park() and unpark() without checking state conditions
+  // properly. This spurious return doesn't manifest itself in any user code
+  // but only in the correctly written condition checking loops of ObjectMonitor,
+  // Mutex/Monitor, Thread::muxAcquire and os::sleep
+
+  if (Atomic::xchg(1, &_event) >= 0) return;
+
+  int status = pthread_mutex_lock(_mutex);
+  assert_status(status == 0, status, "mutex_lock");
+  int anyWaiters = _nParked;
+  assert(anyWaiters == 0 || anyWaiters == 1, "invariant");
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "mutex_unlock");
+
+  // Note that we signal() *after* dropping the lock for "immortal" Events.
+  // This is safe and avoids a common class of futile wakeups.  In rare
+  // circumstances this can cause a thread to return prematurely from
+  // cond_{timed}wait() but the spurious wakeup is benign and the victim
+  // will simply re-test the condition and re-park itself.
+  // This provides particular benefit if the underlying platform does not
+  // provide wait morphing.
+
+  if (anyWaiters != 0) {
+    status = pthread_cond_signal(_cond);
+    assert_status(status == 0, status, "cond_signal");
+  }
+}
+
+// JSR166 support
+
+ os::PlatformParker::PlatformParker() {
+  int status;
+  status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
+  assert_status(status == 0, status, "cond_init rel");
+  status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
+  assert_status(status == 0, status, "cond_init abs");
+  status = pthread_mutex_init(_mutex, _mutexAttr);
+  assert_status(status == 0, status, "mutex_init");
+  _cur_index = -1; // mark as unused
+}
+
+// Parker::park decrements count if > 0, else does a condvar wait.  Unpark
+// sets count to 1 and signals condvar.  Only one thread ever waits
+// on the condvar. Contention seen when trying to park implies that someone
+// is unparking you, so don't wait. And spurious returns are fine, so there
+// is no need to track notifications.
+
+void Parker::park(bool isAbsolute, jlong time) {
+
+  // Optional fast-path check:
+  // Return immediately if a permit is available.
+  // We depend on Atomic::xchg() having full barrier semantics
+  // since we are doing a lock-free update to _counter.
+  if (Atomic::xchg(0, &_counter) > 0) return;
+
+  Thread* thread = Thread::current();
+  assert(thread->is_Java_thread(), "Must be JavaThread");
+  JavaThread *jt = (JavaThread *)thread;
+
+  // Optional optimization -- avoid state transitions if there's
+  // an interrupt pending.
+  if (Thread::is_interrupted(thread, false)) {
+    return;
+  }
+
+  // Next, demultiplex/decode time arguments
+  struct timespec absTime;
+  if (time < 0 || (isAbsolute && time == 0)) { // don't wait at all
+    return;
+  }
+  if (time > 0) {
+    to_abstime(&absTime, time, isAbsolute);
+  }
+
+  // Enter safepoint region
+  // Beware of deadlocks such as 6317397.
+  // The per-thread Parker:: mutex is a classic leaf-lock.
+  // In particular a thread must never block on the Threads_lock while
+  // holding the Parker:: mutex.  If safepoints are pending both the
+  // the ThreadBlockInVM() CTOR and DTOR may grab Threads_lock.
+  ThreadBlockInVM tbivm(jt);
+
+  // Don't wait if cannot get lock since interference arises from
+  // unparking. Also re-check interrupt before trying wait.
+  if (Thread::is_interrupted(thread, false) ||
+      pthread_mutex_trylock(_mutex) != 0) {
+    return;
+  }
+
+  int status;
+  if (_counter > 0)  { // no wait needed
+    _counter = 0;
+    status = pthread_mutex_unlock(_mutex);
+    assert_status(status == 0, status, "invariant");
+    // Paranoia to ensure our locked and lock-free paths interact
+    // correctly with each other and Java-level accesses.
+    OrderAccess::fence();
+    return;
+  }
+
+  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+  jt->set_suspend_equivalent();
+  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
+
+  assert(_cur_index == -1, "invariant");
+  if (time == 0) {
+    _cur_index = REL_INDEX; // arbitrary choice when not timed
+    status = pthread_cond_wait(&_cond[_cur_index], _mutex);
+    assert_status(status == 0, status, "cond_timedwait");
+  }
+  else {
+    _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;
+    status = pthread_cond_timedwait(&_cond[_cur_index], _mutex, &absTime);
+    assert_status(status == 0 || status == ETIMEDOUT,
+                  status, "cond_timedwait");
+  }
+  _cur_index = -1;
+
+  _counter = 0;
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "invariant");
+  // Paranoia to ensure our locked and lock-free paths interact
+  // correctly with each other and Java-level accesses.
+  OrderAccess::fence();
+
+  // If externally suspended while waiting, re-suspend
+  if (jt->handle_special_suspend_equivalent_condition()) {
+    jt->java_suspend_self();
+  }
+}
+
+void Parker::unpark() {
+  int status = pthread_mutex_lock(_mutex);
+  assert_status(status == 0, status, "invariant");
+  const int s = _counter;
+  _counter = 1;
+  // must capture correct index before unlocking
+  int index = _cur_index;
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "invariant");
+
+  // Note that we signal() *after* dropping the lock for "immortal" Events.
+  // This is safe and avoids a common class of futile wakeups.  In rare
+  // circumstances this can cause a thread to return prematurely from
+  // cond_{timed}wait() but the spurious wakeup is benign and the victim
+  // will simply re-test the condition and re-park itself.
+  // This provides particular benefit if the underlying platform does not
+  // provide wait morphing.
+
+  if (s < 1 && index != -1) {
+    // thread is definitely parked
+    status = pthread_cond_signal(&_cond[index]);
+    assert_status(status == 0, status, "invariant");
+  }
+}
+
+
+#endif // !SOLARIS

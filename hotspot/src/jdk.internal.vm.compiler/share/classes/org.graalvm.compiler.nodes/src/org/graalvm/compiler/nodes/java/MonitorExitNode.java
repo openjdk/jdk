@@ -22,10 +22,10 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_50;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_100;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
  * a synchronized method, then the return value of the method will be referenced via the edge
  * {@link #escapedReturnValue}, so that it will be materialized before releasing the monitor.
  */
-@NodeInfo(cycles = CYCLES_50, size = SIZE_100)
+@NodeInfo(cycles = CYCLES_64, size = SIZE_64)
 public final class MonitorExitNode extends AccessMonitorNode implements Virtualizable, Lowerable, IterableNodeType, MonitorExit, MemoryCheckpoint.Single {
 
     public static final NodeClass<MonitorExitNode> TYPE = NodeClass.create(MonitorExitNode.class);

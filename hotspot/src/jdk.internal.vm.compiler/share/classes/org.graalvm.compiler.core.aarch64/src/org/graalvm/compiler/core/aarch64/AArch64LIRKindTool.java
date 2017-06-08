@@ -66,4 +66,13 @@ public class AArch64LIRKindTool implements LIRKindTool {
         return LIRKind.value(AArch64Kind.QWORD);
     }
 
+    @Override
+    public LIRKind getNarrowOopKind() {
+        return LIRKind.reference(AArch64Kind.DWORD);
+    }
+
+    @Override
+    public LIRKind getNarrowPointerKind() {
+        return LIRKind.value(AArch64Kind.DWORD);
+    }
 }

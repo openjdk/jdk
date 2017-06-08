@@ -628,13 +628,6 @@ class RelocIterator : public StackObj {
   // generic relocation accessor; switches on type to call the above
   Relocation* reloc();
 
-  // CodeBlob's have relocation indexes for faster random access:
-  static int locs_and_index_size(int code_size, int locs_size);
-  // Store an index into [dest_start+dest_count..dest_end).
-  // At dest_start[0..dest_count] is the actual relocation information.
-  // Everything else up to dest_end is free space for the index.
-  static void create_index(relocInfo* dest_begin, int dest_count, relocInfo* dest_end);
-
 #ifndef PRODUCT
  public:
   void print();

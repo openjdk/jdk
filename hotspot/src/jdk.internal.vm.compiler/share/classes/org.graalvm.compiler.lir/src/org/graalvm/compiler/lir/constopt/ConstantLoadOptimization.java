@@ -53,7 +53,7 @@ import org.graalvm.compiler.lir.constopt.ConstantTree.NodeCost;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
 
@@ -72,7 +72,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
     public static class Options {
         // @formatter:off
         @Option(help = "Enable constant load optimization.", type = OptionType.Debug)
-        public static final NestedBooleanOptionValue LIROptConstantLoadOptimization = new NestedBooleanOptionValue(LIROptimization, true);
+        public static final NestedBooleanOptionKey LIROptConstantLoadOptimization = new NestedBooleanOptionKey(LIROptimization, true);
         // @formatter:on
     }
 
@@ -170,11 +170,10 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
         }
 
         private static boolean isConstantLoad(LIRInstruction inst) {
-            if (!(inst instanceof LoadConstantOp)) {
+            if (!LoadConstantOp.isLoadConstantOp(inst)) {
                 return false;
             }
-            LoadConstantOp load = (LoadConstantOp) inst;
-            return isVariable(load.getResult());
+            return isVariable(LoadConstantOp.asLoadConstantOp(inst).getResult());
         }
 
         private void addUsageToBlockMap(UseEntry entry) {
@@ -214,7 +213,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                                     phiConstantsSkipped.increment();
                                 }
                                 phiConstants.set(var.index);
-                                Debug.log(Debug.VERBOSE_LOG_LEVEL, "Removing phi variable: %s", var);
+                                Debug.log(Debug.VERBOSE_LEVEL, "Removing phi variable: %s", var);
                             }
                         } else {
                             assert defined.get(var.index) : "phi but not defined? " + var;
@@ -291,7 +290,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                 // no better solution found
                 materializeAtDefinitionSkipped.increment();
             }
-            Debug.dump(Debug.INFO_LOG_LEVEL, constTree, "ConstantTree for %s", tree.getVariable());
+            Debug.dump(Debug.DETAILED_LEVEL, constTree, "ConstantTree for %s", tree.getVariable());
         }
 
         private void createLoads(DefUseTree tree, ConstantTree constTree, AbstractBlockBase<?> startBlock) {
@@ -304,10 +303,12 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                     // create and insert load
                     insertLoad(tree.getConstant(), tree.getVariable().getValueKind(), block, constTree.getCost(block).getUsages());
                 } else {
-                    for (AbstractBlockBase<?> dominated : block.getDominated()) {
+                    AbstractBlockBase<?> dominated = block.getFirstDominated();
+                    while (dominated != null) {
                         if (constTree.isMarked(dominated)) {
                             worklist.addLast(dominated);
                         }
+                        dominated = dominated.getDominatedSibling();
                     }
                 }
             }
@@ -342,7 +343,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
             }
 
             // delete instructions
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             boolean hasDead = false;
             for (LIRInstruction inst : instructions) {
                 if (inst == null) {
@@ -370,7 +371,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                 insertionBuffer = new LIRInsertionBuffer();
                 insertionBuffers.put(block, insertionBuffer);
                 assert !insertionBuffer.initialized() : "already initialized?";
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 insertionBuffer.init(instructions);
             }
             return insertionBuffer;

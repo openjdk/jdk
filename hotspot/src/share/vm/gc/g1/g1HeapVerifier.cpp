@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
@@ -239,7 +239,7 @@ public:
 
   template <class T> void do_oop_work(T *p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj == NULL || G1MarkSweep::in_archive_range(obj),
+    guarantee(obj == NULL || G1ArchiveAllocator::is_archive_object(obj),
               "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
               p2i(p), p2i(obj));
   }

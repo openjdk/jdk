@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -37,7 +37,6 @@ import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -84,9 +83,28 @@ public class VerifyDebugUsageTest {
 
         @Override
         protected void run(StructuredGraph graph) {
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "%s", graph.toString());
+            Debug.dump(Debug.BASIC_LEVEL, graph, "%s", graph.toString());
+        }
+    }
+
+    private static class InvalidDumpLevelPhase extends Phase {
+
+        @Override
+        protected void run(StructuredGraph graph) {
+            Debug.dump(Debug.VERY_DETAILED_LEVEL + 1, graph, "%s", graph);
+        }
+    }
+
+    private static class NonConstantDumpLevelPhase extends Phase {
+
+        @Override
+        protected void run(StructuredGraph graph) {
+            Debug.dump(getLevel(), graph, "%s", graph);
         }
 
+        int getLevel() {
+            return 10;
+        }
     }
 
     private static class InvalidVerifyUsagePhase extends Phase {
@@ -127,7 +145,7 @@ public class VerifyDebugUsageTest {
 
         @Override
         protected void run(StructuredGraph graph) {
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "error " + graph);
+            Debug.dump(Debug.BASIC_LEVEL, graph, "error " + graph);
         }
 
     }
@@ -170,7 +188,7 @@ public class VerifyDebugUsageTest {
 
         @Override
         protected void run(StructuredGraph graph) {
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "%s", graph);
+            Debug.dump(Debug.BASIC_LEVEL, graph, "%s", graph);
         }
 
     }
@@ -187,7 +205,7 @@ public class VerifyDebugUsageTest {
     private static class InvalidGraalErrorGuaranteePhase extends Phase {
         @Override
         protected void run(StructuredGraph graph) {
-            GraalError.guarantee(graph.getNodes().count() > 0, "Graph must contain nodes %s %s %s", graph, graph, graph, graph.toString());
+            GraalError.guarantee(graph.getNodes().count() > 0, "Graph must contain nodes %s %s %s", graph, graph, graph.toString());
         }
     }
 
@@ -232,6 +250,16 @@ public class VerifyDebugUsageTest {
     @Test(expected = VerificationError.class)
     public void testDumpInvalid() {
         testDebugUsageClass(InvalidDumpUsagePhase.class);
+    }
+
+    @Test(expected = VerificationError.class)
+    public void testDumpLevelInvalid() {
+        testDebugUsageClass(InvalidDumpLevelPhase.class);
+    }
+
+    @Test(expected = VerificationError.class)
+    public void testDumpNonConstantLevelInvalid() {
+        testDebugUsageClass(NonConstantDumpLevelPhase.class);
     }
 
     @Test(expected = VerificationError.class)
@@ -307,7 +335,7 @@ public class VerifyDebugUsageTest {
         for (Method m : c.getDeclaredMethods()) {
             if (!Modifier.isNative(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers())) {
                 ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-                StructuredGraph graph = new StructuredGraph(method, AllowAssumptions.NO, INVALID_COMPILATION_ID);
+                StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).build();
                 graphBuilderSuite.apply(graph, context);
                 try (DebugConfigScope s = Debug.disableIntercept()) {
                     new VerifyDebugUsage().apply(graph, context);

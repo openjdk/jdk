@@ -54,8 +54,7 @@ public class ClassPathJimageEntry extends PathHandler {
         if (!Files.exists(root)) {
             return;
         }
-        try {
-            ImageReader reader = ImageReader.open(root);
+        try (ImageReader reader = ImageReader.open(root)) {
             Arrays.stream(reader.getEntryNames())
                     .filter(name -> name.endsWith(".class"))
                     .filter(name -> !name.endsWith("module-info.class"))
@@ -63,6 +62,20 @@ public class ClassPathJimageEntry extends PathHandler {
                     .forEach(this::processClass);
         } catch (IOException ioe) {
             ioe.printStackTrace();
+        }
+    }
+
+    @Override
+    public long classCount() {
+        try (ImageReader reader = ImageReader.open(root)) {
+            return Arrays.stream(reader.getEntryNames())
+                    .filter(name -> name.endsWith(".class"))
+                    .filter(name -> !name.endsWith("module-info.class"))
+                    .map(Utils::fileNameToClassName)
+                    .count();
+        } catch (IOException e) {
+            throw new Error("can not open jimage file " + root + " : "
+                    + e.getMessage() , e);
         }
     }
 }

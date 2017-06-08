@@ -71,12 +71,6 @@ class MacroAssembler: public Assembler {
     bool     check_exceptions          // whether to check for pending exceptions after return
   );
 
-  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
-  // The implementation is only non-empty for the InterpreterMacroAssembler,
-  // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
   // helpers for FPU flag access
@@ -86,6 +80,12 @@ class MacroAssembler: public Assembler {
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+
+ // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
+ // The implementation is only non-empty for the InterpreterMacroAssembler,
+ // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
+ virtual void check_and_handle_popframe(Register java_thread);
+ virtual void check_and_handle_earlyret(Register java_thread);
 
   // Support for NULL-checks
   //
@@ -455,6 +455,11 @@ class MacroAssembler: public Assembler {
   // dst = c = a * b + c
   void fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
   void fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
+
+  void vfmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len);
+  void vfmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len);
+  void vfmad(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len);
+  void vfmaf(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len);
 
 
   // same as fcmp2int, but using SSE2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,15 @@ void LoaderConstraintEntry::set_loader(int i, oop p) {
 }
 
 LoaderConstraintTable::LoaderConstraintTable(int nof_buckets)
-  : Hashtable<Klass*, mtClass>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
+  : Hashtable<InstanceKlass*, mtClass>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
 
 
 LoaderConstraintEntry* LoaderConstraintTable::new_entry(
                                  unsigned int hash, Symbol* name,
-                                 Klass* klass, int num_loaders,
+                                 InstanceKlass* klass, int num_loaders,
                                  int max_loaders) {
   LoaderConstraintEntry* entry;
-  entry = (LoaderConstraintEntry*)Hashtable<Klass*, mtClass>::new_entry(hash, klass);
+  entry = (LoaderConstraintEntry*)Hashtable<InstanceKlass*, mtClass>::new_entry(hash, klass);
   entry->set_name(name);
   entry->set_num_loaders(num_loaders);
   entry->set_max_loaders(max_loaders);
@@ -54,21 +54,8 @@ LoaderConstraintEntry* LoaderConstraintTable::new_entry(
 void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
   // decrement name refcount before freeing
   entry->name()->decrement_refcount();
-  Hashtable<Klass*, mtClass>::free_entry(entry);
+  Hashtable<InstanceKlass*, mtClass>::free_entry(entry);
 }
-
-// Enhanced Class Redefinition support
-void LoaderConstraintTable::classes_do(KlassClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (LoaderConstraintEntry* probe = bucket(index);
-                                probe != NULL;
-                                probe = probe->next()) {
-      if (probe->klass() != NULL) {
-        f->do_klass(probe->klass());
-      }
-        }
-      }
-    }
 
 // The loaderConstraintTable must always be accessed with the
 // SystemDictionary lock held. This is true even for readers as
@@ -106,7 +93,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
     LoaderConstraintEntry** p = bucket_addr(index);
     while(*p) {
       LoaderConstraintEntry* probe = *p;
-      Klass* klass = probe->klass();
+      InstanceKlass* klass = probe->klass();
       // Remove klass that is no longer alive
       if (klass != NULL &&
           klass->class_loader_data()->is_unloading()) {
@@ -185,121 +172,123 @@ void LoaderConstraintTable::purge_loader_constraints() {
   }
 }
 
-bool LoaderConstraintTable::add_entry(Symbol* class_name,
-                                      Klass* klass1, Handle class_loader1,
-                                      Klass* klass2, Handle class_loader2) {
-  int failure_code = 0; // encode different reasons for failing
-
-  if (klass1 != NULL && klass2 != NULL && klass1 != klass2) {
-    failure_code = 1;
-  } else {
-    Klass* klass = klass1 != NULL ? klass1 : klass2;
-
-    LoaderConstraintEntry** pp1 = find_loader_constraint(class_name,
-                                                         class_loader1);
-    if (*pp1 != NULL && (*pp1)->klass() != NULL) {
-      if (klass != NULL) {
-        if (klass != (*pp1)->klass()) {
-          failure_code = 2;
-        }
-      } else {
-        klass = (*pp1)->klass();
-      }
-    }
-
-    LoaderConstraintEntry** pp2 = find_loader_constraint(class_name,
-                                                         class_loader2);
-    if (*pp2 != NULL && (*pp2)->klass() != NULL) {
-      if (klass != NULL) {
-        if (klass != (*pp2)->klass()) {
-          failure_code = 3;
-        }
-      } else {
-        klass = (*pp2)->klass();
-      }
-    }
-
-    if (failure_code == 0) {
-      if (*pp1 == NULL && *pp2 == NULL) {
-        unsigned int hash = compute_hash(class_name);
-        int index = hash_to_index(hash);
-        LoaderConstraintEntry* p;
-        p = new_entry(hash, class_name, klass, 2, 2);
-        p->set_loaders(NEW_C_HEAP_ARRAY(ClassLoaderData*, 2, mtClass));
-        p->set_loader(0, class_loader1());
-        p->set_loader(1, class_loader2());
-        p->set_klass(klass);
-        p->set_next(bucket(index));
-        set_entry(index, p);
-        if (log_is_enabled(Info, class, loader, constraints)) {
-          ResourceMark rm;
-          outputStream* out = Log(class, loader, constraints)::info_stream();
-          out->print_cr("adding new constraint for name: %s, loader[0]: %s,"
-                     " loader[1]: %s",
-                     class_name->as_C_string(),
-                     SystemDictionary::loader_name(class_loader1()),
-                     SystemDictionary::loader_name(class_loader2())
-                     );
-        }
-      } else if (*pp1 == *pp2) {
-        /* constraint already imposed */
-        if ((*pp1)->klass() == NULL) {
-          (*pp1)->set_klass(klass);
-          if (log_is_enabled(Info, class, loader, constraints)) {
-            ResourceMark rm;
-            outputStream* out = Log(class, loader, constraints)::info_stream();
-            out->print_cr("setting class object in existing constraint for"
-                       " name: %s and loader %s",
-                       class_name->as_C_string(),
-                       SystemDictionary::loader_name(class_loader1())
-                       );
-          }
-        } else {
-          assert((*pp1)->klass() == klass, "loader constraints corrupted");
-        }
-      } else if (*pp1 == NULL) {
-        extend_loader_constraint(*pp2, class_loader1, klass);
-      } else if (*pp2 == NULL) {
-        extend_loader_constraint(*pp1, class_loader2, klass);
-      } else {
-        merge_loader_constraints(pp1, pp2, klass);
-      }
-    }
-  }
-
-  if (failure_code != 0 && log_is_enabled(Info, class, loader, constraints)) {
+void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
+                        Handle class_loader1, Handle class_loader2) {
+  if (log_is_enabled(Info, class, loader, constraints)) {
     ResourceMark rm;
     outputStream* out = Log(class, loader, constraints)::info_stream();
-    const char* reason = "";
-    switch(failure_code) {
-    case 1: reason = "the class objects presented by loader[0] and loader[1]"
-              " are different"; break;
-    case 2: reason = "the class object presented by loader[0] does not match"
-              " the stored class object in the constraint"; break;
-    case 3: reason = "the class object presented by loader[1] does not match"
-              " the stored class object in the constraint"; break;
-    default: reason = "unknown reason code";
+    out->print_cr("Failed to add constraint for name: %s, loader[0]: %s,"
+                  " loader[1]: %s, Reason: %s",
+                  class_name->as_C_string(),
+                  SystemDictionary::loader_name(class_loader1()),
+                  SystemDictionary::loader_name(class_loader2()),
+                  reason);
+  }
+}
+
+bool LoaderConstraintTable::add_entry(Symbol* class_name,
+                                      InstanceKlass* klass1, Handle class_loader1,
+                                      InstanceKlass* klass2, Handle class_loader2) {
+  if (klass1 != NULL && klass2 != NULL) {
+    if (klass1 == klass2) {
+      // Same type already loaded in both places.  There is no need for any constraint.
+      return true;
+    } else {
+      log_ldr_constraint_msg(class_name,
+                             "The class objects presented by loader[0] and loader[1] "
+                             "are different",
+                             class_loader1, class_loader2);
+      return false;
     }
-    out->print_cr("failed to add constraint for name: %s, loader[0]: %s,"
-               " loader[1]: %s, Reason: %s",
-               class_name->as_C_string(),
-               SystemDictionary::loader_name(class_loader1()),
-               SystemDictionary::loader_name(class_loader2()),
-               reason
-               );
   }
 
-  return failure_code == 0;
+  InstanceKlass* klass = klass1 != NULL ? klass1 : klass2;
+  LoaderConstraintEntry** pp1 = find_loader_constraint(class_name, class_loader1);
+  if (*pp1 != NULL && (*pp1)->klass() != NULL) {
+    if (klass != NULL) {
+      if (klass != (*pp1)->klass()) {
+        log_ldr_constraint_msg(class_name,
+                               "The class object presented by loader[0] does not match "
+                               "the stored class object in the constraint",
+                               class_loader1, class_loader2);
+        return false;
+      }
+    } else {
+      klass = (*pp1)->klass();
+    }
+  }
+
+  LoaderConstraintEntry** pp2 = find_loader_constraint(class_name, class_loader2);
+  if (*pp2 != NULL && (*pp2)->klass() != NULL) {
+    if (klass != NULL) {
+      if (klass != (*pp2)->klass()) {
+        log_ldr_constraint_msg(class_name,
+                               "The class object presented by loader[1] does not match "
+                               "the stored class object in the constraint",
+                               class_loader1, class_loader2);
+        return false;
+      }
+    } else {
+      klass = (*pp2)->klass();
+    }
+  }
+
+  if (*pp1 == NULL && *pp2 == NULL) {
+    unsigned int hash = compute_hash(class_name);
+    int index = hash_to_index(hash);
+    LoaderConstraintEntry* p;
+    p = new_entry(hash, class_name, klass, 2, 2);
+    p->set_loaders(NEW_C_HEAP_ARRAY(ClassLoaderData*, 2, mtClass));
+    p->set_loader(0, class_loader1());
+    p->set_loader(1, class_loader2());
+    p->set_klass(klass);
+    p->set_next(bucket(index));
+    set_entry(index, p);
+    if (log_is_enabled(Info, class, loader, constraints)) {
+      ResourceMark rm;
+      outputStream* out = Log(class, loader, constraints)::info_stream();
+      out->print_cr("adding new constraint for name: %s, loader[0]: %s,"
+                    " loader[1]: %s",
+                    class_name->as_C_string(),
+                    SystemDictionary::loader_name(class_loader1()),
+                    SystemDictionary::loader_name(class_loader2())
+                    );
+    }
+  } else if (*pp1 == *pp2) {
+    /* constraint already imposed */
+    if ((*pp1)->klass() == NULL) {
+      (*pp1)->set_klass(klass);
+      if (log_is_enabled(Info, class, loader, constraints)) {
+        ResourceMark rm;
+        outputStream* out = Log(class, loader, constraints)::info_stream();
+        out->print_cr("setting class object in existing constraint for"
+                      " name: %s and loader %s",
+                      class_name->as_C_string(),
+                      SystemDictionary::loader_name(class_loader1())
+                      );
+      }
+    } else {
+      assert((*pp1)->klass() == klass, "loader constraints corrupted");
+    }
+  } else if (*pp1 == NULL) {
+    extend_loader_constraint(*pp2, class_loader1, klass);
+  } else if (*pp2 == NULL) {
+    extend_loader_constraint(*pp1, class_loader2, klass);
+  } else {
+    merge_loader_constraints(pp1, pp2, klass);
+  }
+
+  return true;
 }
 
 
 // return true if the constraint was updated, false if the constraint is
 // violated
-bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
-                                                   Handle loader,
-                                                   Symbol* name) {
+bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
+                                            Handle loader,
+                                            Symbol* name) {
   LoaderConstraintEntry* p = *(find_loader_constraint(name, loader));
-  if (p && p->klass() != NULL && p->klass() != k()) {
+  if (p && p->klass() != NULL && p->klass() != k) {
     if (log_is_enabled(Info, class, loader, constraints)) {
       ResourceMark rm;
       outputStream* out = Log(class, loader, constraints)::info_stream();
@@ -311,7 +300,7 @@ bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
     return false;
   } else {
     if (p && p->klass() == NULL) {
-      p->set_klass(k());
+      p->set_klass(k);
       if (log_is_enabled(Info, class, loader, constraints)) {
         ResourceMark rm;
         outputStream* out = Log(class, loader, constraints)::info_stream();
@@ -325,11 +314,12 @@ bool LoaderConstraintTable::check_or_update(instanceKlassHandle k,
   }
 }
 
-Klass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
+InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
                                                        Handle loader) {
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
   if (p != NULL && p->klass() != NULL) {
-    if (p->klass()->is_instance_klass() && !InstanceKlass::cast(p->klass())->is_loaded()) {
+    assert(p->klass()->is_instance_klass(), "sanity");
+    if (p->klass()->is_loaded()) {
       // Only return fully loaded classes.  Classes found through the
       // constraints might still be in the process of loading.
       return NULL;
@@ -357,7 +347,7 @@ void LoaderConstraintTable::ensure_loader_constraint_capacity(
 
 void LoaderConstraintTable::extend_loader_constraint(LoaderConstraintEntry* p,
                                                      Handle loader,
-                                                     Klass* klass) {
+                                                     InstanceKlass* klass) {
   ensure_loader_constraint_capacity(p, 1);
   int num = p->num_loaders();
   p->set_loader(num, loader());
@@ -383,7 +373,7 @@ void LoaderConstraintTable::extend_loader_constraint(LoaderConstraintEntry* p,
 void LoaderConstraintTable::merge_loader_constraints(
                                                    LoaderConstraintEntry** pp1,
                                                    LoaderConstraintEntry** pp2,
-                                                   Klass* klass) {
+                                                   InstanceKlass* klass) {
   // make sure *pp1 has higher capacity
   if ((*pp1)->max_loaders() < (*pp2)->max_loaders()) {
     LoaderConstraintEntry** tmp = pp2;
@@ -447,13 +437,13 @@ void LoaderConstraintTable::verify(Dictionary* dictionary,
                                 probe != NULL;
                                 probe = probe->next()) {
       if (probe->klass() != NULL) {
-        InstanceKlass* ik = InstanceKlass::cast(probe->klass());
+        InstanceKlass* ik = probe->klass();
         guarantee(ik->name() == probe->name(), "name should match");
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         unsigned int d_hash = dictionary->compute_hash(name, loader_data);
         int d_index = dictionary->hash_to_index(d_hash);
-        Klass* k = dictionary->find_class(d_index, d_hash, name, loader_data);
+        InstanceKlass* k = dictionary->find_class(d_index, d_hash, name, loader_data);
         if (k != NULL) {
           // We found the class in the system dictionary, so we should
           // make sure that the Klass* matches what we already have.

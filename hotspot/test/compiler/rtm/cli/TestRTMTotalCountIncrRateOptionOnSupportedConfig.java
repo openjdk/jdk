@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -55,6 +55,6 @@ public class TestRTMTotalCountIncrRateOptionOnSupportedConfig
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMTotalCountIncrRateOptionOnSupportedConfig().test();
+        new TestRTMTotalCountIncrRateOptionOnSupportedConfig().runTestCases();
     }
 }

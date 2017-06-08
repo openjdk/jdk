@@ -22,19 +22,28 @@
  */
 package org.graalvm.compiler.nodes.extended;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.Arrays;
 
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeSuccessorList;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -90,6 +99,11 @@ public abstract class SwitchNode extends ControlSplitNode {
     }
 
     @Override
+    public int getSuccessorCount() {
+        return successors.count();
+    }
+
+    @Override
     public double probability(AbstractBeginNode successor) {
         double sum = 0;
         for (int i = 0; i < keySuccessors.length; i++) {
@@ -98,6 +112,39 @@ public abstract class SwitchNode extends ControlSplitNode {
             }
         }
         return sum;
+    }
+
+    @Override
+    public boolean setProbability(AbstractBeginNode successor, double value) {
+        assert value <= 1.0 && value >= 0.0 : value;
+        assert assertProbabilities();
+
+        double sum = 0;
+        double otherSum = 0;
+        for (int i = 0; i < keySuccessors.length; i++) {
+            if (successors.get(keySuccessors[i]) == successor) {
+                sum += keyProbabilities[i];
+            } else {
+                otherSum += keyProbabilities[i];
+            }
+        }
+
+        if (otherSum == 0 || sum == 0) {
+            // Cannot correctly adjust probabilities.
+            return false;
+        }
+
+        double delta = value - sum;
+
+        for (int i = 0; i < keySuccessors.length; i++) {
+            if (successors.get(keySuccessors[i]) == successor) {
+                keyProbabilities[i] = Math.max(0.0, keyProbabilities[i] + (delta * keyProbabilities[i]) / sum);
+            } else {
+                keyProbabilities[i] = Math.max(0.0, keyProbabilities[i] - (delta * keyProbabilities[i]) / otherSum);
+            }
+        }
+        assert assertProbabilities();
+        return true;
     }
 
     public ValueNode value() {
@@ -201,4 +248,35 @@ public abstract class SwitchNode extends ControlSplitNode {
         tool.addToWorkList(blockSuccessor(survivingEdge));
         graph().removeSplit(this, blockSuccessor(survivingEdge));
     }
+
+    public abstract Stamp getValueStampForSuccessor(AbstractBeginNode beginNode);
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        if (keyCount() == 1) {
+            // if
+            return CYCLES_2;
+        } else if (isSorted()) {
+            // good heuristic
+            return CYCLES_8;
+        } else {
+            // not so good
+            return CYCLES_64;
+        }
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        if (keyCount() == 1) {
+            // if
+            return SIZE_2;
+        } else if (isSorted()) {
+            // good heuristic
+            return SIZE_8;
+        } else {
+            // not so good
+            return SIZE_64;
+        }
+    }
+
 }

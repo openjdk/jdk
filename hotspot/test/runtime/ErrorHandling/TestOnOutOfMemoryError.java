@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test TestOnOutOfMemoryError
- * @summary Test using -XX:OnOutOfMemoryError=<cmd>
+ * @summary Test using single and multiple -XX:OnOutOfMemoryError=<cmd>
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run main TestOnOutOfMemoryError
- * @bug 8078470
+ * @bug 8078470 8177522
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -44,13 +44,22 @@ public class TestOnOutOfMemoryError {
         }
 
         // else this is the main test
-        String msg = "Test Succeeded";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:OnOutOfMemoryError=echo " + msg,
+        String msg1 = "Test1 Succeeded";
+        String msg2 = "Test2 Succeeded";
+        ProcessBuilder pb_single = ProcessTools.createJavaProcessBuilder(
+           "-XX:OnOutOfMemoryError=echo " + msg1,
            TestOnOutOfMemoryError.class.getName(),
            "throwOOME");
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        ProcessBuilder pb_multiple = ProcessTools.createJavaProcessBuilder(
+           "-XX:OnOutOfMemoryError=echo " + msg1,
+           "-XX:OnOutOfMemoryError=echo " + msg2,
+           TestOnOutOfMemoryError.class.getName(),
+           "throwOOME");
+
+        OutputAnalyzer output_single = new OutputAnalyzer(pb_single.start());
+
+        OutputAnalyzer output_multiple = new OutputAnalyzer(pb_multiple.start());
 
         /* Actual output should look like this:
            #
@@ -64,8 +73,13 @@ public class TestOnOutOfMemoryError {
            So we don't want to match on the "# Executing ..." line, and they
            both get written to stdout.
         */
-        output.shouldContain("Requested array size exceeds VM limit");
-        output.stdoutShouldMatch("^" + msg); // match start of line only
+        output_single.shouldContain("Requested array size exceeds VM limit");
+        output_single.stdoutShouldMatch("^" + msg1); // match start of line only
+
+        output_multiple.shouldContain("Requested array size exceeds VM limit");
+        output_multiple.stdoutShouldMatch("^" + msg1); // match start of line only
+        output_multiple.stdoutShouldMatch("^" + msg2); // match start of line only
+
         System.out.println("PASSED");
     }
 }

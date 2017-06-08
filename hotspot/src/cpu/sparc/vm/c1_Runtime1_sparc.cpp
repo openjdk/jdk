@@ -930,11 +930,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         Label not_already_dirty, restart, refill, young_card;
 
-#ifdef _LP64
         __ srlx(addr, CardTableModRefBS::card_shift, addr);
-#else
-        __ srl(addr, CardTableModRefBS::card_shift, addr);
-#endif
 
         AddressLiteral rs(byte_map_base);
         __ set(rs, cardtable);         // cardtable := <card table base>

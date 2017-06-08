@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
-import java.util.List;
+import java.util.ArrayList;
 
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -44,6 +46,7 @@ import org.graalvm.compiler.lir.alloc.trace.lsra.TraceInterval.SpillState;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.IntervalPredicate;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -59,9 +62,8 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
     };
 
     @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, TraceLinearScanAllocationContext context) {
-        TraceBuilderResult traceBuilderResult = context.resultTraces;
-        TraceLinearScan allocator = context.allocator;
+    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
         boolean shouldEliminateSpillMoves = shouldEliminateSpillMoves(traceBuilderResult, allocator);
         eliminateSpillMoves(allocator, shouldEliminateSpillMoves, traceBuilderResult);
     }
@@ -81,7 +83,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
              * by Interval.spillDefinitionPos.
              */
             TraceInterval interval = allocator.createUnhandledListBySpillPos(spilledIntervals);
-            if (DetailedAsserts.getValue()) {
+            if (DetailedAsserts.getValue(allocator.getOptions())) {
                 checkIntervals(interval);
             }
             if (Debug.isLogEnabled()) {
@@ -95,7 +97,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
             LIRInsertionBuffer insertionBuffer = new LIRInsertionBuffer();
             for (AbstractBlockBase<?> block : allocator.sortedBlocks()) {
                 try (Indent indent1 = Debug.logAndIndent("Handle %s", block)) {
-                    List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
+                    ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
                     int numInst = instructions.size();
 
                     int lastOpId = -1;
@@ -106,7 +108,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
                         try (Indent indent2 = Debug.logAndIndent("%5d %s", opId, op)) {
 
                             if (opId == -1) {
-                                MoveOp move = (MoveOp) op;
+                                MoveOp move = MoveOp.asMoveOp(op);
                                 /*
                                  * Remove move from register to stack if the stack slot is
                                  * guaranteed to be correct. Only moves that have been inserted by
@@ -118,13 +120,12 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
                                      * eliminate instruction.
                                      */
                                     if (Debug.isLogEnabled()) {
-                                        if (move instanceof ValueMoveOp) {
-                                            ValueMoveOp vmove = (ValueMoveOp) move;
-                                            Debug.log("eliminating move from interval %d (%s) to %d (%s) in block %s", allocator.operandNumber(vmove.getInput()), vmove.getInput(),
-                                                            allocator.operandNumber(vmove.getResult()), vmove.getResult(), block);
+                                        if (ValueMoveOp.isValueMoveOp(op)) {
+                                            ValueMoveOp vmove = ValueMoveOp.asValueMoveOp(op);
+                                            Debug.log("eliminating move from interval %s to %s in block %s", vmove.getInput(), vmove.getResult(), block);
                                         } else {
-                                            LoadConstantOp load = (LoadConstantOp) move;
-                                            Debug.log("eliminating constant load from %s to %d (%s) in block %s", load.getConstant(), allocator.operandNumber(load.getResult()), load.getResult(),
+                                            LoadConstantOp load = LoadConstantOp.asLoadConstantOp(op);
+                                            Debug.log("eliminating constant load from %s to %s in block %s", load.getConstant(), load.getResult(),
                                                             block);
                                         }
                                     }
@@ -199,7 +200,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
         assert isVariable(move.getResult()) : "LinearScan inserts only moves to variables: " + move;
         assert lastOpId >= 0 : "Invalid lastOpId: " + lastOpId;
 
-        TraceInterval curInterval = allocator.intervalFor(move.getResult());
+        TraceInterval curInterval = allocator.intervalFor(asVariable(move.getResult()));
 
         if (!isRegister(curInterval.location()) && curInterval.inMemoryAt(lastOpId) && !isPhiResolutionMove(allocator, move)) {
             /* Phi resolution moves cannot be removed because they define the value. */
@@ -220,7 +221,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
      */
     private static boolean isPhiResolutionMove(TraceLinearScan allocator, MoveOp move) {
         assert ((LIRInstruction) move).id() == -1 : "Not a spill move: " + move;
-        TraceInterval curInterval = allocator.intervalFor(move.getResult());
+        TraceInterval curInterval = allocator.intervalFor(asVariable(move.getResult()));
         return curInterval.isSplitParent();
     }
 
@@ -228,7 +229,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
         TraceInterval prev = null;
         TraceInterval temp = interval;
         while (temp != TraceInterval.EndMarker) {
-            assert temp.spillDefinitionPos() >= 0 : "invalid spill definition pos";
+            assert temp.spillDefinitionPos() >= 0 : "invalid spill definition pos " + temp;
             if (prev != null) {
                 // assert temp.from() >= prev.from() : "intervals not sorted";
                 assert temp.spillDefinitionPos() >= prev.spillDefinitionPos() : "when intervals are sorted by from :  then they must also be sorted by spillDefinitionPos";

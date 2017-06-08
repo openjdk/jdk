@@ -181,10 +181,12 @@ public class ConstantTree extends PrintableDominatorOptimizationProblem<Constant
     }
 
     public boolean isLeafBlock(AbstractBlockBase<?> block) {
-        for (AbstractBlockBase<?> dom : block.getDominated()) {
+        AbstractBlockBase<?> dom = block.getFirstDominated();
+        while (dom != null) {
             if (isMarked(dom)) {
                 return false;
             }
+            dom = dom.getDominatedSibling();
         }
         return true;
     }
@@ -200,7 +202,13 @@ public class ConstantTree extends PrintableDominatorOptimizationProblem<Constant
     public void traverseTreeWhileTrue(AbstractBlockBase<?> block, Predicate<AbstractBlockBase<?>> action) {
         assert block != null : "block must not be null!";
         if (action.test(block)) {
-            block.getDominated().stream().filter(this::isMarked).forEach(dominated -> traverseTreeWhileTrue(dominated, action));
+            AbstractBlockBase<?> dom = block.getFirstDominated();
+            while (dom != null) {
+                if (this.isMarked(dom)) {
+                    traverseTreeWhileTrue(dom, action);
+                }
+                dom = dom.getDominatedSibling();
+            }
         }
     }
 

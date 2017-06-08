@@ -26,7 +26,7 @@ import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.P
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.POINTER_NE;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.TO_METHOD_POINTER;
 
-import org.graalvm.compiler.word.Pointer;
+import org.graalvm.api.word.Pointer;
 
 /**
  * Marker type for a metaspace pointer to a method.

@@ -22,7 +22,11 @@
  */
 package org.graalvm.compiler.word;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.Signed;
+import org.graalvm.api.word.Unsigned;
+import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
 
@@ -152,7 +156,7 @@ public final class ObjectAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_OBJECT)
-    public static native Word readWord(Object object, WordBase offset, LocationIdentity locationIdentity);
+    public static native <T extends WordBase> T readWord(Object object, WordBase offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
@@ -255,7 +259,7 @@ public final class ObjectAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_OBJECT)
-    public static native Word readWord(Object object, int offset, LocationIdentity locationIdentity);
+    public static native <T extends WordBase> T readWord(Object object, int offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
@@ -612,7 +616,7 @@ public final class ObjectAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_OBJECT)
-    public static native Word readWord(Object object, WordBase offset);
+    public static native <T extends WordBase> T readWord(Object object, WordBase offset);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
@@ -706,7 +710,7 @@ public final class ObjectAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_OBJECT)
-    public static native Word readWord(Object object, int offset);
+    public static native <T extends WordBase> T readWord(Object object, int offset);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.

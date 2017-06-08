@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class ciTypeArrayKlass : public ciArrayKlass {
   CI_PACKAGE_ACCESS
 
 protected:
-  ciTypeArrayKlass(KlassHandle h_k);
+  ciTypeArrayKlass(Klass* k);
 
   TypeArrayKlass* get_TypeArrayKlass() {
     return (TypeArrayKlass*)get_Klass();

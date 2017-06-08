@@ -1390,6 +1390,30 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   return cast;                  // Return casted value
 }
 
+// Sometimes in intrinsics, we implicitly know an object is not null
+// (there's no actual null check) so we can cast it to not null. In
+// the course of optimizations, the input to the cast can become null.
+// In that case that data path will die and we need the control path
+// to become dead as well to keep the graph consistent. So we have to
+// add a check for null for which one branch can't be taken. It uses
+// an Opaque4 node that will cause the check to be removed after loop
+// opts so the test goes away and the compiled code doesn't execute a
+// useless check.
+Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
+  Node* chk = _gvn.transform(new CmpPNode(value, null()));
+  Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+  Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
+  IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
+  _gvn.set_type(iff, iff->Value(&_gvn));
+  Node *if_f = _gvn.transform(new IfFalseNode(iff));
+  Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+  Node *halt = _gvn.transform(new HaltNode(if_f, frame));
+  C->root()->add_req(halt);
+  Node *if_t = _gvn.transform(new IfTrueNode(iff));
+  set_control(if_t);
+  return cast_not_null(value, do_replace_in_map);
+}
+
 
 //--------------------------replace_in_map-------------------------------------
 void GraphKit::replace_in_map(Node* old, Node* neww) {

@@ -45,9 +45,11 @@ import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.GraalDebugConfig.Options;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.java.BciBlockMapping;
 import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.debug.IntervalDumper;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
@@ -77,7 +79,8 @@ public class CFGPrinterObserver implements DebugDumpHandler {
     }
 
     @Override
-    public void dump(Object object, String message) {
+    public void dump(Object object, String format, Object... arguments) {
+        String message = String.format(format, arguments);
         try {
             dumpSandboxed(object, message);
         } catch (Throwable ex) {
@@ -169,6 +172,7 @@ public class CFGPrinterObserver implements DebugDumpHandler {
                 cfgPrinter.lir = Debug.contextLookup(LIR.class);
             }
             cfgPrinter.nodeLirGenerator = Debug.contextLookup(NodeLIRBuilder.class);
+            cfgPrinter.livenessInfo = Debug.contextLookup(GlobalLivenessInfo.class);
             if (cfgPrinter.nodeLirGenerator != null) {
                 cfgPrinter.target = cfgPrinter.nodeLirGenerator.getLIRGeneratorTool().target();
             }
@@ -235,13 +239,14 @@ public class CFGPrinterObserver implements DebugDumpHandler {
             cfgPrinter.target = null;
             cfgPrinter.lir = null;
             cfgPrinter.nodeLirGenerator = null;
+            cfgPrinter.livenessInfo = null;
             cfgPrinter.cfg = null;
             cfgPrinter.flush();
         }
     }
 
-    public static Path getCFGPath() {
-        return UniquePathUtilities.getPath(Options.PrintCFGFileName, Options.DumpPath, "cfg");
+    private static Path getCFGPath() {
+        return UniquePathUtilities.getPath(DebugScope.getConfig().getOptions(), Options.PrintCFGFileName, Options.DumpPath, "cfg");
     }
 
     /** Lazy initialization to delay service lookup until disassembler is actually needed. */
@@ -285,5 +290,12 @@ public class CFGPrinterObserver implements DebugDumpHandler {
             curDecorators = Collections.emptyList();
             curMethod = null;
         }
+    }
+
+    public String getDumpPath() {
+        if (cfgFile != null) {
+            return cfgFile.getAbsolutePath();
+        }
+        return null;
     }
 }

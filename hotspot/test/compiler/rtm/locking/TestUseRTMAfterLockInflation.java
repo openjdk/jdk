@@ -29,6 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -43,13 +44,8 @@ import compiler.testlibrary.rtm.AbortProvoker;
 import compiler.testlibrary.rtm.AbortType;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -68,15 +64,10 @@ import java.util.List;
  * reasons simultaneously. In order to avoid false negative failures related
  * to incorrect aborts counting, -XX:RTMRetryCount=0 is used.
  */
-public class TestUseRTMAfterLockInflation extends CommandLineOptionTest {
+public class TestUseRTMAfterLockInflation {
     private static final long EXPECTED_LOCKS
             = 2L * AbortProvoker.DEFAULT_ITERATIONS;
 
-    private TestUseRTMAfterLockInflation() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         AbortProvoker provoker = AbortType.XABORT.provoker();
         long totalLocksCount = 0;
@@ -133,6 +124,6 @@ public class TestUseRTMAfterLockInflation extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMAfterLockInflation().test();
+        new TestUseRTMAfterLockInflation().runTestCases();
     }
 }

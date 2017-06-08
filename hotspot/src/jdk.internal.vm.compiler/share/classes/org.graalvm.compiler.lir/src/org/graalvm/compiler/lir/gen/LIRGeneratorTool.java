@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.lir.gen;
 
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -66,7 +67,7 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
          * @return True if the constant can be used directly, false if the constant needs to be in a
          *         register.
          */
-        boolean canInlineConstant(JavaConstant c);
+        boolean canInlineConstant(Constant c);
 
         /**
          * @param constant The constant that might be moved to a stack slot.
@@ -136,7 +137,9 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     void emitNullCheck(Value address, LIRFrameState state);
 
-    Variable emitCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue);
+    Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue);
+
+    Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue);
 
     /**
      * Emit an atomic read-and-add instruction.
@@ -246,6 +249,11 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length);
 
+    @SuppressWarnings("unused")
+    default Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
+        throw GraalError.unimplemented();
+    }
+
     void emitBlackhole(Value operand);
 
     LIRKind getLIRKind(Stamp stamp);
@@ -253,4 +261,9 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     void emitPause();
 
     void emitPrefetchAllocate(Value address);
+
+    Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull);
+
+    Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull);
+
 }

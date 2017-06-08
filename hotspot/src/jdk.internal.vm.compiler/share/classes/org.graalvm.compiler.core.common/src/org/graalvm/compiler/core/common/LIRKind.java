@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.core.common;
 
-import java.util.ArrayList;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -170,23 +170,6 @@ public final class LIRKind extends ValueKind<LIRKind> {
     }
 
     /**
-     * Merge the types of the inputs. The result will have the {@link PlatformKind} of one of the
-     * inputs. If all inputs are values (references), the result is a value (reference). Otherwise,
-     * the result is an unknown reference.
-     *
-     * This method should be used to construct the result {@link LIRKind} of merge operation that
-     * does not modify values (e.g. phis).
-     */
-    public static LIRKind merge(Value... inputs) {
-        assert inputs.length > 0;
-        ArrayList<LIRKind> kinds = new ArrayList<>(inputs.length);
-        for (int i = 0; i < inputs.length; i++) {
-            kinds.add(inputs[i].getValueKind(LIRKind.class));
-        }
-        return merge(kinds);
-    }
-
-    /**
      * Helper method to construct derived reference kinds. Returns the base value of a reference or
      * derived reference. For values it returns {@code null}, and for unknown references it returns
      * {@link Value#ILLEGAL}.
@@ -228,60 +211,60 @@ public final class LIRKind extends ValueKind<LIRKind> {
     }
 
     /**
-     * @see #merge(Value...)
+     * Merges the reference information of the inputs. The result will have the {@link PlatformKind}
+     * of {@code mergeKind}. If all inputs are values (references), the result is a value
+     * (reference). Otherwise, the result is an unknown reference.
+     *
+     * The correctness of the {@link PlatformKind} is not verified.
      */
-    public static LIRKind merge(Iterable<LIRKind> kinds) {
-        LIRKind mergeKind = null;
+    public static LIRKind mergeReferenceInformation(LIRKind mergeKind, LIRKind inputKind) {
+        assert mergeKind != null;
+        assert inputKind != null;
 
-        for (LIRKind kind : kinds) {
+        if (mergeKind.isUnknownReference()) {
+            /**
+             * {@code mergeKind} is an unknown reference, therefore the result can only be also an
+             * unknown reference.
+             */
+            return mergeKind;
+        }
 
-            if (kind.isUnknownReference()) {
-                /**
-                 * Kind is an unknown reference, therefore the result can only be also an unknown
-                 * reference.
+        if (mergeKind.isValue()) {
+            /* {@code mergeKind} is a value. */
+            if (!inputKind.isValue()) {
+                /*
+                 * Inputs consists of values and references. Make the result an unknown reference.
                  */
-                mergeKind = kind;
-                break;
+                return mergeKind.makeUnknownReference();
             }
-            if (mergeKind == null) {
-                mergeKind = kind;
-                continue;
-            }
-
-            if (kind.isValue()) {
-                /* Kind is a value. */
-                if (mergeKind.referenceMask != 0) {
-                    /*
-                     * Inputs consists of values and references. Make the result an unknown
-                     * reference.
-                     */
-                    mergeKind = mergeKind.makeUnknownReference();
-                    break;
-                }
-                /* Check that other inputs are also values. */
-            } else {
-                /* Kind is a reference. */
-                if (mergeKind.referenceMask != kind.referenceMask) {
-                    /*
-                     * Reference maps do not match so the result can only be an unknown reference.
-                     */
-                    mergeKind = mergeKind.makeUnknownReference();
-                    break;
-                }
-            }
-
+            return mergeKind;
         }
-        assert mergeKind != null && verifyMerge(mergeKind, kinds);
+        /* {@code mergeKind} is a reference. */
+        if (mergeKind.referenceMask != inputKind.referenceMask) {
+            /*
+             * Reference masks do not match so the result can only be an unknown reference.
+             */
+            return mergeKind.makeUnknownReference();
+        }
 
-        // all inputs are values or references, just return one of them
+        /* Both are references. */
+        if (mergeKind.isDerivedReference()) {
+            if (inputKind.isDerivedReference() && mergeKind.getDerivedReferenceBase().equals(inputKind.getDerivedReferenceBase())) {
+                /* Same reference base so they must be equal. */
+                return mergeKind;
+            }
+            /* Base pointers differ. Make the result an unknown reference. */
+            return mergeKind.makeUnknownReference();
+        }
+        if (inputKind.isDerivedReference()) {
+            /*
+             * {@code mergeKind} is not derived but {@code inputKind} is. Make the result an unknown
+             * reference.
+             */
+            return mergeKind.makeUnknownReference();
+        }
+        /* Both are not derived references so they must be equal. */
         return mergeKind;
-    }
-
-    private static boolean verifyMerge(LIRKind mergeKind, Iterable<LIRKind> kinds) {
-        for (LIRKind kind : kinds) {
-            assert mergeKind == null || verifyMoveKinds(mergeKind, kind) : String.format("Input kinds do not match %s vs. %s", mergeKind, kind);
-        }
-        return true;
     }
 
     /**
@@ -447,6 +430,7 @@ public final class LIRKind extends ValueKind<LIRKind> {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((getPlatformKind() == null) ? 0 : getPlatformKind().hashCode());
+        result = prime * result + ((getDerivedReferenceBase() == null) ? 0 : getDerivedReferenceBase().hashCode());
         result = prime * result + referenceMask;
         return result;
     }
@@ -461,16 +445,37 @@ public final class LIRKind extends ValueKind<LIRKind> {
         }
 
         LIRKind other = (LIRKind) obj;
-        return getPlatformKind() == other.getPlatformKind() && referenceMask == other.referenceMask;
+        if (getPlatformKind() != other.getPlatformKind() || referenceMask != other.referenceMask) {
+            return false;
+        }
+        if (isDerivedReference()) {
+            if (!other.isDerivedReference()) {
+                return false;
+            }
+            return getDerivedReferenceBase().equals(other.getDerivedReferenceBase());
+        }
+        // `this` is not a derived reference
+        if (other.isDerivedReference()) {
+            return false;
+        }
+        return true;
     }
 
-    public static boolean verifyMoveKinds(ValueKind<?> dst, ValueKind<?> src) {
+    public static boolean verifyMoveKinds(ValueKind<?> dst, ValueKind<?> src, RegisterAllocationConfig config) {
         if (src.equals(dst)) {
             return true;
         }
-        if (src.getPlatformKind().equals(dst.getPlatformKind())) {
-            return !isUnknownReference(src) || isUnknownReference(dst);
+        if (isUnknownReference(dst) || isValue(dst) && isValue(src)) {
+            PlatformKind srcPlatformKind = src.getPlatformKind();
+            PlatformKind dstPlatformKind = dst.getPlatformKind();
+            if (srcPlatformKind.equals(dstPlatformKind)) {
+                return true;
+            }
+            // if the register category matches it should be fine, although the kind is different
+            return config.getRegisterCategory(srcPlatformKind).equals(config.getRegisterCategory(dstPlatformKind));
         }
+        // reference information mismatch
         return false;
     }
+
 }

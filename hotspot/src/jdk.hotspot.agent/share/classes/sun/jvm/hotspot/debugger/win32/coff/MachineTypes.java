@@ -39,8 +39,6 @@ public interface MachineTypes {
   public static final short IMAGE_FILE_MACHINE_ALPHA64 = (short) 0x284;
   /** Intel 386 or later, and compatible processors. */
   public static final short IMAGE_FILE_MACHINE_I386 = (short) 0x14c;
-  /** Intel IA64 */
-  public static final short IMAGE_FILE_MACHINE_IA64 = (short) 0x200;
   /** Motorola 68000 series. */
   public static final short IMAGE_FILE_MACHINE_M68K = (short) 0x268;
   public static final short IMAGE_FILE_MACHINE_MIPS16 = (short) 0x266;

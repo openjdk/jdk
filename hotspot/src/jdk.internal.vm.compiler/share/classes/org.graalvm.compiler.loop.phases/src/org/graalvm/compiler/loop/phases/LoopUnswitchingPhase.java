@@ -61,7 +61,7 @@ public class LoopUnswitchingPhase extends ContextlessLoopPhase<LoopPolicies> {
                                     logUnswitch(loop, controlSplits);
                                 }
                                 LoopTransformations.unswitch(loop, controlSplits);
-                                Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After unswitch %s", controlSplits);
+                                Debug.dump(Debug.DETAILED_LEVEL, graph, "After unswitch %s", controlSplits);
                                 UNSWITCHED.increment();
                                 unswitched = true;
                                 break;

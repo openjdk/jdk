@@ -86,6 +86,12 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_MulD:
     assert(bt == T_DOUBLE, "must be");
     return Op_MulVD;
+  case Op_FmaD:
+    assert(bt == T_DOUBLE, "must be");
+    return Op_FmaVD;
+  case Op_FmaF:
+    assert(bt == T_FLOAT, "must be");
+    return Op_FmaVF;
   case Op_CMoveD:
     assert(bt == T_DOUBLE, "must be");
     return Op_CMoveVD;
@@ -259,6 +265,11 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
     *start = 2;
     *end   = n->req();
     break;
+  case Op_FmaD:
+  case Op_FmaF:
+    *start = 1;
+    *end   = 4; // 3 vector operands
+    break;
   default:
     *start = 1;
     *end   = n->req(); // default is all operands
@@ -326,6 +337,19 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
   fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
   return NULL;
 
+}
+
+VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt) {
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+  int vopc = VectorNode::opcode(opc, bt);
+  // This method should not be called for unimplemented vectors.
+  guarantee(vopc > 0, "Vector for '%s' is not implemented", NodeClassNames[opc]);
+  switch (vopc) {
+  case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
+  case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  }
+  fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
+  return NULL;
 }
 
 // Scalar promotion

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 
 import org.graalvm.compiler.bytecode.Bytecode;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.replacements.classfile.ClassfileConstant.Utf8;
 
@@ -76,6 +77,11 @@ public class ClassfileBytecode implements Bytecode {
         exceptionTableBytes = new byte[exceptionTableLength * EXCEPTION_HANDLER_TABLE_SIZE_IN_BYTES];
         stream.readFully(exceptionTableBytes);
         readCodeAttributes(stream);
+    }
+
+    @Override
+    public BytecodeProvider getOrigin() {
+        return constantPool.context;
     }
 
     private void readCodeAttributes(DataInputStream stream) throws IOException {

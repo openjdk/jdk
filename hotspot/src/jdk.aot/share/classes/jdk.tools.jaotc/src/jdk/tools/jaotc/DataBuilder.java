@@ -36,6 +36,7 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -180,7 +181,8 @@ class DataBuilder {
     @SuppressWarnings("try")
     private AOTCompiledClass retrieveStubCode() {
         ArrayList<CompiledMethodInfo> stubs = new ArrayList<>();
-        for (Stub stub : Stub.getStubs()) {
+        HotSpotForeignCallsProvider foreignCallsProvider = backend.getProviders().getForeignCalls();
+        for (Stub stub : foreignCallsProvider.getStubs()) {
             try (Scope scope = Debug.scope("CompileStubs")) {
                 CompilationResult result = stub.getCompilationResult(backend);
                 CompiledMethodInfo cm = new CompiledMethodInfo(result, new AOTStub(stub, backend));
