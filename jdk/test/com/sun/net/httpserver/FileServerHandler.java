@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ class EchoHandler implements HttpHandler {
             t.sendResponseHeaders(200, in.length);
             OutputStream os = t.getResponseBody();
             os.write(in);
-            os.close();
-            is.close();
+            close(os);
+            close(is);
         } else {
             OutputStream os = t.getResponseBody();
             byte[] buf = new byte[64 * 1024];
@@ -232,9 +232,15 @@ class EchoHandler implements HttpHandler {
                 String s = Integer.toString(count);
                 os.write(s.getBytes());
             }
+            close(os);
+            close(is);
+        }
+    }
+
+    protected void close(OutputStream os) throws IOException {
             os.close();
+    }
+    protected void close(InputStream is) throws IOException {
             is.close();
         }
     }
-}
-
