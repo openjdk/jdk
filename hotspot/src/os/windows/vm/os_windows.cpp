@@ -114,14 +114,10 @@ static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
 
-#ifdef _M_IA64
-  #define __CPU__ ia64
+#ifdef _M_AMD64
+  #define __CPU__ amd64
 #else
-  #ifdef _M_AMD64
-    #define __CPU__ amd64
-  #else
-    #define __CPU__ i486
-  #endif
+  #define __CPU__ i486
 #endif
 
 // save DLL module handle, used by GetModuleFileName
@@ -351,38 +347,6 @@ address os::current_stack_base() {
       break;
     }
   }
-
-#ifdef _M_IA64
-  // IA64 has memory and register stacks
-  //
-  // This is the stack layout you get on NT/IA64 if you specify 1MB stack limit
-  // at thread creation (1MB backing store growing upwards, 1MB memory stack
-  // growing downwards, 2MB summed up)
-  //
-  // ...
-  // ------- top of stack (high address) -----
-  // |
-  // |      1MB
-  // |      Backing Store (Register Stack)
-  // |
-  // |         / \
-  // |          |
-  // |          |
-  // |          |
-  // ------------------------ stack base -----
-  // |      1MB
-  // |      Memory Stack
-  // |
-  // |          |
-  // |          |
-  // |          |
-  // |         \ /
-  // |
-  // ----- bottom of stack (low address) -----
-  // ...
-
-  stack_size = stack_size / 2;
-#endif
   return stack_bottom + stack_size;
 }
 
@@ -1497,18 +1461,15 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
 
   static const arch_t arch_array[] = {
     {IMAGE_FILE_MACHINE_I386,      (char*)"IA 32"},
-    {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"},
-    {IMAGE_FILE_MACHINE_IA64,      (char*)"IA 64"}
+    {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"}
   };
-#if   (defined _M_IA64)
-  static const uint16_t running_arch = IMAGE_FILE_MACHINE_IA64;
-#elif (defined _M_AMD64)
+#if (defined _M_AMD64)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_AMD64;
 #elif (defined _M_IX86)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_I386;
 #else
   #error Method os::dll_load requires that one of following \
-         is defined :_M_IA64,_M_AMD64 or _M_IX86
+         is defined :_M_AMD64 or _M_IX86
 #endif
 
 
@@ -2159,39 +2120,22 @@ int os::signal_wait() {
 
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
-    JavaThread* thread = (JavaThread*) Thread::current_or_null();
+  JavaThread* thread = (JavaThread*) Thread::current_or_null();
   // Save pc in thread
-#ifdef _M_IA64
-  // Do not blow up if no thread info available.
-  if (thread) {
-    // Saving PRECISE pc (with slot information) in thread.
-    uint64_t precise_pc = (uint64_t) exceptionInfo->ExceptionRecord->ExceptionAddress;
-    // Convert precise PC into "Unix" format
-    precise_pc = (precise_pc & 0xFFFFFFFFFFFFFFF0) | ((precise_pc & 0xF) >> 2);
-    thread->set_saved_exception_pc((address)precise_pc);
-  }
-  // Set pc to handler
-  exceptionInfo->ContextRecord->StIIP = (DWORD64)handler;
-  // Clear out psr.ri (= Restart Instruction) in order to continue
-  // at the beginning of the target bundle.
-  exceptionInfo->ContextRecord->StIPSR &= 0xFFFFF9FFFFFFFFFF;
-  assert(((DWORD64)handler & 0xF) == 0, "Target address must point to the beginning of a bundle!");
-#else
-  #ifdef _M_AMD64
+#ifdef _M_AMD64
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
-  #else
+#else
   // Do not blow up if no thread info available.
   if (thread) {
     thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
-  #endif
 #endif
 
   // Continue the execution
@@ -2215,11 +2159,6 @@ extern "C" void events();
 // Once a system header becomes available, the "real" define should be
 // included or copied here.
 #define EXCEPTION_INFO_EXEC_VIOLATION 0x08
-
-// Handle NAT Bit consumption on IA64.
-#ifdef _M_IA64
-  #define EXCEPTION_REG_NAT_CONSUMPTION    STATUS_REG_NAT_CONSUMPTION
-#endif
 
 // Windows Vista/2008 heap corruption check
 #define EXCEPTION_HEAP_CORRUPTION        0xC0000374
@@ -2261,9 +2200,6 @@ static const struct { char* name; uint number; } exceptlabels[] = {
     def_excpt(EXCEPTION_INVALID_HANDLE),
     def_excpt(EXCEPTION_UNCAUGHT_CXX_EXCEPTION),
     def_excpt(EXCEPTION_HEAP_CORRUPTION)
-#ifdef _M_IA64
-    , def_excpt(EXCEPTION_REG_NAT_CONSUMPTION)
-#endif
 };
 
 #undef def_excpt
@@ -2284,10 +2220,7 @@ const char* os::exception_name(int exception_code, char *buf, size_t size) {
 LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by idiv; should only happen for -MinInt/-1
   // (division by zero is handled explicitly)
-#ifdef _M_IA64
-  assert(0, "Fix Handle_IDiv_Exception");
-#else
-  #ifdef  _M_AMD64
+#ifdef  _M_AMD64
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
   assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
@@ -2303,7 +2236,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // idiv opcode (0xF7).
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
-  #else
+#else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
   assert(pc[0] == 0xF7, "not an idiv opcode");
@@ -2314,7 +2247,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Eax = (DWORD)min_jint;      // result
   ctx->Edx = (DWORD)0;             // remainder
   // Continue the execution
-  #endif
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
@@ -2412,21 +2344,10 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-#ifdef _M_IA64
-  // On Itanium, we need the "precise pc", which has the slot number coded
-  // into the least 4 bits: 0000=slot0, 0100=slot1, 1000=slot2 (Windows format).
-  address pc = (address) exceptionInfo->ExceptionRecord->ExceptionAddress;
-  // Convert the pc to "Unix format", which has the slot number coded
-  // into the least 2 bits: 0000=slot0, 0001=slot1, 0010=slot2
-  // This is needed for IA64 because "relocation" / "implicit null check" / "poll instruction"
-  // information is saved in the Unix format.
-  address pc_unix_format = (address) ((((uint64_t)pc) & 0xFFFFFFFFFFFFFFF0) | ((((uint64_t)pc) & 0xF) >> 2));
-#else
-  #ifdef _M_AMD64
+#ifdef _M_AMD64
   address pc = (address) exceptionInfo->ContextRecord->Rip;
-  #else
+#else
   address pc = (address) exceptionInfo->ContextRecord->Eip;
-  #endif
 #endif
   Thread* t = Thread::current_or_null_safe();
 
@@ -2544,43 +2465,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
     // Handle potential stack overflows up front.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
-#ifdef _M_IA64
-      // Use guard page for register stack.
-      PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-      address addr = (address) exceptionRecord->ExceptionInformation[1];
-      // Check for a register stack overflow on Itanium
-      if (thread->addr_inside_register_stack_red_zone(addr)) {
-        // Fatal red zone violation happens if the Java program
-        // catches a StackOverflow error and does so much processing
-        // that it runs beyond the unprotected yellow guard zone. As
-        // a result, we are out of here.
-        fatal("ERROR: Unrecoverable stack overflow happened. JVM will exit.");
-      } else if(thread->addr_inside_register_stack(addr)) {
-        // Disable the yellow zone which sets the state that
-        // we've got a stack overflow problem.
-        if (thread->stack_yellow_reserved_zone_enabled()) {
-          thread->disable_stack_yellow_reserved_zone();
-        }
-        // Give us some room to process the exception.
-        thread->disable_register_stack_guard();
-        // Tracing with +Verbose.
-        if (Verbose) {
-          tty->print_cr("SOF Compiled Register Stack overflow at " INTPTR_FORMAT " (SIGSEGV)", pc);
-          tty->print_cr("Register Stack access at " INTPTR_FORMAT, addr);
-          tty->print_cr("Register Stack base " INTPTR_FORMAT, thread->register_stack_base());
-          tty->print_cr("Register Stack [" INTPTR_FORMAT "," INTPTR_FORMAT "]",
-                        thread->register_stack_base(),
-                        thread->register_stack_base() + thread->stack_size());
-        }
-
-        // Reguard the permanent register stack red zone just to be sure.
-        // We saw Windows silently disabling this without telling us.
-        thread->enable_register_stack_red_zone();
-
-        return Handle_Exception(exceptionInfo,
-                                SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
-      }
-#endif
       if (thread->stack_guards_enabled()) {
         if (in_java) {
           frame fr;
@@ -2647,35 +2531,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
           {
             // Null pointer exception.
-#ifdef _M_IA64
-            // Process implicit null checks in compiled code. Note: Implicit null checks
-            // can happen even if "ImplicitNullChecks" is disabled, e.g. in vtable stubs.
-            if (CodeCache::contains((void*) pc_unix_format) && !MacroAssembler::needs_explicit_null_check((intptr_t) addr)) {
-              CodeBlob *cb = CodeCache::find_blob_unsafe(pc_unix_format);
-              // Handle implicit null check in UEP method entry
-              if (cb && (cb->is_frame_complete_at(pc) ||
-                         (cb->is_nmethod() && ((nmethod *)cb)->inlinecache_check_contains(pc)))) {
-                if (Verbose) {
-                  intptr_t *bundle_start = (intptr_t*) ((intptr_t) pc_unix_format & 0xFFFFFFFFFFFFFFF0);
-                  tty->print_cr("trap: null_check at " INTPTR_FORMAT " (SIGSEGV)", pc_unix_format);
-                  tty->print_cr("      to addr " INTPTR_FORMAT, addr);
-                  tty->print_cr("      bundle is " INTPTR_FORMAT " (high), " INTPTR_FORMAT " (low)",
-                                *(bundle_start + 1), *bundle_start);
-                }
-                return Handle_Exception(exceptionInfo,
-                                        SharedRuntime::continuation_for_implicit_exception(thread, pc_unix_format, SharedRuntime::IMPLICIT_NULL));
-              }
-            }
-
-            // Implicit null checks were processed above.  Hence, we should not reach
-            // here in the usual case => die!
-            if (Verbose) tty->print_raw_cr("Access violation, possible null pointer exception");
-            report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                         exceptionInfo->ContextRecord);
-            return EXCEPTION_CONTINUE_SEARCH;
-
-#else // !IA64
-
             if (!MacroAssembler::needs_explicit_null_check((intptr_t)addr)) {
               address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
               if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
@@ -2683,7 +2538,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
                          exceptionInfo->ContextRecord);
             return EXCEPTION_CONTINUE_SEARCH;
-#endif
           }
         }
       }
@@ -2706,22 +2560,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#if defined _M_IA64
-    else if ((exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-              exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      M37 handle_wrong_method_break(0, NativeJump::HANDLE_WRONG_METHOD, PR0);
-
-      // Compiled method patched to be non entrant? Following conditions must apply:
-      // 1. must be first instruction in bundle
-      // 2. must be a break instruction with appropriate code
-      if ((((uint64_t) pc & 0x0F) == 0) &&
-          (((IPF_Bundle*) pc)->get_slot0() == handle_wrong_method_break.bits())) {
-        return Handle_Exception(exceptionInfo,
-                                (address)SharedRuntime::get_handle_wrong_method_stub());
-      }
-    } // /EXCEPTION_ILLEGAL_INSTRUCTION
-#endif
-
 
     if (in_java) {
       switch (exception_code) {
@@ -3752,10 +3590,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   CONTEXT context;
   context.ContextFlags = CONTEXT_CONTROL;
   HANDLE handle = thread->osthread()->thread_handle();
-#ifdef _M_IA64
-  assert(0, "Fix get_thread_pc");
-  return ExtendedPC(NULL);
-#else
   if (GetThreadContext(handle, &context)) {
 #ifdef _M_AMD64
     return ExtendedPC((address) context.Rip);
@@ -3765,7 +3599,6 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   } else {
     return ExtendedPC(NULL);
   }
-#endif
 }
 
 // GetCurrentThreadId() returns DWORD
