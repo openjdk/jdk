@@ -40,6 +40,14 @@ class Arena;
 class BCEscapeAnalyzer;
 class InlineTree;
 
+// Whether profiling found an oop to be always, never or sometimes
+// null
+enum ProfilePtrKind {
+  ProfileAlwaysNull,
+  ProfileNeverNull,
+  ProfileMaybeNull
+};
+
 // ciMethod
 //
 // This class represents a Method* in the HotSpot virtual
@@ -248,9 +256,9 @@ class ciMethod : public ciMetadata {
   int           interpreter_call_site_count(int bci);
 
   // Does type profiling provide any useful information at this point?
-  bool          argument_profiled_type(int bci, int i, ciKlass*& type, bool& maybe_null);
-  bool          parameter_profiled_type(int i, ciKlass*& type, bool& maybe_null);
-  bool          return_profiled_type(int bci, ciKlass*& type, bool& maybe_null);
+  bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
+  bool          return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind);
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);

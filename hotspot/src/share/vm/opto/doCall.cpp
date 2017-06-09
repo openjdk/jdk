@@ -569,7 +569,7 @@ void Parse::do_call() {
   // save across call, for a subsequent cast_not_null.
   Node* receiver = has_receiver ? argument(0) : NULL;
 
-  // The extra CheckCastPP for speculative types mess with PhaseStringOpts
+  // The extra CheckCastPPs for speculative types mess with PhaseStringOpts
   if (receiver != NULL && !call_does_dispatch && !cg->is_string_late_inline()) {
     // Feed profiling data for a single receiver to the type system so
     // it can propagate it as a speculative type
