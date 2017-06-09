@@ -28,8 +28,9 @@
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext EchoHandler
+ * @build jdk.testlibrary.SimpleSSLContext
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
+ * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl ManyRequests
  * @run main/othervm/timeout=40 -Dtest.insertDelay=true ManyRequests
