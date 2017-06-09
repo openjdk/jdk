@@ -2179,6 +2179,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "loop_limit_check",
   "speculate_class_check",
   "speculate_null_check",
+  "speculate_null_assert",
   "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",

@@ -2282,6 +2282,11 @@ void Parse::do_one_bytecode() {
       b = null_check_oop(b, &null_ctl, true, true, true);
       assert(null_ctl->is_top(), "no null control here");
       dec_sp(1);
+    } else if (_gvn.type(b)->speculative_always_null() &&
+               !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+      inc_sp(1);
+      b = null_assert(b);
+      dec_sp(1);
     }
     c = _gvn.transform( new CmpPNode(b, a) );
     do_ifnull(btest, c);

@@ -1540,13 +1540,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
         ciMethod* caller = state()->scope()->method();
         ciMethodData* md = caller->method_data_or_null();
         ciProfileData* data = md->bci_to_data(invoke_bci);
-        if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
-          bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
-          // May not be true in case of an inlined call through a method handle intrinsic.
-          if (has_return) {
-            profile_return_type(x, method(), caller, invoke_bci);
-          }
-        }
+        profile_return_type(x, method(), caller, invoke_bci);
       }
     }
     Goto* goto_callee = new Goto(continuation(), false);
@@ -4366,7 +4360,10 @@ void GraphBuilder::profile_return_type(Value ret, ciMethod* callee, ciMethod* m,
   ciMethodData* md = m->method_data_or_null();
   ciProfileData* data = md->bci_to_data(invoke_bci);
   if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
-    append(new ProfileReturnType(m , invoke_bci, callee, ret));
+    bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
+    if (has_return) {
+      append(new ProfileReturnType(m , invoke_bci, callee, ret));
+    }
   }
 }
 
