@@ -324,6 +324,10 @@ class CompileReplay : public StackObj {
         java_lang_Throwable::print(throwable, tty);
         tty->cr();
         report_error(str);
+        if (ReplayIgnoreInitErrors) {
+          CLEAR_PENDING_EXCEPTION;
+          _error_message = NULL;
+        }
         return NULL;
       }
       return k;
@@ -340,6 +344,10 @@ class CompileReplay : public StackObj {
   // Parse the standard tuple of <klass> <name> <signature>
   Method* parse_method(TRAPS) {
     InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK_NULL);
+    if (k == NULL) {
+      report_error("Can't find holder klass");
+      return NULL;
+    }
     Symbol* method_name = parse_symbol(CHECK_NULL);
     Symbol* method_signature = parse_symbol(CHECK_NULL);
     Method* m = k->find_method(method_name, method_signature);
@@ -653,6 +661,9 @@ class CompileReplay : public StackObj {
   // constant pool tags are in the same state.
   void process_ciInstanceKlass(TRAPS) {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
+    if (k == NULL) {
+      return;
+    }
     int is_linked = parse_int("is_linked");
     int is_initialized = parse_int("is_initialized");
     int length = parse_int("length");
@@ -744,7 +755,7 @@ class CompileReplay : public StackObj {
   void process_staticfield(TRAPS) {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
 
-    if (ReplaySuppressInitializers == 0 ||
+    if (k == NULL || ReplaySuppressInitializers == 0 ||
         ReplaySuppressInitializers == 2 && k->class_loader() == NULL) {
       return;
     }
@@ -771,6 +782,9 @@ class CompileReplay : public StackObj {
       if (field_signature[1] == '[') {
         // multi dimensional array
         ArrayKlass* kelem = (ArrayKlass *)parse_klass(CHECK);
+        if (kelem == NULL) {
+          return;
+        }
         int rank = 0;
         while (field_signature[rank] == '[') {
           rank++;
@@ -1122,10 +1136,12 @@ void ciReplay::initialize(ciMethodData* m) {
       ciEnv* env = ciEnv::current();
       for (int i = 0; i < rec->_classes_length; i++) {
         Klass *k = rec->_classes[i];
-        // In case this class pointer is is tagged, preserve the tag
-        // bits
-        rec->_data[rec->_classes_offsets[i]] =
-          ciTypeEntries::with_status(env->get_metadata(k)->as_klass(), rec->_data[rec->_classes_offsets[i]]);
+        // In case this class pointer is is tagged, preserve the tag bits
+        intptr_t status = 0;
+        if (k != NULL) {
+          status = ciTypeEntries::with_status(env->get_metadata(k)->as_klass(), rec->_data[rec->_classes_offsets[i]]);
+        }
+        rec->_data[rec->_classes_offsets[i]] = status;
       }
       for (int i = 0; i < rec->_methods_length; i++) {
         Method *m = rec->_methods[i];
