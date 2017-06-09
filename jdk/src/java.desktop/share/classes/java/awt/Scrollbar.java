@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,12 +296,16 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * The default properties of the scroll bar are listed in
      * the following table:
      *
-     * <table border=1 summary="Scrollbar default properties">
+     * <table class="striped">
+     * <caption>Scrollbar default properties</caption>
+     * <thead>
      * <tr>
      *   <th>Property</th>
      *   <th>Description</th>
      *   <th>Default Value</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td>orientation</td>
      *   <td>indicates whether the scroll bar is vertical
@@ -347,6 +351,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      *   <br>on either side of the bubble </td>
      *   <td>10</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()

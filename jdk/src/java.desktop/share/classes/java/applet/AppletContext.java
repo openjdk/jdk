@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,13 @@ public interface AppletContext {
      * document is to be displayed.
      * The target argument is interpreted as follows:
      *
-     * <center><table border="3" summary="Target arguments and their descriptions">
-     * <tr><th>Target Argument</th><th>Description</th></tr>
+     * <table class="striped">
+     * <caption>Target arguments and their descriptions</caption>
+     * <thead>
+     * <tr><th>Target Argument</th>
+     * <th>Description</th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td>{@code "_self"}  <td>Show in the window and frame that
      *                                   contain the applet.</tr>
      * <tr><td>{@code "_parent"}<td>Show in the applet's parent frame. If
@@ -130,7 +135,8 @@ public interface AppletContext {
      *                        a target named <i>name</i> does not already exist, a
      *                        new top-level window with the specified name is created,
      *                        and the document is shown there.</tr>
-     * </table> </center>
+     * </tbody>
+     * </table>
      * <p>
      * An applet viewer or browser is free to ignore {@code showDocument}.
      *
