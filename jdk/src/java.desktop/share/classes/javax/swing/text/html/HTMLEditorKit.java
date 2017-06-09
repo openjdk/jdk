@@ -1118,10 +1118,17 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * table describes what this factory will build by
      * default.
      *
-     * <table summary="Describes the tag and view created by this factory by default">
+     * <table class="striped">
+     * <caption>Describes the tag and view created by this factory by default
+     * </caption>
+     * <thead>
      * <tr>
-     * <th style="text-align:left">Tag<th style="text-align:left">View created
-     * </tr><tr>
+     * <th>Tag
+     * <th>View created
+     * </tr>
+     * </thead>
+     * <tbody>
+     * <tr>
      * <td>HTML.Tag.CONTENT<td>InlineView
      * </tr><tr>
      * <td>HTML.Tag.IMPLIED<td>javax.swing.text.html.ParagraphView
@@ -1192,6 +1199,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * </tr><tr>
      * <td>HTML.Tag.FRAME<td>FrameView
      * </tr>
+     * </tbody>
      * </table>
      */
     public static class HTMLFactory implements ViewFactory {
