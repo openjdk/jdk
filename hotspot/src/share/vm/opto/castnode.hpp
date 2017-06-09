@@ -51,7 +51,7 @@ class ConstraintCastNode: public TypeNode {
   virtual uint ideal_reg() const = 0;
   virtual bool depends_only_on_test() const { return !_carry_dependency; }
   bool carry_dependency() const { return _carry_dependency; }
-  TypeNode* dominating_cast(PhaseTransform *phase) const;
+  TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast(int opcode,  Node* c, Node *n, const Type *t, bool carry_dependency);
 
 #ifndef PRODUCT
