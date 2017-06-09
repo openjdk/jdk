@@ -35,7 +35,7 @@
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
-  Node* dom = dominating_cast(phase);
+  Node* dom = dominating_cast(phase, phase);
   if (dom != NULL) {
     return dom;
   }
@@ -108,7 +108,7 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
   return NULL;
 }
 
-TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
+TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
   Node* val = in(1);
   Node* ctl = in(0);
   int opc = Opcode();
@@ -121,7 +121,7 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
   if (is_CastII() && as_CastII()->has_range_check()) {
     return NULL;
   }
-  if (type()->isa_rawptr() && (phase->type_or_null(val) == NULL || phase->type(val)->isa_oopptr())) {
+  if (type()->isa_rawptr() && (gvn->type_or_null(val) == NULL || gvn->type(val)->isa_oopptr())) {
     return NULL;
   }
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
@@ -131,7 +131,7 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
         u->Opcode() == opc &&
         u->in(0) != NULL &&
         u->bottom_type()->higher_equal(type())) {
-      if (phase->is_dominator(u->in(0), ctl)) {
+      if (pt->is_dominator(u->in(0), ctl)) {
         return u->as_Type();
       }
       if (is_CheckCastPP() && u->in(1)->is_Proj() && u->in(1)->in(0)->is_Allocate() &&
@@ -283,7 +283,7 @@ void CastIINode::dump_spec(outputStream* st) const {
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.
 Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
-  Node* dom = dominating_cast(phase);
+  Node* dom = dominating_cast(phase, phase);
   if (dom != NULL) {
     return dom;
   }

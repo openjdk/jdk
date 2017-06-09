@@ -912,7 +912,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   if( m ) return m;
 
   if (n->is_ConstraintCast()) {
-    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(this);
+    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     if (dom_cast != NULL) {
       _igvn.replace_node(n, dom_cast);
       return dom_cast;
