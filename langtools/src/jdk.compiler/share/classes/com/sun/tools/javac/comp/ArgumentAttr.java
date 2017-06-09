@@ -556,19 +556,16 @@ public class ArgumentAttr extends JCTree.Visitor {
         Type overloadCheck(ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
             Type mtype = methodType();
             ResultInfo localInfo = resultInfo(resultInfo);
+            Type t;
             if (mtype != null && mtype.hasTag(METHOD) && mtype.isPartial()) {
-                Type t = ((PartiallyInferredMethodType)mtype).check(localInfo);
-                if (!deferredAttrContext.inferenceContext.free(localInfo.pt)) {
-                    speculativeTypes.put(localInfo, t);
-                    return localInfo.check(tree.pos(), t);
-                } else {
-                    return t;
-                }
+                //poly invocation
+                t = ((PartiallyInferredMethodType)mtype).check(localInfo);
             } else {
-                Type t = localInfo.check(tree.pos(), speculativeTree.type);
-                speculativeTypes.put(localInfo, t);
-                return t;
+                //standalone invocation
+                t = localInfo.check(tree.pos(), speculativeTree.type);
             }
+            speculativeTypes.put(localInfo, t);
+            return t;
         }
 
         /**
