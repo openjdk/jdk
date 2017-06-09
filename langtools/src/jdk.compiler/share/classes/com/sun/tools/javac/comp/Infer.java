@@ -344,9 +344,8 @@ public class Infer {
                     //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
                     //return type _after_ resolution, and check against target
                     ret = types.erasure(ret);
-                    resultInfo.check(env.tree, ret);
                 }
-                return ret;
+                return resultInfo.check(env.tree, ret);
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
