@@ -29,6 +29,8 @@
  * @modules jdk.compiler
  *          jdk.jlink
  * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
  * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 

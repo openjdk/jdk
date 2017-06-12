@@ -25,6 +25,8 @@
  * @bug 8051408 8158534
  * @summary Make sure DrbgParameters coded as specified
  * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ * @run main DrbgParametersSpec
  */
 
 import jdk.test.lib.Asserts;

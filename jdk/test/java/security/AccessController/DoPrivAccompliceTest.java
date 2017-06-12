@@ -42,7 +42,13 @@ import java.nio.file.Paths;
  * DoPrivAccmplice.jar.
  *
  * @library /test/lib
- *
+ * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/othervm DoPrivAccompliceTest
  */
 

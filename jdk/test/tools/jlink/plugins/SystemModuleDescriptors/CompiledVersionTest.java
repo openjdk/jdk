@@ -42,8 +42,10 @@ import static org.testng.Assert.*;
  * @test
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build CompiledVersionTest jdk.testlibrary.ProcessTools
- *        jdk.test.lib.compiler.CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
+ *        CompiledVersionTest jdk.testlibrary.ProcessTools
  * @run testng CompiledVersionTest
  */
 

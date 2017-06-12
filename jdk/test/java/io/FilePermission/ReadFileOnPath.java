@@ -27,6 +27,13 @@
  * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main ReadFileOnPath
  * @summary Still able to read file on the same path
  */
