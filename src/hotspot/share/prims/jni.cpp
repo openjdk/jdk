@@ -2820,7 +2820,7 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   EntryProbe; \
   DT_VOID_RETURN_MARK(Get##Result##ArrayRegion); \
   typeArrayOop src = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-  if (start < 0 || len < 0 || ((unsigned int)start + (unsigned int)len > (unsigned int)src->length())) { \
+  if (start < 0 || len < 0 || (start > src->length() - len)) { \
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
@@ -2870,7 +2870,7 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   EntryProbe; \
   DT_VOID_RETURN_MARK(Set##Result##ArrayRegion); \
   typeArrayOop dst = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-  if (start < 0 || len < 0 || ((unsigned int)start + (unsigned int)len > (unsigned int)dst->length())) { \
+  if (start < 0 || len < 0 || (start > dst->length() - len)) { \
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException()); \
   } else { \
     if (len > 0) { \
@@ -3106,7 +3106,7 @@ JNI_ENTRY(void, jni_GetStringRegion(JNIEnv *env, jstring string, jsize start, js
   DT_VOID_RETURN_MARK(GetStringRegion);
   oop s = JNIHandles::resolve_non_null(string);
   int s_len = java_lang_String::length(s);
-  if (start < 0 || len < 0 || start + len > s_len) {
+  if (start < 0 || len < 0 || start > s_len - len) {
     THROW(vmSymbols::java_lang_StringIndexOutOfBoundsException());
   } else {
     if (len > 0) {
@@ -3132,7 +3132,7 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
   DT_VOID_RETURN_MARK(GetStringUTFRegion);
   oop s = JNIHandles::resolve_non_null(string);
   int s_len = java_lang_String::length(s);
-  if (start < 0 || len < 0 || start + len > s_len) {
+  if (start < 0 || len < 0 || start > s_len - len) {
     THROW(vmSymbols::java_lang_StringIndexOutOfBoundsException());
   } else {
     //%note jni_7
