@@ -31,6 +31,7 @@
  * @modules java.base/java.lang.invoke:open
  *          java.base/java.lang.ref:open
  *          java.management
+ * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFCachingTestCase
