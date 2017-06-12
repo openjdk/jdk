@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,15 +483,6 @@ Java_sun_awt_image_JPEGImageDecoder_initIDs(JNIEnv *env, jclass cls,
                                                   "available", "()I"));
 }
 
-
-/*
- * The Windows Itanium Aug 2002 SDK generates bad code
- * for this routine.  Disable optimization for now.
- */
-#ifdef _M_IA64
-#pragma optimize ("", off)
-#endif
-
 JNIEXPORT void JNICALL
 Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
                                               jobject this,
@@ -745,10 +736,6 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
   RELEASE_ARRAYS(env, &jsrc);
   return;
 }
-#ifdef _M_IA64
-#pragma optimize ("", on)
-#endif
-
 
 /*
  * SOME FINE POINTS:
