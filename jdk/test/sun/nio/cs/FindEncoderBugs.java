@@ -26,6 +26,7 @@
  * @bug 6233345 6381699 6381702 6381705 6381706
  * @summary Encode many char sequences in many ways
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/timeout=1200 FindEncoderBugs
  * @author Martin Buchholz
  * @key randomness

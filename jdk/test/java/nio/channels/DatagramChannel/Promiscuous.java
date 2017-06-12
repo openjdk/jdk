@@ -26,7 +26,9 @@
  * @summary Test for interference when two sockets are bound to the same
  *   port but joined to different multicast groups
  * @library /test/lib
- * @build Promiscuous
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        Promiscuous
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
  * @key randomness

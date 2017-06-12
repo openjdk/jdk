@@ -30,6 +30,8 @@
  *          jdk.compiler
  *          jdk.jartool
  * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng Basic
  */
 

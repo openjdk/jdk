@@ -36,6 +36,7 @@
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
+ * @build jdk.test.lib.RandomFactory
  * @run main/othervm -Dtest.security.protocol=DTLS
  *      -Dtest.mode=norm DTLSSequenceNumberTest
  * @run main/othervm -Dtest.security.protocol=DTLS
