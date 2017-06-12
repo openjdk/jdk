@@ -28,6 +28,12 @@
  *          various bad values fail to launch the VM
  * @requires (os.arch == "x86_64") | (os.arch == "amd64") | (os.arch == "sparcv9")
  * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  *
  * @run main LimitDirectMemoryNegativeTest foo
  * @run main LimitDirectMemoryNegativeTest 10kmt

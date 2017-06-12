@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 /* @test
  * @library /lib/testlibrary /java/lang/invoke/common /test/lib
+ * @build jdk.test.lib.TimeLimitedRunner
  * @compile CatchExceptionTest.java
  * @run main/othervm -esa test.java.lang.invoke.MethodHandles.CatchExceptionTest
  * @key intermittent randomness
