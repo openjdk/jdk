@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.expression.not.allowable.as.annotation.value
+// key: compiler.err.enum.annotation.must.be.enum.constant
 
-enum E { A, B, C }
+enum E {
+    A,
+    B;
+
+    public static final E e = A;
+}
 
 @interface Anno {
     E value();
 }
 
-@Anno(E.valueOf("A"))
+@Anno(E.e)
 class EnumAnnoValueMustBeEnumConstant { }

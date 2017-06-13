@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,7 +345,7 @@ public class MemberEnter extends JCTree.Visitor {
                            Tag.LT, Tag.LE, Tag.GT, Tag.GE, Tag.EQ, Tag.NE,
                            Tag.BITAND, Tag.BITXOR, Tag.BITOR, Tag.AND, Tag.OR);
 
-        private boolean result = true;
+        boolean result = true;
 
         @Override
         public void visitTree(JCTree tree) {
