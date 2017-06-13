@@ -40,17 +40,4 @@ inline void Prefetch::write(void *loc, intx interval) {
   _Prefetch_write(loc, interval);
 }
 
-#ifdef _GNU_SOURCE
-extern "C" {
-  inline void _Prefetch_read (void *loc, intx interval) {
-    __asm__ volatile
-      ("prefetch [%0+%1], 0" : : "r" (loc), "r" (interval) : "memory" );
-  }
-  inline void _Prefetch_write(void *loc, intx interval) {
-    __asm__ volatile
-      ("prefetch [%0+%1], 2" : : "r" (loc), "r" (interval) : "memory" );
-  }
-}
-#endif // _GNU_SOURCE
-
 #endif // OS_CPU_SOLARIS_SPARC_VM_PREFETCH_SOLARIS_SPARC_INLINE_HPP
