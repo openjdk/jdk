@@ -71,6 +71,14 @@ public abstract class PredicatedNodeTest extends NodeTest implements SubContextL
     {
       stream.defaultReadObject();
       m_predicateIndex = -1;
+
+      /**
+       * Initialize to the declared value.
+       * As noted at declaration, this variable is used only for clones for getLastPos,
+       * it should have been excluded from serialization. For compatibility, we'll
+       * keep it as is but initializing to the declared value.
+       */
+      m_predCount = -1;
       resetProximityPositions();
     }
     catch (ClassNotFoundException cnfe)
