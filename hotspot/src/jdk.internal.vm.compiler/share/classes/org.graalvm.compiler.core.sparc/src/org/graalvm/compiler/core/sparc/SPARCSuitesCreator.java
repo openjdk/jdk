@@ -24,7 +24,7 @@ package org.graalvm.compiler.core.sparc;
 
 import java.util.ListIterator;
 
-import org.graalvm.compiler.java.DefaultSuitesProvider;
+import org.graalvm.compiler.java.DefaultSuitesCreator;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
@@ -34,8 +34,9 @@ import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 
-public class SPARCSuitesProvider extends DefaultSuitesProvider {
-    public SPARCSuitesProvider(CompilerConfiguration compilerConfiguration, Plugins plugins) {
+public class SPARCSuitesCreator extends DefaultSuitesCreator {
+
+    public SPARCSuitesCreator(CompilerConfiguration compilerConfiguration, Plugins plugins) {
         super(compilerConfiguration, plugins);
     }
 

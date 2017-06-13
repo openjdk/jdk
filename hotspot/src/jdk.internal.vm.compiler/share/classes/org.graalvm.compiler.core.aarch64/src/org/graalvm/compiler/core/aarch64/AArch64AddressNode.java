@@ -26,7 +26,6 @@ package org.graalvm.compiler.core.aarch64;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
@@ -40,7 +39,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 
 /**
- * Represents an address of the form... TODO.
+ * Represents an AArch64 address in the graph.
  */
 @NodeInfo
 public class AArch64AddressNode extends AddressNode implements LIRLowerable {
@@ -52,7 +51,8 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
     @OptionalInput private ValueNode index;
     private AArch64Address.AddressingMode addressingMode;
 
-    private int displacement;
+    private long displacement;
+    private int scaleFactor;
 
     public AArch64AddressNode(ValueNode base) {
         this(base, null);
@@ -63,6 +63,8 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
         this.base = base;
         this.index = index;
         this.addressingMode = AddressingMode.REGISTER_OFFSET;
+        this.displacement = 0;
+        this.scaleFactor = 1;
     }
 
     @Override
@@ -76,7 +78,6 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
         AllocatableValue indexReference;
         if (addressingMode.equals(AddressingMode.IMMEDIATE_UNSCALED)) {
             indexReference = LIRKind.derivedBaseFromValue(indexValue);
-            throw GraalError.unimplemented();
         } else {
             if (LIRKind.isValue(indexValue.getValueKind())) {
                 indexReference = null;
@@ -86,8 +87,7 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
         }
 
         LIRKind kind = LIRKind.combineDerived(tool.getLIRKind(stamp()), baseReference, indexReference);
-        final boolean scaled = false;
-        gen.setResult(this, new AArch64AddressValue(kind, baseValue, indexValue, displacement, scaled, addressingMode));
+        gen.setResult(this, new AArch64AddressValue(kind, baseValue, indexValue, (int) displacement, scaleFactor, addressingMode));
     }
 
     @Override
@@ -116,16 +116,22 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
         this.index = index;
     }
 
-    public int getDisplacement() {
+    public long getDisplacement() {
         return displacement;
     }
 
-    public void setDisplacement(int displacement) {
+    public void setDisplacement(long displacement, int scaleFactor, AArch64Address.AddressingMode addressingMode) {
         this.displacement = displacement;
+        this.scaleFactor = scaleFactor;
+        this.addressingMode = addressingMode;
     }
 
     @Override
     public long getMaxConstantDisplacement() {
-        return Long.MAX_VALUE;
+        return displacement;
+    }
+
+    public AddressingMode getAddressingMode() {
+        return addressingMode;
     }
 }

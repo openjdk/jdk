@@ -61,6 +61,27 @@ suite = {
   },
 
   "projects" : {
+    # -------------- SDK --------------
+    "org.graalvm.options" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [],
+      "uses" : [],
+      "exports" : [
+        "<package-info>",  # exports all packages containing package-info.java
+      ],
+      "checkstyle" : "org.graalvm.api.word",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,SDK",
+    },
+    "org.graalvm.api.word" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [],
+      "checkstyle" : "org.graalvm.api.word",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,SDK",
+    },
 
     # ------------- Graal -------------
 
@@ -84,7 +105,7 @@ suite = {
 
     "org.graalvm.compiler.options" : {
       "subDir" : "share/classes",
-      "dependencies" : ["JVMCI_SERVICES", "JVMCI_API"],
+      "dependencies" : ["JVMCI_SERVICES", "JVMCI_API", "org.graalvm.util"],
       "sourceDirs" : ["src"],
       "dependencies" : ["org.graalvm.util"],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -592,15 +613,6 @@ suite = {
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "Graal,LIR,SPARC",
-    },
-
-    "org.graalvm.api.word" : {
-      "subDir" : "share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : [],
-      "checkstyle" : "org.graalvm.compiler.graph",
-      "javaCompliance" : "1.8",
-      "workingSets" : "API",
     },
 
     "org.graalvm.compiler.word" : {

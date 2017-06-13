@@ -24,9 +24,13 @@ package org.graalvm.compiler.lir.gen;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.CompilationIdentifier.Verbosity;
+import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.CallingConvention;
 
@@ -43,13 +47,40 @@ public class LIRGenerationResult {
     /**
      * Unique identifier of this compilation.
      */
-    private final CompilationIdentifier compilationId;
+    private CompilationIdentifier compilationId;
+
+    /**
+     * Stores comments about a {@link LIRInstruction} , e.g., which phase created it.
+     */
+    private EconomicMap<LIRInstruction, String> comments;
 
     public LIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, CallingConvention callingConvention) {
         this.lir = lir;
         this.frameMapBuilder = frameMapBuilder;
         this.callingConvention = callingConvention;
         this.compilationId = compilationId;
+    }
+
+    /**
+     * Adds a comment to a {@link LIRInstruction}. Existing comments are replaced.
+     */
+    public final void setComment(LIRInstruction op, String comment) {
+        if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
+            if (comments == null) {
+                comments = EconomicMap.create(Equivalence.IDENTITY);
+            }
+            comments.put(op, comment);
+        }
+    }
+
+    /**
+     * Gets the comment attached to a {@link LIRInstruction}.
+     */
+    public final String getComment(LIRInstruction op) {
+        if (comments == null) {
+            return null;
+        }
+        return comments.get(op);
     }
 
     /**

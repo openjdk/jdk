@@ -36,7 +36,6 @@ import org.graalvm.compiler.core.aarch64.AArch64LIRGenerator;
 import org.graalvm.compiler.core.aarch64.AArch64LIRKindTool;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
@@ -321,8 +320,7 @@ public class AArch64HotSpotLIRGenerator extends AArch64LIRGenerator implements H
         LIRKind wordKind = LIRKind.value(target().arch.getWordKind());
         RegisterValue thread = getProviders().getRegisters().getThreadRegister().asValue(wordKind);
         final int transferSize = value.getValueKind().getPlatformKind().getSizeInBytes();
-        final int scaledDisplacement = offset >> NumUtil.log2Ceil(transferSize);
-        AArch64AddressValue address = new AArch64AddressValue(value.getValueKind(), thread, Value.ILLEGAL, scaledDisplacement, true, AddressingMode.IMMEDIATE_SCALED);
+        AArch64AddressValue address = new AArch64AddressValue(value.getValueKind(), thread, Value.ILLEGAL, offset, transferSize, AddressingMode.IMMEDIATE_SCALED);
         append(new StoreOp((AArch64Kind) value.getPlatformKind(), address, loadReg(value), null));
     }
 

@@ -57,7 +57,11 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
      * This constructor exists for node intrinsics that need a stamp based on {@code accessKind}.
      */
     public RawLoadNode(ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity) {
-        super(TYPE, StampFactory.forKind(accessKind.getStackKind()), object, offset, accessKind, locationIdentity, false);
+        this(object, offset, accessKind, locationIdentity, false);
+    }
+
+    public RawLoadNode(ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity, boolean forceAnyLocation) {
+        super(TYPE, StampFactory.forKind(accessKind.getStackKind()), object, offset, accessKind, locationIdentity, forceAnyLocation);
     }
 
     /**

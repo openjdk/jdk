@@ -115,7 +115,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      */
     @Override
     public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) {
-        String title = id + ": " + String.format(format, args);
+        String title = formatTitle(id, format, args);
         beginGraph(title);
         EconomicSet<Node> noBlockNodes = EconomicSet.create(Equivalence.IDENTITY);
         ScheduleResult schedule = null;

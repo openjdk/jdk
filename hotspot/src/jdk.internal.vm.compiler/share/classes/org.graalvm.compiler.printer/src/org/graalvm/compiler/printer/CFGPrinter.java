@@ -50,6 +50,7 @@ import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.debug.IntervalDumper;
 import org.graalvm.compiler.lir.debug.IntervalDumper.IntervalVisitor;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
@@ -85,6 +86,7 @@ class CFGPrinter extends CompilationPrinter {
     protected ScheduleResult schedule;
     protected ResolvedJavaMethod method;
     protected GlobalLivenessInfo livenessInfo;
+    protected LIRGenerationResult res;
 
     /**
      * Creates a control flow graph printer.
@@ -555,7 +557,7 @@ class CFGPrinter extends CompilationPrinter {
                 out.adjustIndentation(level);
             }
 
-            out.print(" instruction ").print(inst.toString()).print(COLUMN_END);
+            out.print(" instruction ").print(inst.toString(res)).print(COLUMN_END);
             out.println(COLUMN_END);
         }
     }
