@@ -1422,7 +1422,7 @@ public class BytecodeParser implements GraphBuilderContext {
     @Override
     public void handleReplacedInvoke(CallTargetNode callTarget, JavaKind resultType) {
         BytecodeParser intrinsicCallSiteParser = getNonIntrinsicAncestor();
-        boolean withExceptionEdge = intrinsicCallSiteParser == null ? false : intrinsicCallSiteParser.omitInvokeExceptionEdge(null);
+        boolean withExceptionEdge = intrinsicCallSiteParser == null ? !omitInvokeExceptionEdge(null) : !intrinsicCallSiteParser.omitInvokeExceptionEdge(null);
         createNonInlinedInvoke(withExceptionEdge, bci(), callTarget, resultType);
     }
 

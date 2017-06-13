@@ -149,7 +149,7 @@ public class ResolveConstantSnippets implements Snippets {
             args.add("constant", value);
 
             SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, tool, args);
+            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
 
             assert resolveConstantNode.hasNoUsages();
             if (!resolveConstantNode.isDeleted()) {
@@ -187,7 +187,7 @@ public class ResolveConstantSnippets implements Snippets {
             args.add("method", method);
             args.add("klassHint", resolveMethodAndLoadCountersNode.getHub());
             SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, tool, args);
+            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, args);
 
             assert resolveMethodAndLoadCountersNode.hasNoUsages();
             if (!resolveMethodAndLoadCountersNode.isDeleted()) {

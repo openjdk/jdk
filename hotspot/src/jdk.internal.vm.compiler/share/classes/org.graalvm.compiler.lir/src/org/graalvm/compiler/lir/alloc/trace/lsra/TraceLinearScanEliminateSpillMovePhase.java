@@ -65,7 +65,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
                     TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
         boolean shouldEliminateSpillMoves = shouldEliminateSpillMoves(traceBuilderResult, allocator);
-        eliminateSpillMoves(allocator, shouldEliminateSpillMoves, traceBuilderResult);
+        eliminateSpillMoves(allocator, shouldEliminateSpillMoves, traceBuilderResult, lirGenRes);
     }
 
     private static boolean shouldEliminateSpillMoves(TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
@@ -74,7 +74,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
 
     // called once before assignment of register numbers
     @SuppressWarnings("try")
-    private static void eliminateSpillMoves(TraceLinearScan allocator, boolean shouldEliminateSpillMoves, TraceBuilderResult traceBuilderResult) {
+    private static void eliminateSpillMoves(TraceLinearScan allocator, boolean shouldEliminateSpillMoves, TraceBuilderResult traceBuilderResult, LIRGenerationResult res) {
         try (Indent indent = Debug.logAndIndent("Eliminating unnecessary spill moves: Trace%d", traceBuilderResult.getTraceForBlock(allocator.blockAt(0)).getId())) {
             allocator.sortIntervalsBySpillPos();
 
@@ -166,6 +166,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
 
                                             LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
                                             insertionBuffer.append(j + 1, move);
+                                            move.setComment(res, "TraceLSRAEliminateSpillMove: spill def pos");
 
                                             if (Debug.isLogEnabled()) {
                                                 Debug.log("inserting move after definition of interval %d to stack slot %s at opId %d", interval.operandNumber, interval.spillSlot(), opId);

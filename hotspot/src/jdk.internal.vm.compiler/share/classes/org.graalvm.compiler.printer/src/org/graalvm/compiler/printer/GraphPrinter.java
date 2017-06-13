@@ -36,6 +36,7 @@ import org.graalvm.compiler.serviceprovider.JDK9Method;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
@@ -139,6 +140,22 @@ interface GraphPrinter extends Closeable {
                 }
             }
         }
+    }
+
+    default String formatTitle(int id, String format, Object... args) {
+        /*
+         * If an argument is a Class, replace it with the simple name.
+         */
+        Object[] newArgs = new Object[args.length];
+        for (int i = 0; i < newArgs.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof JavaType) {
+                newArgs[i] = ((JavaType) arg).getUnqualifiedName();
+            } else {
+                newArgs[i] = arg;
+            }
+        }
+        return id + ": " + String.format(format, newArgs);
     }
 
     static String truncate(String s) {

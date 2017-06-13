@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,25 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.graalvm.options;
 
-package org.graalvm.compiler.core.aarch64;
+/**
+ * Classifies options in several categories depending on who this option is relevant for.
+ *
+ * @since 1.0
+ */
+public enum OptionCategory {
 
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+    /**
+     * An option common for users to apply.
+     *
+     * @since 1.0
+     */
+    USER,
 
-public class AArch64AddressLowering extends AddressLowering {
+    /**
+     * An option only relevant in corner cases and for fine-tuning.
+     *
+     * @since 1.0
+     */
+    EXPERT,
 
-    @Override
-    public AddressNode lower(ValueNode address) {
-        return lower(address, null);
-    }
-
-    @Override
-    public AddressNode lower(ValueNode base, ValueNode offset) {
-        AArch64AddressNode ret = new AArch64AddressNode(base, offset);
-        // TODO improve
-        return base.graph().unique(ret);
-    }
+    /**
+     * An option only relevant when debugging language or instrument implementations.
+     *
+     * @since 1.0
+     */
+    DEBUG
 
 }

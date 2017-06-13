@@ -277,12 +277,16 @@ public class MultiTypeGuardInlineInfo extends AbstractInlineInfo {
         // do the actual inlining for every invoke
         for (int i = 0; i < numberOfMethods; i++) {
             Invoke invokeForInlining = (Invoke) successors[i].next();
-            canonicalizeNodes.addAll(inline(invokeForInlining, methodAt(i), inlineableElementAt(i), false));
+            canonicalizeNodes.addAll(doInline(i, invokeForInlining));
         }
         if (returnValuePhi != null) {
             canonicalizeNodes.add(returnValuePhi);
         }
         return canonicalizeNodes;
+    }
+
+    protected EconomicSet<Node> doInline(int index, Invoke invokeForInlining) {
+        return inline(invokeForInlining, methodAt(index), inlineableElementAt(index), false);
     }
 
     private int getTypeCount(int concreteMethodIndex) {

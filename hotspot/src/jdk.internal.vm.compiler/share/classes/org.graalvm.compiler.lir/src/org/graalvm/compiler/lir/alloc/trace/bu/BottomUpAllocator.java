@@ -308,6 +308,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         private void insertSpillMoveBefore(AllocatableValue dst, Value src) {
             LIRInstruction move = spillMoveFactory.createMove(dst, src);
             insertInstructionsBefore.add(move);
+            move.setComment(lirGenRes, "BottomUp: spill move before");
             Debug.log("insert before %s", move);
         }
 
@@ -316,6 +317,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             if (!(inst instanceof BlockEndOp)) {
                 LIRInstruction move = spillMoveFactory.createMove(dst, src);
                 insertInstructionsAfter.add(move);
+                move.setComment(lirGenRes, "BottomUp: spill move after");
                 Debug.log("insert after %s", move);
             } else {
                 Debug.log("Block end op. No from %s to %s necessary.", src, dst);
@@ -409,6 +411,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 move = spillMoveFactory.createMove(dest, asVariable(phiOut));
             }
             Debug.log("Inserting load %s", move);
+            move.setComment(lirGenRes, "BottomUp: phi resolution");
             phiResolutionMoves.add(move);
         }
 
