@@ -54,114 +54,6 @@ inline void Atomic::store(jlong store_value, jlong* dest) { *dest = store_value;
 inline void Atomic::store(jlong store_value, volatile jlong* dest) { *dest = store_value; }
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
-#ifdef _GNU_SOURCE
-
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
-  intptr_t rv;
-  __asm__ volatile(
-    "1: \n\t"
-    " ld     [%2], %%o2\n\t"
-    " add    %1, %%o2, %%o3\n\t"
-    " cas    [%2], %%o2, %%o3\n\t"
-    " cmp    %%o2, %%o3\n\t"
-    " bne    1b\n\t"
-    "  nop\n\t"
-    " add    %1, %%o2, %0\n\t"
-    : "=r" (rv)
-    : "r" (add_value), "r" (dest)
-    : "memory", "o2", "o3");
-  return rv;
-}
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  intptr_t rv;
-  __asm__ volatile(
-    "1: \n\t"
-    " ldx    [%2], %%o2\n\t"
-    " add    %0, %%o2, %%o3\n\t"
-    " casx   [%2], %%o2, %%o3\n\t"
-    " cmp    %%o2, %%o3\n\t"
-    " bne    %%xcc, 1b\n\t"
-    "  nop\n\t"
-    " add    %0, %%o2, %0\n\t"
-    : "=r" (rv)
-    : "r" (add_value), "r" (dest)
-    : "memory", "o2", "o3");
-  return rv;
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add_ptr((intptr_t)add_value, (volatile intptr_t*)dest);
-}
-
-
-inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
-  intptr_t rv = exchange_value;
-  __asm__ volatile(
-    " swap   [%2],%1\n\t"
-    : "=r" (rv)
-    : "0" (exchange_value) /* we use same register as for return value */, "r" (dest)
-    : "memory");
-  return rv;
-}
-
-inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
-  intptr_t rv = exchange_value;
-  __asm__ volatile(
-    "1:\n\t"
-    " mov    %1, %%o3\n\t"
-    " ldx    [%2], %%o2\n\t"
-    " casx   [%2], %%o2, %%o3\n\t"
-    " cmp    %%o2, %%o3\n\t"
-    " bne    %%xcc, 1b\n\t"
-    "  nop\n\t"
-    " mov    %%o2, %0\n\t"
-    : "=r" (rv)
-    : "r" (exchange_value), "r" (dest)
-    : "memory", "o2", "o3");
-  return rv;
-}
-
-inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     dest) {
-  return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
-}
-
-
-inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value, cmpxchg_memory_order order) {
-  jint rv;
-  __asm__ volatile(
-    " cas    [%2], %3, %0"
-    : "=r" (rv)
-    : "0" (exchange_value), "r" (dest), "r" (compare_value)
-    : "memory");
-  return rv;
-}
-
-inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-  jlong rv;
-  __asm__ volatile(
-    " casx   [%2], %3, %0"
-    : "=r" (rv)
-    : "0" (exchange_value), "r" (dest), "r" (compare_value)
-    : "memory");
-  return rv;
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
-  intptr_t rv;
-  __asm__ volatile(
-    " casx    [%2], %3, %0"
-    : "=r" (rv)
-    : "0" (exchange_value), "r" (dest), "r" (compare_value)
-    : "memory");
-  return rv;
-}
-
-inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value, cmpxchg_memory_order order) {
-  return (void*)cmpxchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest, (intptr_t)compare_value, order);
-}
-
-#else // _GNU_SOURCE
 
 // This is the interface to the atomic instructions in solaris_sparc.il.
 // It's very messy because we need to support v8 and these instructions
@@ -222,7 +114,5 @@ inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* 
 inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value, cmpxchg_memory_order order) {
   return (void*)cmpxchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest, (intptr_t)compare_value, order);
 }
-
-#endif // _GNU_SOURCE
 
 #endif // OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_HPP
