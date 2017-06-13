@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,6 @@
 # endif
 
 #if defined(LINUX) || defined(_ALLBSD_SOURCE)
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif // __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <signal.h>
 #ifndef __OpenBSD__
