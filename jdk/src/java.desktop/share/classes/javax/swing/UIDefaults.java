@@ -756,9 +756,8 @@ public class UIDefaults extends Hashtable<Object,Object>
      * @see #getUI
      */
     protected void getUIError(String msg) {
-        System.err.println("UIDefaults.getUI() failed: " + msg);
         try {
-            throw new Error();
+            throw new Error(msg);
         }
         catch (Throwable e) {
             e.printStackTrace();
