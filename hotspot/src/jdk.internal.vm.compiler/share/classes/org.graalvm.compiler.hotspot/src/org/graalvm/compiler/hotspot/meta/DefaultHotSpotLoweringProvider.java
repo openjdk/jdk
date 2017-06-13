@@ -364,11 +364,17 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         } else if (n instanceof IdentityHashCodeNode) {
             hashCodeSnippets.lower((IdentityHashCodeNode) n, tool);
         } else if (n instanceof ResolveConstantNode) {
-            resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
+            }
         } else if (n instanceof ResolveMethodAndLoadCountersNode) {
-            resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
+            }
         } else if (n instanceof InitializeKlassNode) {
-            resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
+            }
         } else if (n instanceof ProfileNode) {
             profileSnippets.lower((ProfileNode) n, tool);
         } else {

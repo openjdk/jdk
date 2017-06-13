@@ -145,7 +145,7 @@ public class AArch64Move {
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             Register dst = asRegister(result);
             AArch64Address adr = address.toAddress();
-            masm.loadAddress(dst, adr, address.getPlatformKind().getSizeInBytes());
+            masm.loadAddress(dst, adr, address.getScaleFactor());
         }
     }
 
@@ -241,8 +241,8 @@ public class AArch64Move {
 
         @Override
         public boolean makeNullCheckFor(Value value, LIRFrameState nullCheckState, int implicitNullCheckLimit) {
-            int immediate = addressValue.getImmediate();
-            if (state == null && value.equals(addressValue.getBase()) && addressValue.getOffset().equals(Value.ILLEGAL) && immediate >= 0 && immediate < implicitNullCheckLimit) {
+            int displacement = addressValue.getDisplacement();
+            if (state == null && value.equals(addressValue.getBase()) && addressValue.getOffset().equals(Value.ILLEGAL) && displacement >= 0 && displacement < implicitNullCheckLimit) {
                 state = nullCheckState;
                 return true;
             }

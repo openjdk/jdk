@@ -185,10 +185,12 @@ public class LinearScan {
     protected final Interval intervalEndMarker;
     public final Range rangeEndMarker;
     public final boolean detailedAsserts;
+    private final LIRGenerationResult res;
 
     protected LinearScan(TargetDescription target, LIRGenerationResult res, MoveFactory spillMoveFactory, RegisterAllocationConfig regAllocConfig, AbstractBlockBase<?>[] sortedBlocks,
                     boolean neverSpillConstants) {
         this.ir = res.getLIR();
+        this.res = res;
         this.moveFactory = spillMoveFactory;
         this.frameMapBuilder = res.getFrameMapBuilder();
         this.sortedBlocks = sortedBlocks;
@@ -204,6 +206,10 @@ public class LinearScan {
         this.intervalEndMarker = new Interval(Value.ILLEGAL, Interval.END_MARKER_OPERAND_NUMBER, null, rangeEndMarker);
         this.intervalEndMarker.next = intervalEndMarker;
         this.detailedAsserts = DetailedAsserts.getValue(ir.getOptions());
+    }
+
+    public LIRGenerationResult getLIRGenerationResult() {
+        return res;
     }
 
     public Interval intervalEndMarker() {

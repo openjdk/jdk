@@ -190,13 +190,20 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
 
     @Override
     protected void handleFixedNode(MethodScope methodScope, LoopScope loopScope, int nodeOrderId, FixedNode node) {
-        Node canonical = canonicalizeFixedNode(node);
+        Node canonical = canonicalizeFixedNode(methodScope, node);
         if (canonical != node) {
             handleCanonicalization(loopScope, nodeOrderId, node, canonical);
         }
     }
 
-    private Node canonicalizeFixedNode(FixedNode node) {
+    /**
+     * Canonicalizes the provided node, which was originally a {@link FixedNode} but can already be
+     * canonicalized (and therefore be a non-fixed node).
+     *
+     * @param methodScope The current method.
+     * @param node The node to be canonicalized.
+     */
+    protected Node canonicalizeFixedNode(MethodScope methodScope, Node node) {
         if (node instanceof LoadFieldNode) {
             LoadFieldNode loadFieldNode = (LoadFieldNode) node;
             return loadFieldNode.canonical(canonicalizerTool);

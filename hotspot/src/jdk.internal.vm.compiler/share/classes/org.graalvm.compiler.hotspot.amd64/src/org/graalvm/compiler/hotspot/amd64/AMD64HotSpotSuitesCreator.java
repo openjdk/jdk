@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,40 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.java;
+package org.graalvm.compiler.hotspot.amd64;
 
+import org.graalvm.compiler.core.amd64.AMD64SuitesCreator;
+import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.hotspot.lir.HotSpotZapRegistersPhase;
 import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.Suites;
 
-public class DefaultSuitesProvider extends SuitesProviderBase {
+public class AMD64HotSpotSuitesCreator extends AMD64SuitesCreator {
 
-    private final CompilerConfiguration compilerConfiguration;
-
-    public DefaultSuitesProvider(CompilerConfiguration compilerConfiguration, Plugins plugins) {
-        super();
-        this.defaultGraphBuilderSuite = createGraphBuilderSuite(plugins);
-        this.compilerConfiguration = compilerConfiguration;
-    }
-
-    @Override
-    public Suites createSuites(OptionValues options) {
-        return Suites.createSuites(compilerConfiguration, options);
-    }
-
-    protected PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
-        PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
-        suite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(plugins)));
-        return suite;
+    public AMD64HotSpotSuitesCreator(CompilerConfiguration compilerConfiguration, Plugins plugins) {
+        super(compilerConfiguration, plugins);
     }
 
     @Override
     public LIRSuites createLIRSuites(OptionValues options) {
-        return Suites.createLIRSuites(compilerConfiguration, options);
+        LIRSuites lirSuites = super.createLIRSuites(options);
+        if (GraalOptions.DetailedAsserts.getValue(options)) {
+            lirSuites.getPostAllocationOptimizationStage().appendPhase(new HotSpotZapRegistersPhase());
+        }
+        return lirSuites;
     }
 }

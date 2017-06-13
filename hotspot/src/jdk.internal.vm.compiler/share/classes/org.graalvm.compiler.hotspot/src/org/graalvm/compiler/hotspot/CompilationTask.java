@@ -295,11 +295,13 @@ public class CompilationTask {
         // Log a compilation event.
         EventProvider.CompilationEvent compilationEvent = eventProvider.newCompilationEvent();
 
-        // If there is already compiled code for this method on our level we simply return.
-        // JVMCI compiles are always at the highest compile level, even in non-tiered mode so we
-        // only need to check for that value.
-        if (method.hasCodeAtLevel(entryBCI, config.compilationLevelFullOptimization)) {
-            return null;
+        if (installAsDefault) {
+            // If there is already compiled code for this method on our level we simply return.
+            // JVMCI compiles are always at the highest compile level, even in non-tiered mode so we
+            // only need to check for that value.
+            if (method.hasCodeAtLevel(entryBCI, config.compilationLevelFullOptimization)) {
+                return HotSpotCompilationRequestResult.failure("Already compiled", false);
+            }
         }
 
         RetryableCompilation compilation = new RetryableCompilation(compilationEvent);

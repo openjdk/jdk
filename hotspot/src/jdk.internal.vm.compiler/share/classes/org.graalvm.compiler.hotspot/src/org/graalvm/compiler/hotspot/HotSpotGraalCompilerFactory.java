@@ -128,7 +128,7 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         HotSpotJVMCIRuntime jvmciRuntime = (HotSpotJVMCIRuntime) runtime;
         try (InitTimer t = timer("HotSpotGraalRuntime.<init>")) {
             HotSpotGraalRuntime graalRuntime = new HotSpotGraalRuntime(jvmciRuntime, compilerConfigurationFactory, options);
-            return new HotSpotGraalCompiler(jvmciRuntime, graalRuntime);
+            return new HotSpotGraalCompiler(jvmciRuntime, graalRuntime, graalRuntime.getOptions());
         }
     }
 
