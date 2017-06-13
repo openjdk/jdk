@@ -130,10 +130,12 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             options = initialOptions;
         }
 
-        this.mBean = HotSpotGraalMBean.create();
-
         snippetCounterGroups = GraalOptions.SnippetCounters.getValue(options) ? new ArrayList<>() : null;
         CompilerConfiguration compilerConfiguration = compilerConfigurationFactory.createCompilerConfiguration();
+
+        HotSpotGraalCompiler compiler = new HotSpotGraalCompiler(jvmciRuntime, this, initialOptions);
+        this.mBean = HotSpotGraalMBean.create(compiler);
+
         BackendMap backendMap = compilerConfigurationFactory.createBackendMap();
 
         JVMCIBackend hostJvmciBackend = jvmciRuntime.getHostJVMCIBackend();
@@ -261,12 +263,12 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
     @Override
     public OptionValues getOptions() {
-        return mBean == null ? options : mBean.optionsFor(options, null);
+        return mBean.optionsFor(options, null);
     }
 
     @Override
     public OptionValues getOptions(ResolvedJavaMethod forMethod) {
-        return mBean == null ? options : mBean.optionsFor(options, forMethod);
+        return mBean.optionsFor(options, forMethod);
     }
 
     @Override

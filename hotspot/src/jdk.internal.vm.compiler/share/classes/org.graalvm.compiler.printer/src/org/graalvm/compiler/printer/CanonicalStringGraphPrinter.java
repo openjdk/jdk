@@ -267,7 +267,7 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
                 TTY.println("Dumping string graphs in %s", this.root);
                 this.root = null;
             }
-            String title = id + ": " + String.format(format, args);
+            String title = formatTitle(id, format, args);
             Path filePath = currentDirectory.resolve(escapeFileName(title));
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath.toFile())))) {
                 switch (PrintCanonicalGraphStringFlavor.getValue(options)) {

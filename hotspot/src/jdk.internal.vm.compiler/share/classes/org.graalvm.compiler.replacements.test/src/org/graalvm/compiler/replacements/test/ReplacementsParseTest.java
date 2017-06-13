@@ -68,6 +68,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
     private static final String IN_INTERPRETED_HANDLER_MARKER = "*** in interpreted handler ***";
 
     private InlineInvokePlugin.InlineInfo inlineInvokeDecision;
+    private String inlineInvokeMethodName = null;
 
     @SuppressWarnings("serial")
     static class CustomError extends Error {
@@ -351,12 +352,15 @@ public class ReplacementsParseTest extends ReplacementsTest {
         test(options, "callStringize", Boolean.TRUE);
         String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
         String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
-        for (int i = 0; i < 1000; i++) {
-            // Ensures 'exception seen' bit is set for call to stringize
-            callStringize(THROW_EXCEPTION_MARKER);
-        }
         forceCompileOverride = true;
-        testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringize", THROW_EXCEPTION_MARKER);
+        inlineInvokeDecision = InlineInvokePlugin.InlineInfo.DO_NOT_INLINE_WITH_EXCEPTION;
+        inlineInvokeMethodName = "stringizeId";
+        try {
+            testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringize", THROW_EXCEPTION_MARKER);
+        } finally {
+            inlineInvokeDecision = null;
+            inlineInvokeMethodName = null;
+        }
     }
 
     @Test
@@ -378,14 +382,17 @@ public class ReplacementsParseTest extends ReplacementsTest {
         test(options, "callStringizeId", new TestObject("a string"));
         test(options, "callStringizeId", new TestObject(Boolean.TRUE));
         TestObject exceptionTestObject = new TestObject(THROW_EXCEPTION_MARKER);
-        for (int i = 0; i < 1000; i++) {
-            // Ensures 'exception seen' bit is set for call to stringizeId
-            callStringizeId(exceptionTestObject);
-        }
         String standardReturnValue = IN_INTERPRETED_HANDLER_MARKER;
         String compiledReturnValue = IN_COMPILED_HANDLER_MARKER;
         forceCompileOverride = true;
-        testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringizeId", exceptionTestObject);
+        inlineInvokeDecision = InlineInvokePlugin.InlineInfo.DO_NOT_INLINE_WITH_EXCEPTION;
+        inlineInvokeMethodName = "stringizeId";
+        try {
+            testWithDifferentReturnValues(options, standardReturnValue, compiledReturnValue, "callStringizeId", exceptionTestObject);
+        } finally {
+            inlineInvokeDecision = null;
+            inlineInvokeMethodName = null;
+        }
     }
 
     public static Object callStringize(Object obj) {
@@ -474,7 +481,10 @@ public class ReplacementsParseTest extends ReplacementsTest {
 
     @Override
     protected InlineInvokePlugin.InlineInfo bytecodeParserShouldInlineInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
-        return inlineInvokeDecision;
+        if (inlineInvokeMethodName == null || inlineInvokeMethodName.equals(method.getName())) {
+            return inlineInvokeDecision;
+        }
+        return null;
     }
 
     @Test

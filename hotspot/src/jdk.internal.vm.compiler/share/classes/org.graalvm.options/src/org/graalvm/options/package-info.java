@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,16 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.core.aarch64;
-
-import org.graalvm.compiler.java.DefaultSuitesProvider;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
-
-public class AArch64SuitesProvider extends DefaultSuitesProvider {
-
-    public AArch64SuitesProvider(CompilerConfiguration compilerConfiguration, Plugins plugins) {
-        super(compilerConfiguration, plugins);
-    }
-
-}
+/**
+ * The Graal-SDK options package contains reusable collection classes for options.
+ *
+ * @see org.graalvm.options.OptionDescriptor
+ * @see org.graalvm.options.OptionValues
+ *
+ * @since 1.0
+ */
+package org.graalvm.options;
