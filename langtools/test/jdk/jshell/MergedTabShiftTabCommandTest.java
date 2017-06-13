@@ -44,6 +44,9 @@ import org.testng.annotations.Test;
 public class MergedTabShiftTabCommandTest extends UITesting {
 
     public void testCommand() throws Exception {
+        // set terminal height so that help output won't hit page breaks
+        System.setProperty("test.terminal.height", "1000000");
+
         doRunTest((inputSink, out) -> {
             inputSink.write("1\n");
             waitOutput(out, "\u0005");
