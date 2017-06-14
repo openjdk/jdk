@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159305 8166127
+ * @bug 8159305 8166127 8175860 8176481
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -38,6 +38,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import toolbox.*;
 import toolbox.Task.Expect;
@@ -89,6 +90,29 @@ public class Modules extends ModuleTestBase {
         checkModulesSpecified("m1", "m2");
         checkPackagesIncluded("m1pub", "m2pub");
         checkTypesIncluded("m1pub.A", "m2pub.A");
+
+    }
+
+    @Test
+    public void testMissingModuleWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = src.resolve("m1");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("The first module.")
+                .exports("m1pub")
+                .requires("m2")
+                .classes("package m1pub; /** Class A */ public class A {}")
+                .classes("package m1pro; /** Class B */ public class B {}")
+                .write(src);
+
+        Path javafile = Paths.get(mod.toString(), "m1pub/A.java");
+
+        execNegativeTask("--source-path", mod.toString(),
+                javafile.toString());
+
+        assertMessagePresent("error: cannot access module-info");
+        assertMessageNotPresent("error - fatal error encountered");
 
     }
 
@@ -150,7 +174,7 @@ public class Modules extends ModuleTestBase {
         // no module path
         execNegativeTask("--module-source-path", src.toString(),
                 "--module", "m2");
-        assertErrorPresent("error: module not found: m1");
+        assertMessagePresent("error: module not found: m1");
     }
 
     @Test
@@ -189,7 +213,7 @@ public class Modules extends ModuleTestBase {
         execNegativeTask("--module-source-path", src.toString(),
                 "--module-path", modulePath.toString(),
                 "--module", "m2");
-        assertErrorPresent("error: cannot find symbol");
+        assertMessagePresent("error: cannot find symbol");
 
         // dependency from module path
         ModuleBuilder mb3 = new ModuleBuilder(tb, "m3");
@@ -202,7 +226,7 @@ public class Modules extends ModuleTestBase {
                 "--module-path", modulePath.toString(),
                 "--upgrade-module-path", upgradePath.toString(),
                 "--module", "m3");
-        assertErrorPresent("Z.java:1: error: cannot find symbol");
+        assertMessagePresent("Z.java:1: error: cannot find symbol");
     }
 
     @Test
@@ -268,7 +292,7 @@ public class Modules extends ModuleTestBase {
                 "--module-path", modulePath.toString(),
                 "--limit-modules", "java.base",
                 "--module", "m2");
-        assertErrorPresent("error: module not found: m1");
+        assertMessagePresent("error: module not found: m1");
     }
 
     @Test
@@ -290,38 +314,6 @@ public class Modules extends ModuleTestBase {
         execTask("--module-source-path", src.toString(),
                 "--module-path", modulePath.toString(),
                 "--add-exports", "m1/pkg1=m2",
-                "--module", "m2");
-        checkModulesSpecified("m2");
-        checkPackagesIncluded("pkg2");
-        checkMembersSelected("pkg2.B.f");
-    }
-
-    @Test
-    public void testPatchModuleOption(Path base) throws Exception {
-        Path src = base.resolve("src");
-        Path modulePath = base.resolve("modules");
-        Path patchPath = base.resolve("patch");
-
-        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
-        mb1.comment("Module on module path.")
-                .exports("pkg1")
-                .classes("package pkg1; /** Class A */ public class A { }")
-                .build(modulePath);
-
-        tb.writeJavaFiles(patchPath, "package pkg1; /** Class A */ public class A { public static int k; }");
-        new JavacTask(tb)
-                .files(patchPath.resolve("pkg1/A.java"))
-                .run();
-
-        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
-        mb2.comment("The second module.")
-                .exports("pkg2")
-                .requires("m1")
-                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public int f = pkg1.A.k; }")
-                .write(src);
-        execTask("--module-source-path", src.toString(),
-                "--patch-module", "m1=" + patchPath.toString(),
-                "--module-path", modulePath.toString(),
                 "--module", "m2");
         checkModulesSpecified("m2");
         checkPackagesIncluded("pkg2");
@@ -428,6 +420,7 @@ public class Modules extends ModuleTestBase {
         checkPackagesIncluded("p");
         checkTypesIncluded("p.Main");
         checkPackagesNotIncluded(".*open.*");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -449,9 +442,46 @@ public class Modules extends ModuleTestBase {
                 "--expand-requires", "transitive");
 
         checkModulesSpecified("M", "N", "O");
+        checkModulesNotSpecified("java.base");
         checkModulesIncluded("M", "N", "O");
+        checkModulesNotIncluded("java.base");
         checkPackagesIncluded("p", "openN", "openO");
         checkTypesIncluded("p.Main", "openN.N", "openO.O");
+        assertMessageNotPresent("warning");
+    }
+
+    @Test
+    public void testExpandRequiresTransitiveWithMandated(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        createAuxiliaryModules(src);
+
+        Path patchSrc = Paths.get(src.toString(), "patch");
+
+        new ModuleBuilder(tb, "M")
+                .comment("The M module.")
+                .requiresTransitive("N", src)
+                .requires("L", src)
+                .exports("p")
+                .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
+                .write(src);
+
+        // build the patching module
+        tb.writeJavaFiles(patchSrc, "package pkg1;\n" +
+                "/** Class A */ public class A extends java.util.ArrayList { }");
+        tb.writeJavaFiles(patchSrc, "package pkg1;\n"
+                + "/** Class B */ public class B { }");
+
+        execTask("--module-source-path", src.toString(),
+                "--patch-module", "java.base=" + patchSrc.toString(),
+                "--module", "M",
+                "--expand-requires", "transitive");
+
+        checkModulesSpecified("java.base", "M", "N", "O");
+        checkModulesIncluded("java.base", "M", "N", "O");
+        checkPackagesIncluded("p", "openN", "openO");
+        checkTypesIncluded("p.Main", "openN.N", "openO.O");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -473,13 +503,14 @@ public class Modules extends ModuleTestBase {
                 "--module", "M",
                 "--expand-requires", "all");
 
-        checkModulesSpecified("M", "java.base", "N", "L", "O");
-        checkModulesIncluded("M", "java.base", "N", "L", "O");
+        checkModulesSpecified("M", "N", "L", "O");
+        checkModulesIncluded("M", "N", "L", "O");
         checkModulesNotIncluded("P", "J", "Q");
         checkPackagesIncluded("p", "openN", "openL", "openO");
         checkPackagesNotIncluded(".*openP.*", ".*openJ.*");
         checkTypesIncluded("p.Main", "openN.N", "openL.L", "openO.O");
         checkTypesNotIncluded(".*openP.*", ".*openJ.*");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -501,7 +532,7 @@ public class Modules extends ModuleTestBase {
                 "--module", "MIA",
                 "--expand-requires", "all");
 
-        assertErrorPresent("javadoc: error - module MIA not found.");
+        assertMessagePresent("javadoc: error - module MIA not found.");
     }
 
     @Test
@@ -523,7 +554,53 @@ public class Modules extends ModuleTestBase {
                 "--module", "M,N,L,MIA,O,P",
                 "--expand-requires", "all");
 
-        assertErrorPresent("javadoc: error - module MIA not found");
+        assertMessagePresent("javadoc: error - module MIA not found");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execTask("--source-path", mod.toString(),
+                 "--module", "m1");
+        checkModulesSpecified("m1");
+        checkPackagesIncluded("p");
+        checkTypesIncluded("p.C");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithMissingModuleInSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execNegativeTask("--source-path", mod.toString(),
+                 "--module", "m2");
+        assertMessagePresent("source path does not contain module m2");
+    }
+
+    @Test
+    public void testMultipleModuleOptionWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execNegativeTask("--source-path", mod.toString(),
+                 "--module", "m1,m2,m3");
+        assertMessagePresent("cannot use source path for multiple modules m1, m2, m3");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithNoModuleOnSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod1 = Paths.get(src.toString(), "m1");
+        execNegativeTask("--source-path", mod1.toString(),
+                 "--module", "m1");
+        assertMessagePresent("module m1 not found on source path");
+    }
+
+    Path createSimpleModule(Path src, String mname) throws IOException {
+        Path mpath = Paths.get(src.toString(), mname);
+        tb.writeJavaFiles(mpath,
+                "module " + mname + " { exports p; }",
+                "package p; public class C { }");
+        return mpath;
     }
 
     void createAuxiliaryModules(Path src) throws IOException {
@@ -538,7 +615,7 @@ public class Modules extends ModuleTestBase {
         new ModuleBuilder(tb, "L")
                 .comment("The L module.")
                 .exports("openL")
-                . requiresTransitive("P")
+                .requiresTransitive("P")
                 .classes("package openL; /** Class L open */ public class L { }")
                 .classes("package closedL;  /** Class L closed */ public class L { }")
                 .write(src);
@@ -560,7 +637,7 @@ public class Modules extends ModuleTestBase {
                 .write(src);
 
         new ModuleBuilder(tb, "P")
-                .comment("The O module.")
+                .comment("The P module.")
                 .exports("openP")
                 .requires("J")
                 .classes("package openP; /** Class O open. */ public class O { openJ.J j; }")

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class $1 {
       }
       System.out.println("a2: done");
     }
-  
+
     public void a3() throws Exception {
       int a3local = 3;
       String a3string = "a3";
@@ -105,7 +105,7 @@ mysetup()
 
     for ii in . $TESTSRC $TESTSRC/.. ; do
         if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
+            . $ii/ShellScaffold.sh
             break
         fi
     done

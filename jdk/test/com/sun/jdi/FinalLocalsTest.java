@@ -22,18 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4326648 4768329
- *  @summary Test to verify that table entries are generated for all final
- *           locals when a class is built for debug, even if they could be
- *           inlined otherwise.
+ * @test
+ * @bug 4326648 4768329
+ * @summary Test to verify that table entries are generated for all final
+ *          locals when a class is built for debug, even if they could be
+ *          inlined otherwise.
+ * @author Tim Bell
  *
- *  @author Tim Bell
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g FinalLocalsTest.java
- *  @run driver FinalLocalsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g FinalLocalsTest.java
+ * @run driver FinalLocalsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

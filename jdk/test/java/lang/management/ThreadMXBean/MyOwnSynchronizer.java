@@ -28,7 +28,6 @@
  *          and getThreadInfo of customized JSR-166 synchronizers.
  * @author  Mandy Chung
  *
- * @modules java.management
  * @build Barrier
  * @build ThreadDump
  * @run main/othervm MyOwnSynchronizer

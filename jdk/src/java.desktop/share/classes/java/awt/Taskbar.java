@@ -274,6 +274,10 @@ public class Taskbar {
     /**
      * Requests user attention to the specified window.
      *
+     * Has no effect if a window representation is not displayable in
+     * the task area. Whether it is displayable is dependent on all
+     * of window type, platform, and implementation.
+     *
      * @param w window
      * @throws SecurityException if a security manager exists and it denies the
      * {@code RuntimePermission("canProcessApplicationEvents")} permission.
@@ -375,6 +379,10 @@ public class Taskbar {
      * for the specified window.
      * It may be disabled by system settings.
      *
+     * Has no effect if a window representation is not displayable in
+     * the task area. Whether it is displayable is dependent on all
+     * of window type, platform, and implementation.
+     *
      * @param w window to update
      * @param badge image to affix to the icon
      * @throws SecurityException if a security manager exists and it denies the
@@ -409,6 +417,11 @@ public class Taskbar {
     /**
      * Displays a determinate progress bar in the task area for the specified
      * window.
+     *
+     * Has no effect if a window representation is not displayable in
+     * the task area. Whether it is displayable is dependent on all
+     * of window type, platform, and implementation.
+     *
      * <br>
      * The visual behavior is platform and {@link State} dependent.
      * <br>
@@ -437,6 +450,10 @@ public class Taskbar {
 
     /**
      * Sets a progress state for a specified window.
+     *
+     * Has no effect if a window representation is not displayable in
+     * the task area. Whether it is displayable is dependent on all
+     * of window type, platform, and implementation.
      * <br>
      * Each state displays a progress in a platform-dependent way.
      * <br>

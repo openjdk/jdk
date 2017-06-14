@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,46 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @library /lib/testlibrary /lib/testlibrary/jsr292
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @compile MethodHandlesTest.java remote/RemoteExample.java
- * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -esa test.java.lang.invoke.MethodHandlesTest
+ * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:-VerifyDependencies
+ *                                 -esa
+ *                                 test.java.lang.invoke.MethodHandlesTest
  */
 
 package test.java.lang.invoke;
 
-import test.java.lang.invoke.remote.RemoteExample;
-import java.lang.invoke.*;
-import static java.lang.invoke.MethodType.methodType;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.*;
-import java.util.*;
 import org.junit.*;
-import static org.junit.Assert.*;
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
+import test.java.lang.invoke.remote.RemoteExample;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.WrongMethodTypeException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static java.lang.invoke.MethodType.methodType;
+import static org.junit.Assert.*;
 
 /**
  *
