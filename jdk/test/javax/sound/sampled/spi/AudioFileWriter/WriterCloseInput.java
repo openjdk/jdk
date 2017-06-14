@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -89,7 +92,7 @@ public class WriterCloseInput {
             if (isFile) {
                 File f = File.createTempFile("WriterCloseInput" + testTotal, "tmp");
                 AudioSystem.write(inStream, fileType, f);
-                f.delete();
+                Files.delete(Paths.get(f.getAbsolutePath()));
             } else {
                 OutputStream outStream = new NullOutputStream();
                 AudioSystem.write(inStream, fileType, outStream);

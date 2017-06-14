@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ final class Receiver {
     private final Frame.Reader reader = new Frame.Reader();
     private final RawChannel.RawEvent event = createHandler();
     private final AtomicLong demand = new AtomicLong();
-    private final CooperativeHandler receiveHandler =
-              new CooperativeHandler(this::tryDeliver);
+    private final CooperativeHandler handler =
+              new CooperativeHandler(this::pushContinuously);
     /*
      * Used to ensure registering the channel event at most once (i.e. to avoid
      * multiple registrations).
@@ -72,8 +72,8 @@ final class Receiver {
         this.channel = channel;
         this.data = channel.initialByteBuffer();
         this.frameConsumer = new FrameConsumer(this.messageConsumer);
-        // To ensure the initial `data` will be read correctly (happens-before)
-        // after readable.get()
+        // To ensure the initial non-final `data` will be read correctly
+        // (happens-before) by reader after executing readable.get()
         readable.set(true);
     }
 
@@ -88,7 +88,7 @@ final class Receiver {
             @Override
             public void handle() {
                 readable.set(true);
-                receiveHandler.startOrContinue();
+                handler.handle();
             }
         };
     }
@@ -98,7 +98,7 @@ final class Receiver {
             throw new IllegalArgumentException("Negative: " + n);
         }
         demand.accumulateAndGet(n, (p, i) -> p + i < 0 ? Long.MAX_VALUE : p + i);
-        receiveHandler.startOrContinue();
+        handler.handle();
     }
 
     void acknowledge() {
@@ -113,41 +113,21 @@ final class Receiver {
      * regardless of the current demand.
      */
     void close() {
-        receiveHandler.stop();
+        handler.stop();
     }
 
-    private void tryDeliver() {
-        if (readable.get() && demand.get() > 0) {
-            deliverAtMostOne();
+    private void pushContinuously() {
+        while (readable.get() && demand.get() > 0 && !handler.isStopped()) {
+            pushOnce();
         }
     }
 
-    private void deliverAtMostOne() {
-        if (data == null) {
-            try {
-                data = channel.read();
-            } catch (IOException e) {
-                readable.set(false);
-                messageConsumer.onError(e);
-                return;
-            }
-            if (data == null || !data.hasRemaining()) {
-                readable.set(false);
-                if (!data.hasRemaining()) {
-                    try {
-                        channel.registerEvent(event);
-                    } catch (IOException e) {
-                        messageConsumer.onError(e);
-                        return;
-                    }
-                } else if (data == null) {
-                    messageConsumer.onComplete();
-                }
-                return;
-            }
+    private void pushOnce() {
+        if (data == null && !readData()) {
+            return;
         }
         try {
-            reader.readFrame(data, frameConsumer);
+            reader.readFrame(data, frameConsumer); // Pushing frame parts to the consumer
         } catch (FailWebSocketException e) {
             messageConsumer.onError(e);
             return;
@@ -155,5 +135,29 @@ final class Receiver {
         if (!data.hasRemaining()) {
             data = null;
         }
+    }
+
+    private boolean readData() {
+        try {
+            data = channel.read();
+        } catch (IOException e) {
+            messageConsumer.onError(e);
+            return false;
+        }
+        if (data == null) { // EOF
+            messageConsumer.onComplete();
+            return false;
+        } else if (!data.hasRemaining()) { // No data in the socket at the moment
+            data = null;
+            readable.set(false);
+            try {
+                channel.registerEvent(event);
+            } catch (IOException e) {
+                messageConsumer.onError(e);
+            }
+            return false;
+        }
+        assert data.hasRemaining();
+        return true;
     }
 }

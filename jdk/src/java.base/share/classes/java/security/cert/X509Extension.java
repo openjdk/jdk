@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,10 +152,14 @@ public interface X509Extension {
      * by periods.
      *
      * <p>For example:<br>
-     * <table border=groove summary="Examples of OIDs and extension names">
+     * <table class="plain">
+     * <caption style="display:none">Examples of OIDs and extension names</caption>
+     * <thead>
      * <tr>
      * <th>OID <em>(Object Identifier)</em></th>
      * <th>Extension Name</th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td>2.5.29.14</td>
      * <td>SubjectKeyIdentifier</td></tr>
      * <tr><td>2.5.29.15</td>
@@ -176,6 +180,7 @@ public interface X509Extension {
      * <td>AuthorityKeyIdentifier</td></tr>
      * <tr><td>2.5.29.36</td>
      * <td>PolicyConstraints</td></tr>
+     * </tbody>
      * </table>
      *
      * @param oid the Object Identifier value for the extension.

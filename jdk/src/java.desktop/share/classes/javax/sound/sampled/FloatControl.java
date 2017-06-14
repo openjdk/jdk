@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,8 +361,8 @@ public abstract class FloatControl extends Control {
          * loudness is unaffected. Note that gain measures dB, not amplitude.
          * The relationship between a gain in decibels and the corresponding
          * linear amplitude multiplier is:
-         *
-         * <CENTER>{@code linearScalar = pow(10.0, gainDB/20.0)}</CENTER>
+         * <p style="text-align:center">
+         * {@code linearScalar = pow(10.0, gainDB/20.0)}
          * <p>
          * The {@code FloatControl} class has methods to impose a maximum and
          * minimum allowable value for gain. However, because an audio signal
@@ -386,7 +386,7 @@ public abstract class FloatControl extends Control {
          * @see #REVERB_RETURN
          * @see #VOLUME
          */
-        public static final Type MASTER_GAIN            = new Type("Master Gain");
+        public static final Type MASTER_GAIN = new Type("Master Gain");
 
         /**
          * Represents a control for the auxiliary send gain on a line.
@@ -394,7 +394,7 @@ public abstract class FloatControl extends Control {
          * @see #MASTER_GAIN
          * @see #AUX_RETURN
          */
-        public static final Type AUX_SEND                       = new Type("AUX Send");
+        public static final Type AUX_SEND = new Type("AUX Send");
 
         /**
          * Represents a control for the auxiliary return gain on a line.
@@ -402,7 +402,7 @@ public abstract class FloatControl extends Control {
          * @see #MASTER_GAIN
          * @see #AUX_SEND
          */
-        public static final Type AUX_RETURN                     = new Type("AUX Return");
+        public static final Type AUX_RETURN = new Type("AUX Return");
 
         /**
          * Represents a control for the pre-reverb gain on a line. This control
@@ -413,7 +413,7 @@ public abstract class FloatControl extends Control {
          * @see #REVERB_RETURN
          * @see EnumControl.Type#REVERB
          */
-        public static final Type REVERB_SEND            = new Type("Reverb Send");
+        public static final Type REVERB_SEND = new Type("Reverb Send");
 
         /**
          * Represents a control for the post-reverb gain on a line. This control
@@ -423,7 +423,7 @@ public abstract class FloatControl extends Control {
          * @see #MASTER_GAIN
          * @see #REVERB_SEND
          */
-        public static final Type REVERB_RETURN          = new Type("Reverb Return");
+        public static final Type REVERB_RETURN = new Type("Reverb Return");
 
         /**
          * Represents a control for the volume on a line.
@@ -431,7 +431,7 @@ public abstract class FloatControl extends Control {
         /*
          * $$kk: 08.30.99: ISSUE: what units?  linear or dB?
          */
-        public static final Type VOLUME                         = new Type("Volume");
+        public static final Type VOLUME = new Type("Volume");
 
         /**
          * Represents a control for the relative pan (left-right positioning) of
@@ -442,7 +442,7 @@ public abstract class FloatControl extends Control {
          *
          * @see #BALANCE
          */
-        public static final Type PAN                            = new Type("Pan");
+        public static final Type PAN = new Type("Pan");
 
         /**
          * Represents a control for the relative balance of a stereo signal
@@ -452,7 +452,7 @@ public abstract class FloatControl extends Control {
          *
          * @see #PAN
          */
-        public static final Type BALANCE                        = new Type("Balance");
+        public static final Type BALANCE = new Type("Balance");
 
         /**
          * Represents a control that changes the sample rate of audio playback.
@@ -470,7 +470,7 @@ public abstract class FloatControl extends Control {
          * doubling the sample rate has the effect of doubling the frequencies
          * in the sound's spectrum, which raises the pitch by an octave.
          */
-        public static final Type SAMPLE_RATE            = new Type("Sample Rate");
+        public static final Type SAMPLE_RATE = new Type("Sample Rate");
 
         /**
          * Constructs a new float control type.

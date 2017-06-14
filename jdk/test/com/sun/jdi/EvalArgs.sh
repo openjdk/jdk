@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #  @test
 #  @bug 4663146
-#  @summary Arguments match no method error 
+#  @summary Arguments match no method error
 #  @author Jim Holmlund/Suvasis
 #
 #  @run shell/timeout=300 EvalArgs.sh
@@ -72,13 +72,13 @@ public class $classname {
         System.out.println( ffjj1(myjj1));
         System.out.println( ffjj1(myjj2));
 
-        System.out.println("$classname.ffoverload($classname.jjboolean) = " + 
+        System.out.println("$classname.ffoverload($classname.jjboolean) = " +
                             $classname.ffoverload($classname.jjboolean));
-        System.out.println("$classname.ffoverload($classname.jjbyte) = " + 
+        System.out.println("$classname.ffoverload($classname.jjbyte) = " +
                             $classname.ffoverload($classname.jjbyte));
-        System.out.println("$classname.ffoverload($classname.jjchar) = " + 
+        System.out.println("$classname.ffoverload($classname.jjchar) = " +
                             $classname.ffoverload($classname.jjchar));
-        System.out.println("$classname.ffoverload($classname.jjdouble) = " + 
+        System.out.println("$classname.ffoverload($classname.jjdouble) = " +
                             $classname.ffoverload($classname.jjdouble));
 
 
@@ -94,11 +94,11 @@ public class $classname {
     public static String ffjj1(jj1 arg) {
         return arg.me;
     }
-    
+
     public static String ffjj2(jj2 arg) {
         return arg.me;
     }
-    
+
     static String ffboolean(boolean p1) {
         return "ffbool: p1 = " + p1;
     }
@@ -106,31 +106,31 @@ public class $classname {
     static String ffbyte(byte p1) {
         return "ffbyte: p1 = " + p1;
     }
-        
+
     static String ffchar(char p1) {
         return "ffchar: p1 = " + p1;
     }
-        
+
     static String ffdouble(double p1) {
         return "ffdouble: p1 = " + p1;
     }
-        
+
     static String fffloat(float p1) {
         return "fffloat: p1 = " + p1;
     }
-        
+
     static String ffint(int p1) {
         return "ffint: p1 = " + p1;
     }
-        
+
     static String fflong(long p1) {
         return "fflong: p1 = " + p1;
     }
-        
+
     static String ffshort(short p1) {
         return "ffshort: p1 = " + p1;
     }
-        
+
     static String ffintArray(int[] p1) {
         return "ffintArray: p1 = " + p1;
     }
@@ -139,15 +139,15 @@ public class $classname {
     public static String ffoverload(jj1 arg) {
         return arg.me;
     }
-    
+
     static String ffoverload(boolean p1) {
         return "ffoverload: boolean p1 = " + p1;
     }
-/***        
+/***
     static String ffoverload(byte p1) {
         return "ffoverload: byte p1 = " + p1;
     }
-***/        
+***/
     static String ffoverload(char p1) {
         return "ffoverload: char p1 = " + p1;
     }
@@ -159,11 +159,11 @@ public class $classname {
     static String ffoverload(float p1) {
         return "ffoverload: float p1 = " + p1;
     }
-/***        
+/***
     static String ffoverload(int p1) {
         return "ffoverload: int p1 = " + p1;
     }
-***/        
+***/
     static String ffoverload(long p1) {
         return "ffoverload: long p1 = " + p1;
     }
@@ -171,7 +171,7 @@ public class $classname {
     static String ffoverload(short p1) {
         return "ffoverload: short p1 = " + p1;
     }
-      
+
     static String ffoverload(int[] p1) {
         return "ffoverload: int array p1 = " + p1;
     }
@@ -184,7 +184,7 @@ public class $classname {
     public String toString() {
         return me;
     }
-    
+
   }
 
   static class jj2 extends jj1 {
@@ -227,7 +227,7 @@ dojdbCmds()
     # Provide a visual break in the output
     cmd print 1
 
-    # Verify mixing primitive types works ok 
+    # Verify mixing primitive types works ok
     # These should work even though the arg types are
     # not the same because there is only one
     # method with each name.
@@ -302,7 +302,7 @@ mysetup()
 
     for ii in . $TESTSRC $TESTSRC/.. ; do
         if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
+            . $ii/ShellScaffold.sh
             break
         fi
     done

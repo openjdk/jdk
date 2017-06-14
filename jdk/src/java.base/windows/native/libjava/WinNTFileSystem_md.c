@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,7 @@ Java_java_io_WinNTFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
                                                  jobject file)
 {
     jlong rv = 0;
-    LARGE_INTEGER modTime;
+    ULARGE_INTEGER modTime;
     FILETIME t;
     HANDLE h;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
@@ -784,7 +784,7 @@ Java_java_io_WinNTFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
                     FILE_FLAG_BACKUP_SEMANTICS,
                     0);
     if (h != INVALID_HANDLE_VALUE) {
-        LARGE_INTEGER modTime;
+        ULARGE_INTEGER modTime;
         FILETIME t;
         modTime.QuadPart = (time + 11644473600000L) * 10000L;
         t.dwLowDateTime = (DWORD)modTime.LowPart;

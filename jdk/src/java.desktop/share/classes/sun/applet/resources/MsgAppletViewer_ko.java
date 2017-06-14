@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class MsgAppletViewer_ko extends ListResourceBundle {
             {"appletpanel.fileexception", "\uB85C\uB4DC \uC911 {0} \uC608\uC678\uC0AC\uD56D \uBC1C\uC0DD: {1}"},
             {"appletpanel.filedeath", "\uB85C\uB4DC \uC911 {0}\uC774(\uAC00) \uC885\uB8CC\uB428: {1}"},
             {"appletpanel.fileerror", "\uB85C\uB4DC \uC911 {0} \uC624\uB958 \uBC1C\uC0DD: {1}"},
-            {"appletpanel.badattribute.exception", "HTML \uAD6C\uBB38 \uBD84\uC11D \uC911: width/height \uC18D\uC131\uC5D0 \uB300\uD55C \uAC12\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+            {"appletpanel.badattribute.exception", "HTML \uAD6C\uBB38\uBD84\uC11D \uC911: width/height \uC18D\uC131\uC5D0 \uB300\uD55C \uAC12\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
             {"appletillegalargumentexception.objectinputstream", "AppletObjectInputStream\uC5D0 \uB110\uC774 \uC544\uB2CC \uB85C\uB354\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."},
             {"appletprops.title", "AppletViewer \uC18D\uC131"},
             {"appletprops.label.http.server", "HTTP \uD504\uB85D\uC2DC \uC11C\uBC84:"},

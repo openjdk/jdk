@@ -27,7 +27,7 @@
  * @summary Ensure that preRegister etc are called, but not when wrapped
  * by the class StandardMBean
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MXBeanPreRegisterTest
  * @run build MXBeanPreRegisterTest
  * @run main MXBeanPreRegisterTest
