@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,17 +61,21 @@ import java.util.function.Function;
  * security framework. Services of this type cannot be added, removed,
  * or modified by applications.
  * The following attributes are automatically placed in each Provider object:
- * <table cellspacing=4>
+ * <table class="plain">
  * <caption><b>Attributes Automatically Placed in a Provider Object</b></caption>
+ * <thead>
  * <tr><th>Name</th><th>Value</th>
+ * </thead>
+ * <tbody>
  * <tr><td>{@code Provider.id name}</td>
-  *    <td>{@code String.valueOf(provider.getName())}</td>
+ *     <td>{@code String.valueOf(provider.getName())}</td>
  * <tr><td>{@code Provider.id version}</td>
  *     <td>{@code String.valueOf(provider.getVersionStr())}</td>
  * <tr><td>{@code Provider.id info}</td>
-       <td>{@code String.valueOf(provider.getInfo())}</td>
+ *     <td>{@code String.valueOf(provider.getInfo())}</td>
  * <tr><td>{@code Provider.id className}</td>
  *     <td>{@code provider.getClass().getName()}</td>
+ * </tbody>
  * </table>
  *
  * <p>Each provider has a name and a version string. A provider normally

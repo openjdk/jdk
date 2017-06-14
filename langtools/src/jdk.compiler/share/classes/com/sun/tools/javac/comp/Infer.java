@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
+import com.sun.tools.javac.code.Types.TypeMapping;
+import com.sun.tools.javac.comp.Attr.CheckMode;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -61,9 +63,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
-
-import com.sun.tools.javac.main.Option;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -192,28 +191,29 @@ public class Infer {
                 doIncorporation(inferenceContext, warn);
                 //we are inside method attribution - just return a partially inferred type
                 return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
-            } else if (allowGraphInference &&
-                    resultInfo != null &&
-                    !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+            } else if (allowGraphInference && resultInfo != null) {
+
                 //inject return constraints earlier
                 doIncorporation(inferenceContext, warn); //propagation
 
-                boolean shouldPropagate = shouldPropagate(mt.getReturnType(), resultInfo, inferenceContext);
+                if (!warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                    boolean shouldPropagate = shouldPropagate(mt.getReturnType(), resultInfo, inferenceContext);
 
-                InferenceContext minContext = shouldPropagate ?
-                        inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
-                        inferenceContext;
+                    InferenceContext minContext = shouldPropagate ?
+                            inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
+                            inferenceContext;
 
-                Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        mt, minContext);
-                mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
+                    Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
+                            mt, minContext);
+                    mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
 
-                //propagate outwards if needed
-                if (shouldPropagate) {
-                    //propagate inference context outwards and exit
-                    minContext.dupTo(resultInfo.checkContext.inferenceContext());
-                    deferredAttrContext.complete();
-                    return mt;
+                    //propagate outwards if needed
+                    if (shouldPropagate) {
+                        //propagate inference context outwards and exit
+                        minContext.dupTo(resultInfo.checkContext.inferenceContext());
+                        deferredAttrContext.complete();
+                        return mt;
+                    }
                 }
             }
 
@@ -319,7 +319,8 @@ public class Infer {
                  *  need to use it several times: with several targets.
                  */
                 saved_undet = inferenceContext.save();
-                if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                boolean unchecked = warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED);
+                if (!unchecked) {
                     boolean shouldPropagate = shouldPropagate(getReturnType(), resultInfo, inferenceContext);
 
                     InferenceContext minContext = shouldPropagate ?
@@ -338,7 +339,14 @@ public class Infer {
                     }
                 }
                 inferenceContext.solve(noWarnings);
-                return inferenceContext.asInstType(this).getReturnType();
+                Type ret = inferenceContext.asInstType(this).getReturnType();
+                if (unchecked) {
+                    //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
+                    //return type _after_ resolution, and check against target
+                    ret = types.erasure(ret);
+                    resultInfo.check(env.tree, ret);
+                }
+                return ret;
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
@@ -412,7 +420,7 @@ public class Infer {
             }
         } else if (rsInfoInfContext.free(resultInfo.pt)) {
             //propagation - cache captured vars
-            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, false));
+            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, !resultInfo.checkMode.updateTreeType()));
         }
         Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
@@ -502,7 +510,7 @@ public class Infer {
         inferenceContext.solve(List.of(from.qtype), new Warner());
         inferenceContext.notifyChange();
         Type capturedType = resultInfo.checkContext.inferenceContext()
-                .cachedCapture(tree, from.getInst(), false);
+                .cachedCapture(tree, from.getInst(), !resultInfo.checkMode.updateTreeType());
         if (types.isConvertible(capturedType,
                 resultInfo.checkContext.inferenceContext().asUndetVar(to))) {
             //effectively skip additional return-type constraint generation (compatibility)
@@ -624,7 +632,7 @@ public class Infer {
             }
         }
 
-    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+    TypeMapping<Void> fromTypeVarFun = new StructuralTypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
             UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
@@ -1747,23 +1755,6 @@ public class Infer {
                 }
 
                 /**
-                 * Compute closure of a give node, by recursively walking
-                 * through all its dependencies (of given kinds)
-                 */
-                protected Set<Node> closure() {
-                    boolean progress = true;
-                    Set<Node> closure = new HashSet<>();
-                    closure.add(this);
-                    while (progress) {
-                        progress = false;
-                        for (Node n1 : new HashSet<>(closure)) {
-                            progress = closure.addAll(n1.deps);
-                        }
-                    }
-                    return closure;
-                }
-
-                /**
                  * Is this node a leaf? This means either the node has no dependencies,
                  * or it just has self-dependencies.
                  */
@@ -1898,10 +1889,13 @@ public class Infer {
                     Type i = n_i.data.first();
                     for (Node n_j : nodes) {
                         Type j = n_j.data.first();
-                        UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
-                        if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
-                            //update i's bound dependencies
-                            n_i.addDependency(n_j);
+                        // don't compare a variable to itself
+                        if (i != j) {
+                            UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
+                            if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
+                                //update i's bound dependencies
+                                n_i.addDependency(n_j);
+                            }
                         }
                     }
                 }

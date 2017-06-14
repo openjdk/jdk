@@ -34,7 +34,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaMnemonicHandler {
-    static final RecyclableSingleton<AltProcessor> altProcessor = new RecyclableSingletonFromDefaultConstructor<AltProcessor>(AltProcessor.class);
+    private static final RecyclableSingleton<AltProcessor> altProcessor = new RecyclableSingletonFromDefaultConstructor<AltProcessor>(AltProcessor.class);
     public static KeyEventPostProcessor getInstance() {
         return altProcessor.get();
     }

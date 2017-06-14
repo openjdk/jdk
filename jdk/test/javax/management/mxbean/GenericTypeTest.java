@@ -26,7 +26,7 @@
  * @bug 6376416 6406447
  * @summary Test use of generic types in MXBeans (mostly illegal).
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run main GenericTypeTest
  */
 

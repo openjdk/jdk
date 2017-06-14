@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
@@ -115,23 +114,29 @@ import sun.security.util.SecurityConstants;
  * duration of the class loading process (see {@link #loadClass
  * loadClass} methods).
  *
- * <h3> <a name="builtinLoaders">Run-time Built-in Class Loaders</a></h3>
+ * <h3> <a id="builtinLoaders">Run-time Built-in Class Loaders</a></h3>
  *
  * The Java run-time has the following built-in class loaders:
  *
  * <ul>
- * <li>Bootstrap class loader.
+ * <li><p>Bootstrap class loader.
  *     It is the virtual machine's built-in class loader, typically represented
  *     as {@code null}, and does not have a parent.</li>
- * <li>{@linkplain #getPlatformClassLoader() Platform class loader}.
+ * <li><p>{@linkplain #getPlatformClassLoader() Platform class loader}.
  *     All <em>platform classes</em> are visible to the platform class loader
  *     that can be used as the parent of a {@code ClassLoader} instance.
  *     Platform classes include Java SE platform APIs, their implementation
  *     classes and JDK-specific run-time classes that are defined by the
- *     platform class loader or its ancestors.</li>
- * <li>{@linkplain #getSystemClassLoader() System class loader}.
- *     It is also known as <em>application class
- *     loader</em> and is distinct from the platform class loader.
+ *     platform class loader or its ancestors.
+ *     <p> To allow for upgrading/overriding of modules defined to the platform
+ *     class loader, and where classes in the upgraded version link to
+ *     classes in modules defined to the application class loader, the
+ *     platform class loader may delegate to the application class loader.
+ *     In other words, classes in named modules defined to the application
+ *     class loader may be visible to the platform class loader. </li>
+ * <li><p>{@linkplain #getSystemClassLoader() System class loader}.
+ *     It is also known as <em>application class loader</em> and is distinct
+ *     from the platform class loader.
  *     The system class loader is typically used to define classes on the
  *     application class path, module path, and JDK-specific tools.
  *     The platform class loader is a parent or an ancestor of the system class
@@ -184,7 +189,7 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote>
  *
- * <h3> <a name="name">Binary names</a> </h3>
+ * <h3> <a id="name">Binary names</a> </h3>
  *
  * <p> Any class name provided as a {@code String} parameter to methods in
  * {@code ClassLoader} must be a binary name as defined by
@@ -207,6 +212,8 @@ import sun.security.util.SecurityConstants;
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
+ * @revised 9
+ * @spec JPMS
  */
 public abstract class ClassLoader {
 
@@ -350,9 +357,7 @@ public abstract class ClassLoader {
     private ClassLoader(Void unused, String name, ClassLoader parent) {
         this.name = name;
         this.parent = parent;
-        this.unnamedModule
-            = SharedSecrets.getJavaLangReflectModuleAccess()
-                           .defineUnnamedModule(this);
+        this.unnamedModule = new Module(this);
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             package2certs = new ConcurrentHashMap<>();
@@ -369,6 +374,10 @@ public abstract class ClassLoader {
      * Creates a new class loader of the specified name and using the
      * specified parent class loader for delegation.
      *
+     * @apiNote If the parent is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param  name   class loader name; or {@code null} if not named
      * @param  parent the parent class loader
      *
@@ -380,20 +389,23 @@ public abstract class ClassLoader {
      *         method doesn't allow creation of a new class loader.
      *
      * @since  9
+     * @spec JPMS
      */
     protected ClassLoader(String name, ClassLoader parent) {
         this(checkCreateClassLoader(name), name, parent);
     }
-
 
     /**
      * Creates a new class loader using the specified parent class loader for
      * delegation.
      *
      * <p> If there is a security manager, its {@link
-     * SecurityManager#checkCreateClassLoader()
-     * checkCreateClassLoader} method is invoked.  This may result in
-     * a security exception.  </p>
+     * SecurityManager#checkCreateClassLoader() checkCreateClassLoader} method
+     * is invoked.  This may result in a security exception.  </p>
+     *
+     * @apiNote If the parent is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
      *
      * @param  parent
      *         The parent class loader
@@ -440,6 +452,7 @@ public abstract class ClassLoader {
      * this class loader is not named.
      *
      * @since 9
+     * @spec JPMS
      */
     public String getName() {
         return name;
@@ -710,6 +723,7 @@ public abstract class ClassLoader {
      *         if the class could not be found.
      *
      * @since 9
+     * @spec JPMS
      */
     protected Class<?> findClass(String moduleName, String name) {
         if (moduleName == null) {
@@ -834,6 +848,8 @@ public abstract class ClassLoader {
      * @see  java.security.SecureClassLoader
      *
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len)
         throws ClassFormatError
@@ -967,6 +983,9 @@ public abstract class ClassLoader {
      *          certificates than this class, or if {@code name} begins with
      *          "{@code java.}" and this class loader is not the platform
      *          class loader or its ancestor.
+     *
+     * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, byte[] b, int off, int len,
                                          ProtectionDomain protectionDomain)
@@ -974,7 +993,7 @@ public abstract class ClassLoader {
     {
         protectionDomain = preDefineClass(name, protectionDomain);
         String source = defineClassSourceLocation(protectionDomain);
-        Class<?> c = defineClass1(name, b, off, len, protectionDomain, source);
+        Class<?> c = defineClass1(this, name, b, off, len, protectionDomain, source);
         postDefineClass(c, protectionDomain);
         return c;
     }
@@ -1041,6 +1060,8 @@ public abstract class ClassLoader {
      * @see      #defineClass(String, byte[], int, int, ProtectionDomain)
      *
      * @since  1.5
+     * @revised 9
+     * @spec JPMS
      */
     protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
                                          ProtectionDomain protectionDomain)
@@ -1064,17 +1085,17 @@ public abstract class ClassLoader {
 
         protectionDomain = preDefineClass(name, protectionDomain);
         String source = defineClassSourceLocation(protectionDomain);
-        Class<?> c = defineClass2(name, b, b.position(), len, protectionDomain, source);
+        Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
         postDefineClass(c, protectionDomain);
         return c;
     }
 
-    private native Class<?> defineClass1(String name, byte[] b, int off, int len,
-                                         ProtectionDomain pd, String source);
+    static native Class<?> defineClass1(ClassLoader loader, String name, byte[] b, int off, int len,
+                                        ProtectionDomain pd, String source);
 
-    private native Class<?> defineClass2(String name, java.nio.ByteBuffer b,
-                                         int off, int len, ProtectionDomain pd,
-                                         String source);
+    static native Class<?> defineClass2(ClassLoader loader, String name, java.nio.ByteBuffer b,
+                                        int off, int len, ProtectionDomain pd,
+                                        String source);
 
     // true if the name is null or has the potential to be a valid binary name
     private boolean checkName(String name) {
@@ -1264,11 +1285,11 @@ public abstract class ClassLoader {
      * Class loader implementations that support the loading from modules
      * should override this method.
      *
-     * @apiNote This method is the basis for the {@code Class} {@link
-     * Class#getResource getResource} and {@link Class#getResourceAsStream
-     * getResourceAsStream} methods. It is not subject to the rules for
-     * encapsulation specified by {@code Module} {@link
-     * Module#getResourceAsStream getResourceAsStream}.
+     * @apiNote This method is the basis for the {@link
+     * Class#getResource Class.getResource}, {@link Class#getResourceAsStream
+     * Class.getResourceAsStream}, and {@link Module#getResourceAsStream
+     * Module.getResourceAsStream} methods. It is not subject to the rules for
+     * encapsulation specified by {@code Module.getResourceAsStream}.
      *
      * @implSpec The default implementation attempts to find the resource by
      * invoking {@link #findResource(String)} when the {@code moduleName} is
@@ -1292,6 +1313,7 @@ public abstract class ClassLoader {
      *
      * @see java.lang.module.ModuleReader#find(String)
      * @since 9
+     * @spec JPMS
      */
     protected URL findResource(String moduleName, String name) throws IOException {
         if (moduleName == null) {
@@ -1342,6 +1364,8 @@ public abstract class ClassLoader {
      * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     public URL getResource(String name) {
         Objects.requireNonNull(name);
@@ -1403,6 +1427,8 @@ public abstract class ClassLoader {
      * @see  #findResources(String)
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     public Enumeration<URL> getResources(String name) throws IOException {
         Objects.requireNonNull(name);
@@ -1499,6 +1525,8 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     protected URL findResource(String name) {
         return null;
@@ -1531,6 +1559,8 @@ public abstract class ClassLoader {
      *          If I/O errors occur
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     protected Enumeration<URL> findResources(String name) throws IOException {
         return Collections.emptyEnumeration();
@@ -1601,6 +1631,8 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     public static URL getSystemResource(String name) {
         return getSystemClassLoader().getResource(name);
@@ -1636,6 +1668,8 @@ public abstract class ClassLoader {
      *          If I/O errors occur
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
@@ -1667,6 +1701,8 @@ public abstract class ClassLoader {
      * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     public InputStream getResourceAsStream(String name) {
         Objects.requireNonNull(name);
@@ -1699,6 +1735,8 @@ public abstract class ClassLoader {
      *          denied by the security manager.
      *
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     public static InputStream getSystemResourceAsStream(String name) {
         URL url = getSystemResource(name);
@@ -1749,6 +1787,7 @@ public abstract class ClassLoader {
      *
      * @see Module#isNamed()
      * @since 9
+     * @spec JPMS
      */
     public final Module getUnnamedModule() {
         return unnamedModule;
@@ -1772,6 +1811,7 @@ public abstract class ClassLoader {
      *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ClassLoader getPlatformClassLoader() {
@@ -1847,6 +1887,8 @@ public abstract class ClassLoader {
      *          {@link Throwable#getCause()} method.
      *
      * @revised  1.4
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
@@ -2101,6 +2143,8 @@ public abstract class ClassLoader {
      *          defined by this class loader
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      *
      * @see <a href="../../../technotes/guides/jar/jar.html#versioning">
      *      The JAR File Specification: Package Versioning</a>
@@ -2138,6 +2182,7 @@ public abstract class ClassLoader {
      *          if {@code name} is {@code null}.
      *
      * @since  9
+     * @spec JPMS
      */
     public final Package getDefinedPackage(String name) {
         Objects.requireNonNull(name, "name cannot be null");
@@ -2160,6 +2205,7 @@ public abstract class ClassLoader {
      *         or an zero length array if no package has been defined by this class loader.
      *
      * @since  9
+     * @spec JPMS
      */
     public final Package[] getDefinedPackages() {
         return packages().toArray(Package[]::new);
@@ -2172,6 +2218,12 @@ public abstract class ClassLoader {
      * the {@code Package} is returned. Otherwise, the ancestors of
      * this class loader are searched recursively (parent by parent)
      * for a {@code Package} of the given name.
+     *
+     * @apiNote The {@link #getPlatformClassLoader() platform class loader}
+     * may delegate to the application class loader but the application class
+     * loader is not its ancestor.  When invoked on the platform class loader,
+     * this method  will not find packages defined to the application
+     * class loader.
      *
      * @param  name
      *         The <a href="#name">package name</a>
@@ -2196,6 +2248,8 @@ public abstract class ClassLoader {
      * a {@code Package} for the specified class loader.
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     @Deprecated(since="9")
     protected Package getPackage(String name) {
@@ -2216,10 +2270,20 @@ public abstract class ClassLoader {
      * {@code Package} object of the same package name, each defined by
      * a different class loader in the class loader hierarchy.
      *
+     * @apiNote The {@link #getPlatformClassLoader() platform class loader}
+     * may delegate to the application class loader. In other words,
+     * packages in modules defined to the application class loader may be
+     * visible to the platform class loader.  On the other hand,
+     * the application class loader is not its ancestor and hence
+     * when invoked on the platform class loader, this method will not
+     * return any packages defined to the application class loader.
+     *
      * @return  The array of {@code Package} objects defined by this
      *          class loader and its ancestors
      *
      * @since  1.2
+     * @revised 9
+     * @spec JPMS
      */
     protected Package[] getPackages() {
         Stream<Package> pkgs = packages();
@@ -2308,6 +2372,7 @@ public abstract class ClassLoader {
             this.isBuiltin = isBuiltin;
         }
 
+        @SuppressWarnings("deprecation")
         protected void finalize() {
             synchronized (loadedLibraryNames) {
                 if (fromClass.getClassLoader() != null && loaded) {
@@ -2819,7 +2884,7 @@ public abstract class ClassLoader {
         } catch (NoSuchFieldException e) {
             throw new InternalError(e);
         }
-        return unsafe.compareAndSwapObject(this, offset, null, obj);
+        return unsafe.compareAndSetObject(this, offset, null, obj);
     }
 }
 

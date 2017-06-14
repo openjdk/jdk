@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1264,6 +1264,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
     /**
      * Empty finalizer as no clean up needed here.
      */
+    @SuppressWarnings("deprecation")
     public void finalize() {
     }
 

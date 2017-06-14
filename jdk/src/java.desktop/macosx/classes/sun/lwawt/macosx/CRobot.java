@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,8 @@ class CRobot implements RobotPeer {
     @Override
     public int getRGBPixel(int x, int y) {
         int c[] = new int[1];
-        getScreenPixels(new Rectangle(x, y, 1, 1), c);
+        double scale = fDevice.getScaleFactor();
+        getScreenPixels(new Rectangle(x, y, (int) scale, (int) scale), c);
         return c[0];
     }
 
@@ -198,7 +199,8 @@ class CRobot implements RobotPeer {
                                    boolean isMouseMove);
     private native void keyEvent(int javaKeyCode, boolean keydown);
     private void getScreenPixels(Rectangle r, int[] pixels){
-        nativeGetScreenPixels(r.x, r.y, r.width, r.height, pixels);
+        double scale = fDevice.getScaleFactor();
+        nativeGetScreenPixels(r.x, r.y, r.width, r.height, scale, pixels);
     }
-    private native void nativeGetScreenPixels(int x, int y, int width, int height, int[] pixels);
+    private native void nativeGetScreenPixels(int x, int y, int width, int height, double scale, int[] pixels);
 }

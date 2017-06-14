@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ import java.util.Arrays;
  * are not.  Baseline relative values are calculated relative to the
  * baseline.  Valid values are:
  *
- * <center><table BORDER=0 WIDTH=800
+ * <center><table BORDER=0 style="width:800"
  *        SUMMARY="absolute, relative and baseline values as described above">
  * <tr>
  * <th><P style="text-align:left">Absolute Values</th>
@@ -198,7 +198,7 @@ import java.util.Arrays;
  * The following figure shows a baseline layout and includes a
  * component that spans rows:
  * <center><table summary="Baseline Layout">
- * <tr ALIGN=CENTER>
+ * <tr style="text-align:center">
  * <td>
  * <img src="doc-files/GridBagLayout-baseline.png"
  *  alt="The following text describes this graphic (Figure 1)." style="float:center">
@@ -252,15 +252,15 @@ import java.util.Arrays;
  * left-to-right container and Figure 3 shows the layout for a horizontal,
  * right-to-left container.
  *
- * <center><table WIDTH=600 summary="layout">
- * <tr ALIGN=CENTER>
+ * <center><table style="width:600" summary="layout">
+ * <tr style="text-align:center">
  * <td>
  * <img src="doc-files/GridBagLayout-1.gif" alt="The preceding text describes this graphic (Figure 1)." style="float:center; margin: 7px 10px;">
  * </td>
  * <td>
  * <img src="doc-files/GridBagLayout-2.gif" alt="The preceding text describes this graphic (Figure 2)." style="float:center; margin: 7px 10px;">
  * </td>
- * <tr ALIGN=CENTER>
+ * <tr style="text-align:center">
  * <td>Figure 2: Horizontal, Left-to-Right</td>
  * <td>Figure 3: Horizontal, Right-to-Left</td>
  * </tr>
