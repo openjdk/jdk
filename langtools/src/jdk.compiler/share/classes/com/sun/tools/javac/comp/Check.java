@@ -1978,10 +1978,9 @@ public class Check {
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
                         !checkCommonOverriderIn(s1, s2, site)) {
-                    log.error(pos,
-                            "name.clash.same.erasure.no.override",
-                            s1, s1.location(),
-                            s2, s2.location());
+                    log.error(pos, Errors.NameClashSameErasureNoOverride(
+                            s1.name, types.memberType(site, s1).asMethodType().getParameterTypes(), s1.location(),
+                            s2.name, types.memberType(site, s2).asMethodType().getParameterTypes(), s2.location()));
                     return s2;
                 }
             }
@@ -2107,10 +2106,32 @@ public class Check {
         Name moduleName = tree.sym.name;
         Assert.checkNonNull(moduleName);
         if (lint.isEnabled(LintCategory.MODULE)) {
-            String moduleNameString = moduleName.toString();
-            int nameLength = moduleNameString.length();
-            if (nameLength > 0 && Character.isDigit(moduleNameString.charAt(nameLength - 1))) {
-                log.warning(Lint.LintCategory.MODULE, tree.qualId.pos(), Warnings.PoorChoiceForModuleName(moduleName));
+            JCExpression qualId = tree.qualId;
+            while (qualId != null) {
+                Name componentName;
+                DiagnosticPosition pos;
+                switch (qualId.getTag()) {
+                    case SELECT:
+                        JCFieldAccess selectNode = ((JCFieldAccess) qualId);
+                        componentName = selectNode.name;
+                        pos = selectNode.pos();
+                        qualId = selectNode.selected;
+                        break;
+                    case IDENT:
+                        componentName = ((JCIdent) qualId).name;
+                        pos = qualId.pos();
+                        qualId = null;
+                        break;
+                    default:
+                        throw new AssertionError("Unexpected qualified identifier: " + qualId.toString());
+                }
+                if (componentName != null) {
+                    String moduleNameComponentString = componentName.toString();
+                    int nameLength = moduleNameComponentString.length();
+                    if (nameLength > 0 && Character.isDigit(moduleNameComponentString.charAt(nameLength - 1))) {
+                        log.warning(Lint.LintCategory.MODULE, pos, Warnings.PoorChoiceForModuleName(componentName));
+                    }
+                }
             }
         }
     }
@@ -2443,14 +2464,23 @@ public class Check {
                 if (!types.isSubSignature(sym.type, types.memberType(site, m2), allowStrictMethodClashCheck) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
-                    String key = m1 == sym ?
-                            "name.clash.same.erasure.no.override" :
-                            "name.clash.same.erasure.no.override.1";
-                    log.error(pos,
-                            key,
-                            sym, sym.location(),
-                            m2, m2.location(),
-                            m1, m1.location());
+                    if (m1 == sym) {
+                        log.error(pos, Errors.NameClashSameErasureNoOverride(
+                            m1.name, types.memberType(site, m1).asMethodType().getParameterTypes(), m1.location(),
+                            m2.name, types.memberType(site, m2).asMethodType().getParameterTypes(), m2.location()));
+                    } else {
+                        ClassType ct = (ClassType)site;
+                        String kind = ct.isInterface() ? "interface" : "class";
+                        log.error(pos, Errors.NameClashSameErasureNoOverride1(
+                            kind,
+                            ct.tsym.name,
+                            m1.name,
+                            types.memberType(site, m1).asMethodType().getParameterTypes(),
+                            m1.location(),
+                            m2.name,
+                            types.memberType(site, m2).asMethodType().getParameterTypes(),
+                            m2.location()));
+                    }
                     return;
                 }
             }
@@ -3882,6 +3912,18 @@ public class Check {
             deferredLintHandler.report(() -> {
                 if (lint.isEnabled(LintCategory.OPENS))
                     log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
+            });
+        }
+    }
+
+    void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
+        if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            deferredLintHandler.report(() -> {
+                if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresTransitiveAutomatic);
+                } else if (lint.isEnabled(LintCategory.REQUIRES_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresAutomatic);
+                }
             });
         }
     }

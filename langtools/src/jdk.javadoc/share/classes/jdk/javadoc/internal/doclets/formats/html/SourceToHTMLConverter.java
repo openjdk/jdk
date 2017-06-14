@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class SourceToHTMLConverter {
      */
     private static final String NEW_LINE = DocletConstants.NL;
 
-    private final ConfigurationImpl configuration;
+    private final HtmlConfiguration configuration;
     private final Messages messages;
     private final Utils utils;
 
@@ -88,8 +88,8 @@ public class SourceToHTMLConverter {
      */
     private DocPath relativePath = DocPath.empty;
 
-    private SourceToHTMLConverter(ConfigurationImpl configuration, DocletEnvironment rd,
-            DocPath outputdir) {
+    private SourceToHTMLConverter(HtmlConfiguration configuration, DocletEnvironment rd,
+                                  DocPath outputdir) {
         this.configuration  = configuration;
         this.messages = configuration.getMessages();
         this.utils = configuration.utils;
@@ -106,8 +106,8 @@ public class SourceToHTMLConverter {
      * @throws DocFileIOException if there is a problem generating an output file
      * @throws SimpleDocletException if there is a problem reading a source file
      */
-    public static void convertRoot(ConfigurationImpl configuration, DocletEnvironment docEnv,
-            DocPath outputdir) throws DocFileIOException, SimpleDocletException {
+    public static void convertRoot(HtmlConfiguration configuration, DocletEnvironment docEnv,
+                                   DocPath outputdir) throws DocFileIOException, SimpleDocletException {
         new SourceToHTMLConverter(configuration, docEnv, outputdir).generate();
     }
 

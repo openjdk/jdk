@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.SectionName;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -69,7 +69,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param configuration the configuration for this doclet
      * @param filename String file name.
      */
-    public HtmlDocWriter(Configuration configuration, DocPath filename) {
+    public HtmlDocWriter(BaseConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         this.pathToRoot = filename.parent().invert();
         Messages messages = configuration.getMessages();
@@ -81,7 +81,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * Accessor for configuration.
      * @return the configuration for this doclet
      */
-    public abstract Configuration configuration();
+    public abstract BaseConfiguration configuration();
 
     public Content getHyperLink(DocPath link, String label) {
         return getHyperLink(link, new StringContent(label), false, "", "", "");
@@ -318,7 +318,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param body the body content tree to be added to the HTML document
      * @throws DocFileIOException if there is an error writing the frames document
      */
-    public void printFramesDocument(String title, ConfigurationImpl configuration,
+    public void printFramesDocument(String title, HtmlConfiguration configuration,
             HtmlTree body) throws DocFileIOException {
         Content htmlDocType = configuration.isOutputHtml5()
                 ? DocType.HTML5
@@ -347,7 +347,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
      * @param configuration the configuration for this doclet
      * @return an HtmlTree for the lINK tag which provides the stylesheet location
      */
-    public HtmlTree getStyleSheetProperties(ConfigurationImpl configuration) {
+    public HtmlTree getStyleSheetProperties(HtmlConfiguration configuration) {
         String stylesheetfile = configuration.stylesheetfile;
         DocPath stylesheet;
         if (stylesheetfile.isEmpty()) {

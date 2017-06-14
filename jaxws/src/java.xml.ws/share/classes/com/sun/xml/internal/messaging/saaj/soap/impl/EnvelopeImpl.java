@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTran
 
 import com.sun.xml.internal.org.jvnet.staxex.util.DOMStreamReader;
 import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWriter;
+import org.w3c.dom.Element;
 
 /**
  * Our implementation of the SOAP envelope.
@@ -92,6 +93,10 @@ public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
             addBody();
     }
 
+    public EnvelopeImpl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
     protected abstract NameImpl getHeaderName(String prefix);
     protected abstract NameImpl getBodyName(String prefix);
 
@@ -122,7 +127,7 @@ public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
         }
 
         header = (HeaderImpl) createElement(headerName);
-        insertBefore(header, firstChild);
+        insertBefore(header.getDomElement(), firstChild);
         header.ensureNamespaceIsDeclared(headerName.getPrefix(), headerName.getURI());
 
         return header;
@@ -161,7 +166,7 @@ public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
         if (body == null) {
             NameImpl bodyName = getBodyName(prefix);
             body = (BodyImpl) createElement(bodyName);
-            insertBefore(body, null);
+            insertBefore(body.getDomElement(), null);
             body.ensureNamespaceIsDeclared(bodyName.getPrefix(), bodyName.getURI());
         } else {
             log.severe("SAAJ0122.impl.body.already.exists");

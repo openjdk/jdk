@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +27,7 @@ import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 /**
  * @test
@@ -37,7 +36,9 @@ import jdk.testlibrary.RandomFactory;
  *          with various update/digest methods.
  * @author Kevin Liu
  * @key randomness
- * @library /lib/testlibrary
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main TestSameValue
  */
 
 public class TestSameValue {

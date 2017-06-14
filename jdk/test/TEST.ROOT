@@ -10,7 +10,7 @@
 # randomness tests.
 #
 # A "headful" test requires a graphical environment to meaningfully
-# run. Tests that are not headful are "headless." 
+# run. Tests that are not headful are "headless."
 
 keys=2d dnd i18n intermittent randomness headful
 

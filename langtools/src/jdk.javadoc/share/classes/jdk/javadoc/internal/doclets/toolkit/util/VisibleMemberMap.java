@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 /**
@@ -126,7 +126,7 @@ public class VisibleMemberMap {
     /**
      * The configuration this VisibleMemberMap was created with.
      */
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Messages messages;
     private final Utils utils;
     private final Comparator<Element> comparator;
@@ -147,7 +147,7 @@ public class VisibleMemberMap {
      */
     public VisibleMemberMap(TypeElement typeElement,
                             Kind kind,
-                            Configuration configuration) {
+                            BaseConfiguration configuration) {
         this.typeElement = typeElement;
         this.kind = kind;
         this.configuration = configuration;

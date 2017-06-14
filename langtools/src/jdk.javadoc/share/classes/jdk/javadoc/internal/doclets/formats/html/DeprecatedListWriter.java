@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
 
     private EnumMap<DeprElementKind, AbstractMemberWriter> writerMap;
 
-    private ConfigurationImpl configuration;
+    private HtmlConfiguration configuration;
 
     /**
      * Constructor.
@@ -213,7 +213,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param filename the file to be generated
      */
 
-    public DeprecatedListWriter(ConfigurationImpl configuration, DocPath filename) {
+    public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         this.configuration = configuration;
         NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
@@ -260,7 +260,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.DEPRECATED_LIST;
         DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
         depr.generateDeprecatedListFile(
