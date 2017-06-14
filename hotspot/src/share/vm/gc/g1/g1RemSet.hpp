@@ -108,12 +108,9 @@ public:
   // partitioning the work to be done. It should be the same as
   // the "i" passed to the calling thread's work(i) function.
   // In the sequential case this param will be ignored.
-  //
-  // Returns the number of cards scanned while looking for pointers
-  // into the collection set.
-  size_t oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
-                                     CodeBlobClosure* heap_region_codeblobs,
-                                     uint worker_i);
+  void oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
+                                   CodeBlobClosure* heap_region_codeblobs,
+                                   uint worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
   // call.  Must call each of these once before and after (in sequential
@@ -123,9 +120,9 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
 
-  size_t scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
-                      CodeBlobClosure* heap_region_codeblobs,
-                      uint worker_i);
+  void scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
+                    CodeBlobClosure* heap_region_codeblobs,
+                    uint worker_i);
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
@@ -185,8 +182,10 @@ public:
 class G1ScanRSClosure : public HeapRegionClosure {
   G1RemSetScanState* _scan_state;
 
-  size_t _cards_done;
-  size_t _cards;
+  size_t _cards_scanned;
+  size_t _cards_claimed;
+  size_t _cards_skipped;
+
   G1CollectedHeap* _g1h;
 
   G1ParPushHeapRSClosure* _push_heap_cl;
@@ -213,8 +212,9 @@ public:
     return _strong_code_root_scan_time_sec;
   }
 
-  size_t cards_done() { return _cards_done;}
-  size_t cards_looked_up() { return _cards;}
+  size_t cards_scanned() const { return _cards_scanned; }
+  size_t cards_claimed() const { return _cards_claimed; }
+  size_t cards_skipped() const { return _cards_skipped; }
 };
 
 class UpdateRSOopClosure: public ExtendedOopClosure {

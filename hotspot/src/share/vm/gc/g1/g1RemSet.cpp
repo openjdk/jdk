@@ -334,8 +334,9 @@ G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
   _push_heap_cl(push_heap_cl),
   _code_root_cl(code_root_cl),
   _strong_code_root_scan_time_sec(0.0),
-  _cards(0),
-  _cards_done(0),
+  _cards_claimed(0),
+  _cards_scanned(0),
+  _cards_skipped(0),
   _worker_i(worker_i) {
   _g1h = G1CollectedHeap::heap();
   _bot = _g1h->bot();
@@ -354,7 +355,7 @@ void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *
     _ct_bs->set_card_claimed(index);
     _push_heap_cl->set_region(r);
     r->oops_on_card_seq_iterate_careful<true>(mr, _push_heap_cl);
-    _cards_done++;
+    _cards_scanned++;
   }
 }
 
@@ -389,12 +390,13 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
       claimed_card_block = _scan_state->iter_claimed_next(region_idx, _block_size);
     }
     if (current_card < claimed_card_block) {
+      _cards_skipped++;
       continue;
     }
     HeapWord* card_start = _g1h->bot()->address_for_index(card_index);
 
     HeapRegion* card_region = _g1h->heap_region_containing(card_start);
-    _cards++;
+    _cards_claimed++;
 
     _scan_state->add_dirty_region(card_region->hrm_index());
 
@@ -411,21 +413,25 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
   return false;
 }
 
-size_t G1RemSet::scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
-                              CodeBlobClosure* heap_region_codeblobs,
-                              uint worker_i) {
+void G1RemSet::scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
+                            CodeBlobClosure* heap_region_codeblobs,
+                            uint worker_i) {
   double rs_time_start = os::elapsedTime();
 
   G1ScanRSClosure cl(_scan_state, oops_in_heap_closure, heap_region_codeblobs, worker_i);
   _g1->collection_set_iterate_from(&cl, worker_i);
 
-   double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
-                              cl.strong_code_root_scan_time_sec();
+  double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
+                             cl.strong_code_root_scan_time_sec();
 
-  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
-  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
+  G1GCPhaseTimes* p = _g1p->phase_times();
 
-  return cl.cards_done();
+  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScannedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ClaimedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::SkippedCards);
+
+  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
 }
 
 // Closure used for updating RSets and recording references that
@@ -483,9 +489,9 @@ void G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
 
-size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
-                                             CodeBlobClosure* heap_region_codeblobs,
-                                             uint worker_i) {
+void G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
+                                           CodeBlobClosure* heap_region_codeblobs,
+                                           uint worker_i) {
   // A DirtyCardQueue that is used to hold cards containing references
   // that point into the collection set. This DCQ is associated with a
   // special DirtyCardQueueSet (see g1CollectedHeap.hpp).  Under normal
@@ -498,7 +504,7 @@ size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
   DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
 
   update_rem_set(&into_cset_dcq, cl, worker_i);
-  return scan_rem_set(cl, heap_region_codeblobs, worker_i);;
+  scan_rem_set(cl, heap_region_codeblobs, worker_i);;
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {

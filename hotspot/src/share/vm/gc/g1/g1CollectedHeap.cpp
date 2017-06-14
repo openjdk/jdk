@@ -3274,7 +3274,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // investigate this in CR 7178365.
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        size_t total_cards_scanned = per_thread_states.total_cards_scanned();
+        size_t total_cards_scanned = g1_policy()->phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanRS, G1GCPhaseTimes::ScannedCards);
         g1_policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned, heap_used_bytes_before_gc);
 
         evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
@@ -3464,11 +3464,9 @@ public:
       // treating the nmethods visited to act as roots for concurrent marking.
       // We only want to make sure that the oops in the nmethods are adjusted with regard to the
       // objects copied by the current evacuation.
-      size_t cards_scanned = _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
-                                                                             pss->closures()->weak_codeblobs(),
-                                                                             worker_id);
-
-      _pss->add_cards_scanned(worker_id, cards_scanned);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
+                                                      pss->closures()->weak_codeblobs(),
+                                                      worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
