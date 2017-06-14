@@ -22,16 +22,15 @@
  */
 
 /*
- *   @test       OptionTest
- *   @bug        5095072
- *   @summary    Test for misc jdwp options, just that the option is parsed
- *   @author     Kelly O'Hair (copied from Tim Bell's NoLaunchOptionTest)
+ * @test       OptionTest
+ * @bug        5095072
+ * @summary    Test for misc jdwp options, just that the option is parsed
+ * @author     Kelly O'Hair (copied from Tim Bell's NoLaunchOptionTest)
  *
- *  @modules jdk.jdi
- *  @run compile -g OptionTest.java
- *  @run compile -g HelloWorld.java
- *  @run compile -g VMConnection.java
- *  @run driver OptionTest
+ * @run compile -g OptionTest.java
+ * @run compile -g HelloWorld.java
+ * @run compile -g VMConnection.java
+ * @run driver OptionTest
  */
 
 import java.net.ServerSocket;

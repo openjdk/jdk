@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
-#include "services/attachListener.hpp"
 #include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -1230,8 +1229,12 @@ void JvmtiExport::post_class_unload(Klass* klass) {
     assert(thread->is_VM_thread(), "wrong thread");
 
     // get JavaThread for whom we are proxy
-    JavaThread *real_thread =
-        (JavaThread *)((VMThread *)thread)->vm_operation()->calling_thread();
+    Thread *calling_thread = ((VMThread *)thread)->vm_operation()->calling_thread();
+    if (!calling_thread->is_Java_thread()) {
+      // cannot post an event to a non-JavaThread
+      return;
+    }
+    JavaThread *real_thread = (JavaThread *)calling_thread;
 
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
@@ -2473,15 +2476,6 @@ void JvmtiExport::transition_pending_onload_raw_monitors() {
 // type for the Agent_OnAttach entry point
 extern "C" {
   typedef jint (JNICALL *OnAttachEntry_t)(JavaVM*, char *, void *);
-}
-
-jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
-  // get agent name and options
-  const char* agent = op->arg(0);
-  const char* absParam = op->arg(1);
-  const char* options = op->arg(2);
-
-  return load_agent_library(agent, absParam, options, st);
 }
 
 jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,

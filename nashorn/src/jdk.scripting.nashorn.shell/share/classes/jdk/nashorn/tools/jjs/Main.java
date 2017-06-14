@@ -281,8 +281,7 @@ public final class Main extends Shell {
         }
     }
 
-    // FIXME: needs to be changed to use javase 9 docs later
-    private static String JAVADOC_BASE = "http://download.java.net/jdk9/docs/api/";
+    private static String JAVADOC_BASE = "https://docs.oracle.com/javase/9/docs/api/";
 
     private static void openBrowserForJavadoc(String relativeUrl) {
         try {
