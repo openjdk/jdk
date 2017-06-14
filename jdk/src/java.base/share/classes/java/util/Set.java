@@ -63,7 +63,7 @@ package java.util;
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
  *
- * <h2><a name="immutable">Immutable Set Static Factory Methods</a></h2>
+ * <h2><a id="immutable">Immutable Set Static Factory Methods</a></h2>
  * <p>The {@link Set#of(Object...) Set.of()} static factory methods
  * provide a convenient way to create immutable sets. The {@code Set}
  * instances created by these methods have the following characteristics:
@@ -91,7 +91,7 @@ package java.util;
  * </ul>
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements maintained by this set

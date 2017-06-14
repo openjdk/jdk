@@ -116,7 +116,7 @@ public final class Graph<T> {
                 .forEach(u -> g.adjacentNodes(u).stream()
                                 .filter(v -> isAdjacent(u, v))
                                 .forEach(v -> builder.addEdge(u, v)));
-        return builder.build();
+        return builder.build().reduce();
     }
 
     /**
@@ -274,7 +274,7 @@ public final class Graph<T> {
         }
 
         public void addNodes(Set<T> nodes) {
-            nodes.addAll(nodes);
+            this.nodes.addAll(nodes);
         }
 
         public void addEdge(T u, T v) {
@@ -335,67 +335,4 @@ public final class Graph<T> {
             result.addLast(node);
         }
     }
-
-    public static class DotGraph {
-        static final String ORANGE = "#e76f00";
-        static final String BLUE = "#437291";
-        static final String GRAY = "#dddddd";
-
-        static final String REEXPORTS = "";
-        static final String REQUIRES = "style=\"dashed\"";
-        static final String REQUIRES_BASE = "color=\"" + GRAY + "\"";
-
-        static final Set<String> javaModules = modules(name ->
-            (name.startsWith("java.") && !name.equals("java.smartcardio")));
-        static final Set<String> jdkModules = modules(name ->
-            (name.startsWith("java.") ||
-                name.startsWith("jdk.") ||
-                name.startsWith("javafx.")) && !javaModules.contains(name));
-
-        private static Set<String> modules(Predicate<String> predicate) {
-            return ModuleFinder.ofSystem().findAll()
-                               .stream()
-                               .map(ModuleReference::descriptor)
-                               .map(ModuleDescriptor::name)
-                               .filter(predicate)
-                               .collect(Collectors.toSet());
-        }
-
-        static void printAttributes(PrintWriter out) {
-            out.format("  size=\"25,25\";%n");
-            out.format("  nodesep=.5;%n");
-            out.format("  ranksep=1.5;%n");
-            out.format("  pencolor=transparent;%n");
-            out.format("  node [shape=plaintext, fontname=\"DejaVuSans\", fontsize=36, margin=\".2,.2\"];%n");
-            out.format("  edge [penwidth=4, color=\"#999999\", arrowhead=open, arrowsize=2];%n");
-        }
-
-        static void printNodes(PrintWriter out, Graph<String> graph) {
-            out.format("  subgraph se {%n");
-            graph.nodes().stream()
-                 .filter(javaModules::contains)
-                 .forEach(mn -> out.format("  \"%s\" [fontcolor=\"%s\", group=%s];%n",
-                                           mn, ORANGE, "java"));
-            out.format("  }%n");
-            graph.nodes().stream()
-                 .filter(jdkModules::contains)
-                 .forEach(mn -> out.format("    \"%s\" [fontcolor=\"%s\", group=%s];%n",
-                                           mn, BLUE, "jdk"));
-
-            graph.nodes().stream()
-                 .filter(mn -> !javaModules.contains(mn) && !jdkModules.contains(mn))
-                 .forEach(mn -> out.format("  \"%s\";%n", mn));
-        }
-
-        static void printEdges(PrintWriter out, Graph<String> graph,
-                               String node, Set<String> requiresTransitive) {
-            graph.adjacentNodes(node).forEach(dn -> {
-                String attr = dn.equals("java.base") ? REQUIRES_BASE
-                        : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
-                out.format("  \"%s\" -> \"%s\" [%s];%n", node, dn, attr);
-            });
-        }
-    }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,9 +249,6 @@ public interface ObjectReference extends Value {
      * if the method is a constructor or static initializer, or
      * if {@link #INVOKE_NONVIRTUAL} is specified and the method is
      * abstract.
-     * @throws {@link InvalidTypeException} if any argument in the
-     * argument list is not assignable to the corresponding method argument
-     * type.
      * @throws ClassNotLoadedException if any argument type has not yet been loaded
      * through the appropriate class loader.
      * @throws IncompatibleThreadStateException if the specified thread has not

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.jshell.execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,8 @@ import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 /**
  * Sets up a JDI connection, providing the resulting JDI {@link VirtualMachine}
  * and the {@link Process} the remote agent is running in.
+ *
+ * @since 9
  */
 public class JdiInitiator {
 
@@ -66,16 +70,20 @@ public class JdiInitiator {
      * Start the remote agent and establish a JDI connection to it.
      *
      * @param port the socket port for (non-JDI) commands
-     * @param remoteVMOptions any user requested VM options
+     * @param remoteVMOptions any user requested VM command-line options
      * @param remoteAgent full class name of remote agent to launch
      * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
      * otherwise we start explicitly and use ListeningConnector
      * @param host explicit hostname to use, if null use discovered
      * hostname, applies to listening only (!isLaunch)
-     * @param timeout the start-up time-out in milliseconds
+     * @param timeout the start-up time-out in milliseconds. If zero or negative,
+     * will not wait thus will timeout immediately if not already started.
+     * @param customConnectorArgs custom arguments passed to the connector.
+     * These are JDI com.sun.jdi.connect.Connector arguments.
      */
     public JdiInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
-            boolean isLaunch, String host, int timeout) {
+            boolean isLaunch, String host, int timeout,
+            Map<String, String> customConnectorArgs) {
         this.remoteAgent = remoteAgent;
         this.connectTimeout = (int) (timeout * CONNECT_TIMEOUT_FACTOR);
         String connectorName
@@ -96,6 +104,7 @@ public class JdiInitiator {
                 argumentName2Value.put("localAddress", host);
             }
         }
+        argumentName2Value.putAll(customConnectorArgs);
         this.connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.vm = isLaunch
                 ? launchTarget()
@@ -139,6 +148,9 @@ public class JdiInitiator {
      */
     private VirtualMachine listenTarget(int port, List<String> remoteVMOptions) {
         ListeningConnector listener = (ListeningConnector) connector;
+        // Files to collection to output of a start-up failure
+        File crashErrorFile = createTempFile("error");
+        File crashOutputFile = createTempFile("output");
         try {
             // Start listening, get the JDI connection address
             String addr = listener.startListening(connectorArgs);
@@ -156,23 +168,57 @@ public class JdiInitiator {
             args.add(remoteAgent);
             args.add("" + port);
             ProcessBuilder pb = new ProcessBuilder(args);
+            pb.redirectError(crashErrorFile);
+            pb.redirectOutput(crashOutputFile);
             process = pb.start();
 
             // Accept the connection from the remote agent
             vm = timedVirtualMachineCreation(() -> listener.accept(connectorArgs),
                     () -> process.waitFor());
-            return vm;
-        } catch (Throwable ex) {
-            if (process != null) {
-                process.destroyForcibly();
-            }
-            throw reportLaunchFail(ex, "listen");
-        } finally {
             try {
                 listener.stopListening(connectorArgs);
             } catch (IOException | IllegalConnectorArgumentsException ex) {
                 // ignore
             }
+            crashErrorFile.delete();
+            crashOutputFile.delete();
+            return vm;
+        } catch (Throwable ex) {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            try {
+                listener.stopListening(connectorArgs);
+            } catch (IOException | IllegalConnectorArgumentsException iex) {
+                // ignore
+            }
+            String text = readFile(crashErrorFile) + readFile(crashOutputFile);
+            crashErrorFile.delete();
+            crashOutputFile.delete();
+            if (text.isEmpty()) {
+                throw reportLaunchFail(ex, "listen");
+            } else {
+                throw new IllegalArgumentException(text);
+            }
+        }
+    }
+
+    private File createTempFile(String label) {
+        try {
+            File f = File.createTempFile("remote", label);
+            f.deleteOnExit();
+            return f;
+        } catch (IOException ex) {
+            throw new InternalError("Failed create temp ", ex);
+        }
+    }
+
+    private String readFile(File f) {
+        try {
+            return new String(Files.readAllBytes(f.toPath()),
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            return "error reading " + f + " : " + ex.toString();
         }
     }
 

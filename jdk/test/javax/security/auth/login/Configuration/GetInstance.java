@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,21 @@
  * @test
  * @bug 6268315
  * @bug 6273812
+ * @modules jdk.security.auth
  * @summary Configuration should be provider-based
  * @build GetInstanceConfigSpi GetInstanceProvider
  * @run main/othervm -Djava.security.auth.login.config==${test.src}${/}GetInstance.config GetInstance
  */
 
-import javax.security.auth.login.*;
-
-import java.security.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Security;
+import java.security.URIParameter;
 import java.io.File;
 import java.net.URI;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 
 public class GetInstance {
 

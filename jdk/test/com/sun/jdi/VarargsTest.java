@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4870984
- *  @summary  JPDA: Add support for RFE 4856541 - varargs
+ * @test
+ * @bug 4870984
+ * @summary  JPDA: Add support for RFE 4856541 - varargs
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g VarargsTest.java
- *  @run driver VarargsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g VarargsTest.java
+ * @run driver VarargsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

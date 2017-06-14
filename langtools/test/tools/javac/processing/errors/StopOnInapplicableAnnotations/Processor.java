@@ -63,7 +63,7 @@ public class Processor extends AbstractProcessor {
         if (args.length != 1) throw new IllegalStateException("Must provide class name!");
         String testContent = null;
         List<File> sourcePath = new ArrayList<>();
-        for (String sourcePaths : System.getProperty("test.src.path").split(":")) {
+        for (String sourcePaths : System.getProperty("test.src.path").split(File.pathSeparator)) {
             sourcePath.add(new File(sourcePaths));
         }
         JavacFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);

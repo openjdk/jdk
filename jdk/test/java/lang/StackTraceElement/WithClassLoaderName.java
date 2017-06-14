@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 6479237
  * @summary Basic test StackTraceElement with class loader names
- * @library lib /lib/testlibrary
+ * @library lib /lib/testlibrary /test/lib
+ * @modules jdk.compiler
  * @build m1/* WithClassLoaderName
  * @run main/othervm m1/com.app.Main
  * @run main/othervm WithClassLoaderName
@@ -37,6 +38,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import com.app.Utils;
 

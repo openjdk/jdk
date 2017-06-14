@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @bug 8164705
  * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
+ *          jdk.compiler
  * @run main ReadFileOnPath
  * @summary Still able to read file on the same path
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +59,7 @@ public class ReadFileOnPath {
                 "module-info.class", "base", "p/App.class", "p/child");
 
         // exploded module
-        test("--module-path", "modules", "-m", "m/p.App", "SS+++++");
+        test("--module-path", "modules", "-m", "m/p.App", "SS++++0");
 
         // module in jar
         test("--module-path", "new.jar", "-m", "m/p.App", "SSSS++0");
