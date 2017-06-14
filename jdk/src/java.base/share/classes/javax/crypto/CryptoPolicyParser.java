@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,12 @@ import java.lang.reflect.*;
  *
  * The format of a permission entry in the jurisdiction policy file is:
  *
+ * <pre>{@code
  *   permission <crypto permission class name>[, <algorithm name>
  *              [[, <exemption mechanism name>][, <maxKeySize>
  *              [, <AlgrithomParameterSpec class name>, <parameters
  *              for constructing an AlgrithomParameterSpec object>]]]];
+ * }</pre>
  *
  * @author Sharon Liu
  *
@@ -526,8 +528,7 @@ final class CryptoPolicyParser {
 
     /**
      * Each grant entry in the policy configuration file is  represented by a
-     * GrantEntry object.  <p>
-     *
+     * GrantEntry object.
      * <p>
      * For example, the entry
      * <pre>
@@ -587,8 +588,7 @@ final class CryptoPolicyParser {
 
     /**
      * Each crypto permission entry in the policy configuration file is
-     * represented by a CryptoPermissionEntry object.  <p>
-     *
+     * represented by a CryptoPermissionEntry object.
      * <p>
      * For example, the entry
      * <pre>

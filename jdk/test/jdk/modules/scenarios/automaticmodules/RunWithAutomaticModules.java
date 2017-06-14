@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build RunWithAutomaticModules CompilerUtils JarUtils
+ * @build RunWithAutomaticModules jdk.test.lib.compiler.CompilerUtils JarUtils
  *        jdk.testlibrary.ProcessTools
  * @run testng RunWithAutomaticModules
  * @summary Runs tests that make use of automatic modules
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.Test;

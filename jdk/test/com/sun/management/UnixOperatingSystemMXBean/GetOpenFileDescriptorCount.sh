@@ -24,10 +24,9 @@
 #
 # @test
 # @bug     4858522
-# @summary 
+# @summary
 # @author  Steve Bohne
 #
-# @modules jdk.management
 # @run shell GetOpenFileDescriptorCount.sh
 #
 
@@ -39,7 +38,7 @@ if [ "${COMPILEJAVA}" = "" ]; then
     COMPILEJAVA="${TESTJAVA}"
 fi
 runOne()
-{ 
+{
    echo "runOne $@"
    $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d $TESTCLASSES \
        $TESTSRC/$@.java || exit 2

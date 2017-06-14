@@ -180,6 +180,7 @@ public class MenuShortcut implements java.io.Serializable
      * @return a string representation of this MenuShortcut.
      * @since 1.1
      */
+    @SuppressWarnings("deprecation")
     public String toString() {
         int modifiers = 0;
         if (!GraphicsEnvironment.isHeadless()) {

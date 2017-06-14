@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  *  "java.util.logging.FileHandler.maxLocks" which will be present in
  *  "logging.properties" file with default value of 100. This property can be
  *  overriden by specifying this property in the custom config file.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library /test/lib
  * @author rpatil
  * @run main/othervm FileHandlerMaxLocksTest
  */
@@ -40,7 +39,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.FileHandler;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class FileHandlerMaxLocksTest {
 

@@ -183,7 +183,7 @@ public class JDK9Wrappers {
     }
 
     /**
-     * Wrapper class for java.lang.reflect.Module. To materialize a handle use the static factory
+     * Wrapper class for java.lang.Module. To materialize a handle use the static factory
      * methods Module#getModule(Class<?>) or Module#getUnnamedModule(ClassLoader).
      */
     public static class Module {
@@ -236,9 +236,9 @@ public class JDK9Wrappers {
         }
 
         // -----------------------------------------------------------------------------------------
-        // on java.lang.reflect.Module
+        // on java.lang.Module
         private static Method addExportsMethod = null;
-        // on java.lang.reflect.Module
+        // on java.lang.Module
         private static Method addUsesMethod = null;
         // on java.lang.Class
         private static Method getModuleMethod;
@@ -248,7 +248,7 @@ public class JDK9Wrappers {
         private static void init() {
             if (addExportsMethod == null) {
                 try {
-                    Class<?> moduleClass = Class.forName("java.lang.reflect.Module", false, null);
+                    Class<?> moduleClass = Class.forName("java.lang.Module", false, null);
                     addUsesMethod = moduleClass.getDeclaredMethod("addUses", new Class<?>[] { Class.class });
                     addExportsMethod = moduleClass.getDeclaredMethod("addExports",
                                                         new Class<?>[] { String.class, moduleClass });
@@ -272,12 +272,12 @@ public class JDK9Wrappers {
             init();
         }
 
-        public Configuration resolveRequiresAndUses(
+        public Configuration resolveAndBind(
                 ModuleFinder beforeFinder,
                 ModuleFinder afterFinder,
                 Collection<String> roots) {
             try {
-                Object result = resolveRequiresAndUsesMethod.invoke(theRealConfiguration,
+                Object result = resolveAndBindMethod.invoke(theRealConfiguration,
                                     beforeFinder.theRealModuleFinder,
                                     afterFinder.theRealModuleFinder,
                                     roots
@@ -293,7 +293,7 @@ public class JDK9Wrappers {
         // -----------------------------------------------------------------------------------------
 
         private static Class<?> configurationClass = null;
-        private static Method resolveRequiresAndUsesMethod;
+        private static Method resolveAndBindMethod;
 
         static final Class<?> getConfigurationClass() {
             init();
@@ -305,7 +305,7 @@ public class JDK9Wrappers {
                 try {
                     configurationClass = Class.forName("java.lang.module.Configuration", false, null);
                     Class<?> moduleFinderInterface = ModuleFinder.getModuleFinderClass();
-                    resolveRequiresAndUsesMethod = configurationClass.getDeclaredMethod("resolveRequiresAndUses",
+                    resolveAndBindMethod = configurationClass.getDeclaredMethod("resolveAndBind",
                                 moduleFinderInterface,
                                 moduleFinderInterface,
                                 Collection.class
@@ -318,7 +318,7 @@ public class JDK9Wrappers {
     }
 
     /**
-     * Wrapper class for java.lang.module.Layer.
+     * Wrapper class for java.lang.ModuleLayer.
      */
     public static final class Layer {
         private final Object theRealLayer;
@@ -372,7 +372,7 @@ public class JDK9Wrappers {
         private static void init() {
             if (layerClass == null) {
                 try {
-                    layerClass = Class.forName("java.lang.reflect.Layer", false, null);
+                    layerClass = Class.forName("java.lang.ModuleLayer", false, null);
                     bootMethod = layerClass.getDeclaredMethod("boot");
                     defineModulesWithOneLoaderMethod = layerClass.getDeclaredMethod("defineModulesWithOneLoader",
                                 Configuration.getConfigurationClass(),

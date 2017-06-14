@@ -80,8 +80,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
     // Desktop property which specifies whether XP visual styles are in effect
     public static final String XPSTYLE_THEME_ACTIVE = "win.xpstyle.themeActive";
 
-    static GraphicsConfiguration config;
-
     // System clipboard.
     WClipboard clipboard;
 
@@ -143,21 +141,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     private static native void disableCustomPalette();
-
-    /*
-     * Reset the static GraphicsConfiguration to the default.  Called on
-     * startup and when display settings have changed.
-     */
-    public static void resetGC() {
-        if (GraphicsEnvironment.isHeadless()) {
-            config = null;
-        } else {
-          config = (GraphicsEnvironment
-                  .getLocalGraphicsEnvironment()
-          .getDefaultScreenDevice()
-          .getDefaultConfiguration());
-        }
-    }
 
     /*
      * NOTE: The following embedded*() methods are non-public API intended
@@ -615,21 +598,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
     static native ColorModel makeColorModel();
     static ColorModel screenmodel;
 
-    static ColorModel getStaticColorModel() {
-        if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalArgumentException();
-        }
-        if (config == null) {
-            resetGC();
-        }
-        return config.getColorModel();
-    }
-
-    @Override
-    public ColorModel getColorModel() {
-        return getStaticColorModel();
-    }
-
     @Override
     public Insets getScreenInsets(GraphicsConfiguration gc)
     {
@@ -641,20 +609,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
         Win32GraphicsEnvironment ge = (Win32GraphicsEnvironment)
             GraphicsEnvironment.getLocalGraphicsEnvironment();
         return ge.getXResolution();
-    }
-
-    @Override
-    protected int getScreenWidth() {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration()
-                .getBounds().width;
-    }
-
-    @Override
-    protected int getScreenHeight() {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration()
-                .getBounds().height;
     }
 
     private native Insets getScreenInsets(int screen);

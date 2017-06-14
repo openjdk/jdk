@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.jar.*;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /*
  * ResourceBundle from jar not found if jar exists in path
@@ -38,40 +38,17 @@ import java.util.jar.*;
 public class TestBug4361044 extends JarTest
 {
     public void run(String[] args) throws Exception {
-        if (args.length == 0 ) {  // execute the test in another vm.
-            System.out.println("Test: " + getClass().getName());
-            Process process = Runtime.getRuntime().exec(javaCmd + " TestBug4361044 -test");
-
-            BufferedReader isReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader esReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            Redirector outRedirector = new Redirector(isReader, System.out);
-            Redirector errRedirector = new Redirector(esReader, System.err);
-
-            (new Thread(outRedirector)).start();
-            (new Thread(errRedirector)).start();
-
-            process.waitFor();
-
-            // Delete any remaining files from the test
-            File testDir = new File(tmpdir + File.separator + getClass().getName());
-            deleteRecursively(testDir);
-
-            if (outRedirector.getHasReadData() || errRedirector.getHasReadData())
-                throw new RuntimeException("Failed: No output should have been received from the process");
-
-        } else {   // run the test.
-            File tmp = createTempDir();
-            try {
-                File dir = new File(tmp, "dir!name");
-                dir.mkdir();
-                File testFile = copyResource(dir, "jar1.jar");
-                URL[] urls = new URL[1];
-                urls[0] = new URL("jar:" + testFile.toURL() + "!/");
-                URLClassLoader loader = new URLClassLoader(urls);
-                loader.loadClass("jar1.LoadResourceBundle").newInstance();
-            } finally {
-                deleteRecursively(tmp);
-            }
+        File tmp = createTempDir();
+        try {
+            File dir = new File(tmp, "dir!name");
+            dir.mkdir();
+            File testFile = copyResource(dir, "jar1.jar");
+            URL[] urls = new URL[1];
+            urls[0] = new URL("jar:" + testFile.toURI().toURL() + "!/");
+            URLClassLoader loader = new URLClassLoader(urls);
+            loader.loadClass("jar1.LoadResourceBundle").newInstance();
+        } finally {
+            deleteRecursively(tmp);
         }
     }
 

@@ -1,3 +1,4 @@
+<!doctype html>
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
@@ -6,7 +7,7 @@
    <TITLE>package</TITLE>
 <!--
 /*
-* Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +32,8 @@
 */  
 -->
 </HEAD>
-<BODY BGCOLOR="#FFFFFF">
-Provides the mapping of the OMG CORBA APIs to the Java<SUP><FONT 
-SIZE=-2>TM</FONT></SUP>
+<BODY>
+Provides the mapping of the OMG CORBA APIs to the Java&trade;
 programming language, including the class <code>ORB</code>, which is implemented
 so that a programmer can use it as a fully-functional Object Request Broker
 (ORB).
@@ -427,7 +427,7 @@ will contain the static methods needed for manipulating instances of the type,
 in this case, <code>Account</code> objects.
 
 
-<a name="narrow"></a>
+<a id="narrow"></a>
 <h3>The <code>narrow</code> Method</h3>
 When an object is the return value for a method, it is returned in the
 form of a generic object, either an <code>org.omg.CORBA.Object</code> object
@@ -465,7 +465,7 @@ tutorial uses a <code>narrow</code> method that looks like this:
         helloImpl = HelloHelper.narrow(ncRef.resolve_str(name));
 </PRE>
 
-<a name="basic"></a>
+<a id="basic"></a>
 <h3>Example of a Basic Helper Class</h3>
 A basic helper class, for purposes of this explanation, is one with
 the methods that are provided by every helper class, plus a <code>narrow</code>
@@ -671,7 +671,7 @@ abstract public class AddressHelper
 &nbsp;&nbsp;&nbsp;&nbsp; WStringSeqHelper
 &nbsp;&nbsp;&nbsp;&nbsp; WStringValueHelper
 </code></PRE>
-<a name="adv"></a>
+<a id="adv"></a>
 <H1>
 Other Classes</H1>
 The other classes and interfaces in the <code>CORBA</code> package, which are
@@ -868,17 +868,17 @@ For overviews, guides, and a tutorial, please see:
 
 
 
-<P><A NAME="unimpl"></A>
+<P><A id="unimpl"></A>
 <H1>
 CORBA Features Not Implemented in Java IDL</H1>
 
 <P>Some of the API included in <code>org.omg</code> subpackages is provided for
 conformance with the current OMG CORBA specification but is not implemented
-in Sun's release of the JDK<SUP><FONT SIZE=-2>TM</FONT></SUP>. This enables
+in Sun's release of the JDK&trade;. This enables
 other JDK licensees to provide implementations of this API in standard
 extensions and products.
 
-<P><A NAME="NO_IMPLEMENT"></A>
+<P><A id="NO_IMPLEMENT"></A>
 <h2>Features That Throw NO_IMPLEMENT</h2>
 
 <P>Some of the API included in <code>org.omg</code> subpackages throw

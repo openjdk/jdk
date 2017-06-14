@@ -44,7 +44,7 @@
 package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.wrappers.InfiniteLoop;
+import jdk.test.lib.InfiniteLoop;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
 
