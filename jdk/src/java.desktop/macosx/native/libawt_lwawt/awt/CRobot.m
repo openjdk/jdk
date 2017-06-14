@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
 (JNIEnv *env, jobject peer,
- jint x, jint y, jint width, jint height, jintArray pixels)
+ jint x, jint y, jint width, jint height, jdouble scale, jintArray pixels)
 {
     JNF_COCOA_ENTER(env);
 
@@ -285,10 +285,11 @@ Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
     jint picWidth = width;
     jint picHeight = height;
 
-    CGRect screenRect = CGRectMake(picX, picY, picWidth, picHeight);
+    CGRect screenRect = CGRectMake(picX / scale, picY / scale,
+    				picWidth / scale, picHeight / scale);
     CGImageRef screenPixelsImage = CGWindowListCreateImage(screenRect,
                                         kCGWindowListOptionOnScreenOnly,
-                                        kCGNullWindowID, kCGWindowImageDefault);
+                                        kCGNullWindowID, kCGWindowImageBestResolution);
 
     if (screenPixelsImage == NULL) {
         return;

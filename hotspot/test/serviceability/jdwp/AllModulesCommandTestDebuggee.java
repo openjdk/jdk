@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
-import java.lang.reflect.Layer;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -35,10 +33,10 @@ public class AllModulesCommandTestDebuggee {
 
     public static void main(String[] args) throws InterruptedException {
 
-        int modCount = Layer.boot().modules().size();
+        int modCount = ModuleLayer.boot().modules().size();
 
         // Send all modules names via the process output
-        for (Module mod : Layer.boot().modules()) {
+        for (Module mod : ModuleLayer.boot().modules()) {
             String info = String.format("module %s", mod.getName());
             write(info);
         }

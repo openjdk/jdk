@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
 
 /**
- * <a name="jtree_description"></a>
+ * <a id="jtree_description"></a>
  * A control that displays a set of hierarchical data as an outline.
  * You can find task-oriented documentation and examples of using trees in
  * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>,
@@ -1568,9 +1568,10 @@ public class JTree extends JComponent implements Scrollable, Accessible
                     Rectangle       pathBounds = getPathBounds(path);
 
                     p.translate(-pathBounds.x, -pathBounds.y);
+                    @SuppressWarnings("deprecation")
+                    final int modifiers = event.getModifiers();
                     newEvent = new MouseEvent(rComponent, event.getID(),
-                                          event.getWhen(),
-                                              event.getModifiers(),
+                                          event.getWhen(), modifiers,
                                               p.x, p.y,
                                               event.getXOnScreen(),
                                               event.getYOnScreen(),

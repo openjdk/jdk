@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug 8157068
- * @summary Patch java.base and user module with Hashes attribute tied with
- *          other module.
- * @library /lib/testlibrary
+ * @bug 8157068 8177844
+ * @summary Patch java.base and user module with ModuleHashes attribute
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchSystemModules
  */
 
@@ -40,7 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -52,13 +52,13 @@ public class PatchSystemModules {
     private static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final Path TEST_SRC = Paths.get(System.getProperty("test.src"));
-    private static final Path PATCH_SRC_DIR = TEST_SRC.resolve("src1");
 
     private static final Path JMODS = Paths.get(JAVA_HOME, "jmods");
     private static final Path MODS_DIR = Paths.get("mods");
     private static final Path JARS_DIR = Paths.get("jars");
     private static final Path PATCH_DIR = Paths.get("patches");
     private static final Path IMAGE = Paths.get("image");
+    private static final Path NEW_M1_JAR = JARS_DIR.resolve("new_m1.jar");
 
     private static final String JAVA_BASE = "java.base";
     private final String[] modules = new String[] { "m1", "m2" };
@@ -66,6 +66,8 @@ public class PatchSystemModules {
     @BeforeTest
     private void setup() throws Throwable {
         Path src = TEST_SRC.resolve("src");
+        Path src1 = TEST_SRC.resolve("src1");
+
         for (String name : modules) {
             assertTrue(CompilerUtils.compile(src.resolve(name),
                                              MODS_DIR,
@@ -73,19 +75,36 @@ public class PatchSystemModules {
         }
 
         // compile patched source
-        assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve(JAVA_BASE),
+        String patchDir = src1.resolve(JAVA_BASE).toString();
+        assertTrue(CompilerUtils.compile(src1.resolve(JAVA_BASE),
                                          PATCH_DIR.resolve(JAVA_BASE),
-                                         "-Xmodule:java.base"));
-        assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve("m2"),
+                                         "--patch-module", "java.base=" + patchDir));
+        assertTrue(CompilerUtils.compile(src1.resolve("m2"),
                                          PATCH_DIR.resolve("m2")));
+
+        createJars();
 
         // create an image with only m1 and m2
         if (Files.exists(JMODS)) {
             // create an image with m1,m2
             createImage();
         }
+
+        // compile a different version of m1
+        Path tmp = Paths.get("tmp");
+        assertTrue(CompilerUtils.compile(src1.resolve("m1"), tmp,
+                                         "--module-path", MODS_DIR.toString(),
+                                         "--module-source-path", src1.toString()));
+
+        // package new_m1.jar
+        jar("--create",
+            "--file=" + NEW_M1_JAR.toString(),
+            "-C", tmp.resolve("m1").toString(), ".");
     }
 
+    /*
+     * Test patching system module and user module on module path
+     */
     @Test
     public void test() throws Throwable {
         Path patchedJavaBase = PATCH_DIR.resolve(JAVA_BASE);
@@ -106,6 +125,9 @@ public class PatchSystemModules {
                 "-m", "m1/p1.Main", "2");
     }
 
+    /*
+     * Test --patch-module on a custom image
+     */
     @Test
     public void testImage() throws Throwable {
         if (Files.notExists(JMODS))
@@ -124,27 +146,49 @@ public class PatchSystemModules {
                 "-m", "m1/p1.Main", "2");
     }
 
+    /*
+     * Test a module linked in a system hashed in ModuleHashes attribute
+     * cannot be upgraded
+     */
     @Test
-    public void upgradeTiedModule() throws Throwable {
+    public void upgradeHashedModule() throws Throwable {
         if (Files.notExists(JMODS))
             return;
 
-        Path m1 = MODS_DIR.resolve("m1.jar");
-
-        // create another m1.jar
-        jar("--create",
-            "--file=" + m1.toString(),
-            "-C", MODS_DIR.resolve("m1").toString(), ".");
-
         // Fail to upgrade m1.jar with mismatched hash
         runTestWithExitCode(getJava(IMAGE),
-                "--upgrade-module-path", m1.toString(),
+                "--upgrade-module-path", NEW_M1_JAR.toString(),
                 "-m", "m1/p1.Main");
 
+        // test when SystemModules fast path is not enabled, i.e. exploded image
         runTestWithExitCode(getJava(IMAGE),
                 "--patch-module", "java.base=" + PATCH_DIR.resolve(JAVA_BASE),
-                "--upgrade-module-path", m1.toString(),
-                "-m", "m1/p1.Main", "1");
+                "--upgrade-module-path", NEW_M1_JAR.toString(),
+                "-m", "m1/p1.Main");
+    }
+
+    /*
+     * Test a module linked in a system hashed in ModuleHashes attribute
+     * cannot be upgraded combining with --patch-module and --upgrade-module-path
+     */
+    @Test
+    public void patchHashedModule() throws Throwable {
+        if (Files.notExists(JMODS))
+            return;
+
+        // --patch-module does not disable hash check.
+        // Test that a hashed module cannot be upgraded.
+        runTestWithExitCode(getJava(IMAGE),
+                "--patch-module", "m1=.jar",
+                "--upgrade-module-path", NEW_M1_JAR.toString(),
+                "-m", "m1/p1.Main");
+
+        // test when SystemModules fast path is not enabled, i.e. exploded image
+        runTestWithExitCode(getJava(IMAGE),
+                "--patch-module", "java.base=" + PATCH_DIR.resolve(JAVA_BASE),
+                "--patch-module", "m1=.jar",
+                "--upgrade-module-path", NEW_M1_JAR.toString(),
+                "-m", "m1/p1.Main");
     }
 
     private void runTestWithExitCode(String... options) throws Throwable {
@@ -170,9 +214,8 @@ public class PatchSystemModules {
         assertTrue(exitValue == 0);
     }
 
-    static void createImage() throws Throwable {
+    static void createJars() throws Throwable {
         FileUtils.deleteFileTreeUnchecked(JARS_DIR);
-        FileUtils.deleteFileTreeUnchecked(IMAGE);
 
         Files.createDirectories(JARS_DIR);
         Path m1 = JARS_DIR.resolve("m1.jar");
@@ -188,7 +231,10 @@ public class PatchSystemModules {
             "--module-path", JARS_DIR.toString(),
             "--hash-modules", "m1",
             "-C", MODS_DIR.resolve("m2").toString(), ".");
+    }
 
+    static void createImage() throws Throwable {
+        FileUtils.deleteFileTreeUnchecked(IMAGE);
 
         String mpath = JARS_DIR.toString() + File.pathSeparator + JMODS.toString();
         execTool("jlink", "--module-path", mpath,

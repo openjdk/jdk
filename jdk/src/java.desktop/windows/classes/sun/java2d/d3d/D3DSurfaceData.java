@@ -766,7 +766,17 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
                 final Component target = (Component)sd.getPeer().getTarget();
                 SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
                     public void run() {
-                        target.repaint(x1, y1, x2, y2);
+                        double scaleX = sd.getDefaultScaleX();
+                        double scaleY = sd.getDefaultScaleY();
+                        if (scaleX > 1 || scaleY > 1) {
+                            int sx1 = (int) Math.floor(x1 / scaleX);
+                            int sy1 = (int) Math.floor(y1 / scaleY);
+                            int sx2 = (int) Math.ceil(x2 / scaleX);
+                            int sy2 = (int) Math.ceil(y2 / scaleY);
+                            target.repaint(sx1, sy1, sx2 - sx1, sy2 - sy1);
+                        } else {
+                            target.repaint(x1, y1, x2 - x1, y2 - y1);
+                        }
                     }
                 });
                 return;

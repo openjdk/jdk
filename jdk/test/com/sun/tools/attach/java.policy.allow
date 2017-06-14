@@ -8,7 +8,8 @@ grant {
     permission com.sun.tools.attach.AttachPermission "createAttachProvider";
 
     /* implementation specific */
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
+    permission java.lang.RuntimePermission "manageProcess";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.jvmstat.monitor";
     permission java.lang.RuntimePermission "loadLibrary.attach";

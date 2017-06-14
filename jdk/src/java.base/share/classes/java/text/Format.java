@@ -115,7 +115,7 @@ import java.io.Serializable;
  * the field. For examples of these constants, see <code>ERA_FIELD</code> and its
  * friends in {@link DateFormat}.
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Formats are generally not synchronized.

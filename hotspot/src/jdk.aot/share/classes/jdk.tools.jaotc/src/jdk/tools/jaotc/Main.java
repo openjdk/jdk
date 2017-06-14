@@ -625,7 +625,9 @@ public class Main implements LogPrinter {
 
     private void reportError(Throwable e) {
         log.println("Error: " + e.getMessage());
-        e.printStackTrace(log);
+        if (options.info) {
+            e.printStackTrace(log);
+        }
         log.flush();
     }
 

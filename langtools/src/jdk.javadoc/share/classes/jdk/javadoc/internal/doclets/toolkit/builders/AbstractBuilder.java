@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -65,7 +65,7 @@ public abstract class AbstractBuilder {
         /**
          * The configuration used in this run of the doclet.
          */
-        final Configuration configuration;
+        final BaseConfiguration configuration;
 
         /**
          * Keep track of which packages we have seen for
@@ -79,7 +79,7 @@ public abstract class AbstractBuilder {
          */
         final LayoutParser layoutParser;
 
-        Context(Configuration configuration,
+        Context(BaseConfiguration configuration,
                 Set<PackageElement> containingPackagesSeen,
                 LayoutParser layoutParser) {
             this.configuration = configuration;
@@ -91,7 +91,7 @@ public abstract class AbstractBuilder {
     /**
      * The configuration used in this run of the doclet.
      */
-    protected final Configuration configuration;
+    protected final BaseConfiguration configuration;
 
     protected final Messages messages;
     protected final Resources resources;

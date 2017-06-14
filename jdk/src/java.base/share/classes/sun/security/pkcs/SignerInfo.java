@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.Timestamp;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
@@ -48,6 +49,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import sun.security.timestamp.TimestampToken;
+import sun.security.util.ConstraintsParameters;
 import sun.security.util.Debug;
 import sun.security.util.DerEncoder;
 import sun.security.util.DerInputStream;
@@ -321,6 +323,8 @@ public class SignerInfo implements DerEncoder {
                 data = content.getContentBytes();
             }
 
+            ConstraintsParameters cparams =
+                    new ConstraintsParameters(timestamp);
             String digestAlgname = getDigestAlgorithmId().getName();
 
             byte[] dataSigned;
@@ -347,11 +351,11 @@ public class SignerInfo implements DerEncoder {
                 if (messageDigest == null) // fail if there is no message digest
                     return null;
 
-                // check that algorithm is not restricted
-                if (!JAR_DISABLED_CHECK.permits(DIGEST_PRIMITIVE_SET,
-                        digestAlgname, null)) {
-                    throw new SignatureException("Digest check failed. " +
-                            "Disabled algorithm used: " + digestAlgname);
+                // check that digest algorithm is not restricted
+                try {
+                    JAR_DISABLED_CHECK.permits(digestAlgname, cparams);
+                } catch (CertPathValidatorException e) {
+                    throw new SignatureException(e.getMessage(), e);
                 }
 
                 MessageDigest md = MessageDigest.getInstance(digestAlgname);
@@ -385,17 +389,18 @@ public class SignerInfo implements DerEncoder {
             String algname = AlgorithmId.makeSigAlg(
                     digestAlgname, encryptionAlgname);
 
-            // check that algorithm is not restricted
-            if (!JAR_DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, algname, null)) {
-                throw new SignatureException("Signature check failed. " +
-                        "Disabled algorithm used: " + algname);
+            // check that jar signature algorithm is not restricted
+            try {
+                JAR_DISABLED_CHECK.permits(algname, cparams);
+            } catch (CertPathValidatorException e) {
+                throw new SignatureException(e.getMessage(), e);
             }
 
             X509Certificate cert = getCertificate(block);
-            PublicKey key = cert.getPublicKey();
             if (cert == null) {
                 return null;
             }
+            PublicKey key = cert.getPublicKey();
 
             // check if the public key is restricted
             if (!JAR_DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
