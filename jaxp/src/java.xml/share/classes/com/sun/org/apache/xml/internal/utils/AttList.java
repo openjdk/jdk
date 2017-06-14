@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,25 +39,8 @@ public class AttList implements Attributes
   /** Index of last attribute node          */
   int m_lastIndex;
 
-  // ARGHH!!  JAXP Uses Xerces without setting the namespace processing to ON!
+  // JAXP Uses Xerces without setting the namespace processing to ON!
   // DOM2Helper m_dh = new DOM2Helper();
-
-  /** Local reference to DOMHelper          */
-  DOMHelper m_dh;
-
-//  /**
-//   * Constructor AttList
-//   *
-//   *
-//   * @param attrs List of attributes this will contain
-//   */
-//  public AttList(NamedNodeMap attrs)
-//  {
-//
-//    m_attrs = attrs;
-//    m_lastIndex = m_attrs.getLength() - 1;
-//    m_dh = new DOM2Helper();
-//  }
 
   /**
    * Constructor AttList
@@ -67,12 +49,10 @@ public class AttList implements Attributes
    * @param attrs List of attributes this will contain
    * @param dh DOMHelper
    */
-  public AttList(NamedNodeMap attrs, DOMHelper dh)
+  public AttList(NamedNodeMap attrs)
   {
-
     m_attrs = attrs;
     m_lastIndex = m_attrs.getLength() - 1;
-    m_dh = dh;
   }
 
   /**
@@ -96,7 +76,7 @@ public class AttList implements Attributes
    */
   public String getURI(int index)
   {
-    String ns = m_dh.getNamespaceOfNode(((Attr) m_attrs.item(index)));
+    String ns = DOM2Helper.getNamespaceOfNode(((Attr) m_attrs.item(index)));
     if(null == ns)
       ns = "";
     return ns;
@@ -112,7 +92,7 @@ public class AttList implements Attributes
    */
   public String getLocalName(int index)
   {
-    return m_dh.getLocalNameOfNode(((Attr) m_attrs.item(index)));
+    return DOM2Helper.getLocalNameOfNode(((Attr) m_attrs.item(index)));
   }
 
   /**
