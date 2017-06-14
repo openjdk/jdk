@@ -1191,8 +1191,6 @@ public:
                                                                             \
   diagnostic(bool, InlineNotify, true, "intrinsify subset of notify")       \
                                                                             \
-  experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
-                                                                            \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \

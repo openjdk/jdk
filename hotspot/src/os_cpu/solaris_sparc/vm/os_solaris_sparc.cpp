@@ -725,14 +725,6 @@ void os::Solaris::init_thread_fpu_state(void) {
     // Nothing needed on Sparc.
 }
 
-#if defined(__sparc) && defined(COMPILER2) && defined(_GNU_SOURCE)
- // See file build/solaris/makefiles/$compiler.make
- // For compiler1 the architecture is v8 and frps isn't present in v8
- extern "C"  void _mark_fpu_nosave() {
-   __asm__ __volatile__ ("wr %%g0, 0, %%fprs \n\t" : : :);
-  }
-#endif //defined(__sparc) && defined(COMPILER2)
-
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
 }
