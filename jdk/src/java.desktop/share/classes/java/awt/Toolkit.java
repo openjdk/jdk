@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,7 +451,7 @@ public abstract class Toolkit {
      *
      * @param s the error message
      * @param e the original exception
-     * @throws the new AWTError including the cause (the original exception)
+     * @throws AWTError the new AWTError including the cause (the original exception)
      */
     private static void newAWTError(Throwable e, String s) {
         AWTError newAWTError = new AWTError(s);
@@ -1067,6 +1067,7 @@ public abstract class Toolkit {
      * @see       java.awt.MenuShortcut
      * @since     1.1
      */
+    @SuppressWarnings("deprecation")
     public int getMenuShortcutKeyMask() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
 

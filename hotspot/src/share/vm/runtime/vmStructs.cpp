@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,6 +199,7 @@ typedef Hashtable<Klass*, mtClass>            KlassHashtable;
 typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
+typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -584,6 +585,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
      static_field(SymbolTable,                 _the_table,                                    SymbolTable*)                          \
      static_field(SymbolTable,                 _shared_table,                                 SymbolCompactHashTable)                \
+     static_field(RehashableSymbolHashtable,   _seed,                                         juint)                                 \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* StringTable */                                                                                                                  \
@@ -673,7 +675,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
   nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-  nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
+  volatile_nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                           BasicHashtableEntry<mtInternal>*)      \
   nonstatic_field(BasicHashtable<mtInternal>,  _first_free_entry,                             char*)                                 \
   nonstatic_field(BasicHashtable<mtInternal>,  _end_block,                                    char*)                                 \
   nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
@@ -969,6 +971,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _satb_mark_queue,                              SATBMarkQueue)                         \
   nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
+  volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
                                                                                                                                      \
@@ -1602,6 +1605,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(BasicHashtable<mtInternal>)                       \
     declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
+  declare_toplevel_type(BasicHashtable<mtSymbol>)                         \
+    declare_type(RehashableSymbolHashtable, BasicHashtable<mtSymbol>)     \
   declare_type(SymbolTable, SymbolHashtable)                              \
   declare_type(StringTable, StringHashtable)                              \
     declare_type(LoaderConstraintTable, KlassHashtable)                   \
@@ -2209,6 +2214,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(JavaThread*)                                      \
   declare_toplevel_type(java_lang_Class)                                  \
   declare_integer_type(JavaThread::AsyncRequests)                         \
+  declare_integer_type(JavaThread::TerminatedTypes)                       \
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
   declare_toplevel_type(jint*)                                            \
@@ -2431,6 +2437,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
   declare_constant(_thread_blocked_trans)                                 \
+  declare_constant(JavaThread::_not_terminated)                           \
+  declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
   /******************************/                                        \
   /* Klass misc. enum constants */                                        \

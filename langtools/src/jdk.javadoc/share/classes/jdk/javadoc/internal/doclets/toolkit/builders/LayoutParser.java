@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.*;
 
 import javax.xml.parsers.*;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import org.xml.sax.*;
@@ -56,11 +56,11 @@ public class LayoutParser extends DefaultHandler {
      */
     private final Map<String,XMLNode> xmlElementsMap;
     private XMLNode currentNode;
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private String currentRoot;
     private boolean isParsing;
 
-    private LayoutParser(Configuration configuration) {
+    private LayoutParser(BaseConfiguration configuration) {
         xmlElementsMap = new HashMap<>();
         this.configuration = configuration;
     }
@@ -71,7 +71,7 @@ public class LayoutParser extends DefaultHandler {
      * @param configuration the current configuration of the doclet.
      * @return an instance of the BuilderXML.
      */
-    public static LayoutParser getInstance(Configuration configuration) {
+    public static LayoutParser getInstance(BaseConfiguration configuration) {
         return new LayoutParser(configuration);
     }
 
@@ -95,7 +95,7 @@ public class LayoutParser extends DefaultHandler {
             } catch (IOException | ParserConfigurationException | SAXException e) {
                 String message = (configuration.builderXMLPath == null)
                         ? configuration.getResources().getText("doclet.exception.read.resource",
-                                Configuration.DEFAULT_BUILDER_XML, e)
+                                BaseConfiguration.DEFAULT_BUILDER_XML, e)
                         : configuration.getResources().getText("doclet.exception.read.file",
                                 configuration.builderXMLPath, e);
                 throw new SimpleDocletException(message, e);

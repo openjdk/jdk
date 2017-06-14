@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,14 @@ public class Proc {
     // Specifies a Java system property. Can be called multiple times.
     public Proc prop(String a, String b) {
         prop.put(a, b);
+        return this;
+    }
+    // Inherit the value of a system property
+    public Proc inheritProp(String k) {
+        String v = System.getProperty(k);
+        if (v != null) {
+            prop.put(k, v);
+        }
         return this;
     }
     // Sets classpath. If not called, Proc will choose a classpath. If called

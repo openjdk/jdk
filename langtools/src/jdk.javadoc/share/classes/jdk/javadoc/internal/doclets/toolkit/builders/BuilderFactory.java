@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -56,7 +56,7 @@ public class BuilderFactory {
     /**
      * The current configuration of the doclet.
      */
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
 
     /**
      * The factory to retrieve the required writers from.
@@ -70,7 +70,7 @@ public class BuilderFactory {
      * @param configuration the configuration for the current doclet
      * being executed.
      */
-    public BuilderFactory (Configuration configuration) {
+    public BuilderFactory (BaseConfiguration configuration) {
         this.configuration = configuration;
         this.writerFactory = configuration.getWriterFactory();
 

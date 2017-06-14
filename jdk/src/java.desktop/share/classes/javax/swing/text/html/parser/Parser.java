@@ -2119,8 +2119,11 @@ class Parser implements DTDConstants {
             }
 
             /* To account for extra read()'s that happened */
-            for (int j = 0; j < i; j++) {
-                addString(charsToAdd[j]);
+            if (i > 0) {
+                for (int j = 0; j < i; j++) {
+                    addString(charsToAdd[j]);
+                }
+                continue;
             }
             switch (ch) {
             case -1:

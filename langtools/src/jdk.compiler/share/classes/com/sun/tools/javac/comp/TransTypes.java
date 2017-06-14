@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -377,21 +378,26 @@ public class TransTypes extends TreeTranslator {
                         MethodSymbol target = bridgeSpan == null ? null : bridgeSpan.snd;
                         if (target == null || !target.overrides(meth, origin, types, true, false)) {
                             // Bridge for other symbol pair was added
-                            log.error(pos, "name.clash.same.erasure.no.override",
-                                    other, other.location(origin.type, types),
-                                    meth, meth.location(origin.type, types));
+                            log.error(pos, Errors.NameClashSameErasureNoOverride(
+                                    other.name, types.memberType(origin.type, other).asMethodType().getParameterTypes(),
+                                    other.location(origin.type, types),
+                                    meth.name, types.memberType(origin.type, meth).asMethodType().getParameterTypes(),
+                                    meth.location(origin.type, types)));
                         }
                     }
                 }
             } else if (!bridge.overrides(meth, origin, types, true)) {
                 // Accidental binary override without source override.
+                // Don't diagnose the problem if it would already
+                // have been reported in the superclass
                 if (bridge.owner == origin ||
-                    types.asSuper(bridge.owner.type, meth.owner) == null)
-                    // Don't diagnose the problem if it would already
-                    // have been reported in the superclass
-                    log.error(pos, "name.clash.same.erasure.no.override",
-                              bridge, bridge.location(origin.type, types),
-                              meth,  meth.location(origin.type, types));
+                    types.asSuper(bridge.owner.type, meth.owner) == null) {
+                    log.error(pos, Errors.NameClashSameErasureNoOverride(
+                            bridge.name, types.memberType(origin.type, bridge).asMethodType().getParameterTypes(),
+                            bridge.location(origin.type, types),
+                            meth.name, types.memberType(origin.type, meth).asMethodType().getParameterTypes(),
+                            meth.location(origin.type, types)));
+                }
             }
         }
     }

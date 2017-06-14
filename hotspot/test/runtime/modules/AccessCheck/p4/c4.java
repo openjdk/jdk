@@ -25,8 +25,6 @@
 
 package p4;
 
-import java.lang.reflect.Module;
-
 public class c4 {
     // Add a read edge from c4's module to given module m
     public void addReads(Module m) {

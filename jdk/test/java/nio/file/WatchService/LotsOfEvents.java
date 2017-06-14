@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,24 @@
 
 /* @test
  * @bug 6907760 6929532
- * @summary Tests WatchService behavior when lots of events are pending
+ * @summary Tests WatchService behavior when lots of events are pending (use -Dseed=X to set PRNG seed)
  * @library ..
+ * @library /test/lib
  * @run main/timeout=180 LotsOfEvents
  * @key randomness
  */
 
-import java.nio.file.*;
-import static java.nio.file.StandardWatchEventKinds.*;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.*;
+import static java.nio.file.StandardWatchEventKinds.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import jdk.test.lib.RandomFactory;
 
 public class LotsOfEvents {
 
-    static final Random rand = new Random();
+    private static final Random RAND = RandomFactory.getRandom();
 
     public static void main(String[] args) throws Exception {
         Path dir = TestUtil.createTemporaryDirectory();
@@ -70,7 +72,7 @@ public class LotsOfEvents {
             Thread.sleep(1000);
 
             // check that we see the create events (or overflow)
-            drainAndCheckOverflowEvents(watcher, ENTRY_CREATE, n);
+            drainAndCheckOverflowEvents(dir, watcher, ENTRY_CREATE, n);
 
             // delete the files
             for (int i=0; i<n; i++) {
@@ -81,11 +83,12 @@ public class LotsOfEvents {
             Thread.sleep(1000);
 
             // check that we see the delete events (or overflow)
-            drainAndCheckOverflowEvents(watcher, ENTRY_DELETE, n);
+            drainAndCheckOverflowEvents(dir, watcher, ENTRY_DELETE, n);
         }
     }
 
-    static void drainAndCheckOverflowEvents(WatchService watcher,
+    static void drainAndCheckOverflowEvents(Path dir,
+                                            WatchService watcher,
                                             WatchEvent.Kind<?> expectedKind,
                                             int count)
         throws IOException, InterruptedException
@@ -123,8 +126,25 @@ public class LotsOfEvents {
         }
 
         // check that all expected events were received or there was an overflow
-        if (nread < count && !gotOverflow)
-            throw new RuntimeException("Insufficient events");
+        if (nread < count && !gotOverflow) {
+            System.err.printf("Test directory %s contains %d files%n",
+                dir, Files.list(dir).count());
+
+            long timeBeforePoll = System.nanoTime();
+            key = watcher.poll(15, TimeUnit.SECONDS);
+            long timeAfterPoll = System.nanoTime();
+            if (key == null) {
+                System.err.println("key still null after extra polling");
+            } else {
+                List<WatchEvent<?>> events = key.pollEvents();
+                System.err.printf("Retrieved key with %d events after %d ns%n",
+                    events.size(), timeAfterPoll - timeBeforePoll);
+            }
+
+            throw new RuntimeException("Insufficient "
+                + expectedKind.name() + "  events: expected "
+                + count + ", received " + nread);
+        }
     }
 
     /**
@@ -134,14 +154,14 @@ public class LotsOfEvents {
         throws IOException, InterruptedException
     {
         // this test uses a random number of files
-        final int nfiles = 5 + rand.nextInt(10);
+        final int nfiles = 5 + RAND.nextInt(10);
         DirectoryEntry[] entries = new DirectoryEntry[nfiles];
         for (int i=0; i<nfiles; i++) {
             entries[i] = new DirectoryEntry(dir.resolve("foo" + i));
 
             // "some" of the files exist, some do not.
             entries[i].deleteIfExists();
-            if (rand.nextBoolean())
+            if (RAND.nextBoolean())
                 entries[i].create();
         }
 
@@ -153,8 +173,8 @@ public class LotsOfEvents {
 
                 // make some noise!!!
                 for (int i=0; i<100; i++) {
-                    DirectoryEntry entry = entries[rand.nextInt(nfiles)];
-                    int action = rand.nextInt(10);
+                    DirectoryEntry entry = entries[RAND.nextInt(nfiles)];
+                    int action = RAND.nextInt(10);
                     switch (action) {
                         case 0 : entry.create(); break;
                         case 1 : entry.deleteIfExists(); break;
