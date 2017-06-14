@@ -27,7 +27,7 @@
  * @summary Tests the use of the "jmx.remote.x.password.file" and
  *          "jmx.remote.x.access.file" environment map properties.
  * @author Luis-Miguel Alventosa
- * @modules java.management.rmi
+ *
  * @run clean PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  * @run build PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  * @run main PasswordAccessFileTest

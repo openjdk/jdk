@@ -25,16 +25,14 @@
 // TEMPLATE: change bug number and fill out <SUMMARY> and <AUTHOR>
 // TEMPLATE: delete TEMPLATE lines
 /**
- *  @test
- *  @bug 0000000
- *  @summary <SUMMARY>
+ * @test
+ * @bug 0000000
+ * @summary <SUMMARY>
+ * @author <AUTHOR>
  *
- *  @author <AUTHOR>
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g TemplateTest.java
- *  @run driver TemplateTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g TemplateTest.java
+ * @run driver TemplateTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

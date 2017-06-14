@@ -42,6 +42,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import javax.tools.JavaFileObject;
+
 import java.util.*;
 
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
@@ -56,7 +57,9 @@ import static com.sun.tools.javac.tree.JCTree.Tag.ANNOTATION;
 import static com.sun.tools.javac.tree.JCTree.Tag.ASSIGN;
 import static com.sun.tools.javac.tree.JCTree.Tag.IDENT;
 import static com.sun.tools.javac.tree.JCTree.Tag.NEWARRAY;
+
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+
 
 /** Enter annotations onto symbols and types (and trees).
  *
@@ -565,6 +568,20 @@ public class Annotate {
             return new Attribute.Error(((JCAnnotation)tree).annotationType.type);
         }
 
+        MemberEnter.InitTreeVisitor initTreeVisitor = new MemberEnter.InitTreeVisitor() {
+            // the methods below are added to allow class literals on top of constant expressions
+            @Override
+            public void visitTypeIdent(JCPrimitiveTypeTree that) {}
+
+            @Override
+            public void visitTypeArray(JCArrayTypeTree that) {}
+        };
+        tree.accept(initTreeVisitor);
+        if (!initTreeVisitor.result) {
+            log.error(tree.pos(), Errors.ExpressionNotAllowableAsAnnotationValue);
+            return new Attribute.Error(syms.errType);
+        }
+
         if (expectedElementType.isPrimitive() ||
                 (types.isSameType(expectedElementType, syms.stringType) && !expectedElementType.hasTag(TypeTag.ERROR))) {
             return getAnnotationPrimitiveValue(expectedElementType, tree, env);
@@ -614,12 +631,6 @@ public class Annotate {
             }
         }
 
-        // Class literals look like field accesses of a field named class
-        // at the tree level
-        if (TreeInfo.name(tree) != names._class) {
-            log.error(tree.pos(), "annotation.value.must.be.class.literal");
-            return new Attribute.Error(syms.errType);
-        }
         return new Attribute.Class(types,
                 (((JCFieldAccess) tree).selected).type);
     }

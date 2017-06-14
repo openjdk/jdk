@@ -23,7 +23,6 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -256,7 +255,7 @@ public class Main {
      * Returns the directory for the given module (by name).
      */
     static Path directoryFor(String name) {
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         ResolvedModule resolvedModule = cf.findModule(name).orElse(null);
         if (resolvedModule == null)
             throw new RuntimeException("not found: " + name);

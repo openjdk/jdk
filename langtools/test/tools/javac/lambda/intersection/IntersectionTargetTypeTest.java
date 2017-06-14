@@ -26,7 +26,6 @@
  * @bug 8002099 8010822
  * @summary Add support for intersection types in cast expression
  * @modules jdk.compiler/com.sun.tools.javac.util
- * @run main/othervm IntersectionTargetTypeTest
  */
 
 import com.sun.source.util.JavacTask;
