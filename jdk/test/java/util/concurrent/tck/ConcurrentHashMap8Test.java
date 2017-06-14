@@ -237,8 +237,8 @@ public class ConcurrentHashMap8Test extends JSR166TestCase {
         Set set1 = map.keySet();
         Set set2 = map.keySet(true);
         set2.add(six);
-        assertTrue(((ConcurrentHashMap.KeySetView)set2).getMap() == map);
-        assertTrue(((ConcurrentHashMap.KeySetView)set1).getMap() == map);
+        assertSame(map, ((ConcurrentHashMap.KeySetView)set2).getMap());
+        assertSame(map, ((ConcurrentHashMap.KeySetView)set1).getMap());
         assertEquals(set2.size(), map.size());
         assertEquals(set1.size(), map.size());
         assertTrue((Boolean)map.get(six));
@@ -332,10 +332,10 @@ public class ConcurrentHashMap8Test extends JSR166TestCase {
         assertFalse(set.add(one));
         assertTrue(set.add(six));
         assertTrue(set.add(seven));
-        assertTrue(set.getMappedValue() == one);
-        assertTrue(map.get(one) != one);
-        assertTrue(map.get(six) == one);
-        assertTrue(map.get(seven) == one);
+        assertSame(one, set.getMappedValue());
+        assertNotSame(one, map.get(one));
+        assertSame(one, map.get(six));
+        assertSame(one, map.get(seven));
     }
 
     void checkSpliteratorCharacteristics(Spliterator<?> sp,

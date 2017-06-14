@@ -27,7 +27,7 @@
  * @bug 4838640 4917194
  * @summary test on add/remove NotificationListener
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean AddRemoveTest
  * @run build AddRemoveTest
  * @run main AddRemoveTest

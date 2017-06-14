@@ -67,7 +67,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param configuration for this run
      * @param filename File to be generated.
      */
-    public FrameOutputWriter(ConfigurationImpl configuration, DocPath filename) {
+    public FrameOutputWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         noOfPackages = configuration.packages.size();
     }
@@ -80,7 +80,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
      * @param configuration the configuration for this doclet
      * @throws DocFileIOException if there is a problem generating the frame file
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         FrameOutputWriter framegen = new FrameOutputWriter(configuration, DocPaths.INDEX);
         framegen.generateFrameFile();
     }

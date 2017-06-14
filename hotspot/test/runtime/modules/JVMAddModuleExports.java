@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib ..
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMAddModuleExports
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 public class JVMAddModuleExports {
@@ -42,12 +41,12 @@ public class JVMAddModuleExports {
         MyClassLoader to_cl = new MyClassLoader();
         Module from_module, to_module;
 
-        from_module = ModuleHelper.ModuleObject("from_module", from_cl, new String[] { "mypackage", "this/package" });
+        from_module = ModuleHelper.ModuleObject("from_module", from_cl, new String[] { "mypackage", "x/apackage" });
         assertNotNull(from_module, "Module should not be null");
-        ModuleHelper.DefineModule(from_module, "9.0", "from_module/here", new String[] { "mypackage", "this/package" });
-        to_module = ModuleHelper.ModuleObject("to_module", to_cl, new String[] { "yourpackage", "that/package" });
+        ModuleHelper.DefineModule(from_module, "9.0", "from_module/here", new String[] { "mypackage", "x/apackage" });
+        to_module = ModuleHelper.ModuleObject("to_module", to_cl, new String[] { "yourpackage", "that/apackage" });
         assertNotNull(to_module, "Module should not be null");
-        ModuleHelper.DefineModule(to_module, "9.0", "to_module/here", new String[] { "yourpackage", "that/package" });
+        ModuleHelper.DefineModule(to_module, "9.0", "to_module/here", new String[] { "yourpackage", "that/apackage" });
 
         // Null from_module argument, expect an NPE
         try {
@@ -118,19 +117,19 @@ public class JVMAddModuleExports {
 
         // Export a package, that is not in from_module, to from_module
         try {
-            ModuleHelper.AddModuleExports(from_module, "that/package", from_module);
+            ModuleHelper.AddModuleExports(from_module, "that/apackage", from_module);
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
         }
 
         // Export the same package twice to the same module
-        ModuleHelper.AddModuleExports(from_module, "this/package", to_module);
-        ModuleHelper.AddModuleExports(from_module, "this/package", to_module);
+        ModuleHelper.AddModuleExports(from_module, "x/apackage", to_module);
+        ModuleHelper.AddModuleExports(from_module, "x/apackage", to_module);
 
         // Export a package, using '.' instead of '/'
         try {
-            ModuleHelper.AddModuleExports(from_module, "this.package", to_module);
+            ModuleHelper.AddModuleExports(from_module, "x.apackage", to_module);
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -138,8 +137,8 @@ public class JVMAddModuleExports {
 
         // Export a package to the unnamed module and then to a specific module.
         // The qualified export should be ignored.
-        ModuleHelper.AddModuleExportsToAll(to_module, "that/package");
-        ModuleHelper.AddModuleExports(to_module, "that/package", from_module);
+        ModuleHelper.AddModuleExportsToAll(to_module, "that/apackage");
+        ModuleHelper.AddModuleExports(to_module, "that/apackage", from_module);
     }
 
     static class MyClassLoader extends ClassLoader { }
