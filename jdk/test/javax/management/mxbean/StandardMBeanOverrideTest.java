@@ -29,7 +29,7 @@
  *          getMBeanInfo and getNotificationInfo in StandardMBean and
  *          StandardEmitterMBean.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean StandardMBeanOverrideTest
  * @run build StandardMBeanOverrideTest
  * @run main StandardMBeanOverrideTest

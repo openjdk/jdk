@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,32 +180,32 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapDouble(base, offset, 1.0d, 2.0d);
-            assertEquals(r, true, "success compareAndSwap double");
+            boolean r = UNSAFE.compareAndSetDouble(base, offset, 1.0d, 2.0d);
+            assertEquals(r, true, "success compareAndSet double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "success compareAndSwap double value");
+            assertEquals(x, 2.0d, "success compareAndSet double value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapDouble(base, offset, 1.0d, 3.0d);
-            assertEquals(r, false, "failing compareAndSwap double");
+            boolean r = UNSAFE.compareAndSetDouble(base, offset, 1.0d, 3.0d);
+            assertEquals(r, false, "failing compareAndSet double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "failing compareAndSwap double value");
+            assertEquals(x, 2.0d, "failing compareAndSet double value");
         }
 
         // Advanced compare
         {
-            double r = UNSAFE.compareAndExchangeDoubleVolatile(base, offset, 2.0d, 1.0d);
-            assertEquals(r, 2.0d, "success compareAndExchangeVolatile double");
+            double r = UNSAFE.compareAndExchangeDouble(base, offset, 2.0d, 1.0d);
+            assertEquals(r, 2.0d, "success compareAndExchange double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "success compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "success compareAndExchange double value");
         }
 
         {
-            double r = UNSAFE.compareAndExchangeDoubleVolatile(base, offset, 2.0d, 3.0d);
-            assertEquals(r, 1.0d, "failing compareAndExchangeVolatile double");
+            double r = UNSAFE.compareAndExchangeDouble(base, offset, 2.0d, 3.0d);
+            assertEquals(r, 1.0d, "failing compareAndExchange double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "failing compareAndExchangeVolatile double value");
+            assertEquals(x, 1.0d, "failing compareAndExchange double value");
         }
 
         {
@@ -239,41 +239,41 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapDouble(base, offset, 1.0d, 2.0d);
+                success = UNSAFE.weakCompareAndSetDoublePlain(base, offset, 1.0d, 2.0d);
             }
-            assertEquals(success, true, "weakCompareAndSwap double");
+            assertEquals(success, true, "weakCompareAndSetPlain double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "weakCompareAndSwap double value");
+            assertEquals(x, 2.0d, "weakCompareAndSetPlain double value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapDoubleAcquire(base, offset, 2.0d, 1.0d);
+                success = UNSAFE.weakCompareAndSetDoubleAcquire(base, offset, 2.0d, 1.0d);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire double");
+            assertEquals(success, true, "weakCompareAndSetAcquire double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "weakCompareAndSwapAcquire double");
+            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapDoubleRelease(base, offset, 1.0d, 2.0d);
+                success = UNSAFE.weakCompareAndSetDoubleRelease(base, offset, 1.0d, 2.0d);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease double");
+            assertEquals(success, true, "weakCompareAndSetRelease double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "weakCompareAndSwapRelease double");
+            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapDoubleVolatile(base, offset, 2.0d, 1.0d);
+                success = UNSAFE.weakCompareAndSetDouble(base, offset, 2.0d, 1.0d);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile double");
+            assertEquals(success, true, "weakCompareAndSet double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "weakCompareAndSwapVolatile double");
+            assertEquals(x, 1.0d, "weakCompareAndSet double");
         }
 
         UNSAFE.putDouble(base, offset, 2.0d);
@@ -306,4 +306,3 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
     }
 }
-

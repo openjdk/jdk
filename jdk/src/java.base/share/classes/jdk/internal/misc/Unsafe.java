@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1278,55 +1278,55 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapObject(Object o, long offset,
-                                                     Object expected,
-                                                     Object x);
+    public final native boolean compareAndSetObject(Object o, long offset,
+                                                    Object expected,
+                                                    Object x);
 
     @HotSpotIntrinsicCandidate
-    public final native Object compareAndExchangeObjectVolatile(Object o, long offset,
-                                                                Object expected,
-                                                                Object x);
+    public final native Object compareAndExchangeObject(Object o, long offset,
+                                                        Object expected,
+                                                        Object x);
 
     @HotSpotIntrinsicCandidate
     public final Object compareAndExchangeObjectAcquire(Object o, long offset,
                                                                Object expected,
                                                                Object x) {
-        return compareAndExchangeObjectVolatile(o, offset, expected, x);
+        return compareAndExchangeObject(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final Object compareAndExchangeObjectRelease(Object o, long offset,
                                                                Object expected,
                                                                Object x) {
-        return compareAndExchangeObjectVolatile(o, offset, expected, x);
+        return compareAndExchangeObject(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapObject(Object o, long offset,
-                                                         Object expected,
-                                                         Object x) {
-        return compareAndSwapObject(o, offset, expected, x);
+    public final boolean weakCompareAndSetObjectPlain(Object o, long offset,
+                                                      Object expected,
+                                                      Object x) {
+        return compareAndSetObject(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapObjectAcquire(Object o, long offset,
-                                                                Object expected,
-                                                                Object x) {
-        return compareAndSwapObject(o, offset, expected, x);
+    public final boolean weakCompareAndSetObjectAcquire(Object o, long offset,
+                                                        Object expected,
+                                                        Object x) {
+        return compareAndSetObject(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapObjectRelease(Object o, long offset,
-                                                                Object expected,
-                                                                Object x) {
-        return compareAndSwapObject(o, offset, expected, x);
+    public final boolean weakCompareAndSetObjectRelease(Object o, long offset,
+                                                        Object expected,
+                                                        Object x) {
+        return compareAndSetObject(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapObjectVolatile(Object o, long offset,
-                                                                Object expected,
-                                                                Object x) {
-        return compareAndSwapObject(o, offset, expected, x);
+    public final boolean weakCompareAndSetObject(Object o, long offset,
+                                                 Object expected,
+                                                 Object x) {
+        return compareAndSetObject(o, offset, expected, x);
     }
 
     /**
@@ -1339,61 +1339,61 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapInt(Object o, long offset,
-                                                  int expected,
-                                                  int x);
+    public final native boolean compareAndSetInt(Object o, long offset,
+                                                 int expected,
+                                                 int x);
 
     @HotSpotIntrinsicCandidate
-    public final native int compareAndExchangeIntVolatile(Object o, long offset,
-                                                          int expected,
-                                                          int x);
+    public final native int compareAndExchangeInt(Object o, long offset,
+                                                  int expected,
+                                                  int x);
 
     @HotSpotIntrinsicCandidate
     public final int compareAndExchangeIntAcquire(Object o, long offset,
                                                          int expected,
                                                          int x) {
-        return compareAndExchangeIntVolatile(o, offset, expected, x);
+        return compareAndExchangeInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final int compareAndExchangeIntRelease(Object o, long offset,
                                                          int expected,
                                                          int x) {
-        return compareAndExchangeIntVolatile(o, offset, expected, x);
+        return compareAndExchangeInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapInt(Object o, long offset,
-                                                      int expected,
-                                                      int x) {
-        return compareAndSwapInt(o, offset, expected, x);
+    public final boolean weakCompareAndSetIntPlain(Object o, long offset,
+                                                   int expected,
+                                                   int x) {
+        return compareAndSetInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapIntAcquire(Object o, long offset,
-                                                             int expected,
-                                                             int x) {
-        return compareAndSwapInt(o, offset, expected, x);
+    public final boolean weakCompareAndSetIntAcquire(Object o, long offset,
+                                                     int expected,
+                                                     int x) {
+        return compareAndSetInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapIntRelease(Object o, long offset,
-                                                             int expected,
-                                                             int x) {
-        return compareAndSwapInt(o, offset, expected, x);
+    public final boolean weakCompareAndSetIntRelease(Object o, long offset,
+                                                     int expected,
+                                                     int x) {
+        return compareAndSetInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapIntVolatile(Object o, long offset,
-                                                             int expected,
-                                                             int x) {
-        return compareAndSwapInt(o, offset, expected, x);
+    public final boolean weakCompareAndSetInt(Object o, long offset,
+                                              int expected,
+                                              int x) {
+        return compareAndSetInt(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final byte compareAndExchangeByteVolatile(Object o, long offset,
-                                                     byte expected,
-                                                     byte x) {
+    public final byte compareAndExchangeByte(Object o, long offset,
+                                             byte expected,
+                                             byte x) {
         long wordOffset = offset & ~3;
         int shift = (int) (offset & 3) << 3;
         if (BE) {
@@ -1407,64 +1407,64 @@ public final class Unsafe {
             fullWord = getIntVolatile(o, wordOffset);
             if ((fullWord & mask) != maskedExpected)
                 return (byte) ((fullWord & mask) >> shift);
-        } while (!weakCompareAndSwapIntVolatile(o, wordOffset,
+        } while (!weakCompareAndSetInt(o, wordOffset,
                                                 fullWord, (fullWord & ~mask) | maskedX));
         return expected;
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean compareAndSwapByte(Object o, long offset,
-                                            byte expected,
-                                            byte x) {
-        return compareAndExchangeByteVolatile(o, offset, expected, x) == expected;
+    public final boolean compareAndSetByte(Object o, long offset,
+                                           byte expected,
+                                           byte x) {
+        return compareAndExchangeByte(o, offset, expected, x) == expected;
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapByteVolatile(Object o, long offset,
-                                                        byte expected,
-                                                        byte x) {
-        return compareAndSwapByte(o, offset, expected, x);
+    public final boolean weakCompareAndSetByte(Object o, long offset,
+                                               byte expected,
+                                               byte x) {
+        return compareAndSetByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapByteAcquire(Object o, long offset,
-                                                       byte expected,
-                                                       byte x) {
-        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetByteAcquire(Object o, long offset,
+                                                      byte expected,
+                                                      byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapByteRelease(Object o, long offset,
-                                                       byte expected,
-                                                       byte x) {
-        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetByteRelease(Object o, long offset,
+                                                      byte expected,
+                                                      byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapByte(Object o, long offset,
-                                                        byte expected,
-                                                        byte x) {
-        return weakCompareAndSwapByteVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetBytePlain(Object o, long offset,
+                                                    byte expected,
+                                                    byte x) {
+        return weakCompareAndSetByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final byte compareAndExchangeByteAcquire(Object o, long offset,
                                                     byte expected,
                                                     byte x) {
-        return compareAndExchangeByteVolatile(o, offset, expected, x);
+        return compareAndExchangeByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final byte compareAndExchangeByteRelease(Object o, long offset,
                                                     byte expected,
                                                     byte x) {
-        return compareAndExchangeByteVolatile(o, offset, expected, x);
+        return compareAndExchangeByte(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final short compareAndExchangeShortVolatile(Object o, long offset,
-                                             short expected,
-                                             short x) {
+    public final short compareAndExchangeShort(Object o, long offset,
+                                               short expected,
+                                               short x) {
         if ((offset & 3) == 3) {
             throw new IllegalArgumentException("Update spans the word, not supported");
         }
@@ -1482,44 +1482,44 @@ public final class Unsafe {
             if ((fullWord & mask) != maskedExpected) {
                 return (short) ((fullWord & mask) >> shift);
             }
-        } while (!weakCompareAndSwapIntVolatile(o, wordOffset,
+        } while (!weakCompareAndSetInt(o, wordOffset,
                                                 fullWord, (fullWord & ~mask) | maskedX));
         return expected;
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean compareAndSwapShort(Object o, long offset,
-                                             short expected,
-                                             short x) {
-        return compareAndExchangeShortVolatile(o, offset, expected, x) == expected;
+    public final boolean compareAndSetShort(Object o, long offset,
+                                            short expected,
+                                            short x) {
+        return compareAndExchangeShort(o, offset, expected, x) == expected;
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapShortVolatile(Object o, long offset,
-                                                         short expected,
-                                                         short x) {
-        return compareAndSwapShort(o, offset, expected, x);
+    public final boolean weakCompareAndSetShort(Object o, long offset,
+                                                short expected,
+                                                short x) {
+        return compareAndSetShort(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapShortAcquire(Object o, long offset,
-                                                        short expected,
-                                                        short x) {
-        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetShortAcquire(Object o, long offset,
+                                                       short expected,
+                                                       short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapShortRelease(Object o, long offset,
-                                                        short expected,
-                                                        short x) {
-        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetShortRelease(Object o, long offset,
+                                                       short expected,
+                                                       short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapShort(Object o, long offset,
-                                                 short expected,
-                                                 short x) {
-        return weakCompareAndSwapShortVolatile(o, offset, expected, x);
+    public final boolean weakCompareAndSetShortPlain(Object o, long offset,
+                                                     short expected,
+                                                     short x) {
+        return weakCompareAndSetShort(o, offset, expected, x);
     }
 
 
@@ -1527,14 +1527,14 @@ public final class Unsafe {
     public final short compareAndExchangeShortAcquire(Object o, long offset,
                                                      short expected,
                                                      short x) {
-        return compareAndExchangeShortVolatile(o, offset, expected, x);
+        return compareAndExchangeShort(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final short compareAndExchangeShortRelease(Object o, long offset,
                                                     short expected,
                                                     short x) {
-        return compareAndExchangeShortVolatile(o, offset, expected, x);
+        return compareAndExchangeShort(o, offset, expected, x);
     }
 
     @ForceInline
@@ -1548,17 +1548,17 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean compareAndSwapChar(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return compareAndSwapShort(o, offset, c2s(expected), c2s(x));
+    public final boolean compareAndSetChar(Object o, long offset,
+                                           char expected,
+                                           char x) {
+        return compareAndSetShort(o, offset, c2s(expected), c2s(x));
     }
 
     @ForceInline
-    public final char compareAndExchangeCharVolatile(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return s2c(compareAndExchangeShortVolatile(o, offset, c2s(expected), c2s(x)));
+    public final char compareAndExchangeChar(Object o, long offset,
+                                             char expected,
+                                             char x) {
+        return s2c(compareAndExchangeShort(o, offset, c2s(expected), c2s(x)));
     }
 
     @ForceInline
@@ -1576,31 +1576,31 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapCharVolatile(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return weakCompareAndSwapShortVolatile(o, offset, c2s(expected), c2s(x));
+    public final boolean weakCompareAndSetChar(Object o, long offset,
+                                               char expected,
+                                               char x) {
+        return weakCompareAndSetShort(o, offset, c2s(expected), c2s(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapCharAcquire(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return weakCompareAndSwapShortAcquire(o, offset, c2s(expected), c2s(x));
+    public final boolean weakCompareAndSetCharAcquire(Object o, long offset,
+                                                      char expected,
+                                                      char x) {
+        return weakCompareAndSetShortAcquire(o, offset, c2s(expected), c2s(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapCharRelease(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return weakCompareAndSwapShortRelease(o, offset, c2s(expected), c2s(x));
+    public final boolean weakCompareAndSetCharRelease(Object o, long offset,
+                                                      char expected,
+                                                      char x) {
+        return weakCompareAndSetShortRelease(o, offset, c2s(expected), c2s(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapChar(Object o, long offset,
-                                            char expected,
-                                            char x) {
-        return weakCompareAndSwapShort(o, offset, c2s(expected), c2s(x));
+    public final boolean weakCompareAndSetCharPlain(Object o, long offset,
+                                                    char expected,
+                                                    char x) {
+        return weakCompareAndSetShortPlain(o, offset, c2s(expected), c2s(x));
     }
 
     /**
@@ -1653,17 +1653,17 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean compareAndSwapBoolean(Object o, long offset,
-                                               boolean expected,
-                                               boolean x) {
-        return compareAndSwapByte(o, offset, bool2byte(expected), bool2byte(x));
+    public final boolean compareAndSetBoolean(Object o, long offset,
+                                              boolean expected,
+                                              boolean x) {
+        return compareAndSetByte(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     @ForceInline
-    public final boolean compareAndExchangeBooleanVolatile(Object o, long offset,
-                                                        boolean expected,
-                                                        boolean x) {
-        return byte2bool(compareAndExchangeByteVolatile(o, offset, bool2byte(expected), bool2byte(x)));
+    public final boolean compareAndExchangeBoolean(Object o, long offset,
+                                                   boolean expected,
+                                                   boolean x) {
+        return byte2bool(compareAndExchangeByte(o, offset, bool2byte(expected), bool2byte(x)));
     }
 
     @ForceInline
@@ -1681,31 +1681,31 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapBooleanVolatile(Object o, long offset,
-                                                           boolean expected,
-                                                           boolean x) {
-        return weakCompareAndSwapByteVolatile(o, offset, bool2byte(expected), bool2byte(x));
+    public final boolean weakCompareAndSetBoolean(Object o, long offset,
+                                                  boolean expected,
+                                                  boolean x) {
+        return weakCompareAndSetByte(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapBooleanAcquire(Object o, long offset,
-                                                          boolean expected,
-                                                          boolean x) {
-        return weakCompareAndSwapByteAcquire(o, offset, bool2byte(expected), bool2byte(x));
+    public final boolean weakCompareAndSetBooleanAcquire(Object o, long offset,
+                                                         boolean expected,
+                                                         boolean x) {
+        return weakCompareAndSetByteAcquire(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapBooleanRelease(Object o, long offset,
-                                                          boolean expected,
-                                                          boolean x) {
-        return weakCompareAndSwapByteRelease(o, offset, bool2byte(expected), bool2byte(x));
+    public final boolean weakCompareAndSetBooleanRelease(Object o, long offset,
+                                                         boolean expected,
+                                                         boolean x) {
+        return weakCompareAndSetByteRelease(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapBoolean(Object o, long offset,
-                                                   boolean expected,
-                                                   boolean x) {
-        return weakCompareAndSwapByte(o, offset, bool2byte(expected), bool2byte(x));
+    public final boolean weakCompareAndSetBooleanPlain(Object o, long offset,
+                                                       boolean expected,
+                                                       boolean x) {
+        return weakCompareAndSetBytePlain(o, offset, bool2byte(expected), bool2byte(x));
     }
 
     /**
@@ -1718,21 +1718,21 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @ForceInline
-    public final boolean compareAndSwapFloat(Object o, long offset,
-                                             float expected,
-                                             float x) {
-        return compareAndSwapInt(o, offset,
+    public final boolean compareAndSetFloat(Object o, long offset,
+                                            float expected,
+                                            float x) {
+        return compareAndSetInt(o, offset,
                                  Float.floatToRawIntBits(expected),
                                  Float.floatToRawIntBits(x));
     }
 
     @ForceInline
-    public final float compareAndExchangeFloatVolatile(Object o, long offset,
-                                                       float expected,
-                                                       float x) {
-        int w = compareAndExchangeIntVolatile(o, offset,
-                                              Float.floatToRawIntBits(expected),
-                                              Float.floatToRawIntBits(x));
+    public final float compareAndExchangeFloat(Object o, long offset,
+                                               float expected,
+                                               float x) {
+        int w = compareAndExchangeInt(o, offset,
+                                      Float.floatToRawIntBits(expected),
+                                      Float.floatToRawIntBits(x));
         return Float.intBitsToFloat(w);
     }
 
@@ -1757,37 +1757,37 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapFloat(Object o, long offset,
-                                               float expected,
-                                               float x) {
-        return weakCompareAndSwapInt(o, offset,
+    public final boolean weakCompareAndSetFloatPlain(Object o, long offset,
+                                                     float expected,
+                                                     float x) {
+        return weakCompareAndSetIntPlain(o, offset,
                                      Float.floatToRawIntBits(expected),
                                      Float.floatToRawIntBits(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapFloatAcquire(Object o, long offset,
-                                                      float expected,
-                                                      float x) {
-        return weakCompareAndSwapIntAcquire(o, offset,
-                                            Float.floatToRawIntBits(expected),
-                                            Float.floatToRawIntBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSwapFloatRelease(Object o, long offset,
-                                                      float expected,
-                                                      float x) {
-        return weakCompareAndSwapIntRelease(o, offset,
-                                            Float.floatToRawIntBits(expected),
-                                            Float.floatToRawIntBits(x));
-    }
-
-    @ForceInline
-    public final boolean weakCompareAndSwapFloatVolatile(Object o, long offset,
+    public final boolean weakCompareAndSetFloatAcquire(Object o, long offset,
                                                        float expected,
                                                        float x) {
-        return weakCompareAndSwapIntVolatile(o, offset,
+        return weakCompareAndSetIntAcquire(o, offset,
+                                            Float.floatToRawIntBits(expected),
+                                            Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloatRelease(Object o, long offset,
+                                                       float expected,
+                                                       float x) {
+        return weakCompareAndSetIntRelease(o, offset,
+                                            Float.floatToRawIntBits(expected),
+                                            Float.floatToRawIntBits(x));
+    }
+
+    @ForceInline
+    public final boolean weakCompareAndSetFloat(Object o, long offset,
+                                                float expected,
+                                                float x) {
+        return weakCompareAndSetInt(o, offset,
                                              Float.floatToRawIntBits(expected),
                                              Float.floatToRawIntBits(x));
     }
@@ -1802,21 +1802,21 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @ForceInline
-    public final boolean compareAndSwapDouble(Object o, long offset,
-                                              double expected,
-                                              double x) {
-        return compareAndSwapLong(o, offset,
-                                  Double.doubleToRawLongBits(expected),
-                                  Double.doubleToRawLongBits(x));
+    public final boolean compareAndSetDouble(Object o, long offset,
+                                             double expected,
+                                             double x) {
+        return compareAndSetLong(o, offset,
+                                 Double.doubleToRawLongBits(expected),
+                                 Double.doubleToRawLongBits(x));
     }
 
     @ForceInline
-    public final double compareAndExchangeDoubleVolatile(Object o, long offset,
-                                                         double expected,
-                                                         double x) {
-        long w = compareAndExchangeLongVolatile(o, offset,
-                                                Double.doubleToRawLongBits(expected),
-                                                Double.doubleToRawLongBits(x));
+    public final double compareAndExchangeDouble(Object o, long offset,
+                                                 double expected,
+                                                 double x) {
+        long w = compareAndExchangeLong(o, offset,
+                                        Double.doubleToRawLongBits(expected),
+                                        Double.doubleToRawLongBits(x));
         return Double.longBitsToDouble(w);
     }
 
@@ -1841,37 +1841,37 @@ public final class Unsafe {
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapDouble(Object o, long offset,
-                                                  double expected,
-                                                  double x) {
-        return weakCompareAndSwapLong(o, offset,
+    public final boolean weakCompareAndSetDoublePlain(Object o, long offset,
+                                                      double expected,
+                                                      double x) {
+        return weakCompareAndSetLongPlain(o, offset,
                                      Double.doubleToRawLongBits(expected),
                                      Double.doubleToRawLongBits(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapDoubleAcquire(Object o, long offset,
-                                                         double expected,
-                                                         double x) {
-        return weakCompareAndSwapLongAcquire(o, offset,
+    public final boolean weakCompareAndSetDoubleAcquire(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        return weakCompareAndSetLongAcquire(o, offset,
                                              Double.doubleToRawLongBits(expected),
                                              Double.doubleToRawLongBits(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapDoubleRelease(Object o, long offset,
-                                                         double expected,
-                                                         double x) {
-        return weakCompareAndSwapLongRelease(o, offset,
+    public final boolean weakCompareAndSetDoubleRelease(Object o, long offset,
+                                                        double expected,
+                                                        double x) {
+        return weakCompareAndSetLongRelease(o, offset,
                                              Double.doubleToRawLongBits(expected),
                                              Double.doubleToRawLongBits(x));
     }
 
     @ForceInline
-    public final boolean weakCompareAndSwapDoubleVolatile(Object o, long offset,
-                                                          double expected,
-                                                          double x) {
-        return weakCompareAndSwapLongVolatile(o, offset,
+    public final boolean weakCompareAndSetDouble(Object o, long offset,
+                                                 double expected,
+                                                 double x) {
+        return weakCompareAndSetLong(o, offset,
                                               Double.doubleToRawLongBits(expected),
                                               Double.doubleToRawLongBits(x));
     }
@@ -1886,55 +1886,55 @@ public final class Unsafe {
      * @return {@code true} if successful
      */
     @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapLong(Object o, long offset,
-                                                   long expected,
-                                                   long x);
+    public final native boolean compareAndSetLong(Object o, long offset,
+                                                  long expected,
+                                                  long x);
 
     @HotSpotIntrinsicCandidate
-    public final native long compareAndExchangeLongVolatile(Object o, long offset,
-                                                            long expected,
-                                                            long x);
+    public final native long compareAndExchangeLong(Object o, long offset,
+                                                    long expected,
+                                                    long x);
 
     @HotSpotIntrinsicCandidate
     public final long compareAndExchangeLongAcquire(Object o, long offset,
                                                            long expected,
                                                            long x) {
-        return compareAndExchangeLongVolatile(o, offset, expected, x);
+        return compareAndExchangeLong(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
     public final long compareAndExchangeLongRelease(Object o, long offset,
                                                            long expected,
                                                            long x) {
-        return compareAndExchangeLongVolatile(o, offset, expected, x);
+        return compareAndExchangeLong(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapLong(Object o, long offset,
-                                                       long expected,
-                                                       long x) {
-        return compareAndSwapLong(o, offset, expected, x);
+    public final boolean weakCompareAndSetLongPlain(Object o, long offset,
+                                                    long expected,
+                                                    long x) {
+        return compareAndSetLong(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapLongAcquire(Object o, long offset,
-                                                              long expected,
-                                                              long x) {
-        return compareAndSwapLong(o, offset, expected, x);
+    public final boolean weakCompareAndSetLongAcquire(Object o, long offset,
+                                                      long expected,
+                                                      long x) {
+        return compareAndSetLong(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapLongRelease(Object o, long offset,
-                                                              long expected,
-                                                              long x) {
-        return compareAndSwapLong(o, offset, expected, x);
+    public final boolean weakCompareAndSetLongRelease(Object o, long offset,
+                                                      long expected,
+                                                      long x) {
+        return compareAndSetLong(o, offset, expected, x);
     }
 
     @HotSpotIntrinsicCandidate
-    public final boolean weakCompareAndSwapLongVolatile(Object o, long offset,
-                                                              long expected,
-                                                              long x) {
-        return compareAndSwapLong(o, offset, expected, x);
+    public final boolean weakCompareAndSetLong(Object o, long offset,
+                                               long expected,
+                                               long x) {
+        return compareAndSetLong(o, offset, expected, x);
     }
 
     /**
@@ -2316,7 +2316,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSwapIntVolatile(o, offset, v, v + delta));
+        } while (!weakCompareAndSetInt(o, offset, v, v + delta));
         return v;
     }
 
@@ -2325,7 +2325,7 @@ public final class Unsafe {
         int v;
         do {
             v = getInt(o, offset);
-        } while (!weakCompareAndSwapIntRelease(o, offset, v, v + delta));
+        } while (!weakCompareAndSetIntRelease(o, offset, v, v + delta));
         return v;
     }
 
@@ -2334,7 +2334,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntAcquire(o, offset);
-        } while (!weakCompareAndSwapIntAcquire(o, offset, v, v + delta));
+        } while (!weakCompareAndSetIntAcquire(o, offset, v, v + delta));
         return v;
     }
 
@@ -2354,7 +2354,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSwapLongVolatile(o, offset, v, v + delta));
+        } while (!weakCompareAndSetLong(o, offset, v, v + delta));
         return v;
     }
 
@@ -2363,7 +2363,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLong(o, offset);
-        } while (!weakCompareAndSwapLongRelease(o, offset, v, v + delta));
+        } while (!weakCompareAndSetLongRelease(o, offset, v, v + delta));
         return v;
     }
 
@@ -2372,7 +2372,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongAcquire(o, offset);
-        } while (!weakCompareAndSwapLongAcquire(o, offset, v, v + delta));
+        } while (!weakCompareAndSetLongAcquire(o, offset, v, v + delta));
         return v;
     }
 
@@ -2381,7 +2381,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSwapByteVolatile(o, offset, v, (byte) (v + delta)));
+        } while (!weakCompareAndSetByte(o, offset, v, (byte) (v + delta)));
         return v;
     }
 
@@ -2390,7 +2390,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByte(o, offset);
-        } while (!weakCompareAndSwapByteRelease(o, offset, v, (byte) (v + delta)));
+        } while (!weakCompareAndSetByteRelease(o, offset, v, (byte) (v + delta)));
         return v;
     }
 
@@ -2399,7 +2399,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteAcquire(o, offset);
-        } while (!weakCompareAndSwapByteAcquire(o, offset, v, (byte) (v + delta)));
+        } while (!weakCompareAndSetByteAcquire(o, offset, v, (byte) (v + delta)));
         return v;
     }
 
@@ -2408,7 +2408,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSwapShortVolatile(o, offset, v, (short) (v + delta)));
+        } while (!weakCompareAndSetShort(o, offset, v, (short) (v + delta)));
         return v;
     }
 
@@ -2417,7 +2417,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShort(o, offset);
-        } while (!weakCompareAndSwapShortRelease(o, offset, v, (short) (v + delta)));
+        } while (!weakCompareAndSetShortRelease(o, offset, v, (short) (v + delta)));
         return v;
     }
 
@@ -2426,7 +2426,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortAcquire(o, offset);
-        } while (!weakCompareAndSwapShortAcquire(o, offset, v, (short) (v + delta)));
+        } while (!weakCompareAndSetShortAcquire(o, offset, v, (short) (v + delta)));
         return v;
     }
 
@@ -2455,7 +2455,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getIntVolatile(o, offset);
             v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSwapIntVolatile(o, offset,
+        } while (!weakCompareAndSetInt(o, offset,
                                                 expectedBits, Float.floatToRawIntBits(v + delta)));
         return v;
     }
@@ -2470,7 +2470,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getInt(o, offset);
             v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSwapIntRelease(o, offset,
+        } while (!weakCompareAndSetIntRelease(o, offset,
                                                expectedBits, Float.floatToRawIntBits(v + delta)));
         return v;
     }
@@ -2485,7 +2485,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getIntAcquire(o, offset);
             v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSwapIntAcquire(o, offset,
+        } while (!weakCompareAndSetIntAcquire(o, offset,
                                                expectedBits, Float.floatToRawIntBits(v + delta)));
         return v;
     }
@@ -2500,7 +2500,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getLongVolatile(o, offset);
             v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSwapLongVolatile(o, offset,
+        } while (!weakCompareAndSetLong(o, offset,
                                                  expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
@@ -2515,7 +2515,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getLong(o, offset);
             v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSwapLongRelease(o, offset,
+        } while (!weakCompareAndSetLongRelease(o, offset,
                                                 expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
@@ -2530,7 +2530,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getLongAcquire(o, offset);
             v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSwapLongAcquire(o, offset,
+        } while (!weakCompareAndSetLongAcquire(o, offset,
                                                 expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
@@ -2551,7 +2551,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSwapIntVolatile(o, offset, v, newValue));
+        } while (!weakCompareAndSetInt(o, offset, v, newValue));
         return v;
     }
 
@@ -2560,7 +2560,7 @@ public final class Unsafe {
         int v;
         do {
             v = getInt(o, offset);
-        } while (!weakCompareAndSwapIntRelease(o, offset, v, newValue));
+        } while (!weakCompareAndSetIntRelease(o, offset, v, newValue));
         return v;
     }
 
@@ -2569,7 +2569,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntAcquire(o, offset);
-        } while (!weakCompareAndSwapIntAcquire(o, offset, v, newValue));
+        } while (!weakCompareAndSetIntAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2589,7 +2589,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSwapLongVolatile(o, offset, v, newValue));
+        } while (!weakCompareAndSetLong(o, offset, v, newValue));
         return v;
     }
 
@@ -2598,7 +2598,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLong(o, offset);
-        } while (!weakCompareAndSwapLongRelease(o, offset, v, newValue));
+        } while (!weakCompareAndSetLongRelease(o, offset, v, newValue));
         return v;
     }
 
@@ -2607,7 +2607,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongAcquire(o, offset);
-        } while (!weakCompareAndSwapLongAcquire(o, offset, v, newValue));
+        } while (!weakCompareAndSetLongAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2627,7 +2627,7 @@ public final class Unsafe {
         Object v;
         do {
             v = getObjectVolatile(o, offset);
-        } while (!weakCompareAndSwapObjectVolatile(o, offset, v, newValue));
+        } while (!weakCompareAndSetObject(o, offset, v, newValue));
         return v;
     }
 
@@ -2636,7 +2636,7 @@ public final class Unsafe {
         Object v;
         do {
             v = getObject(o, offset);
-        } while (!weakCompareAndSwapObjectRelease(o, offset, v, newValue));
+        } while (!weakCompareAndSetObjectRelease(o, offset, v, newValue));
         return v;
     }
 
@@ -2645,7 +2645,7 @@ public final class Unsafe {
         Object v;
         do {
             v = getObjectAcquire(o, offset);
-        } while (!weakCompareAndSwapObjectAcquire(o, offset, v, newValue));
+        } while (!weakCompareAndSetObjectAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2654,7 +2654,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSwapByteVolatile(o, offset, v, newValue));
+        } while (!weakCompareAndSetByte(o, offset, v, newValue));
         return v;
     }
 
@@ -2663,7 +2663,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByte(o, offset);
-        } while (!weakCompareAndSwapByteRelease(o, offset, v, newValue));
+        } while (!weakCompareAndSetByteRelease(o, offset, v, newValue));
         return v;
     }
 
@@ -2672,7 +2672,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteAcquire(o, offset);
-        } while (!weakCompareAndSwapByteAcquire(o, offset, v, newValue));
+        } while (!weakCompareAndSetByteAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2696,7 +2696,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSwapShortVolatile(o, offset, v, newValue));
+        } while (!weakCompareAndSetShort(o, offset, v, newValue));
         return v;
     }
 
@@ -2705,7 +2705,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShort(o, offset);
-        } while (!weakCompareAndSwapShortRelease(o, offset, v, newValue));
+        } while (!weakCompareAndSetShortRelease(o, offset, v, newValue));
         return v;
     }
 
@@ -2714,7 +2714,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortAcquire(o, offset);
-        } while (!weakCompareAndSwapShortAcquire(o, offset, v, newValue));
+        } while (!weakCompareAndSetShortAcquire(o, offset, v, newValue));
         return v;
     }
 
@@ -2824,7 +2824,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSwapByteVolatile(o, offset,
+        } while (!weakCompareAndSetByte(o, offset,
                                                   current, (byte) (current | mask)));
         return current;
     }
@@ -2834,7 +2834,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteRelease(o, offset,
+        } while (!weakCompareAndSetByteRelease(o, offset,
                                                  current, (byte) (current | mask)));
         return current;
     }
@@ -2845,7 +2845,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteAcquire(o, offset,
+        } while (!weakCompareAndSetByteAcquire(o, offset,
                                                  current, (byte) (current | mask)));
         return current;
     }
@@ -2855,7 +2855,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSwapByteVolatile(o, offset,
+        } while (!weakCompareAndSetByte(o, offset,
                                                   current, (byte) (current & mask)));
         return current;
     }
@@ -2865,7 +2865,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteRelease(o, offset,
+        } while (!weakCompareAndSetByteRelease(o, offset,
                                                  current, (byte) (current & mask)));
         return current;
     }
@@ -2876,7 +2876,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteAcquire(o, offset,
+        } while (!weakCompareAndSetByteAcquire(o, offset,
                                                  current, (byte) (current & mask)));
         return current;
     }
@@ -2886,7 +2886,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSwapByteVolatile(o, offset,
+        } while (!weakCompareAndSetByte(o, offset,
                                                   current, (byte) (current ^ mask)));
         return current;
     }
@@ -2896,7 +2896,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteRelease(o, offset,
+        } while (!weakCompareAndSetByteRelease(o, offset,
                                                  current, (byte) (current ^ mask)));
         return current;
     }
@@ -2907,7 +2907,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getByte(o, offset);
-        } while (!weakCompareAndSwapByteAcquire(o, offset,
+        } while (!weakCompareAndSetByteAcquire(o, offset,
                                                  current, (byte) (current ^ mask)));
         return current;
     }
@@ -2964,7 +2964,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSwapShortVolatile(o, offset,
+        } while (!weakCompareAndSetShort(o, offset,
                                                 current, (short) (current | mask)));
         return current;
     }
@@ -2974,7 +2974,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortRelease(o, offset,
+        } while (!weakCompareAndSetShortRelease(o, offset,
                                                current, (short) (current | mask)));
         return current;
     }
@@ -2985,7 +2985,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortAcquire(o, offset,
+        } while (!weakCompareAndSetShortAcquire(o, offset,
                                                current, (short) (current | mask)));
         return current;
     }
@@ -2995,7 +2995,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSwapShortVolatile(o, offset,
+        } while (!weakCompareAndSetShort(o, offset,
                                                 current, (short) (current & mask)));
         return current;
     }
@@ -3005,7 +3005,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortRelease(o, offset,
+        } while (!weakCompareAndSetShortRelease(o, offset,
                                                current, (short) (current & mask)));
         return current;
     }
@@ -3016,7 +3016,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortAcquire(o, offset,
+        } while (!weakCompareAndSetShortAcquire(o, offset,
                                                current, (short) (current & mask)));
         return current;
     }
@@ -3026,7 +3026,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSwapShortVolatile(o, offset,
+        } while (!weakCompareAndSetShort(o, offset,
                                                 current, (short) (current ^ mask)));
         return current;
     }
@@ -3036,7 +3036,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortRelease(o, offset,
+        } while (!weakCompareAndSetShortRelease(o, offset,
                                                current, (short) (current ^ mask)));
         return current;
     }
@@ -3047,7 +3047,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getShort(o, offset);
-        } while (!weakCompareAndSwapShortAcquire(o, offset,
+        } while (!weakCompareAndSetShortAcquire(o, offset,
                                                current, (short) (current ^ mask)));
         return current;
     }
@@ -3058,7 +3058,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSwapIntVolatile(o, offset,
+        } while (!weakCompareAndSetInt(o, offset,
                                                 current, current | mask));
         return current;
     }
@@ -3068,7 +3068,7 @@ public final class Unsafe {
         int current;
         do {
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntRelease(o, offset,
+        } while (!weakCompareAndSetIntRelease(o, offset,
                                                current, current | mask));
         return current;
     }
@@ -3079,7 +3079,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntAcquire(o, offset,
+        } while (!weakCompareAndSetIntAcquire(o, offset,
                                                current, current | mask));
         return current;
     }
@@ -3100,7 +3100,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSwapIntVolatile(o, offset,
+        } while (!weakCompareAndSetInt(o, offset,
                                                 current, current & mask));
         return current;
     }
@@ -3110,7 +3110,7 @@ public final class Unsafe {
         int current;
         do {
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntRelease(o, offset,
+        } while (!weakCompareAndSetIntRelease(o, offset,
                                                current, current & mask));
         return current;
     }
@@ -3121,7 +3121,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntAcquire(o, offset,
+        } while (!weakCompareAndSetIntAcquire(o, offset,
                                                current, current & mask));
         return current;
     }
@@ -3131,7 +3131,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSwapIntVolatile(o, offset,
+        } while (!weakCompareAndSetInt(o, offset,
                                                 current, current ^ mask));
         return current;
     }
@@ -3141,7 +3141,7 @@ public final class Unsafe {
         int current;
         do {
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntRelease(o, offset,
+        } while (!weakCompareAndSetIntRelease(o, offset,
                                                current, current ^ mask));
         return current;
     }
@@ -3152,7 +3152,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getInt(o, offset);
-        } while (!weakCompareAndSwapIntAcquire(o, offset,
+        } while (!weakCompareAndSetIntAcquire(o, offset,
                                                current, current ^ mask));
         return current;
     }
@@ -3163,7 +3163,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSwapLongVolatile(o, offset,
+        } while (!weakCompareAndSetLong(o, offset,
                                                 current, current | mask));
         return current;
     }
@@ -3173,7 +3173,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongRelease(o, offset,
+        } while (!weakCompareAndSetLongRelease(o, offset,
                                                current, current | mask));
         return current;
     }
@@ -3184,7 +3184,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongAcquire(o, offset,
+        } while (!weakCompareAndSetLongAcquire(o, offset,
                                                current, current | mask));
         return current;
     }
@@ -3194,7 +3194,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSwapLongVolatile(o, offset,
+        } while (!weakCompareAndSetLong(o, offset,
                                                 current, current & mask));
         return current;
     }
@@ -3204,7 +3204,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongRelease(o, offset,
+        } while (!weakCompareAndSetLongRelease(o, offset,
                                                current, current & mask));
         return current;
     }
@@ -3215,7 +3215,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongAcquire(o, offset,
+        } while (!weakCompareAndSetLongAcquire(o, offset,
                                                current, current & mask));
         return current;
     }
@@ -3225,7 +3225,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSwapLongVolatile(o, offset,
+        } while (!weakCompareAndSetLong(o, offset,
                                                 current, current ^ mask));
         return current;
     }
@@ -3235,7 +3235,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongRelease(o, offset,
+        } while (!weakCompareAndSetLongRelease(o, offset,
                                                current, current ^ mask));
         return current;
     }
@@ -3246,7 +3246,7 @@ public final class Unsafe {
         do {
             // Plain read, the value is a hint, the acquire CAS does the work
             current = getLong(o, offset);
-        } while (!weakCompareAndSwapLongAcquire(o, offset,
+        } while (!weakCompareAndSetLongAcquire(o, offset,
                                                current, current ^ mask));
         return current;
     }

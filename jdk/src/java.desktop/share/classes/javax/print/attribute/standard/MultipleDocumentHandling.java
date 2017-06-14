@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import javax.print.attribute.PrintJobAttribute;
  * The standard MultipleDocumentHandling values are:
  * <UL>
  * <LI>
- * <a NAME="sdfi"></a>{@link #SINGLE_DOCUMENT
+ * <a id="sdfi"></a>{@link #SINGLE_DOCUMENT
  * <B>SINGLE_DOCUMENT</B>}. If a print job has multiple
  * documents -- say, the document data is called {@code a} and
  * {@code b} -- then the result of processing all the document data
@@ -85,7 +85,7 @@ import javax.print.attribute.PrintJobAttribute;
  * each copy ({@code a(*),b(*)}) to start on a new media sheet.
  *
  * <LI>
- * <a NAME="sducfi"></a>{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
+ * <a id="sducfi"></a>{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}. If a print job
  * has multiple documents -- say, the document data is called {@code a} and
  * {@code b} -- then the result of processing the data in each document
@@ -98,7 +98,7 @@ import javax.print.attribute.PrintJobAttribute;
  * {@code a(*),a(*),...,b(*),b(*)...}.
  *
  * <LI>
- * <a NAME="sdccfi"></a>{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
+ * <a id="sdccfi"></a>{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}. If a print job
  * has multiple documents -- say, the document data is called {@code a} and
  * {@code b} -- then the result of processing the data in each document
@@ -111,7 +111,7 @@ import javax.print.attribute.PrintJobAttribute;
  * {@code a(*),b(*),a(*),b(*),...}.
  *
  * <LI>
- * <a NAME="sdnsfi"></a>{@link #SINGLE_DOCUMENT_NEW_SHEET
+ * <a id="sdnsfi"></a>{@link #SINGLE_DOCUMENT_NEW_SHEET
  * <B>SINGLE_DOCUMENT_NEW_SHEET</B>}. Same as SINGLE_DOCUMENT,
  * except that the printer must ensure that the first impression of each
  * document instance in the job is placed on a new media sheet. This value

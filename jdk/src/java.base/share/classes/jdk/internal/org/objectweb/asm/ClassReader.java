@@ -2508,7 +2508,7 @@ public class ClassReader {
     }
 
     /**
-     * Reads a CONSTANT_Pakcage_info item in {@code b}.  This method is
+     * Reads a CONSTANT_Package_info item in {@code b}.  This method is
      * intended for {@link Attribute} sub slasses, and is normally not needed
      * by class generators or adapters.</i>
      *

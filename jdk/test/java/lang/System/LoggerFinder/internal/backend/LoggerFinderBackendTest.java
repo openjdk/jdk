@@ -78,7 +78,6 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import sun.util.logging.internal.LoggingProviderImpl;
-import java.lang.reflect.Module;
 
 /**
  * @author danielfuchs

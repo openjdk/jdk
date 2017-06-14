@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,17 +56,17 @@ final class ECDHCrypt {
     }
 
     // Called by ServerHandshaker for ephemeral ECDH
-    ECDHCrypt(int curveId, SecureRandom random) {
+    ECDHCrypt(NamedGroup namedGroup, SecureRandom random) {
         try {
             KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("EC");
             ECGenParameterSpec params =
-                    EllipticCurvesExtension.getECGenParamSpec(curveId);
+                    SupportedGroupsExtension.getECGenParamSpec(namedGroup);
             kpg.initialize(params, random);
             KeyPair kp = kpg.generateKeyPair();
             privateKey = kp.getPrivate();
             publicKey = (ECPublicKey)kp.getPublic();
         } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Could not generate DH keypair", e);
+            throw new RuntimeException("Could not generate ECDH keypair", e);
         }
     }
 
@@ -79,7 +79,7 @@ final class ECDHCrypt {
             privateKey = kp.getPrivate();
             publicKey = (ECPublicKey)kp.getPublic();
         } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Could not generate DH keypair", e);
+            throw new RuntimeException("Could not generate ECDH keypair", e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,25 +120,21 @@ public abstract class Duration {
      * maps to. Type is computed based on fields that are set,
      * i.e. {@link #isSet(DatatypeConstants.Field field)} == {@code true}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
+     *         <i>(timezone is optional for all date/time datatypes)</i></caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="7">
-     *         Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
-     *         <i>(timezone is optional for all date/time datatypes)</i>
-     *       </th>
+     *       <th>Datatype</th>
+     *       <th>year</th>
+     *       <th>month</th>
+     *       <th>day</th>
+     *       <th>hour</th>
+     *       <th>minute</th>
+     *       <th>second</th>
      *     </tr>
      *   </thead>
      *   <tbody>
-     *     <tr>
-     *       <td>Datatype</td>
-     *       <td>year</td>
-     *       <td>month</td>
-     *       <td>day</td>
-     *       <td>hour</td>
-     *       <td>minute</td>
-     *       <td>second</td>
-     *     </tr>
      *     <tr>
      *       <td>{@link DatatypeConstants#DURATION}</td>
      *       <td>X</td>

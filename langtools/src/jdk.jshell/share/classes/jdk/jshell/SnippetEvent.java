@@ -38,7 +38,9 @@ import jdk.jshell.Snippet.Status;
  * {@code SnippetEvent} is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
  * @author Robert Field
+ * @since 9
  */
 public class SnippetEvent {
 

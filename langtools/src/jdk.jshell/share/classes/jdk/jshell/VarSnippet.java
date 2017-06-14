@@ -35,6 +35,8 @@ import jdk.jshell.Key.VarKey;
  * <code>VarSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
+ * @since 9
  * @jls 8.3: FieldDeclaration.
  */
 public class VarSnippet extends DeclarationSnippet {

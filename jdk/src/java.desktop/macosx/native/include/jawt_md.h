@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 /*
- * Mac OS X specific declarations for AWT native interface.
+ * MacOS specific declarations for AWT native interface.
  * See notes in jawt.h for an example of use.
  */
 
