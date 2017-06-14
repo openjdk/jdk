@@ -34,9 +34,9 @@ import jdk.xml.internal.SecuritySupport;
  * The CatalogFeatures holds a collection of features and properties.
  * <p>
  *
- * <center><h2><a name="CatalogFeatures">Catalog Features</a></h2></center></p>
  *
- * <table border="1">
+ * <table class="plain">
+ * <caption>Catalog Features</caption>
  * <thead>
  * <tr>
  * <th rowspan="2">Feature</th>
@@ -44,7 +44,7 @@ import jdk.xml.internal.SecuritySupport;
  * <th rowspan="2">Property Name</th>
  * <th rowspan="2">System Property [1]</th>
  * <th rowspan="2">jaxp.properties [1]</th>
- * <th colspan="2" align="center">Value [2]</th>
+ * <th colspan="2" style="text-align:center">Value [2]</th>
  * <th rowspan="2">Action</th>
  * </tr>
  * <tr>
@@ -55,7 +55,7 @@ import jdk.xml.internal.SecuritySupport;
  * <tbody>
  *
  * <tr>
- * <td><a name="FILES">FILES</a></td>
+ * <td><a id="FILES">FILES</a></td>
  * <td>A semicolon-delimited list of URIs to locate the catalog files.
  * The URIs must be absolute and have a URL protocol handler for the URI scheme.
  * </td>
@@ -71,7 +71,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <td rowspan="2"><a name="PREFER">PREFER</a></td>
+ * <td rowspan="2"><a id="PREFER">PREFER</a></td>
  * <td rowspan="2">Indicates the preference between the public and system
  * identifiers. The default value is public [3].</td>
  * <td rowspan="2">javax.xml.catalog.prefer</td>
@@ -89,7 +89,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <td rowspan="2"><a name="DEFER">DEFER</a></td>
+ * <td rowspan="2"><a id="DEFER">DEFER</a></td>
  * <td rowspan="2">Indicates that the alternative catalogs including those
  * specified in delegate entries or nextCatalog are not read until they are
  * needed. The default value is true.</td>
@@ -107,7 +107,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <td rowspan="3"><a name="RESOLVE">RESOLVE</a></td>
+ * <td rowspan="3"><a id="RESOLVE">RESOLVE</a></td>
  * <td rowspan="3">Determines the action if there is no matching entry found after
  * all of the specified catalogs are exhausted. The default is strict.</td>
  * <td rowspan="3">javax.xml.catalog.resolve [4]</td>
@@ -241,9 +241,10 @@ import jdk.xml.internal.SecuritySupport;
  * supports a resolver. The following table lists all such processes.
  *
  * <p>
- * <center><h3><a name="CatalogFeatures">Processes with Catalog Support</a></h3></center></p>
+ * <h3><a id="ProcessesWithCatalogSupport">Processes with Catalog Support</a></h3>
  *
- * <table border="1">
+ * <table class="striped">
+ * <caption>Processes with Catalog Support</caption>
  * <thead>
  * <tr>
  * <th>Process</th>

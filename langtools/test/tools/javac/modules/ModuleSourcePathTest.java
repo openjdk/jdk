@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager.Location;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -442,6 +449,76 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void setLocation(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src.resolve("m1x"), "module m1x { }", "package a; class A { }");
+        Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        JavaCompiler c = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            fm.setLocationFromPaths(StandardLocation.MODULE_SOURCE_PATH, List.of(src));
+            new JavacTask(tb)
+                    .options("-XDrawDiagnostics")
+                    .fileManager(fm)
+                    .outdir(modules)
+                    .files(findJavaFiles(src))
+                    .run()
+                    .writeAll();
+
+            checkFiles(modules.resolve("m1x/module-info.class"), modules.resolve("m1x/a/A.class"));
+        }
+    }
+
+    @Test
+    public void getLocation_valid(Path base) throws Exception {
+        Path src1 = base.resolve("src1");
+        tb.writeJavaFiles(src1.resolve("m1x"), "module m1x { }", "package a; class A { }");
+        Path src2 = base.resolve("src2");
+        tb.writeJavaFiles(src1.resolve("m2x"), "module m2x { }", "package b; class B { }");
+
+        JavaCompiler c = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            fm.setLocationFromPaths(StandardLocation.MODULE_SOURCE_PATH, List.of(src1, src2));
+            checkLocation(fm.getLocationAsPaths(StandardLocation.MODULE_SOURCE_PATH), List.of(src1, src2));
+        }
+    }
+
+    @Test
+    public void getLocation_ISA(Path base) throws Exception {
+        Path src1 = base.resolve("src1");
+        tb.writeJavaFiles(src1.resolve("m1x"), "module m1x { }", "package a; class A { }");
+        Path src2 = base.resolve("src2");
+        tb.writeJavaFiles(src2.resolve("m2x").resolve("extra"), "module m2x { }", "package b; class B { }");
+        Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        String FS = File.separator;
+        String PS = File.pathSeparator;
+        JavaCompiler c = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            fm.handleOption("--module-source-path",
+                    List.of(src1 + PS + src2 + FS + "*" + FS + "extra").iterator());
+
+            try {
+                Iterable<? extends Path> paths = fm.getLocationAsPaths(StandardLocation.MODULE_SOURCE_PATH);
+                out.println("result: " + asList(paths));
+                throw new Exception("expected IllegalStateException not thrown");
+            } catch (IllegalStateException e) {
+                out.println("Exception thrown, as expected: " + e);
+            }
+
+            // even if we can't do getLocation for the MODULE_SOURCE_PATH, we should be able
+            // to do getLocation for the modules, which will additionally confirm the option
+            // was effective as intended.
+            Location locn1 = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, "m1x");
+            checkLocation(fm.getLocationAsPaths(locn1), List.of(src1.resolve("m1x")));
+            Location locn2 = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, "m2x");
+            checkLocation(fm.getLocationAsPaths(locn2), List.of(src2.resolve("m2x").resolve("extra")));
+        }
+    }
+
     private void generateModules(Path base, String... paths) throws IOException {
         for (int i = 0; i < paths.length; i++) {
             String moduleName = "m" + i + "x";
@@ -455,8 +532,25 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     private void checkFiles(Path... files) throws Exception {
         for (Path file : files) {
             if (!Files.exists(file)) {
-                throw new Exception("File not exists: " + file);
+                throw new Exception("File not found: " + file);
             }
         }
+    }
+
+    private void checkLocation(Iterable<? extends Path> locn, List<Path> ref) throws Exception {
+        List<Path> list = asList(locn);
+        if (!list.equals(ref)) {
+            out.println("expect: " + ref);
+            out.println(" found: " + list);
+            throw new Exception("location not as expected");
+        }
+    }
+
+    private <T> List<T> asList(Iterable<? extends T> iter) {
+        List<T> list = new ArrayList<>();
+        for (T item : iter) {
+            list.add(item);
+        }
+        return list;
     }
 }

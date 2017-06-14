@@ -36,7 +36,7 @@
  * - the declared name can be loaded by the value's class loader and
  *   produces a class to which the value can be assigned.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean RequiredModelMBeanGetAttributeTest
  * @run build RequiredModelMBeanGetAttributeTest
  * @run main RequiredModelMBeanGetAttributeTest

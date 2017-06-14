@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 6700889
- *  @summary  Thread resume invalidates all stack frames, even from other threads
+ * @test
+ * @bug 6700889
+ * @summary  Thread resume invalidates all stack frames, even from other threads
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g ResumeOneThreadTest.java
- *  @run driver ResumeOneThreadTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g ResumeOneThreadTest.java
+ * @run driver ResumeOneThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

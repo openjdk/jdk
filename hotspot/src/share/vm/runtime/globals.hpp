@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,14 +657,13 @@ public:
           range(0, 99)                                                      \
                                                                             \
   product(bool, UseAES, false,                                              \
-          "Control whether AES instructions can be used on x86/x64")        \
+          "Control whether AES instructions are used when available")       \
                                                                             \
   product(bool, UseFMA, false,                                              \
-          "Control whether FMA instructions can be used")                   \
+          "Control whether FMA instructions are used when available")       \
                                                                             \
   product(bool, UseSHA, false,                                              \
-          "Control whether SHA instructions can be used "                   \
-          "on SPARC, on ARM and on x86")                                    \
+          "Control whether SHA instructions are used when available")       \
                                                                             \
   diagnostic(bool, UseGHASHIntrinsics, false,                               \
           "Use intrinsics for GHASH versions of crypto")                    \
@@ -1159,13 +1158,6 @@ public:
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
-  product(bool, ConvertSleepToYield, true,                                  \
-          "Convert sleep(0) to thread yield ")                              \
-                                                                            \
-  product(bool, ConvertYieldToSleep, false,                                 \
-          "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
-          "behavior")                                                       \
-                                                                            \
   develop(bool, UseDetachedThreads, true,                                   \
           "Use detached threads that are recycled upon termination "        \
           "(for Solaris only)")                                             \
@@ -1458,9 +1450,9 @@ public:
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
-  product(uintx, GCTaskTimeStampEntries, 200,                               \
+  product(uint, GCTaskTimeStampEntries, 200,                                \
           "Number of time stamp entries per gc worker thread")              \
-          range(1, max_uintx)                                               \
+          range(1, max_jint)                                                \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \
@@ -1479,11 +1471,6 @@ public:
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
-          "A System.gc() request invokes a concurrent collection and "      \
-          "also unloads classes during such a concurrent gc cycle "         \
-          "(effective only when UseConcMarkSweepGC)")                       \
-                                                                            \
   product(bool, GCLockerInvokesConcurrent, false,                           \
           "The exit of a JNI critical section necessitating a scavenge, "   \
           "also kicks off a background concurrent collection")              \
@@ -1500,9 +1487,6 @@ public:
                                                                             \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
-                                                                            \
-  product(bool, UseParNewGC, false,                                         \
-          "Use parallel threads in the new generation")                     \
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
@@ -2058,13 +2042,6 @@ public:
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
           "determining maximum heap size")                                  \
-                                                                            \
-  product(bool, UseAutoGCSelectPolicy, false,                               \
-          "Use automatic collection selection policy")                      \
-                                                                            \
-  product(uintx, AutoGCSelectPauseMillis, 5000,                             \
-          "Automatic GC selection pause threshold in milliseconds")         \
-          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
@@ -3003,10 +2980,6 @@ public:
   develop(intx, DontYieldALotInterval,    10,                               \
           "Interval between which yields will be dropped (milliseconds)")   \
                                                                             \
-  develop(intx, MinSleepInterval,     1,                                    \
-          "Minimum sleep() interval (milliseconds) when "                   \
-          "ConvertSleepToYield is off (used for Solaris)")                  \
-                                                                            \
   develop(intx, ProfilerPCTickThreshold,    15,                             \
           "Number of ticks in a PC buckets to be a hotspot")                \
                                                                             \
@@ -3375,7 +3348,7 @@ public:
           "Code cache expansion size (in bytes)")                           \
           range(0, max_uintx)                                               \
                                                                             \
-  develop_pd(uintx, CodeCacheMinBlockLength,                                \
+  diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \
@@ -3874,6 +3847,9 @@ public:
                                                                             \
   product(bool, StartAttachListener, false,                                 \
           "Always start Attach Listener at VM startup")                     \
+                                                                            \
+  product(bool, EnableDynamicAgentLoading, true,                            \
+          "Allow tools to load agents with the attach mechanism")           \
                                                                             \
   manageable(bool, PrintConcurrentLocks, false,                             \
           "Print java.util.concurrent locks in thread dump")                \

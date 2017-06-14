@@ -28,7 +28,7 @@
  *          objects added before the counter monitor is started as well as by
  *          the observed objects which are added once the monitor is started.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean CounterMonitorInitThresholdTest
  * @run build CounterMonitorInitThresholdTest
  * @run main CounterMonitorInitThresholdTest

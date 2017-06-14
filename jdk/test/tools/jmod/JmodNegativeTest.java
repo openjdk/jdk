@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build jdk.testlibrary.FileUtils CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng JmodNegativeTest
  * @summary Negative tests for jmod
  */
@@ -41,7 +41,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import java.util.zip.ZipOutputStream;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

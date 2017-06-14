@@ -3439,6 +3439,34 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register tmp) 
   z_mvi(0, store_addr, 0); // Store byte 0.
 }
 
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
+  NearLabel Ldone;
+  z_ltgr(tmp1, value);
+  z_bre(Ldone);          // Use NULL result as-is.
+
+  z_nill(value, ~JNIHandles::weak_tag_mask);
+  z_lg(value, 0, value); // Resolve (untagged) jobject.
+
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    NearLabel Lnot_weak;
+    z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
+    z_braz(Lnot_weak);
+    verify_oop(value);
+    g1_write_barrier_pre(noreg /* obj */,
+                         noreg /* offset */,
+                         value /* pre_val */,
+                         noreg /* val */,
+                         tmp1  /* tmp1 */,
+                         tmp2  /* tmp2 */,
+                         true  /* pre_val_needed */);
+    bind(Lnot_weak);
+  }
+#endif // INCLUDE_ALL_GCS
+  verify_oop(value);
+  bind(Ldone);
+}
+
 #if INCLUDE_ALL_GCS
 
 //------------------------------------------------------

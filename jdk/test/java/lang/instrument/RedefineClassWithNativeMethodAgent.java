@@ -24,7 +24,6 @@
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Module;
 import java.util.Timer;
 import java.util.TimerTask;
 

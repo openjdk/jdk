@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 6379808
-   @summary Check all Cp933 SBCS characters are not supported in Cp834
+ * @bug 6379808
+ * @summary Check all Cp933 SBCS characters are not supported in Cp834
+ * @modules jdk.charsets
  */
 
 import java.io.*;
