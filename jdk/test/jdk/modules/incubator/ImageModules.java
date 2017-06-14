@@ -25,10 +25,12 @@
  * @test
  * @bug 8170859
  * @summary Basic test for incubator modules in jmods and images
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
- * @build CompilerUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ImageModules
  */
 
@@ -39,14 +41,14 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

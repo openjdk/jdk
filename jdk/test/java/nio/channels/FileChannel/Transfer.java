@@ -25,8 +25,8 @@
  * @bug 4434723 4482726 4559072 4795550 5081340 5103988 6984545
  * @summary Test FileChannel.transferFrom and transferTo (use -Dseed=X to set PRNG seed)
  * @library ..
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run testng/timeout=300 Transfer
  * @key randomness
  */
@@ -51,7 +51,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 import org.testng.annotations.Test;
 

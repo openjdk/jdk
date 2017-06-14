@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,11 +131,9 @@ public abstract class Validator {
      * <p>This method places the following restrictions on the types of
      * the {@link Source}/{@link Result} accepted.
      *
-     * <table border=1>
+     * <table class="plain">
+     * <caption>{@code Source} / {@code Result} Accepted</caption>
      * <thead>
-     *  <tr>
-     *   <th colspan="5">{@code Source} / {@code Result} Accepted</th>
-     *  </tr>
      *  <tr>
      *   <th></th>
      *   <th>{@link javax.xml.transform.stream.StreamSource}</th>
@@ -144,7 +142,7 @@ public abstract class Validator {
      *   <th>{@link javax.xml.transform.stax.StAXSource}</th>
      *  </tr>
      * </thead>
-     * <tbody align="center">
+     * <tbody style="text-align:center">
      *  <tr>
      *   <td>{@code null}</td>
      *   <td>OK</td>

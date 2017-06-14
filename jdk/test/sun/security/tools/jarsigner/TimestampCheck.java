@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.jar.JarFile;
 
 import jdk.test.lib.SecurityTools;
 import jdk.testlibrary.*;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
@@ -68,6 +68,14 @@ import sun.security.x509.X500Name;
  *          java.base/sun.security.tools.keytool
  * @library /lib/testlibrary
  * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.SecurityTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/timeout=600 TimestampCheck
  */
 public class TimestampCheck {
@@ -557,7 +565,7 @@ public class TimestampCheck {
     }
 
     static void prepare() throws Exception {
-        jdk.testlibrary.JarUtils.createJar("old.jar", "A");
+        JarUtils.createJar("old.jar", "A");
         Files.deleteIfExists(Paths.get("tsks"));
         keytool("-alias ca -genkeypair -ext bc -dname CN=CA");
         keytool("-alias old -genkeypair -dname CN=old");
