@@ -5103,11 +5103,6 @@ void os::PlatformEvent::park() {           // AKA: down()
   if (v == 0) {
     // Do this the hard way by blocking ...
     // See http://monaco.sfbay/detail.jsf?cr=5094058.
-    // TODO-FIXME: for Solaris SPARC set fprs.FEF=0 prior to parking.
-    // Only for SPARC >= V8PlusA
-#if defined(__sparc) && defined(COMPILER2)
-    if (ClearFPUAtPark) { _mark_fpu_nosave(); }
-#endif
     int status = os::Solaris::mutex_lock(_mutex);
     assert_status(status == 0, status, "mutex_lock");
     guarantee(_nParked == 0, "invariant");
@@ -5150,11 +5145,6 @@ int os::PlatformEvent::park(jlong millis) {
   compute_abstime(&abst, millis);
 
   // See http://monaco.sfbay/detail.jsf?cr=5094058.
-  // For Solaris SPARC set fprs.FEF=0 prior to parking.
-  // Only for SPARC >= V8PlusA
-#if defined(__sparc) && defined(COMPILER2)
-  if (ClearFPUAtPark) { _mark_fpu_nosave(); }
-#endif
   int status = os::Solaris::mutex_lock(_mutex);
   assert_status(status == 0, status, "mutex_lock");
   guarantee(_nParked == 0, "invariant");
@@ -5347,12 +5337,6 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Do this the hard way by blocking ...
   // See http://monaco.sfbay/detail.jsf?cr=5094058.
-  // TODO-FIXME: for Solaris SPARC set fprs.FEF=0 prior to parking.
-  // Only for SPARC >= V8PlusA
-#if defined(__sparc) && defined(COMPILER2)
-  if (ClearFPUAtPark) { _mark_fpu_nosave(); }
-#endif
-
   if (time == 0) {
     status = os::Solaris::cond_wait(_cond, _mutex);
   } else {
