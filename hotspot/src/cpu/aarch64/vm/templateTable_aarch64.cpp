@@ -246,8 +246,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
       __ get_cache_and_index_and_bytecode_at_bcp(temp_reg, bc_reg, temp_reg, byte_no, 1);
       __ movw(bc_reg, bc);
-      __ cmpw(temp_reg, (unsigned) 0);
-      __ br(Assembler::EQ, L_patch_done);  // don't patch
+      __ cbzw(temp_reg, L_patch_done);  // don't patch
     }
     break;
   default:
