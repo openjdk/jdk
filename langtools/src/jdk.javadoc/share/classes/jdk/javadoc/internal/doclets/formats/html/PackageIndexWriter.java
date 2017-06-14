@@ -83,7 +83,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param filename the path of the page to be generated
      * @see Group
      */
-    public PackageIndexWriter(ConfigurationImpl configuration, DocPath filename) {
+    public PackageIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         groupPackageMap = configuration.group.groupPackages(packages);
         groupList = configuration.group.getGroupList();
@@ -95,7 +95,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the package index page
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
         PackageIndexWriter packgen = new PackageIndexWriter(configuration, filename);
         packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);

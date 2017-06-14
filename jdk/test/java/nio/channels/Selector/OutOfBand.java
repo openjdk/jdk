@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /* @test
  * @bug 6213702
+ * @requires (os.family != "mac") | (os.version == "10.10.5")
+ *    | (os.simpleVersion != "10.8" & os.simpleVersion != "10.9"
+ *        & os.simpleVersion != "10.10")
  * @summary OOB data causes a SocketChannel, with OOBINLINE disabled, to be
  *    selected
  */

@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.jlink/jdk.tools.jmod
  *          jdk.compiler
- * @build AddModsTest CompilerUtils jdk.testlibrary.*
+ * @build AddModsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng AddModsTest
  * @summary Basic test for java --add-modules
  */
@@ -35,6 +35,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;

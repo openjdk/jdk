@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,19 +164,10 @@ class SSLTunnelConnection extends HttpConnection {
 
     @Override
     protected ByteBuffer readImpl() throws IOException {
-        return sslDelegate.recvData(Utils.EMPTY_BYTEBUFFER).buf; // fix this, make the read normal
-    }
+        ByteBuffer buf = Utils.getBuffer();
 
-    @Override
-    protected int readImpl(ByteBuffer buf) throws IOException {
         WrapperResult r = sslDelegate.recvData(buf);
-        // TODO: check for closure
-        String s = "Receive) ";
-        //debugPrint(s, r.buf);
-        if (r.result.bytesProduced() > 0) {
-            assert buf == r.buf;
-        }
-        return r.result.bytesProduced();
+        return r.buf;
     }
 
     @Override

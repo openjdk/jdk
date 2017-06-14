@@ -32,9 +32,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;

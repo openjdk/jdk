@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.awt.geom.Rectangle2D;
  * object that describes the trajectory path of the {@code Shape}
  * outline.
  * <p>
- * <a name="def_insideness"><b>Definition of insideness:</b></a>
+ * <a id="def_insideness"><b>Definition of insideness:</b></a>
  * A point is considered to lie inside a
  * {@code Shape} if and only if:
  * <ul>

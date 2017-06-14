@@ -146,8 +146,16 @@ void Parse::do_field_access(bool is_get, bool is_field) {
 
 
 void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
+  BasicType bt = field->layout_type();
+
   // Does this field have a constant value?  If so, just push the value.
-  if (field->is_constant()) {
+  if (field->is_constant() &&
+      // Keep consistent with types found by ciTypeFlow: for an
+      // unloaded field type, ciTypeFlow::StateVector::do_getstatic()
+      // speculates the field is null. The code in the rest of this
+      // method does the same. We must not bypass it and use a non
+      // null constant here.
+      (bt != T_OBJECT || field->type()->is_loaded())) {
     // final or stable field
     Node* con = make_constant_from_field(field, obj);
     if (con != NULL) {
@@ -163,7 +171,6 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   int offset = field->offset_in_bytes();
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node *adr = basic_plus_adr(obj, obj, offset);
-  BasicType bt = field->layout_type();
 
   // Build the resultant type of the load
   const Type *type;

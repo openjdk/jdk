@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ import java.awt.color.ICC_ColorSpace;
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
-import java.awt.Toolkit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.Arrays;
 
 /**
  * The {@code ColorModel} abstract class encapsulates the
@@ -362,7 +362,14 @@ public abstract class ColorModel implements Transparency{
             this.transparency         = transparency;
         }
 
-        nBits = bits.clone();
+        /*
+         * We need significant bits value only for the length
+         * of number of components, so we truncate remaining part.
+         * It also helps in hashCode calculation since bits[] can contain
+         * different values after the length of number of components between
+         * two ColorModels.
+         */
+        nBits = Arrays.copyOf(bits, numComponents);
         this.pixel_bits = pixel_bits;
         if (pixel_bits <= 0) {
             throw new IllegalArgumentException("Number of pixel bits must "+
@@ -1441,69 +1448,53 @@ public abstract class ColorModel implements Transparency{
     }
 
     /**
-     * Tests if the specified {@code Object} is an instance of
-     * {@code ColorModel} and if it equals this
-     * {@code ColorModel}.
-     * @param obj the {@code Object} to test for equality
-     * @return {@code true} if the specified {@code Object}
-     * is an instance of {@code ColorModel} and equals this
-     * {@code ColorModel}; {@code false} otherwise.
+     * This method simply delegates to the default implementation in {@code Object}
+     * which is identical to an {@code ==} test since this class cannot enforce the
+     * issues of a proper equality test among multiple independent subclass
+     * branches.
+     * Subclasses are encouraged to override this method and provide equality
+     * testing for their own properties in addition to equality tests for the
+     * following common base properties of {@code ColorModel}:
+     * <ul>
+     * <li>Support for alpha component.</li>
+     * <li>Is alpha premultiplied.</li>
+     * <li>Number of bits per pixel.</li>
+     * <li>Type of transparency like Opaque, Bitmask or Translucent.</li>
+     * <li>Number of components in a pixel.</li>
+     * <li>{@code ColorSpace} type.</li>
+     * <li>Type of the array used to represent pixel values.</li>
+     * <li>Number of significant bits per color and alpha component.</li>
+     * </ul>
+     * @param obj the reference object with which to compare.
+     * @return {@code true} if this object is the same as the obj
+     *         argument; {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ColorModel)) {
-            return false;
-        }
-        ColorModel cm = (ColorModel) obj;
-
-        if (this == cm) {
-            return true;
-        }
-        if (supportsAlpha != cm.hasAlpha() ||
-            isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
-            pixel_bits != cm.getPixelSize() ||
-            transparency != cm.getTransparency() ||
-            numComponents != cm.getNumComponents())
-        {
-            return false;
-        }
-
-        int[] nb = cm.getComponentSize();
-
-        if ((nBits != null) && (nb != null)) {
-            for (int i = 0; i < numComponents; i++) {
-                if (nBits[i] != nb[i]) {
-                    return false;
-                }
-            }
-        } else {
-            return ((nBits == null) && (nb == null));
-        }
-
-        return true;
+        return super.equals(obj);
     }
 
     /**
-     * Returns the hash code for this ColorModel.
-     *
-     * @return    a hash code for this ColorModel.
+     * This method simply delegates to the default implementation in {@code Object}
+     * which returns the system ID for the class.
+     * Subclasses are encouraged to override this method and provide a hash
+     * for their own properties in addition to hashing the values of the
+     * following common base properties of {@code ColorModel}:
+     * <ul>
+     * <li>Support for alpha component.</li>
+     * <li>Is alpha premultiplied.</li>
+     * <li>Number of bits per pixel.</li>
+     * <li>Type of transparency like Opaque, Bitmask or Translucent.</li>
+     * <li>Number of components in a pixel.</li>
+     * <li>{@code ColorSpace} type.</li>
+     * <li>Type of the array used to represent pixel values.</li>
+     * <li>Number of significant bits per color and alpha component.</li>
+     * </ul>
+     * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
-
-        int result = 0;
-
-        result = (supportsAlpha ? 2 : 3) +
-                 (isAlphaPremultiplied ? 4 : 5) +
-                 pixel_bits * 6 +
-                 transparency * 7 +
-                 numComponents * 8;
-
-        if (nBits != null) {
-            for (int i = 0; i < numComponents; i++) {
-                result = result + nBits[i] * (i + 9);
-            }
-        }
-
-        return result;
+        return super.hashCode();
     }
 
     /**
@@ -1629,7 +1620,17 @@ public abstract class ColorModel implements Transparency{
      * Disposes of system resources associated with this
      * {@code ColorModel} once this {@code ColorModel} is no
      * longer referenced.
+     *
+     * @deprecated The {@code finalize} method has been deprecated.
+     *     Subclasses that override {@code finalize} in order to perform cleanup
+     *     should be modified to use alternative cleanup mechanisms and
+     *     to remove the overriding {@code finalize} method.
+     *     When overriding the {@code finalize} method, its implementation must explicitly
+     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     *     See the specification for {@link Object#finalize()} for further
+     *     information about migration options.
      */
+    @Deprecated(since="9")
     public void finalize() {
     }
 

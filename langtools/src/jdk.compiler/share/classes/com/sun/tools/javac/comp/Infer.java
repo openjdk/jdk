@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,9 +344,8 @@ public class Infer {
                     //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
                     //return type _after_ resolution, and check against target
                     ret = types.erasure(ret);
-                    resultInfo.check(env.tree, ret);
                 }
-                return ret;
+                return resultInfo.check(env.tree, ret);
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
@@ -1755,23 +1754,6 @@ public class Infer {
                 }
 
                 /**
-                 * Compute closure of a give node, by recursively walking
-                 * through all its dependencies (of given kinds)
-                 */
-                protected Set<Node> closure() {
-                    boolean progress = true;
-                    Set<Node> closure = new HashSet<>();
-                    closure.add(this);
-                    while (progress) {
-                        progress = false;
-                        for (Node n1 : new HashSet<>(closure)) {
-                            progress = closure.addAll(n1.deps);
-                        }
-                    }
-                    return closure;
-                }
-
-                /**
                  * Is this node a leaf? This means either the node has no dependencies,
                  * or it just has self-dependencies.
                  */
@@ -1906,10 +1888,13 @@ public class Infer {
                     Type i = n_i.data.first();
                     for (Node n_j : nodes) {
                         Type j = n_j.data.first();
-                        UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
-                        if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
-                            //update i's bound dependencies
-                            n_i.addDependency(n_j);
+                        // don't compare a variable to itself
+                        if (i != j) {
+                            UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
+                            if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
+                                //update i's bound dependencies
+                                n_i.addDependency(n_j);
+                            }
                         }
                     }
                 }

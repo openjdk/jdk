@@ -23,19 +23,17 @@
 
 /*
  * @test
- * @library /test/lib /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
  *          jdk.jartool
- * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Utils jdk.test.lib.process.*
- * @build jdk.testlibrary.FileUtils
  * @build MRTestBase
  * @run testng Basic
  */
 
 import static org.testng.Assert.*;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.*;
 
 import java.io.File;

@@ -89,8 +89,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * @param nextClass the next class being documented.
      * @param classTree the class tree for the given class.
      */
-    public ClassWriterImpl(ConfigurationImpl configuration, TypeElement typeElement,
-            TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
+    public ClassWriterImpl(HtmlConfiguration configuration, TypeElement typeElement,
+                           TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
         super(configuration, DocPath.forClass(configuration.utils, typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;

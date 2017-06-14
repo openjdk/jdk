@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import sun.reflect.annotation.AnnotationParser;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
 import java.nio.ByteBuffer;
+import java.util.StringJoiner;
 
 /**
  * A {@code Method} provides information about, and access to, a single method
@@ -179,6 +180,10 @@ public final class Method extends Executable {
         return res;
     }
 
+    /**
+     * @throws InaccessibleObjectException {@inheritDoc}
+     * @throws SecurityException {@inheritDoc}
+     */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
@@ -410,6 +415,21 @@ public final class Method extends Executable {
         sb.append(getReturnType().getTypeName()).append(' ');
         sb.append(getDeclaringClass().getTypeName()).append('.');
         sb.append(getName());
+    }
+
+    @Override
+    String toShortString() {
+        StringBuilder sb = new StringBuilder("method ");
+        sb.append(getDeclaringClass().getTypeName()).append('.');
+        sb.append(getName());
+        sb.append('(');
+        StringJoiner sj = new StringJoiner(",");
+        for (Class<?> parameterType : getParameterTypes()) {
+            sj.add(parameterType.getTypeName());
+        }
+        sb.append(sj);
+        sb.append(')');
+        return sb.toString();
     }
 
     /**
@@ -699,7 +719,7 @@ public final class Method extends Executable {
     }
 
     @Override
-    void handleParameterNumberMismatch(int resultLength, int numParameters) {
+    boolean handleParameterNumberMismatch(int resultLength, int numParameters) {
         throw new AnnotationFormatError("Parameter annotations don't match number of parameters");
     }
 }

@@ -408,11 +408,13 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != NULL) {
     ProfileData* data = mdo->bci_to_data(bci);
-    if (data->is_CallTypeData()) {
-      data->as_CallTypeData()->set_argument_type(i, k->get_Klass());
-    } else {
-      assert(data->is_VirtualCallTypeData(), "no arguments!");
-      data->as_VirtualCallTypeData()->set_argument_type(i, k->get_Klass());
+    if (data != NULL) {
+      if (data->is_CallTypeData()) {
+        data->as_CallTypeData()->set_argument_type(i, k->get_Klass());
+      } else {
+        assert(data->is_VirtualCallTypeData(), "no arguments!");
+        data->as_VirtualCallTypeData()->set_argument_type(i, k->get_Klass());
+      }
     }
   }
 }
@@ -430,11 +432,13 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != NULL) {
     ProfileData* data = mdo->bci_to_data(bci);
-    if (data->is_CallTypeData()) {
-      data->as_CallTypeData()->set_return_type(k->get_Klass());
-    } else {
-      assert(data->is_VirtualCallTypeData(), "no arguments!");
-      data->as_VirtualCallTypeData()->set_return_type(k->get_Klass());
+    if (data != NULL) {
+      if (data->is_CallTypeData()) {
+        data->as_CallTypeData()->set_return_type(k->get_Klass());
+      } else {
+        assert(data->is_VirtualCallTypeData(), "no arguments!");
+        data->as_VirtualCallTypeData()->set_return_type(k->get_Klass());
+      }
     }
   }
 }

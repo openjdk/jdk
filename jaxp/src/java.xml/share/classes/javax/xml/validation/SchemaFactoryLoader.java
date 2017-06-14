@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public abstract class SchemaFactoryLoader {
      *      the list of available schema languages</a>.
      *
      * @throws NullPointerException
-     *      If the <tt>schemaLanguage</tt> parameter is null.
+     *      If the <code>schemaLanguage</code> parameter is null.
      *
      * @return <code>null</code> if the callee fails to create one.
      */
