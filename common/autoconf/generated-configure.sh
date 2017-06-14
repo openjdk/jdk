@@ -5148,7 +5148,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1497366236
+DATE_WHEN_GENERATED=1496222235
 
 ###############################################################################
 #
@@ -51531,7 +51531,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
     JVM_CFLAGS="$JVM_CFLAGS -DSOLARIS"
     JVM_CFLAGS="$JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
+        -D_Crun_inline_placement -library=stlport4 $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     JVM_CFLAGS="$JVM_CFLAGS -D_ALLBSD_SOURCE"
@@ -52364,7 +52364,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   elif test "x$OPENJDK_BUILD_OS" = xsolaris; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSOLARIS"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
+        -D_Crun_inline_placement -library=stlport4 $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_ALLBSD_SOURCE"
