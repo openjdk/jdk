@@ -46,5 +46,6 @@ public interface PopupMenuPeer extends MenuPeer {
      *
      * @see PopupMenu#show(java.awt.Component, int, int)
      */
+    @SuppressWarnings("deprecation")
     void show(Event e);
 }

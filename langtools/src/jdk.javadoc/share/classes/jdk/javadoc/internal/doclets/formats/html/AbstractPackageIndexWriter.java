@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param configuration  The current configuration
      * @param filename Name of the package index file to be generated.
      */
-    public AbstractPackageIndexWriter(ConfigurationImpl configuration,
+    public AbstractPackageIndexWriter(HtmlConfiguration configuration,
                                       DocPath filename) {
         super(configuration, filename);
         packages = configuration.packages;
@@ -160,7 +160,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             htmlTree.addStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
-            if (configuration.showModules) {
+            if (configuration.showModules  && configuration.modules.size() > 1) {
                 addAllModulesLink(ul);
             }
             htmlTree.addContent(ul);

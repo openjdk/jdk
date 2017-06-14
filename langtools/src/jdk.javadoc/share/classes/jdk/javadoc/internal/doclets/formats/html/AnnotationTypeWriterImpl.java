@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -78,7 +79,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * @param prevType the previous class that was documented.
      * @param nextType the next class being documented.
      */
-    public AnnotationTypeWriterImpl(ConfigurationImpl configuration,
+    public AnnotationTypeWriterImpl(HtmlConfiguration configuration,
             TypeElement annotationType, TypeMirror prevType, TypeMirror nextType) {
         super(configuration, DocPath.forClass(configuration.utils, annotationType));
         this.annotationType = annotationType;
@@ -191,10 +192,21 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
+        if (configuration.showModules) {
+            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(annotationType);
+            Content typeModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
+            Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, typeModuleLabel);
+            moduleNameDiv.addContent(Contents.SPACE);
+            moduleNameDiv.addContent(getModuleLink(mdle, new StringContent(mdle.getQualifiedName())));
+            div.addContent(moduleNameDiv);
+        }
         PackageElement pkg = utils.containingPackage(annotationType);
         if (!pkg.isUnnamed()) {
-            Content pkgNameContent = new StringContent(utils.getPackageName(pkg));
-            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
+            Content typePackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInType, contents.packageLabel);
+            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, typePackageLabel);
+            pkgNameDiv.addContent(Contents.SPACE);
+            Content pkgNameContent = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
+            pkgNameDiv.addContent(pkgNameContent);
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,

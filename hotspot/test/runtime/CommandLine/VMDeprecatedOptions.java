@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,9 @@ public class VMDeprecatedOptions {
     public static final String[][] DEPRECATED_OPTIONS = {
         // deprecated non-alias flags:
         {"MaxGCMinorPauseMillis", "1032"},
-        {"UseParNewGC", "false"},
-        {"ConvertSleepToYield", "false" },
-        {"ConvertYieldToSleep", "false" },
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
-        {"CMSMarkStackSizeMax", "1032"},
-        {"CMSMarkStackSize", "1032"},
-        {"G1MarkStackSize", "1032"},
-        {"ParallelMarkingThreads", "2"},
-        {"ParallelCMSThreads", "2"},
         {"CreateMinidumpOnCrash", "false"}
     };
 

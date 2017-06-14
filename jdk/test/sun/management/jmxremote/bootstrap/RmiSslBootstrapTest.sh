@@ -27,8 +27,7 @@
 # @summary Test RMI Bootstrap with SSL
 #
 # @library /lib/testlibrary
-# @modules jdk.management.agent/jdk.internal.agent
-#          jdk.management.agent/sun.management.jmxremote
+#
 # @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiSslBootstrapTest.sh
 
@@ -43,7 +42,7 @@ generatePropertyPasswordFiles `ls ${TESTSRC}/*_ssltest*.in`
 
 rm -rf ${TESTCLASSES}/ssl
 mkdir -p ${TESTCLASSES}/ssl
-cp -rf ${TESTSRC}/ssl/*store ${TESTCLASSES}/ssl 
+cp -rf ${TESTSRC}/ssl/*store ${TESTCLASSES}/ssl
 chmod -R 777 ${TESTCLASSES}/ssl
 
 DEBUGOPTIONS=""

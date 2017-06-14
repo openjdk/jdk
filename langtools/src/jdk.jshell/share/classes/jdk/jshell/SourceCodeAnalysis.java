@@ -39,6 +39,7 @@ import java.util.List;
  * etc.
  * Also includes completion suggestions, as might be used in tab-completion.
  *
+ * @since 9
  */
 public abstract class SourceCodeAnalysis {
 

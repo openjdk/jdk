@@ -51,7 +51,6 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
-import java.lang.reflect.Module;
 
 /**
  * @test

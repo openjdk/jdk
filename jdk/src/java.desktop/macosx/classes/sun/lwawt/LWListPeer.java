@@ -302,6 +302,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
             }
 
             @Override
+            @SuppressWarnings("deprecation")
             protected void processMouseEvent(final MouseEvent e) {
                 super.processMouseEvent(e);
                 if (e.getID() == MouseEvent.MOUSE_CLICKED && e.getClickCount() == 2) {
@@ -314,6 +315,7 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
             }
 
             @Override
+            @SuppressWarnings("deprecation")
             protected void processKeyEvent(final KeyEvent e) {
                 super.processKeyEvent(e);
                 if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_ENTER) {
