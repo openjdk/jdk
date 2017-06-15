@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,7 @@ class ObjectSynchronizer : AllStatic {
   static bool deflate_monitor(ObjectMonitor* mid, oop obj,
                               ObjectMonitor** freeHeadp,
                               ObjectMonitor** freeTailp);
+  static bool is_cleanup_needed();
   static void oops_do(OopClosure* f);
   // Process oops in thread local used monitors
   static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
