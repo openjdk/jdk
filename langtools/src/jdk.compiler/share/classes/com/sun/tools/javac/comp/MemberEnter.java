@@ -36,6 +36,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -320,7 +321,7 @@ public class MemberEnter extends JCTree.Visitor {
                 checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
                 checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
             } else {
-                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
+                log.error(tree, Errors.ReceiverParameterNotApplicableConstructorToplevelClass);
             }
         } else {
             checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");

@@ -276,7 +276,7 @@ public class Modules extends JCTree.Visitor {
                 msym.complete();
             }
         } catch (CompletionFailure ex) {
-            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, "cant.access", ex.sym, ex.getDetailValue());
+            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, Errors.CantAccess(ex.sym, ex.getDetailValue()));
             if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
         } finally {
             depth--;
@@ -565,7 +565,7 @@ public class Modules extends JCTree.Visitor {
 
         JavaFileObject prev = log.useSource(tree.sourcefile);
         try {
-            log.error(tree.pos(), "file.sb.on.source.or.patch.path.for.module");
+            log.error(tree.pos(), Errors.FileSbOnSourceOrPatchPathForModule);
         } finally {
             log.useSource(prev);
         }

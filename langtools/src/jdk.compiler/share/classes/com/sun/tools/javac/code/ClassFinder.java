@@ -56,6 +56,7 @@ import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.platform.PlatformDescription;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.util.*;
 
 import static javax.tools.StandardLocation.*;
@@ -292,7 +293,9 @@ public class ClassFinder {
             try {
                 fillIn(p);
             } catch (IOException ex) {
-                throw new CompletionFailure(sym, ex.getLocalizedMessage()).initCause(ex);
+                JCDiagnostic msg =
+                        diagFactory.fragment(Fragments.ExceptionMessage(ex.getLocalizedMessage()));
+                throw new CompletionFailure(sym, msg).initCause(ex);
             }
         }
         if (!reader.filling)
@@ -329,7 +332,9 @@ public class ClassFinder {
      */
     void fillIn(ClassSymbol c) {
         if (completionFailureName == c.fullname) {
-            throw new CompletionFailure(c, "user-selected completion failure by class name");
+            JCDiagnostic msg =
+                    diagFactory.fragment(Fragments.UserSelectedCompletionFailure);
+            throw new CompletionFailure(c, msg);
         }
         currentOwner = c;
         JavaFileObject classfile = c.classfile;
@@ -365,7 +370,7 @@ public class ClassFinder {
     // where
         private CompletionFailure classFileNotFound(ClassSymbol c) {
             JCDiagnostic diag =
-                diagFactory.fragment("class.file.not.found", c.flatname);
+                diagFactory.fragment(Fragments.ClassFileNotFound(c.flatname));
             return newCompletionFailure(c, diag);
         }
         /** Static factory for CompletionFailure objects.

@@ -57,6 +57,8 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.NameAndType;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -279,11 +281,11 @@ public class ClassReader {
             diagFactory);
     }
 
-    public ClassFinder.BadEnclosingMethodAttr badEnclosingMethod(Object... args) {
+    public ClassFinder.BadEnclosingMethodAttr badEnclosingMethod(Symbol sym) {
         return new ClassFinder.BadEnclosingMethodAttr (
             currentOwner.enclClass(),
             currentClassFile,
-            diagFactory.fragment("bad.enclosing.method", args),
+            diagFactory.fragment(Fragments.BadEnclosingMethod(sym)),
             diagFactory);
     }
 
@@ -985,8 +987,8 @@ public class ClassReader {
                 if (lintClassfile && !warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null, "future.attr",
-                                name, version.major, version.minor, majorVersion, minorVersion);
+                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
+                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -2078,14 +2080,11 @@ public class ClassReader {
             try {
                 if (lintClassfile) {
                     if (failure == null) {
-                        log.warning("annotation.method.not.found",
-                                    container,
-                                    name);
+                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
                     } else {
-                        log.warning("annotation.method.not.found.reason",
-                                    container,
-                                    name,
-                                    failure.getDetailValue());//diagnostic, if present
+                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                                                                            name,
+                                                                            failure.getDetailValue()));//diagnostic, if present
                     }
                 }
             } finally {
@@ -2161,12 +2160,14 @@ public class ClassReader {
             }
             if (enumerator == null) {
                 if (failure != null) {
-                    log.warning("unknown.enum.constant.reason",
-                              currentClassFile, enumTypeSym, proxy.enumerator,
-                              failure.getDiagnostic());
+                    log.warning(Warnings.UnknownEnumConstantReason(currentClassFile,
+                                                                   enumTypeSym,
+                                                                   proxy.enumerator,
+                                                                   failure.getDiagnostic()));
                 } else {
-                    log.warning("unknown.enum.constant",
-                              currentClassFile, enumTypeSym, proxy.enumerator);
+                    log.warning(Warnings.UnknownEnumConstant(currentClassFile,
+                                                             enumTypeSym,
+                                                             proxy.enumerator));
                 }
                 result = new Attribute.Enum(enumTypeSym.type,
                         new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
@@ -2686,10 +2687,9 @@ public class ClassReader {
             majorVersion * 1000 + minorVersion <
             Version.MIN().major * 1000 + Version.MIN().minor) {
             if (majorVersion == (maxMajor + 1))
-                log.warning("big.major.version",
-                            currentClassFile,
-                            majorVersion,
-                            maxMajor);
+                log.warning(Warnings.BigMajorVersion(currentClassFile,
+                                                     majorVersion,
+                                                     maxMajor));
             else
                 throw badClassFile("wrong.version",
                                    Integer.toString(majorVersion),
@@ -2982,7 +2982,7 @@ public class ClassReader {
                     theRepeatable = deproxy.deproxyCompound(repeatable);
                 }
             } catch (Exception e) {
-                throw new CompletionFailure(sym, e.getMessage());
+                throw new CompletionFailure(sym, ClassReader.this.diagFactory.fragment(Fragments.ExceptionMessage(e.getMessage())));
             }
 
             sym.getAnnotationTypeMetadata().setTarget(theTarget);
