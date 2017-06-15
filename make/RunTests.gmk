@@ -364,6 +364,10 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
   endif
 
+  ifneq ($$(JIB_JAR), )
+    $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
+  endif
+
   run-test-$1:
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
