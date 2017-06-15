@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,29 +81,33 @@ public class AnnotationTypeOptionalMemberBuilder extends AnnotationTypeRequiredM
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "AnnotationTypeOptionalMemberDetails";
+    public void build(Content contentTree) throws DocletException {
+        buildAnnotationTypeOptionalMember(contentTree);
     }
 
     /**
      * Build the annotation type optional member documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildAnnotationTypeOptionalMember(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeOptionalMember(Content memberDetailsTree)
                 throws DocletException {
-        buildAnnotationTypeMember(node, memberDetailsTree);
+        buildAnnotationTypeMember(memberDetailsTree);
+    }
+
+    @Override
+    protected void buildAnnotationTypeMemberChildren(Content annotationDocTree) {
+        super.buildAnnotationTypeMemberChildren(annotationDocTree);
+        buildDefaultValueInfo(annotationDocTree);
     }
 
     /**
      * Build the default value for this optional member.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildDefaultValueInfo(XMLNode node, Content annotationDocTree) {
+    protected void buildDefaultValueInfo(Content annotationDocTree) {
         ((AnnotationTypeOptionalMemberWriter) writer).addDefaultValueInfo(currentMember,
                 annotationDocTree);
     }
