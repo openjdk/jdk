@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,63 @@
  * questions.
  */
 
-/** Defines the implementation of the
- *  {@link javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
- *  and its command line equivalent, <em>javac</em>, as well as <em>javah</em>.
+/**
+ * Defines the implementation of the
+ * {@link javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
+ * and its command line equivalent, <em>{@index javac javac tool}</em>,
+ * as well as <em>{@index javah javah tool}</em>.
  *
- *  @moduleGraph
- *  @since 9
+ * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javac</h2>
+ *
+ * <p>
+ * This module provides the equivalent of command-line access to <em>javac</em>
+ * via the {@link java.util.spi.ToolProvider ToolProvider} and
+ * {@link javax.tools.Tool} service provider interfaces (SPIs),
+ * and more flexible access via the {@link javax.tools.JavaCompiler JavaCompiler}
+ * SPI.</p>
+ *
+ * <p> Instances of the tools can be obtained by calling
+ * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ * or the {@link java.util.ServiceLoader service loader} with the name
+ * {@code "javac"}.
+ *
+ * <p>
+ * In addition, instances of {@link javax.tools.JavaCompiler.CompilationTask}
+ * obtained from {@linkplain javax.tools.JavaCompiler JavaCompiler} can be
+ * downcast to {@link com.sun.source.util.JavacTask JavacTask} for access to
+ * lower level aspects of <em>javac</em>, such as the
+ * {@link com.sun.source.tree Abstract Syntax Tree} (AST).</p>
+ *
+ * <p>This module uses the {@link java.nio.file.spi.FileSystemProvider
+ * FileSystemProvider} API to locate file system providers. In particular,
+ * this means that a jar file system provider, such as that in the
+ * {@code jdk.zipfs} module, must be available if the compiler is to be able
+ * to read JAR files.
+ *
+ * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javah</h2>
+ *
+ * <p>
+ * <em>javah</em> only exists as a command line tool, and does not provide any
+ * direct API. As of JDK 9, it has been deprecated.
+ * Use the {@code -h} option in <em>javac</em> instead.</p>
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink javac_tool_reference javac},
+ *     {@extLink javah_tool_reference javah}
+ * </dl>
+ *
+ * @provides java.util.spi.ToolProvider
+ * @provides com.sun.tools.javac.platform.PlatformProvider
+ * @provides javax.tools.JavaCompiler
+ * @provides javax.tools.Tool
+ *
+ * @uses javax.annotation.processing.Processor
+ * @uses com.sun.source.util.Plugin
+ * @uses com.sun.tools.javac.platform.PlatformProvider
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.compiler {
     requires transitive java.compiler;

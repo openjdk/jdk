@@ -25,10 +25,10 @@
 
 /**
  * This module provides support for
- * Java&#x2122; Programming Language 'snippet' evaluating tools, such as
- * Read-Eval-Print Loops (REPLs).
+ * Java Programming Language 'snippet' evaluating tools, such as
+ * Read-Eval-Print Loops (REPLs), including the <em>{@index jshell jshell tool}</em> tool.
  * Separate packages support building tools, configuring the execution of tools,
- * and programmatically launching the existing Java&#x2122; shell tool.
+ * and programmatically launching the existing Java shell tool.
  * <p>
  *     The {@link jdk.jshell} is the package for creating 'snippet' evaluating tools.
  *     Generally, this is only package that would be needed for creating tools.
@@ -42,8 +42,8 @@
  *     implementations.
  * </p>
  * <p>
- *     The {@link jdk.jshell.tool} supports programmatically launching the
- *     "jshell tool".
+ *     The {@link jdk.jshell.tool} package supports programmatically launching the
+ *     <em>jshell</em> tool.
  * </p>
  * <p>
  *     The {@link jdk.jshell.execution} package contains implementations of the
@@ -51,6 +51,15 @@
  *     independent, operate at different levels, and do not share functionality or
  *     definitions.
  * </p>
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jshell_tool_reference jshell}
+ * </dl>
+ *
+ * @provides javax.tools.Tool
+ * @provides jdk.jshell.spi.ExecutionControlProvider
+ * @uses jdk.jshell.spi.ExecutionControlProvider
  *
  * @moduleGraph
  * @since 9

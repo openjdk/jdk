@@ -23,15 +23,39 @@
  * questions.
  */
 
-/** Defines the implementation of the
- *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
- *  and its command line equivalent, <em>javadoc</em>.
+/**
+ * Defines the implementation of the
+ * {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
+ * and its command line equivalent, <em>{@index javadoc javadoc tool}</em>.
  *
- *  @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
+ * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javadoc</h2>
+ *
+ * <p>
+ * This module provides the equivalent of command-line access to <em>javadoc</em>
+ * via the {@link java.util.spi.ToolProvider ToolProvider} and
+ * {@link javax.tools.Tool} service provider interfaces (SPIs),
+ * and more flexible access via the {@link javax.tools.DocumentationTool DocumentationTool}
+ * SPI.</p>
+ *
+ * <p> Instances of the tools can be obtained by calling
+ * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ * or the {@link java.util.ServiceLoader service loader} with the name
+ * {@code "javadoc"}.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink javadoc_tool_reference javadoc}
+ * </dl>
+ *
+ * @provides java.util.spi.ToolProvider
+ * @provides javax.tools.DocumentationTool
+ * @provides javax.tools.Tool
+ *
+ * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
  *      Documentation Comment Specification for the Standard Doclet</a>
  *
- *  @moduleGraph
- *  @since 9
+ * @moduleGraph
+ * @since 9
  */
 module jdk.javadoc {
     requires transitive java.compiler;
