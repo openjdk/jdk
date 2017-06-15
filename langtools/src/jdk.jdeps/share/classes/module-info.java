@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,38 @@
  * questions.
  */
 
-/** Defines tools for analysing dependencies in Java libraries and programs, including
- *  the <em>jdeps</em> and <em>javap</em> tools.
+/**
+ * Defines tools for analysing dependencies in Java libraries and programs,
+ * including the <em>{@index jdeps jdeps tool}</em>,
+ * <em>{@index javap javap tool}</em> and
+ * <em>{@index jdeprscan jdeprscan tool}</em> tools.
  *
- *  @moduleGraph
- *  @since 9
+ * <p>
+ * This module provides the equivalent of command-line access to the
+ * <em>javap</em> and <em>jdeps</em> tools via the
+ * {@link java.util.spi.ToolProvider ToolProvider} service provider
+ * interface (SPI)</p>
+ *
+ * <p> Instances of the tools can be obtained by calling
+ * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ * or the {@link java.util.ServiceLoader service loader} with the name
+ * {@code "javap"} or {@code "jdeps"} as appropriate.
+ *
+ * <p>
+ * <em>jdeprscan</em> only exists as a command line tool, and does not provide
+ * any direct API.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink javap_tool_reference javap},
+ *     {@extLink jdeprscan_tool_reference jdeprscan},
+ *     {@extLink jdeps_tool_reference jdeps}
+ * </dl>
+ *
+ * @provides java.util.spi.ToolProvider
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.jdeps {
     requires java.base;
