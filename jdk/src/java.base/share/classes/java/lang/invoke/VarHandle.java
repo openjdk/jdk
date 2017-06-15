@@ -110,6 +110,20 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * boolean r = avh.compareAndSet(sa, 10, "expected", "new");
  * }</pre>
  *
+ * <p>Access modes control atomicity and consistency properties.
+ * <em>Plain</em> read ({@code get}) and write ({@code set})
+ * accesses are guaranteed to be bitwise atomic only for references
+ * and for primitive values of at most 32 bits, and impose no observable
+ * ordering constraints with respect to threads other than the
+ * executing thread. <em>Opaque</em> operations are bitwise atomic and
+ * coherently ordered with respect to accesses to the same variable.
+ * In addition to obeying Opaque properties, <em>Acquire</em> mode
+ * reads and their subsequent accesses are ordered after matching
+ * <em>Release</em> mode writes and their previous accesses.  In
+ * addition to obeying Acquire and Release properties, all
+ * <em>Volatile</em> operations are totally ordered with respect to
+ * each other.
+ *
  * <p>Access modes are grouped into the following categories:
  * <ul>
  * <li>read access modes that get the value of a variable under specified
