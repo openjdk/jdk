@@ -41,6 +41,7 @@ import com.sun.tools.javac.comp.DeferredAttr.DeferredTypeCompleter;
 import com.sun.tools.javac.comp.DeferredAttr.LambdaReturnScanner;
 import com.sun.tools.javac.comp.Infer.PartiallyInferredMethodType;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
@@ -433,7 +434,7 @@ public class ArgumentAttr extends JCTree.Visitor {
                 return localInfo.check(speculativeTree, speculativeTree.type);
             } else if (resultInfo.pt.hasTag(VOID)) {
                 //this means we are returning a poly conditional from void-compatible lambda expression
-                resultInfo.checkContext.report(tree, attr.diags.fragment("conditional.target.cant.be.void"));
+                resultInfo.checkContext.report(tree, attr.diags.fragment(Fragments.ConditionalTargetCantBeVoid));
                 return attr.types.createErrorType(resultInfo.pt);
             } else {
                 //poly
