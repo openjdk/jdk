@@ -1184,6 +1184,12 @@ public:
                                                                             \
   product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
+  experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
+                "Percentage of used monitors before triggering cleanup "    \
+                "safepoint which deflates monitors (0 is off). "            \
+                "The check is performed on GuaranteedSafepointInterval.")   \
+                range(0, 100)                                               \
+                                                                            \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
                                                                             \
