@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,15 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /* @test
- * @bug 8148555
+ * @key headful
+ * @bug 8148555 8181782
  * @summary verifies JTextArea emoji enter exception. Emoji is not supported.
  * @requires (os.family=="mac")
- * @run main JTextAreaEmojiTest
+ * @run main/manual JTextAreaEmojiTest
  */
 public class JTextAreaEmojiTest implements
         ActionListener {
@@ -55,10 +58,16 @@ public class JTextAreaEmojiTest implements
     private static JButton failButton;
 
     private static JFrame mainFrame;
+    private static final CountDownLatch testRunLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
 
         JTextAreaEmojiTest test = new JTextAreaEmojiTest();
+        boolean status = testRunLatch.await(5, TimeUnit.MINUTES);
+
+        if (!status) {
+            throw new RuntimeException("Test timed out");
+        }
     }
 
     public JTextAreaEmojiTest() throws Exception {
@@ -143,7 +152,6 @@ public class JTextAreaEmojiTest implements
     public void actionPerformed(ActionEvent evt) {
         if (evt.getSource() instanceof JButton) {
             JButton btn = (JButton) evt.getSource();
-            cleanUp();
 
             switch (btn.getActionCommand()) {
                 case "Pass":
@@ -151,10 +159,13 @@ public class JTextAreaEmojiTest implements
                 case "Fail":
                     throw new AssertionError("Test case has failed!");
             }
+
+            cleanUp();
         }
     }
 
     private static void cleanUp() {
         mainFrame.dispose();
+        testRunLatch.countDown();
     }
 }
