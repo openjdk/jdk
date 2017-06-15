@@ -567,7 +567,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
 // This function must be called from within a block containing a ResourceMark.
 char* Reflection::verify_class_access_msg(const Klass* current_class,
                                           const InstanceKlass* new_class,
-                                          VerifyClassAccessResults result) {
+                                          const VerifyClassAccessResults result) {
   assert(result != ACCESS_OK, "must be failure result");
   char * msg = NULL;
   if (result != OTHER_PROBLEM && new_class != NULL && current_class != NULL) {
