@@ -56,6 +56,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
+    $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/IsModifiableModule \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleReads \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleExportsAndOpens \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/AddModuleUsesAndProvides \
@@ -85,6 +86,7 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIsModifiableModuleTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleReadsTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleExportsAndOpensTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleUsesAndProvidesTest := -lc
