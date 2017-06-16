@@ -1,4 +1,4 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<!doctype html>
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html">
@@ -42,7 +42,7 @@ is the name of an IDL interface.
 </UL>
 
 
-<H2><a name="helper">Helper Files</a></H2>
+<H2><a id="helper">Helper Files</a></H2>
 
 <P>Helper files supply several static methods needed to manipulate the type.
 These include <code>Any</code> insert and extract operations for the type,
@@ -57,7 +57,7 @@ the object reference does not support the requested type. A different system exc
 is raised to indicate other kinds of errors. Trying to narrow
 a null will always succeed with a return value of null.
 
-<H2><a name="holder">Holder Files</a></H2>
+<H2><a id="holder">Holder Files</a></H2>
 
 <P>Support for out and inout parameter passing modes requires the use of additional holder classes.
 These classes are available for all of the basic IDL datatypes in the <code>org.omg.CORBA</code> package
@@ -74,7 +74,7 @@ false for boolean, 0 for numeric and char types, null for strings, null for obje
 the <code>org.omg.CORBA.portable.Streamable</code> interface.
 
 
-<H2><a name="operations">Operations Files</a></H2>
+<H2><a id="operations">Operations Files</a></H2>
 
 <P>A non abstract IDL interface is mapped to two public Java interfaces:
 a <em>signature</em> interface and an <em>operations</em> interface.
@@ -96,7 +96,7 @@ expressed in IDL is reflected in both the Java signature
 interface and operations interface hierarchies.
 
 
-<H2><a name="stub">Stubs</a></H2>
+<H2><a id="stub">Stubs</a></H2>
 
 <P>For the mapping of a non-object-oriented language, there will be
 a programming interface to the stubs for each interface type. Generally, the stubs

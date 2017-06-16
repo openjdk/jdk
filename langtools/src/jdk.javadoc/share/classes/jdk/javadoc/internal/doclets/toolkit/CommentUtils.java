@@ -64,13 +64,13 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 public class CommentUtils {
 
-    final Configuration configuration;
+    final BaseConfiguration configuration;
     final DocTreeFactory treeFactory;
     final HashMap<Element, DocCommentDuo> dcTreesMap = new HashMap<>();
     final DocTrees trees;
     final Elements elementUtils;
 
-    protected CommentUtils(Configuration configuration) {
+    protected CommentUtils(BaseConfiguration configuration) {
         this.configuration = configuration;
         trees = configuration.docEnv.getDocTrees();
         treeFactory = trees.getDocTreeFactory();
@@ -110,7 +110,7 @@ public class CommentUtils {
         return (DocTree) text;
     }
 
-    public void setEnumValuesTree(Configuration config, Element e) {
+    public void setEnumValuesTree(BaseConfiguration config, Element e) {
         Utils utils = config.utils;
         String klassName = utils.getSimpleName(utils.getEnclosingTypeElement(e));
 
@@ -126,7 +126,7 @@ public class CommentUtils {
         dcTreesMap.put(e, new DocCommentDuo(null, docTree));
     }
 
-    public void setEnumValueOfTree(Configuration config, Element e) {
+    public void setEnumValueOfTree(BaseConfiguration config, Element e) {
 
         List<DocTree> fullBody = new ArrayList<>();
         fullBody.add(treeFactory.newTextTree(config.getText("doclet.enum_valueof_doc.fullbody")));

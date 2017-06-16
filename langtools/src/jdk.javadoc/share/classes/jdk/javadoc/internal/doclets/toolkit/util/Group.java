@@ -30,7 +30,7 @@ import java.util.*;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 
@@ -87,7 +87,7 @@ public class Group {
     /**
      * The global configuration information for this run.
      */
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private Messages messages;
 
     /**
@@ -101,7 +101,7 @@ public class Group {
         }
     }
 
-    public Group(Configuration configuration) {
+    public Group(BaseConfiguration configuration) {
         this.configuration = configuration;
         messages = configuration.getMessages();
     }
@@ -199,7 +199,7 @@ public class Group {
     }
 
     // Lazy init of the messages for now, because Group is created
-    // in Configuration before configuration is fully initialized.
+    // in BaseConfiguration before configuration is fully initialized.
     private void initMessages() {
         if (messages == null) {
             messages = configuration.getMessages();

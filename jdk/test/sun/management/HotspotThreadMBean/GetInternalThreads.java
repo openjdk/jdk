@@ -27,7 +27,7 @@
  * @summary Basic Test for HotspotThreadMBean.getInternalThreadCount()
  *          and getInternalThreadCpuTime()
  * @author  Mandy Chung
- * @modules java.management/sun.management
+ *
  * @run main/othervm -XX:+UsePerfData GetInternalThreads
  */
 

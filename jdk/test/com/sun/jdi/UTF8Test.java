@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 5033550
- *  @summary  JDWP back end uses modified UTF-8
+ * @test
+ * @bug 5033550
+ * @summary  JDWP back end uses modified UTF-8
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g UTF8Test.java
- *  @run driver UTF8Test
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g UTF8Test.java
+ * @run driver UTF8Test
  */
 
 /*

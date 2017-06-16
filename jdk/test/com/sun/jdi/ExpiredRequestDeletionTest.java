@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4453310
- *  @summary Test the deletion of event requests that are expired
- *     by virtue of addCountFilter.
+ * @test
+ * @bug 4453310
+ * @summary Test the deletion of event requests that are expired
+ * by virtue of addCountFilter.
  *
- *  @author Robert Field
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g ExpiredRequestDeletionTest.java
- *  @run driver ExpiredRequestDeletionTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g ExpiredRequestDeletionTest.java
+ * @run driver ExpiredRequestDeletionTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

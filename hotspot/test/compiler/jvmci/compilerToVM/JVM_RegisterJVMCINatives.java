@@ -27,8 +27,8 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc:open
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot:open
- *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:open
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives.positive=true
  *      -XX:+EnableJVMCI

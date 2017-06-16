@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
@@ -34,7 +34,9 @@ import java.util.Arrays;
  * @test
  * @bug 8024302 8026037 8130132
  * @summary warnings, errors and -strict
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
+ * @build jdk.test.lib.util.JarUtils
+ * @run main Warning
  */
 public class Warning {
 

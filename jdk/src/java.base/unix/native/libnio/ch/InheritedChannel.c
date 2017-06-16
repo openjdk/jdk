@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,8 @@
 
 #include "sun_nio_ch_InheritedChannel.h"
 
-static int matchFamily(struct sockaddr *sa) {
-    int family = sa->sa_family;
-#ifdef AF_INET6
-    if (ipv6_available()) {
-        return (family == AF_INET6);
-    }
-#endif
-    return (family == AF_INET);
+static int matchFamily(SOCKETADDRESS *sa) {
+    return (sa->sa.sa_family == (ipv6_available() ? AF_INET6 : AF_INET));
 }
 
 JNIEXPORT void JNICALL
@@ -63,14 +57,13 @@ Java_sun_nio_ch_InheritedChannel_peerAddress0(JNIEnv *env, jclass cla, jint fd)
     jint remote_port;
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
-        if (matchFamily(&sa.sa)) {
+        if (matchFamily(&sa)) {
             remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }
 
     return remote_ia;
 }
-
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
@@ -80,7 +73,7 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
     jint remote_port = -1;
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
-        if (matchFamily(&sa.sa)) {
+        if (matchFamily(&sa)) {
             NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }
@@ -92,7 +85,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_InheritedChannel_soType0(JNIEnv *env, jclass cla, jint fd)
 {
     int sotype;
-    socklen_t arglen=sizeof(sotype);
+    socklen_t arglen = sizeof(sotype);
     if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype, &arglen) == 0) {
         if (sotype == SOCK_STREAM)
             return sun_nio_ch_InheritedChannel_SOCK_STREAM;
@@ -123,7 +116,7 @@ Java_sun_nio_ch_InheritedChannel_dup2(JNIEnv *env, jclass cla, jint fd, jint fd2
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_InheritedChannel_open0(JNIEnv *env, jclass cla, jstring path, jint oflag)
 {
-    const char* str;
+    const char *str;
     int oflag_actual;
 
     /* convert to OS specific value */

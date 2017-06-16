@@ -32,6 +32,7 @@ import java.math.BigInteger;
  * using the <i>Chinese Remainder Theorem</i> (CRT) information values.
  *
  * @author Jan Luehe
+ * @since 1.2
  *
  *
  * @see RSAPrivateKey

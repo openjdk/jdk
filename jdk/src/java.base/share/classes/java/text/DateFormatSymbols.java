@@ -98,6 +98,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @see          SimpleDateFormat
  * @see          java.util.SimpleTimeZone
  * @author       Chen-Lieh Huang
+ * @since 1.1
  */
 public class DateFormatSymbols implements Serializable, Cloneable {
 

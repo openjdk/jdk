@@ -184,6 +184,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
             isAWT = true;
         }
 
+        if (attributes.get(DialogOnTop.class) != null) {
+            setAlwaysOnTop(true);
+        }
         Container c = getContentPane();
         c.setLayout(new BorderLayout());
 
@@ -274,6 +277,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
         this.docFlavor = flavor;
         this.asOriginal = attributes;
         this.asCurrent = new HashPrintRequestAttributeSet(attributes);
+
+        if (attributes.get(DialogOnTop.class) != null) {
+            setAlwaysOnTop(true);
+        }
 
         Container c = getContentPane();
         c.setLayout(new BorderLayout());
