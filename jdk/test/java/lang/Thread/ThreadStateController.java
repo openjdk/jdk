@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-import jdk.testlibrary.LockFreeLogManager;
+import jdk.test.lib.LockFreeLogger;
 import jdk.testlibrary.Utils;
 
 /**
@@ -100,7 +100,7 @@ public class ThreadStateController extends Thread {
     private final AtomicInteger iterations = new AtomicInteger();
     private final AtomicInteger interrupted = new AtomicInteger();
 
-    private final LockFreeLogManager logManager = new LockFreeLogManager();
+    private final LockFreeLogger logger = new LockFreeLogger();
 
     @Override
     public void run() {
@@ -349,7 +349,7 @@ public class ThreadStateController extends Thread {
     }
 
     private void log(String msg, Object ... params) {
-        logManager.log(msg, params);
+        logger.log(msg, params);
     }
 
     /**
@@ -361,6 +361,6 @@ public class ThreadStateController extends Thread {
     public String getLog() throws InterruptedException {
         this.join();
 
-        return logManager.toString();
+        return logger.toString();
     }
 }

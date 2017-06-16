@@ -26,7 +26,7 @@
  * @bug 6174229
  * @summary Verify the property name specifying server notification buffer size.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean NotifBufferSizePropertyNameTest
  * @run build NotifBufferSizePropertyNameTest
  * @run main NotifBufferSizePropertyNameTest

@@ -69,18 +69,20 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
-import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
+import com.sun.tools.javac.util.Log.DiagnosticHandler;
+import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -88,6 +90,8 @@ import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
+import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 
 /** This class could be the main entry point for GJC when GJC is used as a
  *  component in a larger software system. It provides operations to
@@ -340,13 +344,6 @@ public class JavaCompiler {
     protected final Symbol.Completer sourceCompleter =
             sym -> readSourceFile((ClassSymbol) sym);
 
-    protected final ModuleFinder.ModuleInfoSourceFileCompleter moduleInfoSourceFileCompleter =
-            fo -> (ModuleSymbol) readSourceFile(parseImplicitFile(fo), null, tl -> {
-                return tl.defs.nonEmpty() && tl.defs.head.hasTag(Tag.MODULEDEF) ?
-                        ((JCModuleDecl) tl.defs.head).sym.module_info :
-                        syms.defineClass(names.module_info, syms.errModule);
-            }).owner;
-
     /**
      * Command line options.
      */
@@ -398,7 +395,7 @@ public class JavaCompiler {
             syms = Symtab.instance(context);
         } catch (CompletionFailure ex) {
             // inlined Check.completionError as it is not initialized yet
-            log.error("cant.access", ex.sym, ex.getDetailValue());
+            log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
             if (ex instanceof ClassFinder.BadClassFile)
                 throw new Abort();
         }
@@ -417,7 +414,8 @@ public class JavaCompiler {
         diags = Factory.instance(context);
 
         finder.sourceCompleter = sourceCompleter;
-        moduleFinder.sourceFileCompleter = moduleInfoSourceFileCompleter;
+        modules.findPackageInFile = this::findPackageInFile;
+        moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
 
@@ -574,7 +572,7 @@ public class JavaCompiler {
      */
     public int errorCount() {
         if (werror && log.nerrors == 0 && log.nwarnings > 0) {
-            log.error("warnings.and.werror");
+            log.error(Errors.WarningsAndWerror);
         }
         return log.nerrors;
     }
@@ -602,7 +600,7 @@ public class JavaCompiler {
             inputFiles.add(filename);
             return filename.getCharContent(false);
         } catch (IOException e) {
-            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
+            log.error(Errors.ErrorReadingFile(filename, JavacFileManager.getMessage(e)));
             return null;
         }
     }
@@ -746,10 +744,10 @@ public class JavaCompiler {
             if (gen.genClass(env, cdef) && (errorCount() == 0))
                 return writer.writeClass(cdef.sym);
         } catch (ClassWriter.PoolOverflow ex) {
-            log.error(cdef.pos(), "limit.pool");
+            log.error(cdef.pos(), Errors.LimitPool);
         } catch (ClassWriter.StringOverflow ex) {
-            log.error(cdef.pos(), "limit.string.overflow",
-                      ex.value.substring(0, 20));
+            log.error(cdef.pos(),
+                      Errors.LimitStringOverflow(ex.value.substring(0, 20)));
         } catch (CompletionFailure ex) {
             chk.completionError(cdef.pos(), ex);
         }
@@ -768,7 +766,7 @@ public class JavaCompiler {
                                                JavaFileObject.Kind.SOURCE,
                                                null);
         if (inputFiles.contains(outFile)) {
-            log.error(cdef.pos(), "source.cant.overwrite.input.file", outFile);
+            log.error(cdef.pos(), Errors.SourceCantOverwriteInputFile(outFile));
             return null;
         } else {
             try (BufferedWriter out = new BufferedWriter(outFile.openWriter())) {
@@ -787,19 +785,6 @@ public class JavaCompiler {
         readSourceFile(null, c);
     }
 
-    private JCTree.JCCompilationUnit parseImplicitFile(JavaFileObject filename) {
-        JavaFileObject prev = log.useSource(filename);
-        try {
-            JCTree.JCCompilationUnit t = parse(filename, filename.getCharContent(false));
-            return t;
-        } catch (IOException e) {
-            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
-            return make.TopLevel(List.nil());
-        } finally {
-            log.useSource(prev);
-        }
-    }
-
     /** Compile a ClassSymbol from source, optionally using the given compilation unit as
      *  the source tree.
      *  @param tree the compilation unit in which the given ClassSymbol resides,
@@ -808,21 +793,23 @@ public class JavaCompiler {
      */
     public void readSourceFile(JCCompilationUnit tree, ClassSymbol c) throws CompletionFailure {
         if (completionFailureName == c.fullname) {
-            throw new CompletionFailure(c, "user-selected completion failure by class name");
+            JCDiagnostic msg =
+                    diagFactory.fragment(Fragments.UserSelectedCompletionFailure);
+            throw new CompletionFailure(c, msg);
         }
+        JavaFileObject filename = c.classfile;
+        JavaFileObject prev = log.useSource(filename);
 
         if (tree == null) {
-            tree = parseImplicitFile(c.classfile);
+            try {
+                tree = parse(filename, filename.getCharContent(false));
+            } catch (IOException e) {
+                log.error(Errors.ErrorReadingFile(filename, JavacFileManager.getMessage(e)));
+                tree = make.TopLevel(List.<JCTree>nil());
+            } finally {
+                log.useSource(prev);
+            }
         }
-
-        readSourceFile(tree, c, cut -> c);
-    }
-
-    private ClassSymbol readSourceFile(JCCompilationUnit tree,
-                                       ClassSymbol expectedSymbol,
-                                       Function<JCCompilationUnit, ClassSymbol> symbolGetter)
-                                           throws CompletionFailure {
-        Assert.checkNonNull(tree);
 
         if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
@@ -835,20 +822,18 @@ public class JavaCompiler {
         // Note that if module resolution failed, we may not even
         // have enough modules available to access java.lang, and
         // so risk getting FatalError("no.java.lang") from MemberEnter.
-        if (!modules.enter(List.of(tree), expectedSymbol)) {
-            throw new CompletionFailure(symbolGetter.apply(tree),
-                                        diags.fragment("cant.resolve.modules"));
+        if (!modules.enter(List.of(tree), c)) {
+            throw new CompletionFailure(c, diags.fragment(Fragments.CantResolveModules));
         }
 
-        enter.complete(List.of(tree), expectedSymbol);
+        enter.complete(List.of(tree), c);
 
         if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
             taskListener.finished(e);
         }
 
-        ClassSymbol sym = symbolGetter.apply(tree);
-        if (sym == null || enter.getEnv(sym) == null) {
+        if (enter.getEnv(c) == null) {
             boolean isPkgInfo =
                 tree.sourcefile.isNameCompatible("package-info",
                                                  JavaFileObject.Kind.SOURCE);
@@ -858,27 +843,23 @@ public class JavaCompiler {
             if (isModuleInfo) {
                 if (enter.getEnv(tree.modle) == null) {
                     JCDiagnostic diag =
-                        diagFactory.fragment("file.does.not.contain.module");
-                    throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
+                        diagFactory.fragment(Fragments.FileDoesNotContainModule);
+                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
                 }
             } else if (isPkgInfo) {
                 if (enter.getEnv(tree.packge) == null) {
                     JCDiagnostic diag =
-                        diagFactory.fragment("file.does.not.contain.package",
-                                                 sym.location());
-                    throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
+                        diagFactory.fragment(Fragments.FileDoesNotContainPackage(c.location()));
+                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
                 }
             } else {
                 JCDiagnostic diag =
-                        diagFactory.fragment("file.doesnt.contain.class",
-                                            sym.getQualifiedName());
-                throw new ClassFinder.BadClassFile(sym, tree.sourcefile, diag, diagFactory);
+                        diagFactory.fragment(Fragments.FileDoesntContainClass(c.getQualifiedName()));
+                throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
             }
         }
 
         implicitSourceFilesRead = true;
-
-        return sym;
     }
 
     /** Track when the JavaCompiler has been used to compile something. */
@@ -888,7 +869,7 @@ public class JavaCompiler {
 
     public void compile(List<JavaFileObject> sourceFileObject)
         throws Throwable {
-        compile(sourceFileObject, List.nil(), null);
+        compile(sourceFileObject, List.nil(), null, List.nil());
     }
 
     /**
@@ -898,10 +879,13 @@ public class JavaCompiler {
      * @param classnames class names to process for annotations
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
+     * @param addModules additional root modules to be used during
+     * module resolution.
      */
     public void compile(Collection<JavaFileObject> sourceFileObjects,
                         Collection<String> classnames,
-                        Iterable<? extends Processor> processors)
+                        Iterable<? extends Processor> processors,
+                        Collection<String> addModules)
     {
         if (!taskListener.isEmpty()) {
             taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
@@ -930,6 +914,10 @@ public class JavaCompiler {
                 if (sep != -1) {
                     modules.addExtraAddModules(className.substring(0, sep));
                 }
+            }
+
+            for (String moduleName : addModules) {
+                modules.addExtraAddModules(moduleName);
             }
 
             // These method calls must be chained to avoid memory leaks
@@ -1191,13 +1179,12 @@ public class JavaCompiler {
             // annotation processing is to occur with compilation,
             // emit a warning.
             if (options.isSet(PROC, "only")) {
-                log.warning("proc.proc-only.requested.no.procs");
+                log.warning(Warnings.ProcProcOnlyRequestedNoProcs);
                 todo.clear();
             }
             // If not processing annotations, classnames must be empty
             if (!classnames.isEmpty()) {
-                log.error("proc.no.explicit.annotation.processing.requested",
-                          classnames);
+                log.error(Errors.ProcNoExplicitAnnotationProcessingRequested(classnames));
             }
             Assert.checkNull(deferredDiagnosticHandler);
             return ; // continue regular compilation
@@ -1212,8 +1199,7 @@ public class JavaCompiler {
                  // Check for explicit request for annotation
                  // processing
                 if (!explicitAnnotationProcessingRequested()) {
-                    log.error("proc.no.explicit.annotation.processing.requested",
-                              classnames);
+                    log.error(Errors.ProcNoExplicitAnnotationProcessingRequested(classnames));
                     deferredDiagnosticHandler.reportDeferredDiagnostics();
                     log.popDiagnosticHandler(deferredDiagnosticHandler);
                     return ; // TODO: Will this halt compilation?
@@ -1266,7 +1252,7 @@ public class JavaCompiler {
                 procEnvImpl.close();
             }
         } catch (CompletionFailure ex) {
-            log.error("cant.access", ex.sym, ex.getDetailValue());
+            log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
             if (deferredDiagnosticHandler != null) {
                 deferredDiagnosticHandler.reportDeferredDiagnostics();
                 log.popDiagnosticHandler(deferredDiagnosticHandler);
@@ -1447,6 +1433,11 @@ public class JavaCompiler {
 
         if (implicitSourcePolicy == ImplicitSourcePolicy.NONE
                 && !inputFiles.contains(env.toplevel.sourcefile)) {
+            return;
+        }
+
+        if (!modules.multiModuleMode && env.toplevel.modle != modules.getDefaultModule()) {
+            //can only generate classfiles for a single module:
             return;
         }
 
@@ -1632,8 +1623,8 @@ public class JavaCompiler {
                 if (results != null && file != null)
                     results.add(file);
             } catch (IOException ex) {
-                log.error(cdef.pos(), "class.cant.write",
-                          cdef.sym, ex.getMessage());
+                log.error(cdef.pos(),
+                          Errors.ClassCantWrite(cdef.sym, ex.getMessage()));
                 return;
             } finally {
                 log.useSource(prev);
@@ -1720,13 +1711,13 @@ public class JavaCompiler {
                 && implicitSourceFilesRead
                 && implicitSourcePolicy == ImplicitSourcePolicy.UNSET) {
             if (explicitAnnotationProcessingRequested())
-                log.warning("proc.use.implicit");
+                log.warning(Warnings.ProcUseImplicit);
             else
-                log.warning("proc.use.proc.or.implicit");
+                log.warning(Warnings.ProcUseProcOrImplicit);
         }
         chk.reportDeferredDiagnostics();
         if (log.compressedOutput) {
-            log.mandatoryNote(null, "compressed.diags");
+            log.mandatoryNote(null, Notes.CompressedDiags);
         }
     }
 
@@ -1737,6 +1728,32 @@ public class JavaCompiler {
 
     public boolean isEnterDone() {
         return enterDone;
+    }
+
+    private Name readModuleName(JavaFileObject fo) {
+        return parseAndGetName(fo, t -> {
+            JCModuleDecl md = t.getModuleDecl();
+
+            return md != null ? TreeInfo.fullName(md.getName()) : null;
+        });
+    }
+
+    private Name findPackageInFile(JavaFileObject fo) {
+        return parseAndGetName(fo, t -> t.getPackage() != null ?
+                                        TreeInfo.fullName(t.getPackage().getPackageName()) : null);
+    }
+
+    private Name parseAndGetName(JavaFileObject fo,
+                                 Function<JCTree.JCCompilationUnit, Name> tree2Name) {
+        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        try {
+            JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false));
+            return tree2Name.apply(t);
+        } catch (IOException e) {
+            return null;
+        } finally {
+            log.popDiagnosticHandler(dh);
+        }
     }
 
     /** Close the compiler, flushing the logs
@@ -1781,7 +1798,7 @@ public class JavaCompiler {
                     // better written to set any/all exceptions from all the
                     // Closeables as suppressed exceptions on the FatalError
                     // that is thrown.
-                    JCDiagnostic msg = diagFactory.fragment("fatal.err.cant.close");
+                    JCDiagnostic msg = diagFactory.fragment(Fragments.FatalErrCantClose);
                     throw new FatalError(msg, e);
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,19 @@
 
 package sun.tools.attach;
 
+import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.spi.AttachProvider;
+import jdk.internal.misc.VM;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -43,8 +47,33 @@ import java.util.stream.Collectors;
 
 public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
-    HotSpotVirtualMachine(AttachProvider provider, String id) {
+    private static final long CURRENT_PID;
+    private static final boolean ALLOW_ATTACH_SELF;
+    static {
+        PrivilegedAction<ProcessHandle> pa = ProcessHandle::current;
+        CURRENT_PID = AccessController.doPrivileged(pa).pid();
+
+        String s = VM.getSavedProperty("jdk.attach.allowAttachSelf");
+        ALLOW_ATTACH_SELF = "".equals(s) || Boolean.parseBoolean(s);
+    }
+
+    HotSpotVirtualMachine(AttachProvider provider, String id)
+        throws AttachNotSupportedException, IOException
+    {
         super(provider, id);
+
+        int pid;
+        try {
+            pid = Integer.parseInt(id);
+        } catch (NumberFormatException e) {
+            throw new AttachNotSupportedException("Invalid process identifier");
+        }
+
+        // The tool should be a different VM to the target. This check will
+        // eventually be enforced by the target VM.
+        if (!ALLOW_ATTACH_SELF && (pid == 0 || pid == CURRENT_PID)) {
+            throw new IOException("Can not attach to current VM");
+        }
     }
 
     /*
@@ -103,8 +132,6 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
         try {
             loadAgentLibrary("instrument", args);
-        } catch (AgentLoadException x) {
-            throw new InternalError("instrument library is missing in target VM", x);
         } catch (AgentInitializationException x) {
             /*
              * Translate interesting errors into the right exception and
@@ -116,13 +143,17 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                 case JNI_ENOMEM:
                     throw new AgentLoadException("Insuffient memory");
                 case ATTACH_ERROR_BADJAR:
-                    throw new AgentLoadException("Agent JAR not found or no Agent-Class attribute");
+                    throw new AgentLoadException(
+                        "Agent JAR not found or no Agent-Class attribute");
                 case ATTACH_ERROR_NOTONCP:
-                    throw new AgentLoadException("Unable to add JAR file to system class path");
+                    throw new AgentLoadException(
+                        "Unable to add JAR file to system class path");
                 case ATTACH_ERROR_STARTFAIL:
-                    throw new AgentInitializationException("Agent JAR loaded but agent failed to initialize");
+                    throw new AgentInitializationException(
+                        "Agent JAR loaded but agent failed to initialize");
                 default :
-                    throw new AgentLoadException("Failed to load agent - unknown reason: " + rc);
+                    throw new AgentLoadException("" +
+                        "Failed to load agent - unknown reason: " + rc);
             }
         }
     }
@@ -163,20 +194,20 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         return props;
     }
 
-    private static final String MANAGMENT_PREFIX = "com.sun.management.";
+    private static final String MANAGEMENT_PREFIX = "com.sun.management.";
 
     private static boolean checkedKeyName(Object key) {
         if (!(key instanceof String)) {
             throw new IllegalArgumentException("Invalid option (not a String): "+key);
         }
-        if (!((String)key).startsWith(MANAGMENT_PREFIX)) {
+        if (!((String)key).startsWith(MANAGEMENT_PREFIX)) {
             throw new IllegalArgumentException("Invalid option: "+key);
         }
         return true;
     }
 
     private static String stripKeyName(Object key) {
-        return ((String)key).substring(MANAGMENT_PREFIX.length());
+        return ((String)key).substring(MANAGEMENT_PREFIX.length());
     }
 
     @Override
@@ -204,8 +235,10 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     @Override
     public String startLocalManagementAgent() throws IOException {
         executeJCmd("ManagementAgent.start_local").close();
-        return getAgentProperties().getProperty("com.sun.management.jmxremote.localConnectorAddress");
+        String prop = MANAGEMENT_PREFIX + "jmxremote.localConnectorAddress";
+        return getAgentProperties().getProperty(prop);
     }
+
 
     // --- HotSpot specific methods ---
 
@@ -245,8 +278,8 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         return executeCommand("jcmd", command);
     }
 
-    // -- Supporting methods
 
+    // -- Supporting methods
 
     /*
      * Execute the given command in the target VM - specific platform
@@ -306,10 +339,10 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     /*
      * Utility method to read data into a String.
      */
-    String readErrorMessage(InputStream sis) throws IOException {
+    String readErrorMessage(InputStream in) throws IOException {
         String s;
         StringBuilder message = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(sis));
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
         while ((s = br.readLine()) != null) {
             message.append(s);
         }

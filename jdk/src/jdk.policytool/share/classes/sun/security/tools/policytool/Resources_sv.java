@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
     private static final Object[][] contents = {
         {"NEWLINE", "\n"},
         {"Warning.A.public.key.for.alias.signers.i.does.not.exist.Make.sure.a.KeyStore.is.properly.configured.",
-                "Varning! Det finns ingen offentlig nyckel f\u00F6r aliaset {0}. Kontrollera att det aktuella nyckellagret \u00E4r korrekt konfigurerat."},
+                "Varning! Det finns ingen \u00F6ppen nyckel f\u00F6r aliaset {0}. Kontrollera att det aktuella nyckellagret \u00E4r korrekt konfigurerat."},
         {"Warning.Class.not.found.class", "Varning! Klassen hittades inte: {0}"},
         {"Warning.Invalid.argument.s.for.constructor.arg",
                 "Varning! Ogiltiga argument f\u00F6r konstruktor: {0}"},
@@ -59,8 +59,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Warning.File.name.may.include.escaped.backslash.characters.It.is.not.necessary.to.escape.backslash.characters.the.tool.escapes",
             "Varning! Filnamnet kan inneh\u00E5lla omv\u00E4nda snedstreck inom citattecken. Citattecken kr\u00E4vs inte f\u00F6r omv\u00E4nda snedstreck (verktyget hanterar detta n\u00E4r policyinneh\u00E5llet skrivs till det best\u00E4ndiga lagret).\n\nKlicka p\u00E5 Beh\u00E5ll f\u00F6r att beh\u00E5lla det angivna namnet, eller klicka p\u00E5 Redigera f\u00F6r att \u00E4ndra det."},
 
-        {"Add.Public.Key.Alias", "L\u00E4gg till offentligt nyckelalias"},
-        {"Remove.Public.Key.Alias", "Ta bort offentligt nyckelalias"},
+        {"Add.Public.Key.Alias", "L\u00E4gg till alias till \u00F6ppen nyckel"},
+        {"Remove.Public.Key.Alias", "Ta bort alias f\u00F6r \u00F6ppen nyckel"},
         {"File", "&Arkiv"},
         {"KeyStore", "&KeyStore"},
         {"Policy.File.", "Policyfil:"},
@@ -68,7 +68,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Kan inte \u00F6ppna policyfilen: {0}: {1}"},
         {"Policy.Tool", "Policyverktyg"},
         {"Errors.have.occurred.while.opening.the.policy.configuration.View.the.Warning.Log.for.more.information.",
-                "Det uppstod ett fel n\u00E4r policykonfigurationen skulle \u00F6ppnas. Se varningsloggen f\u00F6r mer information."},
+                "Ett fel intr\u00E4ffade n\u00E4r policykonfigurationen skulle \u00F6ppnas. Se varningsloggen f\u00F6r mer information."},
         {"Error", "Fel"},
         {"OK", "OK"},
         {"Status", "Status"},
@@ -80,7 +80,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Target.Name.",
                 "M\u00E5l:                                                    "},
         {"Actions.",
-                "Funktioner:                                                             "},
+                "\u00C5tg\u00E4rder:                                                             "},
         {"OK.to.overwrite.existing.file.filename.",
                 "Ska den befintliga filen {0} skrivas \u00F6ver?"},
         {"Cancel", "Avbryt"},
@@ -94,10 +94,10 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {".Edit.Permission", "  Re&digera beh\u00F6righet"},
         {"Remove.Permission", "Ta &bort beh\u00F6righet"},
         {"Done", "Utf\u00F6rd"},
-        {"KeyStore.URL.", "KeyStore-&URL:"},
-        {"KeyStore.Type.", "KeyStore-&typ:"},
-        {"KeyStore.Provider.", "KeyStore-&leverant\u00F6r:"},
-        {"KeyStore.Password.URL.", "KeyStore-l\u00F6sen&ords-URL:"},
+        {"KeyStore.URL.", "Nyckellager-&URL:"},
+        {"KeyStore.Type.", "Nyckellager&typ:"},
+        {"KeyStore.Provider.", "Nyckellager&leverant\u00F6r:"},
+        {"KeyStore.Password.URL.", "L\u00F6sen&ords-URL till nyckellager:"},
         {"Principals", "Identitetshavare"},
         {".Edit.Principal.", "  Redigera identitetshavare:"},
         {".Add.New.Principal.", "  L\u00E4gg till ny identitetshavare:"},
@@ -136,7 +136,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"provider.name", "leverant\u00F6rsnamn"},
         {"url", "url"},
         {"method.list", "metodlista"},
-        {"request.headers.list", "beg\u00E4ranrubriklista"},
+        {"request.headers.list", "lista \u00F6ver beg\u00E4randehuvuden"},
         {"Principal.List", "Lista \u00F6ver identitetshavare"},
         {"Permission.List", "Beh\u00F6righetslista"},
         {"Code.Base", "Kodbas"},

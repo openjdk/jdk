@@ -43,6 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  *
  * @author Roland Schemers
+ * @since 1.2
  *
  * @serial include
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@
  * @summary test that both old style command line options and new gnu style
  *          command line options work with the --release option whether or
  *          not the --release option is preceded by a file name.
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
- * @build jdk.testlibrary.FileUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng ReleaseBeforeFiles
  */
 
@@ -46,7 +47,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class ReleaseBeforeFiles {
     private Runnable onCompletion;
