@@ -112,6 +112,7 @@ import java.util.Objects;
  * @author      Blake Sullivan
  * @author      Laurence P. G. Cable
  * @author      Jeff Dunn
+ * @since 1.1
  */
 public class DataFlavor implements Externalizable, Cloneable {
 
@@ -211,6 +212,9 @@ public class DataFlavor implements Externalizable, Cloneable {
      *     representationClass = java.awt.Image
      *     mimeType            = "image/x-java-image"
      * </pre>
+     * Will be {@code null} if {@code java.awt.Image} is not visible, the
+     * {@code java.desktop} module is not loaded, or the {@code java.desktop}
+     * module is not in the run-time image.
      */
     public static final DataFlavor imageFlavor = createConstant("image/x-java-image; class=java.awt.Image", "Image");
 

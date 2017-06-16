@@ -279,11 +279,11 @@ public class LSSerializerTest {
                 "<author>\n" +
                 "    <a>&name1;Jo Smith</a>\n" +
                 "    <b>b &name2;Jo Smith &name1;Jo Smith b</b>\n" +
-                "    <c> &name;Jo Smith </c>\n" +
+                "    <c>&name;Jo Smith </c>\n" +
                 "    <d>&ele1;d</d>\n" +
-                "    <e> &ele2;eee </e>\n" +
+                "    <e>&ele2;eee </e>\n" +
                 "    <f>&lt;att&gt;</f>\n" +
-                "    <g> &ele; g</g>\n" +
+                "    <g>&ele; g</g>\n" +
                 "    <h>&ele2;</h>\n" +
                 "</author>\n");
 
@@ -301,7 +301,7 @@ public class LSSerializerTest {
                 "<author>\n" +
                 "    <a>&name;Jo Smith</a>\n" +
                 "    <b>b &name;Jo Smith &name;Jo Smith b</b>\n" +
-                "    <c> &name;Jo Smith </c>\n" +
+                "    <c>&name;Jo Smith </c>\n" +
                 "    <d>\n" +
                 "        <aa>\n" +
                 "            <bb>text</bb>\n" +

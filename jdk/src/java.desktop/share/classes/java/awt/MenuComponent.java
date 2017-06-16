@@ -379,6 +379,7 @@ public abstract class MenuComponent implements java.io.Serializable {
             }
 
         } else { // backward compatibility
+            @SuppressWarnings("deprecation")
             Event olde = e.convertToOld();
             if (olde != null) {
                 postEvent(olde);

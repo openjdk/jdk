@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.Attr.CheckMode;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -238,7 +240,7 @@ public class Infer {
             }
 
             if (resultInfo != null && rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
-                log.note(env.tree.pos, "deferred.method.inst", msym, mt, resultInfo.pt);
+                log.note(env.tree.pos, Notes.DeferredMethodInst(msym, mt, resultInfo.pt));
             }
 
             // return instantiated version of method type
@@ -344,9 +346,8 @@ public class Infer {
                     //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
                     //return type _after_ resolution, and check against target
                     ret = types.erasure(ret);
-                    resultInfo.check(env.tree, ret);
                 }
-                return ret;
+                return resultInfo.check(env.tree, ret);
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
@@ -666,12 +667,12 @@ public class Infer {
             //in the functional interface descriptors)
             List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
             if (descParameterTypes.size() != paramTypes.size()) {
-                checkContext.report(pos, diags.fragment("incompatible.arg.types.in.lambda"));
+                checkContext.report(pos, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
                 return types.createErrorType(funcInterface);
             }
             for (Type p : descParameterTypes) {
                 if (!types.isSameType(funcInterfaceContext.asUndetVar(p), paramTypes.head)) {
-                    checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                    checkContext.report(pos, diags.fragment(Fragments.NoSuitableFunctionalIntfInst(funcInterface)));
                     return types.createErrorType(funcInterface);
                 }
                 paramTypes = paramTypes.tail;
@@ -690,7 +691,7 @@ public class Infer {
             if (!chk.checkValidGenericType(owntype)) {
                 //if the inferred functional interface type is not well-formed,
                 //or if it's not a subtype of the original target, issue an error
-                checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                checkContext.report(pos, diags.fragment(Fragments.NoSuitableFunctionalIntfInst(funcInterface)));
             }
             //propagate constraints as per JLS 18.2.1
             checkContext.compatible(owntype, funcInterface, types.noWarnings);
@@ -1755,23 +1756,6 @@ public class Infer {
                 }
 
                 /**
-                 * Compute closure of a give node, by recursively walking
-                 * through all its dependencies (of given kinds)
-                 */
-                protected Set<Node> closure() {
-                    boolean progress = true;
-                    Set<Node> closure = new HashSet<>();
-                    closure.add(this);
-                    while (progress) {
-                        progress = false;
-                        for (Node n1 : new HashSet<>(closure)) {
-                            progress = closure.addAll(n1.deps);
-                        }
-                    }
-                    return closure;
-                }
-
-                /**
                  * Is this node a leaf? This means either the node has no dependencies,
                  * or it just has self-dependencies.
                  */
@@ -1906,10 +1890,13 @@ public class Infer {
                     Type i = n_i.data.first();
                     for (Node n_j : nodes) {
                         Type j = n_j.data.first();
-                        UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
-                        if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
-                            //update i's bound dependencies
-                            n_i.addDependency(n_j);
+                        // don't compare a variable to itself
+                        if (i != j) {
+                            UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
+                            if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
+                                //update i's bound dependencies
+                                n_i.addDependency(n_j);
+                            }
                         }
                     }
                 }

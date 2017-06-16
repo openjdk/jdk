@@ -26,7 +26,6 @@
  * @bug     7028071
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuLoad()
  *
- * @modules jdk.management
  * @run main GetProcessCpuLoad
  */
 

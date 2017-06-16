@@ -27,7 +27,7 @@
  * @summary Check that a StandardMBean has immutableInfo=true if it is
  * a NotificationBroadcasterSupport that doesn't override getNotificationInfo()
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ImmutableNotificationInfoTest
  * @run build ImmutableNotificationInfoTest
  * @run main ImmutableNotificationInfoTest

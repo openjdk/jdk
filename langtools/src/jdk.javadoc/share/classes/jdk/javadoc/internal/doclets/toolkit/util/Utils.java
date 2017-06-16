@@ -78,8 +78,8 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.tool.DocEnvImpl;
@@ -104,14 +104,14 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
  * @author Jamie Ho
  */
 public class Utils {
-    public final Configuration configuration;
+    public final BaseConfiguration configuration;
     public final Messages messages;
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
     public final JavaScriptScanner javaScriptScanner;
 
-    public Utils(Configuration c) {
+    public Utils(BaseConfiguration c) {
         configuration = c;
         messages = configuration.getMessages();
         elementUtils = c.docEnv.getElementUtils();
