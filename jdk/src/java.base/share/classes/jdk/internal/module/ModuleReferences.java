@@ -36,7 +36,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +50,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
-import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.util.jar.VersionedStream;
@@ -65,59 +63,60 @@ import sun.net.www.ParseUtil;
  */
 
 class ModuleReferences {
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     private ModuleReferences() { }
 
     /**
-     * Creates a ModuleReference to a module or to patched module when
-     * creating modules for the boot Layer and --patch-module is specified.
+     * Creates a ModuleReference to a possibly-patched module
      */
     private static ModuleReference newModule(ModuleInfo.Attributes attrs,
                                              URI uri,
                                              Supplier<ModuleReader> supplier,
+                                             ModulePatcher patcher,
                                              HashSupplier hasher) {
-
         ModuleReference mref = new ModuleReferenceImpl(attrs.descriptor(),
                                                        uri,
                                                        supplier,
                                                        null,
+                                                       attrs.target(),
                                                        attrs.recordedHashes(),
                                                        hasher,
                                                        attrs.moduleResolution());
-        if (JLA.getBootLayer() == null)
-            mref = ModuleBootstrap.patcher().patchIfNeeded(mref);
+        if (patcher != null)
+            mref = patcher.patchIfNeeded(mref);
 
         return mref;
     }
 
     /**
-     * Creates a ModuleReference to a module packaged as a modular JAR.
+     * Creates a ModuleReference to a possibly-patched module in a modular JAR.
      */
-    static ModuleReference newJarModule(ModuleInfo.Attributes attrs, Path file) {
+    static ModuleReference newJarModule(ModuleInfo.Attributes attrs,
+                                        ModulePatcher patcher,
+                                        Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JarModuleReader(file, uri);
         HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
-        return newModule(attrs, uri, supplier, hasher);
+        return newModule(attrs, uri, supplier, patcher, hasher);
     }
 
     /**
-     * Creates a ModuleReference to a module packaged as a JMOD.
+     * Creates a ModuleReference to a module in a JMOD file.
      */
     static ModuleReference newJModModule(ModuleInfo.Attributes attrs, Path file) {
         URI uri = file.toUri();
         Supplier<ModuleReader> supplier = () -> new JModModuleReader(file, uri);
         HashSupplier hasher = (a) -> ModuleHashes.computeHash(file, a);
-        return newModule(attrs, uri, supplier, hasher);
+        return newModule(attrs, uri, supplier, null, hasher);
     }
 
     /**
-     * Creates a ModuleReference to an exploded module.
+     * Creates a ModuleReference to a possibly-patched exploded module.
      */
-    static ModuleReference newExplodedModule(ModuleInfo.Attributes attrs, Path dir) {
+    static ModuleReference newExplodedModule(ModuleInfo.Attributes attrs,
+                                             ModulePatcher patcher,
+                                             Path dir) {
         Supplier<ModuleReader> supplier = () -> new ExplodedModuleReader(dir);
-        return newModule(attrs, dir.toUri(), supplier, null);
+        return newModule(attrs, dir.toUri(), supplier, patcher, null);
     }
 
 
@@ -228,8 +227,8 @@ class ModuleReferences {
 
         static JarFile newJarFile(Path path) {
             try {
-                return new JarFile(path.toFile(),
-                                   true,               // verify
+                return new JarFile(new File(path.toString()),
+                                   true,                       // verify
                                    ZipFile.OPEN_READ,
                                    JarFile.runtimeVersion());
             } catch (IOException ioe) {
@@ -252,6 +251,8 @@ class ModuleReferences {
             if (je != null) {
                 if (jf.isMultiRelease())
                     name = SharedSecrets.javaUtilJarAccess().getRealName(jf, je);
+                if (je.isDirectory() && !name.endsWith("/"))
+                    name += "/";
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jar:" + uri + "!/" + encodedPath;
                 return Optional.of(URI.create(uris));
@@ -274,7 +275,6 @@ class ModuleReferences {
         Stream<String> implList() throws IOException {
             // take snapshot to avoid async close
             List<String> names = VersionedStream.stream(jf)
-                    .filter(e -> !e.isDirectory())
                     .map(JarEntry::getName)
                     .collect(Collectors.toList());
             return names.stream();
@@ -316,6 +316,8 @@ class ModuleReferences {
         Optional<URI> implFind(String name) {
             JmodFile.Entry je = getEntry(name);
             if (je != null) {
+                if (je.isDirectory() && !name.endsWith("/"))
+                    name += "/";
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jmod:" + uri + "!/" + encodedPath;
                 return Optional.of(URI.create(uris));
@@ -370,21 +372,6 @@ class ModuleReferences {
         }
 
         /**
-         * Returns a Path to access to the given resource.
-         */
-        private Path toPath(String name) {
-            Path path = Paths.get(name.replace('/', File.separatorChar));
-            if (path.getRoot() == null) {
-                return dir.resolve(path);
-            } else {
-                // drop the root component so that the resource is
-                // located relative to the module directory
-                int n = path.getNameCount();
-                return (n > 0) ? dir.resolve(path.subpath(0, n)) : null;
-            }
-        }
-
-        /**
          * Throws IOException if the module reader is closed;
          */
         private void ensureOpen() throws IOException {
@@ -394,8 +381,8 @@ class ModuleReferences {
         @Override
         public Optional<URI> find(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = Resources.toFilePath(dir, name);
+            if (path != null) {
                 try {
                     return Optional.of(path.toUri());
                 } catch (IOError e) {
@@ -409,8 +396,8 @@ class ModuleReferences {
         @Override
         public Optional<InputStream> open(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = Resources.toFilePath(dir, name);
+            if (path != null) {
                 return Optional.of(Files.newInputStream(path));
             } else {
                 return Optional.empty();
@@ -420,8 +407,8 @@ class ModuleReferences {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ensureOpen();
-            Path path = toPath(name);
-            if (path != null && Files.isRegularFile(path)) {
+            Path path = Resources.toFilePath(dir, name);
+            if (path != null) {
                 return Optional.of(ByteBuffer.wrap(Files.readAllBytes(path)));
             } else {
                 return Optional.empty();
@@ -431,12 +418,9 @@ class ModuleReferences {
         @Override
         public Stream<String> list() throws IOException {
             ensureOpen();
-            // sym links not followed
-            return Files.find(dir, Integer.MAX_VALUE,
-                              (path, attrs) -> attrs.isRegularFile())
-                    .map(f -> dir.relativize(f)
-                                 .toString()
-                                 .replace(File.separatorChar, '/'));
+            return Files.walk(dir, Integer.MAX_VALUE)
+                        .map(f -> Resources.toResourceName(dir, f))
+                        .filter(s -> s.length() > 0);
         }
 
         @Override

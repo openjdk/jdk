@@ -1,6 +1,6 @@
 ## Apache Santuario v1.5.4
 
-### Notice
+### Apache Santuario Notice
 <pre>
 
   Apache Santuario - XML Security for Java

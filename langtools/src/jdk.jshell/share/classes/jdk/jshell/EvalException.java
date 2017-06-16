@@ -38,6 +38,8 @@ package jdk.jshell;
  * the Snippet id and for snippets without a method name (for example an
  * expression) <code>StackTraceElement.getMethodName()</code> will be the
  * empty string.
+ *
+ * @since 9
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
 public class EvalException extends JShellException {
