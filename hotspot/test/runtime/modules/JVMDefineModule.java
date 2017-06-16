@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib ..
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMDefineModule
@@ -49,7 +49,7 @@ public class JVMDefineModule {
 /* Invalid test, won't compile.
         // Invalid classloader argument, expect an IAE
         try {
-            m = ModuleHelper.ModuleObject("mymodule1", new Object(), new String[] { "mypackage1" });
+            m = ModuleHelper.ModuleObject("mymodule_one", new Object(), new String[] { "mypackage1" });
             ModuleHelper.DefineModule(m,  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE for bad loader");
         } catch(IllegalArgumentException e) {
@@ -78,7 +78,7 @@ public class JVMDefineModule {
             ModuleHelper.DefineModule(new Object(),  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE or NPE for bad module");
         } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("module is not an instance of type java.lang.reflect.Module")) {
+            if (!e.getMessage().contains("module is not an instance of type java.lang.Module")) {
               throw new RuntimeException("Failed to get expected IAE message for bad module: " + e.getMessage());
             }
         }
@@ -207,10 +207,10 @@ public class JVMDefineModule {
         ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { });
 
         // Invalid package name, expect an IAE
-        m = ModuleHelper.ModuleObject("moduleFive", cl, new String[] { "your.package" });
+        m = ModuleHelper.ModuleObject("moduleFive", cl, new String[] { "your.apackage" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "your.package" });
-            throw new RuntimeException("Failed to get expected IAE for your.package");
+            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "your.apackage" });
+            throw new RuntimeException("Failed to get expected IAE for your.apackage");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
               throw new RuntimeException("Failed to get expected IAE message for bad package name: " + e.getMessage());
@@ -220,8 +220,8 @@ public class JVMDefineModule {
         // Invalid package name, expect an IAE
         m = ModuleHelper.ModuleObject("moduleSix", cl, new String[] { "foo" }); // Name irrelevant
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { ";your/package" });
-            throw new RuntimeException("Failed to get expected IAE for ;your.package");
+            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { ";your/apackage" });
+            throw new RuntimeException("Failed to get expected IAE for ;your.apackage");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
               throw new RuntimeException("Failed to get expected IAE message for bad package name: " + e.getMessage());

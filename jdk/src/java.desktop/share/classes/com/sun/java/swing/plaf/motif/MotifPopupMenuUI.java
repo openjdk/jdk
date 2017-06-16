@@ -107,6 +107,7 @@ public class MotifPopupMenuUI extends BasicPopupMenuUI {
         };
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isPopupTrigger(MouseEvent e) {
         return ((e.getID()==MouseEvent.MOUSE_PRESSED)
                 && ((e.getModifiers() & MouseEvent.BUTTON3_MASK)!=0));

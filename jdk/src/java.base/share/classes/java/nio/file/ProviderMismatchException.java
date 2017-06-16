@@ -29,6 +29,8 @@ package java.nio.file;
  * Unchecked exception thrown when an attempt is made to invoke a method on an
  * object created by one file system provider with a parameter created by a
  * different file system provider.
+ *
+ * @since 1.7
  */
 public class ProviderMismatchException
     extends java.lang.IllegalArgumentException

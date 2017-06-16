@@ -23,9 +23,6 @@
 
 package jdk.test;
 
-import java.lang.reflect.Module;
-import java.lang.reflect.Layer;
-
 public class Test {
     public static void main(String[] args) {
         System.out.println(Test.class + " ...");
@@ -36,7 +33,7 @@ public class Test {
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         ClassLoader cl1 = Test.class.getClassLoader();
         Module testModule = Test.class.getModule();
-        ClassLoader cl2 = Layer.boot().findLoader(testModule.getName());
+        ClassLoader cl2 = ModuleLayer.boot().findLoader(testModule.getName());
 
         if (cl1 != scl)
             throw new RuntimeException("Not loaded by system class loader");

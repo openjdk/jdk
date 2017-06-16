@@ -106,7 +106,7 @@ import java.util.function.BiFunction;
  *
  * <p>As of the Java 2 platform v1.2, this class was retrofitted to
  * implement the {@link Map} interface, making it a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  *
  * Java Collections Framework</a>.  Unlike the new collection
  * implementations, {@code Hashtable} is synchronized.  If a

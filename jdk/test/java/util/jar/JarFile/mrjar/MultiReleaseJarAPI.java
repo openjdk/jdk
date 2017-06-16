@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 8132734 8144062 8165723
  * @summary Test the extended API and the aliasing additions in JarFile that
  *          support multi-release jar files
- * @library /lib/testlibrary/java/util/jar /lib/testlibrary/
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
- * @build jdk.testlibrary.RandomFactory
+ * @library /lib/testlibrary/java/util/jar /test/lib
+ * @build jdk.test.lib.RandomFactory
+ *        Compiler JarBuilder CreateMultiReleaseTestJars
  * @run testng MultiReleaseJarAPI
  */
 
@@ -45,7 +45,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
