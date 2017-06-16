@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 package com.sun.jdi.event;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Location;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.request.ExceptionRequest;
 
 /**
  * Notification of an exception in the target VM. When an exception
  * is thrown which satisfies a currently enabled
- * {@link com.sun.jdi.request.ExceptionRequest exception request},
+ * {@link ExceptionRequest exception request},
  * an {@link EventSet event set}
  * containing an instance of this class will be added
  * to the VM's event queue.
