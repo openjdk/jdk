@@ -44,6 +44,7 @@ import java.util.Optional;
  * @see ModuleFinder
  * @see ModuleReader
  * @since 9
+ * @spec JPMS
  */
 
 public abstract class ModuleReference {
@@ -76,7 +77,7 @@ public abstract class ModuleReference {
     /**
      * Returns the location of this module's content, if known.
      *
-     * <p> This URI, when present, is used as the {@linkplain
+     * <p> This URI, when present, can be used as the {@linkplain
      * java.security.CodeSource#getLocation location} value of a {@link
      * java.security.CodeSource CodeSource} so that a module's classes can be
      * granted specific permissions when loaded by a {@link

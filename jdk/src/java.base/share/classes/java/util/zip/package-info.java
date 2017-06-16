@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@
  *         Info-ZIP Application Note 970311</a> - a detailed description of
  *         the Info-ZIP format upon which the {@code java.util.zip} classes
  *         are based.
- *     <li><a name="zip64">An implementation may optionally support the
+ *     <li><a id="zip64">An implementation may optionally support the
  *         ZIP64(tm) format extensions defined by the</a>
  *         <a href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">
  *         PKWARE ZIP File Format Specification</a>. The ZIP64(tm) format
  *         extensions are used to overcome the size limitations of the
  *         original ZIP format.
- *     <li><a name="lang_encoding">APPENDIX D of</a>
+ *     <li><a id="lang_encoding">APPENDIX D of</a>
  *         <a href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">
  *         PKWARE ZIP File Format Specification</a> - Language Encoding Flag
  *         (EFS) to encode ZIP entry filename and comment fields using UTF-8.

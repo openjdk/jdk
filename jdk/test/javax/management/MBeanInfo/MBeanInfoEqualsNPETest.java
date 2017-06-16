@@ -36,7 +36,7 @@ import javax.management.openmbean.SimpleType;
  * @bug 8023954
  * @summary Test that MBean*Info.equals do not throw NPE
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean MBeanInfoEqualsNPETest
  * @run build MBeanInfoEqualsNPETest
  * @run main MBeanInfoEqualsNPETest

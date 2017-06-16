@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.jartool/sun.tools.jar
  *          jdk.compiler
  *          jdk.zipfs
  *          java.se
- * @build ContainerTest CompilerUtils jdk.testlibrary.*
+ * @build ContainerTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng ContainerTest
  * @summary Starts a simple container that uses dynamic configurations
  *          and launches two applications in the same VM
@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;

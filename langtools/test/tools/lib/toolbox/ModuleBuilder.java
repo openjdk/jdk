@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class ModuleBuilder {
     private String comment = "";
     private List<String> requires = new ArrayList<>();
     private List<String> exports = new ArrayList<>();
+    private List<String> opens = new ArrayList<>();
     private List<String> uses = new ArrayList<>();
     private List<String> provides = new ArrayList<>();
     private List<String> content = new ArrayList<>();
@@ -134,33 +135,6 @@ public class ModuleBuilder {
     }
 
     /**
-     * Adds an unqualified "exports dynamic" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @return this builder
-     */
-    public ModuleBuilder exportsDynamic(String pkg) {
-        return addDirective(exports, "exports dynamic " + pkg + ";");
-    }
-
-    /**
-     * Adds an unqualified "exports private" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @return this builder
-     */
-    public ModuleBuilder exportsPrivate(String pkg) {
-        return addDirective(exports, "exports private " + pkg + ";");
-    }
-
-    /**
-     * Adds an unqualified "exports dynamic private" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @return this builder
-     */
-    public ModuleBuilder exportsDynamicPrivate(String pkg) {
-        return addDirective(exports, "exports dynamic private " + pkg + ";");
-    }
-
-    /**
      * Adds a qualified "exports" directive to the declaration.
      * @param pkg the name of the package to be exported
      * @param module the name of the module to which it is to be exported
@@ -171,33 +145,22 @@ public class ModuleBuilder {
     }
 
     /**
-     * Adds a qualified "exports dynamic" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @param module the name of the module to which it is to be exported
+     * Adds an unqualified "opens" directive to the declaration.
+     * @param pkg the name of the package to be opened
      * @return this builder
      */
-    public ModuleBuilder exportsDynamicTo(String pkg, String module) {
-        return addDirective(exports, "exports dynamic " + pkg + " to " + module + ";");
+    public ModuleBuilder opens(String pkg) {
+        return addDirective(opens, "opens " + pkg + ";");
     }
 
     /**
-     * Adds a qualified "exports private" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @param module the name of the module to which it is to be exported
+     * Adds a qualified "opens" directive to the declaration.
+     * @param pkg the name of the package to be opened
+     * @param module the name of the module to which it is to be opened
      * @return this builder
      */
-    public ModuleBuilder exportsPrivateTo(String pkg, String module) {
-        return addDirective(exports, "exports private " + pkg + " to " + module + ";");
-    }
-
-    /**
-     * Adds a qualified "exports dynamic private" directive to the declaration.
-     * @param pkg the name of the package to be exported
-     * @param module the name of the module to which it is to be exported
-     * @return this builder
-     */
-    public ModuleBuilder exportsDynamicPrivateTo(String pkg, String module) {
-        return addDirective(exports, "exports dynamic private " + pkg + " to " + module + ";");
+    public ModuleBuilder opensTo(String pkg, String module) {
+        return addDirective(opens, "opens " + pkg + " to " + module + ";");
     }
 
     /**
@@ -247,11 +210,14 @@ public class ModuleBuilder {
         List<String> sources = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         if (!comment.isEmpty()) {
-            sb.append("/**\n").append(comment.replace("\n", " *")).append(" */\n");
+            sb.append("/**\n * ")
+                    .append(comment.replace("\n", "\n * "))
+                    .append("\n */\n");
         }
         sb.append("module ").append(name).append(" {\n");
         requires.forEach(r -> sb.append("    " + r + "\n"));
         exports.forEach(e -> sb.append("    " + e + "\n"));
+        opens.forEach(o -> sb.append("    " + o + "\n"));
         uses.forEach(u -> sb.append("    " + u + "\n"));
         provides.forEach(p -> sb.append("    " + p + "\n"));
         sb.append("}");

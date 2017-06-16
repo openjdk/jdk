@@ -54,7 +54,7 @@ public class MessageFile {
             if (line.startsWith(keyPrefix + ".")) {
                 int eq = line.indexOf("=");
                 if (eq > 0)
-                    messages.put(line.substring(0, eq), new Message(currLine));
+                    messages.put(line.substring(0, eq).trim(), new Message(currLine));
             }
         }
     }

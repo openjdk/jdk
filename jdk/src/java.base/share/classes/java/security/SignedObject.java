@@ -114,6 +114,7 @@ import java.io.*;
  * @see Signature
  *
  * @author Li Gong
+ * @since 1.2
  */
 
 public final class SignedObject implements Serializable {

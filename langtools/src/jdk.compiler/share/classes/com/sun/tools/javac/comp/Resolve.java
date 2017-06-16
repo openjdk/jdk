@@ -41,6 +41,7 @@ import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
 import com.sun.tools.javac.comp.Resolve.ReferenceLookupResult.StaticKind;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -253,7 +254,7 @@ public class Resolve {
     JCDiagnostic getVerboseApplicableCandidateDiag(int pos, Symbol sym, Type inst) {
         JCDiagnostic subDiag = null;
         if (sym.type.hasTag(FORALL)) {
-            subDiag = diags.fragment("partial.inst.sig", inst);
+            subDiag = diags.fragment(Fragments.PartialInstSig(inst));
         }
 
         String key = subDiag == null ?
@@ -264,7 +265,7 @@ public class Resolve {
     }
 
     JCDiagnostic getVerboseInapplicableCandidateDiag(int pos, Symbol sym, JCDiagnostic subDiag) {
-        return diags.fragment("not.applicable.method.found", pos, sym, subDiag);
+        return diags.fragment(Fragments.NotApplicableMethodFound(pos, sym, subDiag));
     }
     // </editor-fold>
 
@@ -307,6 +308,11 @@ public class Resolve {
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
 
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == c.packge().modle) {
+            return true;
+        }
+
         boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
             case PRIVATE:
@@ -329,7 +335,10 @@ public class Resolve {
                     currModule.complete();
                     PackageSymbol p = c.packge();
                     isAccessible =
-                        (currModule == p.modle) || currModule.visiblePackages.get(p.fullname) == p || p == syms.rootPackage;
+                        currModule == p.modle ||
+                        currModule.visiblePackages.get(p.fullname) == p ||
+                        p == syms.rootPackage ||
+                        (p.modle == syms.unnamedModule && currModule.readModules.contains(p.modle));
                 } else {
                     isAccessible = true;
                 }
@@ -388,6 +397,11 @@ public class Resolve {
         */
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
+
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == sym.packge().modle) {
+            return true;
+        }
 
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
@@ -826,14 +840,6 @@ public class Resolve {
             return "arityMethodCheck";
         }
     };
-
-    List<Type> dummyArgs(int length) {
-        ListBuffer<Type> buf = new ListBuffer<>();
-        for (int i = 0 ; i < length ; i++) {
-            buf.append(Type.noType);
-        }
-        return buf.toList();
-    }
 
     /**
      * Main method applicability routine. Given a list of actual types A,
@@ -1447,8 +1453,7 @@ public class Resolve {
         Symbol sym = findField(env, site, name, site.tsym);
         if (sym.kind == VAR) return (VarSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.field",
-                                name));
+                 diags.fragment(Fragments.FatalErrCantLocateField(name)));
     }
 
     /** Find unqualified variable or field with given name.
@@ -2094,7 +2099,7 @@ public class Resolve {
 
         for (S sym : candidates) {
             if (validate.test(sym))
-                return new InvisibleSymbolError(env, suppressError, sym);
+                return createInvisibleSymbolError(env, suppressError, sym);
         }
 
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
@@ -2113,13 +2118,28 @@ public class Resolve {
                     S sym = load.apply(ms, name);
 
                     if (sym != null && validate.test(sym)) {
-                        return new InvisibleSymbolError(env, suppressError, sym);
+                        return createInvisibleSymbolError(env, suppressError, sym);
                     }
                 }
             }
         }
 
         return defaultResult;
+    }
+
+    private Symbol createInvisibleSymbolError(Env<AttrContext> env, boolean suppressError, Symbol sym) {
+        if (symbolPackageVisible(env, sym)) {
+            return new AccessError(env, null, sym);
+        } else {
+            return new InvisibleSymbolError(env, suppressError, sym);
+        }
+    }
+
+    private boolean symbolPackageVisible(Env<AttrContext> env, Symbol sym) {
+        ModuleSymbol envMod = env.toplevel.modle;
+        PackageSymbol symPack = sym.packge();
+        return envMod == symPack.modle ||
+               envMod.visiblePackages.containsKey(symPack.fullname);
     }
 
     /**
@@ -2525,8 +2545,8 @@ public class Resolve {
      */
     void checkNonAbstract(DiagnosticPosition pos, Symbol sym) {
         if ((sym.flags() & ABSTRACT) != 0 && (sym.flags() & DEFAULT) == 0)
-            log.error(pos, "abstract.cant.be.accessed.directly",
-                      kindName(sym), sym, sym.location());
+            log.error(pos,
+                      Errors.AbstractCantBeAccessedDirectly(kindName(sym),sym, sym.location()));
     }
 
 /* ***************************************************************************
@@ -2673,8 +2693,7 @@ public class Resolve {
                 site, name, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.meth",
-                                name));
+                 diags.fragment(Fragments.FatalErrCantLocateMeth(name)));
     }
 
     /** Resolve constructor.
@@ -2726,7 +2745,7 @@ public class Resolve {
         Symbol sym = resolveConstructor(resolveContext, pos, env, site, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.ctor", site));
+                 diags.fragment(Fragments.FatalErrCantLocateCtor(site)));
     }
 
     Symbol findConstructor(DiagnosticPosition pos, Env<AttrContext> env,
@@ -3511,14 +3530,15 @@ public class Resolve {
             //find a direct super type that is a subtype of 'c'
             for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
-                    log.error(pos, "illegal.default.super.call", c,
-                            diags.fragment("redundant.supertype", c, i));
+                    log.error(pos,
+                              Errors.IllegalDefaultSuperCall(c,
+                                                             Fragments.RedundantSupertype(c, i)));
                     return syms.errSymbol;
                 }
             }
             Assert.error();
         }
-        log.error(pos, "not.encl.class", c);
+        log.error(pos, Errors.NotEnclClass(c));
         return syms.errSymbol;
     }
     //where
@@ -3552,7 +3572,7 @@ public class Resolve {
                                  boolean isSuperCall) {
         Symbol sym = resolveSelfContainingInternal(env, member, isSuperCall);
         if (sym == null) {
-            log.error(pos, "encl.class.required", member);
+            log.error(pos, Errors.EnclClassRequired(member));
             return syms.errSymbol;
         } else {
             return accessBase(sym, pos, env.enclClass.sym.type, sym.name, true);
@@ -3603,8 +3623,9 @@ public class Resolve {
         Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
                          : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym)
-            log.error(pos, "cant.ref.before.ctor.called", "this");
+        if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym) {
+            log.error(pos, Errors.CantRefBeforeCtorCalled("this"));
+        }
         return thisType;
     }
 
@@ -3827,15 +3848,13 @@ public class Resolve {
         }
         private JCDiagnostic getLocationDiag(Symbol location, Type site) {
             if (location.kind == VAR) {
-                return diags.fragment("location.1",
-                    kindName(location),
-                    location,
-                    location.type);
+                return diags.fragment(Fragments.Location1(kindName(location),
+                                                          location,
+                                                          location.type));
             } else {
-                return diags.fragment("location",
-                    typeKindName(site),
-                    site,
-                    null);
+                return diags.fragment(Fragments.Location(typeKindName(site),
+                                      site,
+                                      null));
             }
         }
     }
@@ -3999,11 +4018,11 @@ public class Resolve {
                 List<JCDiagnostic> details = List.nil();
                 for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
                     Symbol sym = _entry.getKey();
-                    JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
-                            Kinds.kindName(sym),
-                            sym.location(site, types),
-                            sym.asMemberOf(site, types),
-                            _entry.getValue());
+                    JCDiagnostic detailDiag =
+                            diags.fragment(Fragments.InapplicableMethod(Kinds.kindName(sym),
+                                                                        sym.location(site, types),
+                                                                        sym.asMemberOf(site, types),
+                                                                        _entry.getValue()));
                     details = details.prepend(detailDiag);
                 }
                 //typically members are visited in reverse order (see Scope)
@@ -4047,7 +4066,7 @@ public class Resolve {
                 "cant.apply.diamond" :
                 "cant.apply.diamond.1";
             return diags.create(dkind, log.currentSource(), pos, key,
-                    diags.fragment("diamond", site.tsym), details);
+                    Fragments.Diamond(site.tsym), details);
         }
     }
 
@@ -4094,8 +4113,7 @@ public class Resolve {
                             pos, "not.def.access.package.cant.access",
                         sym, sym.location(), inaccessiblePackageReason(env, sym.packge()));
                 } else if (   sym.packge() != syms.rootPackage
-                           && sym.packge().modle != env.toplevel.modle
-                           && !isAccessible(env, sym.outermostClass())) {
+                           && !symbolPackageVisible(env, sym)) {
                     return diags.create(dkind, log.currentSource(),
                             pos, "not.def.access.class.intf.cant.access.reason",
                             sym, sym.location(), sym.location().packge(),
@@ -4676,20 +4694,6 @@ public class Resolve {
                 this.sym = sym;
                 this.details = details;
                 this.mtype = mtype;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof Candidate) {
-                    Symbol s1 = this.sym;
-                    Symbol s2 = ((Candidate)o).sym;
-                    if  ((s1 != s2 &&
-                            (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
-                            (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
-                            ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
-                        return true;
-                }
-                return false;
             }
 
             boolean isApplicable() {
