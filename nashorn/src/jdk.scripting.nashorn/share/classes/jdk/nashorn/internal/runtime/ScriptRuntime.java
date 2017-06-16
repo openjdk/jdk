@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ import jdk.nashorn.internal.ir.debug.JSONWriter;
 import jdk.nashorn.internal.objects.AbstractIterator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeObject;
+import jdk.nashorn.internal.objects.NativeJava;
+import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -398,6 +400,30 @@ public final class ScriptRuntime {
             if (itr != null) {
                 return itr;
             }
+
+        if (obj instanceof Map) {
+            return new Iterator<Object>() {
+                private Iterator<?> iter = ((Map<?,?>)obj).entrySet().iterator();
+
+                @Override
+                public boolean hasNext() {
+                    return iter.hasNext();
+                }
+
+                @Override
+                public Object next() {
+                    Map.Entry<?,?> next = (Map.Entry)iter.next();
+                    Object[] keyvalue = new Object[]{next.getKey(), next.getValue()};
+                    NativeArray array = NativeJava.from(null, keyvalue);
+                    return array;
+                }
+
+                @Override
+                public void remove() {
+                    iter.remove();
+                }
+            };
+        }
         }
 
         final Global global = Global.instance();

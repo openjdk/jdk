@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8048604
- * @library ../ /lib/testlibrary
+ * @library ../ /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main CipherNCFuncTest
  * @summary This test verifies the assertion "There should be no transformation
- *  on the plaintext/ciphertext in encryption/decryption mechanism" for
- *  feature "NullCipher".
+ *          on the plaintext/ciphertext in encryption/decryption mechanism" for
+ *          feature "NullCipher".
  */
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NullCipher;
 import javax.crypto.ShortBufferException;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class CipherNCFuncTest {
     public static void main(String[] args) throws ShortBufferException,

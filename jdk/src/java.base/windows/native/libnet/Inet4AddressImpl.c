@@ -30,60 +30,6 @@
 #include "java_net_Inet4AddressImpl.h"
 
 /*
- * Returns true if hostname is in dotted IP address format. Note that this
- * function performs a syntax check only. For each octet it just checks that
- * the octet is at most 3 digits.
- */
-jboolean isDottedIPAddress(const char *hostname, unsigned int *addrp) {
-    char *c = (char *)hostname;
-    int octets = 0;
-    unsigned int cur = 0;
-    int digit_cnt = 0;
-
-    while (*c) {
-        if (*c == '.') {
-            if (digit_cnt == 0) {
-                return JNI_FALSE;
-            } else {
-                if (octets < 4) {
-                    addrp[octets++] = cur;
-                    cur = 0;
-                    digit_cnt = 0;
-                } else {
-                    return JNI_FALSE;
-                }
-            }
-            c++;
-            continue;
-        }
-
-        if ((*c < '0') || (*c > '9')) {
-            return JNI_FALSE;
-        }
-
-        digit_cnt++;
-        if (digit_cnt > 3) {
-            return JNI_FALSE;
-        }
-
-        /* don't check if current octet > 255 */
-        cur = cur*10 + (*c - '0');
-
-        /* Move onto next character and check for EOF */
-        c++;
-        if (*c == '\0') {
-            if (octets < 4) {
-                addrp[octets++] = cur;
-            } else {
-                return JNI_FALSE;
-            }
-        }
-    }
-
-    return (jboolean)(octets == 4);
-}
-
-/*
  * Inet4AddressImpl
  */
 
@@ -93,17 +39,17 @@ jboolean isDottedIPAddress(const char *hostname, unsigned int *addrp) {
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_java_net_Inet4AddressImpl_getLocalHostName (JNIEnv *env, jobject this) {
+Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     char hostname[256];
 
-    if (gethostname(hostname, sizeof hostname) == -1) {
+    if (gethostname(hostname, sizeof(hostname)) == -1) {
         strcpy(hostname, "localhost");
     }
     return JNU_NewStringPlatform(env, hostname);
 }
 
 /*
- * Find an internet address for a given hostname.  Not this this
+ * Find an internet address for a given hostname. Note that this
  * code only works for addresses of type INET. The translation
  * of %d.%d.%d.%d to an address (int) occurs in java now, so the
  * String "host" shouldn't be a %d.%d.%d.%d string. The only
@@ -120,7 +66,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     jobjectArray ret = NULL;
     const char *hostname;
     int error = 0;
-    unsigned int addr[4];
     struct addrinfo hints, *res = NULL, *resNew = NULL, *last = NULL,
         *iterator;
 
@@ -134,57 +79,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
     CHECK_NULL_RETURN(hostname, NULL);
 
-    /*
-     * The NT/2000 resolver tolerates a space in front of localhost. This
-     * is not consistent with other implementations of gethostbyname.
-     * In addition we must do a white space check on Solaris to avoid a
-     * bug whereby 0.0.0.0 is returned if any host name has a white space.
-     */
-    if (isspace(hostname[0])) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", hostname);
-        goto cleanupAndReturn;
-    }
-
-    /*
-     * If the format is x.x.x.x then don't use gethostbyname as Windows
-     * is unable to handle octets which are out of range.
-     */
-    if (isDottedIPAddress(hostname, &addr[0])) {
-        unsigned int address;
-        jobject iaObj;
-
-        /*
-         * Are any of the octets out of range?
-         */
-        if (addr[0] > 255 || addr[1] > 255 || addr[2] > 255 || addr[3] > 255) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", hostname);
-            goto cleanupAndReturn;
-        }
-
-        /*
-         * Return an byte array with the populated address.
-         */
-        address = (addr[3] << 24) & 0xff000000;
-        address |= (addr[2] << 16) & 0xff0000;
-        address |= (addr[1] << 8) & 0xff00;
-        address |= addr[0];
-
-        ret = (*env)->NewObjectArray(env, 1, ia_class, NULL);
-
-        if (IS_NULL(ret)) {
-            goto cleanupAndReturn;
-        }
-
-        iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
-        if (IS_NULL(iaObj)) {
-            ret = NULL;
-            goto cleanupAndReturn;
-        }
-        setInetAddress_addr(env, iaObj, ntohl(address));
-        (*env)->SetObjectArrayElement(env, ret, 0, iaObj);
-        goto cleanupAndReturn;
-    }
-
     // try once, with our static buffer
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
@@ -193,6 +87,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     error = getaddrinfo(hostname, NULL, &hints, &res);
 
     if (error) {
+        // report error
         NET_ThrowByNameWithLastError(env, "java/net/UnknownHostException",
                                      hostname);
         goto cleanupAndReturn;
@@ -311,145 +206,86 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     return ret;
 }
 
+/**
+ * ping implementation using tcp port 7 (echo)
+ */
 static jboolean
-tcp_ping4(JNIEnv *env,
-          jbyteArray addrArray,
-          jint timeout,
-          jbyteArray ifArray,
+tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
           jint ttl)
 {
-    jint addr;
-    jbyte caddr[4];
     jint fd;
-    struct sockaddr_in him;
-    struct sockaddr_in* netif = NULL;
-    struct sockaddr_in inf;
-    int len = 0;
-    WSAEVENT hEvent;
     int connect_rv = -1;
-    int sz;
+    WSAEVENT hEvent;
 
-    /**
-     * Convert IP address from byte array to integer
-     */
-    sz = (*env)->GetArrayLength(env, addrArray);
-    if (sz != 4) {
-        return JNI_FALSE;
-    }
-    memset((char *) &him, 0, sizeof(him));
-    memset((char *) caddr, 0, sizeof(caddr));
-    (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
-    addr = ((caddr[0]<<24) & 0xff000000);
-    addr |= ((caddr[1] <<16) & 0xff0000);
-    addr |= ((caddr[2] <<8) & 0xff00);
-    addr |= (caddr[3] & 0xff);
-    addr = htonl(addr);
-    /**
-     * Socket address
-     */
-    him.sin_addr.s_addr = addr;
-    him.sin_family = AF_INET;
-    len = sizeof(him);
-
-    /**
-     * If a network interface was specified, let's convert its address
-     * as well.
-     */
-    if (!(IS_NULL(ifArray))) {
-        memset((char *) caddr, 0, sizeof(caddr));
-        (*env)->GetByteArrayRegion(env, ifArray, 0, 4, caddr);
-        addr = ((caddr[0]<<24) & 0xff000000);
-        addr |= ((caddr[1] <<16) & 0xff0000);
-        addr |= ((caddr[2] <<8) & 0xff00);
-        addr |= (caddr[3] & 0xff);
-        addr = htonl(addr);
-        inf.sin_addr.s_addr = addr;
-        inf.sin_family = AF_INET;
-        inf.sin_port = 0;
-        netif = &inf;
-    }
-
-    /*
-     * Can't create a raw socket, so let's try a TCP socket
-     */
+    // open a TCP socket
     fd = NET_Socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-        /* note: if you run out of fds, you may not be able to load
-         * the exception class, and get a NoClassDefFoundError
-         * instead.
-         */
+    if (fd == SOCKET_ERROR) {
+        // note: if you run out of fds, you may not be able to load
+        // the exception class, and get a NoClassDefFoundError instead.
         NET_ThrowNew(env, WSAGetLastError(), "Can't create socket");
         return JNI_FALSE;
     }
+
+    // set TTL
     if (ttl > 0) {
         setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *)&ttl, sizeof(ttl));
     }
-    /*
-     * A network interface was specified, so let's bind to it.
-     */
+
+    // A network interface was specified, so let's bind to it.
     if (netif != NULL) {
-        if (bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in)) < 0) {
+        if (bind(fd, &netif->sa, sizeof(struct sockaddr_in)) < 0) {
             NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket");
             closesocket(fd);
             return JNI_FALSE;
         }
     }
 
-    /*
-     * Make the socket non blocking so we can use select/poll.
-     */
+    // Make the socket non blocking so we can use select/poll.
     hEvent = WSACreateEvent();
     WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
 
-    /* no need to use NET_Connect as non-blocking */
-    him.sin_port = htons(7);    /* Echo */
-    connect_rv = connect(fd, (struct sockaddr *)&him, len);
+    sa->sa4.sin_port = htons(7); // echo port
+    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in));
 
-    /**
-     * connection established or refused immediately, either way it means
-     * we were able to reach the host!
-     */
+    // connection established or refused immediately, either way it means
+    // we were able to reach the host!
     if (connect_rv == 0 || WSAGetLastError() == WSAECONNREFUSED) {
         WSACloseEvent(hEvent);
         closesocket(fd);
         return JNI_TRUE;
-    } else {
-        int optlen;
+    }
 
-        switch (WSAGetLastError()) {
-        case WSAEHOSTUNREACH:   /* Host Unreachable */
-        case WSAENETUNREACH:    /* Network Unreachable */
-        case WSAENETDOWN:       /* Network is down */
-        case WSAEPFNOSUPPORT:   /* Protocol Family unsupported */
+    switch (WSAGetLastError()) {
+    case WSAEHOSTUNREACH:   // Host Unreachable
+    case WSAENETUNREACH:    // Network Unreachable
+    case WSAENETDOWN:       // Network is down
+    case WSAEPFNOSUPPORT:   // Protocol Family unsupported
+        WSACloseEvent(hEvent);
+        closesocket(fd);
+        return JNI_FALSE;
+    case WSAEWOULDBLOCK:    // this is expected as we'll probably have to wait
+        break;
+    default:
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
+                                     "connect failed");
+        WSACloseEvent(hEvent);
+        closesocket(fd);
+        return JNI_FALSE;
+    }
+
+    timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
+    if (timeout >= 0) {
+        // connection has been established, check for error condition
+        int optlen = sizeof(connect_rv);
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void *)&connect_rv,
+                       &optlen) < 0)
+        {
+            connect_rv = WSAGetLastError();
+        }
+        if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
             WSACloseEvent(hEvent);
             closesocket(fd);
-            return JNI_FALSE;
-        }
-
-        if (WSAGetLastError() != WSAEWOULDBLOCK) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
-                                         "connect failed");
-            WSACloseEvent(hEvent);
-            closesocket(fd);
-            return JNI_FALSE;
-        }
-
-        timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
-
-        /* has connection been established */
-
-        if (timeout >= 0) {
-            optlen = sizeof(connect_rv);
-            if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
-                           &optlen) <0) {
-                connect_rv = WSAGetLastError();
-            }
-
-            if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
-                WSACloseEvent(hEvent);
-                closesocket(fd);
-                return JNI_TRUE;
-            }
+            return JNI_TRUE;
         }
     }
     WSACloseEvent(hEvent);
@@ -464,21 +300,17 @@ tcp_ping4(JNIEnv *env,
  * Returns true is an ECHO_REPLY is received, otherwise, false.
  */
 static jboolean
-ping4(JNIEnv *env,
-      unsigned long src_addr,
-      unsigned long dest_addr,
-      jint timeout,
-      HANDLE hIcmpFile)
+ping4(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
+      SOCKETADDRESS *netif, jint timeout)
 {
-    // See https://msdn.microsoft.com/en-us/library/aa366050%28VS.85%29.aspx
-
     DWORD dwRetVal = 0;
     char SendData[32] = {0};
     LPVOID ReplyBuffer = NULL;
     DWORD ReplySize = 0;
     jboolean ret = JNI_FALSE;
 
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366051%28v=vs.85%29.aspx
+    // See https://msdn.microsoft.com/en-us/library/aa366050%28VS.85%29.aspx
+    // or https://msdn.microsoft.com/en-us/library/windows/desktop/aa366051%28v=vs.85%29.aspx
     ReplySize = sizeof(ICMP_ECHO_REPLY)   // The buffer should be large enough
                                           // to hold at least one ICMP_ECHO_REPLY
                                           // structure
@@ -487,16 +319,16 @@ ping4(JNIEnv *env,
                                           // to also hold 8 more bytes of data
                                           // (the size of an ICMP error message)
 
-    ReplyBuffer = (VOID*) malloc(ReplySize);
+    ReplyBuffer = (VOID *)malloc(ReplySize);
     if (ReplyBuffer == NULL) {
         IcmpCloseHandle(hIcmpFile);
         NET_ThrowNew(env, WSAGetLastError(), "Unable to allocate memory");
         return JNI_FALSE;
     }
 
-    if (src_addr == 0) {
+    if (netif == NULL) {
         dwRetVal = IcmpSendEcho(hIcmpFile,  // HANDLE IcmpHandle,
-                                dest_addr,  // IPAddr DestinationAddress,
+                                sa->sa4.sin_addr.s_addr, // IPAddr DestinationAddress,
                                 SendData,   // LPVOID RequestData,
                                 sizeof(SendData),   // WORD RequestSize,
                                 NULL,       // PIP_OPTION_INFORMATION RequestOptions,
@@ -506,20 +338,20 @@ ping4(JNIEnv *env,
                                 // seem to have an undocumented minimum
                                 // timeout of 1000ms below which the
                                 // api behaves inconsistently.
-                                (timeout < 1000) ? 1000 : timeout);   // DWORD Timeout
+                                (timeout < 1000) ? 1000 : timeout); // DWORD Timeout
     } else {
         dwRetVal = IcmpSendEcho2Ex(hIcmpFile,  // HANDLE IcmpHandle,
                                    NULL,       // HANDLE Event
                                    NULL,       // PIO_APC_ROUTINE ApcRoutine
                                    NULL,       // ApcContext
-                                   src_addr,   // IPAddr SourceAddress,
-                                   dest_addr,  // IPAddr DestinationAddress,
+                                   netif->sa4.sin_addr.s_addr, // IPAddr SourceAddress,
+                                   sa->sa4.sin_addr.s_addr, // IPAddr DestinationAddress,
                                    SendData,   // LPVOID RequestData,
-                                   sizeof(SendData),   // WORD RequestSize,
+                                   sizeof(SendData), // WORD RequestSize,
                                    NULL,       // PIP_OPTION_INFORMATION RequestOptions,
                                    ReplyBuffer,// LPVOID ReplyBuffer,
                                    ReplySize,  // DWORD ReplySize,
-                                   (timeout < 1000) ? 1000 : timeout);   // DWORD Timeout
+                                   (timeout < 1000) ? 1000 : timeout); // DWORD Timeout
     }
 
     if (dwRetVal == 0) { // if the call failed
@@ -544,8 +376,8 @@ ping4(JNIEnv *env,
                 break;
             default:
                 FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                        NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                        (LPTSTR)&buf, 0, NULL);
+                              NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPTSTR)&buf, 0, NULL);
                 NET_ThrowNew(env, err, buf);
                 LocalFree(buf);
                 break;
@@ -558,8 +390,8 @@ ping4(JNIEnv *env,
         // We perform an extra check to make sure that our
         // roundtrip time was less than our desired timeout
         // for cases where that timeout is < 1000ms.
-        if (pEchoReply->Status == IP_SUCCESS
-                && (int)pEchoReply->RoundTripTime <= timeout)
+        if (pEchoReply->Status == IP_SUCCESS &&
+            (int)pEchoReply->RoundTripTime <= timeout)
         {
             ret = JNI_TRUE;
         }
@@ -578,57 +410,58 @@ ping4(JNIEnv *env,
  */
 JNIEXPORT jboolean JNICALL
 Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
-                                           jbyteArray addrArray,
-                                           jint timeout,
-                                           jbyteArray ifArray,
-                                           jint ttl) {
-    jint src_addr = 0;
-    jint dest_addr = 0;
+                                            jbyteArray addrArray, jint timeout,
+                                            jbyteArray ifArray, jint ttl)
+{
     jbyte caddr[4];
-    int sz;
+    jint addr = 0, sz;
+    SOCKETADDRESS sa, inf, *netif = NULL;
     HANDLE hIcmpFile;
 
-    /**
-     * Convert IP address from byte array to integer
-     */
+    // check if address array size is 4 (IPv4 address)
     sz = (*env)->GetArrayLength(env, addrArray);
     if (sz != 4) {
       return JNI_FALSE;
     }
-    memset((char *) caddr, 0, sizeof(caddr));
-    (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
-    dest_addr = ((caddr[0]<<24) & 0xff000000);
-    dest_addr |= ((caddr[1] <<16) & 0xff0000);
-    dest_addr |= ((caddr[2] <<8) & 0xff00);
-    dest_addr |= (caddr[3] & 0xff);
-    dest_addr = htonl(dest_addr);
 
-    /**
-     * If a network interface was specified, let's convert its address
-     * as well.
-     */
+    // convert IP address from byte array to integer
+    memset((char *)caddr, 0, sizeof(caddr));
+    (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
+    addr = ((caddr[0] << 24) & 0xff000000);
+    addr |= ((caddr[1] << 16) & 0xff0000);
+    addr |= ((caddr[2] << 8) & 0xff00);
+    addr |= (caddr[3] & 0xff);
+    memset((char *)&sa, 0, sizeof(SOCKETADDRESS));
+    sa.sa4.sin_addr.s_addr = htonl(addr);
+    sa.sa4.sin_family = AF_INET;
+
+    // If a network interface was specified, let's convert its address as well.
     if (!(IS_NULL(ifArray))) {
-        memset((char *) caddr, 0, sizeof(caddr));
+        memset((char *)caddr, 0, sizeof(caddr));
         (*env)->GetByteArrayRegion(env, ifArray, 0, 4, caddr);
-        src_addr = ((caddr[0]<<24) & 0xff000000);
-        src_addr |= ((caddr[1] <<16) & 0xff0000);
-        src_addr |= ((caddr[2] <<8) & 0xff00);
-        src_addr |= (caddr[3] & 0xff);
-        src_addr = htonl(src_addr);
+        addr = ((caddr[0] << 24) & 0xff000000);
+        addr |= ((caddr[1] << 16) & 0xff0000);
+        addr |= ((caddr[2] << 8) & 0xff00);
+        addr |= (caddr[3] & 0xff);
+        memset((char *)&inf, 0, sizeof(SOCKETADDRESS));
+        inf.sa4.sin_addr.s_addr = htonl(addr);
+        inf.sa4.sin_family = AF_INET;
+        netif = &inf;
     }
 
+    // Let's try to create an ICMP handle.
     hIcmpFile = IcmpCreateFile();
     if (hIcmpFile == INVALID_HANDLE_VALUE) {
         int err = WSAGetLastError();
         if (err == ERROR_ACCESS_DENIED) {
             // fall back to TCP echo if access is denied to ICMP
-            return tcp_ping4(env, addrArray, timeout, ifArray, ttl);
+            return tcp_ping4(env, &sa, netif, timeout, ttl);
         } else {
             NET_ThrowNew(env, err, "Unable to create ICMP file handle");
             return JNI_FALSE;
         }
     } else {
-        return ping4(env, src_addr, dest_addr, timeout, hIcmpFile);
+        // It didn't fail, so we can use ICMP.
+        return ping4(env, hIcmpFile, &sa, netif, timeout);
     }
 }
-

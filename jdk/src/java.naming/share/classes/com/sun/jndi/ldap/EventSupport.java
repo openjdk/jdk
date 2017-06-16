@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.jndi.ldap;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.EventObject;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.naming.*;
 import javax.naming.event.*;
@@ -204,31 +206,35 @@ final class EventSupport {
      * Removes {@code l} from all notifiers in this context.
      */
     synchronized void removeNamingListener(NamingListener l) {
-        if (debug) System.err.println("EventSupport removing listener");
-
+        if (debug) {
+            System.err.println("EventSupport removing listener");
+        }
         // Go through list of notifiers, remove 'l' from each.
         // If 'l' is notifier's only listener, remove notifier too.
-        for (NamingEventNotifier notifier : notifiers.values()) {
+        Iterator<NamingEventNotifier> iterator = notifiers.values().iterator();
+        while (iterator.hasNext()) {
+            NamingEventNotifier notifier = iterator.next();
             if (notifier != null) {
-                if (debug)
+                if (debug) {
                     System.err.println("EventSupport removing listener from notifier");
+                }
                 notifier.removeNamingListener(l);
                 if (!notifier.hasNamingListeners()) {
-                    if (debug)
+                    if (debug) {
                         System.err.println("EventSupport stopping notifier");
+                    }
                     notifier.stop();
-                    notifiers.remove(notifier.info);
+                    iterator.remove();
                 }
             }
         }
-
         // Remove from list of unsolicited notifier
-        if (debug) System.err.println("EventSupport removing unsolicited: " +
-            unsolicited);
+        if (debug) {
+            System.err.println("EventSupport removing unsolicited: " + unsolicited);
+        }
         if (unsolicited != null) {
             unsolicited.removeElement(l);
         }
-
     }
 
     synchronized boolean hasUnsolicited() {

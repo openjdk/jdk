@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,8 +244,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_ReverseBytesL)) return false;
     break;
 
-  /* CompareAndSwap, Object: */
-  case vmIntrinsics::_compareAndSwapObject:
+  /* CompareAndSet, Object: */
+  case vmIntrinsics::_compareAndSetObject:
 #ifdef _LP64
     if ( UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapN)) return false;
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
@@ -253,10 +253,10 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_CompareAndSwapP)) return false;
 #endif
     break;
-  case vmIntrinsics::_weakCompareAndSwapObject:
-  case vmIntrinsics::_weakCompareAndSwapObjectAcquire:
-  case vmIntrinsics::_weakCompareAndSwapObjectRelease:
-  case vmIntrinsics::_weakCompareAndSwapObjectVolatile:
+  case vmIntrinsics::_weakCompareAndSetObjectPlain:
+  case vmIntrinsics::_weakCompareAndSetObjectAcquire:
+  case vmIntrinsics::_weakCompareAndSetObjectRelease:
+  case vmIntrinsics::_weakCompareAndSetObject:
 #ifdef _LP64
     if ( UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapN)) return false;
     if (!UseCompressedOops && !Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
@@ -264,52 +264,52 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapP)) return false;
 #endif
     break;
-  /* CompareAndSwap, Long: */
-  case vmIntrinsics::_compareAndSwapLong:
+  /* CompareAndSet, Long: */
+  case vmIntrinsics::_compareAndSetLong:
     if (!Matcher::match_rule_supported(Op_CompareAndSwapL)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSwapLong:
-  case vmIntrinsics::_weakCompareAndSwapLongAcquire:
-  case vmIntrinsics::_weakCompareAndSwapLongRelease:
-  case vmIntrinsics::_weakCompareAndSwapLongVolatile:
+  case vmIntrinsics::_weakCompareAndSetLongPlain:
+  case vmIntrinsics::_weakCompareAndSetLongAcquire:
+  case vmIntrinsics::_weakCompareAndSetLongRelease:
+  case vmIntrinsics::_weakCompareAndSetLong:
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapL)) return false;
     break;
 
-  /* CompareAndSwap, Int: */
-  case vmIntrinsics::_compareAndSwapInt:
+  /* CompareAndSet, Int: */
+  case vmIntrinsics::_compareAndSetInt:
     if (!Matcher::match_rule_supported(Op_CompareAndSwapI)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSwapInt:
-  case vmIntrinsics::_weakCompareAndSwapIntAcquire:
-  case vmIntrinsics::_weakCompareAndSwapIntRelease:
-  case vmIntrinsics::_weakCompareAndSwapIntVolatile:
+  case vmIntrinsics::_weakCompareAndSetIntPlain:
+  case vmIntrinsics::_weakCompareAndSetIntAcquire:
+  case vmIntrinsics::_weakCompareAndSetIntRelease:
+  case vmIntrinsics::_weakCompareAndSetInt:
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapL)) return false;
     break;
 
-  /* CompareAndSwap, Byte: */
-  case vmIntrinsics::_compareAndSwapByte:
+  /* CompareAndSet, Byte: */
+  case vmIntrinsics::_compareAndSetByte:
     if (!Matcher::match_rule_supported(Op_CompareAndSwapB)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSwapByte:
-  case vmIntrinsics::_weakCompareAndSwapByteAcquire:
-  case vmIntrinsics::_weakCompareAndSwapByteRelease:
-  case vmIntrinsics::_weakCompareAndSwapByteVolatile:
+  case vmIntrinsics::_weakCompareAndSetBytePlain:
+  case vmIntrinsics::_weakCompareAndSetByteAcquire:
+  case vmIntrinsics::_weakCompareAndSetByteRelease:
+  case vmIntrinsics::_weakCompareAndSetByte:
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapB)) return false;
     break;
 
-  /* CompareAndSwap, Short: */
-  case vmIntrinsics::_compareAndSwapShort:
+  /* CompareAndSet, Short: */
+  case vmIntrinsics::_compareAndSetShort:
     if (!Matcher::match_rule_supported(Op_CompareAndSwapS)) return false;
     break;
-  case vmIntrinsics::_weakCompareAndSwapShort:
-  case vmIntrinsics::_weakCompareAndSwapShortAcquire:
-  case vmIntrinsics::_weakCompareAndSwapShortRelease:
-  case vmIntrinsics::_weakCompareAndSwapShortVolatile:
+  case vmIntrinsics::_weakCompareAndSetShortPlain:
+  case vmIntrinsics::_weakCompareAndSetShortAcquire:
+  case vmIntrinsics::_weakCompareAndSetShortRelease:
+  case vmIntrinsics::_weakCompareAndSetShort:
     if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapS)) return false;
     break;
 
   /* CompareAndExchange, Object: */
-  case vmIntrinsics::_compareAndExchangeObjectVolatile:
+  case vmIntrinsics::_compareAndExchangeObject:
   case vmIntrinsics::_compareAndExchangeObjectAcquire:
   case vmIntrinsics::_compareAndExchangeObjectRelease:
 #ifdef _LP64
@@ -321,28 +321,28 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
 
   /* CompareAndExchange, Long: */
-  case vmIntrinsics::_compareAndExchangeLongVolatile:
+  case vmIntrinsics::_compareAndExchangeLong:
   case vmIntrinsics::_compareAndExchangeLongAcquire:
   case vmIntrinsics::_compareAndExchangeLongRelease:
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeL)) return false;
     break;
 
   /* CompareAndExchange, Int: */
-  case vmIntrinsics::_compareAndExchangeIntVolatile:
+  case vmIntrinsics::_compareAndExchangeInt:
   case vmIntrinsics::_compareAndExchangeIntAcquire:
   case vmIntrinsics::_compareAndExchangeIntRelease:
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeI)) return false;
     break;
 
   /* CompareAndExchange, Byte: */
-  case vmIntrinsics::_compareAndExchangeByteVolatile:
+  case vmIntrinsics::_compareAndExchangeByte:
   case vmIntrinsics::_compareAndExchangeByteAcquire:
   case vmIntrinsics::_compareAndExchangeByteRelease:
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeB)) return false;
     break;
 
   /* CompareAndExchange, Short: */
-  case vmIntrinsics::_compareAndExchangeShortVolatile:
+  case vmIntrinsics::_compareAndExchangeShort:
   case vmIntrinsics::_compareAndExchangeShortAcquire:
   case vmIntrinsics::_compareAndExchangeShortRelease:
     if (!Matcher::match_rule_supported(Op_CompareAndExchangeS)) return false;

@@ -25,10 +25,12 @@
  * @test
  * @bug 8168836
  * @summary  Basic argument validation for --add-reads
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddReadsTestWarningError CompilerUtils ModuleInfoMaker
+ * @build jdk.test.lib.compiler.ModuleInfoMaker
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @build jdk.testlibrary.*
+ * @build AddReadsTestWarningError
  * @run testng AddReadsTestWarningError
  */
 
@@ -40,6 +42,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.ModuleInfoMaker;
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -47,7 +50,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class AddReadsTestWarningError {

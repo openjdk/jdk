@@ -25,15 +25,16 @@
  * @test
  * @bug 6521014 6543428
  * @summary IOException thrown when Socket tries to bind to an local IPv6 address on SuSE Linux
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main B6521014
  */
 
 import java.net.*;
 import java.io.*;
 import java.util.*;
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 
 /*
  *
