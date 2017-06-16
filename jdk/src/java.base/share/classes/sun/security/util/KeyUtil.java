@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import java.security.AlgorithmParameters;
 import java.security.Key;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
@@ -35,6 +36,8 @@ import java.security.interfaces.DSAKey;
 import java.security.interfaces.DSAParams;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -97,6 +100,61 @@ public final class KeyUtil {
             // a key we are not able to handle.
 
         return size;
+    }
+
+    /**
+     * Returns the key size of the given cryptographic parameters in bits.
+     *
+     * @param parameters the cryptographic parameters, cannot be null
+     * @return the key size of the given cryptographic parameters in bits,
+     *       or -1 if the key size is not accessible
+     */
+    public static final int getKeySize(AlgorithmParameters parameters) {
+
+        String algorithm = parameters.getAlgorithm();
+        switch (algorithm) {
+            case "EC":
+                try {
+                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                            ECKeySizeParameterSpec.class);
+                    if (ps != null) {
+                        return ps.getKeySize();
+                    }
+                } catch (InvalidParameterSpecException ipse) {
+                    // ignore
+                }
+
+                try {
+                    ECParameterSpec ps = parameters.getParameterSpec(
+                            ECParameterSpec.class);
+                    if (ps != null) {
+                        return ps.getOrder().bitLength();
+                    }
+                } catch (InvalidParameterSpecException ipse) {
+                    // ignore
+                }
+
+                // Note: the ECGenParameterSpec case should be covered by the
+                // ECParameterSpec case above.
+                // See ECUtil.getECParameterSpec(Provider, String).
+
+                break;
+            case "DiffieHellman":
+                try {
+                    DHParameterSpec ps = parameters.getParameterSpec(
+                            DHParameterSpec.class);
+                    if (ps != null) {
+                        return ps.getP().bitLength();
+                    }
+                } catch (InvalidParameterSpecException ipse) {
+                    // ignore
+                }
+                break;
+
+            // May support more AlgorithmParameters algorithms in the future.
+        }
+
+        return -1;
     }
 
     /**

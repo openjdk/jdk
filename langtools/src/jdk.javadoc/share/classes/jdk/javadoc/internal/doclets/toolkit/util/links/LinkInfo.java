@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -140,7 +140,7 @@ public abstract class LinkInfo {
      * @param configuration the current configuration of the doclet.
      * @return the label for this class link.
      */
-    public Content getClassLinkLabel(Configuration configuration) {
+    public Content getClassLinkLabel(BaseConfiguration configuration) {
         if (label != null && !label.isEmpty()) {
             return label;
         } else if (isLinkable()) {

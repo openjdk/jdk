@@ -25,10 +25,15 @@
  * @test 1.1 05/01/05
  * @bug 6206527
  * @summary "cannot assign address" when binding ServerSocket on Suse 9
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ * @run main B6206527
  */
 
 import java.net.*;
 import java.util.*;
+import jdk.test.lib.NetworkConfiguration;
 
 public class B6206527 {
 
@@ -53,21 +58,12 @@ public class B6206527 {
         ss.bind(new InetSocketAddress(addr, 0));
     }
 
-    public static Inet6Address getLocalAddr () throws Exception {
-        Enumeration e = NetworkInterface.getNetworkInterfaces();
-        while (e.hasMoreElements()) {
-            NetworkInterface ifc = (NetworkInterface) e.nextElement();
-            Enumeration addrs = ifc.getInetAddresses();
-            while (addrs.hasMoreElements()) {
-                InetAddress a = (InetAddress)addrs.nextElement();
-                if (a instanceof Inet6Address) {
-                    Inet6Address ia6 = (Inet6Address) a;
-                    if (ia6.isLinkLocalAddress()) {
-                        return ia6;
-                    }
-                }
-            }
-        }
-        return null;
+    public static Inet6Address getLocalAddr() throws Exception {
+        Optional<Inet6Address> oaddr = NetworkConfiguration.probe()
+                .ip6Addresses()
+                .filter(a -> a.isLinkLocalAddress())
+                .findFirst();
+
+        return oaddr.orElseGet(() -> null);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
 import com.sun.tools.javac.comp.Lower.BasicFreeVarCollector;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -767,13 +768,6 @@ public class LambdaToMethod extends TreeTranslator {
      */
     private MethodSymbol makePrivateSyntheticMethod(long flags, Name name, Type type, Symbol owner) {
         return new MethodSymbol(flags | SYNTHETIC | PRIVATE, name, type, owner);
-    }
-
-    /**
-     * Create new synthetic variable with given flags, name, type, owner
-     */
-    private VarSymbol makeSyntheticVar(long flags, String name, Type type, Symbol owner) {
-        return makeSyntheticVar(flags, names.fromString(name), type, owner);
     }
 
     /**
@@ -1504,7 +1498,7 @@ public class LambdaToMethod extends TreeTranslator {
             } else {
                 super.visitReference(tree);
                 if (dumpLambdaToMethodStats) {
-                    log.note(tree, "mref.stat", rcontext.needsAltMetafactory(), null);
+                    log.note(tree, Notes.MrefStat(rcontext.needsAltMetafactory(), null));
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@
  * @modules java.desktop/sun.awt
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -42,8 +40,11 @@ import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.text.AttributedCharacterIterator;
-import javax.swing.Icon;
+
+import javax.swing.JToolBar;
 import javax.swing.plaf.metal.MetalBorders.ToolBarBorder;
+
+import sun.awt.SunToolkit;
 
 public class Test6657026 extends ToolBarBorder implements Runnable {
 
@@ -63,8 +64,8 @@ public class Test6657026 extends ToolBarBorder implements Runnable {
 
     private void test() {
         MyGraphics mg = new MyGraphics();
-        Icon icon = bumps;
-        icon.paintIcon(mg.component, mg, 0, 0);
+        ToolBarBorder border = new ToolBarBorder();
+        border.paintBorder(mg.component, mg, 0, 0, 10, 10);
         if (mg.image != null) {
             boolean failed = true;
             int value = mg.image.getRGB(0, 0);
@@ -86,7 +87,7 @@ public class Test6657026 extends ToolBarBorder implements Runnable {
 
     private static class MyGraphics extends Graphics {
 
-        private final Component component = new Component() {};
+        private final Component component = new JToolBar() {};
         private BufferedImage image;
 
         public Graphics create() {

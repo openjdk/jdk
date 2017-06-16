@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,14 +59,6 @@ public class ImageLocation {
         return strings;
     }
 
-    private static int attributeLength(int data) {
-        return (data & 0x7) + 1;
-    }
-
-    private static int attributeKind(int data) {
-        return data >>> 3;
-    }
-
     static long[] decompress(ByteBuffer bytes) {
         Objects.requireNonNull(bytes);
         long[] attributes = new long[ATTRIBUTE_COUNT];
@@ -74,7 +66,7 @@ public class ImageLocation {
         if (bytes != null) {
             while (bytes.hasRemaining()) {
                 int data = bytes.get() & 0xFF;
-                int kind = attributeKind(data);
+                int kind = data >>> 3;
 
                 if (kind == ATTRIBUTE_END) {
                     break;
@@ -85,7 +77,7 @@ public class ImageLocation {
                         "Invalid jimage attribute kind: " + kind);
                 }
 
-                int length = attributeLength(data);
+                int length = (data & 0x7) + 1;
                 long value = 0;
 
                 for (int j = 0; j < length; j++) {
@@ -128,9 +120,82 @@ public class ImageLocation {
      }
 
     public boolean verify(String name) {
-        Objects.requireNonNull(name);
+        return verify(name, attributes, strings);
+    }
 
-        return name.equals(getFullName());
+    /**
+     * A simpler verification would be {@code name.equals(getFullName())}, but
+     * by not creating the full name and enabling early returns we allocate
+     * fewer objects. Could possibly be made allocation free by extending
+     * ImageStrings to test if strings at an offset match the name region.
+     */
+    static boolean verify(String name, long[] attributes, ImageStrings strings) {
+        Objects.requireNonNull(name);
+        final int length = name.length();
+        int index = 0;
+        int moduleOffset = (int)attributes[ATTRIBUTE_MODULE];
+        if (moduleOffset != 0) {
+            String module = strings.get(moduleOffset);
+            final int moduleLen = module.length();
+            index = moduleLen + 1;
+            if (length <= index
+                    || name.charAt(0) != '/'
+                    || !name.regionMatches(1, module, 0, moduleLen)
+                    || name.charAt(index++) != '/') {
+                return false;
+            }
+        }
+
+        return verifyName(name, index, length, attributes, strings);
+    }
+
+    static boolean verify(String module, String name, long[] attributes,
+            ImageStrings strings) {
+        Objects.requireNonNull(module);
+        Objects.requireNonNull(name);
+        int moduleOffset = (int)attributes[ATTRIBUTE_MODULE];
+        if (moduleOffset != 0) {
+            if (!module.equals(strings.get(moduleOffset))) {
+                return false;
+            }
+        }
+
+        return verifyName(name, 0, name.length(), attributes, strings);
+    }
+
+    private static boolean verifyName(String name, int index, int length,
+            long[] attributes, ImageStrings strings) {
+
+        int parentOffset = (int) attributes[ATTRIBUTE_PARENT];
+        if (parentOffset != 0) {
+            String parent = strings.get(parentOffset);
+            final int parentLen = parent.length();
+            if (!name.regionMatches(index, parent, 0, parentLen)) {
+                return false;
+            }
+            index += parentLen;
+            if (length <= index || name.charAt(index++) != '/') {
+                return false;
+            }
+        }
+        String base = strings.get((int) attributes[ATTRIBUTE_BASE]);
+        final int baseLen = base.length();
+        if (!name.regionMatches(index, base, 0, baseLen)) {
+            return false;
+        }
+        index += baseLen;
+        int extOffset = (int) attributes[ATTRIBUTE_EXTENSION];
+        if (extOffset != 0) {
+            String extension = strings.get(extOffset);
+            int extLen = extension.length();
+            if (length <= index
+                    || name.charAt(index++) != '.'
+                    || !name.regionMatches(index, extension, 0, extLen)) {
+                return false;
+            }
+            index += extLen;
+        }
+        return length == index;
     }
 
     long getAttribute(int kind) {

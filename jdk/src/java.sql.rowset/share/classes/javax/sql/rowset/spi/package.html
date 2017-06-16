@@ -1,5 +1,5 @@
-<!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 
   <meta http-equiv="Content-Type"
@@ -8,7 +8,7 @@
   <meta name="GENERATOR"
  content="Mozilla/4.79 [en] (Windows NT 5.0; U) [Netscape]">
 <!--
-Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ questions.
   <title>javax.sql.rowset.spi</title>
 
 </head>
-  <body bgcolor="#ffffff">
+  <body>
 
 The standard classes and interfaces that a third party vendor has to
 use in its implementation of a synchronization provider. These classes and
@@ -57,7 +57,7 @@ the naming convention to be used.)
 <li><a href="#reldocs">6.0 Related Documentation</a>
 </ul>
 
-<h3><a name="pkgspec">1.0 Package Specification</a></h3>
+<h3><a id="pkgspec">1.0 Package Specification</a></h3>
 <P>
 The following classes and interfaces make up the <code>javax.sql.rowset.spi</code>
 package:
@@ -202,7 +202,7 @@ synchronization mechanisms.  A vendor can make its implementation available by
 registering the fully qualified class name with Oracle Corporation at
 <code>jdbc@sun.com</code>. This process is discussed in further detail below.
 
-<h3><a name="arch">2.0 Service Provider Interface Architecture</a></h3>
+<h3><a id="arch">2.0 Service Provider Interface Architecture</a></h3>
 <b>2.1 Overview</b>
 <p>
 The Service Provider Interface provides a pluggable mechanism by which
@@ -267,7 +267,7 @@ implementation provider <code>RIOptimisticProvider</code> is supplied.
 These policies are explored in more detail in the <a href="SyncFactory.html">
 <code>SyncFactory</code></a> class.
 
-<h3><a name="impl">3.0 SyncProvider Implementer's Guide</a></h3>
+<h3><a id="impl">3.0 SyncProvider Implementer's Guide</a></h3>
 
 <b>3.1 Requirements</b>
 <p>
@@ -442,7 +442,7 @@ implementations currently registered with the <code>SyncFactory</code>.
 </pre>
 
 
-<h3><a name="resolving">4.0 Resolving Synchronization Conflicts</a></h3>
+<h3><a id="resolving">4.0 Resolving Synchronization Conflicts</a></h3>
 
 The interface <code>SyncResolver</code> provides a way for an application to
 decide manually what to do when a conflict occurs. When the <code>CachedRowSet</code>
@@ -487,13 +487,13 @@ persist, the application or user can overwrite the data source value with it.
 <P>
 The comment for the <code>SyncResolver</code> interface has more detail.
 
-<h3><a name="relspec">5.0 Related Specifications</a></h3>
+<h3><a id="relspec">5.0 Related Specifications</a></h3>
 <ul>
 <li><a href="http://docs.oracle.com/javase/jndi/tutorial/index.html">JNDI</a>
 <li><a href="{@docRoot}/../technotes/guides/logging/index.html">Java Logging
 APIs</a>
 </ul>
-<h3><a name="reldocs">6.0 Related Documentation</a></h3>
+<h3><a id="reldocs">6.0 Related Documentation</a></h3>
 <ul>
 <li><a href="{@docRoot}/../technotes/tools/index.html#basic">System
 properties</a>
