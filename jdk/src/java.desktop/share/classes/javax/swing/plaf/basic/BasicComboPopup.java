@@ -911,7 +911,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             // JComboBox mouse listener
             Component source = (Component)e.getSource();
             Dimension size = source.getSize();
-            Rectangle bounds = new Rectangle( 0, 0, size.width - 1, size.height - 1 );
+            Rectangle bounds = new Rectangle( 0, 0, size.width, size.height);
             if ( !bounds.contains( e.getPoint() ) ) {
                 MouseEvent newEvent = convertMouseEvent( e );
                 Point location = newEvent.getPoint();
