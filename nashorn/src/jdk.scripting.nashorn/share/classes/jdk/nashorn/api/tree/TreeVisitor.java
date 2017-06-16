@@ -30,7 +30,7 @@ package jdk.nashorn.api.tree;
  * Classes implementing this interface are used to operate
  * on a tree when the kind of tree is unknown at compile time.
  * When a visitor is passed to an tree's {@link Tree#accept
- * accept} method, the <tt>visit<i>XYZ</i></tt> method most applicable
+ * accept} method, the <code>visit<i>Xyz</i></code> method most applicable
  * to that tree is invoked.
  *
  * <p> Classes implementing this interface may or may not throw a

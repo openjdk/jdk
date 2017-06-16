@@ -1542,9 +1542,7 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
     @Override
     public Element visitModuleTarget(ModuleTarget_attribute attr, Element p) {
         Element e = new Element(x.getCpString(attr.attribute_name_index));
-        e.add(x.getCpString(attr.os_name_index));
-        e.add(x.getCpString(attr.os_arch_index));
-        e.add(x.getCpString(attr.os_version_index));
+        e.add(x.getCpString(attr.target_platform_index));
         e.trimToSize();
         p.add(e);
         return null;

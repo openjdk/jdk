@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,12 @@ import org.testng.annotations.Test;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run testng Basic
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs
@@ -66,13 +72,13 @@ public class Basic {
     public static void test2() {
         try {
             ProcessHandle self = ProcessHandle.current();
-            long pid = self.getPid();       // known native process id
+            long pid = self.pid();       // known native process id
             Optional<ProcessHandle> self1 = ProcessHandle.of(pid);
             assertEquals(self1.get(), self,
-                    "ProcessHandle.of(x.getPid()) should be equal getPid() %d: %d");
+                    "ProcessHandle.of(x.pid()) should be equal pid() %d: %d");
 
             Optional<ProcessHandle> ph = ProcessHandle.of(pid);
-            assertEquals(pid, ph.get().getPid());
+            assertEquals(pid, ph.get().pid());
         } finally {
             // Cleanup any left over processes
             ProcessHandle.current().children().forEach(ProcessHandle::destroy);
@@ -98,7 +104,7 @@ public class Basic {
             Process p = new ProcessBuilder("sleep", "0").start();
             p.waitFor();
 
-            long deadPid = p.getPid();
+            long deadPid = p.pid();
             p = null;               // Forget the process
 
             Optional<ProcessHandle> t = ProcessHandle.of(deadPid);

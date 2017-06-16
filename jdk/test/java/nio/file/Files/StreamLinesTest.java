@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /* @test
  * @bug 8072773
- * @library /lib/testlibrary/ ../../../util/stream/bootlib
+ * @library /test/lib /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
- * @build jdk.testlibrary.RandomFactory
+ *        jdk.test.lib.RandomFactory
  * @run testng/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
  *          testing the file-channel-based stream stream with supported
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class StreamLinesTest extends OpTestCase {
 

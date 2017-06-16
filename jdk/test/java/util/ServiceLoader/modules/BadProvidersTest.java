@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider
  *          factories deployed on the module path
@@ -33,7 +33,6 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,6 +43,8 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -87,14 +88,14 @@ public class BadProvidersTest {
     private List<Provider> loadProviders(Path mp, String moduleName) throws Exception {
         ModuleFinder finder = ModuleFinder.of(mp);
 
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of(moduleName));
+                .resolveAndBind(finder, ModuleFinder.of(), Set.of(moduleName));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 
-        Layer layer = Layer.boot().defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = ModuleLayer.boot().defineModulesWithOneLoader(cf, scl);
 
         Class<?> service = layer.findLoader(moduleName).loadClass(TEST_SERVICE);
 

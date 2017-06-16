@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.beans.Transient;
  * that create a {@code Rectangle}, and the methods that can modify
  * one, do not prevent setting a negative value for width or height.
  * <p>
- * <a name="Empty">
+ * <a id="Empty">
  * A {@code Rectangle} whose width or height is exactly zero has location
  * along those axes with zero dimension, but is otherwise considered empty.</a>
  * The {@link #isEmpty} method will return true for such a {@code Rectangle}.
@@ -49,7 +49,7 @@ import java.beans.Transient;
  * will include the location of the {@code Rectangle} on that axis in the
  * result as if the {@link #add(Point)} method were being called.
  * <p>
- * <a name="NonExistent">
+ * <a id="NonExistent">
  * A {@code Rectangle} whose width or height is negative has neither
  * location nor dimension along those axes with negative dimensions.
  * Such a {@code Rectangle} is treated as non-existent along those axes.

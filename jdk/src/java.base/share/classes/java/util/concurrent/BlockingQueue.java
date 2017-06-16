@@ -53,14 +53,14 @@ import java.util.Queue;
  * and the fourth blocks for only a given maximum time limit before giving
  * up.  These methods are summarized in the following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of BlockingQueue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Special value</em></td>
- *    <td ALIGN=CENTER><em>Blocks</em></td>
- *    <td ALIGN=CENTER><em>Times out</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Special value</em></td>
+ *    <td style="text-align:center"><em>Blocks</em></td>
+ *    <td style="text-align:center"><em>Times out</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
@@ -170,7 +170,7 @@ import java.util.Queue;
  * the {@code BlockingQueue} in another thread.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5

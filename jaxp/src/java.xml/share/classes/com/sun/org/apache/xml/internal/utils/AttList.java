@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,9 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: AttList.java,v 1.2.4.1 2005/09/15 08:15:35 suresh_emailid Exp $
- */
+
 package com.sun.org.apache.xml.internal.utils;
 
 import org.w3c.dom.Attr;
@@ -41,25 +39,8 @@ public class AttList implements Attributes
   /** Index of last attribute node          */
   int m_lastIndex;
 
-  // ARGHH!!  JAXP Uses Xerces without setting the namespace processing to ON!
+  // JAXP Uses Xerces without setting the namespace processing to ON!
   // DOM2Helper m_dh = new DOM2Helper();
-
-  /** Local reference to DOMHelper          */
-  DOMHelper m_dh;
-
-//  /**
-//   * Constructor AttList
-//   *
-//   *
-//   * @param attrs List of attributes this will contain
-//   */
-//  public AttList(NamedNodeMap attrs)
-//  {
-//
-//    m_attrs = attrs;
-//    m_lastIndex = m_attrs.getLength() - 1;
-//    m_dh = new DOM2Helper();
-//  }
 
   /**
    * Constructor AttList
@@ -68,12 +49,10 @@ public class AttList implements Attributes
    * @param attrs List of attributes this will contain
    * @param dh DOMHelper
    */
-  public AttList(NamedNodeMap attrs, DOMHelper dh)
+  public AttList(NamedNodeMap attrs)
   {
-
     m_attrs = attrs;
     m_lastIndex = m_attrs.getLength() - 1;
-    m_dh = dh;
   }
 
   /**
@@ -97,7 +76,7 @@ public class AttList implements Attributes
    */
   public String getURI(int index)
   {
-    String ns = m_dh.getNamespaceOfNode(((Attr) m_attrs.item(index)));
+    String ns = DOM2Helper.getNamespaceOfNode(((Attr) m_attrs.item(index)));
     if(null == ns)
       ns = "";
     return ns;
@@ -113,7 +92,7 @@ public class AttList implements Attributes
    */
   public String getLocalName(int index)
   {
-    return m_dh.getLocalNameOfNode(((Attr) m_attrs.item(index)));
+    return DOM2Helper.getLocalNameOfNode(((Attr) m_attrs.item(index)));
   }
 
   /**

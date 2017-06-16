@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,9 @@ import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCBlockTag;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
@@ -418,6 +421,7 @@ public class JavacTrees extends DocTrees {
 
     private Symbol attributeDocReference(TreePath path, DCReference ref) {
         Env<AttrContext> env = getAttrContext(path);
+        if (env == null) return null;
 
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
@@ -482,7 +486,7 @@ public class JavacTrees extends DocTrees {
                 paramTypes = lb.toList();
             }
 
-            ClassSymbol sym = (ClassSymbol) types.cvarUpperBound(tsym.type).tsym;
+            ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
 
             Symbol msym = (memberName == sym.name)
                     ? findConstructor(sym, paramTypes)
@@ -881,6 +885,7 @@ public class JavacTrees extends DocTrees {
                 case INTERFACE:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
+                    if (env == null) return null;
                     break;
                 case METHOD:
 //                    System.err.println("METHOD: " + ((JCMethodDecl)tree).sym.getSimpleName());
@@ -1127,19 +1132,19 @@ public class JavacTrees extends DocTrees {
         try {
             switch (kind) {
             case ERROR:
-                log.error(DiagnosticFlag.MULTIPLE, pos, "proc.messager", msg.toString());
+                log.error(DiagnosticFlag.MULTIPLE, pos, Errors.ProcMessager(msg.toString()));
                 break;
 
             case WARNING:
-                log.warning(pos, "proc.messager", msg.toString());
+                log.warning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             case MANDATORY_WARNING:
-                log.mandatoryWarning(pos, "proc.messager", msg.toString());
+                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             default:
-                log.note(pos, "proc.messager", msg.toString());
+                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {
             if (oldSource != null)
