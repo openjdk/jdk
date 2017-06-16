@@ -40,6 +40,7 @@ import org.testng.TestNG;
 
 /*
  * @test
+ * @key intermittent
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
