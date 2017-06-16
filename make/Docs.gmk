@@ -63,7 +63,7 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
 # URLs
 JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
-COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
+COPYRIGHT_URL := {@docroot}/../legal/copyright.html
 LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
 REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
 
@@ -448,7 +448,7 @@ JDK_INDEX_CONTENT := \
 $(JDK_INDEX_HTML): 
 	$(ECHO) '$(JDK_INDEX_CONTENT)' > $@
 
-JDK_INDEX_TARGETS := $(JDK_INDEX_HTML)
+JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
 
 # Copy the global resources
 GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/
