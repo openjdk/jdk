@@ -92,7 +92,6 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 
-
 public final class LauncherHelper {
 
     // No instantiation
@@ -492,16 +491,16 @@ public final class LauncherHelper {
             if (s.length == 2) {
                 String mn = s[0];
                 String pn = s[1];
-
-                ModuleLayer.boot().findModule(mn).ifPresent(m -> {
-                    if (m.getDescriptor().packages().contains(pn)) {
+                ModuleLayer.boot()
+                    .findModule(mn)
+                    .filter(m -> m.getDescriptor().packages().contains(pn))
+                    .ifPresent(m -> {
                         if (open) {
                             Modules.addOpensToAllUnnamed(m, pn);
                         } else {
                             Modules.addExportsToAllUnnamed(m, pn);
                         }
-                    }
-                });
+                    });
             }
         }
     }
@@ -618,7 +617,7 @@ public final class LauncherHelper {
             }
         } catch (LinkageError le) {
             abort(null, "java.launcher.module.error3", mainClass, m.getName(),
-                le.getClass().getName() + ": " + le.getLocalizedMessage());
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -719,7 +718,7 @@ public final class LauncherHelper {
                       mainClass.getName(), mainClass.getModule(),
                       e.getClass().getName(), e.getLocalizedMessage());
             } else {
-                abort(e,"java.launcher.cls.error7", mainClass.getName(),
+                abort(e, "java.launcher.cls.error7", mainClass.getName(),
                       e.getClass().getName(), e.getLocalizedMessage());
             }
         }
