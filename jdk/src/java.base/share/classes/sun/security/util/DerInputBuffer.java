@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 import sun.util.calendar.CalendarDate;
@@ -44,16 +43,26 @@ import sun.util.calendar.CalendarSystem;
  */
 class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
-    DerInputBuffer(byte[] buf) { super(buf); }
+    boolean allowBER = true;
 
-    DerInputBuffer(byte[] buf, int offset, int len) {
+    // used by sun/security/util/DerInputBuffer/DerInputBufferEqualsHashCode.java
+    DerInputBuffer(byte[] buf) {
+        this(buf, true);
+    }
+
+    DerInputBuffer(byte[] buf, boolean allowBER) {
+        super(buf);
+        this.allowBER = allowBER;
+    }
+
+    DerInputBuffer(byte[] buf, int offset, int len, boolean allowBER) {
         super(buf, offset, len);
+        this.allowBER = allowBER;
     }
 
     DerInputBuffer dup() {
         try {
             DerInputBuffer retval = (DerInputBuffer)clone();
-
             retval.mark(Integer.MAX_VALUE);
             return retval;
         } catch (CloneNotSupportedException e) {
@@ -147,8 +156,8 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
         System.arraycopy(buf, pos, bytes, 0, len);
         skip(len);
 
-        // check to make sure no extra leading 0s for DER
-        if (len >= 2 && (bytes[0] == 0) && (bytes[1] >= 0)) {
+        // BER allows leading 0s but DER does not
+        if (!allowBER && (len >= 2 && (bytes[0] == 0) && (bytes[1] >= 0))) {
             throw new IOException("Invalid encoding: redundant leading 0s");
         }
 
@@ -265,7 +274,7 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
         if (len > available())
             throw new IOException("short read of DER Generalized Time");
 
-        if (len < 13 || len > 23)
+        if (len < 13)
             throw new IOException("DER Generalized Time length error");
 
         return getTime(len, true);
@@ -340,7 +349,7 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
          */
 
         millis = 0;
-        if (len > 2 && len < 12) {
+        if (len > 2) {
             second = 10 * Character.digit((char)buf[pos++], 10);
             second += Character.digit((char)buf[pos++], 10);
             len -= 2;
@@ -348,31 +357,30 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
             if (buf[pos] == '.' || buf[pos] == ',') {
                 len --;
                 pos++;
-                // handle upto milisecond precision only
                 int precision = 0;
-                int peek = pos;
-                while (buf[peek] != 'Z' &&
-                       buf[peek] != '+' &&
-                       buf[peek] != '-') {
-                    peek++;
+                while (buf[pos] != 'Z' &&
+                       buf[pos] != '+' &&
+                       buf[pos] != '-') {
+                    // Validate all digits in the fractional part but
+                    // store millisecond precision only
+                    int thisDigit = Character.digit((char)buf[pos], 10);
                     precision++;
+                    pos++;
+                    switch (precision) {
+                        case 1:
+                            millis += 100 * thisDigit;
+                            break;
+                        case 2:
+                            millis += 10 * thisDigit;
+                            break;
+                        case 3:
+                            millis += thisDigit;
+                            break;
+                    }
                 }
-                switch (precision) {
-                case 3:
-                    millis += 100 * Character.digit((char)buf[pos++], 10);
-                    millis += 10 * Character.digit((char)buf[pos++], 10);
-                    millis += Character.digit((char)buf[pos++], 10);
-                    break;
-                case 2:
-                    millis += 100 * Character.digit((char)buf[pos++], 10);
-                    millis += 10 * Character.digit((char)buf[pos++], 10);
-                    break;
-                case 1:
-                    millis += 100 * Character.digit((char)buf[pos++], 10);
-                    break;
-                default:
-                        throw new IOException("Parse " + type +
-                            " time, unsupported precision for seconds value");
+                if (precision == 0) {
+                    throw new IOException("Parse " + type +
+                            " time, empty fractional part");
                 }
                 len -= precision;
             }

@@ -36,6 +36,7 @@ import java.util.*;
  * @see PrivateKey
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public final class KeyPair implements java.io.Serializable {

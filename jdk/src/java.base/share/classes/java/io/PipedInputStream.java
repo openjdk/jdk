@@ -39,7 +39,7 @@ package java.io;
  * The piped input stream contains a buffer,
  * decoupling read operations from write operations,
  * within limits.
- * A pipe is said to be <a name="BROKEN"> <i>broken</i> </a> if a
+ * A pipe is said to be <a id="BROKEN"> <i>broken</i> </a> if a
  * thread that was providing data bytes to the connected
  * piped output stream is no longer alive.
  *

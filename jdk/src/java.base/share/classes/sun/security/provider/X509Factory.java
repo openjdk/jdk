@@ -553,8 +553,7 @@ public class X509Factory extends CertificateFactorySpi {
             return bout.toByteArray();
         } else {
             // Read BASE64 encoded data, might skip info at the beginning
-            char[] data = new char[2048];
-            int pos = 0;
+            ByteArrayOutputStream data = new ByteArrayOutputStream();
 
             // Step 1: Read until header is found
             int hyphen = (c=='-') ? 1: 0;   // count of consequent hyphens
@@ -598,7 +597,10 @@ public class X509Factory extends CertificateFactorySpi {
                         end = '\n';
                     } else {
                         end = '\r';
-                        data[pos++] = (char)next;
+                        // Skip all white space chars
+                        if (next != 9 && next != 10 && next != 13 && next != 32) {
+                            data.write(next);
+                        }
                     }
                     break;
                 }
@@ -612,9 +614,9 @@ public class X509Factory extends CertificateFactorySpi {
                     throw new IOException("Incomplete data");
                 }
                 if (next != '-') {
-                    data[pos++] = (char)next;
-                    if (pos >= data.length) {
-                        data = Arrays.copyOf(data, data.length+1024);
+                    // Skip all white space chars
+                    if (next != 9 && next != 10 && next != 13 && next != 32) {
+                        data.write(next);
                     }
                 } else {
                     break;
@@ -635,7 +637,11 @@ public class X509Factory extends CertificateFactorySpi {
 
             checkHeaderFooter(header.toString(), footer.toString());
 
-            return Pem.decode(new String(data, 0, pos));
+            try {
+                return Base64.getDecoder().decode(data.toByteArray());
+            } catch (IllegalArgumentException e) {
+                throw new IOException(e);
+            }
         }
     }
 

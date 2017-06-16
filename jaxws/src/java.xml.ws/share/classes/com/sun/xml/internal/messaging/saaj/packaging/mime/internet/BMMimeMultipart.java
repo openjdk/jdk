@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,8 @@ public  class BMMimeMultipart extends MimeMultipart {
      * <code>contentType</code> field. <p>
      *
      * MimeBodyParts may be added later.
+     *
+     * @param subtype subtype.
      */
     public BMMimeMultipart(String subtype) {
         super(subtype);
@@ -142,7 +144,9 @@ public  class BMMimeMultipart extends MimeMultipart {
      * skips the 'preamble' and reads bytes till the terminating
      * boundary and creates MimeBodyParts for each part of the stream.
      *
-     * @param   ds      DataSource, can be a MultipartDataSource
+     * @param   ds      DataSource, can be a MultipartDataSource.
+     * @param   ct      content type.
+     * @exception MessagingException in case of error.
      */
     public BMMimeMultipart(DataSource ds, ContentType ct)
         throws MessagingException {
@@ -197,6 +201,7 @@ public  class BMMimeMultipart extends MimeMultipart {
      *
      * @since   JavaMail 1.2
      */
+    @Override
     protected  void parse() throws  MessagingException {
         if (parsed)
             return;
@@ -694,6 +699,7 @@ public  class BMMimeMultipart extends MimeMultipart {
      * separated by a boundary.
      */
 
+    @Override
     public void writeTo(OutputStream os)
             throws IOException, MessagingException {
 

@@ -27,6 +27,7 @@ package com.sun.tools.javac.jvm;
 
 import java.util.*;
 
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
@@ -173,7 +174,7 @@ implements CRTFlags {
                                 ", new_pos = " + new_pos);
          }
          if (new_pos == Position.NOPOS)
-             log.warning(pos, "position.overflow", line);
+             log.warning(pos, Warnings.PositionOverflow(line));
 
         return new_pos;
      }

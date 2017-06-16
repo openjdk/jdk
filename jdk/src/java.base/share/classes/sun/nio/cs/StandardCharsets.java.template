@@ -32,7 +32,6 @@ package sun.nio.cs;
 import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 import sun.security.action.GetPropertyAction;
 
@@ -44,13 +43,13 @@ public class StandardCharsets extends CharsetProvider {
     _INCLUDE_CACHE_MAP_
 
     // Maps canonical names to class names
-    private Map<String,String> classMap;
+    private final Map<String,String> classMap;
     // Maps alias names to canonical names
-    private Map<String,String> aliasMap;
+    private final Map<String,String> aliasMap;
     // Maps canonical names to cached instances
-    private Map<String,Charset> cache;
+    private final Map<String,Charset> cache;
 
-    private String packagePrefix = "sun.nio.cs";
+    private static final String packagePrefix = "sun.nio.cs";
 
     public StandardCharsets() {
         this.aliasMap = new Aliases();
@@ -102,10 +101,16 @@ public class StandardCharsets extends CharsetProvider {
         if (cln == null)
             return null;
 
-        if (cln.equals("US_ASCII")) {
-            cs = new US_ASCII();
-            cache.put(csn, cs);
-            return cs;
+        // As all charset class names added to classMap are string literals we
+        // can check identity here as an optimization
+        if (cln == "US_ASCII") {
+            return cache(csn, new US_ASCII());
+        }
+        if (cln == "ISO_8859_1") {
+            return cache(csn, new ISO_8859_1());
+        }
+        if (cln == "UTF_8") {
+            return cache(csn, new UTF_8());
         }
 
         // Instantiate the charset and cache it
@@ -114,14 +119,17 @@ public class StandardCharsets extends CharsetProvider {
             Object o = Class.forName(packagePrefix + "." + cln,
                                      true,
                                      this.getClass().getClassLoader()).newInstance();
-            cs = (Charset)o;
-            cache.put(csn, cs);
-            return cs;
+            return cache(csn, (Charset)o);
         } catch (ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException x) {
             return null;
         }
+    }
+
+    private Charset cache(String csn, Charset cs) {
+        cache.put(csn, cs);
+        return cs;
     }
 
     public final Charset charsetForName(String charsetName) {

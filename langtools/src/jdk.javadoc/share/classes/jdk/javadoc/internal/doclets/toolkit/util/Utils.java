@@ -78,8 +78,8 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.tool.DocEnvImpl;
@@ -104,14 +104,14 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
  * @author Jamie Ho
  */
 public class Utils {
-    public final Configuration configuration;
+    public final BaseConfiguration configuration;
     public final Messages messages;
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
     public final JavaScriptScanner javaScriptScanner;
 
-    public Utils(Configuration c) {
+    public Utils(BaseConfiguration c) {
         configuration = c;
         messages = configuration.getMessages();
         elementUtils = c.docEnv.getElementUtils();
@@ -725,7 +725,7 @@ public class Utils {
         return result.toString();
     }
 
-    private String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
+    public String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
         return new SimpleTypeVisitor9<StringBuilder, Void>() {
             final StringBuilder sb = new StringBuilder();
 
@@ -893,7 +893,7 @@ public class Utils {
             }
             List<? extends Element> methods = te.getEnclosedElements();
             for (ExecutableElement ee : ElementFilter.methodsIn(methods)) {
-                if (elementUtils.overrides(method, ee, origin)) {
+                if (configuration.workArounds.overrides(method, ee, origin)) {
                     return ee;
                 }
             }
@@ -1886,11 +1886,6 @@ public class Utils {
             }
 
             @Override
-            public String visitPrimitive(PrimitiveType t, Void p) {
-                return t.toString();
-            }
-
-            @Override
             public String visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                 // The knee jerk reaction is to do this but don't!, as we would like
                 // it to be compatible with the old world, now if we decide to do so
@@ -1900,9 +1895,10 @@ public class Utils {
             }
 
             @Override
-            protected String defaultAction(TypeMirror e, Void p) {
-                throw new UnsupportedOperationException("should not happen");
+            protected String defaultAction(TypeMirror t, Void p) {
+                return t.toString();
             }
+
         }.visit(t);
     }
 
