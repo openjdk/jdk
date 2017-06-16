@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class Http1Response<T> {
     private final HttpConnection connection;
     private ResponseHeaders headers;
     private int responseCode;
-    private final ByteBuffer buffer; // same buffer used for reading status line and headers
+    private ByteBuffer buffer;
     private final Http1Exchange<T> exchange;
     private final boolean redirecting; // redirecting
     private boolean return2Cache; // return connection to cache when finished
@@ -94,6 +94,10 @@ class Http1Response<T> {
 
     synchronized boolean finished() {
         return finished;
+    }
+
+    ByteBuffer getBuffer() {
+        return buffer;
     }
 
     int fixupContentLen(int clen) {
@@ -164,6 +168,7 @@ class Http1Response<T> {
 
     private void onFinished() {
         if (return2Cache) {
+            Log.logTrace("Returning connection to the pool: {0}", connection);
             connection.returnToCache(headers);
         }
     }
@@ -193,12 +198,15 @@ class Http1Response<T> {
     static final char CR = '\r';
     static final char LF = '\n';
 
-    private int getBuffer() throws IOException {
+    private int obtainBuffer() throws IOException {
         int n = buffer.remaining();
 
         if (n == 0) {
-            buffer.clear();
-            return connection.read(buffer);
+            buffer = connection.read();
+            if (buffer == null) {
+                return -1;
+            }
+            n = buffer.remaining();
         }
         return n;
     }
@@ -206,18 +214,17 @@ class Http1Response<T> {
     String readStatusLine() throws IOException {
         boolean cr = false;
         StringBuilder statusLine = new StringBuilder(128);
-        ByteBuffer b = buffer;
-        while (getBuffer() != -1) {
-            byte[] buf = b.array();
-            int offset = b.position();
-            int len = b.limit() - offset;
+        while ((obtainBuffer()) != -1) {
+            byte[] buf = buffer.array();
+            int offset = buffer.position();
+            int len = buffer.limit() - offset;
 
             for (int i = 0; i < len; i++) {
                 char c = (char) buf[i+offset];
 
                 if (cr) {
                     if (c == LF) {
-                        b.position(i + 1 + offset);
+                        buffer.position(i + 1 + offset);
                         return statusLine.toString();
                     } else {
                         throw new IOException("invalid status line");
@@ -230,7 +237,7 @@ class Http1Response<T> {
                 }
             }
             // unlikely, but possible, that multiple reads required
-            b.position(b.limit());
+            buffer.position(buffer.limit());
         }
         return null;
     }

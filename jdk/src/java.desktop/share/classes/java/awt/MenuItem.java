@@ -435,6 +435,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * keydown) and the item is enabled.
      * Returns true if there is an associated shortcut.
      */
+    @SuppressWarnings("deprecation")
     boolean handleShortcut(KeyEvent e) {
         MenuShortcut s = new MenuShortcut(e.getKeyCode(),
                              (e.getModifiers() & InputEvent.SHIFT_MASK) > 0);

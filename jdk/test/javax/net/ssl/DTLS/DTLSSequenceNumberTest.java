@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Testing DTLS records sequence number property support in application
  *          data exchange.
  * @key randomness
- * @library /sun/security/krb5/auto /lib/testlibrary /javax/net/ssl/TLSCommon
+ * @library /sun/security/krb5/auto /test/lib /javax/net/ssl/TLSCommon
  * @modules java.security.jgss
  *          jdk.security.auth
  *          java.security.jgss/sun.security.krb5:+open
@@ -36,6 +36,7 @@
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
+ * @build jdk.test.lib.RandomFactory
  * @run main/othervm -Dtest.security.protocol=DTLS
  *      -Dtest.mode=norm DTLSSequenceNumberTest
  * @run main/othervm -Dtest.security.protocol=DTLS
@@ -51,7 +52,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import java.util.Random;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 /**
  * Testing DTLS records sequence number property support in application data

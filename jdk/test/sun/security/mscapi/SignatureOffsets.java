@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ import java.security.SignatureException;
  *          get random set of clear text data to sign. After the signature
  *          generation, the test tries to verify signature with the above API
  *          and passing in different signature offset (0, 33, 66, 99).
- * @library /lib/testlibrary
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @compile ../../../java/security/Signature/Offsets.java
  * @requires os.family == "windows"
  * @run main SignatureOffsets SunMSCAPI NONEwithRSA

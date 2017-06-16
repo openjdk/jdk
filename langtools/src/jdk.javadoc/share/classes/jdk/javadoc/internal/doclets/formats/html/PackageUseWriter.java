@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @param filename the file to be generated.
      */
-    public PackageUseWriter(ConfigurationImpl configuration,
+    public PackageUseWriter(HtmlConfiguration configuration,
                             ClassUseMapper mapper, DocPath filename,
                             PackageElement pkgElement) {
         super(configuration, DocPath.forPackage(pkgElement).resolve(filename));
@@ -99,7 +99,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @param pkgElement    the package being documented.
      * @throws DocFileIOException if there is a problem generating the package use page
      */
-    public static void generate(ConfigurationImpl configuration,
+    public static void generate(HtmlConfiguration configuration,
                                 ClassUseMapper mapper, PackageElement pkgElement)
             throws DocFileIOException {
         DocPath filename = DocPaths.PACKAGE_USE;

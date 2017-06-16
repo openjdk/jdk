@@ -66,7 +66,8 @@ public abstract class CustomCursor extends Cursor {
 
         // Scale image to nearest supported size.
         Dimension nativeSize = toolkit.getBestCursorSize(width, height);
-        if (nativeSize.width != width || nativeSize.height != height) {
+        if ((nativeSize.width != width || nativeSize.height != height) &&
+            (nativeSize.width != 0 && nativeSize.height != 0)) {
             cursor = cursor.getScaledInstance(nativeSize.width,
                                               nativeSize.height,
                                               Image.SCALE_DEFAULT);

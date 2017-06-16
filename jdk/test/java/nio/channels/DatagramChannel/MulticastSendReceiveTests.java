@@ -24,7 +24,10 @@
 /* @test
  * @bug 4527345 7026376 6633549
  * @summary Unit test for DatagramChannel's multicast support
- * @build MulticastSendReceiveTests NetworkConfiguration
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        MulticastSendReceiveTests
  * @run main MulticastSendReceiveTests
  * @run main/othervm -Djava.net.preferIPv4Stack=true MulticastSendReceiveTests
  * @key randomness
@@ -36,6 +39,9 @@ import java.net.*;
 import static java.net.StandardProtocolFamily.*;
 import java.util.*;
 import java.io.IOException;
+import java.util.stream.Collectors;
+
+import jdk.test.lib.NetworkConfiguration;
 
 public class MulticastSendReceiveTests {
 
@@ -238,14 +244,15 @@ public class MulticastSendReceiveTests {
         // multicast groups used for the test
         InetAddress ip4Group = InetAddress.getByName("225.4.5.6");
         InetAddress ip6Group = InetAddress.getByName("ff02::a");
-
-        for (NetworkInterface nif: config.ip4Interfaces()) {
+        for (NetworkInterface nif: config.ip4MulticastInterfaces()
+                                         .collect(Collectors.toList())) {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET,   nif, ip4Group, source);
             test(UNSPEC, nif, ip4Group, source);
         }
 
-        for (NetworkInterface nif: config.ip6Interfaces()) {
+        for (NetworkInterface nif: config.ip6MulticastInterfaces()
+                                         .collect(Collectors.toList())) {
             InetAddress source = config.ip6Addresses(nif).iterator().next();
             test(INET6,  nif, ip6Group, source);
             test(UNSPEC, nif, ip6Group, source);

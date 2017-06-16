@@ -54,7 +54,7 @@ public class AquaNativeResources {
         }
     }
 
-    static final RecyclableSingleton<Color> sBackgroundColor = new RecyclableSingleton<Color>() {
+    private static final RecyclableSingleton<Color> sBackgroundColor = new RecyclableSingleton<Color>() {
         @Override
         protected Color getInstance() {
             final long backgroundID = getWindowBackgroundColor();
