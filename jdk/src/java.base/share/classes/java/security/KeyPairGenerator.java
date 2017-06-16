@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,15 @@ import sun.security.util.Debug;
  * <p>In case the client does not explicitly initialize the KeyPairGenerator
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
- * For example, the <i>Sun</i> provider uses a default modulus size (keysize)
- * of 1024 bits for DSA key pairs.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the KeyPairGenerator defaults used by
+ * JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * KeyPairGenerator instead of relying on provider-specific defaults.
  *
  * <p>Note that this class is abstract and extends from
  * {@code KeyPairGeneratorSpi} for historical reasons.
@@ -114,13 +121,14 @@ import sun.security.util.Debug;
  * <li>{@code RSA} (1024, 2048, 4096)</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
+ * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
  * KeyPairGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @see java.security.spec.AlgorithmParameterSpec
  */
@@ -142,8 +150,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      */
     protected KeyPairGenerator(String algorithm) {
@@ -153,8 +161,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Returns the standard name of the algorithm for this key pair generator.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the standard string name of the algorithm.
@@ -205,8 +213,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code KeyPairGenerator} object
@@ -264,8 +272,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the string name of the provider.
@@ -306,8 +314,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyPairGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

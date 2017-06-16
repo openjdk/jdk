@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      * @param nextClass the next class being documented.
      * @param classTree the class tree for the given class.
      */
-    public ClassWriterImpl(ConfigurationImpl configuration, TypeElement typeElement,
-            TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
+    public ClassWriterImpl(HtmlConfiguration configuration, TypeElement typeElement,
+                           TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
         super(configuration, DocPath.forClass(configuration.utils, typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
@@ -205,7 +205,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         div.addStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, contents.moduleLabel);
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.addContent(Contents.SPACE);
             moduleNameDiv.addContent(getModuleLink(mdle,
@@ -214,7 +214,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         }
         PackageElement pkg = utils.containingPackage(typeElement);
         if (!pkg.isUnnamed()) {
-            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, contents.packageLabel);
+            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInType, contents.packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
             pkgNameDiv.addContent(Contents.SPACE);
             Content pkgNameContent = getPackageLink(pkg,

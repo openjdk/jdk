@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
-
 import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import org.testng.Assert.ThrowingRunnable;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertThrows;
 
 /**
  * @test
@@ -53,8 +53,8 @@ public class PrimitiveIteratorDefaults {
             }
         };
 
-        executeAndCatch(() -> i.forEachRemaining((IntConsumer) null));
-        executeAndCatch(() -> i.forEachRemaining((Consumer<Integer>) null));
+        assertThrowsNPE(() -> i.forEachRemaining((IntConsumer) null));
+        assertThrowsNPE(() -> i.forEachRemaining((Consumer<Integer>) null));
     }
 
     public void testLongForEachRemainingWithNull() {
@@ -70,8 +70,8 @@ public class PrimitiveIteratorDefaults {
             }
         };
 
-        executeAndCatch(() -> i.forEachRemaining((LongConsumer) null));
-        executeAndCatch(() -> i.forEachRemaining((Consumer<Long>) null));
+        assertThrowsNPE(() -> i.forEachRemaining((LongConsumer) null));
+        assertThrowsNPE(() -> i.forEachRemaining((Consumer<Long>) null));
     }
 
     public void testDoubleForEachRemainingWithNull() {
@@ -87,29 +87,12 @@ public class PrimitiveIteratorDefaults {
             }
         };
 
-        executeAndCatch(() -> i.forEachRemaining((DoubleConsumer) null));
-        executeAndCatch(() -> i.forEachRemaining((Consumer<Double>) null));
+        assertThrowsNPE(() -> i.forEachRemaining((DoubleConsumer) null));
+        assertThrowsNPE(() -> i.forEachRemaining((Consumer<Double>) null));
     }
 
-    private void executeAndCatch(Runnable r) {
-        executeAndCatch(NullPointerException.class, r);
-    }
-
-    private void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        }
-        catch (Exception e) {
-            caught = e;
-        }
-
-        assertNotNull(caught,
-                      String.format("No Exception was thrown, expected an Exception of %s to be thrown",
-                                    expected.getName()));
-        assertTrue(expected.isInstance(caught),
-                   String.format("Exception thrown %s not an instance of %s",
-                                 caught.getClass().getName(), expected.getName()));
+    private void assertThrowsNPE(ThrowingRunnable r) {
+        assertThrows(NullPointerException.class, r);
     }
 
 }

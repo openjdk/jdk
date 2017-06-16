@@ -31,12 +31,9 @@
  * @run main NestedUnsafe
  */
 
-import java.security.ProtectionDomain;
-import java.io.InputStream;
 import java.lang.*;
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.internal.misc.Unsafe;
-import static jdk.test.lib.Asserts.*;
 
 // package p;
 

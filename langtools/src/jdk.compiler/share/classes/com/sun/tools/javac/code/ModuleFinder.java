@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -90,7 +91,7 @@ public class ModuleFinder {
 
     private ModuleNameReader moduleNameReader;
 
-    public ModuleInfoSourceFileCompleter sourceFileCompleter;
+    public ModuleNameFromSourceReader moduleNameFromSourceReader;
 
     /** Get the ModuleFinder instance for this invocation. */
     public static ModuleFinder instance(Context context) {
@@ -190,8 +191,6 @@ public class ModuleFinder {
         return list;
     }
 
-    private boolean inFindSingleModule;
-
     public ModuleSymbol findSingleModule() {
         try {
             JavaFileObject src_fo = getModuleInfoFromLocation(StandardLocation.SOURCE_PATH, Kind.SOURCE);
@@ -204,49 +203,67 @@ public class ModuleFinder {
             if (fo == null) {
                 msym = syms.unnamedModule;
             } else {
-                switch (fo.getKind()) {
-                    case SOURCE:
-                        if (!inFindSingleModule) {
-                            try {
-                                inFindSingleModule = true;
-                                // Note: the following will trigger a re-entrant call to Modules.enter
-                                msym = sourceFileCompleter.complete(fo);
-                                msym.module_info.classfile = fo;
-                            } finally {
-                                inFindSingleModule = false;
-                            }
-                        } else {
-                            //the module-info.java does not contain a module declaration,
-                            //avoid infinite recursion:
-                            msym = syms.unnamedModule;
-                        }
-                        break;
-                    case CLASS:
-                        Name name;
-                        try {
-                            name = names.fromString(readModuleName(fo));
-                        } catch (BadClassFile | IOException ex) {
-                            //fillIn will report proper errors:
-                            name = names.error;
-                        }
-                        msym = syms.enterModule(name);
-                        msym.module_info.classfile = fo;
-                        msym.completer = Completer.NULL_COMPLETER;
-                        classFinder.fillIn(msym.module_info);
-                        break;
-                    default:
-                        Assert.error();
-                        msym = syms.unnamedModule;
-                        break;
-                }
+                msym = readModule(fo);
             }
 
-            msym.classLocation = StandardLocation.CLASS_OUTPUT;
+            if (msym.patchLocation == null) {
+                msym.classLocation = StandardLocation.CLASS_OUTPUT;
+            } else {
+                msym.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
+            }
             return msym;
 
         } catch (IOException e) {
             throw new Error(e); // FIXME
         }
+    }
+
+    private ModuleSymbol readModule(JavaFileObject fo) throws IOException {
+        Name name;
+        switch (fo.getKind()) {
+            case SOURCE:
+                name = moduleNameFromSourceReader.readModuleName(fo);
+                if (name == null) {
+                    JCDiagnostic diag =
+                        diags.fragment(Fragments.FileDoesNotContainModule);
+                    ClassSymbol errModuleInfo = syms.defineClass(names.module_info, syms.errModule);
+                    throw new ClassFinder.BadClassFile(errModuleInfo, fo, diag, diags);
+                }
+                break;
+            case CLASS:
+                try {
+                    name = names.fromString(readModuleName(fo));
+                } catch (BadClassFile | IOException ex) {
+                    //fillIn will report proper errors:
+                    name = names.error;
+                }
+                break;
+            default:
+                Assert.error();
+                name = names.error;
+                break;
+        }
+
+        ModuleSymbol msym = syms.enterModule(name);
+        msym.module_info.classfile = fo;
+        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) && name != names.error) {
+            msym.patchLocation = fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH, name.toString());
+
+            if (msym.patchLocation != null) {
+                JavaFileObject patchFO = getModuleInfoFromLocation(StandardLocation.CLASS_OUTPUT, Kind.CLASS);
+                patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.CLASS), patchFO);
+                patchFO = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.SOURCE), patchFO);
+
+                if (patchFO != null) {
+                    msym.module_info.classfile = patchFO;
+                }
+            }
+        }
+
+        msym.completer = Completer.NULL_COMPLETER;
+        classFinder.fillIn(msym.module_info);
+
+        return msym;
     }
 
     private String readModuleName(JavaFileObject jfo) throws IOException, ModuleNameReader.BadClassFile {
@@ -256,7 +273,7 @@ public class ModuleFinder {
     }
 
     private JavaFileObject getModuleInfoFromLocation(Location location, Kind kind) throws IOException {
-        if (!fileManager.hasLocation(location))
+        if (location == null || !fileManager.hasLocation(location))
             return null;
 
         return fileManager.getJavaFileForInput(location,
@@ -267,6 +284,7 @@ public class ModuleFinder {
     private List<ModuleSymbol> scanModulePath(ModuleSymbol toFind) {
         ListBuffer<ModuleSymbol> results = new ListBuffer<>();
         Map<Name, Location> namesInSet = new HashMap<>();
+        boolean multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         while (moduleLocationIterator.hasNext()) {
             Set<Location> locns = (moduleLocationIterator.next());
             namesInSet.clear();
@@ -279,10 +297,25 @@ public class ModuleFinder {
                             // module has already been found, so ignore this instance
                             continue;
                         }
+                        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) &&
+                            msym.patchLocation == null) {
+                            msym.patchLocation =
+                                    fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH,
+                                                                     msym.name.toString());
+                            if (msym.patchLocation != null &&
+                                multiModuleMode &&
+                                fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                                msym.patchOutputLocation =
+                                        fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT,
+                                                                         msym.name.toString());
+                            }
+                        }
                         if (moduleLocationIterator.outer == StandardLocation.MODULE_SOURCE_PATH) {
                             msym.sourceLocation = l;
                             if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT, msym.name.toString());
+                                msym.classLocation =
+                                        fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT,
+                                                                         msym.name.toString());
                             }
                         } else {
                             msym.classLocation = l;
@@ -291,7 +324,8 @@ public class ModuleFinder {
                             moduleLocationIterator.outer == StandardLocation.UPGRADE_MODULE_PATH) {
                             msym.flags_field |= Flags.SYSTEM_MODULE;
                         }
-                        if (toFind == msym || toFind == null) {
+                        if (toFind == null ||
+                            (toFind == msym && (msym.sourceLocation != null || msym.classLocation != null))) {
                             // Note: cannot return msym directly, because we must finish
                             // processing this set first
                             results.add(msym);
@@ -313,17 +347,16 @@ public class ModuleFinder {
 
     private void findModuleInfo(ModuleSymbol msym) {
         try {
-            JavaFileObject src_fo = (msym.sourceLocation == null) ? null
-                    : fileManager.getJavaFileForInput(msym.sourceLocation,
-                            names.module_info.toString(), Kind.SOURCE);
+            JavaFileObject fo;
 
-            JavaFileObject class_fo = (msym.classLocation == null) ? null
-                    : fileManager.getJavaFileForInput(msym.classLocation,
-                            names.module_info.toString(), Kind.CLASS);
+            fo = getModuleInfoFromLocation(msym.patchOutputLocation, Kind.CLASS);
+            fo = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.CLASS), fo);
+            fo = preferredFileObject(getModuleInfoFromLocation(msym.patchLocation, Kind.SOURCE), fo);
 
-            JavaFileObject fo = (src_fo == null) ? class_fo :
-                    (class_fo == null) ? src_fo :
-                    classFinder.preferredFileObject(src_fo, class_fo);
+            if (fo == null) {
+                fo = getModuleInfoFromLocation(msym.classLocation, Kind.CLASS);
+                fo = preferredFileObject(getModuleInfoFromLocation(msym.sourceLocation, Kind.SOURCE), fo);
+            }
 
             if (fo == null) {
                 String moduleName = msym.sourceLocation == null && msym.classLocation != null ?
@@ -352,6 +385,12 @@ public class ModuleFinder {
         }
     }
 
+    private JavaFileObject preferredFileObject(JavaFileObject fo1, JavaFileObject fo2) {
+        if (fo1 == null) return fo2;
+        if (fo2 == null) return fo1;
+        return classFinder.preferredFileObject(fo1, fo2);
+    }
+
     Fragment getDescription(StandardLocation l) {
         switch (l) {
             case MODULE_PATH: return Fragments.LocnModule_path;
@@ -363,8 +402,8 @@ public class ModuleFinder {
         }
     }
 
-    public interface ModuleInfoSourceFileCompleter {
-        public ModuleSymbol complete(JavaFileObject file);
+    public interface ModuleNameFromSourceReader {
+        public Name readModuleName(JavaFileObject file);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Spliterators;
 
-import static org.testng.Assert.assertNotNull;
+import org.testng.Assert.ThrowingRunnable;
+
+import static org.testng.Assert.assertThrows;
 
 public class StreamAndSpliterator {
     @Test
@@ -124,25 +126,11 @@ public class StreamAndSpliterator {
         assertThrowsAIOOB(() -> Spliterators.spliterator(new String[]{}, 0, 1, 0));
     }
 
-    void assertThrowsNPE(Runnable r) {
-        NullPointerException caught = null;
-        try {
-            r.run();
-        }
-        catch (NullPointerException e) {
-            caught = e;
-        }
-        assertNotNull(caught, "NullPointerException not thrown");
+    void assertThrowsNPE(ThrowingRunnable r) {
+        assertThrows(NullPointerException.class, r);
     }
 
-    void assertThrowsAIOOB(Runnable r) {
-        ArrayIndexOutOfBoundsException caught = null;
-        try {
-            r.run();
-        }
-        catch (ArrayIndexOutOfBoundsException e) {
-            caught = e;
-        }
-        assertNotNull(caught, "ArrayIndexOutOfBoundsException not thrown");
+    void assertThrowsAIOOB(ThrowingRunnable r) {
+        assertThrows(ArrayIndexOutOfBoundsException.class, r);
     }
 }

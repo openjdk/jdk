@@ -51,7 +51,12 @@ import org.testng.annotations.Test;
  * @test
  * @library /lib/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
- * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @modules java.base/jdk.internal
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.ref

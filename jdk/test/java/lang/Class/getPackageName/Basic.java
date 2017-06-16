@@ -154,8 +154,8 @@ public class Basic {
         return new Object[][] {
 
             { Basic.class,                  TEST_PACKAGE },
-            { Basic[].class,                null },
-            { Basic[][].class,              null },
+            { Basic[].class,                TEST_PACKAGE },
+            { Basic[][].class,              TEST_PACKAGE },
 
             { getNestedClass1(),            TEST_PACKAGE },
             { getNestedClass2(),            TEST_PACKAGE },
@@ -174,14 +174,14 @@ public class Basic {
             { getAnonymousClass6(),         TEST_PACKAGE },
 
             { Object.class,                 "java.lang" },
-            { Object[].class,               null },
-            { Object[][].class,             null },
+            { Object[].class,               "java.lang" },
+            { Object[][].class,             "java.lang" },
 
-            { int.class,                    null },
-            { int[].class,                  null },
-            { int[][].class,                null },
+            { int.class,                    "java.lang" },
+            { int[].class,                  "java.lang" },
+            { int[][].class,                "java.lang" },
 
-            { void.class,                   null },
+            { void.class,                   "java.lang" },
 
         };
     }
