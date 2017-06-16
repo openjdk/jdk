@@ -49,8 +49,10 @@ import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Attributes;
@@ -336,16 +338,43 @@ public class BuiltinClassLoader
             }
         }
 
-        // search class path
+        // class path (not checked)
         Enumeration<URL> e = findResourcesOnClassPath(name);
-        while (e.hasMoreElements()) {
-            URL url = checkURL(e.nextElement());
-            if (url != null) {
-                checked.add(url);
-            }
-        }
 
-        return Collections.enumeration(checked);
+        // concat the checked URLs and the (not checked) class path
+        return new Enumeration<>() {
+            final Iterator<URL> iterator = checked.iterator();
+            URL next;
+            private boolean hasNext() {
+                if (next != null) {
+                    return true;
+                } else if (iterator.hasNext()) {
+                    next = iterator.next();
+                    return true;
+                } else {
+                    // need to check each URL
+                    while (e.hasMoreElements() && next == null) {
+                        next = checkURL(e.nextElement());
+                    }
+                    return next != null;
+                }
+            }
+            @Override
+            public boolean hasMoreElements() {
+                return hasNext();
+            }
+            @Override
+            public URL nextElement() {
+                if (hasNext()) {
+                    URL result = next;
+                    next = null;
+                    return result;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
+
     }
 
     /**

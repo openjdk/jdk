@@ -48,7 +48,7 @@ import jdk.internal.module.SystemModuleFinder;
 /**
  * A finder of modules. A {@code ModuleFinder} is used to find modules during
  * <a href="package-summary.html#resolution">resolution</a> or
- * <a href="package-summary.html#servicebinding">service binding</a>.
+ * <a href="Configuration.html#service-binding">service binding</a>.
  *
  * <p> A {@code ModuleFinder} can only find one module with a given name. A
  * {@code ModuleFinder} that finds modules in a sequence of directories, for
@@ -239,30 +239,35 @@ public interface ModuleFinder {
      *
      * <ul>
      *
-     *     <li><p> The module {@link ModuleDescriptor#name() name}, and {@link
-     *     ModuleDescriptor#version() version} if applicable, is derived from
-     *     the file name of the JAR file as follows: </p>
+     *     <li><p> If the JAR file has the attribute "{@code Automatic-Module-Name}"
+     *     in its main manifest then its value is the {@linkplain
+     *     ModuleDescriptor#name() module name}. The module name is otherwise
+     *     derived from the name of the JAR file. </p></li>
+     *
+     *     <li><p> The {@link ModuleDescriptor#version() version}, and the
+     *     module name when the attribute "{@code Automatic-Module-Name}" is not
+     *     present, are derived from the file name of the JAR file as follows: </p>
      *
      *     <ul>
      *
-     *         <li><p> The {@code .jar} suffix is removed. </p></li>
+     *         <li><p> The "{@code .jar}" suffix is removed. </p></li>
      *
      *         <li><p> If the name matches the regular expression {@code
      *         "-(\\d+(\\.|$))"} then the module name will be derived from the
      *         subsequence preceding the hyphen of the first occurrence. The
      *         subsequence after the hyphen is parsed as a {@link
-     *         ModuleDescriptor.Version} and ignored if it cannot be parsed as
-     *         a {@code Version}. </p></li>
+     *         ModuleDescriptor.Version Version} and ignored if it cannot be
+     *         parsed as a {@code Version}. </p></li>
      *
      *         <li><p> All non-alphanumeric characters ({@code [^A-Za-z0-9]})
      *         in the module name are replaced with a dot ({@code "."}), all
      *         repeating dots are replaced with one dot, and all leading and
      *         trailing dots are removed. </p></li>
      *
-     *         <li><p> As an example, a JAR file named {@code foo-bar.jar} will
-     *         derive a module name {@code foo.bar} and no version. A JAR file
-     *         named {@code foo-bar-1.2.3-SNAPSHOT.jar} will derive a module
-     *         name {@code foo.bar} and {@code 1.2.3-SNAPSHOT} as the version.
+     *         <li><p> As an example, a JAR file named "{@code foo-bar.jar}" will
+     *         derive a module name "{@code foo.bar}" and no version. A JAR file
+     *         named "{@code foo-bar-1.2.3-SNAPSHOT.jar}" will derive a module
+     *         name "{@code foo.bar}" and "{@code 1.2.3-SNAPSHOT}" as the version.
      *         </p></li>
      *
      *     </ul></li>
@@ -295,11 +300,12 @@ public interface ModuleFinder {
      * <p> If a {@code ModuleDescriptor} cannot be created (by means of the
      * {@link ModuleDescriptor.Builder ModuleDescriptor.Builder} API) for an
      * automatic module then {@code FindException} is thrown. This can arise
-     * when a legal module name cannot be derived from the file name of the JAR
-     * file, where the JAR file contains a {@code .class} in the top-level
-     * directory of the JAR file, where an entry in a service configuration
-     * file is not a legal class name or its package name is not in the set of
-     * packages derived for the module. </p>
+     * when the value of the "{@code Automatic-Module-Name}" attribute is not a
+     * legal module name, a legal module name cannot be derived from the file
+     * name of the JAR file, where the JAR file contains a {@code .class} in
+     * the top-level directory of the JAR file, where an entry in a service
+     * configuration file is not a legal class name or its package name is not
+     * in the set of packages derived for the module. </p>
      *
      * <p> In addition to JAR files, an implementation may also support modules
      * that are packaged in other implementation specific module formats. If

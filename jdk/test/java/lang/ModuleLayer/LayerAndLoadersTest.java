@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,21 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -63,7 +67,6 @@ public class LayerAndLoadersTest {
 
     @BeforeTest
     public void setup() throws Exception {
-
         // javac -d mods --module-source-path src src/**
         assertTrue(CompilerUtils.compile(SRC_DIR, MODS_DIR,
                 "--module-source-path", SRC_DIR.toString()));
@@ -77,7 +80,6 @@ public class LayerAndLoadersTest {
      *   m1 requires m2 and m3
      */
     public void testWithOneLoader() throws Exception {
-
         Configuration cf = resolve("m1");
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
@@ -95,7 +97,6 @@ public class LayerAndLoadersTest {
         assertTrue(cl3 == cl1);
 
         invoke(layer, "m1", "p.Main");
-
     }
 
 
@@ -106,7 +107,6 @@ public class LayerAndLoadersTest {
      *   m1 requires m2 and m3
      */
     public void testWithManyLoaders() throws Exception {
-
         Configuration cf = resolve("m1");
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
@@ -127,7 +127,6 @@ public class LayerAndLoadersTest {
         assertTrue(cl3 != cl2);
 
         invoke(layer, "m1", "p.Main");
-
     }
 
 
@@ -141,7 +140,6 @@ public class LayerAndLoadersTest {
      *    m4 provides S with ...
      */
     public void testServicesWithOneLoader() throws Exception {
-
         Configuration cf = resolveAndBind("m1");
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
@@ -168,7 +166,6 @@ public class LayerAndLoadersTest {
         assertTrue(serviceType.isInstance(provider));
         assertTrue(provider.getClass().getClassLoader() == cl1);
         assertFalse(iter.hasNext());
-
     }
 
 
@@ -182,7 +179,6 @@ public class LayerAndLoadersTest {
      *    m4 provides S with ...
      */
     public void testServicesWithManyLoaders() throws Exception {
-
         Configuration cf = resolveAndBind("m1");
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
@@ -220,7 +216,6 @@ public class LayerAndLoadersTest {
             assertTrue(provider.getClass().getClassLoader() == cl4);
             assertFalse(iter.hasNext());
         }
-
     }
 
 
@@ -229,7 +224,6 @@ public class LayerAndLoadersTest {
      * to the given parent class loader.
      */
     public void testDelegationToParent() throws Exception {
-
         Configuration cf = resolve("m1");
 
         ClassLoader parent = this.getClass().getClassLoader();
@@ -250,7 +244,6 @@ public class LayerAndLoadersTest {
         // many loader with boot loader as parent
         layer = ModuleLayer.boot().defineModulesWithManyLoaders(cf, null);
         testLoadFail(layer, cn);
-
     }
 
 
@@ -262,7 +255,6 @@ public class LayerAndLoadersTest {
      *   m2 exports p
      */
     public void testOverlappingPackages() {
-
         ModuleDescriptor descriptor1
             = ModuleDescriptor.newModule("m1").exports("p").build();
 
@@ -284,7 +276,6 @@ public class LayerAndLoadersTest {
         // should be okay to have one module per class loader
         ModuleLayer layer = ModuleLayer.boot().defineModulesWithManyLoaders(cf, null);
         checkLayer(layer, "m1", "m2");
-
     }
 
 
@@ -296,7 +287,6 @@ public class LayerAndLoadersTest {
      *   layer2: m3 reads m1, m4 reads m2
      */
     public void testSplitDelegation() {
-
         ModuleDescriptor descriptor1
             = ModuleDescriptor.newModule("m1").exports("p").build();
 
@@ -332,7 +322,6 @@ public class LayerAndLoadersTest {
         // no split delegation when modules have their own class loader
         ModuleLayer layer2 = layer1.defineModulesWithManyLoaders(cf2, null);
         checkLayer(layer2, "m3", "m4");
-
     }
 
 
@@ -345,7 +334,6 @@ public class LayerAndLoadersTest {
      *   layer2: m1, m2, m4 => same loader
      */
     public void testOverriding1() throws Exception {
-
         Configuration cf1 = resolve("m1");
 
         ModuleLayer layer1 = ModuleLayer.boot().defineModulesWithOneLoader(cf1, null);
@@ -381,7 +369,6 @@ public class LayerAndLoadersTest {
         assertTrue(loader4.loadClass("p.Main").getClassLoader() == loader4);
         assertTrue(loader4.loadClass("q.Hello").getClassLoader() == loader4);
         assertTrue(loader4.loadClass("w.Hello").getClassLoader() == loader4);
-
     }
 
 
@@ -394,7 +381,6 @@ public class LayerAndLoadersTest {
      *   layer2: m1, m2, m3 => loader pool
      */
     public void testOverriding2() throws Exception {
-
         Configuration cf1 = resolve("m1");
 
         ModuleLayer layer1 = ModuleLayer.boot().defineModulesWithManyLoaders(cf1, null);
@@ -476,7 +462,6 @@ public class LayerAndLoadersTest {
             loader6.loadClass("q.Hello");
             assertTrue(false);
         } catch (ClassNotFoundException expected) { }
-
     }
 
 
@@ -488,7 +473,6 @@ public class LayerAndLoadersTest {
      * layer2: m1, m3 => same loader
      */
     public void testOverriding3() throws Exception {
-
         Configuration cf1 = resolve("m1");
 
         ModuleLayer layer1 = ModuleLayer.boot().defineModulesWithOneLoader(cf1, null);
@@ -513,7 +497,6 @@ public class LayerAndLoadersTest {
         assertTrue(loader2.loadClass("p.Main").getClassLoader() == loader2);
         assertTrue(loader2.loadClass("q.Hello").getClassLoader() == loader1);
         assertTrue(loader2.loadClass("w.Hello").getClassLoader() == loader2);
-
     }
 
 
@@ -525,7 +508,6 @@ public class LayerAndLoadersTest {
      * layer2: m1, m3 => loader pool
      */
     public void testOverriding4() throws Exception {
-
         Configuration cf1 = resolve("m1");
 
         ModuleLayer layer1 = ModuleLayer.boot().defineModulesWithManyLoaders(cf1, null);
@@ -565,49 +547,133 @@ public class LayerAndLoadersTest {
         assertTrue(loader4.loadClass("w.Hello").getClassLoader() == loader6);
 
         assertTrue(loader6.loadClass("w.Hello").getClassLoader() == loader6);
-
     }
 
 
     /**
-     * Basic test of resource loading with a class loader created by
-     * Layer.defineModulesWithOneLoader.
+     * Basic test for locating resources with a class loader created by
+     * defineModulesWithOneLoader.
      */
-    public void testResourcesOneLoader() throws Exception {
+    public void testResourcesWithOneLoader() throws Exception {
         Configuration cf = resolve("m1");
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         ModuleLayer layer = ModuleLayer.boot().defineModulesWithOneLoader(cf, scl);
+
         ClassLoader loader = layer.findLoader("m1");
-        testResourceLoading(loader, "p/Main.class");
+        assertNotNull(loader);
+
+        // check that getResource and getResources are consistent
+        URL url1 = loader.getResource("module-info.class");
+        URL url2 = loader.getResources("module-info.class").nextElement();
+        assertEquals(url1.toURI(), url2.toURI());
+
+        // use getResources to find module-info.class resources
+        Enumeration<URL> urls = loader.getResources("module-info.class");
+        List<String> list = readModuleNames(urls);
+
+        // m1, m2, ... should be first (order not specified)
+        int count = cf.modules().size();
+        cf.modules().stream()
+                .map(ResolvedModule::name)
+                .forEach(mn -> assertTrue(list.indexOf(mn) < count));
+
+        // java.base should be after m1, m2, ...
+        assertTrue(list.indexOf("java.base") >= count);
+
+        // check resources(String)
+        List<String> list2 = loader.resources("module-info.class")
+                .map(this::readModuleName)
+                .collect(Collectors.toList());
+        assertEquals(list2, list);
+
+        // check nulls
+        try {
+            loader.getResource(null);
+            assertTrue(false);
+        } catch (NullPointerException e) { }
+        try {
+            loader.getResources(null);
+            assertTrue(false);
+        } catch (NullPointerException e) { }
+        try {
+            loader.resources(null);
+            assertTrue(false);
+        } catch (NullPointerException e) { }
     }
 
     /**
-     * Basic test of resource loading with a class loader created by
-     * Layer.defineModulesWithOneLoader.
+     * Basic test for locating resources with class loaders created by
+     * defineModulesWithManyLoaders.
      */
-    public void testResourcesManyLoaders() throws Exception {
+    public void testResourcesWithManyLoaders() throws Exception {
         Configuration cf = resolve("m1");
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         ModuleLayer layer = ModuleLayer.boot().defineModulesWithManyLoaders(cf, scl);
-        ClassLoader loader = layer.findLoader("m1");
-        testResourceLoading(loader, "p/Main.class");
+
+        for (Module m : layer.modules()) {
+            String name = m.getName();
+            ClassLoader loader = m.getClassLoader();
+            assertNotNull(loader);
+
+            // getResource should find the module-info.class for the module
+            URL url = loader.getResource("module-info.class");
+            assertEquals(readModuleName(url), name);
+
+            // list of modules names read from module-info.class
+            Enumeration<URL> urls = loader.getResources("module-info.class");
+            List<String> list = readModuleNames(urls);
+
+            // module should be the first element
+            assertTrue(list.indexOf(name) == 0);
+
+            // the module-info.class for the other modules in the layer
+            // should not be found
+            layer.modules().stream()
+                    .map(Module::getName)
+                    .filter(mn -> !mn.equals(name))
+                    .forEach(mn -> assertTrue(list.indexOf(mn) < 0));
+
+            // java.base cannot be the first element
+            assertTrue(list.indexOf("java.base") > 0);
+
+            // check resources(String)
+            List<String> list2 = loader.resources("module-info.class")
+                    .map(this::readModuleName)
+                    .collect(Collectors.toList());
+            assertEquals(list2, list);
+
+            // check nulls
+            try {
+                loader.getResource(null);
+                assertTrue(false);
+            } catch (NullPointerException e) { }
+            try {
+                loader.getResources(null);
+                assertTrue(false);
+            } catch (NullPointerException e) { }
+            try {
+                loader.resources(null);
+                assertTrue(false);
+            } catch (NullPointerException e) { }
+        }
     }
 
-    /**
-     * Test that a resource is located by a class loader.
-     */
-    private void testResourceLoading(ClassLoader loader, String name)
-        throws IOException
-    {
-        URL url = loader.getResource(name);
-        assertNotNull(url);
-
-        try (InputStream in = loader.getResourceAsStream(name)) {
-            assertNotNull(in);
+    private List<String> readModuleNames(Enumeration<URL> e) {
+        List<String> list = new ArrayList<>();
+        while (e.hasMoreElements()) {
+            URL url = e.nextElement();
+            list.add(readModuleName(url));
         }
+        return list;
+    }
 
-        Enumeration<URL> urls = loader.getResources(name);
-        assertTrue(urls.hasMoreElements());
+    private String readModuleName(URL url) {
+        try (InputStream in = url.openStream()) {
+            ModuleDescriptor descriptor = ModuleDescriptor.read(in);
+            return descriptor.name();
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
     }
 
 
