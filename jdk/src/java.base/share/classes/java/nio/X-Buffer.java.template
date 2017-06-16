@@ -93,7 +93,7 @@ import java.util.stream.$Streamtype$Stream;
  *
 #if[byte]
  *
- * <a name="direct"></a>
+ * <a id="direct"></a>
  * <h2> Direct <i>vs.</i> non-direct buffers </h2>
  *
  * <p> A byte buffer is either <i>direct</i> or <i>non-direct</i>.  Given a
@@ -128,7 +128,7 @@ import java.util.stream.$Streamtype$Stream;
  * that explicit buffer management can be done in performance-critical code.
  *
  *
- * <a name="bin"></a>
+ * <a id="bin"></a>
  * <h2> Access to binary data </h2>
  *
  * <p> This class defines methods for reading and writing values of all other
@@ -155,7 +155,7 @@ import java.util.stream.$Streamtype$Stream;
  * parameters of the absolute <i>get</i> and <i>put</i> methods are in terms of
  * bytes rather than of the type being read or written.
  *
- * <a name="views"></a>
+ * <a id="views"></a>
  *
  * <p> For access to homogeneous binary data, that is, sequences of values of
  * the same type, this class defines methods that can create <i>views</i> of a
@@ -1069,7 +1069,6 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public
@@ -1083,7 +1082,6 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public
@@ -1097,7 +1095,6 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public 
@@ -1111,7 +1108,6 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public 
@@ -1125,7 +1121,6 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public 
@@ -1139,7 +1134,6 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public 
@@ -1153,7 +1147,6 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public 

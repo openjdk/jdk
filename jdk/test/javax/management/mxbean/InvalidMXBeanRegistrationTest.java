@@ -27,7 +27,7 @@
  * @summary Ensure the registration of an invalid MXBean
  *          throws NotCompliantMBeanException.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean InvalidMXBeanRegistrationTest
  * @run build InvalidMXBeanRegistrationTest
  * @run main InvalidMXBeanRegistrationTest

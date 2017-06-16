@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @build jdk.testlibrary.ProcessTools
- *        ModuleTest CompilerUtils JarUtils
+ *        ModuleTest jdk.test.lib.compiler.CompilerUtils JarUtils
  * @run testng ModuleTest
  * @summary Basic tests for using rmi in module world
  */
@@ -36,6 +36,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.file.Paths;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1752,8 +1752,10 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   if (x->needs_null_check() &&
       (needs_patching ||
        MacroAssembler::needs_explicit_null_check(x->offset()))) {
-    // emit an explicit null check because the offset is too large
-    __ null_check(object.result(), new CodeEmitInfo(info));
+    // Emit an explicit null check because the offset is too large.
+    // If the class is not loaded and the object is NULL, we need to deoptimize to throw a
+    // NoClassDefFoundError in the interpreter instead of an implicit NPE from compiled code.
+    __ null_check(object.result(), new CodeEmitInfo(info), /* deoptimize */ needs_patching);
   }
 
   LIR_Address* address;
@@ -1838,8 +1840,10 @@ void LIRGenerator::do_LoadField(LoadField* x) {
       obj = new_register(T_OBJECT);
       __ move(LIR_OprFact::oopConst(NULL), obj);
     }
-    // emit an explicit null check because the offset is too large
-    __ null_check(obj, new CodeEmitInfo(info));
+    // Emit an explicit null check because the offset is too large.
+    // If the class is not loaded and the object is NULL, we need to deoptimize to throw a
+    // NoClassDefFoundError in the interpreter instead of an implicit NPE from compiled code.
+    __ null_check(obj, new CodeEmitInfo(info), /* deoptimize */ needs_patching);
   }
 
   LIR_Opr reg = rlock_result(x, field_type);
@@ -3208,13 +3212,13 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   // java.nio.Buffer.checkIndex
   case vmIntrinsics::_checkIndex:     do_NIOCheckIndex(x); break;
 
-  case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_compareAndSetObject:
     do_CompareAndSwap(x, objectType);
     break;
-  case vmIntrinsics::_compareAndSwapInt:
+  case vmIntrinsics::_compareAndSetInt:
     do_CompareAndSwap(x, intType);
     break;
-  case vmIntrinsics::_compareAndSwapLong:
+  case vmIntrinsics::_compareAndSetLong:
     do_CompareAndSwap(x, longType);
     break;
 
@@ -3258,50 +3262,52 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
     int bci = x->bci_of_invoke();
     ciMethodData* md = x->method()->method_data_or_null();
     ciProfileData* data = md->bci_to_data(bci);
-    if ((data->is_CallTypeData() && data->as_CallTypeData()->has_arguments()) ||
-        (data->is_VirtualCallTypeData() && data->as_VirtualCallTypeData()->has_arguments())) {
-      ByteSize extra = data->is_CallTypeData() ? CallTypeData::args_data_offset() : VirtualCallTypeData::args_data_offset();
-      int base_offset = md->byte_offset_of_slot(data, extra);
-      LIR_Opr mdp = LIR_OprFact::illegalOpr;
-      ciTypeStackSlotEntries* args = data->is_CallTypeData() ? ((ciCallTypeData*)data)->args() : ((ciVirtualCallTypeData*)data)->args();
+    if (data != NULL) {
+      if ((data->is_CallTypeData() && data->as_CallTypeData()->has_arguments()) ||
+          (data->is_VirtualCallTypeData() && data->as_VirtualCallTypeData()->has_arguments())) {
+        ByteSize extra = data->is_CallTypeData() ? CallTypeData::args_data_offset() : VirtualCallTypeData::args_data_offset();
+        int base_offset = md->byte_offset_of_slot(data, extra);
+        LIR_Opr mdp = LIR_OprFact::illegalOpr;
+        ciTypeStackSlotEntries* args = data->is_CallTypeData() ? ((ciCallTypeData*)data)->args() : ((ciVirtualCallTypeData*)data)->args();
 
-      Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
-      int start = 0;
-      int stop = data->is_CallTypeData() ? ((ciCallTypeData*)data)->number_of_arguments() : ((ciVirtualCallTypeData*)data)->number_of_arguments();
-      if (x->callee()->is_loaded() && x->callee()->is_static() && Bytecodes::has_receiver(bc)) {
-        // first argument is not profiled at call (method handle invoke)
-        assert(x->method()->raw_code_at_bci(bci) == Bytecodes::_invokehandle, "invokehandle expected");
-        start = 1;
-      }
-      ciSignature* callee_signature = x->callee()->signature();
-      // method handle call to virtual method
-      bool has_receiver = x->callee()->is_loaded() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
-      ciSignatureStream callee_signature_stream(callee_signature, has_receiver ? x->callee()->holder() : NULL);
-
-      bool ignored_will_link;
-      ciSignature* signature_at_call = NULL;
-      x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
-      ciSignatureStream signature_at_call_stream(signature_at_call);
-
-      // if called through method handle invoke, some arguments may have been popped
-      for (int i = 0; i < stop && i+start < x->nb_profiled_args(); i++) {
-        int off = in_bytes(TypeEntriesAtCall::argument_type_offset(i)) - in_bytes(TypeEntriesAtCall::args_data_offset());
-        ciKlass* exact = profile_type(md, base_offset, off,
-                                      args->type(i), x->profiled_arg_at(i+start), mdp,
-                                      !x->arg_needs_null_check(i+start),
-                                      signature_at_call_stream.next_klass(), callee_signature_stream.next_klass());
-        if (exact != NULL) {
-          md->set_argument_type(bci, i, exact);
+        Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
+        int start = 0;
+        int stop = data->is_CallTypeData() ? ((ciCallTypeData*)data)->number_of_arguments() : ((ciVirtualCallTypeData*)data)->number_of_arguments();
+        if (x->callee()->is_loaded() && x->callee()->is_static() && Bytecodes::has_receiver(bc)) {
+          // first argument is not profiled at call (method handle invoke)
+          assert(x->method()->raw_code_at_bci(bci) == Bytecodes::_invokehandle, "invokehandle expected");
+          start = 1;
         }
-      }
-    } else {
+        ciSignature* callee_signature = x->callee()->signature();
+        // method handle call to virtual method
+        bool has_receiver = x->callee()->is_loaded() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
+        ciSignatureStream callee_signature_stream(callee_signature, has_receiver ? x->callee()->holder() : NULL);
+
+        bool ignored_will_link;
+        ciSignature* signature_at_call = NULL;
+        x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
+        ciSignatureStream signature_at_call_stream(signature_at_call);
+
+        // if called through method handle invoke, some arguments may have been popped
+        for (int i = 0; i < stop && i+start < x->nb_profiled_args(); i++) {
+          int off = in_bytes(TypeEntriesAtCall::argument_type_offset(i)) - in_bytes(TypeEntriesAtCall::args_data_offset());
+          ciKlass* exact = profile_type(md, base_offset, off,
+              args->type(i), x->profiled_arg_at(i+start), mdp,
+              !x->arg_needs_null_check(i+start),
+              signature_at_call_stream.next_klass(), callee_signature_stream.next_klass());
+          if (exact != NULL) {
+            md->set_argument_type(bci, i, exact);
+          }
+        }
+      } else {
 #ifdef ASSERT
-      Bytecodes::Code code = x->method()->raw_code_at_bci(x->bci_of_invoke());
-      int n = x->nb_profiled_args();
-      assert(MethodData::profile_parameters() && (MethodData::profile_arguments_jsr292_only() ||
-                                                  (x->inlined() && ((code == Bytecodes::_invokedynamic && n <= 1) || (code == Bytecodes::_invokehandle && n <= 2)))),
-             "only at JSR292 bytecodes");
+        Bytecodes::Code code = x->method()->raw_code_at_bci(x->bci_of_invoke());
+        int n = x->nb_profiled_args();
+        assert(MethodData::profile_parameters() && (MethodData::profile_arguments_jsr292_only() ||
+            (x->inlined() && ((code == Bytecodes::_invokedynamic && n <= 1) || (code == Bytecodes::_invokehandle && n <= 2)))),
+            "only at JSR292 bytecodes");
 #endif
+      }
     }
   }
 }
@@ -3392,24 +3398,26 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   int bci = x->bci_of_invoke();
   ciMethodData* md = x->method()->method_data_or_null();
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");
-  ciReturnTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
-  LIR_Opr mdp = LIR_OprFact::illegalOpr;
+  if (data != NULL) {
+    assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");
+    ciReturnTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
+    LIR_Opr mdp = LIR_OprFact::illegalOpr;
 
-  bool ignored_will_link;
-  ciSignature* signature_at_call = NULL;
-  x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
+    bool ignored_will_link;
+    ciSignature* signature_at_call = NULL;
+    x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
 
-  // The offset within the MDO of the entry to update may be too large
-  // to be used in load/store instructions on some platforms. So have
-  // profile_type() compute the address of the profile in a register.
-  ciKlass* exact = profile_type(md, md->byte_offset_of_slot(data, ret->type_offset()), 0,
-                                ret->type(), x->ret(), mdp,
-                                !x->needs_null_check(),
-                                signature_at_call->return_type()->as_klass(),
-                                x->callee()->signature()->return_type()->as_klass());
-  if (exact != NULL) {
-    md->set_return_type(bci, exact);
+    // The offset within the MDO of the entry to update may be too large
+    // to be used in load/store instructions on some platforms. So have
+    // profile_type() compute the address of the profile in a register.
+    ciKlass* exact = profile_type(md, md->byte_offset_of_slot(data, ret->type_offset()), 0,
+        ret->type(), x->ret(), mdp,
+        !x->needs_null_check(),
+        signature_at_call->return_type()->as_klass(),
+        x->callee()->signature()->return_type()->as_klass());
+    if (exact != NULL) {
+      md->set_return_type(bci, exact);
+    }
   }
 }
 

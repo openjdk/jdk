@@ -32,6 +32,8 @@ import java.util.HashMap;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -427,7 +429,7 @@ public class Flow {
             scanStat(tree);
             if (tree != null && tree.hasTag(JCTree.Tag.BLOCK) && !alive) {
                 log.error(tree.pos(),
-                          "initializer.must.be.able.to.complete.normally");
+                          Errors.InitializerMustBeAbleToCompleteNormally);
             }
         }
 
@@ -435,7 +437,7 @@ public class Flow {
          */
         void scanStat(JCTree tree) {
             if (!alive && tree != null) {
-                log.error(tree.pos(), "unreachable.stmt");
+                log.error(tree.pos(), Errors.UnreachableStmt);
                 if (!tree.hasTag(SKIP)) alive = true;
             }
             scan(tree);
@@ -503,7 +505,7 @@ public class Flow {
                 scanStat(tree.body);
 
                 if (alive && !tree.sym.type.getReturnType().hasTag(VOID))
-                    log.error(TreeInfo.diagEndPos(tree.body), "missing.ret.stmt");
+                    log.error(TreeInfo.diagEndPos(tree.body), Errors.MissingRetStmt);
 
                 List<PendingExit> exits = pendingExits.toList();
                 pendingExits = new ListBuffer<>();
@@ -608,7 +610,7 @@ public class Flow {
                     c.stats.nonEmpty() && l.tail.nonEmpty())
                     log.warning(Lint.LintCategory.FALLTHROUGH,
                                 l.tail.head.pos(),
-                                "possible.fall-through.into.case");
+                                Warnings.PossibleFallThroughIntoCase);
             }
             if (!hasDefault) {
                 alive = true;
@@ -650,7 +652,7 @@ public class Flow {
                     if (lint.isEnabled(Lint.LintCategory.FINALLY)) {
                         log.warning(Lint.LintCategory.FINALLY,
                                 TreeInfo.diagEndPos(tree.finalizer),
-                                "finally.cannot.complete");
+                                Warnings.FinallyCannotComplete);
                     }
                 } else {
                     while (exits.nonEmpty()) {
@@ -811,18 +813,15 @@ public class Flow {
                 if (classDef != null &&
                     classDef.pos == exit.tree.pos) {
                     log.error(exit.tree.pos(),
-                            "unreported.exception.default.constructor",
-                            exit.thrown);
+                              Errors.UnreportedExceptionDefaultConstructor(exit.thrown));
                 } else if (exit.tree.hasTag(VARDEF) &&
                         ((JCVariableDecl)exit.tree).sym.isResourceVariable()) {
                     log.error(exit.tree.pos(),
-                            "unreported.exception.implicit.close",
-                            exit.thrown,
-                            ((JCVariableDecl)exit.tree).sym.name);
+                              Errors.UnreportedExceptionImplicitClose(exit.thrown,
+                                                                      ((JCVariableDecl)exit.tree).sym.name));
                 } else {
                     log.error(exit.tree.pos(),
-                            "unreported.exception.need.to.catch.or.throw",
-                            exit.thrown);
+                              Errors.UnreportedExceptionNeedToCatchOrThrow(exit.thrown));
                 }
             }
         }
@@ -1170,11 +1169,11 @@ public class Flow {
 
         void checkCaughtType(DiagnosticPosition pos, Type exc, List<Type> thrownInTry, List<Type> caughtInTry) {
             if (chk.subset(exc, caughtInTry)) {
-                log.error(pos, "except.already.caught", exc);
+                log.error(pos, Errors.ExceptAlreadyCaught(exc));
             } else if (!chk.isUnchecked(pos, exc) &&
                     !isExceptionOrThrowable(exc) &&
                     !chk.intersects(exc, thrownInTry)) {
-                log.error(pos, "except.never.thrown.in.try", exc);
+                log.error(pos, Errors.ExceptNeverThrownInTry(exc));
             } else if (allowImprovedCatchAnalysis) {
                 List<Type> catchableThrownTypes = chk.intersect(List.of(exc), thrownInTry);
                 // 'catchableThrownTypes' cannnot possibly be empty - if 'exc' was an
@@ -1610,11 +1609,11 @@ public class Flow {
                 else if ((sym.flags() & FINAL) != 0) {
                     if ((sym.flags() & PARAMETER) != 0) {
                         if ((sym.flags() & UNION) != 0) { //multi-catch parameter
-                            log.error(pos, "multicatch.parameter.may.not.be.assigned", sym);
+                            log.error(pos, Errors.MulticatchParameterMayNotBeAssigned(sym));
                         }
                         else {
-                            log.error(pos, "final.parameter.may.not.be.assigned",
-                                  sym);
+                            log.error(pos,
+                                      Errors.FinalParameterMayNotBeAssigned(sym));
                         }
                     } else if (!uninits.isMember(sym.adr)) {
                         log.error(pos, flowKind.errKey, sym);
@@ -1624,7 +1623,7 @@ public class Flow {
                 }
                 inits.incl(sym.adr);
             } else if ((sym.flags() & FINAL) != 0) {
-                log.error(pos, "var.might.already.be.assigned", sym);
+                log.error(pos, Errors.VarMightAlreadyBeAssigned(sym));
             }
         }
         //where
@@ -2190,7 +2189,7 @@ public class Flow {
                 for (JCVariableDecl resVar : resourceVarDecls) {
                     if (unrefdResources.includes(resVar.sym)) {
                         log.warning(Lint.LintCategory.TRY, resVar.pos(),
-                                    "try.resource.not.referenced", resVar.sym);
+                                    Warnings.TryResourceNotReferenced(resVar.sym));
                         unrefdResources.remove(resVar.sym);
                     }
                 }
@@ -2601,13 +2600,12 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             String subKey = currentTree.hasTag(LAMBDA) ?
                   "lambda"  : "inner.cls";
-            log.error(pos, "cant.ref.non.effectively.final.var", sym, diags.fragment(subKey));
+            log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));
         }
 
         void reportInnerClsNeedsFinalError(DiagnosticPosition pos, Symbol sym) {
             log.error(pos,
-                    "local.var.accessed.from.icls.needs.final",
-                    sym);
+                      Errors.LocalVarAccessedFromIclsNeedsFinal(sym));
         }
 
     /*************************************************************************
@@ -2676,7 +2674,7 @@ public class Flow {
                 if (!resource.hasTag(VARDEF)) {
                     Symbol var = TreeInfo.symbol(resource);
                     if (var != null && (var.flags() & (FINAL | EFFECTIVELY_FINAL)) == 0) {
-                        log.error(resource.pos(), "try.with.resources.expr.effectively.final.var", var);
+                        log.error(resource.pos(), Errors.TryWithResourcesExprEffectivelyFinalVar(var));
                     }
                 }
             }

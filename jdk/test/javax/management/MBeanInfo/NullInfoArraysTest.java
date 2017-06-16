@@ -27,7 +27,7 @@
  * @summary Test that an MBeanInfo works even if it is deserialized from
  * an implementation where its array fields can be null.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NullInfoArraysTest
  * @run build NullInfoArraysTest
  * @run main NullInfoArraysTest

@@ -44,7 +44,7 @@ import static jdk.jshell.Util.asLetters;
  *
  * @author Robert Field
  */
-public class OuterWrapMap {
+class OuterWrapMap {
 
     private final JShell state;
     private final Map<String,OuterSnippetsClassWrap> classOuters = new HashMap<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -155,6 +156,11 @@ public class BasicJavacTask extends JavacTask {
     }
 
     @Override @DefinedBy(Api.COMPILER)
+    public void addModules(Iterable<String> moduleNames) {
+        throw new IllegalStateException();
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
     public void setProcessors(Iterable<? extends Processor> processors) {
         throw new IllegalStateException();
     }
@@ -214,7 +220,7 @@ public class BasicJavacTask extends JavacTask {
             }
         }
         for (List<String> p: pluginsToCall) {
-            Log.instance(context).error("plugin.not.found", p.head);
+            Log.instance(context).error(Errors.PluginNotFound(p.head));
         }
     }
 
