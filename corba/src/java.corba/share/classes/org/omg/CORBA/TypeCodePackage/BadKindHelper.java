@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package org.omg.CORBA.TypeCodePackage;
  * This Helper class is used to facilitate the marshalling of
  * {@code TypeCodePackage/BadKind}.
  * For more information on Helper files, see
- * <a href="doc-files/generatedfiles.html#helper">
+ * <a href="{@docRoot}/org/omg/CORBA/doc-files/generatedfiles.html#helper">
  * "Generated Files: Helper Files"</a>.
  */
 
