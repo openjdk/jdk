@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -114,6 +115,14 @@ public class JavacElements implements Elements {
         log = Log.instance(context);
         Source source = Source.instance(context);
         allowModules = source.allowModules();
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Set<? extends ModuleElement> getAllModuleElements() {
+        if (allowModules)
+            return Collections.unmodifiableSet(modules.allModules());
+        else
+            return Collections.emptySet();
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)

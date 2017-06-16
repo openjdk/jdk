@@ -39,6 +39,12 @@ import org.testng.annotations.Test;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run testng Basic
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs

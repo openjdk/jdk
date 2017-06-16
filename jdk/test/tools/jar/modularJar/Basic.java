@@ -25,7 +25,6 @@ import java.io.*;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Method;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.jar.JarEntry;
@@ -36,7 +35,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -48,10 +47,12 @@ import static java.lang.System.out;
 /*
  * @test
  * @bug 8167328 8171830 8165640 8174248 8176772
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
- * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.JDKToolFinder
  * @compile Basic.java
  * @run testng Basic
  * @summary Tests for plain Modular jars & Multi-Release Modular jars

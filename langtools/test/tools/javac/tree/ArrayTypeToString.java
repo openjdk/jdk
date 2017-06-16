@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 8068737
  * @summary Tests ArrayType.toString with type annotations present
  * @modules jdk.compiler/com.sun.tools.javac.code
- * @build ArrayTypeToString
+ * @library /tools/javac/lib
+ * @build ArrayTypeToString JavacTestingAbstractProcessor
  * @compile/ref=ArrayTypeToString.out -XDaccessInternalAPI -XDrawDiagnostics -processor ArrayTypeToString -proc:only ArrayTypeToString.java
  */
 
@@ -54,8 +55,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 }
 
 @SupportedAnnotationTypes("Foo")
-@SupportedSourceVersion(SourceVersion.RELEASE_9)
-public class ArrayTypeToString extends AbstractProcessor {
+public class ArrayTypeToString extends JavacTestingAbstractProcessor {
     @Foo(0) String @Foo(1)[] @Foo(2)[] @Foo(3)[] field;
 
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {

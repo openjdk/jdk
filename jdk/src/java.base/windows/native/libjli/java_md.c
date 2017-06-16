@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,32 +158,10 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char *jrepath, jint so_jrepath,
                            char *jvmpath, jint so_jvmpath,
                            char *jvmcfg,  jint so_jvmcfg) {
-    char * jvmtype;
+
+    char *jvmtype;
     int i = 0;
-    int running = CURRENT_DATA_MODEL;
-
-    int wanted = running;
-
     char** argv = *pargv;
-    for (i = 1; i < *pargc ; i++) {
-        if (JLI_StrCmp(argv[i], "-J-d64") == 0 || JLI_StrCmp(argv[i], "-d64") == 0) {
-            wanted = 64;
-            continue;
-        }
-        if (JLI_StrCmp(argv[i], "-J-d32") == 0 || JLI_StrCmp(argv[i], "-d32") == 0) {
-            wanted = 32;
-            continue;
-        }
-
-        if (IsJavaArgs() && argv[i][0] != '-')
-            continue;
-        if (argv[i][0] != '-')
-            break;
-    }
-    if (running != wanted) {
-        JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-        exit(1);
-    }
 
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath)) {

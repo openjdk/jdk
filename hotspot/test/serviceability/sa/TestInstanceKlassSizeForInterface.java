@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,15 @@
  * questions.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
 import sun.jvm.hotspot.HotSpotAgent;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
 import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.debugger.*;
 
+import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -45,29 +49,20 @@ import jdk.test.lib.Asserts;
  * @run main/othervm TestInstanceKlassSizeForInterface
  */
 
-interface Language {
-    static final long nbrOfWords = 99999;
-    public abstract long getNbrOfWords();
-}
-
-class ParselTongue implements Language {
-    public long getNbrOfWords() {
-      return nbrOfWords * 4;
-    }
-}
-
 public class TestInstanceKlassSizeForInterface {
 
-    private static void SAInstanceKlassSize(int pid,
+    private static LingeredAppWithInterface theApp = null;
+
+    private static void SAInstanceKlassSize(int lingeredAppPid,
                                             String[] instanceKlassNames) {
 
         HotSpotAgent agent = new HotSpotAgent();
         try {
-            agent.attach((int)pid);
+            agent.attach(lingeredAppPid);
         }
         catch (DebuggerException e) {
             System.out.println(e.getMessage());
-            System.err.println("Unable to connect to process ID: " + pid);
+            System.err.println("Unable to connect to process ID: " + lingeredAppPid);
 
             agent.detach();
             e.printStackTrace();
@@ -98,11 +93,9 @@ public class TestInstanceKlassSizeForInterface {
     }
 
     private static void createAnotherToAttach(
-                            String[] instanceKlassNames) throws Exception {
+                            String[] instanceKlassNames,
+                            int lingeredAppPid) throws Exception {
 
-        ProcessBuilder pb = new ProcessBuilder();
-
-        // Grab the pid from the current java process and pass it
         String[] toolArgs = {
             "--add-modules=jdk.hotspot.agent",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
@@ -110,22 +103,25 @@ public class TestInstanceKlassSizeForInterface {
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
             "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
             "TestInstanceKlassSizeForInterface",
-            Long.toString(ProcessTools.getProcessId())
+            Integer.toString(lingeredAppPid)
         };
 
+        // Start a new process to attach to the LingeredApp process
+        ProcessBuilder processBuilder = ProcessTools
+                  .createJavaProcessBuilder(toolArgs);
+        OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
+        SAOutput.shouldHaveExitValue(0);
+        System.out.println(SAOutput.getOutput());
+
+        // Run jcmd on the LingeredApp process
+        ProcessBuilder pb = new ProcessBuilder();
         pb.command(new String[] {
                           JDKToolFinder.getJDKTool("jcmd"),
-                          Long.toString(ProcessTools.getProcessId()),
+                          Long.toString(lingeredAppPid),
                           "GC.class_stats",
                           "VTab,ITab,OopMap,KlassBytes"
                       }
                   );
-
-        // Start a new process to attach to the current process
-        ProcessBuilder processBuilder = ProcessTools
-                  .createJavaProcessBuilder(toolArgs);
-        OutputAnalyzer SAOutput = ProcessTools.executeProcess(processBuilder);
-        System.out.println(SAOutput.getOutput());
 
         OutputAnalyzer jcmdOutput = new OutputAnalyzer(pb.start());
         System.out.println(jcmdOutput.getOutput());
@@ -153,7 +149,7 @@ public class TestInstanceKlassSizeForInterface {
         String[] instanceKlassNames = new String[] {
                                           "Language",
                                           "ParselTongue",
-                                          "TestInstanceKlassSizeForInterface$1"
+                                          "LingeredAppWithInterface$1"
                                       };
 
         if (!Platform.shouldSAAttach()) {
@@ -163,22 +159,17 @@ public class TestInstanceKlassSizeForInterface {
         }
 
         if (args == null || args.length == 0) {
-            ParselTongue lang = new ParselTongue();
+            try {
+                List<String> vmArgs = new ArrayList<String>();
+                vmArgs.addAll(Utils.getVmOptions());
 
-            Language ventro = new Language() {
-                public long getNbrOfWords() {
-                    return nbrOfWords * 8;
-                }
-            };
-
-            // Not tested at this point. The test needs to be enhanced
-            // later to test for the sizes of the Lambda MetaFactory
-            // generated anonymous classes too. (After JDK-8160228 gets
-            // fixed.)
-            Runnable r2 = () -> System.out.println("Hello world!");
-            r2.run();
-
-            createAnotherToAttach(instanceKlassNames);
+                theApp = new LingeredAppWithInterface();
+                LingeredApp.startApp(vmArgs, theApp);
+                createAnotherToAttach(instanceKlassNames,
+                                      (int)theApp.getPid());
+            } finally {
+                LingeredApp.stopApp(theApp);
+            }
         } else {
             SAInstanceKlassSize(Integer.parseInt(args[0]), instanceKlassNames);
         }

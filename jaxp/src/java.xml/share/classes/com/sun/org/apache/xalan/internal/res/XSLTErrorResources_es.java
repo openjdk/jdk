@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,12 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 /**
  * Set up error messages.
@@ -1423,25 +1421,4 @@ public class XSLTErrorResources_es extends ListResourceBundle
 
   /** String for use when formatting of the error string failed.   */
   public static final String FORMAT_FAILED = "FORMAT_FAILED";
-
-  /** General error string.   */
-  public static final String ERROR_STRING = "#error";
-
-  /** String to prepend to error messages.  */
-  public static final String ERROR_HEADER = "Error: ";
-
-  /** String to prepend to warning messages.    */
-  public static final String WARNING_HEADER = "Warning: ";
-
-  /** String to specify the XSLT module.  */
-  public static final String XSL_HEADER = "XSLT ";
-
-  /** String to specify the XML parser module.  */
-  public static final String XML_HEADER = "XML ";
-
-  /** I don't think this is used any more.
-   * @deprecated  */
-  public static final String QUERY_HEADER = "PATTERN ";
-
-
     }
