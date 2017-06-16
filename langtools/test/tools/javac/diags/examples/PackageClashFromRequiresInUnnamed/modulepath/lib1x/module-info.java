@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,6 @@
  * questions.
  */
 
-/** Defines tools for analysing dependencies in Java libraries and programs, including
- *  the <em>jdeps</em> and <em>javap</em> tools.
- *
- *  @moduleGraph
- *  @since 9
- */
-module jdk.jdeps {
-    requires java.compiler;
-    requires jdk.compiler;
-    exports com.sun.tools.classfile to jdk.jlink;
-
-    provides java.util.spi.ToolProvider with
-        com.sun.tools.javap.Main.JavapToolProvider,
-        com.sun.tools.jdeps.Main.JDepsToolProvider;
+module lib1x {
+     exports exported;
 }
