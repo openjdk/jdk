@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,19 @@
  * questions.
  */
 
+import java.util.concurrent.TimeUnit;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
 
 /*
  * @test
  * @bug 5070081
  * @summary Tests that javax.sound.sampled.Clip does not loses position through
  *          stop/start
- * @key headful
  */
 public class bug5070081 {
 
@@ -43,10 +45,15 @@ public class bug5070081 {
 
     static boolean test() throws Exception {
         DataLine.Info info = new DataLine.Info(Clip.class, format);
-        Clip clip = (Clip)AudioSystem.getLine(info);
-        clip.open(format, soundData, 0, soundData.length);
-
+        Clip clip = null;
         boolean bSuccess = true;
+        try {
+            clip = (Clip) AudioSystem.getLine(info);
+            clip.open(format, soundData, 0, soundData.length);
+        } catch (LineUnavailableException | IllegalArgumentException ignored) {
+            // the test is not applicable
+            return bSuccess;
+        }
 
         long nLengthMS = clip.getMicrosecondLength()/1000;
 
@@ -56,18 +63,22 @@ public class bug5070081 {
 
         clip.start();                               // start playing
         Thread.sleep(1000);                         // wait a sec
-        long time1 = System.currentTimeMillis();
+        long time1 = currentTimeMillis();
         long pos1 = clip.getFramePosition();        // store the position
-        System.out.println("  Position before stop: " + pos1);
         clip.stop();                                // and then stop
         long pos2 = clip.getFramePosition();        // 2nd try
-        long time2 = System.currentTimeMillis();
+        long time2 = currentTimeMillis();
+
+        System.out.println("  Position before stop: " + pos1);
         System.out.println("  Position after stop: " + pos2);
 
-        System.out.println("  d(time): " + Math.abs(time2-time1) + " ms;"
-                + "d(clip pos): " + Math.abs(pos2 - pos1) + " ms.");
+        long timeDiff = Math.abs(time2 - time1);
+        // sample rate is 22050 per second, so 22.05 per ms
+        long posDiff = (long) (Math.abs(pos2 - pos1) / 22.05);
+        System.out.println("  d(time): " + timeDiff + " ms;"
+                + "d(clip pos time): " + posDiff + " ms.");
 
-        long nDerivation = Math.abs(pos2 - pos1) - Math.abs(time2-time1);
+        long nDerivation = posDiff - timeDiff;
         // add 50 ms for deviation (delay for stopping and errors due timer precision)
         if (nDerivation > 50) {
             System.out.println("  ERROR(1): The deviation is too much: " + nDerivation + " ms");
@@ -103,5 +114,9 @@ public class bug5070081 {
         }
 
         System.out.println("Test passed sucessfully");
+    }
+
+    private static long currentTimeMillis() {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
     }
 }

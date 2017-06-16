@@ -38,6 +38,7 @@ package java.security;
  *
  * @author Roland Schemers
  * @author Li Gong
+ * @since 1.2
  */
 
 public interface Guard {

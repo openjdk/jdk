@@ -38,6 +38,7 @@ package java.security;
  * </ul>
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @see Key
  * @see KeyException

@@ -372,6 +372,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     /**
      * Selects word based on the MouseEvent
      */
+    @SuppressWarnings("deprecation")
     private void selectWord(MouseEvent e) {
         if (selectedWordEvent != null
             && selectedWordEvent.getX() == e.getX()
@@ -405,6 +406,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @param e the mouse event
      * @see MouseListener#mouseClicked
      */
+    @SuppressWarnings("deprecation")
     public void mouseClicked(MouseEvent e) {
         if (getComponent() == null) {
             return;
@@ -513,6 +515,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     /**
      * Adjusts the caret location based on the MouseEvent.
      */
+    @SuppressWarnings("deprecation")
     private void adjustCaret(MouseEvent e) {
         if ((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0 &&
             getDot() != -1) {

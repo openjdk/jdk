@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute.Entry;
 
-import java.io.File;
 import java.io.IOException;
 
 public class FinallyLineNumberTest {
@@ -46,13 +45,13 @@ public class FinallyLineNumberTest {
         if (lines == null) {
             throw new Exception("finally line number table could not be loaded");
         }
-        if (lines.length != 4) {
+        if (lines.length != 5) {
             // Help debug
             System.err.println("LineTable error, got lines:");
             for (Entry e : lines) {
                 System.err.println(e.line_number);
             }
-            throw new Exception("finally line number table incorrect: length=" + lines.length + " expected length=4");
+            throw new Exception("finally line number table incorrect: length=" + lines.length + " expected length=5");
         }
 
         // return null line, for the load null operation
@@ -71,10 +70,16 @@ public class FinallyLineNumberTest {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + first);
         }
 
-        // finally line, for when exception is thrown
+        // for when exception is thrown
         current = lines[3].line_number;
         if (current != first + 2) {
             throw new Exception("finally line number table incorrect: got=" + current + " expected=" + (first + 2));
+        }
+
+        // the '}' closing the finally block
+        current = lines[4].line_number;
+        if (current != first + 3) {
+            throw new Exception("finally line number table incorrect: got=" + current + " expected=" + (first + 3));
         }
     }
 

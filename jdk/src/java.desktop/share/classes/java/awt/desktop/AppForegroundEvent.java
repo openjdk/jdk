@@ -30,8 +30,8 @@ package java.awt.desktop;
  * Event sent when the application has become the foreground app, and when it is
  * no longer the foreground app.
  *
- * @see AppForegroundListener#appRaisedToForeground(AppEvent.AppForegroundEvent)
- * @see AppForegroundListener#appMovedToBackground(AppEvent.AppForegroundEvent)
+ * @see AppForegroundListener#appRaisedToForeground(AppForegroundEvent)
+ * @see AppForegroundListener#appMovedToBackground(AppForegroundEvent)
  *
  * @since 9
  */

@@ -31,6 +31,7 @@ import java.security.GeneralSecurityException;
  * CRL (Certificate Revocation List) Exception.
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 public class CRLException extends GeneralSecurityException {
 

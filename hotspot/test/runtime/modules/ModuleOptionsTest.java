@@ -43,7 +43,7 @@ public class ModuleOptionsTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "--add-modules=i_dont_exist", "--add-modules=java.base", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("ResolutionException");
+        output.shouldContain("FindException");
         output.shouldContain("i_dont_exist");
         output.shouldHaveExitValue(1);
 

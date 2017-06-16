@@ -33,6 +33,7 @@ import java.math.BigInteger;
  * efficiency.
  *
  * @author Jan Luehe
+ * @since 1.2
  *
  *
  * @see java.security.Key
