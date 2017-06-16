@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 #include <errno.h>
 
+#include "jvm.h"
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"
@@ -231,7 +232,6 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 {
     jint localport = (*env)->GetIntField(env, this, psi_localportID);
     int len = 0;
-
     /* fdObj is the FileDescriptor field on this */
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
 
@@ -325,7 +325,8 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         /* connection not established immediately */
         if (connect_rv != 0) {
             socklen_t optlen;
-            jlong prevTime = JVM_CurrentTimeMillis(env, 0);
+            jlong nanoTimeout = (jlong) timeout * NET_NSEC_PER_MSEC;
+            jlong prevNanoTime = JVM_NanoTime(env, 0);
 
             if (errno != EINPROGRESS) {
                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
@@ -341,13 +342,13 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
              * this thread.
              */
             while (1) {
-                jlong newTime;
+                jlong newNanoTime;
                 struct pollfd pfd;
                 pfd.fd = fd;
                 pfd.events = POLLOUT;
 
                 errno = 0;
-                connect_rv = NET_Poll(&pfd, 1, timeout);
+                connect_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
 
                 if (connect_rv >= 0) {
                     break;
@@ -360,13 +361,13 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
                  * The poll was interrupted so adjust timeout and
                  * restart
                  */
-                newTime = JVM_CurrentTimeMillis(env, 0);
-                timeout -= (newTime - prevTime);
-                if (timeout <= 0) {
+                newNanoTime = JVM_NanoTime(env, 0);
+                nanoTimeout -= (newNanoTime - prevNanoTime);
+                if (nanoTimeout < NET_NSEC_PER_MSEC) {
                     connect_rv = 0;
                     break;
                 }
-                prevTime = newTime;
+                prevNanoTime = newNanoTime;
 
             } /* while */
 
@@ -593,7 +594,8 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     /* fields on this */
     int port;
     jint timeout = (*env)->GetIntField(env, this, psi_timeoutID);
-    jlong prevTime = 0;
+    jlong prevNanoTime = 0;
+    jlong nanoTimeout = (jlong) timeout * NET_NSEC_PER_MSEC;
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
 
     /* the FileDescriptor field on socket */
@@ -633,18 +635,19 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
      */
     for (;;) {
         int ret;
+        jlong currNanoTime;
 
         /* first usage pick up current time */
-        if (prevTime == 0 && timeout > 0) {
-            prevTime = JVM_CurrentTimeMillis(env, 0);
+        if (prevNanoTime == 0 && nanoTimeout > 0) {
+            prevNanoTime = JVM_NanoTime(env, 0);
         }
 
         /* passing a timeout of 0 to poll will return immediately,
            but in the case of ServerSocket 0 means infinite. */
         if (timeout <= 0) {
-            ret = NET_Timeout(fd, -1);
+            ret = NET_Timeout(env, fd, -1, 0);
         } else {
-            ret = NET_Timeout(fd, timeout);
+            ret = NET_Timeout(env, fd, nanoTimeout / NET_NSEC_PER_MSEC, prevNanoTime);
         }
         if (ret == 0) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
@@ -676,17 +679,14 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         }
 
         /* ECONNABORTED or EWOULDBLOCK error so adjust timeout if there is one. */
-        if (timeout) {
-            jlong currTime = JVM_CurrentTimeMillis(env, 0);
-            timeout -= (currTime - prevTime);
-
-            if (timeout <= 0) {
-                JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
-                                "Accept timed out");
-                return;
-            }
-            prevTime = currTime;
+        currNanoTime = JVM_NanoTime(env, 0);
+        nanoTimeout -= (currNanoTime - prevNanoTime);
+        if (nanoTimeout < NET_NSEC_PER_MSEC) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketTimeoutException",
+                    "Accept timed out");
+            return;
         }
+        prevNanoTime = currNanoTime;
     }
 
     if (newfd < 0) {

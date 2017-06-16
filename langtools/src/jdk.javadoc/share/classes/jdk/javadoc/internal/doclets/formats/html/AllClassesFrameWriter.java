@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @param filename       Path to the file which is getting generated.
      * @param indexbuilder   Unicode based Index from {@link IndexBuilder}
      */
-    public AllClassesFrameWriter(ConfigurationImpl configuration,
+    public AllClassesFrameWriter(HtmlConfiguration configuration,
                                  DocPath filename, IndexBuilder indexbuilder) {
         super(configuration, filename);
         this.indexbuilder = indexbuilder;
@@ -88,7 +88,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * @param indexBuilder IndexBuilder object for all classes index.
      * @throws DocFileIOException
      */
-    public static void generate(ConfigurationImpl configuration,
+    public static void generate(HtmlConfiguration configuration,
             IndexBuilder indexBuilder) throws DocFileIOException {
         if (configuration.frames) {
             generate(configuration, indexBuilder, DocPaths.ALLCLASSES_FRAME, true);
@@ -98,8 +98,8 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
         }
     }
 
-    private static void generate(ConfigurationImpl configuration, IndexBuilder indexBuilder,
-        DocPath fileName, boolean wantFrames) throws DocFileIOException {
+    private static void generate(HtmlConfiguration configuration, IndexBuilder indexBuilder,
+                                 DocPath fileName, boolean wantFrames) throws DocFileIOException {
         AllClassesFrameWriter allclassgen = new AllClassesFrameWriter(configuration,
                 fileName, indexBuilder);
         allclassgen.buildAllClassesFile(wantFrames);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -465,28 +463,16 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // constructor
+    // constructor via factory
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=NullPointerException.class)
     public void constructor_nullTime() throws Throwable  {
-        Constructor<OffsetTime> con = OffsetTime.class.getDeclaredConstructor(LocalTime.class, ZoneOffset.class);
-        con.setAccessible(true);
-        try {
-            con.newInstance(null, OFFSET_PONE);
-        } catch (InvocationTargetException ex) {
-            throw ex.getCause();
-        }
+        OffsetTime.of(null, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void constructor_nullOffset() throws Throwable  {
-        Constructor<OffsetTime> con = OffsetTime.class.getDeclaredConstructor(LocalTime.class, ZoneOffset.class);
-        con.setAccessible(true);
-        try {
-            con.newInstance(LocalTime.of(11, 30, 0, 0), null);
-        } catch (InvocationTargetException ex) {
-            throw ex.getCause();
-        }
+       OffsetTime.of(LocalTime.of(11, 30, 0, 0), null);
     }
 
     //-----------------------------------------------------------------------

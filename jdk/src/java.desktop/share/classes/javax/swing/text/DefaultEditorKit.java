@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2179,9 +2179,6 @@ public class DefaultEditorKit extends EditorKit {
 
         /**
          * Create this action with the appropriate identifier.
-         * @param nm  the name of the action, Action.NAME.
-         * @param select whether to extend the selection when
-         *  changing the caret position.
          */
         SelectWordAction() {
             super(selectWordAction);
@@ -2209,9 +2206,6 @@ public class DefaultEditorKit extends EditorKit {
 
         /**
          * Create this action with the appropriate identifier.
-         * @param nm  the name of the action, Action.NAME.
-         * @param select whether to extend the selection when
-         *  changing the caret position.
          */
         SelectLineAction() {
             super(selectLineAction);
@@ -2239,9 +2233,6 @@ public class DefaultEditorKit extends EditorKit {
 
         /**
          * Create this action with the appropriate identifier.
-         * @param nm  the name of the action, Action.NAME.
-         * @param select whether to extend the selection when
-         *  changing the caret position.
          */
         SelectParagraphAction() {
             super(selectParagraphAction);
@@ -2269,9 +2260,6 @@ public class DefaultEditorKit extends EditorKit {
 
         /**
          * Create this action with the appropriate identifier.
-         * @param nm  the name of the action, Action.NAME.
-         * @param select whether to extend the selection when
-         *  changing the caret position.
          */
         SelectAllAction() {
             super(selectAllAction);

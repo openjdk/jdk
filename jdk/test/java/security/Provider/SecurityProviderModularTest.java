@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.compiler.CompilerUtils;
 import org.testng.annotations.BeforeTest;
 
 /**
@@ -40,8 +41,9 @@ import org.testng.annotations.BeforeTest;
  * @bug 8130360
  * @library /lib/testlibrary
  * @library /java/security/modules
+ * @library /test/lib
  * @modules java.base/jdk.internal.module
- * @build CompilerUtils JarUtils
+ * @build jdk.test.lib.compiler.CompilerUtils JarUtils
  * @summary Test custom security provider module with all possible modular
  *          condition. The test includes different combination of security
  *          client/provider modules interaction with or without service

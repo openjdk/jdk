@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
  * An interface representing a data checksum.
  *
  * @author David Connelly
+ * @since 1.1
  */
 public interface Checksum {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import com.sun.javadoc.*;
  * tag must implement this interface.
  *
  * <p style="font-style: italic; font-size:larger">
- * <b>Note:</b> This interface has been superseded by one
- * in the new package {@code jdk.javadoc.doclet.taglet}.
+ * <b>Note:</b> This interface has been superseded by its replacement,
+ * {@link jdk.javadoc.doclet.Taglet}.
  * </p>
  *
  * To be loaded and used by
@@ -53,20 +53,21 @@ import com.sun.javadoc.*;
  * <p>
  * Here are two sample taglets: <br>
  * <ul>
- *  <li><a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/ToDoTaglet.java">ToDoTaglet.java</a>
+ *  <li><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/ToDoTaglet.java">ToDoTaglet.java</a>
  *         - Standalone taglet</li>
- *  <li><a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/UnderlineTaglet.java">UnderlineTaglet.java</a>
+ *  <li><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/UnderlineTaglet.java">UnderlineTaglet.java</a>
  *         - Inline taglet</li>
  * </ul>
  * <p>
  * For more information on how to create your own Taglets, please see the
- * <a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/overview.html">Taglet Overview</a>.
+ * <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/overview.html">Taglet Overview</a>.
  *
  * @since 1.4
  * @author Jamie Ho
  *
  * @deprecated
- *   This interface has been superseded by one in the new package {@code jdk.javadoc.doclet.taglet}.
+ * This interface has been superseded by its replacement,
+ * {@link jdk.javadoc.doclet.Taglet}.
  */
 @Deprecated
 public interface Taglet {
