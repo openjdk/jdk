@@ -44,5 +44,6 @@
  */
 module java.scripting {
     exports javax.script;
+
     uses javax.script.ScriptEngineFactory;
 }

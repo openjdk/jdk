@@ -32,8 +32,10 @@
  * @since 9
  */
 module jdk.security.auth {
-    requires transitive java.naming;
+
     requires java.security.jgss;
+
+    requires transitive java.naming;
 
     exports com.sun.security.auth;
     exports com.sun.security.auth.callback;
