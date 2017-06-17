@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 /*
  * @test
- * @bug 8049321 8182143
+ * @bug 8049321
  * @summary Support SHA256WithDSA in JSSE
  * @run main/othervm SignatureAlgorithms PKIX "SHA-224,SHA-256"
  *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
@@ -433,6 +433,21 @@ public class SignatureAlgorithms {
          * Get the customized arguments.
          */
         parseArguments(args);
+
+
+        /*
+         * Ignore testing on Windows if only SHA-224 is available.
+         */
+        if ((Security.getProvider("SunMSCAPI") != null) &&
+                (disabledAlgorithms.contains("SHA-1")) &&
+                (disabledAlgorithms.contains("SHA-256"))) {
+
+            System.out.println(
+                "Windows system does not support SHA-224 algorithms yet. " +
+                "Ignore the testing");
+
+            return;
+        }
 
         /*
          * Expose the target algorithms by diabling unexpected algorithms.
