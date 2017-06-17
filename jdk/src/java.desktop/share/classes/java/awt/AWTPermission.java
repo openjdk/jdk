@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,17 @@ import java.security.BasicPermission;
  * permission allows and a discussion of the risks of granting code
  * the permission.
  *
- * <table border=1 cellpadding=5 summary="AWTPermission target names, descriptions, and associated risks.">
+ * <table class="striped">
+ * <caption>AWTPermission target names, descriptions, and associated risks
+ * </caption>
+ * <thead>
  * <tr>
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>
  * <th>Risks of Allowing this Permission</th>
  * </tr>
- *
+ * </thead>
+ * <tbody>
  * <tr>
  *   <td>accessClipboard</td>
  *   <td>Posting and retrieval of information to and from the AWT clipboard</td>
@@ -182,6 +186,7 @@ import java.security.BasicPermission;
  * so that keyboard is emulated using the mouse, an applet may guess what
  * is being typed.</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @see java.security.BasicPermission
