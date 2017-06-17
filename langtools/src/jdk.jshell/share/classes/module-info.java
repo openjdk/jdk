@@ -65,27 +65,28 @@
  * @since 9
  */
 module jdk.jshell {
-    requires transitive java.compiler;
-    requires transitive jdk.jdi;
-    requires transitive java.prefs;
     requires java.logging;
     requires jdk.compiler;
-    requires jdk.internal.le;
     requires jdk.internal.ed;
+    requires jdk.internal.le;
     requires jdk.internal.opt;
 
+    requires transitive java.compiler;
+    requires transitive java.prefs;
+    requires transitive jdk.jdi;
+
     exports jdk.jshell;
-    exports jdk.jshell.spi;
     exports jdk.jshell.execution;
+    exports jdk.jshell.spi;
     exports jdk.jshell.tool;
 
     uses jdk.jshell.spi.ExecutionControlProvider;
     uses jdk.internal.editor.spi.BuildInEditorProvider;
 
-    provides javax.tools.Tool
-        with jdk.internal.jshell.tool.JShellToolProvider;
-    provides jdk.jshell.spi.ExecutionControlProvider
-        with jdk.jshell.execution.JdiExecutionControlProvider,
-             jdk.jshell.execution.LocalExecutionControlProvider,
-             jdk.jshell.execution.FailOverExecutionControlProvider;
+    provides javax.tools.Tool with
+        jdk.internal.jshell.tool.JShellToolProvider;
+    provides jdk.jshell.spi.ExecutionControlProvider with
+        jdk.jshell.execution.JdiExecutionControlProvider,
+        jdk.jshell.execution.LocalExecutionControlProvider,
+        jdk.jshell.execution.FailOverExecutionControlProvider;
 }
