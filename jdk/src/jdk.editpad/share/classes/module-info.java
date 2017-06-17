@@ -30,8 +30,9 @@
  * @since 9
  */
 module jdk.editpad {
-    requires jdk.internal.ed;
     requires java.desktop;
-    provides jdk.internal.editor.spi.BuildInEditorProvider
-              with jdk.editpad.EditPadProvider;
+    requires jdk.internal.ed;
+
+    provides jdk.internal.editor.spi.BuildInEditorProvider with
+        jdk.editpad.EditPadProvider;
 }

@@ -35,6 +35,7 @@
 @Deprecated(since="9", forRemoval=true)
 module java.transaction {
     requires transitive java.rmi;
+
     exports javax.transaction;
 }
 
