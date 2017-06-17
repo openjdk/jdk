@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,12 +411,16 @@ final class SignatureAndHashAlgorithm {
                     "SHA1withRSA",          --p);
             supports(HashAlgorithm.SHA1,        SignatureAlgorithm.ECDSA,
                     "SHA1withECDSA",        --p);
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.DSA,
-                    "SHA224withDSA",        --p);
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.RSA,
-                    "SHA224withRSA",        --p);
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.ECDSA,
-                    "SHA224withECDSA",      --p);
+
+            if (Security.getProvider("SunMSCAPI") == null) {
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.DSA,
+                        "SHA224withDSA",        --p);
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.RSA,
+                        "SHA224withRSA",        --p);
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.ECDSA,
+                        "SHA224withECDSA",      --p);
+            }
+
             supports(HashAlgorithm.SHA256,      SignatureAlgorithm.DSA,
                     "SHA256withDSA",        --p);
             supports(HashAlgorithm.SHA256,      SignatureAlgorithm.RSA,
