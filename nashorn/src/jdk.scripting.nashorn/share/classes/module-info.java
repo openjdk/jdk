@@ -142,8 +142,9 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  */
 module jdk.scripting.nashorn {
     requires java.logging;
-    requires transitive java.scripting;
     requires jdk.dynalink;
+
+    requires transitive java.scripting;
 
     exports jdk.nashorn.api.scripting;
     exports jdk.nashorn.api.tree;
@@ -155,9 +156,9 @@ module jdk.scripting.nashorn {
     exports jdk.nashorn.tools to
         jdk.scripting.nashorn.shell;
 
-    provides javax.script.ScriptEngineFactory
-        with jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+    provides javax.script.ScriptEngineFactory with
+        jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
-    provides jdk.dynalink.linker.GuardingDynamicLinkerExporter
-        with jdk.nashorn.api.linker.NashornLinkerExporter;
+    provides jdk.dynalink.linker.GuardingDynamicLinkerExporter with
+        jdk.nashorn.api.linker.NashornLinkerExporter;
 }
