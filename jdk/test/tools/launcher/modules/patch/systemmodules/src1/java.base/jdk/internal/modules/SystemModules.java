@@ -23,6 +23,10 @@
 
 package jdk.internal.module;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 /*
  * Test --patch-module java.base=jdk/modules/java.base to override
  * java.base with an exploded image
@@ -34,5 +38,13 @@ public final class SystemModules {
 
     public static boolean hasSplitPackages() {
         return true;
+    }
+
+    public static Map<String, Set<String>> concealedPackagesToOpen() {
+        return Collections.emptyMap();
+    }
+
+    public static Map<String, Set<String>> exportedPackagesToOpen() {
+        return Collections.emptyMap();
     }
 }

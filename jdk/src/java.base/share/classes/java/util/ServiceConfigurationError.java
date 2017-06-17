@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,33 +27,12 @@ package java.util;
 
 
 /**
- * Error thrown when something goes wrong while loading a service provider.
- *
- * <p> This error will be thrown in the following situations:
- *
- * <ul>
- *
- *   <li> The format of a provider-configuration file violates the <a
- *   href="ServiceLoader.html#format">specification</a>; </li>
- *
- *   <li> An {@link java.io.IOException IOException} occurs while reading a
- *   provider-configuration file; </li>
- *
- *   <li> A concrete provider class named in a provider-configuration file
- *   cannot be found; </li>
- *
- *   <li> A concrete provider class is not a subclass of the service class;
- *   </li>
- *
- *   <li> A concrete provider class cannot be instantiated; or
- *
- *   <li> Some other kind of error occurs. </li>
- *
- * </ul>
- *
+ * Error thrown when something goes wrong while locating, loading, or
+ * instantiating a service provider.
  *
  * @author Mark Reinhold
  * @since 1.6
+ * @see ServiceLoader
  */
 
 public class ServiceConfigurationError
