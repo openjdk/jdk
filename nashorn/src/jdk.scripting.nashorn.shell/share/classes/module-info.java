@@ -38,9 +38,9 @@
  * @since 9
  */
 module jdk.scripting.nashorn.shell {
-    requires java.desktop;
     requires java.compiler;
-    requires jdk.scripting.nashorn;
+    requires java.desktop;
     requires jdk.internal.le;
+    requires jdk.scripting.nashorn;
 }
 
