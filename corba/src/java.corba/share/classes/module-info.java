@@ -26,17 +26,20 @@
 /**
  * Defines the Java binding of the OMG CORBA APIs, and the RMI-IIOP API.
  *
+ * <p> This module is upgradeble.
+ *
  * @moduleGraph
  * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
 module java.corba {
-    requires transitive java.desktop;
-    requires transitive java.rmi;
     requires java.logging;
     requires java.naming;
     requires java.transaction;
     requires jdk.unsupported;
+
+    requires transitive java.desktop;
+    requires transitive java.rmi;
 
     exports javax.activity;
     exports javax.rmi;
