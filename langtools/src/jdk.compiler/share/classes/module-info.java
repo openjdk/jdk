@@ -88,6 +88,7 @@ module jdk.compiler {
     exports com.sun.source.tree;
     exports com.sun.source.util;
     exports com.sun.tools.javac;
+
     exports com.sun.tools.doclint to
         jdk.javadoc;
     exports com.sun.tools.javac.api to
@@ -127,16 +128,16 @@ module jdk.compiler {
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.javac.platform.PlatformProvider;
 
-    provides java.util.spi.ToolProvider
-        with com.sun.tools.javac.main.JavacToolProvider;
+    provides java.util.spi.ToolProvider with
+        com.sun.tools.javac.main.JavacToolProvider;
 
-    provides com.sun.tools.javac.platform.PlatformProvider
-        with com.sun.tools.javac.platform.JDKPlatformProvider;
+    provides com.sun.tools.javac.platform.PlatformProvider with
+        com.sun.tools.javac.platform.JDKPlatformProvider;
 
-    provides javax.tools.JavaCompiler
-        with com.sun.tools.javac.api.JavacTool;
+    provides javax.tools.JavaCompiler with
+        com.sun.tools.javac.api.JavacTool;
 
-    provides javax.tools.Tool
-        with com.sun.tools.javac.api.JavacTool;
+    provides javax.tools.Tool with
+        com.sun.tools.javac.api.JavacTool;
 }
 
