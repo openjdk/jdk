@@ -63,11 +63,4 @@ public final class ModuleHelper {
         }
     }
 
-    /**
-     * Adds a package to a module without notifying the VM.
-     */
-    public static void addPackageNoSync(Module m, String pkg) {
-        m.implAddPackageNoSync(pkg);
-    }
-
 }
