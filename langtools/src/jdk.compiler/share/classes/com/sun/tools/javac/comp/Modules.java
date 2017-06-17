@@ -1574,8 +1574,13 @@ public class Modules extends JCTree.Visitor {
                                                             : null;
                     DiagnosticPosition pos = env != null ? env.tree.pos() : null;
                     try {
-                        log.error(pos, Errors.PackageClashFromRequires(msym, packageName,
-                                                                      previousModule, exportsFrom));
+                        if (msym.isUnnamed()) {
+                            log.error(pos, Errors.PackageClashFromRequiresInUnnamed(packageName,
+                                                                                    previousModule, exportsFrom));
+                        } else {
+                            log.error(pos, Errors.PackageClashFromRequires(msym, packageName,
+                                                                           previousModule, exportsFrom));
+                        }
                     } finally {
                         if (env != null)
                             log.useSource(origSource);
