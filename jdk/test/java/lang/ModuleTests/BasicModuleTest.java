@@ -35,7 +35,7 @@ import static org.testng.Assert.*;
  * @test
  * @summary Basic test of java.lang.Module
  * @modules java.desktop java.xml
- * @run testng BasicModuleTest
+ * @run testng/othervm --illegal-access=deny BasicModuleTest
  */
 
 public class BasicModuleTest {

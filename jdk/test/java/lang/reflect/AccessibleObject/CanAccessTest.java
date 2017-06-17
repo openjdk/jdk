@@ -25,7 +25,7 @@
  * @test
  * @build CanAccessTest
  * @modules java.base/jdk.internal.misc:+open
- * @run testng CanAccessTest
+ * @run testng/othervm --illegal-access=deny CanAccessTest
  * @summary Test AccessibleObject::canAccess method
  */
 
