@@ -82,8 +82,6 @@ module java.xml {
         java.xml.crypto;
     exports com.sun.org.apache.xpath.internal.res to
         java.xml.crypto;
-    // reflection access from com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory
-    exports com.sun.xml.internal.stream.writers to java.xml.ws;
 
     uses javax.xml.datatype.DatatypeFactory;
     uses javax.xml.parsers.DocumentBuilderFactory;
