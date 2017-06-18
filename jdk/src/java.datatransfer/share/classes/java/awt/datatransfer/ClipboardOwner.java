@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,32 +26,28 @@
 package java.awt.datatransfer;
 
 /**
- * Defines the interface for classes that will provide data to
- * a clipboard. An instance of this interface becomes the owner
- * of the contents of a clipboard (clipboard owner) if it is
- * passed as an argument to
- * {@link java.awt.datatransfer.Clipboard#setContents} method of
- * the clipboard and this method returns successfully.
- * The instance remains the clipboard owner until another application
- * or another object within this application asserts ownership
- * of this clipboard.
+ * Defines the interface for classes that will provide data to a clipboard. An
+ * instance of this interface becomes the owner of the contents of a clipboard
+ * (clipboard owner) if it is passed as an argument to
+ * {@link Clipboard#setContents} method of the clipboard and this method returns
+ * successfully. The instance remains the clipboard owner until another
+ * application or another object within this application asserts ownership of
+ * this clipboard.
  *
- * @see java.awt.datatransfer.Clipboard
- *
- * @author      Amy Fowler
+ * @author Amy Fowler
+ * @see Clipboard
  * @since 1.1
  */
-
 public interface ClipboardOwner {
 
     /**
-     * Notifies this object that it is no longer the clipboard owner.
-     * This method will be called when another application or another
-     * object within this application asserts ownership of the clipboard.
+     * Notifies this object that it is no longer the clipboard owner. This
+     * method will be called when another application or another object within
+     * this application asserts ownership of the clipboard.
      *
-     * @param clipboard the clipboard that is no longer owned
-     * @param contents the contents which this owner had placed on the clipboard
+     * @param  clipboard the clipboard that is no longer owned
+     * @param  contents the contents which this owner had placed on the
+     *         {@code clipboard}
      */
     public void lostOwnership(Clipboard clipboard, Transferable contents);
-
 }

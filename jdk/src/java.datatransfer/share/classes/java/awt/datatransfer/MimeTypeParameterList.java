@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
- * An object that encapsulates the parameter list of a MimeType
- * as defined in RFC 2045 and 2046.
+ * An object that encapsulates the parameter list of a MimeType as defined in
+ * RFC 2045 and 2046.
  *
  * @author jeff.dunn@eng.sun.com
  */
@@ -71,9 +70,9 @@ class MimeTypeParameterList implements Cloneable {
     } // hashCode()
 
     /**
-     * Two parameter lists are considered equal if they have exactly
-     * the same set of parameter names and associated values. The
-     * order of the parameters is not considered.
+     * Two parameter lists are considered equal if they have exactly the same
+     * set of parameter names and associated values. The order of the parameters
+     * is not considered.
      */
     public boolean equals(Object thatObject) {
         //System.out.println("MimeTypeParameterList.equals("+this+","+thatObject+")");
@@ -246,16 +245,16 @@ class MimeTypeParameterList implements Cloneable {
     }
 
     /**
-     * Retrieve the value associated with the given name, or null if there
-     * is no current association.
+     * Retrieve the value associated with the given name, or {@code null} if
+     * there is no current association.
      */
     public String get(String name) {
         return parameters.get(name.trim().toLowerCase());
     }
 
     /**
-     * Set the value to be associated with the given name, replacing
-     * any previous association.
+     * Set the value to be associated with the given name, replacing any
+     * previous association.
      */
     public void set(String name, String value) {
         parameters.put(name.trim().toLowerCase(), value);
@@ -294,18 +293,20 @@ class MimeTypeParameterList implements Cloneable {
     }
 
     /**
+     * Returns a clone of this object.
+     *
      * @return a clone of this object
      */
     @SuppressWarnings("unchecked") // Cast from clone
-     public Object clone() {
-         MimeTypeParameterList newObj = null;
-         try {
-             newObj = (MimeTypeParameterList)super.clone();
-         } catch (CloneNotSupportedException cannotHappen) {
-         }
-         newObj.parameters = (Hashtable<String, String>)parameters.clone();
-         return newObj;
-     }
+    public Object clone() {
+        MimeTypeParameterList newObj = null;
+        try {
+            newObj = (MimeTypeParameterList)super.clone();
+        } catch (CloneNotSupportedException cannotHappen) {
+        }
+        newObj.parameters = (Hashtable<String, String>)parameters.clone();
+        return newObj;
+    }
 
     private Hashtable<String, String> parameters;
 
@@ -319,8 +320,8 @@ class MimeTypeParameterList implements Cloneable {
     }
 
     /**
-     * return the index of the first non white space character in
-     * rawdata at or after index i.
+     * Returns the index of the first non white space character in
+     * {@code rawdata} at or after index {@code i}.
      */
     private static int skipWhiteSpace(String rawdata, int i) {
         int length = rawdata.length();
@@ -374,7 +375,8 @@ class MimeTypeParameterList implements Cloneable {
     }
 
     /**
-     * A routine that knows how to strip the quotes and escape sequences from the given value.
+     * A routine that knows how to strip the quotes and escape sequences from
+     * the given value.
      */
     private static String unquote(String value) {
         int valueLength = value.length();
@@ -400,5 +402,4 @@ class MimeTypeParameterList implements Cloneable {
      * A string that holds all the special chars.
      */
     private static final String TSPECIALS = "()<>@,;:\\\"/[]?=";
-
 }
