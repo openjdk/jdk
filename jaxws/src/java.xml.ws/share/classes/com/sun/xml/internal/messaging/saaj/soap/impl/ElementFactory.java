@@ -106,9 +106,9 @@ public class ElementFactory {
         }
         if ("Fault".equalsIgnoreCase(localName)) {
             if (NameImpl.SOAP11_NAMESPACE.equals(namespaceUri)) {
-                return new Fault1_1Impl(element, ownerDocument);
+                return new Fault1_1Impl(ownerDocument, element);
             } else if (NameImpl.SOAP12_NAMESPACE.equals(namespaceUri)) {
-                return new Fault1_2Impl(element, ownerDocument);
+                return new Fault1_2Impl(ownerDocument, element);
             }
 
         }

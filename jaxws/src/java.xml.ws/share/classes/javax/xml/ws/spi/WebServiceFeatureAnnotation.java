@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.WebServiceRef;
-import javax.xml.ws.WebServiceRefs;
 import javax.xml.ws.RespectBinding;
 import javax.xml.ws.soap.Addressing;
 import javax.xml.ws.soap.MTOM;
@@ -74,12 +73,14 @@ public @interface WebServiceFeatureAnnotation {
      * Unique identifier for the WebServiceFeature.  This
      * identifier MUST be unique across all implementations
      * of JAX-WS.
+     * @return unique identifier for the WebServiceFeature
      */
     String id();
 
     /**
      * The {@code WebServiceFeature} bean that is associated
      * with the {@code WebServiceFeature} annotation
+     * @return the {@code WebServiceFeature} bean
      */
     Class<? extends WebServiceFeature> bean();
 }

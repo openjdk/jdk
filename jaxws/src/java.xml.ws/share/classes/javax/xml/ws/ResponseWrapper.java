@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,22 +49,26 @@ public @interface ResponseWrapper {
 
     /**
      * Element's local name.
+     * @return local name
      */
     public String localName() default "";
 
     /**
      * Element's namespace name.
+     * @return target namespace name
      */
     public String targetNamespace() default "";
 
     /**
      * Response wrapper bean name.
+     * @return bean name
      */
     public String className() default "";
 
     /**
      * wsdl:part name for the wrapper part
      *
+     * @return wsdl:part name
      * @since 1.7, JAX-WS 2.2
      */
     public String partName() default "";

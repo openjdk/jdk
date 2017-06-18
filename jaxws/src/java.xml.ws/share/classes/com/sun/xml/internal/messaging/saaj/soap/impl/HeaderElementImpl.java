@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.xml.soap.*;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
+import org.w3c.dom.Element;
 
 public abstract class HeaderElementImpl
     extends ElementImpl
@@ -47,6 +48,10 @@ public abstract class HeaderElementImpl
         super(ownerDoc, qname);
     }
 
+    public HeaderElementImpl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
     protected abstract NameImpl getActorAttributeName();
     protected abstract NameImpl getRoleAttributeName();
     protected abstract NameImpl getMustunderstandAttributeName();
@@ -58,6 +63,7 @@ public abstract class HeaderElementImpl
     protected abstract String getActorOrRole();
 
 
+    @Override
     public void setParentElement(SOAPElement element) throws SOAPException {
         if (!(element instanceof SOAPHeader)) {
             log.severe("SAAJ0130.impl.header.elem.parent.mustbe.header");
@@ -67,6 +73,7 @@ public abstract class HeaderElementImpl
         super.setParentElement(element);
     }
 
+    @Override
     public void setActor(String actorUri) {
         try {
             removeAttribute(getActorAttributeName());
@@ -76,6 +83,7 @@ public abstract class HeaderElementImpl
     }
 
     //SOAP 1.2 supports Role
+    @Override
     public void setRole(String roleUri) throws SOAPException {
         // runtime exception thrown if called for SOAP 1.1
         removeAttribute(getRoleAttributeName());
@@ -85,6 +93,7 @@ public abstract class HeaderElementImpl
 
     Name actorAttNameWithoutNS = NameImpl.createFromTagName("actor");
 
+    @Override
     public String getActor() {
         String actor = getAttributeValue(getActorAttributeName());
         return actor;
@@ -92,12 +101,14 @@ public abstract class HeaderElementImpl
 
     Name roleAttNameWithoutNS = NameImpl.createFromTagName("role");
 
+    @Override
     public String getRole() {
         // runtime exception thrown for 1.1
         String role = getAttributeValue(getRoleAttributeName());
         return role;
     }
 
+    @Override
     public void setMustUnderstand(boolean mustUnderstand) {
         try {
             removeAttribute(getMustunderstandAttributeName());
@@ -108,6 +119,7 @@ public abstract class HeaderElementImpl
         }
     }
 
+    @Override
     public boolean getMustUnderstand() {
         String mu = getAttributeValue(getMustunderstandAttributeName());
 
@@ -117,6 +129,7 @@ public abstract class HeaderElementImpl
         return false;
     }
 
+    @Override
     public void setRelay(boolean relay) throws SOAPException {
         // runtime exception thrown for 1.1
         removeAttribute(getRelayAttributeName());
@@ -125,6 +138,7 @@ public abstract class HeaderElementImpl
             getRelayLiteralValue(relay));
     }
 
+    @Override
     public boolean getRelay() {
         String mu = getAttributeValue(getRelayAttributeName());
         if (mu != null)

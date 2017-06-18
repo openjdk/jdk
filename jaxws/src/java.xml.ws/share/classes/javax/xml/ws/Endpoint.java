@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ public abstract class Endpoint {
      *  <p>Type: javax.xml.namespace.QName
      **/
     public static final String WSDL_PORT = "javax.xml.ws.wsdl.port";
-
 
     /**
      * Creates an endpoint with the specified implementor object. If there is
@@ -272,7 +271,6 @@ public abstract class Endpoint {
         return Provider.provider().createAndPublishEndpoint(address, implementor, features);
     }
 
-
     /**
      * Publishes this endpoint at the provided server context.
      * A server context encapsulates the server infrastructure
@@ -406,7 +404,6 @@ public abstract class Endpoint {
      **/
     public abstract void setExecutor(java.util.concurrent.Executor executor);
 
-
     /**
      * Returns the property bag for this {@code Endpoint} instance.
      *
@@ -450,11 +447,11 @@ public abstract class Endpoint {
      **/
     public abstract EndpointReference getEndpointReference(Element... referenceParameters);
 
-
     /**
      * Returns the {@code EndpointReference} associated with
      * this {@code Endpoint} instance.
      *
+     * @param <T> The type of EndpointReference.
      * @param clazz Specifies the type of EndpointReference  that MUST be returned.
      * @param referenceParameters Reference parameters to be associated with the
      * returned {@code EndpointReference} instance.
@@ -478,7 +475,7 @@ public abstract class Endpoint {
             Element... referenceParameters);
 
     /**
-     * By settng a {@code EndpointContext}, JAX-WS runtime knows about
+     * By setting a {@code EndpointContext}, JAX-WS runtime knows about
      * addresses of other endpoints in an application. If multiple endpoints
      * share different ports of a WSDL, then the multiple port addresses
      * are patched when the WSDL is accessed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ package javax.activation;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import com.sun.activation.registries.MailcapFile;
 import com.sun.activation.registries.LogSupport;
 
@@ -48,11 +50,18 @@ import com.sun.activation.registries.LogSupport;
  * <ol>
  * <li> Programatically added entries to the MailcapCommandMap instance.
  * <li> The file {@code .mailcap} in the user's home directory.
- * <li> The file {@literal <}<i>java.home</i>{@literal >}{@code /lib/mailcap}.
+ * <li> The file {@code mailcap} in the Java runtime.
  * <li> The file or resources named {@code META-INF/mailcap}.
  * <li> The file or resource named {@code META-INF/mailcap.default}
  * (usually found only in the {@code activation.jar} file).
  * </ol>
+ * <p>
+ * (The current implementation looks for the {@code mailcap} file
+ * in the Java runtime in the directory <i>java.home</i>{@code /conf}
+ * if it exists, and otherwise in the directory
+ * <i>java.home</i>{@code /lib}, where <i>java.home</i> is the value
+ * of the "java.home" System property.  Note that the "conf" directory was
+ * introduced in JDK 9.)
  * <p>
  * <b>Mailcap file format:</b><p>
  *
@@ -120,6 +129,29 @@ public class MailcapCommandMap extends CommandMap {
     private MailcapFile[] DB;
     private static final int PROG = 0;  // programmatically added entries
 
+    private static final String confDir;
+
+    static {
+        String dir = null;
+        try {
+            dir = (String)AccessController.doPrivileged(
+                new PrivilegedAction() {
+                    public Object run() {
+                        String home = System.getProperty("java.home");
+                        String newdir = home + File.separator + "conf";
+                        File conf = new File(newdir);
+                        if (conf.exists())
+                            return newdir + File.separator;
+                        else
+                            return home + File.separator + "lib" + File.separator;
+                    }
+                });
+        } catch (Exception ex) {
+            // ignore any exceptions
+        }
+        confDir = dir;
+    }
+
     /**
      * The default Constructor.
      */
@@ -144,11 +176,11 @@ public class MailcapCommandMap extends CommandMap {
         LogSupport.log("MailcapCommandMap: load SYS");
         try {
             // check system's home
-            String system_mailcap = System.getProperty("java.home") +
-                File.separator + "lib" + File.separator + "mailcap";
-            mf = loadFile(system_mailcap);
-            if (mf != null)
-                dbv.add(mf);
+            if (confDir != null) {
+                mf = loadFile(confDir + "mailcap");
+                if (mf != null)
+                    dbv.add(mf);
+            }
         } catch (SecurityException ex) {}
 
         LogSupport.log("MailcapCommandMap: load JAR");
@@ -633,6 +665,7 @@ public class MailcapCommandMap extends CommandMap {
      * entries that specify a view command for the specified
      * MIME type are returned.
      *
+     * @param   mimeType        the MIME type
      * @return          array of native command entries
      * @since   1.6, JAF 1.1
      */

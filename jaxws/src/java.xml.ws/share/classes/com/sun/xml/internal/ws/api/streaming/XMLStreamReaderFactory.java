@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.api.streaming;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.streaming.XMLReaderException;
+import com.sun.xml.internal.ws.util.MrJarUtil;
 import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import org.xml.sax.InputSource;
 
@@ -79,7 +80,7 @@ public abstract class XMLStreamReaderFactory {
 
                     // this system property can be used to disable the pooling altogether,
                     // in case someone hits an issue with pooling in the production system.
-                    if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool")) {
+                    if(!MrJarUtil.getNoPoolProperty(XMLStreamReaderFactory.class.getName())) {
                         f = Zephyr.newInstance(xif);
                     }
 

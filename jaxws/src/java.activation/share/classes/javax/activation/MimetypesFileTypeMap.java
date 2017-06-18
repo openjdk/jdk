@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package javax.activation;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import com.sun.activation.registries.MimeTypeFile;
 import com.sun.activation.registries.LogSupport;
 
@@ -43,11 +45,18 @@ import com.sun.activation.registries.LogSupport;
  * <ol>
  * <li> Programmatically added entries to the MimetypesFileTypeMap instance.
  * <li> The file {@code .mime.types} in the user's home directory.
- * <li> The file {@literal <}<i>java.home</i>{@literal >}{@code /lib/mime.types}.
+ * <li> The file {@code mime.types} in the Java runtime.
  * <li> The file or resources named {@code META-INF/mime.types}.
  * <li> The file or resource named {@code META-INF/mimetypes.default}
  * (usually found only in the {@code activation.jar} file).
  * </ol>
+ * <p>
+ * (The current implementation looks for the {@code mime.types} file
+ * in the Java runtime in the directory <i>java.home</i>{@code /conf}
+ * if it exists, and otherwise in the directory
+ * <i>java.home</i>{@code /lib}, where <i>java.home</i> is the value
+ * of the "java.home" System property.  Note that the "conf" directory was
+ * introduced in JDK 9.)
  * <p>
  * <b>MIME types file format:</b>
  *
@@ -72,7 +81,30 @@ public class MimetypesFileTypeMap extends FileTypeMap {
     private MimeTypeFile[] DB;
     private static final int PROG = 0;  // programmatically added entries
 
-    private static String defaultType = "application/octet-stream";
+    private static final String defaultType = "application/octet-stream";
+
+    private static final String confDir;
+
+    static {
+        String dir = null;
+        try {
+            dir = (String)AccessController.doPrivileged(
+                new PrivilegedAction() {
+                    public Object run() {
+                        String home = System.getProperty("java.home");
+                        String newdir = home + File.separator + "conf";
+                        File conf = new File(newdir);
+                        if (conf.exists())
+                            return newdir + File.separator;
+                        else
+                            return home + File.separator + "lib" + File.separator;
+                    }
+                });
+        } catch (Exception ex) {
+            // ignore any exceptions
+        }
+        confDir = dir;
+    }
 
     /**
      * The default constructor.
@@ -97,11 +129,11 @@ public class MimetypesFileTypeMap extends FileTypeMap {
         LogSupport.log("MimetypesFileTypeMap: load SYS");
         try {
             // check system's home
-            String system_mimetypes = System.getProperty("java.home") +
-                File.separator + "lib" + File.separator + "mime.types";
-            mf = loadFile(system_mimetypes);
-            if (mf != null)
-                dbv.addElement(mf);
+            if (confDir != null) {
+                mf = loadFile(confDir + "mime.types");
+                if (mf != null)
+                    dbv.addElement(mf);
+            }
         } catch (SecurityException ex) {}
 
         LogSupport.log("MimetypesFileTypeMap: load JAR");
@@ -239,6 +271,7 @@ public class MimetypesFileTypeMap extends FileTypeMap {
      * added from the named file.
      *
      * @param mimeTypeFileName  the file name
+     * @exception       IOException     for errors reading the file
      */
     public MimetypesFileTypeMap(String mimeTypeFileName) throws IOException {
         this();

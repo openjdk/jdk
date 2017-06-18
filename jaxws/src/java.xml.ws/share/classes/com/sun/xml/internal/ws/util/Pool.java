@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@ import com.sun.xml.internal.ws.api.pipe.TubeCloner;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
+
 
 /**
  * General-purpose object pool.
@@ -50,7 +52,7 @@ import java.lang.ref.WeakReference;
 public abstract class Pool<T> {
 
     // volatile since multiple threads may access queue reference
-    private volatile WeakReference<ConcurrentLinkedQueue<T>> queue;
+    private volatile SoftReference<ConcurrentLinkedQueue<T>> queue;
 
     /**
      * Gets a new object from the pool.
@@ -69,7 +71,7 @@ public abstract class Pool<T> {
     }
 
     private ConcurrentLinkedQueue<T> getQueue() {
-        WeakReference<ConcurrentLinkedQueue<T>> q = queue;
+        SoftReference<ConcurrentLinkedQueue<T>> q = queue;
         if (q != null) {
             ConcurrentLinkedQueue<T> d = q.get();
             if (d != null)
@@ -78,7 +80,7 @@ public abstract class Pool<T> {
 
         // overwrite the queue
         ConcurrentLinkedQueue<T> d = new ConcurrentLinkedQueue<T>();
-        queue = new WeakReference<ConcurrentLinkedQueue<T>>(d);
+        queue = new SoftReference<ConcurrentLinkedQueue<T>>(d);
 
         return d;
     }
