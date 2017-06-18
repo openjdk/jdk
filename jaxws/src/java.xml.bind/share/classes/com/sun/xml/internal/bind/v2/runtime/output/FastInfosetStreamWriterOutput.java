@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,22 @@
 
 package com.sun.xml.internal.bind.v2.runtime.output;
 
+import com.sun.xml.internal.bind.marshaller.NoEscapeHandler;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
-import javax.xml.stream.XMLStreamException;
-
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data;
 import com.sun.xml.internal.fastinfoset.EncodingConstants;
 import com.sun.xml.internal.fastinfoset.stax.StAXDocumentSerializer;
+import com.sun.xml.internal.org.jvnet.fastinfoset.VocabularyApplicationData;
+import org.xml.sax.SAXException;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.WeakHashMap;
-import javax.xml.bind.JAXBContext;
-import com.sun.xml.internal.org.jvnet.fastinfoset.VocabularyApplicationData;
-import org.xml.sax.SAXException;
 
 /**
  * {@link XmlOutput} for {@link StAXDocumentSerializer}.
@@ -220,7 +221,7 @@ public final class FastInfosetStreamWriterOutput extends XMLStreamWriterOutput {
 
     public FastInfosetStreamWriterOutput(StAXDocumentSerializer out,
             JAXBContextImpl context) {
-        super(out);
+        super(out, NoEscapeHandler.theInstance);
 
         this.fiout = out;
         this.localNames = context.getUTF8NameTable();

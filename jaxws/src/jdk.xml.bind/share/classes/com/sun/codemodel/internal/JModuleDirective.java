@@ -94,14 +94,17 @@ public abstract class JModuleDirective {
 
     /**
      * Returns a hash code for this module directive based on directive type and name.
-     * The hash code for a module directive is computed as <blockquote><pre>
-     * 97 * Integer.hashCode(type_ordinal_value + 1) + name.hashCode()
-     * </pre></blockquote> using {@code int} arithmetic.
+     * The hash code for a module directive is computed as
+     * <blockquote><pre>
+     *     {@code 97 * (type_ordinal_value + 1) + name.hashCode()}
+     * </pre></blockquote>
+     * using {@code int} arithmetic.
+     *
      * @return a hash code value for this object.
      */
     @Override
     public int hashCode() {
-        return 97 * (Integer.valueOf(getType().ordinal() + 1)).hashCode() + name.hashCode();
+        return 97 * (getType().ordinal() + 1) + name.hashCode();
     }
 
     /**

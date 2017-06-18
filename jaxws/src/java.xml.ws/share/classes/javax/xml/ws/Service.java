@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,48 @@ public class Service {
      * access to entire protocol message, {@code PAYLOAD} to protocol message
      * payload only.
      **/
-    public enum Mode { MESSAGE, PAYLOAD }
+    public enum Mode {
 
+        /**
+         * Message mode.
+         */
+        MESSAGE,
+
+        /**
+         * Payload mode.
+         */
+        PAYLOAD }
+
+    /**
+     * Creates a {@code Service}.
+     *
+     * The specified WSDL document location and service qualified name MUST
+     * uniquely identify a {@code wsdl:service} element.
+     *
+     * @param wsdlDocumentLocation {@code URL} for the WSDL document location
+     *                             for the service
+     * @param serviceName {@code QName} for the service
+     */
     protected Service(java.net.URL wsdlDocumentLocation, QName serviceName) {
         delegate = Provider.provider().createServiceDelegate(wsdlDocumentLocation,
                 serviceName,
                 this.getClass());
     }
 
+    /**
+     * Creates a {@code Service}. The created instance is
+     * configured with the web service features.
+     *
+     * The specified WSDL document location and service qualified name MUST
+     * uniquely identify a {@code wsdl:service} element.
+     *
+     * @param wsdlDocumentLocation {@code URL} for the WSDL document location
+     *                             for the service
+     * @param serviceName {@code QName} for the service
+     * @param features Web Service features that must be configured on
+     *        the service. If the provider doesn't understand a feature,
+     *        it must throw a WebServiceException.
+     */
     protected Service(java.net.URL wsdlDocumentLocation, QName serviceName, WebServiceFeature ... features) {
         delegate = Provider.provider().createServiceDelegate(wsdlDocumentLocation,
                 serviceName,
@@ -93,6 +127,7 @@ public class Service {
      * specifies the service endpoint interface that is supported by
      * the created dynamic proxy instance.
      *
+     * @param <T> Service endpoint interface.
      * @param portName  Qualified name of the service endpoint in
      *                  the WSDL service description.
      * @param serviceEndpointInterface Service endpoint interface
@@ -126,6 +161,7 @@ public class Service {
      * specifies the service endpoint interface that is supported by
      * the created dynamic proxy instance.
      *
+     * @param <T> Service endpoint interface.
      * @param portName  Qualified name of the service endpoint in
      *                  the WSDL service description.
      * @param serviceEndpointInterface Service endpoint interface
@@ -170,6 +206,7 @@ public class Service {
      * binding (and a port) and configuring the proxy accordingly.
      * The returned proxy should not be reconfigured by the client.
      *
+     * @param <T> Service endpoint interface.
      * @param serviceEndpointInterface Service endpoint interface.
      * @return Object instance that supports the
      *                  specified service endpoint interface.
@@ -198,6 +235,7 @@ public class Service {
      * binding (and a port) and configuring the proxy accordingly.
      * The returned proxy should not be reconfigured by the client.
      *
+     * @param <T> Service endpoint interface.
      * @param serviceEndpointInterface Service endpoint interface.
      * @param features  A list of WebServiceFeatures to configure on the
      *                proxy.  Supported features not in the {@code features
@@ -267,6 +305,7 @@ public class Service {
      * {@code serviceEndpointInterface} and the WSDL
      * associated with this {@code Service} instance.
      *
+     * @param <T> Service endpoint interface.
      * @param endpointReference  The {@code EndpointReference}
      * for the target service endpoint that will be invoked by the
      * returned proxy.
@@ -328,6 +367,7 @@ public class Service {
      * Creates a {@code Dispatch} instance for use with objects of
      * the client's choosing.
      *
+     * @param <T> The type of the message or payload
      * @param portName  Qualified name for the target service endpoint
      * @param type The class of object used for messages or message
      * payloads. Implementations are required to support
@@ -357,6 +397,7 @@ public class Service {
      * Creates a {@code Dispatch} instance for use with objects of
      * the client's choosing.
      *
+     * @param <T> The type of the message or payload
      * @param portName  Qualified name for the target service endpoint
      * @param type The class of object used for messages or message
      * payloads. Implementations are required to support
@@ -419,6 +460,7 @@ public class Service {
      * where the {@code portName} is retrieved from the
      * WSDL or {@code EndpointReference} metadata.
      *
+     * @param <T> The type of the message or payload
      * @param endpointReference  The {@code EndpointReference}
      * for the target service endpoint that will be invoked by the
      * returned {@code Dispatch} object.
@@ -698,6 +740,7 @@ public class Service {
      * @param wsdlDocumentLocation {@code URL} for the WSDL document location
      *                             for the service
      * @param serviceName {@code QName} for the service
+     * @return Service instance
      * @throws WebServiceException If any error in creation of the
      *                    specified service.
      **/
@@ -720,6 +763,7 @@ public class Service {
      * @param features Web Service features that must be configured on
      *        the service. If the provider doesn't understand a feature,
      *        it must throw a WebServiceException.
+     * @return Service instance configured with requested web service features
      * @throws WebServiceException If any error in creation of the
      *                    specified service.
      * @since 1.7, JAX-WS 2.2
@@ -734,6 +778,7 @@ public class Service {
      * Creates a {@code Service} instance.
      *
      * @param serviceName {@code QName} for the service
+     * @return Service instance
      * @throws WebServiceException If any error in creation of the
      *                    specified service
      */
@@ -749,6 +794,7 @@ public class Service {
      * @param features Web Service features that must be configured on
      *        the service. If the provider doesn't understand a feature,
      *        it must throw a WebServiceException.
+     * @return Service instance configured with requested web service features
      * @throws WebServiceException If any error in creation of the
      *                    specified service
      *

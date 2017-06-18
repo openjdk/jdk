@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package javax.xml.ws.spi;
 
-import java.net.URL;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
 import javax.xml.namespace.QName;
 import javax.xml.ws.*;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
@@ -77,6 +74,7 @@ public abstract class Provider {
      *  <li> Finally, a platform default implementation is used.
      * </ul>
      *
+     * @return provider object
      */
     public static Provider provider() {
         try {
@@ -123,7 +121,6 @@ public abstract class Provider {
         throw new UnsupportedOperationException("JAX-WS 2.2 implementation must override this default behaviour.");
     }
 
-
     /**
      *
      * Creates an endpoint object with the provided binding and implementation
@@ -138,7 +135,6 @@ public abstract class Provider {
      */
     public abstract Endpoint createEndpoint(String bindingId,
             Object implementor);
-
 
     /**
      * Creates and publishes an endpoint object with the specified
@@ -199,6 +195,7 @@ public abstract class Provider {
      * {@code serviceName} metadata.
      *
      *
+     * @param <T> Service endpoint interface
      * @param endpointReference the EndpointReference that will
      * be invoked by the returned proxy.
      * @param serviceEndpointInterface Service endpoint interface

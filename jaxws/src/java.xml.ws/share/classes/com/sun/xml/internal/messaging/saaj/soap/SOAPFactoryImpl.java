@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
 
     protected abstract SOAPDocumentImpl createDocument();
 
+    @Override
     public SOAPElement createElement(String tagName) throws SOAPException {
          if (tagName == null) {
              log.log(
@@ -60,6 +61,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
                         NameImpl.createFromTagName(tagName));
     }
 
+    @Override
     public SOAPElement createElement(Name name) throws SOAPException {
         // @since SAAJ 1.3
         // If the Name was null it would cause a NullPointerException in earlier release
@@ -71,6 +73,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
         return ElementFactory.createElement(createDocument(), name);
     }
 
+    @Override
     public SOAPElement createElement(QName qname) throws SOAPException {
         if (qname == null) {
             log.log(Level.SEVERE,"SAAJ0567.soap.null.input",
@@ -80,6 +83,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
         return ElementFactory.createElement(createDocument(),qname);
     }
 
+    @Override
     public SOAPElement createElement(
         String localName,
         String prefix,
@@ -96,6 +100,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
         return ElementFactory.createElement(createDocument(), localName, prefix, uri);
     }
 
+    @Override
     public Name createName(String localName, String prefix, String uri)
         throws SOAPException {
         // @since SAAJ 1.3
@@ -110,6 +115,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
         return NameImpl.create(localName, prefix, uri);
     }
 
+    @Override
     public Name createName(String localName) throws SOAPException {
         // @since SAAJ 1.3
         // if localName==null, earlier impl would create Name with localName=null
@@ -125,6 +131,7 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
 
     // Note: the child elements might still be org.w3c.dom.Element's, but the
     // getChildElements will do the conversion to SOAPElement when called.
+    @Override
     public SOAPElement createElement(Element domElement) throws SOAPException {
         if (domElement == null) {
             return null;
@@ -163,14 +170,17 @@ public abstract class SOAPFactoryImpl extends SOAPFactory {
         return copy;
     }
 
+    @Override
     public Detail createDetail() throws SOAPException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public  SOAPFault createFault(String reasonText, QName faultCode) throws SOAPException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public SOAPFault createFault() throws SOAPException {
         throw new UnsupportedOperationException();
     }

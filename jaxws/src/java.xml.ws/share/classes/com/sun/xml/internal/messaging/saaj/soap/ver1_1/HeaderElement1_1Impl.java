@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.HeaderElementImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import org.w3c.dom.Element;
 
 public class HeaderElement1_1Impl extends HeaderElementImpl {
 
@@ -55,17 +56,24 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
         super(ownerDoc, qname);
     }
 
+    public HeaderElement1_1Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
+    @Override
     public SOAPElement setElementQName(QName newName) throws SOAPException {
         HeaderElementImpl copy =
             new HeaderElement1_1Impl((SOAPDocumentImpl) getOwnerDocument(), newName);
         return replaceElementWithSOAPElement(this,copy);
     }
 
+    @Override
     protected NameImpl getActorAttributeName() {
         return NameImpl.create("actor", null, NameImpl.SOAP11_NAMESPACE);
     }
 
     // role not supported by SOAP 1.1
+    @Override
     protected NameImpl getRoleAttributeName() {
         log.log(
             Level.SEVERE,
@@ -74,15 +82,18 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
         throw new UnsupportedOperationException("Role not supported by SOAP 1.1");
     }
 
+    @Override
     protected NameImpl getMustunderstandAttributeName() {
         return NameImpl.create("mustUnderstand", null, NameImpl.SOAP11_NAMESPACE);
     }
 
     // mustUnderstand attribute has literal value "1" or "0"
+    @Override
     protected String getMustunderstandLiteralValue(boolean mustUnderstand) {
         return (mustUnderstand == true ? "1" : "0");
     }
 
+    @Override
     protected boolean getMustunderstandAttributeValue(String mu) {
         if ("1".equals(mu) || "true".equalsIgnoreCase(mu))
             return true;
@@ -90,6 +101,7 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
     }
 
     // relay not supported by SOAP 1.1
+    @Override
     protected NameImpl getRelayAttributeName() {
         log.log(
             Level.SEVERE,
@@ -98,6 +110,7 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
         throw new UnsupportedOperationException("Relay not supported by SOAP 1.1");
     }
 
+    @Override
     protected String getRelayLiteralValue(boolean relayAttr) {
         log.log(
             Level.SEVERE,
@@ -106,6 +119,7 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
         throw new UnsupportedOperationException("Relay not supported by SOAP 1.1");
     }
 
+    @Override
     protected boolean getRelayAttributeValue(String mu) {
         log.log(
             Level.SEVERE,
@@ -114,6 +128,7 @@ public class HeaderElement1_1Impl extends HeaderElementImpl {
         throw new UnsupportedOperationException("Relay not supported by SOAP 1.1");
     }
 
+    @Override
     protected String getActorOrRole() {
         return getActor();
     }

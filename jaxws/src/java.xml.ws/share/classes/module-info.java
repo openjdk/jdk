@@ -122,8 +122,18 @@ module java.xml.ws {
     // com.sun.xml.internal.ws.fault.SOAPFaultBuilder uses JAXBContext.newInstance
     opens com.sun.xml.internal.ws.fault to java.xml.bind;
 
-    // classes passed to JAXBContext.newInstance for deep reflection
+    // com.sun.xml.internal.ws.addressing.WsaTubeHelperImpl uses JAXBContext.newInstance
     opens com.sun.xml.internal.ws.addressing to java.xml.bind;
+
+    // com.sun.xml.internal.ws.addressing.v200408.WsaTubeHelperImpl uses JAXBContext.newInstance
+    opens com.sun.xml.internal.ws.addressing.v200408 to java.xml.bind;
+
+    // com.sun.xml.ws.developer.MemberSubmissionEndpointReference uses JAXBContext.newInstance
+    opens com.sun.xml.internal.ws.developer to java.xml.bind;
+
+    // com.sun.xml.ws.model.ExternalMetadataReader uses JAXBContext.newInstance
+    opens com.oracle.xmlns.internal.webservices.jaxws_databinding to java.xml.bind;
+
 
     uses javax.xml.ws.spi.Provider;
     uses javax.xml.soap.MessageFactory;

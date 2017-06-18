@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,54 +25,28 @@
 
 package com.sun.xml.internal.ws.resources;
 
-import com.sun.istack.internal.localization.Localizable;
-import com.sun.istack.internal.localization.LocalizableMessageFactory;
-import com.sun.istack.internal.localization.Localizer;
-
 import java.util.Locale;
 import java.util.ResourceBundle;
+import javax.annotation.Generated;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.LocalizableMessageFactory.ResourceBundleSupplier;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
  * Defines string formatting method for each constant in the resource file
  *
  */
+@Generated("com.sun.istack.internal.maven.ResourceGenMojo")
 public final class ProviderApiMessages {
+
     private final static String BUNDLE_NAME = "com.sun.xml.internal.ws.resources.providerApi";
-    private final static LocalizableMessageFactory messageFactory =
-        new LocalizableMessageFactory(BUNDLE_NAME, ProviderApiMessages::getResourceBundle);
-    private final static Localizer localizer = new Localizer();
-
-    private static ResourceBundle getResourceBundle(Locale locale) {
-        return ResourceBundle.getBundle(BUNDLE_NAME, locale);
-    }
-
-    public static Localizable localizableNULL_ADDRESS_SERVICE_ENDPOINT() {
-        return messageFactory.getMessage("null.address.service.endpoint");
-    }
-
-    /**
-     * Address in an EPR cannot be null, when serviceName or portName is null
-     *
-     */
-    public static String NULL_ADDRESS_SERVICE_ENDPOINT() {
-        return localizer.localize(localizableNULL_ADDRESS_SERVICE_ENDPOINT());
-    }
-
-    public static Localizable localizableNO_WSDL_NO_PORT(Object arg0) {
-        return messageFactory.getMessage("no.wsdl.no.port", arg0);
-    }
-
-    /**
-     * WSDL Metadata not available to create the proxy, either Service instance or ServiceEndpointInterface {0} should have WSDL information
-     *
-     */
-    public static String NO_WSDL_NO_PORT(Object arg0) {
-        return localizer.localize(localizableNO_WSDL_NO_PORT(arg0));
-    }
+    private final static LocalizableMessageFactory MESSAGE_FACTORY = new LocalizableMessageFactory(BUNDLE_NAME, new ProviderApiMessages.BundleSupplier());
+    private final static Localizer LOCALIZER = new Localizer();
 
     public static Localizable localizableNULL_SERVICE() {
-        return messageFactory.getMessage("null.service");
+        return MESSAGE_FACTORY.getMessage("null.service");
     }
 
     /**
@@ -80,23 +54,23 @@ public final class ProviderApiMessages {
      *
      */
     public static String NULL_SERVICE() {
-        return localizer.localize(localizableNULL_SERVICE());
+        return LOCALIZER.localize(localizableNULL_SERVICE());
     }
 
-    public static Localizable localizableNULL_ADDRESS() {
-        return messageFactory.getMessage("null.address");
+    public static Localizable localizableNULL_ADDRESS_SERVICE_ENDPOINT() {
+        return MESSAGE_FACTORY.getMessage("null.address.service.endpoint");
     }
 
     /**
-     * Address in an EPR cannot be null
+     * Address in an EPR cannot be null, when serviceName or portName is null
      *
      */
-    public static String NULL_ADDRESS() {
-        return localizer.localize(localizableNULL_ADDRESS());
+    public static String NULL_ADDRESS_SERVICE_ENDPOINT() {
+        return LOCALIZER.localize(localizableNULL_ADDRESS_SERVICE_ENDPOINT());
     }
 
     public static Localizable localizableNULL_PORTNAME() {
-        return messageFactory.getMessage("null.portname");
+        return MESSAGE_FACTORY.getMessage("null.portname");
     }
 
     /**
@@ -104,35 +78,11 @@ public final class ProviderApiMessages {
      *
      */
     public static String NULL_PORTNAME() {
-        return localizer.localize(localizableNULL_PORTNAME());
-    }
-
-    public static Localizable localizableNOTFOUND_SERVICE_IN_WSDL(Object arg0, Object arg1) {
-        return messageFactory.getMessage("notfound.service.in.wsdl", arg0, arg1);
-    }
-
-    /**
-     * Service: {0} not found in WSDL: {1}
-     *
-     */
-    public static String NOTFOUND_SERVICE_IN_WSDL(Object arg0, Object arg1) {
-        return localizer.localize(localizableNOTFOUND_SERVICE_IN_WSDL(arg0, arg1));
-    }
-
-    public static Localizable localizableNULL_EPR() {
-        return messageFactory.getMessage("null.epr");
-    }
-
-    /**
-     * EndpointReference is null
-     *
-     */
-    public static String NULL_EPR() {
-        return localizer.localize(localizableNULL_EPR());
+        return LOCALIZER.localize(localizableNULL_PORTNAME());
     }
 
     public static Localizable localizableNULL_WSDL() {
-        return messageFactory.getMessage("null.wsdl");
+        return MESSAGE_FACTORY.getMessage("null.wsdl");
     }
 
     /**
@@ -140,11 +90,23 @@ public final class ProviderApiMessages {
      *
      */
     public static String NULL_WSDL() {
-        return localizer.localize(localizableNULL_WSDL());
+        return LOCALIZER.localize(localizableNULL_WSDL());
+    }
+
+    public static Localizable localizableNO_WSDL_NO_PORT(Object arg0) {
+        return MESSAGE_FACTORY.getMessage("no.wsdl.no.port", arg0);
+    }
+
+    /**
+     * WSDL Metadata not available to create the proxy, either Service instance or ServiceEndpointInterface {0} should have WSDL information
+     *
+     */
+    public static String NO_WSDL_NO_PORT(Object arg0) {
+        return LOCALIZER.localize(localizableNO_WSDL_NO_PORT(arg0));
     }
 
     public static Localizable localizableNOTFOUND_PORT_IN_WSDL(Object arg0, Object arg1, Object arg2) {
-        return messageFactory.getMessage("notfound.port.in.wsdl", arg0, arg1, arg2);
+        return MESSAGE_FACTORY.getMessage("notfound.port.in.wsdl", arg0, arg1, arg2);
     }
 
     /**
@@ -152,11 +114,47 @@ public final class ProviderApiMessages {
      *
      */
     public static String NOTFOUND_PORT_IN_WSDL(Object arg0, Object arg1, Object arg2) {
-        return localizer.localize(localizableNOTFOUND_PORT_IN_WSDL(arg0, arg1, arg2));
+        return LOCALIZER.localize(localizableNOTFOUND_PORT_IN_WSDL(arg0, arg1, arg2));
+    }
+
+    public static Localizable localizableNOTFOUND_SERVICE_IN_WSDL(Object arg0, Object arg1) {
+        return MESSAGE_FACTORY.getMessage("notfound.service.in.wsdl", arg0, arg1);
+    }
+
+    /**
+     * Service: {0} not found in WSDL: {1}
+     *
+     */
+    public static String NOTFOUND_SERVICE_IN_WSDL(Object arg0, Object arg1) {
+        return LOCALIZER.localize(localizableNOTFOUND_SERVICE_IN_WSDL(arg0, arg1));
+    }
+
+    public static Localizable localizableNULL_EPR() {
+        return MESSAGE_FACTORY.getMessage("null.epr");
+    }
+
+    /**
+     * EndpointReference is null
+     *
+     */
+    public static String NULL_EPR() {
+        return LOCALIZER.localize(localizableNULL_EPR());
+    }
+
+    public static Localizable localizableNULL_ADDRESS() {
+        return MESSAGE_FACTORY.getMessage("null.address");
+    }
+
+    /**
+     * Address in an EPR cannot be null
+     *
+     */
+    public static String NULL_ADDRESS() {
+        return LOCALIZER.localize(localizableNULL_ADDRESS());
     }
 
     public static Localizable localizableERROR_WSDL(Object arg0) {
-        return messageFactory.getMessage("error.wsdl", arg0);
+        return MESSAGE_FACTORY.getMessage("error.wsdl", arg0);
     }
 
     /**
@@ -164,7 +162,18 @@ public final class ProviderApiMessages {
      *
      */
     public static String ERROR_WSDL(Object arg0) {
-        return localizer.localize(localizableERROR_WSDL(arg0));
+        return LOCALIZER.localize(localizableERROR_WSDL(arg0));
+    }
+
+    private static class BundleSupplier
+        implements ResourceBundleSupplier
+    {
+
+
+        public ResourceBundle getResourceBundle(Locale locale) {
+            return ResourceBundle.getBundle(BUNDLE_NAME, locale);
+        }
+
     }
 
 }

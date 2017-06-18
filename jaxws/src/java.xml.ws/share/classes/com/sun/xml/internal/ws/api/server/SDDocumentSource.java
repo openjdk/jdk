@@ -35,6 +35,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -89,8 +90,14 @@ public abstract class SDDocumentSource {
      */
     public abstract URL getSystemId();
 
-    public static SDDocumentSource create(final Class<?> implClass, final String url) {
-        return create(url, implClass);
+    public static SDDocumentSource create(final Class<?> implClass, final String wsdlLocation) {
+        ClassLoader cl = implClass.getClassLoader();
+        URL url = cl.getResource(wsdlLocation);
+        if (url != null) {
+            return create(url);
+        } else {
+            return create(wsdlLocation, implClass);
+        }
     }
 
     /**

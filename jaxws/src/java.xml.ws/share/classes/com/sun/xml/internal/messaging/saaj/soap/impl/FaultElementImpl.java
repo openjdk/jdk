@@ -54,6 +54,7 @@ public abstract class FaultElementImpl
 
     protected abstract boolean isStandardFaultElement();
 
+    @Override
     public SOAPElement setElementQName(QName newName) throws SOAPException {
             log.log(Level.SEVERE,
                     "SAAJ0146.impl.invalid.name.change.requested",

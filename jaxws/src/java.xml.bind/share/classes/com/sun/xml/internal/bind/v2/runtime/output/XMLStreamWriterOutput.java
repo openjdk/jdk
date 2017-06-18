@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.sun.xml.internal.bind.marshaller.CharacterEscapeHandler;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallerImpl;
 import org.xml.sax.SAXException;
 
 /**
@@ -53,7 +54,7 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
      * Creates a new {@link XmlOutput} from a {@link XMLStreamWriter}.
      * This method recognizes an FI StAX writer.
      */
-    public static XmlOutput create(XMLStreamWriter out, JAXBContextImpl context) {
+    public static XmlOutput create(XMLStreamWriter out, JAXBContextImpl context, CharacterEscapeHandler escapeHandler) {
         // try optimized path
         final Class writerClass = out.getClass();
         if (writerClass==FI_STAX_WRITER_CLASS) {
@@ -69,17 +70,26 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
             }
         }
 
+        CharacterEscapeHandler xmlStreamEscapeHandler = escapeHandler != null ?
+                escapeHandler : NewLineEscapeHandler.theInstance;
+
         // otherwise the normal writer.
-        return new XMLStreamWriterOutput(out);
+        return new XMLStreamWriterOutput(out, xmlStreamEscapeHandler);
     }
 
 
     private final XMLStreamWriter out;
 
+    private final CharacterEscapeHandler escapeHandler;
+
+    private final XmlStreamOutWriterAdapter writerWrapper;
+
     protected final char[] buf = new char[256];
 
-    protected XMLStreamWriterOutput(XMLStreamWriter out) {
+    protected XMLStreamWriterOutput(XMLStreamWriter out, CharacterEscapeHandler escapeHandler) {
         this.out = out;
+        this.escapeHandler = escapeHandler;
+        this.writerWrapper = new XmlStreamOutWriterAdapter(out);
     }
 
     // not called if we are generating fragments
@@ -137,7 +147,7 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
     public void text(String value, boolean needsSeparatingWhitespace) throws IOException, SAXException, XMLStreamException {
         if(needsSeparatingWhitespace)
             out.writeCharacters(" ");
-        out.writeCharacters(value);
+        escapeHandler.escape(value.toCharArray(), 0, value.length(), false, writerWrapper);
     }
 
     public void text(Pcdata value, boolean needsSeparatingWhitespace) throws IOException, SAXException, XMLStreamException {
@@ -207,4 +217,81 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
         }
     }
 
+    /**
+     * Performs character escaping only for new lines.
+     */
+    private static class NewLineEscapeHandler implements CharacterEscapeHandler {
+
+        public static final NewLineEscapeHandler theInstance = new NewLineEscapeHandler();
+
+        @Override
+        public void escape(char[] ch, int start, int length, boolean isAttVal, Writer out) throws IOException {
+            int limit = start+length;
+            int lastEscaped = start;
+            for (int i = start; i < limit; i++) {
+                char c = ch[i];
+                if (c == '\r' || c == '\n') {
+                    if (i != lastEscaped) {
+                        out.write(ch, lastEscaped, i - lastEscaped);
+                    }
+                    lastEscaped = i + 1;
+                    if (out instanceof XmlStreamOutWriterAdapter) {
+                        try {
+                            ((XmlStreamOutWriterAdapter)out).writeEntityRef("#x" + Integer.toHexString(c));
+                        } catch (XMLStreamException e) {
+                            throw new IOException("Error writing xml stream", e);
+                        }
+                    } else {
+                        out.write("&#x");
+                        out.write(Integer.toHexString(c));
+                        out.write(';');
+                    }
+                }
+            }
+
+            if (lastEscaped != limit) {
+                out.write(ch, lastEscaped, length - lastEscaped);
+            }
+        }
+    }
+
+    private static final class XmlStreamOutWriterAdapter extends Writer {
+
+        private final XMLStreamWriter writer;
+
+        private XmlStreamOutWriterAdapter(XMLStreamWriter writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void write(char[] cbuf, int off, int len) throws IOException {
+            try {
+                writer.writeCharacters(cbuf, off, len);
+            } catch (XMLStreamException e) {
+                throw new IOException("Error writing XML stream", e);
+            }
+        }
+
+        public void writeEntityRef(String entityReference) throws XMLStreamException {
+            writer.writeEntityRef(entityReference);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            try {
+                writer.flush();
+            } catch (XMLStreamException e) {
+                throw new IOException("Error flushing XML stream", e);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                writer.close();
+            } catch (XMLStreamException e) {
+                throw new IOException("Error closing XML stream", e);
+            }
+        }
+    }
 }

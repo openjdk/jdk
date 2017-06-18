@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,18 @@ public final class W3CEndpointReference extends EndpointReference {
     private final JAXBContext w3cjc = getW3CJaxbContext();
 
     // should be changed to package private, keeping original modifier to keep backwards compatibility
+
+    /**
+     * Addressing namespace.
+     */
     protected static final String NS = "http://www.w3.org/2005/08/addressing";
 
     // default constructor forbidden ...
     // should be private, keeping original modifier to keep backwards compatibility
+
+    /**
+     * Default constructor.
+     */
     protected W3CEndpointReference() {
     }
 
@@ -110,6 +118,7 @@ public final class W3CEndpointReference extends EndpointReference {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void writeTo(Result result){
         try {
             Marshaller marshaller = w3cjc.createMarshaller();

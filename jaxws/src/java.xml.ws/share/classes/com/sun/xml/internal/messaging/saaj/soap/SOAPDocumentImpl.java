@@ -32,6 +32,8 @@ package com.sun.xml.internal.messaging.saaj.soap;
 import com.sun.xml.internal.messaging.saaj.soap.impl.CDATAImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.ElementFactory;
 import com.sun.xml.internal.messaging.saaj.soap.impl.ElementImpl;
+import com.sun.xml.internal.messaging.saaj.soap.impl.NamedNodeMapImpl;
+import com.sun.xml.internal.messaging.saaj.soap.impl.NodeListImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.SOAPCommentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.SOAPTextImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
@@ -39,6 +41,7 @@ import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
+import org.w3c.dom.CharacterData;
 import org.w3c.dom.Comment;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMException;
@@ -52,6 +55,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.ProcessingInstruction;
+import org.w3c.dom.Text;
 import org.w3c.dom.UserDataHandler;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -59,12 +63,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
+import java.lang.reflect.Constructor;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Document {
+
+    public static final String SAAJ_NODE = "javax.xml.soap.Node";
 
     private static final String XMLNS = "xmlns".intern();
     protected static final Logger log =
@@ -74,8 +79,6 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
     SOAPPartImpl enclosingSOAPPart;
 
     private Document document;
-
-    private Map<Node, javax.xml.soap.Node> domToSoap = new HashMap<>();
 
     public SOAPDocumentImpl(SOAPPartImpl enclosingDocument) {
         document = createDocument();
@@ -105,6 +108,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
     //        super(doctype, grammarAccess);
     //    }
 
+    @Override
     public SOAPPartImpl getSOAPPart() {
         if (enclosingSOAPPart == null) {
             log.severe("SAAJ0541.soap.fragment.not.bound.to.part");
@@ -113,19 +117,23 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         return enclosingSOAPPart;
     }
 
+    @Override
     public SOAPDocumentImpl getDocument() {
         return this;
     }
 
+    @Override
     public DocumentType getDoctype() {
         // SOAP means no DTD, No DTD means no doctype (SOAP 1.2 only?)
         return null;
     }
 
+    @Override
     public DOMImplementation getImplementation() {
         return document.getImplementation();
     }
 
+    @Override
     public Element getDocumentElement() {
         // This had better be an Envelope!
         getSOAPPart().doGetDocumentElement();
@@ -136,6 +144,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         return document.getDocumentElement();
     }
 
+    @Override
     public Element createElement(String tagName) throws DOMException {
         return ElementFactory.createElement(
             this,
@@ -144,22 +153,27 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
             null);
     }
 
+    @Override
     public DocumentFragment createDocumentFragment() {
-        return document.createDocumentFragment();
+        return new SOAPDocumentFragment(this);
     }
 
+    @Override
     public org.w3c.dom.Text createTextNode(String data) {
         return new SOAPTextImpl(this, data);
     }
 
+    @Override
     public Comment createComment(String data) {
         return new SOAPCommentImpl(this, data);
     }
 
+    @Override
     public CDATASection createCDATASection(String data) throws DOMException {
         return new CDATAImpl(this, data);
     }
 
+    @Override
     public ProcessingInstruction createProcessingInstruction(
         String target,
         String data)
@@ -168,6 +182,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         throw new UnsupportedOperationException("Processing Instructions are not allowed in SOAP documents");
     }
 
+    @Override
     public Attr createAttribute(String name) throws DOMException {
         boolean isQualifiedName = (name.indexOf(":") > 0);
         if (isQualifiedName) {
@@ -184,24 +199,70 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         return document.createAttribute(name);
     }
 
+    @Override
     public EntityReference createEntityReference(String name)
         throws DOMException {
             log.severe("SAAJ0543.soap.entity.refs.not.allowed.in.docs");
             throw new UnsupportedOperationException("Entity References are not allowed in SOAP documents");
     }
 
+    @Override
     public NodeList getElementsByTagName(String tagname) {
-        return document.getElementsByTagName(tagname);
+        return new NodeListImpl(this, document.getElementsByTagName(tagname));
     }
 
+    @Override
     public org.w3c.dom.Node importNode(Node importedNode, boolean deep)
         throws DOMException {
-        final Node node = document.importNode(getDomNode(importedNode), deep);
-        return node instanceof Element ?
-            ElementFactory.createElement(this, (Element) node)
-                : node;
+        Node domNode = getDomNode(importedNode);
+        final Node newNode = document.importNode(domNode, deep);
+
+        if (importedNode instanceof javax.xml.soap.Node) {
+            Node newSoapNode = createSoapNode(importedNode.getClass(), newNode);
+            newNode.setUserData(SAAJ_NODE, newSoapNode, null);
+            if (deep && importedNode.hasChildNodes()) {
+                NodeList childNodes = importedNode.getChildNodes();
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    registerChildNodes(childNodes.item(i), deep);
+                }
+            }
+            return newSoapNode;
+        }
+
+        registerChildNodes(newNode, deep);
+        return findIfPresent(newNode);
     }
 
+    //If the parentNode is not registered to domToSoap, create soap wapper for parentNode and register it to domToSoap
+    //If deep = true, also register all children of parentNode to domToSoap map.
+    public void registerChildNodes(Node parentNode, boolean deep) {
+        if (parentNode.getUserData(SAAJ_NODE) == null) {
+            if (parentNode instanceof Element) {
+                ElementFactory.createElement(this, (Element) parentNode);
+            } else if (parentNode instanceof CharacterData) {
+                switch (parentNode.getNodeType()) {
+                    case CDATA_SECTION_NODE:
+                        new CDATAImpl(this, (CharacterData) parentNode);
+                        break;
+                    case COMMENT_NODE:
+                        new SOAPCommentImpl(this, (CharacterData) parentNode);
+                        break;
+                    case TEXT_NODE:
+                        new SOAPTextImpl(this, (CharacterData) parentNode);
+                        break;
+                }
+            }
+        }
+        if (deep) {
+            NodeList nodeList = parentNode.getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node nextChild = nodeList.item(i);
+                registerChildNodes(nextChild, true);
+            }
+        }
+    }
+
+    @Override
     public Element createElementNS(String namespaceURI, String qualifiedName)
         throws DOMException {
         return ElementFactory.createElement(
@@ -211,19 +272,22 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
             namespaceURI);
     }
 
+    @Override
     public Attr createAttributeNS(String namespaceURI, String qualifiedName)
         throws DOMException {
         return document.createAttributeNS(namespaceURI, qualifiedName);
     }
 
+    @Override
     public NodeList getElementsByTagNameNS(
         String namespaceURI,
         String localName) {
-        return document.getElementsByTagNameNS(namespaceURI, localName);
+        return new NodeListImpl(this, document.getElementsByTagNameNS(namespaceURI, localName));
     }
 
+    @Override
     public Element getElementById(String elementId) {
-        return document.getElementById(elementId);
+        return (Element) findIfPresent(document.getElementById(elementId));
     }
 
     @Override
@@ -293,7 +357,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public Node renameNode(Node n, String namespaceURI, String qualifiedName) throws DOMException {
-        return document.renameNode(n, namespaceURI, qualifiedName);
+        return findIfPresent(document.renameNode(n, namespaceURI, qualifiedName));
     }
 
     @Override
@@ -318,37 +382,37 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public Node getParentNode() {
-        return document.getParentNode();
+        return findIfPresent(document.getParentNode());
     }
 
     @Override
     public NodeList getChildNodes() {
-        return document.getChildNodes();
+        return new NodeListImpl(this, document.getChildNodes());
     }
 
     @Override
     public Node getFirstChild() {
-        return document.getFirstChild();
+        return findIfPresent(document.getFirstChild());
     }
 
     @Override
     public Node getLastChild() {
-        return document.getLastChild();
+        return findIfPresent(document.getLastChild());
     }
 
     @Override
     public Node getPreviousSibling() {
-        return document.getPreviousSibling();
+        return findIfPresent(document.getPreviousSibling());
     }
 
     @Override
     public Node getNextSibling() {
-        return document.getNextSibling();
+        return findIfPresent(document.getNextSibling());
     }
 
     @Override
     public NamedNodeMap getAttributes() {
-        return document.getAttributes();
+        return new NamedNodeMapImpl(document.getAttributes(), this);
     }
 
     @Override
@@ -383,7 +447,9 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public Node cloneNode(boolean deep) {
-        return document.cloneNode(deep);
+        Node node = document.cloneNode(deep);
+        registerChildNodes(node, deep);
+        return findIfPresent(node);
     }
 
     @Override
@@ -428,7 +494,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public short compareDocumentPosition(Node other) throws DOMException {
-        return document.compareDocumentPosition(other);
+        return document.compareDocumentPosition(getDomNode(other));
     }
 
     @Override
@@ -443,7 +509,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public boolean isSameNode(Node other) {
-        return document.isSameNode(other);
+        return document.isSameNode(getDomNode(other));
     }
 
     @Override
@@ -463,7 +529,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
 
     @Override
     public boolean isEqualNode(Node arg) {
-        return document.isEqualNode(arg);
+        return document.isEqualNode(getDomNode(arg));
     }
 
     @Override
@@ -496,11 +562,11 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
      */
     public void register(javax.xml.soap.Node node) {
         final Node domElement = getDomNode(node);
-        if (domToSoap.containsKey(domElement)) {
+        if (domElement.getUserData(SAAJ_NODE) != null) {
             throw new IllegalStateException("Element " + domElement.getNodeName()
                     + " is already registered");
         }
-        domToSoap.put(domElement, node);
+        domElement.setUserData(SAAJ_NODE, node, null);
     }
 
     /**
@@ -522,7 +588,7 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         if (node instanceof javax.xml.soap.Node) {
             return (javax.xml.soap.Node) node;
         }
-        final javax.xml.soap.Node found = domToSoap.get(node);
+        final javax.xml.soap.Node found = (javax.xml.soap.Node) node.getUserData(SAAJ_NODE);
         if (found == null && required) {
             throw new IllegalArgumentException(MessageFormat.format("Cannot find SOAP wrapper for element {0}", node));
         }
@@ -561,6 +627,24 @@ public class SOAPDocumentImpl implements SOAPDocument, javax.xml.soap.Node, Docu
         }
         return node;
     }
+
+
+    private Node createSoapNode(Class nodeType, Node node) {
+        if (SOAPTextImpl.class.isAssignableFrom(nodeType)) {
+            return new SOAPTextImpl(this, (Text) node);
+        } else if (SOAPCommentImpl.class.isAssignableFrom(nodeType)) {
+            return new SOAPCommentImpl(this, (Comment) node);
+        } else if (CDATAImpl.class.isAssignableFrom(nodeType)) {
+            return new CDATAImpl(this, (CDATASection) node);
+        }
+        try {
+            Constructor<Node> constructor = nodeType.getConstructor(SOAPDocumentImpl.class, Element.class);
+            return constructor.newInstance(this, node);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
 
     public Document getDomElement() {
         return document;
