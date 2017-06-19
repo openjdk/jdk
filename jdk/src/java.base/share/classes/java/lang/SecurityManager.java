@@ -1496,7 +1496,10 @@ class SecurityManager {
      * Throws a {@code SecurityException} if the calling thread is not allowed
      * to access the specified package.
      * <p>
-     * This method is called by the {@code loadClass} method of class loaders.
+     * During class loading, this method may be called by the {@code loadClass}
+     * method of class loaders and by the Java Virtual Machine to ensure that
+     * the caller is allowed to access the package of the class that is
+     * being loaded.
      * <p>
      * This method checks if the specified package starts with or equals
      * any of the packages in the {@code package.access} Security Property.
