@@ -950,6 +950,17 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Name getSimpleName() {
+            Name fullName = getQualifiedName();
+            int lastPeriod = fullName.lastIndexOf((byte)'.');
+            if (lastPeriod == -1) {
+                return fullName;
+            } else {
+                return fullName.subName(lastPeriod + 1, fullName.length());
+            }
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean isOpen() {
             return flags.contains(ModuleFlags.OPEN);
         }
