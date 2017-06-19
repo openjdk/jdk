@@ -22,23 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.api.word;
+package org.graalvm.word;
 
-public interface ComparableWord extends WordBase {
+public interface WordBase {
 
-    /**
-     * Compares this word with the specified value.
-     *
-     * @param val value to which this word is to be compared.
-     * @return {@code this == val}
-     */
-    boolean equal(ComparableWord val);
+    long rawValue();
 
     /**
-     * Compares this word with the specified value.
-     *
-     * @param val value to which this word is to be compared.
-     * @return {@code this != val}
+     * This is deprecated because of the easy to mistype name collision between {@link #equals} and
+     * the other word based equality routines. In general you should never be statically calling
+     * this method anyway.
      */
-    boolean notEqual(ComparableWord val);
+    @Override
+    @Deprecated
+    boolean equals(Object o);
 }

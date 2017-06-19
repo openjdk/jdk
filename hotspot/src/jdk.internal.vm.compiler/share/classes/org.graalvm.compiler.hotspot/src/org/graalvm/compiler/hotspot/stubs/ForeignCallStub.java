@@ -24,9 +24,6 @@ package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
-
-import org.graalvm.api.word.LocationIdentity;
-
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCallee;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
@@ -57,6 +54,7 @@ import org.graalvm.compiler.replacements.GraphKit;
 import org.graalvm.compiler.replacements.nodes.ReadRegisterNode;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordTypes;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotSignature;

@@ -28,13 +28,13 @@ import static jdk.vm.ci.sparc.SPARC.i0;
 import static jdk.vm.ci.sparc.SPARC.i1;
 import static jdk.vm.ci.sparc.SPARC.o0;
 import static jdk.vm.ci.sparc.SPARC.o1;
-import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NOFP;
 import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
+import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;

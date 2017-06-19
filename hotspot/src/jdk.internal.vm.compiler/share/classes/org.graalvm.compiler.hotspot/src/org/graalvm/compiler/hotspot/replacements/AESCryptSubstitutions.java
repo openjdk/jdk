@@ -29,9 +29,6 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.ENCRYPT_BLOCK;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.VERY_SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
@@ -44,6 +41,9 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;

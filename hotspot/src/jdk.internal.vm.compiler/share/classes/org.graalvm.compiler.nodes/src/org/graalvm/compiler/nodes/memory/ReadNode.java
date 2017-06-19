@@ -26,7 +26,6 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -48,6 +47,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;

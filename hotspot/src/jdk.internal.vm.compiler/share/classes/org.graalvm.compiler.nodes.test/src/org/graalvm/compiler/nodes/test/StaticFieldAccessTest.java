@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +20,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.nodes.memory;
+package org.graalvm.compiler.nodes.test;
 
-import org.graalvm.word.LocationIdentity;
+import java.lang.reflect.Constructor;
 
-/**
- * This interface marks nodes that access some memory location, and that have an edge to the last
- * node that kills this location.
- */
-public interface MemoryAccess {
+import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.junit.Test;
 
-    LocationIdentity getLocationIdentity();
+public class StaticFieldAccessTest extends GraalCompilerTest {
 
-    MemoryNode getLastLocationAccess();
+    static StaticFieldAccessTest tester;
 
-    /**
-     * @param lla the {@link MemoryNode} that represents the last kill of the location
-     */
-    void setLastLocationAccess(MemoryNode lla);
+    public static class Inner {
+        static Object o;
+
+        static {
+            Constructor<?>[] c = Inner.class.getConstructors();
+            if (c.length != 1) {
+                throw new InternalError("can't find single constructor");
+            }
+            tester.parseDebug(tester.asResolvedJavaMethod(c[0]), AllowAssumptions.YES);
+        }
+
+        public Inner(Object o) {
+            Inner.o = o;
+        }
+    }
+
+    @Test
+    public void test() {
+        tester = this;
+        System.out.println(Inner.o);
+    }
 }

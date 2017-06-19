@@ -25,7 +25,6 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -42,6 +41,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.replacements.nodes.CStringConstant;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.api.word;
+package org.graalvm.word;
 
-/**
- * Marker interface for all {@link WordBase word types} that have the semantic of a pointer (but not
- * necessarily all the memory access methods defined in {@link Pointer}).
- */
-public interface PointerBase extends ComparableWord {
+public interface ComparableWord extends WordBase {
+
+    /**
+     * Compares this word with the specified value.
+     *
+     * @param val value to which this word is to be compared.
+     * @return {@code this == val}
+     */
+    boolean equal(ComparableWord val);
+
+    /**
+     * Compares this word with the specified value.
+     *
+     * @param val value to which this word is to be compared.
+     * @return {@code this != val}
+     */
+    boolean notEqual(ComparableWord val);
 }

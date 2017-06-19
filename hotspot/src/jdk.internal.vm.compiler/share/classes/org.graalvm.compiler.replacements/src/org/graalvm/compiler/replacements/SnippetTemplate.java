@@ -23,13 +23,13 @@
 package org.graalvm.compiler.replacements;
 
 import static java.util.FormattableFlags.ALTERNATE;
-import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.debug.Debug.applyFormattingFlagsAndWidth;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
+import static org.graalvm.word.LocationIdentity.any;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -45,8 +45,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
@@ -129,6 +127,8 @@ import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.WordBase;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Constant;

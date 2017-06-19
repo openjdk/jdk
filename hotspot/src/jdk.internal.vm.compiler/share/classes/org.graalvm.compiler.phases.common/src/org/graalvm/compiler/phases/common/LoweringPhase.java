@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -76,6 +75,7 @@ import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.DeoptimizationAction;

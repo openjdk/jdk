@@ -38,6 +38,7 @@ import org.graalvm.compiler.nodes.calc.SignedRemNode;
 import org.graalvm.compiler.nodes.calc.UnsignedDivNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate;
@@ -205,6 +206,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         protected SafeSignedDivNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
         }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitDiv(gen.operand(getX()), gen.operand(getY()), null));
+        }
     }
 
     @NodeInfo
@@ -213,6 +221,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
 
         protected SafeSignedRemNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
+        }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitRem(gen.operand(getX()), gen.operand(getY()), null));
         }
     }
 
@@ -223,6 +238,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         protected SafeUnsignedDivNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
         }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitUDiv(gen.operand(getX()), gen.operand(getY()), null));
+        }
     }
 
     @NodeInfo
@@ -231,6 +253,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
 
         protected SafeUnsignedRemNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
+        }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitURem(gen.operand(getX()), gen.operand(getY()), null));
         }
     }
 

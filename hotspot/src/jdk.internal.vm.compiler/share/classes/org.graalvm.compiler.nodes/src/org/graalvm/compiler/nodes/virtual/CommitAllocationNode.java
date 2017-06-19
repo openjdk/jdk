@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -54,6 +53,7 @@ import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.word.LocationIdentity;
 
 // @formatter:off
 @NodeInfo(nameTemplate = "Alloc {i#virtualObjects}",

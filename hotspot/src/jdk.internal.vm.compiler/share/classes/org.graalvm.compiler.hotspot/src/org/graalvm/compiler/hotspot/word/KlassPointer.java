@@ -27,10 +27,10 @@ import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.P
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.READ_KLASS_POINTER;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.TO_KLASS_POINTER;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
 
 /**
  * Marker type for a metaspace pointer to a type.

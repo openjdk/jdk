@@ -26,10 +26,10 @@ import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_0, size = SIZE_0)
 public final class KillingBeginNode extends AbstractBeginNode implements MemoryCheckpoint.Single {

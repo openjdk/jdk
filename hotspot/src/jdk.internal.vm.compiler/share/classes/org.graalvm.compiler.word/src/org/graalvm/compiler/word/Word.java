@@ -29,13 +29,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.graalvm.api.word.ComparableWord;
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.Signed;
-import org.graalvm.api.word.Unsigned;
-import org.graalvm.api.word.WordBase;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
 import org.graalvm.compiler.debug.GraalError;
@@ -55,6 +48,13 @@ import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.address.AddressNode.Address;
+import org.graalvm.word.ComparableWord;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.Signed;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 
 public abstract class Word extends WordFactory implements Signed, Unsigned, Pointer {
 

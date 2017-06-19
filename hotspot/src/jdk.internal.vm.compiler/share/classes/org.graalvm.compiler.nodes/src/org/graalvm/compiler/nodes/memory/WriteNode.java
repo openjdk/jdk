@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
@@ -30,6 +29,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * Writes a given {@linkplain #value() value} a {@linkplain FixedAccessNode memory location}.

@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.phases.schedule;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
@@ -68,6 +67,7 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
+import org.graalvm.word.LocationIdentity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
