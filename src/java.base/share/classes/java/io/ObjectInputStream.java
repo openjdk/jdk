@@ -1770,6 +1770,10 @@ public class ObjectInputStream
         passHandle = NULL_HANDLE;
 
         int numIfaces = bin.readInt();
+        if (numIfaces > 65535) {
+            throw new InvalidObjectException("interface limit exceeded: "
+                    + numIfaces);
+        }
         String[] ifaces = new String[numIfaces];
         for (int i = 0; i < numIfaces; i++) {
             ifaces[i] = bin.readUTF();
