@@ -663,8 +663,6 @@ JVM_FEATURES_core
 JVM_FEATURES_client
 JVM_FEATURES_server
 INCLUDE_GRAAL
-ELF_LIBS
-ELF_CFLAGS
 STLPORT_LIB
 LIBZIP_CAN_USE_MMAP
 LIBDL
@@ -789,6 +787,7 @@ ARFLAGS
 COMPILER_BINDCMD_FILE_FLAG
 COMPILER_COMMAND_FILE_FLAG
 COMPILER_TARGET_BITS_FLAG
+JIB_JAR
 JT_HOME
 JTREGEXE
 HOTSPOT_TOOLCHAIN_TYPE
@@ -1181,6 +1180,7 @@ with_extra_ldflags
 with_toolchain_version
 with_build_devkit
 with_jtreg
+with_jib
 with_abi_profile
 enable_warnings_as_errors
 with_native_debug_symbols
@@ -1217,9 +1217,6 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
-with_libelf
-with_libelf_include
-with_libelf_lib
 with_jvm_features
 with_jvm_interpreter
 enable_jtreg_failure_handler
@@ -1349,8 +1346,6 @@ PNG_CFLAGS
 PNG_LIBS
 LCMS_CFLAGS
 LCMS_LIBS
-ELF_CFLAGS
-ELF_LIBS
 ICECC_CMD
 ICECC_CREATE_ENV
 ICECC_WRAPPER
@@ -2128,6 +2123,7 @@ Optional Packages:
                           dependent]
   --with-build-devkit     Devkit to use for the build platform toolchain
   --with-jtreg            Regression Test Harness [probed]
+  --with-jib              Jib dependency management tool [not used]
   --with-abi-profile      specify ABI profile for ARM builds
                           (arm-vfp-sflt,arm-vfp-hflt,arm-sflt,
                           armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64)
@@ -2182,11 +2178,6 @@ Optional Packages:
                           compatibility and is ignored
   --with-dxsdk-include    Deprecated. Option is kept for backwards
                           compatibility and is ignored
-  --with-libelf           specify prefix directory for the libelf package
-                          (expecting the libraries under PATH/lib and the
-                          headers under PATH/include)
-  --with-libelf-include   specify directory for the libelf include files
-  --with-libelf-lib       specify directory for the libelf library
   --with-jvm-features     additional JVM features to enable (separated by
                           comma), use '--help' to show possible values [none]
   --with-jvm-interpreter  Deprecated. Option is kept for backwards
@@ -2323,8 +2314,6 @@ Some influential environment variables:
   PNG_LIBS    linker flags for PNG, overriding pkg-config
   LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
   LCMS_LIBS   linker flags for LCMS, overriding pkg-config
-  ELF_CFLAGS  C compiler flags for ELF, overriding pkg-config
-  ELF_LIBS    linker flags for ELF, overriding pkg-config
   ICECC_CMD   Override default value for ICECC_CMD
   ICECC_CREATE_ENV
               Override default value for ICECC_CREATE_ENV
@@ -4512,7 +4501,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4789,36 +4778,6 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 ################################################################################
 
 
-#
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-################################################################################
-# Setup libelf (ELF library)
-################################################################################
-
-
 
 ################################################################################
 # Determine which libraries are needed for this configuration
@@ -4957,7 +4916,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -5088,6 +5047,9 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 # Setup the JTReg Regression Test Harness.
 
 
+# Setup the JIB dependency resolver
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5189,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1496926402
+DATE_WHEN_GENERATED=1497900133
 
 ###############################################################################
 #
@@ -49520,6 +49482,41 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
 
 
 
+# Setup Jib dependency tool
+
+
+# Check whether --with-jib was given.
+if test "${with_jib+set}" = set; then :
+  withval=$with_jib;
+fi
+
+
+  if test "x$with_jib" = xno || test "x$with_jib" = x; then
+    # jib disabled
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jib" >&5
+$as_echo_n "checking for jib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$with_jib" = xyes; then
+    as_fn_error $? "Must supply a value to --with-jib" "$LINENO" 5
+  else
+    JIB_HOME="${with_jib}"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jib" >&5
+$as_echo_n "checking for jib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${JIB_HOME}" >&5
+$as_echo "${JIB_HOME}" >&6; }
+    if test ! -d "${JIB_HOME}"; then
+      as_fn_error $? "--with-jib must be a directory" "$LINENO" 5
+    fi
+    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
+    if test ! -f "${JIB_JAR}"; then
+      as_fn_error $? "Could not find jib jar file in ${JIB_HOME}" "$LINENO" 5
+    fi
+  fi
+
+
+
+
 
   # COMPILER_TARGET_BITS_FLAG  : option for selecting 32- or 64-bit output
   # COMPILER_COMMAND_FILE_FLAG : option for passing a command file to the compiler
@@ -51062,6 +51059,74 @@ $as_echo "$JDK_ARCH_ABI_PROP_NAME" >&6; }
   fi
 
 
+  # Optional POSIX functionality needed by the JVM
+  #
+  # Check if clock_gettime is available and in which library. This indicates
+  # availability of CLOCK_MONOTONIC for hotspot. But we don't need to link, so
+  # don't let it update LIBS.
+  save_LIBS="$LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing clock_gettime" >&5
+$as_echo_n "checking for library containing clock_gettime... " >&6; }
+if ${ac_cv_search_clock_gettime+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char clock_gettime ();
+int
+main ()
+{
+return clock_gettime ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' rt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_search_clock_gettime=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_clock_gettime+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_clock_gettime+:} false; then :
+
+else
+  ac_cv_search_clock_gettime=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_clock_gettime" >&5
+$as_echo "$ac_cv_search_clock_gettime" >&6; }
+ac_res=$ac_cv_search_clock_gettime
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  HAS_CLOCK_GETTIME=true
+fi
+
+  if test "x$LIBS" = "x-lrt "; then
+    CLOCK_GETTIME_IN_LIBRT=true
+  fi
+  LIBS="$save_LIBS"
+
+
   # Special extras...
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
@@ -51362,7 +51427,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    JVM_CFLAGS="$JVM_CFLAGS -D_REENTRANT -D__STDC_FORMAT_MACROS"
+    JVM_CFLAGS="$JVM_CFLAGS -D_REENTRANT"
     CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -51427,6 +51492,11 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fi
   fi
 
+  # Always enable optional macros for VM.
+  JVM_CFLAGS="$JVM_CFLAGS -D__STDC_FORMAT_MACROS"
+  JVM_CFLAGS="$JVM_CFLAGS -D__STDC_LIMIT_MACROS"
+  JVM_CFLAGS="$JVM_CFLAGS -D__STDC_CONSTANT_MACROS"
+
   # Setup target OS define. Use OS target name but in upper case.
   OPENJDK_TARGET_OS_UPPERCASE=`$ECHO $OPENJDK_TARGET_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D$OPENJDK_TARGET_OS_UPPERCASE"
@@ -51446,6 +51516,16 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
 
+  # Optional POSIX functionality needed by the VM
+
+  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
+    JVM_CFLAGS="$JVM_CFLAGS -DSUPPORTS_CLOCK_MONOTONIC"
+    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
+      JVM_CFLAGS="$JVM_CFLAGS -DNEEDS_LIBRT"
+    fi
+  fi
+
+
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
     JVM_CFLAGS="$JVM_CFLAGS -DLINUX"
@@ -51454,7 +51534,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
     JVM_CFLAGS="$JVM_CFLAGS -DSOLARIS"
     JVM_CFLAGS="$JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
+        -D_Crun_inline_placement -library=stlport4 $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     JVM_CFLAGS="$JVM_CFLAGS -D_ALLBSD_SOURCE"
@@ -52180,7 +52260,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
     OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_REENTRANT -D__STDC_FORMAT_MACROS"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_REENTRANT"
     OPENJDK_BUILD_CFLAGS_JDK="$OPENJDK_BUILD_CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     OPENJDK_BUILD_CXXFLAGS_JDK="$OPENJDK_BUILD_CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -52245,6 +52325,11 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     fi
   fi
 
+  # Always enable optional macros for VM.
+  OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D__STDC_FORMAT_MACROS"
+  OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D__STDC_LIMIT_MACROS"
+  OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D__STDC_CONSTANT_MACROS"
+
   # Setup target OS define. Use OS target name but in upper case.
   OPENJDK_BUILD_OS_UPPERCASE=`$ECHO $OPENJDK_BUILD_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
   OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D$OPENJDK_BUILD_OS_UPPERCASE"
@@ -52264,6 +52349,16 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
 
+  # Optional POSIX functionality needed by the VM
+
+  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSUPPORTS_CLOCK_MONOTONIC"
+    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DNEEDS_LIBRT"
+    fi
+  fi
+
+
   # Set some additional per-OS defines.
   if test "x$OPENJDK_BUILD_OS" = xlinux; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DLINUX"
@@ -52272,7 +52367,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   elif test "x$OPENJDK_BUILD_OS" = xsolaris; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSOLARIS"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
+        -D_Crun_inline_placement -library=stlport4 $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_ALLBSD_SOURCE"
@@ -53893,8 +53988,8 @@ $as_echo "no, forced" >&6; }
   fi
 
   if test "x$ENABLE_AOT" = "xtrue"; then
-    # Only enable AOT on linux-X64.
-    if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+    # Only enable AOT on X64 platforms.
+    if test "x$OPENJDK_TARGET_OS" != "xwindows" && test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
         if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
@@ -53913,7 +54008,7 @@ $as_echo "no, forced" >&6; }
     else
       ENABLE_AOT="false"
       if test "x$enable_aot" = "xyes"; then
-        as_fn_error $? "AOT is currently only supported on Linux-x86_64. Remove --enable-aot." "$LINENO" 5
+        as_fn_error $? "AOT is currently only supported on x86_64. Remove --enable-aot." "$LINENO" 5
       fi
     fi
   fi
@@ -65400,286 +65495,6 @@ $as_echo "no, not found at $STLPORT_LIB" >&6; }
     fi
 
   fi
-
-
-
-# Check whether --with-libelf was given.
-if test "${with_libelf+set}" = set; then :
-  withval=$with_libelf;
-fi
-
-
-# Check whether --with-libelf-include was given.
-if test "${with_libelf_include+set}" = set; then :
-  withval=$with_libelf_include;
-fi
-
-
-# Check whether --with-libelf-lib was given.
-if test "${with_libelf_lib+set}" = set; then :
-  withval=$with_libelf_lib;
-fi
-
-
-  if test "x$ENABLE_AOT" = xfalse; then
-    if (test "x${with_libelf}" != x && test "x${with_libelf}" != xno) || \
-        (test "x${with_libelf_include}" != x && test "x${with_libelf_include}" != xno) || \
-        (test "x${with_libelf_lib}" != x && test "x${with_libelf_lib}" != xno); then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libelf is not used, so --with-libelf[-*] is ignored" >&5
-$as_echo "$as_me: WARNING: libelf is not used, so --with-libelf[-*] is ignored" >&2;}
-    fi
-    LIBELF_CFLAGS=
-    LIBELF_LIBS=
-  else
-    LIBELF_FOUND=no
-
-    if test "x${with_libelf}" = xno || test "x${with_libelf_include}" = xno || test "x${with_libelf_lib}" = xno; then
-      ENABLE_AOT="false"
-      if test "x${enable_aot}" = xyes; then
-        as_fn_error $? "libelf is explicitly disabled, cannot build AOT. Enable libelf or remove --enable-aot to disable AOT." "$LINENO" 5
-      fi
-    else
-      if test "x${with_libelf}" != x; then
-        ELF_LIBS="-L${with_libelf}/lib -lelf"
-        ELF_CFLAGS="-I${with_libelf}/include"
-        LIBELF_FOUND=yes
-      fi
-      if test "x${with_libelf_include}" != x; then
-        ELF_CFLAGS="-I${with_libelf_include}"
-        LIBELF_FOUND=yes
-      fi
-      if test "x${with_libelf_lib}" != x; then
-        ELF_LIBS="-L${with_libelf_lib} -lelf"
-        LIBELF_FOUND=yes
-      fi
-      # Do not try pkg-config if we have a sysroot set.
-      if test "x$SYSROOT" = x; then
-        if test "x$LIBELF_FOUND" = xno; then
-          # Figure out ELF_CFLAGS and ELF_LIBS
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ELF" >&5
-$as_echo_n "checking for ELF... " >&6; }
-
-if test -n "$ELF_CFLAGS"; then
-    pkg_cv_ELF_CFLAGS="$ELF_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libelf\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libelf") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_ELF_CFLAGS=`$PKG_CONFIG --cflags "libelf" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$ELF_LIBS"; then
-    pkg_cv_ELF_LIBS="$ELF_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libelf\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libelf") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_ELF_LIBS=`$PKG_CONFIG --libs "libelf" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        ELF_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libelf" 2>&1`
-        else
-	        ELF_PKG_ERRORS=`$PKG_CONFIG --print-errors "libelf" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$ELF_PKG_ERRORS" >&5
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-                LIBELF_FOUND=no
-elif test $pkg_failed = untried; then
-	LIBELF_FOUND=no
-else
-	ELF_CFLAGS=$pkg_cv_ELF_CFLAGS
-	ELF_LIBS=$pkg_cv_ELF_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	LIBELF_FOUND=yes
-fi
-        fi
-      fi
-      if test "x$LIBELF_FOUND" = xno; then
-        for ac_header in libelf.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "libelf.h" "ac_cv_header_libelf_h" "$ac_includes_default"
-if test "x$ac_cv_header_libelf_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBELF_H 1
-_ACEOF
-
-              LIBELF_FOUND=yes
-              ELF_CFLAGS=
-              ELF_LIBS=-lelf
-
-else
-  LIBELF_FOUND=no
-
-fi
-
-done
-
-      fi
-      if test "x$LIBELF_FOUND" = xno; then
-        ENABLE_AOT="false"
-
-  # Print a helpful message on how to acquire the necessary build dependency.
-  # elf is the help tag: freetype, cups, alsa etc
-  MISSING_DEPENDENCY=elf
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
-  else
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-      apt-get)
-        apt_help     $MISSING_DEPENDENCY ;;
-      yum)
-        yum_help     $MISSING_DEPENDENCY ;;
-      brew)
-        brew_help    $MISSING_DEPENDENCY ;;
-      port)
-        port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
-        pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
-        pkgadd_help  $MISSING_DEPENDENCY ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-  fi
-
-        if test "x${enable_aot}" = xyes; then
-          as_fn_error $? "libelf not found, cannot build AOT. Remove --enable-aot to disable AOT or: $HELP_MSG" "$LINENO" 5
-        else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libelf not found, cannot build AOT. $HELP_MSG" >&5
-$as_echo "$as_me: WARNING: libelf not found, cannot build AOT. $HELP_MSG" >&2;}
-        fi
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libelf works" >&5
-$as_echo_n "checking if libelf works... " >&6; }
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        OLD_CFLAGS="$CFLAGS"
-        CFLAGS="$CFLAGS $ELF_CFLAGS"
-        OLD_LIBS="$LIBS"
-        LIBS="$LIBS $ELF_LIBS"
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <libelf.h>
-int
-main ()
-{
-
-              elf_version(0);
-              return 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  LIBELF_WORKS=yes
-else
-  LIBELF_WORKS=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-        CFLAGS="$OLD_CFLAGS"
-        LIBS="$OLD_LIBS"
-        ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBELF_WORKS" >&5
-$as_echo "$LIBELF_WORKS" >&6; }
-
-        if test "x$LIBELF_WORKS" = xno; then
-          ENABLE_AOT="false"
-
-  # Print a helpful message on how to acquire the necessary build dependency.
-  # elf is the help tag: freetype, cups, alsa etc
-  MISSING_DEPENDENCY=elf
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
-  else
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-      apt-get)
-        apt_help     $MISSING_DEPENDENCY ;;
-      yum)
-        yum_help     $MISSING_DEPENDENCY ;;
-      brew)
-        brew_help    $MISSING_DEPENDENCY ;;
-      port)
-        port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
-        pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
-        pkgadd_help  $MISSING_DEPENDENCY ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-  fi
-
-          if test "x$enable_aot" = "xyes"; then
-            as_fn_error $? "Found libelf but could not link and compile with it. Remove --enable-aot to disable AOT or: $HELP_MSG" "$LINENO" 5
-          else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Found libelf but could not link and compile with it. $HELP_MSG" >&5
-$as_echo "$as_me: WARNING: Found libelf but could not link and compile with it. $HELP_MSG" >&2;}
-          fi
-        fi
-      fi
-    fi
-  fi
-
-
-
-
 
 
 
