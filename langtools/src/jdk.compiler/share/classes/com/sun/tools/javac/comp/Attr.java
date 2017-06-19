@@ -718,8 +718,7 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute a statement or definition tree.
      */
     public Type attribStat(JCTree tree, Env<AttrContext> env) {
-        Env<AttrContext> analyzeEnv =
-                env.dup(tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+        Env<AttrContext> analyzeEnv = analyzer.copyEnvIfNeeded(tree, env);
         try {
             return attribTree(tree, env, statInfo);
         } finally {
