@@ -641,9 +641,6 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_VZEROUPPER;
   }
 
-  if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
-    _features &= ~CPU_AES;
-
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
     _features &= ~CPU_HT;
