@@ -456,6 +456,15 @@ $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
 ))
 JDK_INDEX_TARGETS += $(COPY_GLOBAL_RESOURCES)
 
+# Copy the legal notices distributed with the docs bundle
+DOCS_LEGAL_NOTICES := jquery.md jszip.md pako.md
+$(eval $(call SetupCopyFiles, COPY_DOCS_LEGAL_NOTICES, \
+    SRC := $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/legal, \
+    FILES := $(DOCS_LEGAL_NOTICES), \
+    DEST := $(DOCS_OUTPUTDIR)/legal, \
+))
+JDK_INDEX_TARGETS += $(COPY_DOCS_LEGAL_NOTICES)
+
 ################################################################################
 # Copy JDK specs files
 
