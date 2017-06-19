@@ -26,6 +26,7 @@
  * @bug 4879123
  * @summary Verify that sun.nio.cs.map property interpreted in ja multibyte locales
  * @requires (os.family != "windows")
+ * @modules jdk.charsets
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
