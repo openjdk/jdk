@@ -3492,6 +3492,14 @@ public class AMD64Assembler extends Assembler {
         emitByte(0xC0 | encode);
     }
 
+    public final void btrq(Register src, int imm8) {
+        int encode = prefixqAndEncode(src.encoding);
+        emitByte(0x0F);
+        emitByte(0xBA);
+        emitByte(0xF0 | encode);
+        emitByte(imm8);
+    }
+
     public final void xaddl(AMD64Address dst, Register src) {
         prefix(dst, src);
         emitByte(0x0F);

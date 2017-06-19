@@ -32,8 +32,16 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
 
+    private final boolean considerGuards;
+
     public EarlyReadEliminationPhase(CanonicalizerPhase canonicalizer) {
         super(1, canonicalizer, true);
+        this.considerGuards = true;
+    }
+
+    public EarlyReadEliminationPhase(CanonicalizerPhase canonicalizer, boolean considerGuards) {
+        super(1, canonicalizer, true);
+        this.considerGuards = considerGuards;
     }
 
     @Override
@@ -46,7 +54,7 @@ public class EarlyReadEliminationPhase extends EffectsPhase<PhaseContext> {
     @Override
     protected Closure<?> createEffectsClosure(PhaseContext context, ScheduleResult schedule, ControlFlowGraph cfg) {
         assert schedule == null;
-        return new ReadEliminationClosure(cfg);
+        return new ReadEliminationClosure(cfg, considerGuards);
     }
 
     @Override

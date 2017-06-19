@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.Unsigned;
-import org.graalvm.api.word.WordBase;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;

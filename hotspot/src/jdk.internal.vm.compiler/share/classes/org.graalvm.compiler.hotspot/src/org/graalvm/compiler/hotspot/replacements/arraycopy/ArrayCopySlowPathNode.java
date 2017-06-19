@@ -25,9 +25,8 @@ package org.graalvm.compiler.hotspot.replacements.arraycopy;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
 
-import static org.graalvm.api.word.LocationIdentity.any;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -37,6 +36,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
+import org.graalvm.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = InputType.Memory)
 public final class ArrayCopySlowPathNode extends BasicArrayCopyNode {

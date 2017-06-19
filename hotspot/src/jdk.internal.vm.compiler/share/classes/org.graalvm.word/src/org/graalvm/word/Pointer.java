@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.api.word;
+package org.graalvm.word;
 
 /**
  * Lowest-level memory access of native C memory.

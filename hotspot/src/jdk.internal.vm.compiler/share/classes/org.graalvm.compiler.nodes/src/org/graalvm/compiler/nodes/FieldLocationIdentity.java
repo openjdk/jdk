@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes;
 
 import jdk.vm.ci.meta.JavaKind.FormatWithToString;
 
-import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 

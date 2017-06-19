@@ -264,7 +264,6 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
@@ -407,6 +406,7 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.util.ValueMergeUtil;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -1929,6 +1929,15 @@ public class BytecodeParser implements GraphBuilderContext {
                 }
                 /* Do not inline, and do not ask the remaining plugins. */
                 return inlineInfo;
+            }
+        }
+
+        // There was no inline plugin with a definite answer to whether or not
+        // to inline. If we're parsing an intrinsic, then we need to enforce the
+        // invariant here that methods are always force inlined in intrinsics/snippets.
+        if (parsingIntrinsic()) {
+            if (inline(targetMethod, targetMethod, this.bytecodeProvider, args)) {
+                return SUCCESSFULLY_INLINED;
             }
         }
         return null;
@@ -3678,9 +3687,9 @@ public class BytecodeParser implements GraphBuilderContext {
         ResolvedJavaType resolvedType = (ResolvedJavaType) type;
 
         ClassInitializationPlugin classInitializationPlugin = this.graphBuilderConfig.getPlugins().getClassInitializationPlugin();
-        if (classInitializationPlugin != null && classInitializationPlugin.shouldApply(this, resolvedType.getArrayClass())) {
+        if (classInitializationPlugin != null && classInitializationPlugin.shouldApply(this, resolvedType)) {
             FrameState stateBefore = frameState.create(bci(), getNonIntrinsicAncestor(), false, null, null);
-            classInitializationPlugin.apply(this, resolvedType.getArrayClass(), stateBefore);
+            classInitializationPlugin.apply(this, resolvedType, stateBefore);
         }
 
         ValueNode length = frameState.pop(JavaKind.Int);

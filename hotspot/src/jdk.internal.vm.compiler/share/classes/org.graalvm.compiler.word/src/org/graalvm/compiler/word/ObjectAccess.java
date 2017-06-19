@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.word;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.Signed;
-import org.graalvm.api.word.Unsigned;
-import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.Signed;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordBase;
 
 /**
  * Low-level memory access for Objects. Similarly to the readXxx and writeXxx methods defined for

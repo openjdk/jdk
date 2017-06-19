@@ -22,11 +22,10 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_256;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -40,6 +39,7 @@ import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 

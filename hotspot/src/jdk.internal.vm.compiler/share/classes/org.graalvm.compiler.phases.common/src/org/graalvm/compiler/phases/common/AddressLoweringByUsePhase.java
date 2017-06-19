@@ -94,8 +94,13 @@ public class AddressLoweringByUsePhase extends Phase {
             // the lowered address amy already be a replacement
             // in which case we want to use it not delete it!
             if (lowered != address) {
-                address.replaceAtUsages(lowered);
-                GraphUtil.killWithUnusedFloatingInputs(address);
+                // replace original with lowered at this usage only
+                // n.b. lowered is added unique so repeat lowerings will elide
+                node.replaceFirstInput(address, lowered);
+                // if that was the last reference we can kill the old (dead) node
+                if (address.hasNoUsages()) {
+                    GraphUtil.killWithUnusedFloatingInputs(address);
+                }
             }
         }
 

@@ -76,7 +76,9 @@ public class AArch64AddressNode extends AddressNode implements LIRLowerable {
 
         AllocatableValue baseReference = LIRKind.derivedBaseFromValue(baseValue);
         AllocatableValue indexReference;
-        if (addressingMode.equals(AddressingMode.IMMEDIATE_UNSCALED)) {
+        if (index == null) {
+            indexReference = null;
+        } else if (addressingMode.equals(AddressingMode.IMMEDIATE_UNSCALED)) {
             indexReference = LIRKind.derivedBaseFromValue(indexValue);
         } else {
             if (LIRKind.isValue(indexValue.getValueKind())) {

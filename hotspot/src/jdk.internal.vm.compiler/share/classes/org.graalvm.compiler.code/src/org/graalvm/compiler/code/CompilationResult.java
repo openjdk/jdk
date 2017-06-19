@@ -300,7 +300,6 @@ public class CompilationResult {
      * Sets the assumptions made during compilation.
      */
     public void setAssumptions(Assumption[] assumptions) {
-        checkOpen();
         this.assumptions = assumptions;
     }
 

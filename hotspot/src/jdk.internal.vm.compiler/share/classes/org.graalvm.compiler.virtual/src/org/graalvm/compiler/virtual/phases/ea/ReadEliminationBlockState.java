@@ -24,9 +24,9 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.Iterator;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.util.Equivalence;
+import org.graalvm.word.LocationIdentity;
 import org.graalvm.util.EconomicMap;
 
 /**

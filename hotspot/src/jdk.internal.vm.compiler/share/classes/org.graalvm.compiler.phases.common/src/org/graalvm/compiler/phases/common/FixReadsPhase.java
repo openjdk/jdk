@@ -53,6 +53,7 @@ import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph.RecursiveVisitor;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -64,7 +65,10 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.graph.ScheduledNodeIterator;
+import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
+import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.MapCursor;
 
@@ -85,8 +89,8 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
     private static final DebugCounter counterConstantInputReplacements = Debug.counter("FixReads_ConstantInputReplacement");
     private static final DebugCounter counterBetterMergedStamps = Debug.counter("FixReads_BetterMergedStamp");
 
-    private boolean replaceInputsWithConstants;
-    private Phase schedulePhase;
+    protected boolean replaceInputsWithConstants;
+    protected Phase schedulePhase;
 
     @Override
     public float codeSizeIncrease() {
@@ -123,7 +127,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
 
     }
 
-    private static class RawConditionalEliminationVisitor implements RecursiveVisitor<Integer> {
+    protected static class RawConditionalEliminationVisitor implements RecursiveVisitor<Integer> {
 
         protected final NodeMap<StampElement> stampMap;
         protected final NodeStack undoOperations;
@@ -134,7 +138,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
         private final BlockMap<Integer> blockActionStart;
         private final EconomicMap<MergeNode, EconomicMap<ValueNode, Stamp>> endMaps;
 
-        RawConditionalEliminationVisitor(StructuredGraph graph, ScheduleResult schedule, MetaAccessProvider metaAccess, boolean replaceInputsWithConstants) {
+        protected RawConditionalEliminationVisitor(StructuredGraph graph, ScheduleResult schedule, MetaAccessProvider metaAccess, boolean replaceInputsWithConstants) {
             this.graph = graph;
             this.schedule = schedule;
             this.metaAccess = metaAccess;
@@ -145,38 +149,49 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             replaceConstantInputs = replaceInputsWithConstants && GraalOptions.ReplaceInputsWithConstantsBasedOnStamps.getValue(graph.getOptions());
         }
 
-        protected void processNode(Node node) {
-            assert node.isAlive();
+        protected void replaceInput(Position p, Node oldInput, Node newConstantInput) {
+            p.set(oldInput, newConstantInput);
+        }
 
-            if (replaceConstantInputs) {
-                // Check if we can replace any of the inputs with a constant.
-                for (Position p : node.inputPositions()) {
-                    Node input = p.get(node);
-                    if (p.getInputType() == InputType.Value) {
-                        if (input instanceof ValueNode) {
-                            ValueNode valueNode = (ValueNode) input;
-                            if (valueNode instanceof ConstantNode) {
-                                // Input already is a constant.
-                            } else {
-                                Stamp bestStamp = getBestStamp(valueNode);
-                                Constant constant = bestStamp.asConstant();
-                                if (constant != null) {
-                                    if (bestStamp instanceof FloatStamp) {
-                                        FloatStamp floatStamp = (FloatStamp) bestStamp;
-                                        if (floatStamp.contains(0.0d)) {
-                                            // Could also be -0.0d.
-                                            continue;
-                                        }
+        protected int replaceConstantInputs(Node node) {
+            int replacements = 0;
+            // Check if we can replace any of the inputs with a constant.
+            for (Position p : node.inputPositions()) {
+                Node input = p.get(node);
+                if (p.getInputType() == InputType.Value) {
+                    if (input instanceof ValueNode) {
+                        ValueNode valueNode = (ValueNode) input;
+                        if (valueNode instanceof ConstantNode) {
+                            // Input already is a constant.
+                        } else {
+                            Stamp bestStamp = getBestStamp(valueNode);
+                            Constant constant = bestStamp.asConstant();
+                            if (constant != null) {
+                                if (bestStamp instanceof FloatStamp) {
+                                    FloatStamp floatStamp = (FloatStamp) bestStamp;
+                                    if (floatStamp.contains(0.0d)) {
+                                        // Could also be -0.0d.
+                                        continue;
                                     }
-                                    counterConstantInputReplacements.increment();
-                                    ConstantNode stampConstant = ConstantNode.forConstant(bestStamp, constant, metaAccess, graph);
-                                    assert stampConstant.stamp().isCompatible(valueNode.stamp());
-                                    p.set(node, stampConstant);
                                 }
+                                counterConstantInputReplacements.increment();
+                                ConstantNode stampConstant = ConstantNode.forConstant(bestStamp, constant, metaAccess, graph);
+                                assert stampConstant.stamp().isCompatible(valueNode.stamp());
+                                replaceInput(p, node, stampConstant);
+                                replacements++;
                             }
                         }
                     }
                 }
+            }
+            return replacements;
+        }
+
+        protected void processNode(Node node) {
+            assert node.isAlive();
+
+            if (replaceConstantInputs) {
+                replaceConstantInputs(node);
             }
 
             if (node instanceof MergeNode) {
@@ -200,7 +215,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private void registerCombinedStamps(MergeNode node) {
+        protected void registerCombinedStamps(MergeNode node) {
             EconomicMap<ValueNode, Stamp> endMap = endMaps.get(node);
             MapCursor<ValueNode, Stamp> entries = endMap.getEntries();
             while (entries.advance()) {
@@ -210,7 +225,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private void processEnd(EndNode node) {
+        protected void processEnd(EndNode node) {
             AbstractMergeNode abstractMerge = node.merge();
             if (abstractMerge instanceof MergeNode) {
                 MergeNode merge = (MergeNode) abstractMerge;
@@ -294,14 +309,14 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             return blockToNodeMap.get(node);
         }
 
-        private void processUnary(UnaryNode node) {
+        protected void processUnary(UnaryNode node) {
             Stamp newStamp = node.foldStamp(getBestStamp(node.getValue()));
             if (!checkReplaceWithConstant(newStamp, node)) {
                 registerNewValueStamp(node, newStamp);
             }
         }
 
-        private boolean checkReplaceWithConstant(Stamp newStamp, ValueNode node) {
+        protected boolean checkReplaceWithConstant(Stamp newStamp, ValueNode node) {
             Constant constant = newStamp.asConstant();
             if (constant != null && !(node instanceof ConstantNode)) {
                 ConstantNode stampConstant = ConstantNode.forConstant(newStamp, constant, metaAccess, graph);
@@ -314,7 +329,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             return false;
         }
 
-        private void processBinary(BinaryNode node) {
+        protected void processBinary(BinaryNode node) {
             Stamp xStamp = getBestStamp(node.getX());
             Stamp yStamp = getBestStamp(node.getY());
             Stamp newStamp = node.foldStamp(xStamp, yStamp);
@@ -323,7 +338,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private void processIntegerSwitch(IntegerSwitchNode node) {
+        protected void processIntegerSwitch(IntegerSwitchNode node) {
             Stamp bestStamp = getBestStamp(node.value());
             if (node.tryRemoveUnreachableKeys(null, bestStamp)) {
                 Debug.log("\t Canonicalized integer switch %s for value %s and stamp %s", node, node.value(), bestStamp);
@@ -331,7 +346,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private void processIf(IfNode node) {
+        protected void processIf(IfNode node) {
             TriState result = tryProveCondition(node.condition());
             if (result != TriState.UNKNOWN) {
                 boolean isTrue = (result == TriState.TRUE);
@@ -345,7 +360,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private void processConditional(ConditionalNode node) {
+        protected void processConditional(ConditionalNode node) {
             TriState result = tryProveCondition(node.condition());
             if (result != TriState.UNKNOWN) {
                 boolean isTrue = (result == TriState.TRUE);
@@ -358,7 +373,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
         }
 
-        private TriState tryProveCondition(LogicNode condition) {
+        protected TriState tryProveCondition(LogicNode condition) {
             Stamp conditionStamp = this.getBestStamp(condition);
             if (conditionStamp == StampFactory.tautology()) {
                 return TriState.TRUE;
@@ -377,7 +392,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             return TriState.UNKNOWN;
         }
 
-        private void processAbstractBegin(AbstractBeginNode beginNode) {
+        protected void processAbstractBegin(AbstractBeginNode beginNode) {
             Node predecessor = beginNode.predecessor();
             if (predecessor instanceof IfNode) {
                 IfNode ifNode = (IfNode) predecessor;
@@ -484,8 +499,37 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             fixReadsClosure.processNodes(block, schedule);
         }
         if (GraalOptions.RawConditionalElimination.getValue(graph.getOptions())) {
-            schedule.getCFG().visitDominatorTree(new RawConditionalEliminationVisitor(graph, schedule, context.getMetaAccess(), replaceInputsWithConstants), false);
+            schedule.getCFG().visitDominatorTree(createVisitor(graph, schedule, context), false);
         }
+        graph.setAfterFixReadPhase(true);
+    }
+
+    public static class RawCEPhase extends BasePhase<LowTierContext> {
+
+        private final boolean replaceInputsWithConstants;
+
+        public RawCEPhase(boolean replaceInputsWithConstants) {
+            this.replaceInputsWithConstants = replaceInputsWithConstants;
+        }
+
+        @Override
+        protected CharSequence getName() {
+            return "RawCEPhase";
+        }
+
+        @Override
+        protected void run(StructuredGraph graph, LowTierContext context) {
+            if (GraalOptions.RawConditionalElimination.getValue(graph.getOptions())) {
+                SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.LATEST, true);
+                schedulePhase.apply(graph);
+                ScheduleResult schedule = graph.getLastSchedule();
+                schedule.getCFG().visitDominatorTree(new RawConditionalEliminationVisitor(graph, schedule, context.getMetaAccess(), replaceInputsWithConstants), false);
+            }
+        }
+    }
+
+    protected ControlFlowGraph.RecursiveVisitor<?> createVisitor(StructuredGraph graph, ScheduleResult schedule, PhaseContext context) {
+        return new RawConditionalEliminationVisitor(graph, schedule, context.getMetaAccess(), replaceInputsWithConstants);
     }
 
     protected static final class StampElement {
@@ -516,5 +560,9 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             }
             return result.toString();
         }
+    }
+
+    public void setReplaceInputsWithConstants(boolean replaceInputsWithConstants) {
+        this.replaceInputsWithConstants = replaceInputsWithConstants;
     }
 }

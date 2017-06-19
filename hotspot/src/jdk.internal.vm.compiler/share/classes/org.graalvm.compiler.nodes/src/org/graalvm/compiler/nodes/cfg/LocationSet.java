@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.word.LocationIdentity;
 
 public class LocationSet {
     private LocationIdentity firstLocation;

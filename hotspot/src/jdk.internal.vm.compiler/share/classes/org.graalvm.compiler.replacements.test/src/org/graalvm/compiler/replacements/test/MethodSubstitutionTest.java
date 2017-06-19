@@ -132,7 +132,7 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
     protected Object invokeSafe(ResolvedJavaMethod method, Object receiver, Object... args) {
         try {
             return invoke(method, receiver, args);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
             throw new RuntimeException(e);
         }
     }

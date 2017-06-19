@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.api.word;
+package org.graalvm.word;
 
 /**
  * Utility methods on Unsigned values.

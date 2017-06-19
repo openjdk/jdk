@@ -63,7 +63,6 @@ public abstract class AccessFieldNode extends FixedWithNextNode implements Lower
         super(c, stamp);
         this.object = object;
         this.field = field;
-        assert object != null || field.getDeclaringClass().isInitialized();
     }
 
     /**
