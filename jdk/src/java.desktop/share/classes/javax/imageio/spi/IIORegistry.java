@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,10 +104,8 @@ import java.util.ServiceConfigurationError;
  * sees fit.
  *
  * <p> For more details on declaring service providers, and the JAR
- * format in general, see the <a
- * href="{@docRoot}/../technotes/guides/jar/jar.html">
- * JAR File Specification</a>.
- *
+ * format in general, see the
+ * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>.
  */
 public final class IIORegistry extends ServiceRegistry {
 
