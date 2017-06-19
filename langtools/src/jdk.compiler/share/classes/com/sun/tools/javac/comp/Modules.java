@@ -146,8 +146,6 @@ public class Modules extends JCTree.Visitor {
 
     public final boolean multiModuleMode;
 
-    private final String legacyModuleOverride;
-
     private final Name java_se;
     private final Name java_;
 
@@ -195,14 +193,6 @@ public class Modules extends JCTree.Visitor {
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
-
-        Collection<String> xmodules = options.keySet()
-                                             .stream()
-                                             .filter(opt -> opt.startsWith(XMODULES_PREFIX))
-                                             .map(opt -> opt.substring(XMODULES_PREFIX.length()))
-                                             .collect(Collectors.toList());
-
-        legacyModuleOverride = xmodules.size() == 1 ? xmodules.iterator().next() : null;
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -469,9 +459,6 @@ public class Modules extends JCTree.Visitor {
                             if (moduleOverride != null) {
                                 checkNoAllModulePath();
                                 defaultModule = moduleFinder.findModule(names.fromString(moduleOverride));
-                                if (legacyModuleOverride != null) {
-                                    defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
-                                }
                                 defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
                             } else {
                                 // Question: why not do findAllModules and initVisiblePackages here?
@@ -546,11 +533,6 @@ public class Modules extends JCTree.Visitor {
     }
 
     private void checkSourceLocation(JCCompilationUnit tree, ModuleSymbol msym) {
-        // skip check if legacy module override still in use
-        if (legacyModuleOverride != null) {
-            return;
-        }
-
         try {
             JavaFileObject fo = tree.sourcefile;
             if (fileManager.contains(msym.sourceLocation, fo)) {
@@ -582,7 +564,7 @@ public class Modules extends JCTree.Visitor {
 
     private String singleModuleOverride(List<JCCompilationUnit> trees) {
         if (!fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
-            return legacyModuleOverride;
+            return null;
         }
 
         Set<String> override = new LinkedHashSet<>();
@@ -602,7 +584,7 @@ public class Modules extends JCTree.Visitor {
         }
 
         switch (override.size()) {
-            case 0: return legacyModuleOverride;
+            case 0: return null;
             case 1: return override.iterator().next();
             default:
                 log.error(Errors.TooManyPatchedModules(override));
