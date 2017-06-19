@@ -336,12 +336,28 @@ public class Analyzer {
     };
 
     /**
-     * Analyze an AST node if needed.
+     * Create a copy of Env if needed.
      */
-    void analyzeIfNeeded(JCTree tree, Env<AttrContext> env) {
+    Env<AttrContext> copyEnvIfNeeded(JCTree tree, Env<AttrContext> env) {
         if (!analyzerModes.isEmpty() &&
                 !env.info.isSpeculative &&
                 TreeInfo.isStatement(tree)) {
+            Env<AttrContext> analyzeEnv =
+                    env.dup(env.tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+            analyzeEnv.info.returnResult = analyzeEnv.info.returnResult != null ?
+                    attr.new ResultInfo(analyzeEnv.info.returnResult.pkind,
+                                        analyzeEnv.info.returnResult.pt) : null;
+            return analyzeEnv;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Analyze an AST node if needed.
+     */
+    void analyzeIfNeeded(JCTree tree, Env<AttrContext> env) {
+        if (env != null) {
             JCStatement stmt = (JCStatement)tree;
             analyze(stmt, env);
         }
