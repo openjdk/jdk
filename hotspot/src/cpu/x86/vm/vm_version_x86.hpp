@@ -782,9 +782,7 @@ public:
 
   static bool supports_compare_and_exchange() { return true; }
 
-  static intx allocate_prefetch_distance() {
-    // This method should be called before allocate_prefetch_style().
-    //
+  static intx allocate_prefetch_distance(bool use_watermark_prefetch) {
     // Hardware prefetching (distance/size in bytes):
     // Pentium 3 -  64 /  32
     // Pentium 4 - 256 / 128
@@ -800,58 +798,34 @@ public:
     // Core      - 256 / prefetchnta
     // It will be used only when AllocatePrefetchStyle > 0
 
-    intx count = AllocatePrefetchDistance;
-    if (count < 0) {   // default ?
-      if (is_amd()) {  // AMD
-        if (supports_sse2())
-          count = 256; // Opteron
-        else
-          count = 128; // Athlon
-      } else {         // Intel
-        if (supports_sse2())
-          if (cpu_family() == 6) {
-            count = 256; // Pentium M, Core, Core2
-          } else {
-            count = 512; // Pentium 4
-          }
-        else
-          count = 128; // Pentium 3 (and all other old CPUs)
+    if (is_amd()) { // AMD
+      if (supports_sse2()) {
+        return 256; // Opteron
+      } else {
+        return 128; // Athlon
+      }
+    } else { // Intel
+      if (supports_sse3() && cpu_family() == 6) {
+        if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+          return 192;
+        } else if (use_watermark_prefetch) { // watermark prefetching on Core
+#ifdef _LP64
+          return 384;
+#else
+          return 320;
+#endif
+        }
+      }
+      if (supports_sse2()) {
+        if (cpu_family() == 6) {
+          return 256; // Pentium M, Core, Core2
+        } else {
+          return 512; // Pentium 4
+        }
+      } else {
+        return 128; // Pentium 3 (and all other old CPUs)
       }
     }
-    return count;
-  }
-  static intx allocate_prefetch_style() {
-    assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
-    // Return 0 if AllocatePrefetchDistance was not defined.
-    return AllocatePrefetchDistance > 0 ? AllocatePrefetchStyle : 0;
-  }
-
-  // Prefetch interval for gc copy/scan == 9 dcache lines.  Derived from
-  // 50-warehouse specjbb runs on a 2-way 1.8ghz opteron using a 4gb heap.
-  // Tested intervals from 128 to 2048 in increments of 64 == one cache line.
-  // 256 bytes (4 dcache lines) was the nearest runner-up to 576.
-
-  // gc copy/scan is disabled if prefetchw isn't supported, because
-  // Prefetch::write emits an inlined prefetchw on Linux.
-  // Do not use the 3dnow prefetchw instruction.  It isn't supported on em64t.
-  // The used prefetcht0 instruction works for both amd64 and em64t.
-  static intx prefetch_copy_interval_in_bytes() {
-    intx interval = PrefetchCopyIntervalInBytes;
-    return interval >= 0 ? interval : 576;
-  }
-  static intx prefetch_scan_interval_in_bytes() {
-    intx interval = PrefetchScanIntervalInBytes;
-    return interval >= 0 ? interval : 576;
-  }
-  static intx prefetch_fields_ahead() {
-    intx count = PrefetchFieldsAhead;
-    return count >= 0 ? count : 1;
-  }
-  static uint32_t get_xsave_header_lower_segment() {
-    return _cpuid_info.xem_xcr0_eax.value;
-  }
-  static uint32_t get_xsave_header_upper_segment() {
-    return _cpuid_info.xem_xcr0_edx;
   }
 
   // SSE2 and later processors implement a 'pause' instruction

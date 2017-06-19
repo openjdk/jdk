@@ -37,23 +37,40 @@ void VM_Version::initialize() {
   assert(_features != 0, "System pre-initialization is not complete.");
   guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
 
-  PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
-  PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
-  PrefetchFieldsAhead         = prefetch_fields_ahead();
+  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, prefetch_copy_interval_in_bytes());
+  }
+  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, prefetch_scan_interval_in_bytes());
+  }
+  if (FLAG_IS_DEFAULT(PrefetchFieldsAhead)) {
+    FLAG_SET_DEFAULT(PrefetchFieldsAhead, prefetch_fields_ahead());
+  }
 
   // Allocation prefetch settings
   intx cache_line_size = prefetch_data_size();
-  if( cache_line_size > AllocatePrefetchStepSize )
-    AllocatePrefetchStepSize = cache_line_size;
+  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
+      (cache_line_size > AllocatePrefetchStepSize)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+  }
 
-  AllocatePrefetchDistance = allocate_prefetch_distance();
-  AllocatePrefetchStyle    = allocate_prefetch_style();
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 512);
+  }
 
-  if (!has_blk_init() || cache_line_size <= 0) {
-    if (AllocatePrefetchInstr == 1) {
-      warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+  if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
+    assert(!FLAG_IS_DEFAULT(AllocatePrefetchDistance), "default value should not be 0");
+    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
     }
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+  }
+
+  if ((AllocatePrefetchInstr == 1) && (!has_blk_init() || cache_line_size <= 0)) {
+    if (!FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+      warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
+    }
+    FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
   }
 
   UseSSE = 0; // Only on x86 and x64
@@ -121,9 +138,10 @@ void VM_Version::initialize() {
       }
     }
 
-    if (AllocatePrefetchInstr == 1) {
-      // Use allocation prefetch style 3 because BIS instructions
-      // require aligned memory addresses.
+    if ((AllocatePrefetchInstr == 1) && (AllocatePrefetchStyle != 3)) {
+      if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+        warning("AllocatePrefetchStyle set to 3 because BIS instructions require aligned memory addresses");
+      }
       FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
     }
 #endif /* COMPILER2 */
