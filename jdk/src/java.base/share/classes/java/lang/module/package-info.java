@@ -159,21 +159,28 @@
  *
  * <h2> Observable modules </h2>
  *
- * <p> The set of observable modules at both compile-time and run-time is determined
- * by searching an abstract module path. The module path is typically composed
- * of search paths that are searched in order: </p>
+ * <p> The set of observable modules at both compile-time and run-time is
+ * determined by searching several different paths, and also by searching
+ * the compiled modules built in to the environment. The search order is as
+ * follows: </p>
  *
- * <ul>
- *   <li><p> At compile-time only, a compilation module path that contains module
- *   definitions in source form. </p></li>
- *   <li><p> The upgrade module path containing compiled definitions of modules
- *   intended to be used in place of upgradeable modules built-in to the
- *   environment. </p></li>
- *   <li><p> The system modules which are the compiled modules built-in to the
- *   environment. </p></li>
- *   <li><p> The application module path which contains compiled definitions of
- *   library and application modules. </p></li>
- * </ul>
+ * <ol>
+ *   <li><p> At compile time only, the compilation module path. This path
+ *   contains module definitions in source form.  </p></li>
+ *
+ *   <li><p> The upgrade module path. This path contains compiled definitions of
+ *   modules that will be observed in preference to the compiled definitions of
+ *   any <i>upgradeable modules</i> that are present in (3) and (4). See the Java
+ *   SE Platform for the designation of which standard modules are upgradeable.
+ *   </p></li>
+ *
+ *   <li><p> The system modules, which are the compiled definitions built in to
+ *   the environment. </p></li>
+ *
+ *   <li><p> The application module path. This path contains compiled definitions
+ *   of library and application modules. </p></li>
+ *
+ * </ol>
  *
  * <h2> 'requires' directives with 'static' modifier </h2>
  *

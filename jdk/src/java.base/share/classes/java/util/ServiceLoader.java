@@ -57,215 +57,290 @@ import jdk.internal.reflect.Reflection;
 
 
 /**
- * A simple service-provider loading facility.
+ * A facility to load implementations of a service.
  *
- * <p> A <i>service</i> is a well-known set of interfaces and (usually
- * abstract) classes.  A <i>service provider</i> is a specific implementation
- * of a service.  The classes in a provider typically implement the interfaces
- * and subclass the classes defined in the service itself.
- * Providers may be developed and deployed as modules and made available using
- * the application module path. Providers may alternatively be packaged as JAR
- * files and made available by adding them to the application class path. The
- * advantage of developing a provider as a module is that the provider can be
- * fully encapsulated to hide all details of its implementation.
+ * <p> A <i>service</i> is a well-known interface or class for which zero, one,
+ * or many service providers exist. A <i>service provider</i> (or just
+ * <i>provider</i>) is a class that implements or subclasses the well-known
+ * interface or class. A {@code ServiceLoader} is an object that locates and
+ * loads service providers deployed in the run time environment at a time of an
+ * application's choosing. Application code refers only to the service, not to
+ * service providers, and is assumed to be capable of differentiating between
+ * multiple service providers as well as handling the possibility that no service
+ * providers are located.
  *
- * <p> For the purpose of loading, a service is represented by a single type,
- * that is, a single interface or abstract class.  (A concrete class can be
- * used, but this is not recommended.)  A provider of a given service contains
- * one or more concrete classes that extend this <i>service type</i> with data
- * and code specific to the provider.  The <i>provider class</i> is typically
- * not the entire provider itself but rather a proxy which contains enough
- * information to decide whether the provider is able to satisfy a particular
- * request together with code that can create the actual provider on demand.
- * The details of provider classes tend to be highly service-specific; no
- * single class or interface could possibly unify them, so no such type is
- * defined here.
+ * <h3> Obtaining a service loader </h3>
  *
- * <p> A service loader is created by invoking one of the static {@code load}
- * methods that {@code ServiceLoader} defines. The resulting service loader
- * can be used to locate and instantiate service provider implementations by
- * means of its {@link #iterator() iterator} ({@code ServiceLoader} implements
- * {@code Iterable}) or by consuming elements from its {@link #stream() stream}.
+ * <p> An application obtains a service loader for a given service by invoking
+ * one of the static {@code load} methods of ServiceLoader. If the application
+ * is a module, then its module declaration must have a <i>uses</i> directive
+ * that specifies the service; this helps to locate providers and ensure they
+ * will execute reliably. In addition, if the service is not in the application
+ * module, then the module declaration must have a <i>requires</i> directive
+ * that specifies the module which exports the service.
  *
- * <p> As an example, suppose the service type is {@code com.example.CodecSet}
- * and it defines two abstract methods to obtain encoders and decoders:
+ * <p> A service loader can be used to locate and instantiate providers of the
+ * service by means of the {@link #iterator() iterator} method. {@code ServiceLoader}
+ * also defines the {@link #stream() stream} method to obtain a stream of providers
+ * that can be inspected and filtered without instantiating them.
+ *
+ * <p> As an example, suppose the service is {@code com.example.CodecFactory}, an
+ * interface that defines methods for producing encoders and decoders:
+ *
  * <pre>{@code
  *     package com.example;
- *     public interface CodecSet {
+ *     public interface CodecFactory {
  *         Encoder getEncoder(String encodingName);
  *         Decoder getDecoder(String encodingName);
  *     }
  * }</pre>
- * With this example, the following uses the service loader's iterator to find
- * a provider that supports a specific encoding:
+ *
+ * <p> The following code obtains a service loader for the {@code CodecFactory}
+ * service, then uses its iterator (created automatically by the enhanced-for
+ * loop) to yield instances of the service providers that are located:
+ *
  * <pre>{@code
- *     public Encoder getEncoder(String encodingName) {
- *         ServiceLoader<CodeSet> loader = ServiceLoader.load(CodeSet.class);
- *         for (CodecSet cs : loader) {
- *             Encoder encoder = cs.getEncoder(encodingName);
- *             if (encoder != null)
- *                 return encoder;
+ *     ServiceLoader<CodecFactory> loader = ServiceLoader.load(CodecFactory.class);
+ *     for (CodecFactory factory : loader) {
+ *         Encoder enc = factory.getEncoder("PNG");
+ *         if (enc != null)
+ *             ... use enc to encode a PNG file
+ *             break;
  *         }
- *         return null;
- *    }
  * }</pre>
  *
- * <p> Selecting a provider or filtering providers will usually involve invoking
- * a provider method. In the {@code CodeSet} example, the {@code getEncoder}
- * method is used to select the implementation. Where selection or filtering based
- * on the provider class is needed then it can be done when consuming the elements
- * of the service loader's stream. As an example, the following collects the
- * {@code CodeSet} implementations that have a specific annotation:
+ * <p> If this code resides in a module, then in order to refer to the
+ * {@code com.example.CodecFactory} interface, the module declaration would
+ * require the module which exports the interface. The module declaration would
+ * also specify use of {@code com.example.CodecFactory}:
  * <pre>{@code
- *     Set<CodecSet> providers = ServiceLoader.load(CodecSet.class)
- *            .stream()
- *            .filter(p -> p.type().isAnnotationPresent(Managed.class))
- *            .map(Provider::get)
+ *     requires com.example.codec.core;
+ *     uses com.example.CodecFactory;
+ * }</pre>
+ *
+ * <p> Sometimes an application may wish to inspect a service provider before
+ * instantiating it, in order to determine if an instance of that service
+ * provider would be useful. For example, a service provider for {@code
+ * CodecFactory} that is capable of producing a "PNG" encoder may be annotated
+ * with {@code @PNG}. The following code uses service loader's {@code stream}
+ * method to yield instances of {@code Provider<CodecFactory>} in contrast to
+ * how the iterator yields instances of {@code CodecFactory}:
+ * <pre>{@code
+ *     ServiceLoader<CodecFactory> loader = ServiceLoader.load(CodecFactory.class);
+ *     Set<CodecFactory> pngFactories = loader
+ *            .stream()                                              // Note a below
+ *            .filter(p -> p.type().isAnnotationPresent(PNG.class))  // Note b
+ *            .map(Provider::get)                                    // Note c
  *            .collect(Collectors.toSet());
  * }</pre>
+ * <ol type="a">
+ *   <li> A stream of {@code Provider<CodecFactory>} objects </li>
+ *   <li> {@code p.type()} yields a {@code Class<CodecFactory>} </li>
+ *   <li> {@code get()} yields an instance of {@code CodecFactory} </li>
+ * </ol>
  *
- * <p> Providers are located and instantiated lazily, that is, on demand.  A
- * service loader maintains a cache of the providers that have been loaded so
- * far. Each invocation of the {@code iterator} method returns an iterator that
- * first yields all of the elements cached from previous iteration, in
+ * <h3> Designing services </h3>
+ *
+ * <p> A service is a single type, usually an interface or abstract class. A
+ * concrete class can be used, but this is not recommended. The type may have
+ * any accessibility. The methods of a service are highly domain-specific, so
+ * this API specification cannot give concrete advice about their form or
+ * function. However, there are two general guidelines:
+ * <ol>
+ *   <li><p> A service should declare as many methods as needed to allow service
+ *   providers to communicate their domain-specific properties and other
+ *   quality-of-implementation factors. An application which obtains a service
+ *   loader for the service may then invoke these methods on each instance of
+ *   a service provider, in order to choose the best provider for the
+ *   application. </p></li>
+ *   <li><p> A service should express whether its service providers are intended
+ *   to be direct implementations of the service or to be an indirection
+ *   mechanism such as a "proxy" or a "factory". Service providers tend to be
+ *   indirection mechanisms when domain-specific objects are relatively
+ *   expensive to instantiate; in this case, the service should be designed
+ *   so that service providers are abstractions which create the "real"
+ *   implementation on demand. For example, the {@code CodecFactory} service
+ *   expresses through its name that its service providers are factories
+ *   for codecs, rather than codecs themselves, because it may be expensive
+ *   or complicated to produce certain codecs. </p></li>
+ * </ol>
+ *
+ * <h3> <a id="developing-service-providers">Developing service providers</a> </h3>
+ *
+ * <p> A service provider is a single type, usually a concrete class. An
+ * interface or abstract class is permitted because it may declare a static
+ * provider method, discussed later. The type must be public and must not be
+ * an inner class.
+ *
+ * <p> A service provider and its supporting code may be developed in a module,
+ * which is then deployed on the application module path or in a modular
+ * image. Alternatively, a service provider and its supporting code may be
+ * packaged as a JAR file and deployed on the application class path. The
+ * advantage of developing a service provider in a module is that the provider
+ * can be fully encapsulated to hide all details of its implementation.
+ *
+ * <p> An application that obtains a service loader for a given service is
+ * indifferent to whether providers of the service are deployed in modules or
+ * packaged as JAR files. The application instantiates service providers via
+ * the service loader's iterator, or via {@link Provider Provider} objects in
+ * the service loader's stream, without knowledge of the service providers'
+ * locations.
+ *
+ * <h3> Deploying service providers as modules </h3>
+ *
+ * <p> A service provider that is developed in a module must be specified in a
+ * <i>provides</i> directive in the module declaration. The provides directive
+ * specifies both the service and the service provider; this helps to locate the
+ * provider when another module, with a <i>uses</i> directive for the service,
+ * obtains a service loader for the service. It is strongly recommended that the
+ * module does not export the package containing the service provider. There is
+ * no support for a module specifying, in a <i>provides</i> directive, a service
+ * provider in another module.
+
+ * <p> A service provider that is developed in a module has no control over when
+ * it is instantiated, since that occurs at the behest of the application, but it
+ * does have control over how it is instantiated:
+ *
+ * <ul>
+ *
+ *   <li> If the service provider declares a provider method, then the service
+ *   loader invokes that method to obtain an instance of the service provider. A
+ *   provider method is a public static method named "provider" with no formal
+ *   parameters and a return type that is assignable to the service's interface
+ *   or class.
+ *   <p> In this case, the service provider itself need not be assignable to the
+ *   service's interface or class. </li>
+ *
+ *   <li> If the service provider does not declare a provider method, then the
+ *   service provider is instantiated directly, via its provider constructor. A
+ *   provider constructor is a public constructor with no formal parameters.
+ *   <p> In this case, the service provider must be assignable to the service's
+ *   interface or class </li>
+ *
+ * </ul>
+ *
+ * <p> A service provider that is deployed as an
+ * {@linkplain java.lang.module.ModuleDescriptor#isAutomatic automatic module} on
+ * the application module path must have a provider constructor. There is no
+ * support for a provider method in this case.
+ *
+ * <p> As an example, suppose a module specifies the following directives:
+ * <pre>{@code
+ *     provides com.example.CodecFactory with com.example.impl.StandardCodecs;
+ *     provides com.example.CodecFactory with com.example.impl.ExtendedCodecsFactory;
+ * }</pre>
+ *
+ * <p> where
+ *
+ * <ul>
+ *   <li> {@code com.example.CodecFactory} is the two-method service from
+ *   earlier. </li>
+ *
+ *   <li> {@code com.example.impl.StandardCodecs} is a public class that implements
+ *   {@code CodecFactory} and has a public no-args constructor. </li>
+ *
+ *   <li> {@code com.example.impl.ExtendedCodecsFactory} is a public class that
+ *   does not implement CodecFactory, but it declares a public static no-args
+ *   method named "provider" with a return type of {@code CodecFactory}. </li>
+ * </ul>
+ *
+ * <p> A service loader will instantiate {@code StandardCodecs} via its
+ * constructor, and will instantiate {@code ExtendedCodecsFactory} by invoking
+ * its {@code provider} method. The requirement that the provider constructor or
+ * provider method is public helps to document the intent that the class (that is,
+ * the service provider) will be instantiated by an entity (that is, a service
+ * loader) which is outside the class's package.
+ *
+ * <h3> Deploying service providers on the class path </h3>
+ *
+ * A service provider that is packaged as a JAR file for the class path is
+ * identified by placing a <i>provider-configuration file</i> in the resource
+ * directory {@code META-INF/services}. The name of the provider-configuration
+ * file is the fully qualified binary name of the service. The provider-configuration
+ * file contains a list of fully qualified binary names of service providers, one
+ * per line.
+ *
+ * <p> For example, suppose the service provider
+ * {@code com.example.impl.StandardCodecs} is packaged in a JAR file for the
+ * class path. The JAR file will contain a provider-configuration file named:
+ *
+ * <blockquote>{@code
+ *     META-INF/services/com.example.CodecFactory
+ * }</blockquote>
+ *
+ * that contains the line:
+ *
+ * <blockquote>{@code
+ *     com.example.impl.StandardCodecs # Standard codecs
+ * }</blockquote>
+ *
+ * <p><a id="format">The provider-configuration file must be encoded in UTF-8. </a>
+ * Space and tab characters surrounding each service provider's name, as well as
+ * blank lines, are ignored. The comment character is {@code '#'}
+ * ({@code '&#92;u0023'} <span style="font-size:smaller;">NUMBER SIGN</span>);
+ * on each line all characters following the first comment character are ignored.
+ * If a service provider class name is listed more than once in a
+ * provider-configuration file then the duplicate is ignored. If a service
+ * provider class is named in more than one configuration file then the duplicate
+ * is ignored.
+ *
+ * <p> A service provider that is mentioned in a provider-configuration file may
+ * be located in the same JAR file as the provider-configuration file or in a
+ * different JAR file. The service provider must be visible from the class loader
+ * that is initially queried to locate the provider-configuration file; this is
+ * not necessarily the class loader which ultimately locates the
+ * provider-configuration file.
+ *
+ * <h3> Timing of provider discovery </h3>
+ *
+ * <p> Service providers are loaded and instantiated lazily, that is, on demand.
+ * A service loader maintains a cache of the providers that have been loaded so
+ * far. Each invocation of the {@code iterator} method returns an {@code Iterator}
+ * that first yields all of the elements cached from previous iteration, in
  * instantiation order, and then lazily locates and instantiates any remaining
- * providers, adding each one to the cache in turn.  Similarly, each invocation
- * of the {@code stream} method returns a stream that first processes all
+ * providers, adding each one to the cache in turn. Similarly, each invocation
+ * of the stream method returns a {@code Stream} that first processes all
  * providers loaded by previous stream operations, in load order, and then lazily
  * locates any remaining providers. Caches are cleared via the {@link #reload
  * reload} method.
  *
- * <h3> Deploying provider classes in modules  </h3>
+ * <h3> <a id="errors">Errors</a> </h3>
  *
- * <p> A provider deployed as an explicit module must have an appropriate
- * <i>provides</i> clause in its module descriptor to declare that the module
- * provides an implementation of the service.
- *
- * <p> A provider deployed as an explicit module is instantiated by a
- * <em>provider factory</em> or directly via the provider's constructor. In the
- * module declaration then the class name specified in the <i>provides</i> clause
- * is a provider factory if it is public and explicitly declares a public static
- * no-args method named "{@code provider}". The return type of the method must be
- * assignable to the <i>service</i> type. If the class is not a provider factory
- * then it is public with a public zero-argument constructor. The requirement
- * that the provider factory or provider class be public helps to document the
- * intent that the provider will be instantiated by the service-provider loading
- * facility.
- *
- * <p> Providers deployed as {@link
- * java.lang.module.ModuleDescriptor#isAutomatic automatic-modules} on the
- * module path must have a public zero-argument constructor. If the provider
- * also declares a public static method named  "{@code provider}" then it is
- * ignored.
- *
- * <p> As an example, suppose a module declares the following:
- *
- * <pre>{@code
- *     provides com.example.CodecSet with com.example.impl.StandardCodecs;
- *     provides com.example.CodecSet with com.example.impl.ExtendedCodecsFactory;
- * }</pre>
- *
- * where
- * <ul>
- *     <li> {@code com.example.CodecSet} is the service type as above </li>
- *     <li> {@code com.example.impl.StandardCodecs} is a provider class
- *     (implements {@code CodecSet}) that is public with a public no-args
- *     constructor </li>
- *     <li> {@code com.example.impl.ExtendedCodecsFactory} is a public class
- *     that explicitly declares a public static no-args method named
- *     "{@code provider}" with a return type that is {@code CodecSet} or a
- *     subtype of. </li>
- * </ul>
- *
- * <p> For this example then {@code StandardCodecs}'s no-arg constructor will
- * be used to instantiate {@code StandardCodecs}. {@code ExtendedCodecsFactory}
- * will be treated as a provider factory and {@code
- * ExtendedCodecsFactory.provider()} will be invoked to obtain the provider.
- *
- * <h3> Deploying provider classes on the class path </h3>
- *
- * <p><a id="format">A service provider that is packaged as a JAR file for
- * the class path is identified by placing a <i>provider-configuration file</i>
- * in the resource directory {@code META-INF/services}.</a> The file's name is
- * the fully-qualified <a href="../lang/ClassLoader.html#name">binary name</a>
- * of the service's type. The file contains a list of fully-qualified binary
- * names of concrete provider classes, one per line.  Space and tab characters
- * surrounding each name, as well as blank lines, are ignored.  The comment
- * character is {@code '#'} (<code>'&#92;u0023'</code>,
- * <span style="font-size:smaller;">NUMBER SIGN</span>); on
- * each line all characters following the first comment character are ignored.
- * The file must be encoded in UTF-8.
- * If a particular concrete provider class is named in more than one
- * configuration file, or is named in the same configuration file more than
- * once, then the duplicates are ignored.  The configuration file naming a
- * particular provider need not be in the same JAR file or other distribution
- * unit as the provider itself. The provider must be visible from the same
- * class loader that was initially queried to locate the configuration file;
- * note that this is not necessarily the class loader from which the file was
- * actually located.
- *
- * <p> For the example, then suppose {@code com.example.impl.StandardCodecs} is
- * packaged in a JAR file for the class path then the JAR file will contain a
- * file named:
- * <blockquote>{@code
- *     META-INF/services/com.example.CodecSet
- * }</blockquote>
- * that contains the line:
- * <blockquote>{@code
- *     com.example.impl.StandardCodecs    # Standard codecs
- * }</blockquote>
- *
- * <h3> Using ServiceLoader from code in modules </h3>
- *
- * <p> An application or library using this loading facility and developed
- * and deployed as an explicit module must have an appropriate <i>uses</i>
- * clause in its <i>module descriptor</i> to declare that the module uses
- * implementations of the service. Combined with the requirement is that a
- * provider deployed as an explicit module must have an appropriate
- * <i>provides</i> clause allows consumers of a service to be <i>linked</i>
- * to modules containing providers of the service.
- *
- * <p> For the example, if code in a module uses a service loader to load
- * implementations of {@code com.example.CodecSet} then its module will declare
- * the usage with: <pre>{@code    uses com.example.CodecSet; }</pre>
- *
- * <h3> Errors </h3>
- *
- * <p>  When using the service loader's {@code iterator} then its {@link
+ * <p> When using the service loader's {@code iterator}, the {@link
  * Iterator#hasNext() hasNext} and {@link Iterator#next() next} methods will
- * fail with {@link ServiceConfigurationError} if an error occurs locating or
- * instantiating a provider. When processing the service loader's stream then
- * {@code ServiceConfigurationError} is thrown by whatever method causes a
- * provider class to be loaded.
+ * fail with {@link ServiceConfigurationError} if an error occurs locating,
+ * loading or instantiating a service provider. When processing the service
+ * loader's stream then {@code ServiceConfigurationError} may be thrown by any
+ * method that causes a service provider to be located or loaded.
  *
- * <p> When loading or instantiating a provider class in a named module then
- * {@code ServiceConfigurationError} can be thrown for the following reasons: </p>
+ * <p> When loading or instantiating a service provider in a module, {@code
+ * ServiceConfigurationError} can be thrown for the following reasons:
  *
  * <ul>
  *
- *   <li> The provider class cannot be loaded. </li>
+ *   <li> The service provider cannot be loaded. </li>
  *
- *   <li> The provider class is not a provider factory or is not a subclass of
- *   the service type with a public zero-argument constructor. </li>
+ *   <li> The service provider does not declare a provider method, and either
+ *   it is not assignable to the service's interface/class or does not have a
+ *   provider constructor. </li>
  *
- *   <li> The provider class explicitly declares a public static no-args method
- *   named "{@code provider}" with a return type that is not a subclass of the
- *   service type. </li>
+ *   <li> The service provider declares a public static no-args method named
+ *   "provider" with a return type that is not assignable to the service's
+ *   interface or class. </li>
  *
- *   <li> The provider class explicitly declares more than one public static
+ *   <li> The service provider class file has more than one public static
  *   no-args method named "{@code provider}". </li>
  *
- *   <li> The provider class is a provider factory and its public static no-args
- *   method "{@code provider}" method returns {@code null} or throws an
- *   exception. </li>
+ *   <li> The service provider declares a provider method and it fails by
+ *   returning {@code null} or throwing an exception. </li>
  *
- *   <li> The provider class is not a provider factory and cannot be instantiated
- *   with its public zero-argument constructor. </li>
+ *   <li> The service provider does not declare a provider method, and its
+ *   provider constructor fails by throwing an exception. </li>
  *
  * </ul>
  *
- * <p> When reading a provider-configuration file, or loading or instantiating a
- * provider class named in a provider-configuration file, then {@code
+ * <p> When reading a provider-configuration file, or loading or instantiating
+ * a provider class named in a provider-configuration file, then {@code
  * ServiceConfigurationError} can be thrown for the following reasons:
  *
  * <ul>
@@ -276,10 +351,11 @@ import jdk.internal.reflect.Reflection;
  *   <li> An {@link IOException IOException} occurs while reading the
  *   provider-configuration file; </li>
  *
- *   <li> The provider class cannot be loaded; </li>
+ *   <li> A service provider cannot be loaded; </li>
  *
- *   <li> The provider class is not a subclass of the service type, does not
- *   define a public zero-argument constructor, or cannot be instantiated; </li>
+ *   <li> A service provider is not assignable to the service's interface or
+ *   class, or does not define a provider constructor, or cannot be
+ *   instantiated. </li>
  *
  * </ul>
  *
@@ -1232,48 +1308,38 @@ public final class ServiceLoader<S>
     }
 
     /**
-     * Lazily load and instantiate the available providers of this loader's
-     * service.
-     *
-     * <p> The iterator returned by this method first yields all of the
-     * elements of the provider cache, in the order that they were loaded.
-     * It then lazily loads and instantiates any remaining providers,
-     * adding each one to the cache in turn.
+     * Returns an iterator to lazily load and instantiate the available
+     * providers of this loader's service.
      *
      * <p> To achieve laziness the actual work of locating and instantiating
-     * providers must be done by the iterator itself. Its {@link
-     * java.util.Iterator#hasNext hasNext} and {@link java.util.Iterator#next
-     * next} methods can therefore throw a {@link ServiceConfigurationError}
-     * if a provider class cannot be loaded, doesn't have an appropriate static
-     * factory method or constructor, can't be assigned to the service type or
-     * if any other kind of exception or error is thrown as the next provider
-     * is located and instantiated. To write robust code it is only necessary
-     * to catch {@link ServiceConfigurationError} when using a service iterator.
-     *
-     * <p> If such an error is thrown then subsequent invocations of the
+     * providers is done by the iterator itself. Its {@link Iterator#hasNext
+     * hasNext} and {@link Iterator#next next} methods can therefore throw a
+     * {@link ServiceConfigurationError} for any of the reasons specified in
+     * the <a href="#errors">Errors</a> section above. To write robust code it
+     * is only necessary to catch {@code ServiceConfigurationError} when using
+     * the iterator. If an error is thrown then subsequent invocations of the
      * iterator will make a best effort to locate and instantiate the next
      * available provider, but in general such recovery cannot be guaranteed.
      *
-     * <blockquote style="font-size: smaller; line-height: 1.2"><span
-     * style="padding-right: 1em; font-weight: bold">Design Note</span>
-     * Throwing an error in these cases may seem extreme.  The rationale for
-     * this behavior is that a malformed provider-configuration file, like a
-     * malformed class file, indicates a serious problem with the way the Java
-     * virtual machine is configured or is being used.  As such it is
-     * preferable to throw an error rather than try to recover or, even worse,
-     * fail silently.</blockquote>
-     *
-     * <p> If this loader's provider caches are cleared by invoking the {@link
-     * #reload() reload} method then existing iterators for this service
-     * loader should be discarded.
-     * The {@link java.util.Iterator#hasNext() hasNext} and {@link
-     * java.util.Iterator#next() next} methods of the iterator throw {@link
+     * <p> Caching: The iterator returned by this method first yields all of
+     * the elements of the provider cache, in the order that they were loaded.
+     * It then lazily loads and instantiates any remaining service providers,
+     * adding each one to the cache in turn. If this loader's provider caches are
+     * cleared by invoking the {@link #reload() reload} method then existing
+     * iterators for this service loader should be discarded.
+     * The {@code  hasNext} and {@code next} methods of the iterator throw {@link
      * java.util.ConcurrentModificationException ConcurrentModificationException}
      * if used after the provider cache has been cleared.
      *
      * <p> The iterator returned by this method does not support removal.
      * Invoking its {@link java.util.Iterator#remove() remove} method will
      * cause an {@link UnsupportedOperationException} to be thrown.
+     *
+     * @apiNote Throwing an error in these cases may seem extreme.  The rationale
+     * for this behavior is that a malformed provider-configuration file, like a
+     * malformed class file, indicates a serious problem with the way the Java
+     * virtual machine is configured or is being used.  As such it is preferable
+     * to throw an error rather than try to recover or, even worse, fail silently.
      *
      * @return  An iterator that lazily loads providers for this loader's
      *          service
@@ -1331,35 +1397,36 @@ public final class ServiceLoader<S>
     }
 
     /**
-     * Returns a stream that lazily loads the available providers of this
-     * loader's service. The stream elements are of type {@link Provider
-     * Provider}, the {@code Provider}'s {@link Provider#get() get} method
-     * must be invoked to get or instantiate the provider.
+     * Returns a stream to lazily load available providers of this loader's
+     * service. The stream elements are of type {@link Provider Provider}, the
+     * {@code Provider}'s {@link Provider#get() get} method must be invoked to
+     * get or instantiate the provider.
      *
-     * <p> When processing the stream then providers that were previously
+     * <p> To achieve laziness the actual work of locating providers is done
+     * when processing the stream. If a service provider cannot be loaded for any
+     * of the the reasons specified in the <a href="#errors">Errors</a> section
+     * above then {@link ServiceConfigurationError} is thrown by whatever method
+     * caused the service provider to be loaded. </p>
+     *
+     * <p> Caching: When processing the stream then providers that were previously
      * loaded by stream operations are processed first, in load order. It then
-     * lazily loads any remaining providers. If a provider class cannot be
-     * loaded, can't be assigned to the service type, or some other error is
-     * thrown when locating the provider then it is wrapped with a {@code
-     * ServiceConfigurationError} and thrown by whatever method caused the
-     * provider to be loaded. </p>
+     * lazily loads any remaining service providers. If this loader's provider
+     * caches are cleared by invoking the {@link #reload() reload} method then
+     * existing streams for this service loader should be discarded. The returned
+     * stream's source {@link Spliterator spliterator} is <em>fail-fast</em> and
+     * will throw {@link ConcurrentModificationException} if the provider cache
+     * has been cleared. </p>
      *
-     * <p> If this loader's provider caches are cleared by invoking the {@link
-     * #reload() reload} method then existing streams for this service loader
-     * should be discarded. The returned stream's source {@code Spliterator} is
-     * <em>fail-fast</em> and will throw {@link ConcurrentModificationException}
-     * if the provider cache has been cleared. </p>
-     *
-     * <p> The following examples demonstrate usage. The first example
-     * creates a stream of providers, the second example is the same except
-     * that it sorts the providers by provider class name (and so locate all
-     * providers).
+     * <p> The following examples demonstrate usage. The first example creates
+     * a stream of {@code CodecFactory} objects, the second example is the same
+     * except that it sorts the providers by provider class name (and so locate
+     * all providers).
      * <pre>{@code
-     *    Stream<CodecSet> providers = ServiceLoader.load(CodecSet.class)
+     *    Stream<CodecFactory> providers = ServiceLoader.load(CodecFactory.class)
      *            .stream()
      *            .map(Provider::get);
      *
-     *    Stream<CodecSet> providers = ServiceLoader.load(CodecSet.class)
+     *    Stream<CodecFactory> providers = ServiceLoader.load(CodecFactory.class)
      *            .stream()
      *            .sorted(Comparator.comparing(p -> p.type().getName()))
      *            .map(Provider::get);
@@ -1463,68 +1530,67 @@ public final class ServiceLoader<S>
     }
 
     /**
-     * Creates a new service loader for the given service type and class
-     * loader. The service loader locates service providers in both named and
-     * unnamed modules:
+     * Creates a new service loader for the given service. The service loader
+     * uses the given class loader as the starting point to locate service
+     * providers for the service. The service loader's {@link #iterator()
+     * iterator} and {@link #stream() stream} locate providers in both named
+     * and unnamed modules, as follows:
      *
      * <ul>
-     *   <li><p> Service providers are located in named modules defined to the
-     *   class loader, or any class loader that is reachable via parent
-     *   delegation. </p>
+     *   <li> <p> Step 1: Locate providers in named modules. </p>
      *
-     *   <p> Additionally, and with the exception of the bootstrap and {@linkplain
-     *   ClassLoader#getPlatformClassLoader() platform} class loaders, if the
-     *   class loader, or any class loader reachable via parent delegation,
-     *   defines modules in a module layer then the providers in the module layer
-     *   are located. For example, suppose there is a module layer where each
-     *   module is defined to its own class loader (see {@link
-     *   ModuleLayer#defineModulesWithManyLoaders defineModulesWithManyLoaders}).
-     *   If this {@code ServiceLoader.load} method is invoked to locate providers
-     *   using any of the class loaders created for this layer then it will locate
-     *   all of the providers in that layer, irrespective of their defining class
-     *   loader. </p></li>
+     *   <p> Service providers are located in all named modules of the class
+     *   loader or to any class loader reachable via parent delegation. </p>
      *
-     *   <li><p> A provider is an unnamed modules is located if its class
-     *   name is listed in a service configuration file located by the the class
-     *   loader's {@link ClassLoader#getResources(String) getResources} method.
-     *   The provider class must be visible to the class loader. If a provider
-     *   class is in a named module is listed then it is ignored (this is to
-     *   avoid duplicates that would otherwise arise when a module has both a
-     *   <i>provides</i> clause and a service configuration file in {@code
-     *   META-INF/services} that lists the same provider). </p> </li>
-     * </ul>
+     *   <p> In addition, if the class loader is not the bootstrap or {@linkplain
+     *   ClassLoader#getPlatformClassLoader() platform class loader}, then service
+     *   providers may be located in the named modules of other class loaders.
+     *   Specifically, if the class loader, or any class loader reachable via
+     *   parent delegation, has a module in a {@linkplain ModuleLayer module
+     *   layer}, then service providers in all modules in the module layer are
+     *   located.  </p>
      *
-     * <p> The ordering that the service loader's iterator and stream locate
-     * providers and yield elements is as follows:
+     *   <p> For example, suppose there is a module layer where each module is
+     *   in its own class loader (see {@link ModuleLayer#defineModulesWithManyLoaders
+     *   defineModulesWithManyLoaders}). If this {@code ServiceLoader.load} method
+     *   is invoked to locate providers using any of the class loaders created for
+     *   the module layer, then it will locate all of the providers in the module
+     *   layer, irrespective of their defining class loader. </p>
      *
-     * <ul>
-     *     <li><p> Providers in named modules are located before service
-     *     providers in unnamed modules.</p></li>
+     *   <p> Ordering: The service loader will first locate any service providers
+     *   in modules defined to the class loader, then its parent class loader,
+     *   its parent parent, and so on to the bootstrap class loader. If a class
+     *   loader has modules in a module layer then all providers in that module
+     *   layer are located (irrespective of their class loader) before the
+     *   providers in the parent class loader are located. The ordering of
+     *   modules in same class loader, or the ordering of modules in a module
+     *   layer, is not defined. </p>
      *
-     *     <li><p> When locating providers in named modules then the service
-     *     loader will first locate any service providers in modules defined to
-     *     the class loader, then its parent class loader, its parent parent,
-     *     and so on to the bootstrap class loader. If a class loader or any
-     *     class loader in the parent delegation chain, defines modules in a
-     *     module layer then all providers in that layer are located
-     *     (irrespective of their class loader) before providers in the parent
-     *     class loader are located. The ordering of modules defined to the
-     *     same class loader, or the ordering of modules in a layer, is not
-     *     defined. </p></li>
+     *   <p> If a module declares more than one provider then the providers
+     *   are located in the order that its module descriptor {@linkplain
+     *   java.lang.module.ModuleDescriptor.Provides#providers() lists the
+     *   providers}. Providers added dynamically by instrumentation agents (see
+     *   {@link java.lang.instrument.Instrumentation#redefineModule redefineModule})
+     *   are always located after providers declared by the module. </p> </li>
      *
-     *     <li><p> If a named module declares more than one provider then the
-     *     providers are located in the order that its module descriptor
-     *     {@linkplain java.lang.module.ModuleDescriptor.Provides#providers()
-     *     lists the providers}. Providers added dynamically by instrumentation
-     *     agents (see {@link java.lang.instrument.Instrumentation#redefineModule
-     *     redefineModule}) are always located after providers declared by the
-     *     module. </p></li>
+     *   <li> <p> Step 2: Locate providers in unnamed modules. </p>
      *
-     *     <li><p> When locating providers in unnamed modules then the
-     *     ordering is based on the order that the class loader's {@link
-     *     ClassLoader#getResources(String) getResources} method finds the
-     *     service configuration files and within that, the order that the class
-     *     names are listed in the file. </p></li>
+     *   <p> Service providers in unnamed modules are located if their class names
+     *   are listed in provider-configuration files located by the class loader's
+     *   {@link ClassLoader#getResources(String) getResources} method. </p>
+     *
+     *   <p> The ordering is based on the order that the class loader's {@code
+     *   getResources} method finds the service configuration files and within
+     *   that, the order that the class names are listed in the file. </p>
+     *
+     *   <p> In a provider-configuration file, any mention of a service provider
+     *   that is deployed in a named module is ignored. This is to avoid
+     *   duplicates that would otherwise arise when a named module has both a
+     *   <i>provides</i> directive and a provider-configuration file that mention
+     *   the same service provider. </p>
+     *
+     *   <p> The provider class must be visible to the class loader. </p> </li>
+     *
      * </ul>
      *
      * @apiNote If the class path of the class loader includes remote network
@@ -1657,9 +1723,8 @@ public final class ServiceLoader<S>
     /**
      * Creates a new service loader for the given service type to load service
      * providers from modules in the given module layer and its ancestors. It
-     * does not locate providers in unnamed modules.
-     *
-     * <p> The ordering that the service loader's iterator and stream locate
+     * does not locate providers in unnamed modules. The ordering that the service
+     * loader's {@link #iterator() iterator} and {@link #stream() stream} locate
      * providers and yield elements is as follows:
      *
      * <ul>
@@ -1671,8 +1736,8 @@ public final class ServiceLoader<S>
      *   loader to locate providers with L3 as the context will locate providers
      *   in the following order: L3, L1, L0, L2. </p></li>
      *
-     *   <li><p> If a named module declares more than one provider then the
-     *   providers are located in the order that its module descriptor
+     *   <li><p> If a module declares more than one provider then the providers
+     *   are located in the order that its module descriptor
      *   {@linkplain java.lang.module.ModuleDescriptor.Provides#providers()
      *   lists the providers}. Providers added dynamically by instrumentation
      *   agents are always located after providers declared by the module. </p></li>
@@ -1708,26 +1773,25 @@ public final class ServiceLoader<S>
     }
 
     /**
-     * Load the first available provider of this loader's service. This
+     * Load the first available service provider of this loader's service. This
      * convenience method is equivalent to invoking the {@link #iterator()
      * iterator()} method and obtaining the first element. It therefore
      * returns the first element from the provider cache if possible, it
      * otherwise attempts to load and instantiate the first provider.
      *
-     * <p> The following example loads the first available provider. If there
-     * are no providers deployed then it uses a default implementation.
+     * <p> The following example loads the first available service provider. If
+     * no service providers are located then it uses a default implementation.
      * <pre>{@code
-     *    CodecSet provider =
-     *        ServiceLoader.load(CodecSet.class).findFirst().orElse(DEFAULT_CODECSET);
+     *    CodecFactory factory = ServiceLoader.load(CodecFactory.class)
+     *                                        .findFirst()
+     *                                        .orElse(DEFAULT_CODECSET_FACTORY);
      * }</pre>
-     * @return The first provider or empty {@code Optional} if no providers
-     *         are located
+     * @return The first service provider or empty {@code Optional} if no
+     *         service providers are located
      *
      * @throws ServiceConfigurationError
-     *         If a provider class cannot be loaded, doesn't have the
-     *         appropriate static factory method or constructor, can't be
-     *         assigned to the service type, or if any other kind of exception
-     *         or error is thrown when locating or instantiating the provider.
+     *         If a provider class cannot be loaded for any of the reasons
+     *         specified in the <a href="#errors">Errors</a> section above.
      *
      * @since 9
      * @spec JPMS
@@ -1747,11 +1811,11 @@ public final class ServiceLoader<S>
      *
      * <p> After invoking this method, subsequent invocations of the {@link
      * #iterator() iterator} or {@link #stream() stream} methods will lazily
-     * look up providers (and instantiate in the case of {@code iterator})
-     * from scratch, just as is done by a newly-created loader.
+     * locate providers (and instantiate in the case of {@code iterator})
+     * from scratch, just as is done by a newly-created service loader.
      *
-     * <p> This method is intended for use in situations in which new providers
-     * can be installed into a running Java virtual machine.
+     * <p> This method is intended for use in situations in which new service
+     * providers can be installed into a running Java virtual machine.
      */
     public void reload() {
         lookupIterator1 = null;
