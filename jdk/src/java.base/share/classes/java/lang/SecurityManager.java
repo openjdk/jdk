@@ -194,18 +194,15 @@ import sun.security.util.SecurityConstants;
  * of system administrators who might need to perform multiple
  * tasks that require all (or numerous) permissions.
  * <p>
- * See <a href ="../../../technotes/guides/security/permissions.html">
- * Permissions in the JDK</a> for permission-related information.
+ * See {@extLink security_guide_permissions
+ * Permissions in the Java Development Kit (JDK)}
+ * for permission-related information.
  * This document includes, for example, a table listing the various SecurityManager
  * <code>check</code> methods and the permission(s) the default
  * implementation of each such method requires.
  * It also contains a table of all the version 1.2 methods
  * that require permissions, and for each such method tells
  * which permission it requires.
- * <p>
- * For more information about <code>SecurityManager</code> changes made in
- * the JDK and advice regarding porting of 1.1-style security managers,
- * see the <a href="../../../technotes/guides/security/index.html">security documentation</a>.
  *
  * @author  Arthur van Hoff
  * @author  Roland Schemers
