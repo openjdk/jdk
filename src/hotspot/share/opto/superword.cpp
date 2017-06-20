@@ -1102,7 +1102,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   }
 
   if (isomorphic(s1, s2)) {
-    if (independent(s1, s2) || reduction(s1, s2)) {
+    if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
           int s1_align = alignment(s1);
@@ -1178,6 +1178,20 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   visited_clear();
 
   return independent_path(shallow, deep);
+}
+
+//--------------------------have_similar_inputs-----------------------
+// For a node pair (s1, s2) which is isomorphic and independent,
+// do s1 and s2 have similar input edges?
+bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
+  // assert(isomorphic(s1, s2) == true, "check isomorphic");
+  // assert(independent(s1, s2) == true, "check independent");
+  if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
+    for (uint i = 1; i < s1->req(); i++) {
+      if (s1->in(i)->Opcode() != s2->in(i)->Opcode()) return false;
+    }
+  }
+  return true;
 }
 
 //------------------------------reduction---------------------------
