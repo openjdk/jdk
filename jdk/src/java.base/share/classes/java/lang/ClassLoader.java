@@ -2165,7 +2165,7 @@ public abstract class ClassLoader {
      * @revised 9
      * @spec JPMS
      *
-     * @see <a href="../../../technotes/guides/jar/jar.html#sealing">
+     * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
      *      The JAR File Specification: Package Sealing</a>
      */
     protected Package definePackage(String name, String specTitle,
