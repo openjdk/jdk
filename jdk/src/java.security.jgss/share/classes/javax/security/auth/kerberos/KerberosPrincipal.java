@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,9 +100,9 @@ public final class KerberosPrincipal
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
      * configuration file or via the java.security.krb5.realm
-     * system property. For more information, see
-     * <a href="../../../../../technotes/guides/security/jgss/tutorials/index.html">
-     * Kerberos Requirements</a>. Additionally, if a security manager is
+     * system property. For more information, see the
+     * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
+     * Additionally, if a security manager is
      * installed, a {@link ServicePermission} must be granted and the service
      * principal of the permission must minimally be inside the
      * {@code KerberosPrincipal}'s realm. For example, if the result of
@@ -140,9 +140,9 @@ public final class KerberosPrincipal
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
      * configuration file or via the java.security.krb5.realm
-     * system property. For more information, see
-     * <a href="../../../../../technotes/guides/security/jgss/tutorials/index.html">
-     * Kerberos Requirements</a>. Additionally, if a security manager is
+     * system property. For more information, see the
+     * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
+     * Additionally, if a security manager is
      * installed, a {@link ServicePermission} must be granted and the service
      * principal of the permission must minimally be inside the
      * {@code KerberosPrincipal}'s realm. For example, if the result of
