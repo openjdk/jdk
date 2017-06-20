@@ -40,7 +40,7 @@
  *       <a href="../zip/package-summary.html#package_description">java.util.zip
  *       package description.</a> <p>
  *       In JAR files, all file names must be encoded in the UTF-8 encoding.
- *   <li><a href="../../../../technotes/guides/jar/jar.html">
+ *   <li><a href="{@docRoot}/../specs/jar/jar.html">
  *       Manifest and Signature Specification</a> - The manifest format specification.
  * </ul>
  *
