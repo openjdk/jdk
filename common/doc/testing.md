@@ -16,6 +16,15 @@ Some example command-lines:
     $ make run-test TEST="hotspot/test:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make run-test TEST="jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java"
 
+### Configuration
+
+To be able to run JTReg tests, `configure` needs to know where to find the
+JTReg test framework. If it is not picked up automatically by configure, use
+the `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
+Note that this option should point to the JTReg home, i.e. the top directory,
+containing `lib/jtreg.jar` etc. (An alternative is to set the `JT_HOME`
+environment variable to point to the JTReg home before running `configure`.)
+
 ## Test selection
 
 All functionality is available using the run-test make target. In this use
@@ -24,7 +33,7 @@ To speed up subsequent test runs with no source code changes, run-test-only can
 be used instead, which do not depend on the source and test image build.
 
 For some common top-level tests, direct make targets have been generated. This
-includes all JTreg test groups, the hotspot gtest, and custom tests (if
+includes all JTReg test groups, the hotspot gtest, and custom tests (if
 present). This means that `make run-test-tier1` is equivalent to `make run-test
 TEST="tier1"`, but the latter is more tab-completion friendly. For more complex
 test runs, the `run-test TEST="x"` solution needs to be used.
@@ -36,9 +45,9 @@ jtreg:langtools/test:tier1 jtreg:nashorn/test:tier1 jtreg:jaxp/test:tier1`. You
 can always submit a list of fully qualified test descriptors in the `TEST`
 variable if you want to shortcut the parser.
 
-### JTreg
+### JTReg
 
-JTreg test groups can be specified either without a test root, e.g. `:tier1`
+JTReg test groups can be specified either without a test root, e.g. `:tier1`
 (or `tier1`, the initial colon is optional), or with, e.g.
 `hotspot/test:tier1`, `jdk/test:jdk_util`.
 
@@ -46,10 +55,10 @@ When specified without a test root, all matching groups from all tests roots
 will be added. Otherwise, only the group from the specified test root will be
 added.
 
-Individual JTreg tests or directories containing JTreg tests can also be
+Individual JTReg tests or directories containing JTReg tests can also be
 specified, like `hotspot/test/native_sanity/JniVersion.java` or
 `hotspot/test/native_sanity`. You can also specify an absolute path, to point
-to a JTreg test outside the source tree.
+to a JTReg test outside the source tree.
 
 As long as the test groups or test paths can be uniquely resolved, you do not
 need to enter the `jtreg:` prefix. If this is not possible, or if you want to
@@ -93,7 +102,7 @@ error, timeout or other problems.
 
 In case of test failures, `make run-test` will exit with a non-zero exit value.
 
-All tests have their result stored in `build/$BUILD/test-result/$TEST_ID`,
+All tests have their result stored in `build/$BUILD/test-results/$TEST_ID`,
 where TEST_ID is a path-safe conversion from the fully qualified test
 descriptor, e.g. for `jtreg:jdk/test:tier1` the TEST_ID is
 `jtreg_jdk_test_tier1`. This path is also printed in the log at the end of the
@@ -109,7 +118,7 @@ It is possible to control various aspects of the test suites using make control
 variables.
 
 These variables use a keyword=value approach to allow multiple values to be
-set. So, for instance, `JTREG="JOBS=1;TIMEOUT=8"` will set the JTreg
+set. So, for instance, `JTREG="JOBS=1;TIMEOUT=8"` will set the JTReg
 concurrency level to 1 and the timeout factor to 8. This is equivalent to
 setting `JTREG_JOBS=1 JTREG_TIMEOUT=8`, but using the keyword format means that
 the `JTREG` variable is parsed and verified for correctness, so
@@ -130,7 +139,7 @@ proper quoting of command line arguments through.)
 As far as possible, the names of the keywords have been standardized between
 test suites.
 
-### JTreg keywords
+### JTReg keywords
 
 #### JOBS
 The test concurrency (`-concurrency`).
@@ -168,21 +177,21 @@ Defaults to `fail,error`.
 #### MAX_MEM
 Limit memory consumption (`-Xmx` and `-vmoption:-Xmx`, or none).
 
-Limit memory consumption for JTreg test framework and VM under test. Set to 0
+Limit memory consumption for JTReg test framework and VM under test. Set to 0
 to disable the limits.
 
 Defaults to 512m, except for hotspot, where it defaults to 0 (no limit).
 
 #### OPTIONS
-Additional options to the JTreg test framework.
+Additional options to the JTReg test framework.
 
-Use `JTREG="OPTIONS=--help all"` to see all available JTreg options.
+Use `JTREG="OPTIONS=--help all"` to see all available JTReg options.
 
 #### JAVA_OPTIONS
-Additional Java options to JTreg (`-javaoption`).
+Additional Java options to JTReg (`-javaoption`).
 
 #### VM_OPTIONS
-Additional VM options to JTreg (`-vmoption`).
+Additional VM options to JTReg (`-vmoption`).
 
 ### Gtest keywords
 
