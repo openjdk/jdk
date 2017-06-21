@@ -36,7 +36,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include "jvm.h"
 #include "net_util.h"
 
