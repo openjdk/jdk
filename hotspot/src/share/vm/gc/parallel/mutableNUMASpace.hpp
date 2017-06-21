@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,8 @@ class MutableNUMASpace : public MutableSpace {
   GrowableArray<LGRPSpace*>* _lgrp_spaces;
   size_t _page_size;
   unsigned _adaptation_cycles, _samples_count;
+
+  bool _must_use_large_pages;
 
   void set_page_size(size_t psz)                     { _page_size = psz;          }
   size_t page_size() const                           { return _page_size;         }

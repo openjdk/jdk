@@ -22,9 +22,10 @@
  */
 package org.graalvm.compiler.nodes;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
-
 import jdk.vm.ci.meta.JavaKind.FormatWithToString;
+
+import org.graalvm.word.LocationIdentity;
+
 import jdk.vm.ci.meta.ResolvedJavaField;
 
 public class FieldLocationIdentity extends LocationIdentity implements FormatWithToString {

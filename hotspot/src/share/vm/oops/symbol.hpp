@@ -175,7 +175,16 @@ class Symbol : public MetaspaceObj {
   int utf8_length() const { return _length; }
 
   // Compares the symbol with a string.
-  bool equals(const char* str, int len) const;
+  bool equals(const char* str, int len) const {
+    int l = utf8_length();
+    if (l != len) return false;
+    while (l-- > 0) {
+      if (str[l] != (char) byte_at(l))
+        return false;
+    }
+    assert(l == -1, "we should be at the beginning");
+    return true;
+  }
   bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
 
   // Tests if the symbol starts with the given prefix.

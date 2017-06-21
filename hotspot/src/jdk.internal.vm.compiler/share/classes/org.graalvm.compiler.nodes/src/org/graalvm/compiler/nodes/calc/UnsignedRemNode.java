@@ -70,10 +70,4 @@ public class UnsignedRemNode extends IntegerDivRemNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitURem(gen.operand(getX()), gen.operand(getY()), gen.state(this)));
     }
-
-    @NodeIntrinsic
-    public static native int unsignedRemainder(int a, int b);
-
-    @NodeIntrinsic
-    public static native long unsignedRemainder(long a, long b);
 }

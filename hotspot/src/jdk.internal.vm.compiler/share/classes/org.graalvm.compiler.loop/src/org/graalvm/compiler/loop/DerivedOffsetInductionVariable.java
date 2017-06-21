@@ -90,7 +90,7 @@ public class DerivedOffsetInductionVariable extends DerivedInductionVariable {
     @Override
     public ValueNode strideNode() {
         if (value instanceof SubNode && base.valueNode() == value.getY()) {
-            return graph().unique(new NegateNode(base.strideNode()));
+            return graph().addOrUniqueWithInputs(NegateNode.create(base.strideNode()));
         }
         return base.strideNode();
     }

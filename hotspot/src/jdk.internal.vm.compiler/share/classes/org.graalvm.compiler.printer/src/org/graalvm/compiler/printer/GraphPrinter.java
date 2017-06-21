@@ -22,23 +22,21 @@
  */
 package org.graalvm.compiler.printer;
 
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.util.ModuleAPI;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
@@ -56,9 +54,11 @@ interface GraphPrinter extends Closeable {
      * Prints an entire {@link Graph} with the specified title, optionally using short names for
      * nodes.
      */
-    void print(Graph graph, String title, Map<Object, Object> properties) throws IOException;
+    void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException;
 
     SnippetReflectionProvider getSnippetReflectionProvider();
+
+    void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection);
 
     /**
      * Ends the current group.
@@ -76,12 +76,12 @@ interface GraphPrinter extends Closeable {
     /**
      * {@code jdk.vm.ci} module.
      */
-    Object JVMCI_MODULE = JAVA_SPECIFICATION_VERSION < 9 ? null : ModuleAPI.getModule.invoke(Services.class);
+    Object JVMCI_MODULE = JDK9Method.JAVA_SPECIFICATION_VERSION < 9 ? null : JDK9Method.getModule.invoke(Services.class);
 
     /**
      * Classes whose {@link #toString()} method does not run any untrusted code.
      */
-    Set<Class<?>> TRUSTED_CLASSES = new HashSet<>(Arrays.asList(
+    List<Class<?>> TRUSTED_CLASSES = Arrays.asList(
                     String.class,
                     Class.class,
                     Boolean.class,
@@ -91,7 +91,7 @@ interface GraphPrinter extends Closeable {
                     Integer.class,
                     Float.class,
                     Long.class,
-                    Double.class));
+                    Double.class);
     int MAX_CONSTANT_TO_STRING_LENGTH = 50;
 
     /**
@@ -102,14 +102,14 @@ interface GraphPrinter extends Closeable {
         if (TRUSTED_CLASSES.contains(c)) {
             return true;
         }
-        if (JAVA_SPECIFICATION_VERSION < 9) {
+        if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
             if (c.getClassLoader() == Services.class.getClassLoader()) {
                 // Loaded by the JVMCI class loader
                 return true;
             }
         } else {
-            Object module = ModuleAPI.getModule.invoke(c);
-            if (JVMCI_MODULE == module || (Boolean) ModuleAPI.isExportedTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
+            Object module = JDK9Method.getModule.invoke(c);
+            if (JVMCI_MODULE == module || (Boolean) JDK9Method.isOpenTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
                 // Can access non-statically-exported package in JVMCI
                 return true;
             }
@@ -142,6 +142,22 @@ interface GraphPrinter extends Closeable {
         }
     }
 
+    default String formatTitle(int id, String format, Object... args) {
+        /*
+         * If an argument is a Class, replace it with the simple name.
+         */
+        Object[] newArgs = new Object[args.length];
+        for (int i = 0; i < newArgs.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof JavaType) {
+                newArgs[i] = ((JavaType) arg).getUnqualifiedName();
+            } else {
+                newArgs[i] = arg;
+            }
+        }
+        return id + ": " + String.format(format, newArgs);
+    }
+
     static String truncate(String s) {
         if (s.length() > MAX_CONSTANT_TO_STRING_LENGTH) {
             return s.substring(0, MAX_CONSTANT_TO_STRING_LENGTH - 3) + "...";
@@ -158,7 +174,7 @@ interface GraphPrinter extends Closeable {
         } else if (isToStringTrusted(c)) {
             return value.toString();
         }
-        return MetaUtil.getSimpleName(c, true) + "@" + System.identityHashCode(value);
+        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value));
 
     }
 

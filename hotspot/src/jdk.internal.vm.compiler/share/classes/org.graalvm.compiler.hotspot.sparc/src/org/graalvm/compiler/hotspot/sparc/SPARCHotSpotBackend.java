@@ -22,13 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.sparc;
 
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPCC;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.isGlobalRegister;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.NOT_ANNUL;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict.PREDICT_NOT_TAKEN;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.CC.Xcc;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.NotEqual;
-import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.sparc.SPARC.g0;
@@ -40,10 +33,16 @@ import static jdk.vm.ci.sparc.SPARC.l7;
 import static jdk.vm.ci.sparc.SPARC.o0;
 import static jdk.vm.ci.sparc.SPARC.o7;
 import static jdk.vm.ci.sparc.SPARC.sp;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPCC;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.isGlobalRegister;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.NOT_ANNUL;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict.PREDICT_NOT_TAKEN;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.CC.Xcc;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.NotEqual;
+import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -62,11 +61,11 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.sparc.SPARCNodeMatchRules;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -92,6 +91,10 @@ import org.graalvm.compiler.lir.sparc.SPARCLIRInstructionMixin.SizeEstimate;
 import org.graalvm.compiler.lir.sparc.SPARCTailDelayedLIRInstruction;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.Register;
@@ -203,7 +206,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
                 }
             }
 
-            if (ZapStackOnMethodEntry.getValue()) {
+            if (ZapStackOnMethodEntry.getValue(crb.getOptions())) {
                 final int slotSize = 8;
                 for (int i = 0; i < frameSize / slotSize; ++i) {
                     // 0xC1C1C1C1
@@ -235,7 +238,8 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
         // On SPARC we always use stack frames.
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
-        CompilationResultBuilder crb = factory.createBuilder(getProviders().getCodeCache(), getProviders().getForeignCalls(), frameMap, masm, dataBuilder, frameContext, compilationResult);
+        OptionValues options = lir.getOptions();
+        CompilationResultBuilder crb = factory.createBuilder(getProviders().getCodeCache(), getProviders().getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, compilationResult);
         crb.setTotalFrameSize(frameMap.totalFrameSize());
         crb.setMaxInterpreterFrameSize(gen.getMaxInterpreterFrameSize());
         StackSlot deoptimizationRescueSlot = gen.getDeoptimizationRescueSlot();
@@ -245,8 +249,8 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
 
         if (stub != null) {
             // Even on sparc we need to save floating point registers
-            Set<Register> destroyedCallerRegisters = gatherDestroyedCallerRegisters(lir);
-            Map<LIRFrameState, SaveRegistersOp> calleeSaveInfo = gen.getCalleeSaveInfo();
+            EconomicSet<Register> destroyedCallerRegisters = gatherDestroyedCallerRegisters(lir);
+            EconomicMap<LIRFrameState, SaveRegistersOp> calleeSaveInfo = gen.getCalleeSaveInfo();
             updateStub(stub, destroyedCallerRegisters, calleeSaveInfo, frameMap);
         }
         assert registerSizePredictionValidator(crb);
@@ -421,7 +425,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
      * possible.
      */
     private static void stuffDelayedControlTransfers(LIR l, AbstractBlockBase<?> block) {
-        List<LIRInstruction> instructions = l.getLIRforBlock(block);
+        ArrayList<LIRInstruction> instructions = l.getLIRforBlock(block);
         if (instructions.size() >= 2) {
             LIRDependencyAccumulator acc = new LIRDependencyAccumulator();
             SPARCDelayedControlTransfer delayedTransfer = null;
@@ -497,14 +501,14 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
     }
 
     @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig) {
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
-        return new SPARCHotSpotRegisterAllocationConfig(registerConfigNonNull);
+        return new SPARCHotSpotRegisterAllocationConfig(registerConfigNonNull, allocationRestrictedTo);
     }
 
     @Override
-    public Set<Register> translateToCallerRegisters(Set<Register> calleeRegisters) {
-        HashSet<Register> callerRegisters = new HashSet<>(calleeRegisters.size());
+    public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
+        EconomicSet<Register> callerRegisters = EconomicSet.create(Equivalence.IDENTITY, calleeRegisters.size());
         for (Register register : calleeRegisters) {
             if (l0.number <= register.number && register.number <= l7.number) {
                 // do nothing

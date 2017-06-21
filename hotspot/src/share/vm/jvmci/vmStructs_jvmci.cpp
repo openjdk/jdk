@@ -719,7 +719,8 @@
   declare_preprocessor_constant("VM_Version::CPU_AVX512BW", CPU_AVX512BW) \
   declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
   declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)           \
-  declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)
+  declare_preprocessor_constant("VM_Version::CPU_FMA", CPU_FMA)           \
+  declare_preprocessor_constant("VM_Version::CPU_VZEROUPPER", CPU_VZEROUPPER)
 
 #endif
 

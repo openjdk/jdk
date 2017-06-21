@@ -22,12 +22,14 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_15;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_10;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -39,7 +41,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 /**
  * The base class of all instructions that access fields.
  */
-@NodeInfo(cycles = CYCLES_15, size = SIZE_10)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_1)
 public abstract class AccessFieldNode extends FixedWithNextNode implements Lowerable {
 
     public static final NodeClass<AccessFieldNode> TYPE = NodeClass.create(AccessFieldNode.class);
@@ -61,7 +63,6 @@ public abstract class AccessFieldNode extends FixedWithNextNode implements Lower
         super(c, stamp);
         this.object = object;
         this.field = field;
-        assert field.getDeclaringClass().isInitialized();
     }
 
     /**
@@ -109,5 +110,13 @@ public abstract class AccessFieldNode extends FixedWithNextNode implements Lower
     public boolean verify() {
         assertTrue((object == null) == isStatic(), "static field must not have object, instance field must have object");
         return super.verify();
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        if (field.isVolatile()) {
+            return SIZE_2;
+        }
+        return super.estimatedNodeSize();
     }
 }

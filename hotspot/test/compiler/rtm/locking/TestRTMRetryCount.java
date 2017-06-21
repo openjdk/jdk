@@ -28,6 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -42,13 +43,9 @@ import compiler.testlibrary.rtm.BusyLock;
 import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -56,18 +53,13 @@ import java.util.List;
  * Test verifies that RTMRetryCount option actually affects amount of
  * retries on lock busy.
  */
-public class TestRTMRetryCount extends CommandLineOptionTest {
+public class TestRTMRetryCount {
     /**
      * Time in ms, during which busy lock will be locked.
      */
     private static final int LOCKING_TIME = 5000;
     private static final boolean INFLATE_MONITOR = true;
 
-    private TestRTMRetryCount() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         verifyRTMRetryCount(0);
         verifyRTMRetryCount(1);
@@ -107,6 +99,6 @@ public class TestRTMRetryCount extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMRetryCount().test();
+        new TestRTMRetryCount().runTestCases();
     }
 }

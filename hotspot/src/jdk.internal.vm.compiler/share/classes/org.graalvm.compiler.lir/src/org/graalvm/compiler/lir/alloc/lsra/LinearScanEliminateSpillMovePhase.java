@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.phases.LIRPhase.Options.LIROptimization;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -41,21 +41,21 @@ import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.SpillState;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan.IntervalPredicate;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
 
-public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
+public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase {
 
     public static class Options {
         // @formatter:off
         @Option(help = "Enable spill move elimination.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> LIROptLSRAEliminateSpillMoves = new NestedBooleanOptionValue(LIROptimization, true);
+        public static final OptionKey<Boolean> LIROptLSRAEliminateSpillMoves = new NestedBooleanOptionKey(LIROptimization, true);
         // @formatter:on
     }
 
@@ -75,12 +75,12 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
-        eliminateSpillMoves();
+        eliminateSpillMoves(lirGenRes);
     }
 
     /**
      * @return the index of the first instruction that is of interest for
-     *         {@link #eliminateSpillMoves()}
+     *         {@link #eliminateSpillMoves}
      */
     protected int firstInstructionOfInterest() {
         // skip the first because it is always a label
@@ -89,7 +89,7 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
 
     // called once before assignment of register numbers
     @SuppressWarnings("try")
-    void eliminateSpillMoves() {
+    void eliminateSpillMoves(LIRGenerationResult res) {
         try (Indent indent = Debug.logAndIndent("Eliminating unnecessary spill moves")) {
 
             /*
@@ -97,15 +97,15 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
              * by Interval.spillDefinitionPos.
              */
             Interval interval;
-            interval = allocator.createUnhandledLists(mustStoreAtDefinition, null).first;
-            if (DetailedAsserts.getValue()) {
+            interval = allocator.createUnhandledLists(mustStoreAtDefinition, null).getLeft();
+            if (DetailedAsserts.getValue(allocator.getOptions())) {
                 checkIntervals(interval);
             }
 
             LIRInsertionBuffer insertionBuffer = new LIRInsertionBuffer();
             for (AbstractBlockBase<?> block : allocator.sortedBlocks()) {
                 try (Indent indent1 = Debug.logAndIndent("Handle %s", block)) {
-                    List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
+                    ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
                     int numInst = instructions.size();
 
                     // iterate all instructions of the block.
@@ -114,24 +114,24 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
                         int opId = op.id();
 
                         if (opId == -1) {
-                            MoveOp move = (MoveOp) op;
+                            MoveOp move = MoveOp.asMoveOp(op);
                             /*
                              * Remove move from register to stack if the stack slot is guaranteed to
                              * be correct. Only moves that have been inserted by LinearScan can be
                              * removed.
                              */
-                            if (Options.LIROptLSRAEliminateSpillMoves.getValue() && canEliminateSpillMove(block, move)) {
+                            if (Options.LIROptLSRAEliminateSpillMoves.getValue(allocator.getOptions()) && canEliminateSpillMove(block, move)) {
                                 /*
                                  * Move target is a stack slot that is always correct, so eliminate
                                  * instruction.
                                  */
                                 if (Debug.isLogEnabled()) {
-                                    if (move instanceof ValueMoveOp) {
-                                        ValueMoveOp vmove = (ValueMoveOp) move;
+                                    if (ValueMoveOp.isValueMoveOp(op)) {
+                                        ValueMoveOp vmove = ValueMoveOp.asValueMoveOp(op);
                                         Debug.log("eliminating move from interval %d (%s) to %d (%s) in block %s", allocator.operandNumber(vmove.getInput()), vmove.getInput(),
                                                         allocator.operandNumber(vmove.getResult()), vmove.getResult(), block);
                                     } else {
-                                        LoadConstantOp load = (LoadConstantOp) move;
+                                        LoadConstantOp load = LoadConstantOp.asLoadConstantOp(op);
                                         Debug.log("eliminating constant load from %s to %d (%s) in block %s", load.getConstant(), allocator.operandNumber(load.getResult()), load.getResult(), block);
                                     }
                                 }
@@ -145,10 +145,10 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
                              * Insert move from register to stack just after the beginning of the
                              * interval.
                              */
-                            assert interval == Interval.EndMarker || interval.spillDefinitionPos() >= opId : "invalid order";
-                            assert interval == Interval.EndMarker || (interval.isSplitParent() && interval.spillState() == SpillState.StoreAtDefinition) : "invalid interval";
+                            assert interval.isEndMarker() || interval.spillDefinitionPos() >= opId : "invalid order";
+                            assert interval.isEndMarker() || (interval.isSplitParent() && interval.spillState() == SpillState.StoreAtDefinition) : "invalid interval";
 
-                            while (interval != Interval.EndMarker && interval.spillDefinitionPos() == opId) {
+                            while (!interval.isEndMarker() && interval.spillDefinitionPos() == opId) {
                                 if (!interval.canMaterialize()) {
                                     if (!insertionBuffer.initialized()) {
                                         /*
@@ -168,6 +168,7 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
 
                                         LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
                                         insertionBuffer.append(j + 1, move);
+                                        move.setComment(res, "LSRAEliminateSpillMove: store at definition");
 
                                         if (Debug.isLogEnabled()) {
                                             Debug.log("inserting move after definition of interval %d to stack slot %s at opId %d", interval.operandNumber, interval.spillSlot(), opId);
@@ -185,7 +186,7 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
                 }
             } // end of block iteration
 
-            assert interval == Interval.EndMarker : "missed an interval";
+            assert interval.isEndMarker() : "missed an interval";
         }
     }
 
@@ -208,7 +209,7 @@ public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
     private static void checkIntervals(Interval interval) {
         Interval prev = null;
         Interval temp = interval;
-        while (temp != Interval.EndMarker) {
+        while (!temp.isEndMarker()) {
             assert temp.spillDefinitionPos() > 0 : "invalid spill definition pos";
             if (prev != null) {
                 assert temp.from() >= prev.from() : "intervals not sorted";

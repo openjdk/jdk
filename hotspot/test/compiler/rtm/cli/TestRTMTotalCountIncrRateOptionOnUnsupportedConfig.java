@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires !(vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os)
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,26 +40,18 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
-
 public class TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {
     private static final String DEFAULT_VALUE = "64";
 
     private TestRTMTotalCountIncrRateOptionOnUnsupportedConfig() {
-        super(new NotPredicate(
-                new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM())),
-                "RTMTotalCountIncrRate", false, true,
+        super("RTMTotalCountIncrRate", false, true,
                 TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
                         .DEFAULT_VALUE,
-                "-1", "0", "42", "128");
+                "1", "42", "128");
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMTotalCountIncrRateOptionOnUnsupportedConfig().test();
+        new TestRTMTotalCountIncrRateOptionOnUnsupportedConfig().runTestCases();
     }
 }

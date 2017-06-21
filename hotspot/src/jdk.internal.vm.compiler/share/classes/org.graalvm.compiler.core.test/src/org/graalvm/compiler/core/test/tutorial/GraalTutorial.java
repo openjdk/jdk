@@ -22,12 +22,12 @@
  */
 package org.graalvm.compiler.core.test.tutorial;
 
+import java.lang.reflect.Method;
+import java.util.regex.Pattern;
+
+import org.graalvm.compiler.bytecode.BytecodeDisassembler;
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.graalvm.compiler.bytecode.Bytecode;
-import org.graalvm.compiler.bytecode.BytecodeDisassembler;
-import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -49,14 +49,31 @@ public class GraalTutorial extends InvokeGraal {
      */
 
     @Test
-    public void testPrintBytecodes() {
-        ResolvedJavaMethod method = findMethod(String.class, "hashCode");
-        Bytecode bytecode = new ResolvedJavaMethodBytecode(method);
+    public void testGetBytecodes() throws NoSuchMethodException {
+        Method reflectionMethod = String.class.getDeclaredMethod("hashCode");
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(reflectionMethod);
 
-        byte[] bytecodes = bytecode.getCode();
-        Assert.assertNotNull(bytecodes);
+        /*
+         * ResolvedJavaMethod provides all information that you want about a method, for example,
+         * the bytecodes.
+         */
+        byte[] bytecodes = method.getCode();
 
-        System.out.println(new BytecodeDisassembler().disassemble(bytecode));
+        /*
+         * BytecodeDisassembler shows you how to iterate bytecodes, how to access type information,
+         * and more.
+         */
+        String disassembly = new BytecodeDisassembler().disassemble(method);
+
+        /*
+         * We don't want test cases to print any output, so we check the validity of the output
+         * instead.
+         */
+        Pattern disassemblyLineRE = Pattern.compile(" *\\d+: [a-z][\\w_]+");
+        for (String line : disassembly.split("\\n")) {
+            Assert.assertTrue(line, disassemblyLineRE.matcher(line).find());
+        }
+        Assert.assertTrue(bytecodes.length > 0);
     }
 
     /*
@@ -131,6 +148,21 @@ public class GraalTutorial extends InvokeGraal {
      * Tutorial example for snippets and lowering.
      */
 
+    public static int identityHashCodeUsage(Object obj) {
+        return System.identityHashCode(obj);
+    }
+
+    @Test
+    public void testIdentityHashCodeUsage() throws InvalidInstalledCodeException {
+        Object a = new Object();
+        int expectedResult = identityHashCodeUsage(a);
+
+        InstalledCode compiledMethod = compileAndInstallMethod(findMethod(GraalTutorial.class, "identityHashCodeUsage"));
+
+        int result = (int) compiledMethod.executeVarargs(a);
+        Assert.assertEquals(expectedResult, result);
+    }
+
     static class A {
     }
 
@@ -173,17 +205,18 @@ public class GraalTutorial extends InvokeGraal {
      * Tutorial example for intrinsic methods.
      */
 
-    public static double intrinsicUsage(double val) {
-        return Math.sin(val);
+    public static int intrinsicIntegerReverseBytes(int val) {
+        return Integer.reverseBytes(val);
     }
 
     @Test
-    public void testIntrinsicUsage() throws InvalidInstalledCodeException {
-        double expectedResult = intrinsicUsage(42d);
+    public void testIntrinsicIntegerReverseBytes() throws InvalidInstalledCodeException {
+        int input = 0x12345678;
+        int expected = intrinsicIntegerReverseBytes(input);
 
-        InstalledCode compiledMethod = compileAndInstallMethod(findMethod(GraalTutorial.class, "intrinsicUsage"));
+        InstalledCode compiledMethod = compileAndInstallMethod(findMethod(GraalTutorial.class, "intrinsicIntegerReverseBytes"));
 
-        double result = (double) compiledMethod.executeVarargs(42d);
-        Assert.assertEquals(expectedResult, result, 0);
+        int actual = (int) compiledMethod.executeVarargs(input);
+        Assert.assertEquals(expected, actual);
     }
 }

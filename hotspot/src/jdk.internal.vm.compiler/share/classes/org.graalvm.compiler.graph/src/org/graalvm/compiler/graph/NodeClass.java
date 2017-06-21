@@ -28,7 +28,6 @@ import static org.graalvm.compiler.graph.Edges.translateInto;
 import static org.graalvm.compiler.graph.Graph.isModificationCountsEnabled;
 import static org.graalvm.compiler.graph.InputEdges.translateInto;
 import static org.graalvm.compiler.graph.Node.WithAllEdges;
-import static org.graalvm.compiler.graph.Node.newIdentityMap;
 import static org.graalvm.compiler.graph.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
@@ -39,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +49,6 @@ import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.DebugTimer;
-import org.graalvm.compiler.debug.Fingerprint;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Edges.Type;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -68,9 +65,8 @@ import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
-import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.StableOptionValue;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 /**
  * Metadata for every {@link Node} type. The metadata includes:
@@ -81,13 +77,6 @@ import org.graalvm.compiler.options.StableOptionValue;
  * </ul>
  */
 public final class NodeClass<T> extends FieldIntrospection<T> {
-
-    public static class Options {
-        // @formatter:off
-        @Option(help = "Verifies that receivers of NodeInfo#size() and NodeInfo#cycles() do not have UNSET values.")
-        public static final OptionValue<Boolean> VerifyNodeCostOnAccess = new StableOptionValue<>(false);
-        // @formatter:on
-    }
 
     // Timers for creation of a NodeClass instance
     private static final DebugTimer Init_FieldScanning = Debug.timer("NodeClass.Init.FieldScanning");
@@ -140,6 +129,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     private static final Class<?> SUCCESSOR_LIST_CLASS = NodeSuccessorList.class;
 
     private static AtomicInteger nextIterableId = new AtomicInteger();
+    private static AtomicInteger nextLeafId = new AtomicInteger();
 
     private final InputEdges inputs;
     private final SuccessorEdges successors;
@@ -172,6 +162,8 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
      */
     private final boolean isSimplifiable;
     private final boolean isLeafNode;
+
+    private final int leafId;
 
     public NodeClass(Class<T> clazz, NodeClass<? super T> superNodeClass) {
         this(clazz, superNodeClass, new FieldsScanner.DefaultCalcOffset(), null, 0);
@@ -207,6 +199,11 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         }
 
         isLeafNode = inputs.getCount() + successors.getCount() == 0;
+        if (isLeafNode) {
+            this.leafId = nextLeafId.getAndIncrement();
+        } else {
+            this.leafId = -1;
+        }
 
         canGVN = Node.ValueNumberable.class.isAssignableFrom(clazz);
         startGVNNumber = clazz.getName().hashCode();
@@ -277,16 +274,10 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     private final NodeSize size;
 
     public NodeCycles cycles() {
-        if (Options.VerifyNodeCostOnAccess.getValue() && cycles == NodeCycles.CYCLES_UNSET) {
-            throw new GraalError("Missing NodeCycles specification in the @NodeInfo annotation of the node %s", this);
-        }
         return cycles;
     }
 
     public NodeSize size() {
-        if (Options.VerifyNodeCostOnAccess.getValue() && size == NodeSize.SIZE_UNSET) {
-            throw new GraalError("Missing NodeSize specification in the @NodeInfo annotation of the node %s", this);
-        }
         return size;
     }
 
@@ -532,7 +523,11 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     private static int deepHashCode0(Object o) {
-        if (o instanceof Object[]) {
+        if (o == null) {
+            return 0;
+        } else if (!o.getClass().isArray()) {
+            return o.hashCode();
+        } else if (o instanceof Object[]) {
             return Arrays.deepHashCode((Object[]) o);
         } else if (o instanceof byte[]) {
             return Arrays.hashCode((byte[]) o);
@@ -550,10 +545,8 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
             return Arrays.hashCode((double[]) o);
         } else if (o instanceof boolean[]) {
             return Arrays.hashCode((boolean[]) o);
-        } else if (o != null) {
-            return o.hashCode();
         } else {
-            return 0;
+            throw shouldNotReachHere();
         }
     }
 
@@ -605,30 +598,47 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     private static boolean deepEquals0(Object e1, Object e2) {
-        assert e1 != null;
-        boolean eq;
-        if (e1 instanceof Object[] && e2 instanceof Object[]) {
-            eq = Arrays.deepEquals((Object[]) e1, (Object[]) e2);
-        } else if (e1 instanceof byte[] && e2 instanceof byte[]) {
-            eq = Arrays.equals((byte[]) e1, (byte[]) e2);
-        } else if (e1 instanceof short[] && e2 instanceof short[]) {
-            eq = Arrays.equals((short[]) e1, (short[]) e2);
-        } else if (e1 instanceof int[] && e2 instanceof int[]) {
-            eq = Arrays.equals((int[]) e1, (int[]) e2);
-        } else if (e1 instanceof long[] && e2 instanceof long[]) {
-            eq = Arrays.equals((long[]) e1, (long[]) e2);
-        } else if (e1 instanceof char[] && e2 instanceof char[]) {
-            eq = Arrays.equals((char[]) e1, (char[]) e2);
-        } else if (e1 instanceof float[] && e2 instanceof float[]) {
-            eq = Arrays.equals((float[]) e1, (float[]) e2);
-        } else if (e1 instanceof double[] && e2 instanceof double[]) {
-            eq = Arrays.equals((double[]) e1, (double[]) e2);
-        } else if (e1 instanceof boolean[] && e2 instanceof boolean[]) {
-            eq = Arrays.equals((boolean[]) e1, (boolean[]) e2);
+        if (e1 == e2) {
+            return true;
+        } else if (e1 == null || e2 == null) {
+            return false;
+        } else if (!e1.getClass().isArray() || e1.getClass() != e2.getClass()) {
+            return e1.equals(e2);
+        } else if (e1 instanceof Object[] && e2 instanceof Object[]) {
+            return deepEquals((Object[]) e1, (Object[]) e2);
+        } else if (e1 instanceof int[]) {
+            return Arrays.equals((int[]) e1, (int[]) e2);
+        } else if (e1 instanceof long[]) {
+            return Arrays.equals((long[]) e1, (long[]) e2);
+        } else if (e1 instanceof byte[]) {
+            return Arrays.equals((byte[]) e1, (byte[]) e2);
+        } else if (e1 instanceof char[]) {
+            return Arrays.equals((char[]) e1, (char[]) e2);
+        } else if (e1 instanceof short[]) {
+            return Arrays.equals((short[]) e1, (short[]) e2);
+        } else if (e1 instanceof float[]) {
+            return Arrays.equals((float[]) e1, (float[]) e2);
+        } else if (e1 instanceof double[]) {
+            return Arrays.equals((double[]) e1, (double[]) e2);
+        } else if (e1 instanceof boolean[]) {
+            return Arrays.equals((boolean[]) e1, (boolean[]) e2);
         } else {
-            eq = e1.equals(e2);
+            throw shouldNotReachHere();
         }
-        return eq;
+    }
+
+    private static boolean deepEquals(Object[] a1, Object[] a2) {
+        int length = a1.length;
+        if (a2.length != length) {
+            return false;
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (!deepEquals0(a1[i], a2[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean dataEquals(Node a, Node b) {
@@ -799,10 +809,11 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
 
     /**
      * The template used to build the {@link Verbosity#Name} version. Variable parts are specified
-     * using &#123;i#inputName&#125; or &#123;p#propertyName&#125;.
+     * using &#123;i#inputName&#125; or &#123;p#propertyName&#125;. Returns empty string if no
+     * special name template is specified.
      */
     public String getNameTemplate() {
-        return nameTemplate.isEmpty() ? shortName() : nameTemplate;
+        return nameTemplate;
     }
 
     interface InplaceUpdateClosure {
@@ -810,15 +821,15 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         Node replacement(Node node, Edges.Type type);
     }
 
-    static Map<Node, Node> addGraphDuplicate(final Graph graph, final Graph oldGraph, int estimatedNodeCount, Iterable<? extends Node> nodes, final DuplicationReplacement replacements) {
-        final Map<Node, Node> newNodes;
+    static EconomicMap<Node, Node> addGraphDuplicate(final Graph graph, final Graph oldGraph, int estimatedNodeCount, Iterable<? extends Node> nodes, final DuplicationReplacement replacements) {
+        final EconomicMap<Node, Node> newNodes;
         int denseThreshold = oldGraph.getNodeCount() + oldGraph.getNodesDeletedSinceLastCompression() >> 4;
         if (estimatedNodeCount > denseThreshold) {
             // Use dense map
-            newNodes = new NodeNodeMap(oldGraph);
+            newNodes = new NodeMap<>(oldGraph);
         } else {
             // Use sparse map
-            newNodes = newIdentityMap();
+            newNodes = EconomicMap.create(Equivalence.IDENTITY);
         }
         createNodeDuplicates(graph, nodes, replacements, newNodes);
 
@@ -859,7 +870,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         return newNodes;
     }
 
-    private static void createNodeDuplicates(final Graph graph, Iterable<? extends Node> nodes, final DuplicationReplacement replacements, final Map<Node, Node> newNodes) {
+    private static void createNodeDuplicates(final Graph graph, Iterable<? extends Node> nodes, final DuplicationReplacement replacements, final EconomicMap<Node, Node> newNodes) {
         for (Node node : nodes) {
             if (node != null) {
                 assert !node.isDeleted() : "trying to duplicate deleted node: " + node;
@@ -868,15 +879,9 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                     replacement = replacements.replacement(node);
                 }
                 if (replacement != node) {
-                    if (Fingerprint.ENABLED) {
-                        Fingerprint.submit("replacing %s with %s", node, replacement);
-                    }
                     assert replacement != null;
                     newNodes.put(node, replacement);
                 } else {
-                    if (Fingerprint.ENABLED) {
-                        Fingerprint.submit("duplicating %s", node);
-                    }
                     Node newNode = node.clone(graph, WithAllEdges);
                     assert newNode.getNodeClass().isLeafNode() || newNode.hasNoUsages();
                     assert newNode.getClass() == node.getClass();
@@ -886,12 +891,12 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         }
     }
 
-    private static void transferEdgesDifferentNodeClass(final Graph graph, final DuplicationReplacement replacements, final Map<Node, Node> newNodes, Node oldNode, Node node) {
+    private static void transferEdgesDifferentNodeClass(final Graph graph, final DuplicationReplacement replacements, final EconomicMap<Node, Node> newNodes, Node oldNode, Node node) {
         transferEdges(graph, replacements, newNodes, oldNode, node, Edges.Type.Inputs);
         transferEdges(graph, replacements, newNodes, oldNode, node, Edges.Type.Successors);
     }
 
-    private static void transferEdges(final Graph graph, final DuplicationReplacement replacements, final Map<Node, Node> newNodes, Node oldNode, Node node, Edges.Type type) {
+    private static void transferEdges(final Graph graph, final DuplicationReplacement replacements, final EconomicMap<Node, Node> newNodes, Node oldNode, Node node, Edges.Type type) {
         NodeClass<?> nodeClass = node.getNodeClass();
         NodeClass<?> oldNodeClass = oldNode.getNodeClass();
         Edges oldEdges = oldNodeClass.getEdges(type);
@@ -924,6 +929,14 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
      */
     public boolean isLeafNode() {
         return isLeafNode;
+    }
+
+    public int getLeafId() {
+        return this.leafId;
+    }
+
+    public NodeClass<? super T> getSuperNodeClass() {
+        return superNodeClass;
     }
 
     public long inputsIteration() {
@@ -1086,6 +1099,25 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                     return new RawEdgesIterator(node, mask);
                 }
             }
+
+            @Override
+            public String toString() {
+                StringBuilder sb = new StringBuilder();
+                Iterator<Node> iterator = iterator();
+                boolean first = true;
+                sb.append("succs=");
+                sb.append('[');
+                while (iterator.hasNext()) {
+                    Node input = iterator.next();
+                    if (!first) {
+                        sb.append(", ");
+                    }
+                    sb.append(input);
+                    first = false;
+                }
+                sb.append(']');
+                return sb.toString();
+            }
         };
     }
 
@@ -1100,6 +1132,25 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                 } else {
                     return new RawEdgesIterator(node, mask);
                 }
+            }
+
+            @Override
+            public String toString() {
+                StringBuilder sb = new StringBuilder();
+                Iterator<Node> iterator = iterator();
+                boolean first = true;
+                sb.append("inputs=");
+                sb.append('[');
+                while (iterator.hasNext()) {
+                    Node input = iterator.next();
+                    if (!first) {
+                        sb.append(", ");
+                    }
+                    sb.append(input);
+                    first = false;
+                }
+                sb.append(']');
+                return sb.toString();
             }
         };
     }
@@ -1117,13 +1168,15 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         assert other.getNodeClass() == this;
         while (myMask != 0) {
             long offset = (myMask & OFFSET_MASK);
-            Object v1 = UNSAFE.getObject(node, offset);
-            Object v2 = UNSAFE.getObject(other, offset);
             if ((myMask & LIST_MASK) == 0) {
+                Object v1 = Edges.getNodeUnsafe(node, offset);
+                Object v2 = Edges.getNodeUnsafe(other, offset);
                 if (v1 != v2) {
                     return false;
                 }
             } else {
+                Object v1 = Edges.getNodeListUnsafe(node, offset);
+                Object v2 = Edges.getNodeListUnsafe(other, offset);
                 if (!Objects.equals(v1, v2)) {
                     return false;
                 }
@@ -1178,7 +1231,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                 if (curNode != null) {
                     Node newNode = consumer.apply(node, curNode);
                     if (newNode != curNode) {
-                        UNSAFE.putObject(node, offset, newNode);
+                        Edges.putNodeUnsafe(node, offset, newNode);
                     }
                 }
             } else {
@@ -1211,7 +1264,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                 Node curNode = Edges.getNodeUnsafe(node, offset);
                 if (curNode != null) {
                     node.updatePredecessor(curNode, null);
-                    UNSAFE.putObject(node, offset, null);
+                    Edges.putNodeUnsafe(node, offset, null);
                 }
             } else {
                 unregisterAtSuccessorsAsPredecessorHelper(node, offset);
@@ -1276,9 +1329,9 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         while (myMask != 0) {
             long offset = (myMask & OFFSET_MASK);
             if ((myMask & LIST_MASK) == 0) {
-                Object curNode = UNSAFE.getObject(node, offset);
+                Object curNode = Edges.getNodeUnsafe(node, offset);
                 if (curNode == key) {
-                    UNSAFE.putObject(node, offset, replacement);
+                    Edges.putNodeUnsafe(node, offset, replacement);
                     return true;
                 }
             } else {
@@ -1333,7 +1386,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
                     if (curNode.hasNoUsages()) {
                         node.maybeNotifyZeroUsages(curNode);
                     }
-                    UNSAFE.putObject(node, offset, null);
+                    Edges.putNodeUnsafe(node, offset, null);
                 }
             } else {
                 unregisterAtInputsAsUsageHelper(node, offset);

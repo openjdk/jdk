@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_OSTHREAD_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadInterruptedOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.threadObjectOffset;
+import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
@@ -45,6 +45,9 @@ import org.graalvm.compiler.word.Word;
 @ClassSubstitution(Thread.class)
 public class ThreadSubstitutions {
 
+    /**
+     * hidden in 9.
+     */
     @MethodSubstitution(isStatic = false, optional = true)
     public static boolean isInterrupted(final Thread thisObject, boolean clearInterrupted) {
         Word javaThread = CurrentJavaThreadNode.get();

@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes.java;
 
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 import static org.graalvm.compiler.nodes.java.ForeignCallDescriptors.REGISTER_FINALIZER;
 
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
@@ -54,7 +54,7 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 // @formatter:off
 @NodeInfo(cycles = CYCLES_UNKNOWN,
           cyclesRationale = "We cannot estimate the time of a runtime call.",
-          size = SIZE_20,
+          size = SIZE_8,
           sizeRationale = "Rough estimation for register handling & calling")
 // @formatter:on
 public final class RegisterFinalizerNode extends AbstractStateSplit implements Canonicalizable.Unary<ValueNode>, LIRLowerable, Virtualizable, DeoptimizingNode.DeoptAfter {

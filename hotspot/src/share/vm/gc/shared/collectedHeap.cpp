@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,22 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
 }
 
+// WhiteBox API support for concurrent collectors.  These are the
+// default implementations, for collectors which don't support this
+// feature.
+bool CollectedHeap::supports_concurrent_phase_control() const {
+  return false;
+}
+
+const char* const* CollectedHeap::concurrent_phases() const {
+  static const char* const result[] = { NULL };
+  return result;
+}
+
+bool CollectedHeap::request_concurrent_phase(const char* phase) {
+  return false;
+}
+
 // Memory state functions.
 
 
@@ -279,7 +295,7 @@ void CollectedHeap::check_for_valid_allocation_state() {
 }
 #endif
 
-HeapWord* CollectedHeap::allocate_from_tlab_slow(KlassHandle klass, Thread* thread, size_t size) {
+HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, size_t size) {
 
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.

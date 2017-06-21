@@ -49,7 +49,7 @@ public class AOTStub implements JavaMethodInfo {
     }
 
     public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return HotSpotCompiledCodeBuilder.createCompiledCode(null, null, result);
+        return HotSpotCompiledCodeBuilder.createCompiledCode(backend.getCodeCache(), null, null, result);
     }
 
 }

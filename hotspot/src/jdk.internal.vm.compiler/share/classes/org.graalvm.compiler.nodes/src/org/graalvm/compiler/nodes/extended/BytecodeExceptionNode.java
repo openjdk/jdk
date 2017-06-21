@@ -22,10 +22,9 @@
  */
 package org.graalvm.compiler.nodes.extended;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -38,6 +37,7 @@ import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 
@@ -46,9 +46,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  * either a {@linkplain ForeignCallDescriptor foreign} call or a pre-allocated exception object.
  */
 // @formatter:off
-@NodeInfo(cycles = CYCLES_UNKNOWN,
+@NodeInfo(cycles = CYCLES_8,
           cyclesRationale = "Node will be lowered to a foreign call.",
-          size = SIZE_20)
+          size = SIZE_8)
 // @formatter:on
 public final class BytecodeExceptionNode extends AbstractMemoryCheckpoint implements Lowerable, MemoryCheckpoint.Single {
 

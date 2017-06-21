@@ -22,19 +22,19 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_16;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
-@NodeInfo(cycles = CYCLES_3, size = SIZE_20)
-public class ResolveConstantNode extends FloatingNode implements Lowerable {
+@NodeInfo(cycles = CYCLES_4, size = SIZE_16)
+public class ResolveConstantNode extends DeoptimizingFixedWithNextNode implements Lowerable {
     public static final NodeClass<ResolveConstantNode> TYPE = NodeClass.create(ResolveConstantNode.class);
 
     @Input ValueNode value;
@@ -63,5 +63,10 @@ public class ResolveConstantNode extends FloatingNode implements Lowerable {
 
     public HotSpotConstantLoadAction action() {
         return action;
+    }
+
+    @Override
+    public boolean canDeoptimize() {
+        return true;
     }
 }

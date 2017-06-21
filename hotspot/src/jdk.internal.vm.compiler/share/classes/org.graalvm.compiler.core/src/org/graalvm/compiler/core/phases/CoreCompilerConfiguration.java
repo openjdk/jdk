@@ -29,6 +29,7 @@ import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAlloc
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationStage;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -38,33 +39,32 @@ import org.graalvm.compiler.phases.tiers.MidTierContext;
 public class CoreCompilerConfiguration implements CompilerConfiguration {
 
     @Override
-    public PhaseSuite<HighTierContext> createHighTier() {
-        return new HighTier();
+    public PhaseSuite<HighTierContext> createHighTier(OptionValues options) {
+        return new HighTier(options);
     }
 
     @Override
-    public PhaseSuite<MidTierContext> createMidTier() {
-        return new MidTier();
+    public PhaseSuite<MidTierContext> createMidTier(OptionValues options) {
+        return new MidTier(options);
     }
 
     @Override
-    public PhaseSuite<LowTierContext> createLowTier() {
-        return new LowTier();
+    public PhaseSuite<LowTierContext> createLowTier(OptionValues options) {
+        return new LowTier(options);
     }
 
     @Override
-    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage() {
-        return new PreAllocationOptimizationStage();
+    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options) {
+        return new PreAllocationOptimizationStage(options);
     }
 
     @Override
-    public LIRPhaseSuite<AllocationContext> createAllocationStage() {
-        return new AllocationStage();
+    public LIRPhaseSuite<AllocationContext> createAllocationStage(OptionValues options) {
+        return new AllocationStage(options);
     }
 
     @Override
-    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage() {
-        return new PostAllocationOptimizationStage();
+    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options) {
+        return new PostAllocationOptimizationStage(options);
     }
-
 }

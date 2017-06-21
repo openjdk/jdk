@@ -38,12 +38,12 @@ public class TestRTMRetryCountOption extends RTMGenericCommandLineOptionTest {
     private static final String DEFAULT_VALUE = "5";
 
     private TestRTMRetryCountOption() {
-        super(Boolean.TRUE::booleanValue, "RTMRetryCount", false, false,
+        super("RTMRetryCount", false, false,
                 TestRTMRetryCountOption.DEFAULT_VALUE,
                 "0", "10", "100", "1000");
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMRetryCountOption().test();
+        new TestRTMRetryCountOption().runTestCases();
     }
 }

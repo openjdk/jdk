@@ -2151,6 +2151,7 @@ class MethodData : public Metadata {
   CC_INTERP_ONLY(friend class BytecodeInterpreter;)
 private:
   friend class ProfileData;
+  friend class TypeEntriesAtCall;
 
   // Back pointer to the Method*
   Method* _method;
@@ -2173,7 +2174,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 22 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 23 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
@@ -2302,6 +2303,7 @@ private:
   };
 
   static bool profile_jsr292(const methodHandle& m, int bci);
+  static bool profile_unsafe(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(const methodHandle& m, int bci);

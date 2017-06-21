@@ -68,16 +68,19 @@ public class AArch64HotSpotJumpToExceptionHandlerInCallerOp extends AArch64HotSp
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         leaveFrame(crb, masm, /* emitSafepoint */false);
 
-        // Restore sp from fp if the exception PC is a method handle call site.
-        try (ScratchRegister sc = masm.getScratchRegister()) {
-            Register scratch = sc.getRegister();
-            AArch64Address address = masm.makeAddress(thread, isMethodHandleReturnOffset, scratch, 4, /* allowOverwrite */false);
-            masm.ldr(32, scratch, address);
-            Label noRestore = new Label();
-            masm.cbz(32, scratch, noRestore);
-            masm.mov(64, sp, fp);
-            masm.bind(noRestore);
+        if (System.getProperty("java.specification.version").compareTo("1.8") < 0) {
+            // Restore sp from fp if the exception PC is a method handle call site.
+            try (ScratchRegister sc = masm.getScratchRegister()) {
+                Register scratch = sc.getRegister();
+                AArch64Address address = masm.makeAddress(thread, isMethodHandleReturnOffset, scratch, 4, /* allowOverwrite */false);
+                masm.ldr(32, scratch, address);
+                Label noRestore = new Label();
+                masm.cbz(32, scratch, noRestore);
+                masm.mov(64, sp, fp);
+                masm.bind(noRestore);
+            }
         }
+
         masm.jmp(asRegister(handlerInCallerPc));
     }
 }

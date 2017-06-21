@@ -22,16 +22,14 @@
  */
 package org.graalvm.compiler.jtt.except;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
 import org.graalvm.compiler.test.ExportingClassLoader;
-
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 public class UntrustedInterfaces extends JTTTest {
 

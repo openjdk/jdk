@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "prims/jvm.h"
@@ -146,22 +147,27 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  if (PrintSharedSpaces) {
+  if (log_is_enabled(Info, cds, hashtables)) {
+    ResourceMark rm;
+    LogMessage(cds, hashtables) msg;
+    stringStream info_stream;
+
     double avg_cost = 0.0;
     if (_num_entries > 0) {
       avg_cost = double(table_bytes)/double(_num_entries);
     }
-    tty->print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
-                  table_name, (intptr_t)base_address);
-    tty->print_cr("Number of entries       : %9d", _num_entries);
-    tty->print_cr("Total bytes used        : %9d", table_bytes);
-    tty->print_cr("Average bytes per entry : %9.3f", avg_cost);
-    tty->print_cr("Average bucket size     : %9.3f", summary.avg());
-    tty->print_cr("Variance of bucket size : %9.3f", summary.variance());
-    tty->print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
-    tty->print_cr("Empty buckets           : %9d", _num_empty_buckets);
-    tty->print_cr("Value_Only buckets      : %9d", _num_value_only_buckets);
-    tty->print_cr("Other buckets           : %9d", _num_other_buckets);
+    info_stream.print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
+                         table_name, (intptr_t)base_address);
+    info_stream.print_cr("Number of entries       : %9d", _num_entries);
+    info_stream.print_cr("Total bytes used        : %9d", table_bytes);
+    info_stream.print_cr("Average bytes per entry : %9.3f", avg_cost);
+    info_stream.print_cr("Average bucket size     : %9.3f", summary.avg());
+    info_stream.print_cr("Variance of bucket size : %9.3f", summary.variance());
+    info_stream.print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
+    info_stream.print_cr("Empty buckets           : %9d", _num_empty_buckets);
+    info_stream.print_cr("Value_Only buckets      : %9d", _num_value_only_buckets);
+    info_stream.print_cr("Other buckets           : %9d", _num_other_buckets);
+    msg.info("%s", info_stream.as_string());
   }
 }
 

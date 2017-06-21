@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,17 +131,17 @@ public:
 
 private:
   typedef struct {
-    const TYPES                dual_type;
-    const BasicType            basic_type;
-    const char*                msg;
-    const bool                 isa_oop;
-    const int                  ideal_reg;
-    const relocInfo::relocType reloc;
+    TYPES                dual_type;
+    BasicType            basic_type;
+    const char*          msg;
+    bool                 isa_oop;
+    uint                 ideal_reg;
+    relocInfo::relocType reloc;
   } TypeInfo;
 
   // Dictionary of types shared among compilations.
   static Dict* _shared_type_dict;
-  static TypeInfo _type_info[];
+  static const TypeInfo _type_info[];
 
   static int uhash( const Type *const t );
   // Structural equality check.  Assumes that cmp() has already compared
@@ -410,7 +410,7 @@ public:
 
   // Mapping from compiler type to VM BasicType
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
-  int ideal_reg() const              { return _type_info[_base].ideal_reg; }
+  uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
   bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
   relocInfo::relocType reloc() const { return _type_info[_base].reloc; }
@@ -445,10 +445,11 @@ public:
   virtual ciKlass* speculative_type() const                                   { return NULL; }
   virtual ciKlass* speculative_type_not_null() const                          { return NULL; }
   virtual bool speculative_maybe_null() const                                 { return true; }
+  virtual bool speculative_always_null() const                                { return true; }
   virtual const Type* remove_speculative() const                              { return this; }
   virtual const Type* cleanup_speculative() const                             { return this; }
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const { return exact_kls != NULL; }
-  virtual bool would_improve_ptr(bool maybe_null) const                       { return !maybe_null; }
+  virtual bool would_improve_ptr(ProfilePtrKind ptr_kind) const { return ptr_kind == ProfileAlwaysNull || ptr_kind == ProfileNeverNull; }
   const Type* maybe_remove_speculative(bool include_speculative) const;
 
   virtual bool maybe_null() const { return true; }
@@ -885,10 +886,11 @@ public:
   virtual ciKlass* speculative_type() const;
   virtual ciKlass* speculative_type_not_null() const;
   virtual bool speculative_maybe_null() const;
+  virtual bool speculative_always_null() const;
   virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
-  virtual bool would_improve_ptr(bool maybe_null) const;
+  virtual bool would_improve_ptr(ProfilePtrKind maybe_null) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
 
   virtual bool maybe_null() const { return meet_ptr(Null) == ptr(); }

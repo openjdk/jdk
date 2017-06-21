@@ -118,11 +118,10 @@ void SATBMarkQueue::filter() {
     return;
   }
 
-  assert(_index <= _sz, "invariant");
-
   // Two-fingered compaction toward the end.
-  void** src = &buf[byte_index_to_index(_index)];
-  void** dst = &buf[byte_index_to_index(_sz)];
+  void** src = &buf[index()];
+  void** dst = &buf[capacity()];
+  assert(src <= dst, "invariant");
   for ( ; src < dst; ++src) {
     // Search low to high for an entry to keep.
     void* entry = *src;
@@ -139,7 +138,7 @@ void SATBMarkQueue::filter() {
   }
   // dst points to the lowest retained entry, or the end of the buffer
   // if all the entries were filtered out.
-  _index = pointer_delta(dst, buf, 1);
+  set_index(dst - buf);
 }
 
 // This method will first apply the above filtering to the buffer. If
@@ -156,12 +155,13 @@ bool SATBMarkQueue::should_enqueue_buffer() {
 
   // This method should only be called if there is a non-NULL buffer
   // that is full.
-  assert(_index == 0, "pre-condition");
+  assert(index() == 0, "pre-condition");
   assert(_buf != NULL, "pre-condition");
 
   filter();
 
-  size_t percent_used = ((_sz - _index) * 100) / _sz;
+  size_t cap = capacity();
+  size_t percent_used = ((cap - index()) * 100) / cap;
   bool should_enqueue = percent_used > G1SATBBufferEnqueueingThresholdPercent;
   return should_enqueue;
 }
@@ -170,27 +170,27 @@ void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(),
          "SATB queues must only be processed at safepoints");
   if (_buf != NULL) {
-    assert(_index % sizeof(void*) == 0, "invariant");
-    assert(_sz % sizeof(void*) == 0, "invariant");
-    assert(_index <= _sz, "invariant");
-    cl->do_buffer(_buf + byte_index_to_index(_index),
-                  byte_index_to_index(_sz - _index));
-    _index = _sz;
+    cl->do_buffer(&_buf[index()], size());
+    reset();
   }
 }
 
 #ifndef PRODUCT
 // Helpful for debugging
 
-void SATBMarkQueue::print(const char* name) {
-  print(name, _buf, _index, _sz);
+static void print_satb_buffer(const char* name,
+                              void** buf,
+                              size_t index,
+                              size_t capacity) {
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT
+                " capacity: " SIZE_FORMAT,
+                name, p2i(buf), index, capacity);
 }
 
-void SATBMarkQueue::print(const char* name,
-                          void** buf, size_t index, size_t sz) {
-  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
-                name, p2i(buf), index, sz);
+void SATBMarkQueue::print(const char* name) {
+  print_satb_buffer(name, _buf, index(), capacity());
 }
+
 #endif // PRODUCT
 
 SATBMarkQueueSet::SATBMarkQueueSet() :
@@ -275,8 +275,8 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   }
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
-    size_t index = SATBMarkQueue::byte_index_to_index(nd->index());
-    size_t size = SATBMarkQueue::byte_index_to_index(_sz);
+    size_t index = nd->index();
+    size_t size = buffer_size();
     assert(index <= size, "invariant");
     cl->do_buffer(buf + index, size - index);
     deallocate_buffer(nd);
@@ -303,7 +303,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   while (nd != NULL) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
-    SATBMarkQueue::print(buffer, buf, 0, _sz);
+    print_satb_buffer(buffer, buf, nd->index(), buffer_size());
     nd = nd->next();
     i += 1;
   }

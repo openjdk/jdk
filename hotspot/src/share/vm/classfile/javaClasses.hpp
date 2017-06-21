@@ -155,7 +155,7 @@ class java_lang_String : AllStatic {
   static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
-  static Symbol* as_symbol(Handle java_string, TRAPS);
+  static Symbol* as_symbol(oop java_string, TRAPS);
   static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
@@ -209,29 +209,23 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(KlassHandle k, Handle mirror, Handle protection_domain, TRAPS);
-  static void set_mirror_module_field(KlassHandle K, Handle mirror, Handle module, TRAPS);
+  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain, TRAPS);
+  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
  public:
   static void compute_offsets();
 
   // Instance creation
-  static void create_mirror(KlassHandle k, Handle class_loader, Handle module,
+  static void create_mirror(Klass* k, Handle class_loader, Handle module,
                             Handle protection_domain, TRAPS);
-  static void fixup_mirror(KlassHandle k, TRAPS);
+  static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
 
-  static void fixup_module_field(KlassHandle k, Handle module);
+  static void fixup_module_field(Klass* k, Handle module);
 
   // Conversion
   static Klass* as_Klass(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
-  static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
-    Klass* refk_oop = NULL;
-    BasicType result = as_BasicType(java_class, &refk_oop);
-    (*reference_klass) = KlassHandle(refk_oop);
-    return result;
-  }
   static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
   static const char* as_external_name(oop java_class);
@@ -457,7 +451,7 @@ class java_lang_Throwable: AllStatic {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
     trace_mirrors_offset = 2,
-    trace_cprefs_offset  = 3,
+    trace_names_offset   = 3,
     trace_next_offset    = 4,
     trace_size           = 5,
     trace_chunk_size     = 32
@@ -485,7 +479,7 @@ class java_lang_Throwable: AllStatic {
   static int get_backtrace_offset() { return backtrace_offset;}
   static int get_detailMessage_offset() { return detailMessage_offset;}
   // Message
-  static oop message(Handle throwable);
+  static oop message(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
@@ -503,7 +497,7 @@ class java_lang_Throwable: AllStatic {
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
   // Printing
-  static void print(Handle throwable, outputStream* st);
+  static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging
@@ -1011,10 +1005,33 @@ class java_lang_invoke_LambdaForm: AllStatic {
 // Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 
+#define RESOLVEDMETHOD_INJECTED_FIELDS(macro)                                   \
+  macro(java_lang_invoke_ResolvedMethodName, vmholder, object_signature, false) \
+  macro(java_lang_invoke_ResolvedMethodName, vmtarget, intptr_signature, false)
+
+class java_lang_invoke_ResolvedMethodName : AllStatic {
+  friend class JavaClasses;
+
+  static int _vmtarget_offset;
+  static int _vmholder_offset;
+
+  static void compute_offsets();
+ public:
+  static int vmtarget_offset_in_bytes() { return _vmtarget_offset; }
+
+  static Method* vmtarget(oop resolved_method);
+  static void set_vmtarget(oop resolved_method, Method* method);
+
+  // find or create resolved member name
+  static oop find_resolved_method(const methodHandle& m, TRAPS);
+
+  static bool is_instance(oop resolved_method);
+};
+
+
 #define MEMBERNAME_INJECTED_FIELDS(macro)                               \
-  macro(java_lang_invoke_MemberName, vmloader, object_signature, false) \
-  macro(java_lang_invoke_MemberName, vmindex,  intptr_signature, false) \
-  macro(java_lang_invoke_MemberName, vmtarget, intptr_signature, false)
+  macro(java_lang_invoke_MemberName, vmindex,  intptr_signature, false)
+
 
 class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
@@ -1025,14 +1042,13 @@ class java_lang_invoke_MemberName: AllStatic {
   //    private String     name;        // may be null if not yet materialized
   //    private Object     type;        // may be null if not yet materialized
   //    private int        flags;       // modifier bits; see reflect.Modifier
-  //    private intptr     vmtarget;    // VM-specific target value
+  //    private ResolvedMethodName method;    // holds VM-specific target value
   //    private intptr_t   vmindex;     // member index within class or interface
   static int _clazz_offset;
   static int _name_offset;
   static int _type_offset;
   static int _flags_offset;
-  static int _vmtarget_offset;
-  static int _vmloader_offset;
+  static int _method_offset;
   static int _vmindex_offset;
 
   static void compute_offsets();
@@ -1051,8 +1067,9 @@ class java_lang_invoke_MemberName: AllStatic {
   static int            flags(oop mname);
   static void       set_flags(oop mname, int flags);
 
-  static Metadata*      vmtarget(oop mname);
-  static void       set_vmtarget(oop mname, Metadata* target);
+  // Link through ResolvedMethodName field to get Method*
+  static Method*        vmtarget(oop mname);
+  static void       set_method(oop mname, oop method);
 
   static intptr_t       vmindex(oop mname);
   static void       set_vmindex(oop mname, intptr_t index);
@@ -1084,10 +1101,8 @@ class java_lang_invoke_MemberName: AllStatic {
   static int type_offset_in_bytes()             { return _type_offset; }
   static int name_offset_in_bytes()             { return _name_offset; }
   static int flags_offset_in_bytes()            { return _flags_offset; }
-  static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
+  static int method_offset_in_bytes()           { return _method_offset; }
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
-
-  static bool equals(oop mt1, oop mt2);
 };
 
 
@@ -1324,7 +1339,7 @@ class java_lang_StackTraceElement: AllStatic {
   static oop create(const methodHandle& method, int bci, TRAPS);
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
-                      int version, int bci, int cpref, TRAPS);
+                      int version, int bci, Symbol* name, TRAPS);
 
   // Debugging
   friend class JavaClasses;
@@ -1364,7 +1379,7 @@ private:
 public:
   // Setters
   static void set_declaringClass(oop info, oop value);
-  static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci);
+  static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS);
   static void set_bci(oop info, int value);
 
   static void set_version(oop info, short value);
@@ -1478,6 +1493,7 @@ class InjectedField {
 #define ALL_INJECTED_FIELDS(macro)          \
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
+  RESOLVEDMETHOD_INJECTED_FIELDS(macro)     \
   MEMBERNAME_INJECTED_FIELDS(macro)         \
   CALLSITECONTEXT_INJECTED_FIELDS(macro)    \
   STACKFRAMEINFO_INJECTED_FIELDS(macro)     \

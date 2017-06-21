@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,7 +793,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         const RegMask &rm = n->out_RegMask();
         lrg.AND( rm );
 
-        int ireg = n->ideal_reg();
+        uint ireg = n->ideal_reg();
         assert( !n->bottom_type()->isa_oop_ptr() || ireg == Op_RegP,
                 "oops must be in Op_RegP's" );
 
@@ -1013,7 +1013,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 
         // Check for bound register masks
         const RegMask &lrgmask = lrg.mask();
-        int kreg = n->in(k)->ideal_reg();
+        uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
                is_vect || kreg == Op_RegD || kreg == Op_RegL,

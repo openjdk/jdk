@@ -24,15 +24,15 @@ package org.graalvm.compiler.nodes.extended;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Guard;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo
-public class GuardedUnsafeLoadNode extends UnsafeLoadNode implements GuardedNode {
+public class GuardedUnsafeLoadNode extends RawLoadNode implements GuardedNode {
     public static final NodeClass<GuardedUnsafeLoadNode> TYPE = NodeClass.create(GuardedUnsafeLoadNode.class);
 
     @OptionalInput(Guard) protected GuardingNode guard;

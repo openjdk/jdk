@@ -60,6 +60,14 @@ uint Opaque2Node::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
+Node* Opaque4Node::Identity(PhaseGVN* phase) {
+  return phase->C->major_progress() ? this : in(2);
+}
+
+const Type* Opaque4Node::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
+}
+
 //=============================================================================
 
 uint ProfileBooleanNode::hash() const { return NO_HASH; }

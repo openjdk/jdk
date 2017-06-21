@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,12 +643,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  __ unimplemented("generate_continuation_for");
-  return entry;
-}
-
 // This entry is returned to when a call returns to the interpreter.
 // When we arrive here, we expect that the callee stack frame is already popped.
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
@@ -692,6 +686,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 #endif
   __ sldi(size, size, Interpreter::logStackElementSize);
   __ add(R15_esp, R15_esp, size);
+
+ __ check_and_handle_popframe(R11_scratch1);
+ __ check_and_handle_earlyret(R11_scratch1);
+
   __ dispatch_next(state, step);
   return entry;
 }
@@ -1894,7 +1892,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ lwz(crc,  2*wordSize, argP);    // Current crc state, zero extend to 64 bit to have a clean register.
 
     StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
-    __ kernel_crc32_singleByte(crc, data, dataLen, table, tmp);
+    __ kernel_crc32_singleByte(crc, data, dataLen, table, tmp, true);
 
     // Restore caller sp for c2i case and return.
     __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
@@ -1910,7 +1908,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   return NULL;
 }
 
-// CRC32 Intrinsics.
+
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
@@ -1986,7 +1984,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     // Performance measurements show the 1word and 2word variants to be almost equivalent,
     // with very light advantages for the 1word variant. We chose the 1word variant for
     // code compactness.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, tc3);
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, tc3, true);
 
     // Restore caller sp for c2i case and return.
     __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
@@ -2002,8 +2000,88 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   return NULL;
 }
 
-// Not supported
+
+/**
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(           int crc, byte[] b,  int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long* buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
+ **/
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  if (UseCRC32CIntrinsics) {
+    address start = __ pc();  // Remember stub start address (is rtn value).
+
+    // We don't generate local frame and don't align stack because
+    // we not even call stub code (we generate the code inline)
+    // and there is no safepoint on this path.
+
+    // Load parameters.
+    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+    const Register argP    = R15_esp;
+    const Register crc     = R3_ARG1;  // crc value
+    const Register data    = R4_ARG2;  // address of java byte array
+    const Register dataLen = R5_ARG3;  // source data len
+    const Register table   = R6_ARG4;  // address of crc32c table
+
+    const Register t0      = R9;       // scratch registers for crc calculation
+    const Register t1      = R10;
+    const Register t2      = R11;
+    const Register t3      = R12;
+
+    const Register tc0     = R2;       // registers to hold pre-calculated column addresses
+    const Register tc1     = R7;
+    const Register tc2     = R8;
+    const Register tc3     = table;    // table address is reconstructed at the end of kernel_crc32_* emitters
+
+    const Register tmp     = t0;       // Only used very locally to calculate byte buffer address.
+
+    // Arguments are reversed on java expression stack.
+    // Calculate address of start element.
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) { // Used for "updateDirectByteBuffer".
+      BLOCK_COMMENT("CRC32C_updateDirectByteBuffer {");
+      // crc     @ (SP + 5W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to long array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off
+      __ ld(  data,    3*wordSize, argP);  // start of byte buffer
+      __ lwa( tmp,     2*wordSize, argP);  // byte buffer offset
+      __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
+      __ lwz( crc,     5*wordSize, argP);  // current crc state
+      __ add( data, data, tmp);            // Add byte buffer offset.
+      __ sub( dataLen, dataLen, tmp);      // (end_index - offset)
+    } else {                                                         // Used for "updateBytes update".
+      BLOCK_COMMENT("CRC32C_updateBytes {");
+      // crc     @ (SP + 4W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to byte array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off + base_offset
+      __ ld(  data,    3*wordSize, argP);  // start of byte buffer
+      __ lwa( tmp,     2*wordSize, argP);  // byte buffer offset
+      __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
+      __ add( data, data, tmp);            // add byte buffer offset
+      __ sub( dataLen, dataLen, tmp);      // (end_index - offset)
+      __ lwz( crc,     4*wordSize, argP);  // current crc state
+      __ addi(data, data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    }
+
+    StubRoutines::ppc64::generate_load_crc32c_table_addr(_masm, table);
+
+    // Performance measurements show the 1word and 2word variants to be almost equivalent,
+    // with very light advantages for the 1word variant. We chose the 1word variant for
+    // code compactness.
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, tc3, false);
+
+    // Restore caller sp for c2i case and return.
+    __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
+    __ blr();
+
+    BLOCK_COMMENT("} CRC32C_update{Bytes|DirectByteBuffer}");
+    return start;
+  }
+
   return NULL;
 }
 

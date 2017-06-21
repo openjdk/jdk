@@ -48,4 +48,14 @@ public interface LIRKindTool {
      * Get the architecture specific kind pointer-sized integer kind.
      */
     LIRKind getWordKind();
+
+    /**
+     * Get the platform specific kind used to represent compressed oops.
+     */
+    LIRKind getNarrowOopKind();
+
+    /**
+     * Gets the platform specific kind used to represent compressed metaspace pointers.
+     */
+    LIRKind getNarrowPointerKind();
 }

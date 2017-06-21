@@ -47,6 +47,8 @@ protected:
     tcheck,
     mfdscr,
     vsx,
+    ldbrx,
+    stdbrx,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -66,6 +68,8 @@ protected:
     tcheck_m              = (1 << tcheck ),
     mfdscr_m              = (1 << mfdscr ),
     vsx_m                 = (1 << vsx    ),
+    ldbrx_m               = (1 << ldbrx  ),
+    stdbrx_m              = (1 << stdbrx ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -100,6 +104,8 @@ public:
   static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
   static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
   static bool has_vsx()     { return (_features & vsx_m) != 0; }
+  static bool has_ldbrx()   { return (_features & ldbrx_m) != 0; }
+  static bool has_stdbrx()  { return (_features & stdbrx_m) != 0; }
 
   // Assembler testing
   static void allow_all();

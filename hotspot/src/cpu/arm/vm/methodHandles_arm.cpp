@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, Register temp1, Register temp2, SystemDictionary::WKID klass_id,
                                  const char* error_message) {
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
@@ -157,8 +157,9 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ load_heap_oop(tmp, Address(tmp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())));
   __ verify_oop(tmp);
 
-  // the following assumes that a Method* is normally compressed in the vmtarget field:
-  __ ldr(Rmethod, Address(tmp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())));
+  __ load_heap_oop(Rmethod, Address(tmp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())));
+  __ verify_oop(Rmethod);
+  __ ldr(Rmethod, Address(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())));
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -320,7 +321,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     Address member_clazz(   member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
     Address member_vmindex( member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-    Address member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()));
+    Address member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
+    Address vmtarget_method(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {
@@ -375,14 +377,17 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
-      __ ldr(Rmethod, member_vmtarget);
+      __ load_heap_oop(Rmethod, member_vmtarget);
+      __ ldr(Rmethod, vmtarget_method);
       break;
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
-      __ ldr(Rmethod, member_vmtarget);
+      __ load_heap_oop(Rmethod, member_vmtarget);
+      __ ldr(Rmethod, vmtarget_method);
+      break;
       break;
 
     case vmIntrinsics::_linkToVirtual:

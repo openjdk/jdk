@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ class Klass;
 // Handles are declared in a straight-forward manner, e.g.
 //
 //   oop obj = ...;
-//   Handle h1(obj);              // allocate new handle
-//   Handle h2(thread, obj);      // faster allocation when current thread is known
+//   Handle h2(thread, obj);      // allocate a new handle in thread
 //   Handle h3;                   // declare handle only, no allocation occurs
 //   ...
 //   h3 = h1;                     // make h3 refer to same indirection as h1
@@ -55,11 +54,7 @@ class Klass;
 //
 // Handles are specialized for different oop types to provide extra type
 // information and avoid unnecessary casting. For each oop type xxxOop
-// there is a corresponding handle called xxxHandle, e.g.
-//
-//   oop           Handle
-//   Method*       methodHandle
-//   instanceOop   instanceHandle
+// there is a corresponding handle called xxxHandle.
 
 //------------------------------------------------------------------------------------------------------------------------
 // Base class for all handles. Provides overloading of frequently
@@ -76,7 +71,6 @@ class Handle VALUE_OBJ_CLASS_SPEC {
  public:
   // Constructors
   Handle()                                       { _handle = NULL; }
-  Handle(oop obj);
   Handle(Thread* thread, oop obj);
 
   // General access
@@ -113,10 +107,6 @@ class Handle VALUE_OBJ_CLASS_SPEC {
    public:                                       \
     /* Constructors */                           \
     type##Handle ()                              : Handle()                 {} \
-    type##Handle (type##Oop obj) : Handle((oop)obj) {                         \
-      assert(is_null() || ((oop)obj)->is_a(),                                 \
-             "illegal type");                                                 \
-    }                                                                         \
     type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
       assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
     }                                                                         \
@@ -136,6 +126,8 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 // Metadata Handles.  Unlike oop Handles these are needed to prevent metadata
 // from being reclaimed by RedefineClasses.
+// Metadata Handles should be passed around as const references to avoid copy construction
+// and destruction for parameters.
 
 // Specific Handles for different oop types
 #define DEF_METADATA_HANDLE(name, type)          \
@@ -175,48 +167,6 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 DEF_METADATA_HANDLE(method, Method)
 DEF_METADATA_HANDLE(constantPool, ConstantPool)
-
-// Writing this class explicitly, since DEF_METADATA_HANDLE(klass) doesn't
-// provide the necessary Klass* <-> Klass* conversions. This Klass
-// could be removed when we don't have the Klass* typedef anymore.
-class KlassHandle : public StackObj {
-  Klass* _value;
- protected:
-   Klass* obj() const          { return _value; }
-   Klass* non_null_obj() const { assert(_value != NULL, "resolving NULL _value"); return _value; }
-
- public:
-   KlassHandle()                                 : _value(NULL) {}
-   KlassHandle(const Klass* obj)                 : _value(const_cast<Klass *>(obj)) {};
-   KlassHandle(Thread* thread, const Klass* obj) : _value(const_cast<Klass *>(obj)) {};
-
-   Klass* operator () () const { return obj(); }
-   Klass* operator -> () const { return non_null_obj(); }
-
-   bool operator == (Klass* o) const             { return obj() == o; }
-   bool operator == (const KlassHandle& h) const { return obj() == h.obj(); }
-
-    bool is_null() const  { return _value == NULL; }
-    bool not_null() const { return _value != NULL; }
-};
-
-class instanceKlassHandle : public KlassHandle {
- public:
-  /* Constructors */
-  instanceKlassHandle () : KlassHandle() {}
-  instanceKlassHandle (const Klass* k) : KlassHandle(k) {
-    assert(k == NULL || is_instanceKlass(k), "illegal type");
-  }
-  instanceKlassHandle (Thread* thread, const Klass* k) : KlassHandle(thread, k) {
-    assert(k == NULL || is_instanceKlass(k), "illegal type");
-  }
-  /* Access to klass part */
-  InstanceKlass*       operator () () const { return (InstanceKlass*)obj(); }
-  InstanceKlass*       operator -> () const { return (InstanceKlass*)obj(); }
-
-  debug_only(bool is_instanceKlass(const Klass* k));
-};
-
 
 //------------------------------------------------------------------------------------------------------------------------
 // Thread local handle area
@@ -277,7 +227,7 @@ class HandleArea: public Arena {
 //   Handle h;
 //   {
 //     HandleMark hm;
-//     h = Handle(obj);
+//     h = Handle(THREAD, obj);
 //   }
 //   h()->print();       // WRONG, h destroyed by HandleMark destructor.
 //

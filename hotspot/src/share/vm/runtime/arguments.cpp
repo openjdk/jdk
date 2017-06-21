@@ -416,6 +416,7 @@ static AliasedFlag const aliased_jvm_flags[] = {
 // NOTE: A compatibility request will be necessary for each alias to be removed.
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
+  { "PrintSharedSpaces",         LogLevel::Info,  true,  LOG_TAGS(cds) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
   { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
@@ -735,6 +736,9 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
   } else if (result->is_size_t()) {
     size_t size_t_v = (size_t) v;
     return CommandLineFlags::size_tAtPut(result, &size_t_v, origin) == Flag::SUCCESS;
+  } else if (result->is_double()) {
+    double double_v = (double) v;
+    return CommandLineFlags::doubleAtPut(result, &double_v, origin) == Flag::SUCCESS;
   } else {
     return false;
   }
@@ -1295,7 +1299,7 @@ void Arguments::check_unsupported_dumping_properties() {
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array with index less than the info_idx,
   // vm will exit with an error message. Otherwise, it will print an informational message if
-  // PrintSharedSpaces is enabled.
+  // -Xlog:cds is enabled.
   uint info_idx = 1;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
@@ -1305,10 +1309,8 @@ void Arguments::check_unsupported_dumping_properties() {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
         } else {
-          if (PrintSharedSpaces) {
-            tty->print_cr(
-              "Info: the %s option is ignored when dumping the shared archive", unsupported_options[i]);
-          }
+          log_info(cds)("Info: the %s option is ignored when dumping the shared archive",
+                        unsupported_options[i]);
         }
       }
     }
@@ -2589,19 +2591,26 @@ bool Arguments::create_property(const char* prop_name, const char* prop_value, P
 }
 
 bool Arguments::create_numbered_property(const char* prop_base_name, const char* prop_value, unsigned int count) {
-  // Make sure count is < 1,000. Otherwise, memory allocation will be too small.
-  if (count < 1000) {
-    size_t prop_len = strlen(prop_base_name) + strlen(prop_value) + 5;
+  const unsigned int props_count_limit = 1000;
+  const int max_digits = 3;
+  const int extra_symbols_count = 3; // includes '.', '=', '\0'
+
+  // Make sure count is < props_count_limit. Otherwise, memory allocation will be too small.
+  if (count < props_count_limit) {
+    size_t prop_len = strlen(prop_base_name) + strlen(prop_value) + max_digits + extra_symbols_count;
     char* property = AllocateHeap(prop_len, mtArguments);
     int ret = jio_snprintf(property, prop_len, "%s.%d=%s", prop_base_name, count, prop_value);
     if (ret < 0 || ret >= (int)prop_len) {
       FreeHeap(property);
+      jio_fprintf(defaultStream::error_stream(), "Failed to create property %s.%d=%s\n", prop_base_name, count, prop_value);
       return false;
     }
     bool added = add_property(property, UnwriteableProperty, InternalProperty);
     FreeHeap(property);
     return added;
   }
+
+  jio_fprintf(defaultStream::error_stream(), "Property count limit exceeded: %s, limit=%d\n", prop_base_name, props_count_limit);
   return false;
 }
 
@@ -4392,10 +4401,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) || PrintSharedSpaces) {
+  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+      log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
-    FLAG_SET_DEFAULT(PrintSharedSpaces, false);
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS

@@ -28,6 +28,7 @@ import org.graalvm.compiler.debug.DebugInitializationParticipant;
 import org.graalvm.compiler.debug.GraalDebugConfig;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsPrinter;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
 
 /**
@@ -39,52 +40,57 @@ public class GraalDebugInitializationParticipant implements DebugInitializationP
 
     @Override
     public void apply(Params params) {
-        if (GraalDebugConfig.areDebugScopePatternsEnabled()) {
+        OptionValues options = params.getOptions();
+        if (GraalDebugConfig.areDebugScopePatternsEnabled(options)) {
             params.enable = true;
         }
-        if ("".equals(GraalDebugConfig.Options.Count.getValue())) {
+        if ("".equals(GraalDebugConfig.Options.Count.getValue(options))) {
             params.enableUnscopedCounters = true;
         }
-        if ("".equals(GraalDebugConfig.Options.MethodMeter.getValue())) {
+        if ("".equals(GraalDebugConfig.Options.MethodMeter.getValue(options))) {
             params.enableUnscopedMethodMetrics = true;
             // mm requires full debugging support
             params.enable = true;
         }
-        if ("".equals(GraalDebugConfig.Options.Time.getValue())) {
+        if ("".equals(GraalDebugConfig.Options.Time.getValue(options))) {
             params.enableUnscopedTimers = true;
         }
-        if ("".equals(GraalDebugConfig.Options.TrackMemUse.getValue())) {
+        if ("".equals(GraalDebugConfig.Options.TrackMemUse.getValue(options))) {
             params.enableUnscopedMemUseTrackers = true;
         }
         // unscoped counters/timers/mem use trackers/method metrics should respect method filter
         // semantics
         if (!params.enable && (params.enableUnscopedMemUseTrackers || params.enableUnscopedMethodMetrics || params.enableUnscopedCounters || params.enableUnscopedTimers) &&
-                        GraalDebugConfig.isNotEmpty(GraalDebugConfig.Options.MethodFilter)) {
+                        GraalDebugConfig.isNotEmpty(GraalDebugConfig.Options.MethodFilter, options)) {
             params.enable = true;
             params.enableMethodFilter = true;
         }
 
-        if (!params.enableUnscopedMethodMetrics && GraalDebugConfig.Options.MethodMeter.getValue() != null) {
+        if (!params.enable && GraalDebugConfig.Options.DumpOnPhaseChange.getValue(options) != null) {
+            params.enable = true;
+        }
+
+        if (!params.enableUnscopedMethodMetrics && GraalDebugConfig.Options.MethodMeter.getValue(options) != null) {
             // mm requires full debugging support
             params.enable = true;
         }
 
-        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled()) {
+        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled(options)) {
             if (!params.enable) {
                 TTY.println("WARNING: MethodMeter is disabled but GlobalMetricsInterceptedByMethodMetrics is enabled. Ignoring MethodMeter and GlobalMetricsInterceptedByMethodMetrics.");
             } else {
-                parseMethodMetricsDebugValueInterception(params);
+                parseMethodMetricsDebugValueInterception(params, options);
             }
         }
-        if (GraalDebugConfig.isNotEmpty(GraalDebugConfig.Options.MethodMeter) || params.enableUnscopedMethodMetrics) {
-            if (!MethodMetricsPrinter.methodMetricsDumpingEnabled()) {
+        if (GraalDebugConfig.isNotEmpty(GraalDebugConfig.Options.MethodMeter, options) || params.enableUnscopedMethodMetrics) {
+            if (!MethodMetricsPrinter.methodMetricsDumpingEnabled(options)) {
                 TTY.println("WARNING: MethodMeter is enabled but MethodMeter dumping is disabled. Output will not contain MethodMetrics.");
             }
         }
     }
 
-    private static void parseMethodMetricsDebugValueInterception(Params params) {
-        String interceptionGroup = GraalDebugConfig.Options.GlobalMetricsInterceptedByMethodMetrics.getValue();
+    private static void parseMethodMetricsDebugValueInterception(Params params, OptionValues options) {
+        String interceptionGroup = GraalDebugConfig.Options.GlobalMetricsInterceptedByMethodMetrics.getValue(options);
         boolean intercepted = false;
         if (interceptionGroup.contains("Timers")) {
             params.interceptTime = true;
@@ -101,7 +107,6 @@ public class GraalDebugInitializationParticipant implements DebugInitializationP
 
         if (!intercepted) {
             TTY.println("WARNING: Ignoring GlobalMetricsInterceptedByMethodMetrics as the supplied argument does not contain Timers/Counters/MemUseTrackers.");
-            GraalDebugConfig.Options.GlobalMetricsInterceptedByMethodMetrics.setValue(null);
         }
     }
 }

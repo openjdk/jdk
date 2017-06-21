@@ -37,7 +37,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class EncodedGraph {
 
     private final byte[] encoding;
-    private final long startOffset;
+    private final int startOffset;
     private final Object[] objects;
     private final NodeClass<?>[] types;
     private final Assumptions assumptions;
@@ -47,9 +47,9 @@ public class EncodedGraph {
      * The "table of contents" of the encoded graph, i.e., the mapping from orderId numbers to the
      * offset in the encoded byte[] array. Used as a cache during decoding.
      */
-    protected long[] nodeStartOffsets;
+    protected int[] nodeStartOffsets;
 
-    public EncodedGraph(byte[] encoding, long startOffset, Object[] objects, NodeClass<?>[] types, Assumptions assumptions, List<ResolvedJavaMethod> inlinedMethods) {
+    public EncodedGraph(byte[] encoding, int startOffset, Object[] objects, NodeClass<?>[] types, Assumptions assumptions, List<ResolvedJavaMethod> inlinedMethods) {
         this.encoding = encoding;
         this.startOffset = startOffset;
         this.objects = objects;
@@ -62,7 +62,7 @@ public class EncodedGraph {
         return encoding;
     }
 
-    public long getStartOffset() {
+    public int getStartOffset() {
         return startOffset;
     }
 

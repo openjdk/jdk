@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,32 @@ private:
   // to avoid duplicates. Uses jbyte since there are no atomic instructions for bools.
   IsDirtyRegionState* _in_dirty_region_buffer;
   size_t _cur_dirty_region;
+
+  // Creates a snapshot of the current _top values at the start of collection to
+  // filter out card marks that we do not want to scan.
+  class G1ResetScanTopClosure : public HeapRegionClosure {
+  private:
+    HeapWord** _scan_top;
+  public:
+    G1ResetScanTopClosure(HeapWord** scan_top) : _scan_top(scan_top) { }
+
+    virtual bool doHeapRegion(HeapRegion* r) {
+      uint hrm_index = r->hrm_index();
+      if (!r->in_collection_set() && r->is_old_or_humongous()) {
+        _scan_top[hrm_index] = r->top();
+      } else {
+        _scan_top[hrm_index] = r->bottom();
+      }
+      return false;
+    }
+  };
+
+  // For each region, contains the maximum top() value to be used during this garbage
+  // collection. Subsumes common checks like filtering out everything but old and
+  // humongous regions outside the collection set.
+  // This is valid because we are not interested in scanning stray remembered set
+  // entries from free or archive regions.
+  HeapWord** _scan_top;
 public:
   G1RemSetScanState() :
     _max_regions(0),
@@ -123,8 +149,8 @@ public:
     _iter_claims(NULL),
     _dirty_region_buffer(NULL),
     _in_dirty_region_buffer(NULL),
-    _cur_dirty_region(0) {
-
+    _cur_dirty_region(0),
+    _scan_top(NULL) {
   }
 
   ~G1RemSetScanState() {
@@ -140,6 +166,9 @@ public:
     if (_in_dirty_region_buffer != NULL) {
       FREE_C_HEAP_ARRAY(IsDirtyRegionState, _in_dirty_region_buffer);
     }
+    if (_scan_top != NULL) {
+      FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
+    }
   }
 
   void initialize(uint max_regions) {
@@ -150,12 +179,17 @@ public:
     _iter_claims = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
     _dirty_region_buffer = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
     _in_dirty_region_buffer = NEW_C_HEAP_ARRAY(IsDirtyRegionState, max_regions, mtGC);
+    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_regions, mtGC);
   }
 
   void reset() {
     for (uint i = 0; i < _max_regions; i++) {
       _iter_states[i] = Unclaimed;
     }
+
+    G1ResetScanTopClosure cl(_scan_top);
+    G1CollectedHeap::heap()->heap_region_iterate(&cl);
+
     memset((void*)_iter_claims, 0, _max_regions * sizeof(size_t));
     memset(_in_dirty_region_buffer, Clean, _max_regions * sizeof(IsDirtyRegionState));
     _cur_dirty_region = 0;
@@ -210,6 +244,10 @@ public:
       size_t allocated = Atomic::add(1, &_cur_dirty_region) - 1;
       _dirty_region_buffer[allocated] = region;
     }
+  }
+
+  HeapWord* scan_top(uint region_idx) const {
+    return _scan_top[region_idx];
   }
 
   // Clear the card table of "dirty" regions.
@@ -305,22 +343,18 @@ G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
   _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
 }
 
-void G1ScanRSClosure::scan_card(size_t index, HeapRegion *r) {
-  // Stack allocate the DirtyCardToOopClosure instance
-  HeapRegionDCTOC cl(_g1h, r, _push_heap_cl, CardTableModRefBS::Precise);
-
-  // Set the "from" region in the closure.
-  _push_heap_cl->set_region(r);
-  MemRegion card_region(_bot->address_for_index(index), BOTConstants::N_words);
-  MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
+void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
+  MemRegion card_region(card_start, BOTConstants::N_words);
+  MemRegion pre_gc_allocated(r->bottom(), _scan_state->scan_top(r->hrm_index()));
   MemRegion mr = pre_gc_allocated.intersection(card_region);
   if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
     // We make the card as "claimed" lazily (so races are possible
     // but they're benign), which reduces the number of duplicate
     // scans (the rsets of the regions in the cset can intersect).
     _ct_bs->set_card_claimed(index);
+    _push_heap_cl->set_region(r);
+    r->oops_on_card_seq_iterate_careful<true>(mr, _push_heap_cl);
     _cards_done++;
-    cl.do_MemRegion(mr);
   }
 }
 
@@ -367,7 +401,7 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     // If the card is dirty, then we will scan it during updateRS.
     if (!card_region->in_collection_set() &&
         !_ct_bs->is_card_dirty(card_index)) {
-      scan_card(card_index, card_region);
+      scan_card(card_index, card_start, card_region);
     }
   }
   if (_scan_state->set_iter_complete(region_idx)) {
@@ -417,7 +451,7 @@ public:
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
     assert(worker_i < ParallelGCThreads, "should be a GC worker");
 
-    if (_g1rs->refine_card(card_ptr, worker_i, _cl)) {
+    if (_g1rs->refine_card_during_gc(card_ptr, worker_i, _cl)) {
       // 'card_ptr' contains references that point into the collection
       // set. We need to record the card in the DCQS
       // (_into_cset_dirty_card_queue_set)
@@ -527,47 +561,38 @@ void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
   _g1->heap_region_par_iterate(&scrub_cl, worker_num, hrclaimer);
 }
 
-G1TriggerClosure::G1TriggerClosure() :
-  _triggered(false) { }
-
-G1InvokeIfNotTriggeredClosure::G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t_cl,
-                                                             OopClosure* oop_cl)  :
-  _trigger_cl(t_cl), _oop_cl(oop_cl) { }
-
-G1Mux2Closure::G1Mux2Closure(OopClosure *c1, OopClosure *c2) :
-  _c1(c1), _c2(c2) { }
-
-G1UpdateRSOrPushRefOopClosure::
-G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
-                              G1RemSet* rs,
-                              G1ParPushHeapRSClosure* push_ref_cl,
-                              bool record_refs_into_cset,
-                              uint worker_i) :
-  _g1(g1h), _g1_rem_set(rs), _from(NULL),
-  _record_refs_into_cset(record_refs_into_cset),
-  _push_ref_cl(push_ref_cl), _worker_i(worker_i) { }
-
-// Returns true if the given card contains references that point
-// into the collection set, if we're checking for such references;
-// false otherwise.
-
-bool G1RemSet::refine_card(jbyte* card_ptr,
-                           uint worker_i,
-                           G1ParPushHeapRSClosure*  oops_in_heap_closure) {
-  assert(_g1->is_in_exact(_ct_bs->addr_for(card_ptr)),
+inline void check_card_ptr(jbyte* card_ptr, CardTableModRefBS* ct_bs) {
+#ifdef ASSERT
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  assert(g1->is_in_exact(ct_bs->addr_for(card_ptr)),
          "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
-         _ct_bs->index_for(_ct_bs->addr_for(card_ptr)),
-         p2i(_ct_bs->addr_for(card_ptr)),
-         _g1->addr_to_region(_ct_bs->addr_for(card_ptr)));
+         ct_bs->index_for(ct_bs->addr_for(card_ptr)),
+         p2i(ct_bs->addr_for(card_ptr)),
+         g1->addr_to_region(ct_bs->addr_for(card_ptr)));
+#endif
+}
 
-  bool check_for_refs_into_cset = oops_in_heap_closure != NULL;
+G1UpdateRSOrPushRefOopClosure::G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
+                                                             G1ParPushHeapRSClosure* push_ref_cl,
+                                                             bool record_refs_into_cset,
+                                                             uint worker_i) :
+  _g1(g1h),
+  _from(NULL),
+  _record_refs_into_cset(record_refs_into_cset),
+  _has_refs_into_cset(false),
+  _push_ref_cl(push_ref_cl),
+  _worker_i(worker_i) { }
+
+void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
+                                        uint worker_i) {
+  assert(!_g1->is_gc_active(), "Only call concurrently");
+
+  check_card_ptr(card_ptr, _ct_bs);
 
   // If the card is no longer dirty, nothing to do.
   if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-    // No need to return that this card contains refs that point
-    // into the collection set.
-    return false;
+    return;
   }
 
   // Construct the region representing the card.
@@ -595,7 +620,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   // enqueueing of the card and processing it here will have ensured
   // we see the up-to-date region type here.
   if (!r->is_old_or_humongous()) {
-    return false;
+    return;
   }
 
   // While we are processing RSet buffers during the collection, we
@@ -609,7 +634,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   // however, that if evacuation fails, we have to scan any objects
   // that were not moved and create any missing entries.
   if (r->in_collection_set()) {
-    return false;
+    return;
   }
 
   // The result from the hot card cache insert call is either:
@@ -622,14 +647,13 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   //
 
   if (_hot_card_cache->use_cache()) {
-    assert(!check_for_refs_into_cset, "sanity");
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
     const jbyte* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {
       // There was no eviction. Nothing to do.
-      return false;
+      return;
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
       start = _ct_bs->addr_for(card_ptr);
@@ -640,7 +664,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
       // region could have been freed while in the cache.  The cset is
       // not relevant here, since we're in concurrent phase.
       if (!r->is_old_or_humongous()) {
-        return false;
+        return;
       }
     } // Else we still have the original card.
   }
@@ -649,25 +673,19 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   // in the region.  The card could be stale, or the card could cover
   // (part of) an object at the end of the allocated space and extend
   // beyond the end of allocation.
-  HeapWord* scan_limit;
-  if (_g1->is_gc_active()) {
-    // If we're in a STW GC, then a card might be in a GC alloc region
-    // and extend onto a GC LAB, which may not be parsable.  Stop such
-    // at the "scan_top" of the region.
-    scan_limit = r->scan_top();
-  } else {
-    // Non-humongous objects are only allocated in the old-gen during
-    // GC, so if region is old then top is stable.  Humongous object
-    // allocation sets top last; if top has not yet been set, this is
-    // a stale card and we'll end up with an empty intersection.  If
-    // this is not a stale card, the synchronization between the
-    // enqueuing of the card and processing it here will have ensured
-    // we see the up-to-date top here.
-    scan_limit = r->top();
-  }
+
+  // Non-humongous objects are only allocated in the old-gen during
+  // GC, so if region is old then top is stable.  Humongous object
+  // allocation sets top last; if top has not yet been set, this is
+  // a stale card and we'll end up with an empty intersection.  If
+  // this is not a stale card, the synchronization between the
+  // enqueuing of the card and processing it here will have ensured
+  // we see the up-to-date top here.
+  HeapWord* scan_limit = r->top();
+
   if (scan_limit <= start) {
     // If the trimmed region is empty, the card must be stale.
-    return false;
+    return;
   }
 
   // Okay to clean and process the card now.  There are still some
@@ -689,26 +707,10 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
-                                                 _g1->g1_rem_set(),
-                                                 oops_in_heap_closure,
-                                                 check_for_refs_into_cset,
-                                                 worker_i);
-  update_rs_oop_cl.set_from(r);
-
-  G1TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(_g1, &trigger_cl);
-  G1InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
-  G1Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
-
-  FilterOutOfRegionClosure filter_then_update_rs_oop_cl(r,
-                        (check_for_refs_into_cset ?
-                                (OopClosure*)&mux :
-                                (OopClosure*)&update_rs_oop_cl));
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1, worker_i);
 
   bool card_processed =
-    r->oops_on_card_seq_iterate_careful(dirty_region,
-                                        &filter_then_update_rs_oop_cl);
+    r->oops_on_card_seq_iterate_careful<false>(dirty_region, &conc_refine_cl);
 
   // If unable to process the card then we encountered an unparsable
   // part of the heap (e.g. a partially allocated object) while
@@ -716,7 +718,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   // and re-enqueue, because we've already cleaned the card.  Without
   // this we could incorrectly discard a non-stale card.
   if (!card_processed) {
-    assert(!_g1->is_gc_active(), "Unparsable heap during GC");
     // The card might have gotten re-dirtied and re-enqueued while we
     // worked.  (In fact, it's pretty likely.)
     if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
@@ -730,18 +731,57 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   } else {
     _conc_refine_cards++;
   }
+}
 
-  // This gets set to true if the card being refined has
-  // references that point into the collection set.
-  bool has_refs_into_cset = trigger_cl.triggered();
+bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
+                                     uint worker_i,
+                                     G1ParPushHeapRSClosure*  oops_in_heap_closure) {
+  assert(_g1->is_gc_active(), "Only call during GC");
 
-  // We should only be detecting that the card contains references
-  // that point into the collection set if the current thread is
-  // a GC worker thread.
-  assert(!has_refs_into_cset || SafepointSynchronize::is_at_safepoint(),
-           "invalid result at non safepoint");
+  check_card_ptr(card_ptr, _ct_bs);
 
-  return has_refs_into_cset;
+  // If the card is no longer dirty, nothing to do. This covers cards that were already
+  // scanned as parts of the remembered sets.
+  if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
+    // No need to return that this card contains refs that point
+    // into the collection set.
+    return false;
+  }
+
+  // During GC we can immediately clean the card since we will not re-enqueue stale
+  // cards as we know they can be disregarded.
+  *card_ptr = CardTableModRefBS::clean_card_val();
+
+  // Construct the region representing the card.
+  HeapWord* card_start = _ct_bs->addr_for(card_ptr);
+  // And find the region containing it.
+  HeapRegion* r = _g1->heap_region_containing(card_start);
+
+  HeapWord* scan_limit = _scan_state->scan_top(r->hrm_index());
+  if (scan_limit <= card_start) {
+    // If the card starts above the area in the region containing objects to scan, skip it.
+    return false;
+  }
+
+  // Don't use addr_for(card_ptr + 1) which can ask for
+  // a card beyond the heap.
+  HeapWord* card_end = card_start + CardTableModRefBS::card_size_in_words;
+  MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
+  assert(!dirty_region.is_empty(), "sanity");
+
+  G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
+                                                 oops_in_heap_closure,
+                                                 true,
+                                                 worker_i);
+  update_rs_oop_cl.set_from(r);
+
+  bool card_processed =
+    r->oops_on_card_seq_iterate_careful<true>(dirty_region,
+                                              &update_rs_oop_cl);
+  assert(card_processed, "must be");
+  _conc_refine_cards++;
+
+  return update_rs_oop_cl.has_refs_into_cset();
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {

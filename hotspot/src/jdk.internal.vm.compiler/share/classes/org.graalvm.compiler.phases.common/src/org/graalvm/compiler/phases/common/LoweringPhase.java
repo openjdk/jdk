@@ -33,7 +33,6 @@ import static org.graalvm.compiler.phases.common.LoweringPhase.ProcessBlockState
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
@@ -49,11 +48,14 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.BeginNode;
+import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -62,16 +64,18 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.AnchoringNode;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
+import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.DeoptimizationAction;
@@ -177,14 +181,14 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
 
         @Override
         public GuardingNode createGuard(FixedNode before, LogicNode condition, DeoptimizationReason deoptReason, DeoptimizationAction action, JavaConstant speculation, boolean negated) {
-            if (OptEliminateGuards.getValue()) {
+            StructuredGraph graph = before.graph();
+            if (OptEliminateGuards.getValue(graph.getOptions())) {
                 for (Node usage : condition.usages()) {
                     if (!activeGuards.isNew(usage) && activeGuards.isMarked(usage) && ((GuardNode) usage).isNegated() == negated) {
                         return (GuardNode) usage;
                     }
                 }
             }
-            StructuredGraph graph = before.graph();
             if (!condition.graph().getGuardsStage().allowsFloatingGuards()) {
                 FixedGuardNode fixedGuard = graph.add(new FixedGuardNode(condition, deoptReason, action, speculation, negated));
                 graph.addBeforeFixed(before, fixedGuard);
@@ -195,7 +199,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
                 return result;
             } else {
                 GuardNode newGuard = graph.unique(new GuardNode(condition, guardAnchor, deoptReason, action, negated, speculation));
-                if (OptEliminateGuards.getValue()) {
+                if (OptEliminateGuards.getValue(graph.getOptions())) {
                     activeGuards.markAndGrow(newGuard);
                 }
                 return newGuard;
@@ -205,11 +209,6 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
         @Override
         public FixedWithNextNode lastFixedNode() {
             return lastFixedNode;
-        }
-
-        @Override
-        public NodeCostProvider getNodeCostProvider() {
-            return context.getNodeCostProvider();
         }
 
         private void setLastFixedNode(FixedWithNextNode n) {
@@ -224,6 +223,11 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
     public LoweringPhase(CanonicalizerPhase canonicalizer, LoweringTool.LoweringStage loweringStage) {
         this.canonicalizer = canonicalizer;
         this.loweringStage = loweringStage;
+    }
+
+    @Override
+    protected boolean shouldDumpBeforeAtBasicLevel() {
+        return loweringStage == LoweringTool.StandardLoweringStage.HIGH_TIER;
     }
 
     /**
@@ -248,7 +252,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
 
     private void lower(StructuredGraph graph, PhaseContext context, LoweringMode mode) {
         IncrementalCanonicalizerPhase<PhaseContext> incrementalCanonicalizer = new IncrementalCanonicalizerPhase<>(canonicalizer);
-        incrementalCanonicalizer.appendPhase(new Round(context, mode));
+        incrementalCanonicalizer.appendPhase(new Round(context, mode, graph.getOptions()));
         incrementalCanonicalizer.apply(graph, context);
         assert graph.verify();
     }
@@ -283,6 +287,43 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
                 assert postLoweringMark.equals(mark) : graph + ": lowering of " + node + " produced lowerable " + n + " that should have been recursively lowered as it introduces these new nodes: " +
                                 graph.getNewNodes(postLoweringMark).snapshot();
             }
+            if (graph.isAfterFloatingReadPhase() && n instanceof MemoryCheckpoint && !(node instanceof MemoryCheckpoint) && !(node instanceof ControlSinkNode)) {
+                /*
+                 * The lowering introduced a MemoryCheckpoint but the current node isn't a
+                 * checkpoint. This is only OK if the locations involved don't affect the memory
+                 * graph or if the new kill location doesn't connect into the existing graph.
+                 */
+                boolean isAny = false;
+                if (n instanceof MemoryCheckpoint.Single) {
+                    isAny = ((MemoryCheckpoint.Single) n).getLocationIdentity().isAny();
+                } else {
+                    for (LocationIdentity ident : ((MemoryCheckpoint.Multi) n).getLocationIdentities()) {
+                        if (ident.isAny()) {
+                            isAny = true;
+                        }
+                    }
+                }
+                if (isAny && n instanceof FixedWithNextNode) {
+                    /*
+                     * Check if the next kill location leads directly to a ControlSinkNode in the
+                     * new part of the graph. This is a fairly conservative test that could be made
+                     * more general if required.
+                     */
+                    FixedWithNextNode cur = (FixedWithNextNode) n;
+                    while (cur != null && graph.isNew(preLoweringMark, cur)) {
+                        if (cur.next() instanceof ControlSinkNode) {
+                            isAny = false;
+                            break;
+                        }
+                        if (cur.next() instanceof FixedWithNextNode) {
+                            cur = (FixedWithNextNode) cur.next();
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                assert !isAny : node + " " + n;
+            }
         }
         return true;
     }
@@ -299,7 +340,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
         private ScheduleResult schedule;
         private final SchedulePhase schedulePhase;
 
-        private Round(PhaseContext context, LoweringMode mode) {
+        private Round(PhaseContext context, LoweringMode mode, OptionValues options) {
             this.context = context;
             this.mode = mode;
 
@@ -310,7 +351,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
              */
             boolean immutableSchedule = mode == LoweringMode.VERIFY_LOWERING;
 
-            this.schedulePhase = new SchedulePhase(immutableSchedule);
+            this.schedulePhase = new SchedulePhase(immutableSchedule, options);
         }
 
         @Override
@@ -377,7 +418,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
 
             @Override
             public void postprocess() {
-                if (anchor != null && OptEliminateGuards.getValue()) {
+                if (anchor == block.getBeginNode() && OptEliminateGuards.getValue(activeGuards.graph().getOptions())) {
                     for (GuardNode guard : anchor.asNode().usages().filter(GuardNode.class)) {
                         if (activeGuards.isMarkedAndGrow(guard)) {
                             activeGuards.clear(guard);
@@ -463,7 +504,7 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
             List<Node> unscheduledUsages = new ArrayList<>();
             if (node instanceof FloatingNode) {
                 for (Node usage : node.usages()) {
-                    if (usage instanceof ValueNode) {
+                    if (usage instanceof ValueNode && !(usage instanceof PhiNode) && !(usage instanceof ProxyNode)) {
                         if (schedule.getCFG().getNodeToBlock().isNew(usage) || schedule.getCFG().blockFor(usage) == null) {
                             unscheduledUsages.add(usage);
                         }
@@ -525,11 +566,13 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
                     nextState = ST_ENTER;
                 }
             } else if (state == ST_ENTER) {
-                if (f.dominated.hasNext()) {
-                    Block n = f.dominated.next();
+                if (f.dominated != null) {
+                    Block n = f.dominated;
+                    f.dominated = n.getDominatedSibling();
                     if (n == f.alwaysReachedBlock) {
-                        if (f.dominated.hasNext()) {
-                            n = f.dominated.next();
+                        if (f.dominated != null) {
+                            n = f.dominated;
+                            f.dominated = n.getDominatedSibling();
                         } else {
                             n = null;
                         }
@@ -579,11 +622,13 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
                     nextState = ST_ENTER;
                 }
             } else if (state == ST_ENTER) {
-                if (f.dominated.hasNext()) {
-                    Block n = f.dominated.next();
+                if (f.dominated != null) {
+                    Block n = f.dominated;
+                    f.dominated = n.getDominatedSibling();
                     if (n == f.alwaysReachedBlock) {
-                        if (f.dominated.hasNext()) {
-                            n = f.dominated.next();
+                        if (f.dominated != null) {
+                            n = f.dominated;
+                            f.dominated = n.getDominatedSibling();
                         } else {
                             n = null;
                         }
@@ -619,14 +664,13 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
     public abstract static class Frame<T extends Frame<?>> {
         protected final Block block;
         final T parent;
-        Iterator<Block> dominated;
+        Block dominated;
         final Block alwaysReachedBlock;
 
         public Frame(Block block, T parent) {
-            super();
             this.block = block;
             this.alwaysReachedBlock = block.getPostdominator();
-            this.dominated = block.getDominated().iterator();
+            this.dominated = block.getFirstDominated();
             this.parent = parent;
         }
 

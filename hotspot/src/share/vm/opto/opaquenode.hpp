@@ -87,6 +87,28 @@ class Opaque3Node : public Opaque2Node {
   bool rtm_opt() const { return (_opt == RTM_OPT); }
 };
 
+// Used by GraphKit::must_be_not_null(): input 1 is a check that we
+// know implicitly is always true or false but the compiler has no way
+// to prove. If during optimizations, that check becomes true or
+// false, the Opaque4 node is replaced by that constant true or
+// false. Input 2 is the constant value we know the test takes. After
+// loop optimizations, we replace input 1 by input 2 so the control
+// that depends on that test can be removed and there's no overhead at
+// runtime.
+class Opaque4Node : public Node {
+  public:
+  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(0, tst, final_tst) {
+    // Put it on the Macro nodes list to removed during macro nodes expansion.
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
+};
+
+
 //------------------------------ProfileBooleanNode-------------------------------
 // A node represents value profile for a boolean during parsing.
 // Once parsing is over, the node goes away (during IGVN).

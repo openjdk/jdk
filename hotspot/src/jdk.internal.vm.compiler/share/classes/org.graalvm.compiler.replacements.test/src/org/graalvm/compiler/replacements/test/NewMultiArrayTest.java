@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.NewMultiArrayNode;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -53,8 +54,8 @@ public class NewMultiArrayTest extends GraalCompilerTest {
     }
 
     @Override
-    protected InstalledCode getCode(final ResolvedJavaMethod method, StructuredGraph g) {
-        StructuredGraph graph = g == null ? parseForCompile(method) : g;
+    protected InstalledCode getCode(ResolvedJavaMethod method, StructuredGraph g, boolean ignore, boolean installAsDefault, OptionValues options) {
+        StructuredGraph graph = g == null ? parseForCompile(method, options) : g;
         boolean forceCompile = false;
         if (bottomType != null) {
             List<NewMultiArrayNode> snapshot = graph.getNodes().filter(NewMultiArrayNode.class).snapshot();
@@ -73,11 +74,12 @@ public class NewMultiArrayTest extends GraalCompilerTest {
             graph.replaceFixedWithFixed(node, repl);
             forceCompile = true;
         }
-        return super.getCode(method, graph, forceCompile);
+        return super.getCode(method, graph, forceCompile, installAsDefault, options);
     }
 
     @Override
-    protected Object referenceInvoke(ResolvedJavaMethod method, Object receiver, Object... args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    protected Object referenceInvoke(ResolvedJavaMethod method, Object receiver, Object... args)
+                    throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
         if (bottomType != null) {
             try {
                 return Array.newInstance(bottomClass, dimensions);

@@ -91,8 +91,8 @@ public class AllocatorTest extends BackendTest {
         private void collectStats(final LIRInstruction instr) {
             instr.forEachOutput(collectStatsProc);
 
-            if (instr instanceof ValueMoveOp) {
-                ValueMoveOp move = (ValueMoveOp) instr;
+            if (ValueMoveOp.isValueMoveOp(instr)) {
+                ValueMoveOp move = ValueMoveOp.asValueMoveOp(instr);
                 Value def = move.getResult();
                 Value use = move.getInput();
                 if (ValueUtil.isRegister(def)) {

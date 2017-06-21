@@ -39,11 +39,11 @@ public class TestUseRTMXendForLockBusyOption
     private static final String DEFAULT_VALUE = "true";
 
     public TestUseRTMXendForLockBusyOption() {
-        super(Boolean.TRUE::booleanValue, "UseRTMXendForLockBusy", true, true,
+        super("UseRTMXendForLockBusy", true, true,
                 TestUseRTMXendForLockBusyOption.DEFAULT_VALUE, "true");
     }
 
     public static void main(String agrs[]) throws Throwable {
-        new TestUseRTMXendForLockBusyOption().test();
+        new TestUseRTMXendForLockBusyOption().runTestCases();
     }
 }

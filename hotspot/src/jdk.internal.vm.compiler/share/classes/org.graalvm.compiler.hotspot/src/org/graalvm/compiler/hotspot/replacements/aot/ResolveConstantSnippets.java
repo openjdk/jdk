@@ -48,6 +48,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -113,8 +114,8 @@ public class ResolveConstantSnippets implements Snippets {
         private final SnippetInfo initializeKlass = snippet(ResolveConstantSnippets.class, "initializeKlass");
         private final SnippetInfo pureInitializeKlass = snippet(ResolveConstantSnippets.class, "pureInitializeKlass");
 
-        public Templates(HotSpotProviders providers, TargetDescription target) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, HotSpotProviders providers, TargetDescription target) {
+            super(options, providers, providers.getSnippetReflection(), target);
         }
 
         public void lower(ResolveConstantNode resolveConstantNode, LoweringTool tool) {
@@ -148,7 +149,7 @@ public class ResolveConstantSnippets implements Snippets {
             args.add("constant", value);
 
             SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, tool, args);
+            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
 
             assert resolveConstantNode.hasNoUsages();
             if (!resolveConstantNode.isDeleted()) {
@@ -186,7 +187,7 @@ public class ResolveConstantSnippets implements Snippets {
             args.add("method", method);
             args.add("klassHint", resolveMethodAndLoadCountersNode.getHub());
             SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, tool, args);
+            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, args);
 
             assert resolveMethodAndLoadCountersNode.hasNoUsages();
             if (!resolveMethodAndLoadCountersNode.isDeleted()) {

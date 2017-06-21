@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   if (!HAS_PENDING_EXCEPTION) {
     JavaCallArguments args;
     args.push_oop(receiver);
-    args.push_oop((oop)method_result.get_jobject());
+    args.push_oop(Handle(THREAD, (oop)method_result.get_jobject()));
     args.push_int(entry_bci);
     args.push_long((jlong) (address) env);
     args.push_int(env->task()->compile_id());
@@ -202,7 +202,7 @@ CompLevel JVMCIRuntime::adjust_comp_level(methodHandle method, bool is_osr, Comp
   return level;
 }
 
-void JVMCICompiler::exit_on_pending_exception(Handle exception, const char* message) {
+void JVMCICompiler::exit_on_pending_exception(oop exception, const char* message) {
   JavaThread* THREAD = JavaThread::current();
   CLEAR_PENDING_EXCEPTION;
 
@@ -210,7 +210,8 @@ void JVMCICompiler::exit_on_pending_exception(Handle exception, const char* mess
   if (!report_error && Atomic::cmpxchg(1, &report_error, 0) == 0) {
     // Only report an error once
     tty->print_raw_cr(message);
-    java_lang_Throwable::java_printStackTrace(exception, THREAD);
+    Handle ex(THREAD, exception);
+    java_lang_Throwable::java_printStackTrace(ex, THREAD);
   } else {
     // Allow error reporting thread to print the stack trace.
     os::sleep(THREAD, 200, false);

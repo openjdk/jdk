@@ -25,7 +25,6 @@ package org.graalvm.compiler.hotspot.test;
 import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 
 import java.util.List;
-import java.util.Map;
 
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
@@ -39,6 +38,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Binding;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.util.EconomicMap;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
@@ -60,7 +60,7 @@ public class TestIntrinsicCompiles extends GraalCompilerTest {
         Plugins graphBuilderPlugins = providers.getGraphBuilderPlugins();
         InvocationPlugins invocationPlugins = graphBuilderPlugins.getInvocationPlugins();
 
-        Map<String, List<Binding>> bindings = invocationPlugins.getBindings(true);
+        EconomicMap<String, List<Binding>> bindings = invocationPlugins.getBindings(true);
         HotSpotVMConfigStore store = rt.getVMConfig().getStore();
         List<VMIntrinsicMethod> intrinsics = store.getIntrinsics();
         for (VMIntrinsicMethod intrinsic : intrinsics) {
@@ -69,7 +69,7 @@ public class TestIntrinsicCompiles extends GraalCompilerTest {
                 if (plugin instanceof MethodSubstitutionPlugin) {
                     ResolvedJavaMethod method = CheckGraalIntrinsics.resolveIntrinsic(getMetaAccess(), intrinsic);
                     if (!method.isNative()) {
-                        StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, INVALID_COMPILATION_ID);
+                        StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, INVALID_COMPILATION_ID, getInitialOptions());
                         getCode(method, graph);
                     }
                 }

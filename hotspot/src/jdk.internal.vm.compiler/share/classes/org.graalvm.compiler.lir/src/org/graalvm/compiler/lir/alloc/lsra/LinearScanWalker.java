@@ -22,14 +22,15 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static jdk.vm.ci.code.CodeUtil.isOdd;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig.AllocatableRegisters;
@@ -72,7 +73,7 @@ class LinearScanWalker extends IntervalWalker {
      * bootstrap run of Graal). Therefore, we initialize {@link #spillIntervals} with this marker
      * value, and allocate a "real" list only on demand in {@link #setUsePos}.
      */
-    private static final List<Interval> EMPTY_LIST = new ArrayList<>(0);
+    private static final List<Interval> EMPTY_LIST = Collections.emptyList();
 
     // accessors mapped to same functions in class LinearScan
     int blockCount() {
@@ -167,7 +168,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void freeExcludeActiveFixed() {
         Interval interval = activeLists.get(RegisterBinding.Fixed);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             assert isRegister(interval.location()) : "active interval must have a register assigned";
             excludeFromUse(interval);
             interval = interval.next;
@@ -176,7 +177,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void freeExcludeActiveAny() {
         Interval interval = activeLists.get(RegisterBinding.Any);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             assert isRegister(interval.location()) : "active interval must have a register assigned";
             excludeFromUse(interval);
             interval = interval.next;
@@ -185,7 +186,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void freeCollectInactiveFixed(Interval current) {
         Interval interval = inactiveLists.get(RegisterBinding.Fixed);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             if (current.to() <= interval.currentFrom()) {
                 assert interval.currentIntersectsAt(current) == -1 : "must not intersect";
                 setUsePos(interval, interval.currentFrom(), true);
@@ -198,7 +199,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void freeCollectInactiveAny(Interval current) {
         Interval interval = inactiveLists.get(RegisterBinding.Any);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             setUsePos(interval, interval.currentIntersectsAt(current), true);
             interval = interval.next;
         }
@@ -206,7 +207,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void freeCollectUnhandled(RegisterBinding kind, Interval current) {
         Interval interval = unhandledLists.get(kind);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             setUsePos(interval, interval.intersectsAt(current), true);
             if (kind == RegisterBinding.Fixed && current.to() <= interval.from()) {
                 setUsePos(interval, interval.from(), true);
@@ -217,7 +218,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void spillExcludeActiveFixed() {
         Interval interval = activeLists.get(RegisterBinding.Fixed);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             excludeFromUse(interval);
             interval = interval.next;
         }
@@ -225,7 +226,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void spillBlockUnhandledFixed(Interval current) {
         Interval interval = unhandledLists.get(RegisterBinding.Fixed);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             setBlockPos(interval, interval.intersectsAt(current));
             interval = interval.next;
         }
@@ -233,7 +234,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void spillBlockInactiveFixed(Interval current) {
         Interval interval = inactiveLists.get(RegisterBinding.Fixed);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             if (current.to() > interval.currentFrom()) {
                 setBlockPos(interval, interval.currentIntersectsAt(current));
             } else {
@@ -246,7 +247,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void spillCollectActiveAny(RegisterPriority registerPriority) {
         Interval interval = activeLists.get(RegisterBinding.Any);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             setUsePos(interval, Math.min(interval.nextUsage(registerPriority, currentPosition), interval.to()), false);
             interval = interval.next;
         }
@@ -254,7 +255,7 @@ class LinearScanWalker extends IntervalWalker {
 
     void spillCollectInactiveAny(Interval current) {
         Interval interval = inactiveLists.get(RegisterBinding.Any);
-        while (interval != Interval.EndMarker) {
+        while (!interval.isEndMarker()) {
             if (interval.currentIntersects(current)) {
                 setUsePos(interval, Math.min(interval.nextUsage(RegisterPriority.LiveAtLoopEnd, currentPosition), interval.to()), false);
             }
@@ -275,7 +276,7 @@ class LinearScanWalker extends IntervalWalker {
         // numbering of instructions is known.
         // When the block already contains spill moves, the index must be increased until the
         // correct index is reached.
-        List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(opBlock);
+        ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(opBlock);
         int index = (opId - instructions.get(0).id()) >> 1;
         assert instructions.get(index).id() <= opId : "error in calculation";
 
@@ -602,7 +603,7 @@ class LinearScanWalker extends IntervalWalker {
                      * The loop depth of the spilling position is higher then the loop depth at the
                      * definition of the interval. Move write to memory out of loop.
                      */
-                    if (LinearScan.Options.LIROptLSRAOptimizeSpillPosition.getValue()) {
+                    if (LinearScan.Options.LIROptLSRAOptimizeSpillPosition.getValue(allocator.getOptions())) {
                         // find best spill position in dominator the tree
                         interval.setSpillState(SpillState.SpillInDominator);
                     } else {
@@ -620,12 +621,17 @@ class LinearScanWalker extends IntervalWalker {
             }
 
             case OneSpillStore: {
-                if (LinearScan.Options.LIROptLSRAOptimizeSpillPosition.getValue()) {
-                    // the interval is spilled more then once
-                    interval.setSpillState(SpillState.SpillInDominator);
-                } else {
-                    // It is better to store it to memory at the definition.
-                    interval.setSpillState(SpillState.StoreAtDefinition);
+                int defLoopDepth = allocator.blockForId(interval.spillDefinitionPos()).getLoopDepth();
+                int spillLoopDepth = allocator.blockForId(spillPos).getLoopDepth();
+
+                if (defLoopDepth <= spillLoopDepth) {
+                    if (LinearScan.Options.LIROptLSRAOptimizeSpillPosition.getValue(allocator.getOptions())) {
+                        // the interval is spilled more then once
+                        interval.setSpillState(SpillState.SpillInDominator);
+                    } else {
+                        // It is better to store it to memory at the definition.
+                        interval.setSpillState(SpillState.StoreAtDefinition);
+                    }
                 }
                 break;
             }
@@ -699,7 +705,7 @@ class LinearScanWalker extends IntervalWalker {
             freeCollectInactiveFixed(interval);
             freeCollectInactiveAny(interval);
             // freeCollectUnhandled(fixedKind, cur);
-            assert unhandledLists.get(RegisterBinding.Fixed) == Interval.EndMarker : "must not have unhandled fixed intervals because all fixed intervals have a use at position 0";
+            assert unhandledLists.get(RegisterBinding.Fixed).isEndMarker() : "must not have unhandled fixed intervals because all fixed intervals have a use at position 0";
 
             // usePos contains the start of the next interval that has this register assigned
             // (either as a fixed register or a normal allocated register in the past)
@@ -811,7 +817,7 @@ class LinearScanWalker extends IntervalWalker {
                 initUseLists(false);
                 spillExcludeActiveFixed();
                 // spillBlockUnhandledFixed(cur);
-                assert unhandledLists.get(RegisterBinding.Fixed) == Interval.EndMarker : "must not have unhandled fixed intervals because all fixed intervals have a use at position 0";
+                assert unhandledLists.get(RegisterBinding.Fixed).isEndMarker() : "must not have unhandled fixed intervals because all fixed intervals have a use at position 0";
                 spillBlockInactiveFixed(interval);
                 spillCollectActiveAny(registerPriority);
                 spillCollectInactiveAny(interval);
@@ -855,7 +861,7 @@ class LinearScanWalker extends IntervalWalker {
                          * errors
                          */
                         allocator.assignSpillSlot(interval);
-                        Debug.dump(Debug.INFO_LOG_LEVEL, allocator.getLIR(), description);
+                        Debug.dump(Debug.INFO_LEVEL, allocator.getLIR(), description);
                         allocator.printIntervals(description);
                         throw new OutOfRegistersException("LinearScan: no register found", description);
                     }
@@ -940,8 +946,8 @@ class LinearScanWalker extends IntervalWalker {
     }
 
     static boolean isMove(LIRInstruction op, Interval from, Interval to) {
-        if (op instanceof ValueMoveOp) {
-            ValueMoveOp move = (ValueMoveOp) op;
+        if (ValueMoveOp.isValueMoveOp(op)) {
+            ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (isVariable(move.getInput()) && isVariable(move.getResult())) {
                 return move.getInput() != null && move.getInput().equals(from.operand) && move.getResult() != null && move.getResult().equals(to.operand);
             }

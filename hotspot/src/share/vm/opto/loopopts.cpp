@@ -912,7 +912,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   if( m ) return m;
 
   if (n->is_ConstraintCast()) {
-    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(this);
+    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
     // transformations happened in between), thus additional dominance check is needed

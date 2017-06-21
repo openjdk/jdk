@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package jdk.tools.jaotc.binformat;
 
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
-import jdk.tools.jaotc.jnilibelf.ELFContainer;
+import jdk.tools.jaotc.binformat.Container;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -41,7 +41,7 @@ import java.util.Arrays;
  * The method {@code putIntAt} updates the content of {@code contentBytes}. Changes are not
  * reflected in {@code contentStream}.
  */
-public class ByteContainer implements ELFContainer {
+public class ByteContainer implements Container {
     /**
      * {@code ByteBuffer} representation of {@code BinaryContainer}.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,7 +452,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Compute whether the root vframe returns a float or double value.
   BasicType return_type;
   {
-    HandleMark hm;
     methodHandle method(thread, array->element(0)->method());
     Bytecode_invoke invoke = Bytecode_invoke_check(method, array->element(0)->bci());
     return_type = invoke.is_valid() ? invoke.result_type() : T_ILLEGAL;
@@ -800,7 +799,7 @@ Deoptimization::DeoptAction Deoptimization::_unloaded_action
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArray<ScopeValue*>* objects, TRAPS) {
-  Handle pending_exception(thread->pending_exception());
+  Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
   int exception_line = thread->exception_line();
   thread->clear_pending_exception();
@@ -811,19 +810,19 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArra
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
 
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k());
+      InstanceKlass* ik = InstanceKlass::cast(k);
       obj = ik->allocate_instance(THREAD);
     } else if (k->is_typeArray_klass()) {
-      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       obj = ak->allocate(len, THREAD);
     } else if (k->is_objArray_klass()) {
-      ObjArrayKlass* ak = ObjArrayKlass::cast(k());
+      ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       obj = ak->allocate(sv->field_size(), THREAD);
     }
 
@@ -1080,7 +1079,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
     if (PrintDeoptimizationDetails) {
@@ -1091,10 +1090,10 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     }
 
     if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k());
+      InstanceKlass* ik = InstanceKlass::cast(k);
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
     } else if (k->is_typeArray_klass()) {
-      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
     } else if (k->is_objArray_klass()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
@@ -1110,7 +1109,7 @@ void Deoptimization::relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaT
     if (mon_info->eliminated()) {
       assert(!mon_info->owner_is_scalar_replaced() || realloc_failures, "reallocation was missed");
       if (!mon_info->owner_is_scalar_replaced()) {
-        Handle obj = Handle(mon_info->owner());
+        Handle obj(thread, mon_info->owner());
         markOop mark = obj->mark();
         if (UseBiasedLocking && mark->has_bias_pattern()) {
           // New allocated objects may have the mark set to anonymously biased.
@@ -1138,7 +1137,7 @@ void Deoptimization::print_objects(GrowableArray<ScopeValue*>* objects, bool rea
 
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
 
     tty->print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
@@ -1247,10 +1246,11 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
 
 static void collect_monitors(compiledVFrame* cvf, GrowableArray<Handle>* objects_to_revoke) {
   GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
+  Thread* thread = Thread::current();
   for (int i = 0; i < monitors->length(); i++) {
     MonitorInfo* mon_info = monitors->at(i);
     if (!mon_info->eliminated() && mon_info->owner() != NULL) {
-      objects_to_revoke->append(Handle(mon_info->owner()));
+      objects_to_revoke->append(Handle(thread, mon_info->owner()));
     }
   }
 }
@@ -2179,6 +2179,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "loop_limit_check",
   "speculate_class_check",
   "speculate_null_check",
+  "speculate_null_assert",
   "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",

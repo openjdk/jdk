@@ -27,8 +27,6 @@ import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.debug.Debug;
@@ -38,6 +36,9 @@ import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRValueUtil;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -54,11 +55,13 @@ public class MoveResolver {
     private int insertIdx;
     private LIRInsertionBuffer insertionBuffer; // buffer where moves are inserted
 
-    private final List<Interval> mappingFrom;
-    private final List<Constant> mappingFromOpr;
-    private final List<Interval> mappingTo;
+    private final ArrayList<Interval> mappingFrom;
+    private final ArrayList<Constant> mappingFromOpr;
+    private final ArrayList<Interval> mappingTo;
     private boolean multipleReadsAllowed;
     private final int[] registerBlocked;
+
+    private final LIRGenerationResult res;
 
     protected void setValueBlocked(Value location, int direction) {
         assert direction == 1 || direction == -1 : "out of bounds";
@@ -101,7 +104,6 @@ public class MoveResolver {
     }
 
     protected MoveResolver(LinearScan allocator) {
-
         this.allocator = allocator;
         this.multipleReadsAllowed = false;
         this.mappingFrom = new ArrayList<>(8);
@@ -110,6 +112,7 @@ public class MoveResolver {
         this.insertIdx = -1;
         this.insertionBuffer = new LIRInsertionBuffer();
         this.registerBlocked = new int[allocator.getRegisters().size()];
+        this.res = allocator.getLIRGenerationResult();
     }
 
     protected boolean checkEmpty() {
@@ -146,7 +149,7 @@ public class MoveResolver {
             }
         }
 
-        HashSet<Value> usedRegs = new HashSet<>();
+        EconomicSet<Value> usedRegs = EconomicSet.create(Equivalence.DEFAULT);
         if (!areMultipleReadsAllowed()) {
             for (i = 0; i < mappingFrom.size(); i++) {
                 Interval interval = mappingFrom.get(i);
@@ -175,7 +178,7 @@ public class MoveResolver {
     }
 
     protected void verifyStackSlotMapping() {
-        HashSet<Value> usedRegs = new HashSet<>();
+        EconomicSet<Value> usedRegs = EconomicSet.create(Equivalence.DEFAULT);
         for (int i = 0; i < mappingFrom.size(); i++) {
             Interval interval = mappingFrom.get(i);
             if (interval != null && !isRegister(interval.location())) {
@@ -241,7 +244,7 @@ public class MoveResolver {
             return true;
         }
         if (from != null && isRegister(from) && isRegister(to) && asRegister(from).equals(asRegister(to))) {
-            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
+            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind(), allocator.getRegisterAllocationConfig()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
             return true;
         }
         return false;
@@ -251,7 +254,7 @@ public class MoveResolver {
         return isRegister(location);
     }
 
-    private void createInsertionBuffer(List<LIRInstruction> list) {
+    private void createInsertionBuffer(ArrayList<LIRInstruction> list) {
         assert !insertionBuffer.initialized() : "overwriting existing buffer";
         insertionBuffer.init(list);
     }
@@ -265,16 +268,18 @@ public class MoveResolver {
         insertIdx = -1;
     }
 
-    private void insertMove(Interval fromInterval, Interval toInterval) {
+    private LIRInstruction insertMove(Interval fromInterval, Interval toInterval) {
         assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : "move between different types";
+        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind(), allocator.getRegisterAllocationConfig()) : "move between different types";
         assert insertIdx != -1 : "must setup insert position first";
 
-        insertionBuffer.append(insertIdx, createMove(fromInterval.operand, toInterval.operand, fromInterval.location(), toInterval.location()));
+        LIRInstruction move = createMove(fromInterval.operand, toInterval.operand, fromInterval.location(), toInterval.location());
+        insertionBuffer.append(insertIdx, move);
 
         if (Debug.isLogEnabled()) {
             Debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
         }
+        return move;
     }
 
     /**
@@ -287,7 +292,7 @@ public class MoveResolver {
         return getAllocator().getSpillMoveFactory().createMove(toOpr, fromOpr);
     }
 
-    private void insertMove(Constant fromOpr, Interval toInterval) {
+    private LIRInstruction insertMove(Constant fromOpr, Interval toInterval) {
         assert insertIdx != -1 : "must setup insert position first";
 
         AllocatableValue toOpr = toInterval.operand;
@@ -297,6 +302,7 @@ public class MoveResolver {
         if (Debug.isLogEnabled()) {
             Debug.log("insert move from value %s to %s at %d", fromOpr, toInterval, insertIdx);
         }
+        return move;
     }
 
     @SuppressWarnings("try")
@@ -329,12 +335,14 @@ public class MoveResolver {
 
                     if (safeToProcessMove(fromInterval, toInterval)) {
                         // this interval can be processed because target is free
+                        final LIRInstruction move;
                         if (fromInterval != null) {
-                            insertMove(fromInterval, toInterval);
+                            move = insertMove(fromInterval, toInterval);
                             unblockRegisters(fromInterval);
                         } else {
-                            insertMove(mappingFromOpr.get(i), toInterval);
+                            move = insertMove(mappingFromOpr.get(i), toInterval);
                         }
+                        move.setComment(res, "MoveResolver resolve mapping");
                         if (LIRValueUtil.isStackSlotValue(toInterval.location())) {
                             if (busySpillSlots == null) {
                                 busySpillSlots = new ArrayList<>(2);
@@ -404,9 +412,10 @@ public class MoveResolver {
         blockRegisters(spillInterval);
 
         // insert a move from register to stack and update the mapping
-        insertMove(fromInterval, spillInterval);
+        LIRInstruction move = insertMove(fromInterval, spillInterval);
         mappingFrom.set(spillCandidate, spillInterval);
         unblockRegisters(fromInterval);
+        move.setComment(res, "MoveResolver break cycle");
     }
 
     @SuppressWarnings("try")
@@ -427,14 +436,14 @@ public class MoveResolver {
         }
     }
 
-    void setInsertPosition(List<LIRInstruction> insertList, int insertIdx) {
+    void setInsertPosition(ArrayList<LIRInstruction> insertList, int insertIdx) {
         assert this.insertIdx == -1 : "use moveInsertPosition instead of setInsertPosition when data already set";
 
         createInsertionBuffer(insertList);
         this.insertIdx = insertIdx;
     }
 
-    void moveInsertPosition(List<LIRInstruction> newInsertList, int newInsertIdx) {
+    void moveInsertPosition(ArrayList<LIRInstruction> newInsertList, int newInsertIdx) {
         if (insertionBuffer.lirList() != null && (insertionBuffer.lirList() != newInsertList || this.insertIdx != newInsertIdx)) {
             // insert position changed . resolve current mappings
             resolveMappings();
@@ -469,8 +478,8 @@ public class MoveResolver {
         }
 
         assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", fromInterval.kind(), toInterval.kind(), fromInterval,
-                        toInterval);
+        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind(), allocator.getRegisterAllocationConfig()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", fromInterval.kind(),
+                        toInterval.kind(), fromInterval, toInterval);
         mappingFrom.add(fromInterval);
         mappingFromOpr.add(null);
         mappingTo.add(toInterval);

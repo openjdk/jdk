@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_MEMORY_METADATAFACTORY_HPP
 
 #include "classfile/classLoaderData.hpp"
-#include "utilities/array.hpp"
+#include "oops/array.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -80,7 +80,7 @@ class MetadataFactory : AllStatic {
   template <class T>
   static void free_metadata(ClassLoaderData* loader_data, T md) {
     if (DumpSharedSpaces) {
-      // FIXME: the freeing code is buggy, especially when PrintSharedSpaces is enabled.
+      // FIXME: the freeing code is buggy, especially when -Xlog:cds is enabled.
       // Disable for now -- this means if you specify bad classes in your classlist you
       // may have wasted space inside the archive.
       return;

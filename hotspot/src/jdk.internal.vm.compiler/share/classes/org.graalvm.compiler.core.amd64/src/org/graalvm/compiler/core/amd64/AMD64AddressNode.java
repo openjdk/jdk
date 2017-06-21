@@ -73,7 +73,9 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
 
         AllocatableValue baseReference = LIRKind.derivedBaseFromValue(baseValue);
         AllocatableValue indexReference;
-        if (scale.equals(Scale.Times1)) {
+        if (index == null) {
+            indexReference = null;
+        } else if (scale.equals(Scale.Times1)) {
             indexReference = LIRKind.derivedBaseFromValue(indexValue);
         } else {
             if (LIRKind.isValue(indexValue)) {
@@ -87,6 +89,7 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
         gen.setResult(this, new AMD64AddressValue(kind, baseValue, indexValue, scale, displacement));
     }
 
+    @Override
     public ValueNode getBase() {
         return base;
     }
@@ -99,6 +102,7 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
         this.base = base;
     }
 
+    @Override
     public ValueNode getIndex() {
         return index;
     }
@@ -125,5 +129,10 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
 
     public void setDisplacement(int displacement) {
         this.displacement = displacement;
+    }
+
+    @Override
+    public long getMaxConstantDisplacement() {
+        return displacement;
     }
 }

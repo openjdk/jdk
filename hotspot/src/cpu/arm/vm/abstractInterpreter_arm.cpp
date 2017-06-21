@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,8 +234,15 @@ void AbstractInterpreter::layout_activation(Method* method,
 #ifdef AARCH64
   interpreter_frame->interpreter_frame_set_stack_top(stack_top);
 
+  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
+  // none of which are at the same time, so we just need to make sure there is enough room
+  // for the biggest user:
+  //   -reserved slot for exception handler
+  //   -reserved slots for JSR292. Method::extra_stack_entries() is the size.
+  //   -3 reserved slots so get_method_counters() can save some registers before call_VM().
+  int max_stack = method->constMethod()->max_stack() + MAX2(3, Method::extra_stack_entries());
   intptr_t* extended_sp = (intptr_t*) monbot  -
-    (method->max_stack() + 1) * Interpreter::stackElementWords - // +1 is reserved slot for exception handler
+    (max_stack * Interpreter::stackElementWords) -
     popframe_extra_args;
   extended_sp = (intptr_t*)round_down((intptr_t)extended_sp, StackAlignmentInBytes);
   interpreter_frame->interpreter_frame_set_extended_sp(extended_sp);

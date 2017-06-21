@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,23 +232,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // length of the array, shift (multiply) it appropriately,
       // up to wordSize, add the header, and align to object size.
       size_t size_in_bytes;
-#ifdef _M_IA64
-      // The Windows Itanium Aug 2002 SDK hoists this load above
-      // the check for s < 0.  An oop at the end of the heap will
-      // cause an access violation if this load is performed on a non
-      // array oop.  Making the reference volatile prohibits this.
-      // (%%% please explain by what magic the length is actually fetched!)
-      volatile int *array_length;
-      array_length = (volatile int *)( (intptr_t)this +
-                          arrayOopDesc::length_offset_in_bytes() );
-      assert(array_length > 0, "Integer arithmetic problem somewhere");
-      // Put into size_t to avoid overflow.
-      size_in_bytes = (size_t) array_length;
-      size_in_bytes = size_in_bytes << Klass::layout_helper_log2_element_size(lh);
-#else
       size_t array_length = (size_t) ((arrayOop)this)->length();
       size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
-#endif
       size_in_bytes += Klass::layout_helper_header_size(lh);
 
       // This code could be simplified, but by keeping array_header_in_bytes
@@ -662,13 +647,6 @@ void oopDesc::incr_age() {
   } else {
     set_mark(mark()->incr_age());
   }
-}
-
-int oopDesc::ms_adjust_pointers() {
-  debug_only(int check_size = size());
-  int s = klass()->oop_ms_adjust_pointers(this);
-  assert(s == check_size, "should be the same");
-  return s;
 }
 
 #if INCLUDE_ALL_GCS

@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.replacements;
 
-import static org.graalvm.compiler.core.common.GraalOptions.SnippetCounters;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
@@ -34,7 +33,6 @@ import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
@@ -45,11 +43,13 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.word.ObjectAccess;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.TargetDescription;
 import sun.misc.Unsafe;
@@ -101,30 +101,26 @@ public class SnippetCounterNode extends FixedWithNextNode implements Lowerable {
     }
 
     /**
-     * When {@link #SnippetCounters} are enabled make sure {@link #SNIPPET_COUNTER_LOCATION} is part
-     * of the private locations.
+     * Add {@link #SNIPPET_COUNTER_LOCATION} to {@code privateLocations} if it isn't already there.
      *
      * @param privateLocations
      * @return a copy of privateLocations with any needed locations added
      */
     public static LocationIdentity[] addSnippetCounters(LocationIdentity[] privateLocations) {
-        if (SnippetCounters.getValue()) {
-            for (LocationIdentity location : privateLocations) {
-                if (location.equals(SNIPPET_COUNTER_LOCATION)) {
-                    return privateLocations;
-                }
+        for (LocationIdentity location : privateLocations) {
+            if (location.equals(SNIPPET_COUNTER_LOCATION)) {
+                return privateLocations;
             }
-            LocationIdentity[] result = Arrays.copyOf(privateLocations, privateLocations.length + 1);
-            result[result.length - 1] = SnippetCounterNode.SNIPPET_COUNTER_LOCATION;
-            return result;
         }
-        return privateLocations;
+        LocationIdentity[] result = Arrays.copyOf(privateLocations, privateLocations.length + 1);
+        result[result.length - 1] = SnippetCounterNode.SNIPPET_COUNTER_LOCATION;
+        return result;
     }
 
     /**
-     * We do not want to use the {@link LocationIdentity} of the {@link SnippetCounter#value} field,
-     * so that the usage in snippets is always possible. If a method accesses the counter via the
-     * field and the snippet, the result might not be correct though.
+     * We do not want to use the {@link LocationIdentity} of the {@link SnippetCounter#value()}
+     * field, so that the usage in snippets is always possible. If a method accesses the counter via
+     * the field and the snippet, the result might not be correct though.
      */
     public static final LocationIdentity SNIPPET_COUNTER_LOCATION = NamedLocationIdentity.mutable("SnippetCounter");
 
@@ -149,8 +145,8 @@ public class SnippetCounterNode extends FixedWithNextNode implements Lowerable {
 
             private final SnippetInfo add = snippet(SnippetCounterSnippets.class, "add", SNIPPET_COUNTER_LOCATION);
 
-            Templates(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-                super(providers, snippetReflection, target);
+            Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+                super(options, providers, snippetReflection, target);
             }
 
             public void lower(SnippetCounterNode counter, LoweringTool tool) {

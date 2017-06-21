@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,21 +40,6 @@
  * This file is currently collecting system-specific dregs for the
  * JNI conversion, which should be sorted out later.
  */
-#ifdef __NetBSD__
-/*
- * Since we are compiling with c++, we need the following to make c macros
- * visible.
- */
-# if !defined(__STDC_LIMIT_MACROS)
-#  define __STDC_LIMIT_MACROS           1
-# endif
-# if !defined(__STDC_CONSTANT_MACROS)
-#  define __STDC_CONSTANT_MACROS        1
-# endif
-# if !defined(__STDC_FORMAT_MACROS)
-#  define __STDC_FORMAT_MACROS          1
-# endif
-#endif
 
 #include <dirent.h>             /* For DIR */
 #include <sys/param.h>          /* For MAXPATHLEN */

@@ -5232,7 +5232,7 @@ void CMSCollector::refProcessingWork() {
       GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer_cm);
 
       // Unload classes and purge the SystemDictionary.
-      bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure);
+      bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure, _gc_timer_cm);
 
       // Unload nmethods.
       CodeCache::do_unloading(&_is_alive_closure, purged_class);
@@ -5253,7 +5253,6 @@ void CMSCollector::refProcessingWork() {
       StringTable::unlink(&_is_alive_closure);
     }
   }
-
 
   // Restore any preserved marks as a result of mark stack or
   // work queue overflow

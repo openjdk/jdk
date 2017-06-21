@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include <sys/param.h>
 #include <dlfcn.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/filio.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -80,18 +80,15 @@ inline int os::readdir_buf_size(const char *path) {
 
 inline struct dirent* os::readdir(DIR* dirp, dirent* dbuf) {
   assert(dirp != NULL, "just checking");
-#if defined(_LP64) || defined(_GNU_SOURCE) || _FILE_OFFSET_BITS==64
   dirent* p;
   int status;
 
   if((status = ::readdir_r(dirp, dbuf, &p)) != 0) {
     errno = status;
     return NULL;
-  } else
+  } else {
     return p;
-#else  // defined(_LP64) || defined(_GNU_SOURCE) || _FILE_OFFSET_BITS==64
-  return ::readdir_r(dirp, dbuf);
-#endif // defined(_LP64) || defined(_GNU_SOURCE) || _FILE_OFFSET_BITS==64
+  }
 }
 
 inline int os::closedir(DIR *dirp) {

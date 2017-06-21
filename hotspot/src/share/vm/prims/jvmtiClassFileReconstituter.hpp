@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ class JvmtiConstantPoolReconstituter : public StackObj {
   SymbolHashMap*       _symmap;
   SymbolHashMap*       _classmap;
   constantPoolHandle   _cpool;
-  instanceKlassHandle  _ikh;
+  InstanceKlass*       _ik;
   jvmtiError           _err;
 
  protected:
-  instanceKlassHandle  ikh()     { return _ikh; };
+  InstanceKlass*  ik()           { return _ik; };
   constantPoolHandle   cpool()   { return _cpool; };
 
   u2 symbol_to_cpool_index(Symbol* sym) {
@@ -52,10 +52,10 @@ class JvmtiConstantPoolReconstituter : public StackObj {
  public:
   // Calls to this constructor must be proceeded by a ResourceMark
   // and a HandleMark
-  JvmtiConstantPoolReconstituter(instanceKlassHandle ikh){
+  JvmtiConstantPoolReconstituter(InstanceKlass* ik){
     set_error(JVMTI_ERROR_NONE);
-    _ikh = ikh;
-    _cpool = constantPoolHandle(Thread::current(), ikh->constants());
+    _ik = ik;
+    _cpool = constantPoolHandle(Thread::current(), ik->constants());
     _symmap = new SymbolHashMap();
     _classmap = new SymbolHashMap();
     _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
@@ -138,8 +138,8 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
  public:
   // Calls to this constructor must be proceeded by a ResourceMark
   // and a HandleMark
-  JvmtiClassFileReconstituter(instanceKlassHandle ikh) :
-                                      JvmtiConstantPoolReconstituter(ikh) {
+  JvmtiClassFileReconstituter(InstanceKlass* ik) :
+                                      JvmtiConstantPoolReconstituter(ik) {
     _buffer_size = initial_buffer_size;
     _buffer = _buffer_ptr = NEW_RESOURCE_ARRAY(u1, _buffer_size);
     _thread = Thread::current();

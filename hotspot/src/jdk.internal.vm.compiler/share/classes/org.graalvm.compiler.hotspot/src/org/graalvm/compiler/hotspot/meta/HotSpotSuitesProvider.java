@@ -22,17 +22,16 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.VerifyPhases;
 
 import java.util.ListIterator;
 
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotInstructionProfiling;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.phases.AheadOfTimeVerificationPhase;
 import org.graalvm.compiler.hotspot.phases.LoadJavaMirrorWithKlassPhase;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
@@ -50,16 +49,14 @@ import org.graalvm.compiler.nodes.SimplifyingGraphDecoder;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.ExpandLogicPhase;
-import org.graalvm.compiler.phases.common.LoopSafepointInsertionPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.SuitesCreator;
 
@@ -71,36 +68,34 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
     protected final GraalHotSpotVMConfig config;
     protected final HotSpotGraalRuntimeProvider runtime;
 
-    private final AddressLowering addressLowering;
     private final SuitesCreator defaultSuitesCreator;
 
-    public HotSpotSuitesProvider(SuitesCreator defaultSuitesCreator, GraalHotSpotVMConfig config, HotSpotGraalRuntimeProvider runtime, AddressLowering addressLowering) {
+    public HotSpotSuitesProvider(SuitesCreator defaultSuitesCreator, GraalHotSpotVMConfig config, HotSpotGraalRuntimeProvider runtime) {
         this.defaultSuitesCreator = defaultSuitesCreator;
         this.config = config;
         this.runtime = runtime;
-        this.addressLowering = addressLowering;
         this.defaultGraphBuilderSuite = createGraphBuilderSuite();
     }
 
     @Override
-    public Suites createSuites() {
-        Suites ret = defaultSuitesCreator.createSuites();
+    public Suites createSuites(OptionValues options) {
+        Suites ret = defaultSuitesCreator.createSuites(options);
 
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(options)) {
             // lowering introduces class constants, therefore it must be after lowering
-            ret.getHighTier().appendPhase(new LoadJavaMirrorWithKlassPhase(config.classMirrorOffset, config.useCompressedOops ? config.getOopEncoding() : null));
-            if (VerifyPhases.getValue()) {
+            ret.getHighTier().appendPhase(new LoadJavaMirrorWithKlassPhase(config));
+            if (VerifyPhases.getValue(options)) {
                 ret.getHighTier().appendPhase(new AheadOfTimeVerificationPhase());
             }
-            if (GeneratePIC.getValue()) {
-                // EliminateRedundantInitializationPhase must happen before the first lowering.
+            if (GeneratePIC.getValue(options)) {
                 ListIterator<BasePhase<? super HighTierContext>> highTierLowering = ret.getHighTier().findPhase(LoweringPhase.class);
                 highTierLowering.previous();
                 highTierLowering.add(new EliminateRedundantInitializationPhase());
-                if (HotSpotAOTProfilingPlugin.Options.TieredAOT.getValue()) {
-                    highTierLowering.add(new FinalizeProfileNodesPhase(HotSpotAOTProfilingPlugin.Options.TierAInvokeInlineeNotifyFreqLog.getValue()));
+                if (HotSpotAOTProfilingPlugin.Options.TieredAOT.getValue(options)) {
+                    highTierLowering.add(new FinalizeProfileNodesPhase(HotSpotAOTProfilingPlugin.Options.TierAInvokeInlineeNotifyFreqLog.getValue(options)));
                 }
-                ret.getMidTier().findPhase(LoopSafepointInsertionPhase.class).add(new ReplaceConstantNodesPhase());
+                ListIterator<BasePhase<? super MidTierContext>> midTierLowering = ret.getMidTier().findPhase(LoweringPhase.class);
+                midTierLowering.add(new ReplaceConstantNodesPhase());
 
                 // Replace inlining policy
                 ListIterator<BasePhase<? super HighTierContext>> iter = ret.getHighTier().findPhase(InliningPhase.class);
@@ -111,11 +106,9 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
         }
 
         ret.getMidTier().appendPhase(new WriteBarrierAdditionPhase(config));
-        if (VerifyPhases.getValue()) {
+        if (VerifyPhases.getValue(options)) {
             ret.getMidTier().appendPhase(new WriteBarrierVerificationPhase(config));
         }
-
-        ret.getLowTier().findPhase(ExpandLogicPhase.class).add(new AddressLoweringPhase(addressLowering));
 
         return ret;
     }
@@ -131,7 +124,7 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
      * encoding and decoding process work correctly. The decoding performs canonicalization during
      * decoding, so the decoded graph can be different than the encoded graph - we cannot check them
      * for equality here. However, the encoder {@link GraphEncoder#verifyEncoding verifies the
-     * encoding itself}, i.e., performs a decoding without canoncialization and checks the graphs
+     * encoding itself}, i.e., performs a decoding without canonicalization and checks the graphs
      * for equality.
      */
     private boolean appendGraphEncoderTest(PhaseSuite<HighTierContext> suite) {
@@ -140,10 +133,10 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
             protected void run(StructuredGraph graph, HighTierContext context) {
                 EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graph, runtime.getTarget().arch);
 
-                SimplifyingGraphDecoder graphDecoder = new SimplifyingGraphDecoder(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(),
-                                context.getStampProvider(), !ImmutableCode.getValue(), runtime.getTarget().arch);
-                StructuredGraph targetGraph = new StructuredGraph(graph.method(), AllowAssumptions.YES, INVALID_COMPILATION_ID);
-                graphDecoder.decode(targetGraph, encodedGraph);
+                StructuredGraph targetGraph = new StructuredGraph.Builder(graph.getOptions(), AllowAssumptions.YES).method(graph.method()).build();
+                SimplifyingGraphDecoder graphDecoder = new SimplifyingGraphDecoder(runtime.getTarget().arch, targetGraph, context.getMetaAccess(), context.getConstantReflection(),
+                                context.getConstantFieldProvider(), context.getStampProvider(), !ImmutableCode.getValue(graph.getOptions()));
+                graphDecoder.decode(encodedGraph);
             }
 
             @Override
@@ -169,9 +162,9 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
     }
 
     @Override
-    public LIRSuites createLIRSuites() {
-        LIRSuites suites = defaultSuitesCreator.createLIRSuites();
-        String profileInstructions = HotSpotBackend.Options.ASMInstructionProfiling.getValue();
+    public LIRSuites createLIRSuites(OptionValues options) {
+        LIRSuites suites = defaultSuitesCreator.createLIRSuites(options);
+        String profileInstructions = HotSpotBackend.Options.ASMInstructionProfiling.getValue(options);
         if (profileInstructions != null) {
             suites.getPostAllocationOptimizationStage().appendPhase(new HotSpotInstructionProfiling(profileInstructions));
         }
