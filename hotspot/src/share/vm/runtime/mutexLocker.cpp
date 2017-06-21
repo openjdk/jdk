@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
 Mutex*   JNIGlobalHandle_lock         = NULL;
 Mutex*   JNIHandleBlockFreeList_lock  = NULL;
-Mutex*   MemberNameTable_lock         = NULL;
+Mutex*   ResolvedMethodTable_lock     = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
@@ -81,6 +81,7 @@ Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
 Mutex*   ParGCRareEvent_lock          = NULL;
 Mutex*   DerivedPointerTableGC_lock   = NULL;
+Monitor* CGCPhaseManager_lock         = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
 Monitor* CompileThread_lock           = NULL;
@@ -124,7 +125,7 @@ Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;
 Monitor* RedefineClasses_lock         = NULL;
 
-#ifdef INCLUDE_TRACE
+#if INCLUDE_TRACE
 Mutex*   JfrStacktrace_lock           = NULL;
 Monitor* JfrMsg_lock                  = NULL;
 Mutex*   JfrBuffer_lock               = NULL;
@@ -203,6 +204,9 @@ void mutex_init() {
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_sometimes);
   def(DerivedPointerTableGC_lock   , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
+#ifdef INCLUDE_ALL_GCS
+  def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_sometimes);
+#endif
   def(CodeCache_lock               , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // used for oop_map_cache allocation.
@@ -251,7 +255,7 @@ void mutex_init() {
 
   def(Heap_lock                    , PaddedMonitor, nonleaf+1,   false, Monitor::_safepoint_check_sometimes);
   def(JfieldIdCreation_lock        , PaddedMutex  , nonleaf+1,   true,  Monitor::_safepoint_check_always);     // jfieldID, Used in VM_Operation
-  def(MemberNameTable_lock         , PaddedMutex  , nonleaf+1,   false, Monitor::_safepoint_check_always);     // Used to protect MemberNameTable
+  def(ResolvedMethodTable_lock     , PaddedMutex  , nonleaf+1,   false, Monitor::_safepoint_check_always);     // Used to protect ResolvedMethodTable
 
   def(CompiledIC_lock              , PaddedMutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // locks VtableStubs_lock, InlineCacheBuffer_lock
   def(CompileTaskAlloc_lock        , PaddedMutex  , nonleaf+2,   true,  Monitor::_safepoint_check_always);
@@ -276,7 +280,7 @@ void mutex_init() {
     def(Compilation_lock           , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_never);
   }
 
-#ifdef INCLUDE_TRACE
+#if INCLUDE_TRACE
   def(JfrMsg_lock                  , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);
   def(JfrBuffer_lock               , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(JfrThreadGroups_lock         , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);

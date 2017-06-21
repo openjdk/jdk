@@ -42,7 +42,8 @@ import java.util.function.Function;
 
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.Debug;
@@ -99,6 +100,7 @@ public final class FrameStateBuilder implements SideEffectsState {
 
     private MonitorIdNode[] monitorIds;
     private final StructuredGraph graph;
+    private final boolean clearNonLiveLocals;
     private FrameState outerFrameState;
 
     /**
@@ -142,6 +144,7 @@ public final class FrameStateBuilder implements SideEffectsState {
 
         this.monitorIds = EMPTY_MONITOR_ARRAY;
         this.graph = graph;
+        this.clearNonLiveLocals = GraalOptions.OptClearNonLiveLocals.getValue(graph.getOptions());
         this.canVerifyKind = true;
     }
 
@@ -263,6 +266,7 @@ public final class FrameStateBuilder implements SideEffectsState {
 
         assert other.graph != null;
         graph = other.graph;
+        clearNonLiveLocals = other.clearNonLiveLocals;
         monitorIds = other.monitorIds.length == 0 ? other.monitorIds : other.monitorIds.clone();
 
         assert locals.length == code.getMaxLocals();
@@ -303,7 +307,8 @@ public final class FrameStateBuilder implements SideEffectsState {
 
     public FrameState create(int bci, StateSplit forStateSplit) {
         if (parser != null && parser.parsingIntrinsic()) {
-            return parser.intrinsicContext.createFrameState(parser.getGraph(), this, forStateSplit);
+            NodeSourcePosition sourcePosition = createBytecodePosition(bci, false);
+            return parser.intrinsicContext.createFrameState(parser.getGraph(), this, forStateSplit, sourcePosition);
         }
 
         // Skip intrinsic frames
@@ -346,8 +351,12 @@ public final class FrameStateBuilder implements SideEffectsState {
     }
 
     public NodeSourcePosition createBytecodePosition(int bci) {
+        return createBytecodePosition(bci, HideSubstitutionStates.getValue(parser.graph.getOptions()));
+    }
+
+    private NodeSourcePosition createBytecodePosition(int bci, boolean hideSubstitutionStates) {
         BytecodeParser parent = parser.getParent();
-        if (HideSubstitutionStates.getValue()) {
+        if (hideSubstitutionStates) {
             if (parser.parsingIntrinsic()) {
                 // Attribute to the method being replaced
                 return new NodeSourcePosition(constantReceiver, parent.getFrameStateBuilder().createBytecodePosition(parent.bci()), parser.intrinsicContext.getOriginalMethod(), -1);
@@ -355,13 +364,13 @@ public final class FrameStateBuilder implements SideEffectsState {
             // Skip intrinsic frames
             parent = parser.getNonIntrinsicAncestor();
         }
-        return create(null, constantReceiver, bci, parent);
+        return create(null, constantReceiver, bci, parent, hideSubstitutionStates);
     }
 
-    private NodeSourcePosition create(NodeSourcePosition o, JavaConstant receiver, int bci, BytecodeParser parent) {
+    private NodeSourcePosition create(NodeSourcePosition o, JavaConstant receiver, int bci, BytecodeParser parent, boolean hideSubstitutionStates) {
         NodeSourcePosition outer = o;
         if (outer == null && parent != null) {
-            outer = parent.getFrameStateBuilder().createBytecodePosition(parent.bci());
+            outer = parent.getFrameStateBuilder().createBytecodePosition(parent.bci(), hideSubstitutionStates);
         }
         if (bci == BytecodeFrame.AFTER_EXCEPTION_BCI && parent != null) {
             return FrameState.toSourcePosition(outerFrameState);
@@ -624,7 +633,7 @@ public final class FrameStateBuilder implements SideEffectsState {
          * slots at the OSR entry aren't cleared. it is also not enough to rely on PiNodes with
          * Kind.Illegal, because the conflicting branch might not have been parsed.
          */
-        if (!parser.graphBuilderConfig.clearNonLiveLocals()) {
+        if (!clearNonLiveLocals) {
             return;
         }
         if (liveIn) {

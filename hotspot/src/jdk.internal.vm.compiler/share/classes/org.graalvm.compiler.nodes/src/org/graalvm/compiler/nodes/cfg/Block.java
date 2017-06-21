@@ -25,11 +25,11 @@ package org.graalvm.compiler.nodes.cfg;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -37,6 +37,7 @@ import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.word.LocationIdentity;
 
 public final class Block extends AbstractBlockBase<Block> {
 
@@ -54,7 +55,7 @@ public final class Block extends AbstractBlockBase<Block> {
     private LocationSet killLocations;
     private LocationSet killLocationsBetweenThisAndDominator;
 
-    protected Block(AbstractBeginNode node) {
+    public Block(AbstractBeginNode node) {
         this.beginNode = node;
     }
 
@@ -182,7 +183,40 @@ public final class Block extends AbstractBlockBase<Block> {
 
     @Override
     public String toString() {
-        return "B" + id;
+        return toString(Verbosity.Id);
+    }
+
+    public String toString(Verbosity verbosity) {
+        StringBuilder sb = new StringBuilder();
+        sb.append('B').append(id);
+        if (verbosity != Verbosity.Id) {
+            if (isLoopHeader()) {
+                sb.append(" lh");
+            }
+
+            if (getSuccessorCount() > 0) {
+                sb.append(" ->[");
+                for (int i = 0; i < getSuccessorCount(); ++i) {
+                    if (i != 0) {
+                        sb.append(',');
+                    }
+                    sb.append('B').append(getSuccessors()[i].getId());
+                }
+                sb.append(']');
+            }
+
+            if (getPredecessorCount() > 0) {
+                sb.append(" <-[");
+                for (int i = 0; i < getPredecessorCount(); ++i) {
+                    if (i != 0) {
+                        sb.append(',');
+                    }
+                    sb.append('B').append(getPredecessors()[i].getId());
+                }
+                sb.append(']');
+            }
+        }
+        return sb.toString();
     }
 
     @Override
@@ -322,5 +356,9 @@ public final class Block extends AbstractBlockBase<Block> {
         }
 
         next.setPredecessors(newPreds.toArray(new Block[0]));
+    }
+
+    protected void setPostDominator(Block postdominator) {
+        this.postdominator = postdominator;
     }
 }

@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
@@ -65,7 +64,7 @@ public class EdgesTest extends GraalCompilerTest {
 
     }
 
-    StructuredGraph graph = new StructuredGraph(AllowAssumptions.NO, INVALID_COMPILATION_ID);
+    StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).build();
     TestNode node;
     ConstantNode i1;
     ConstantNode i2;

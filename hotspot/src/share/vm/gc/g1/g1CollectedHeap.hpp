@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,8 @@ private:
   HeapRegionSet _humongous_set;
 
   void eagerly_reclaim_humongous_regions();
+  // Start a new incremental collection set for the next pause.
+  void start_new_collection_set();
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
@@ -1129,9 +1131,7 @@ public:
 #endif
 
   // Return "TRUE" iff the given object address is within the collection
-  // set. Slow implementation.
-  bool obj_in_cs(oop obj);
-
+  // set. Assumes that the reference points into the heap.
   inline bool is_in_cset(const HeapRegion *hr);
   inline bool is_in_cset(oop obj);
 
@@ -1348,7 +1348,6 @@ public:
   // bitmap off to the side.
   void doConcurrentMark();
 
-  bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
   // Determine if an object is dead, given the object and also
@@ -1357,8 +1356,7 @@ public:
   // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
-      !hr->obj_allocated_since_prev_marking(obj) &&
-      !isMarkedPrev(obj) &&
+      hr->is_obj_dead(obj, _cm->prevMarkBitMap()) &&
       !hr->is_archive();
   }
 
@@ -1403,12 +1401,16 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Delete entries for dead interned string and clean up unreferenced symbols
-  // in symbol table, possibly in parallel.
-  void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
+  // Partial cleaning used when class unloading is disabled.
+  // Let the caller choose what structures to clean out:
+  // - StringTable
+  // - SymbolTable
+  // - StringDeduplication structures
+  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_symbols, bool unlink_string_dedup);
 
-  // Parallel phase of unloading/cleaning after G1 concurrent mark.
-  void parallel_cleaning(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool class_unloading_occurred);
+  // Complete cleaning used when class unloading is enabled.
+  // Cleans out all structures handled by partial_cleaning and also the CodeCache.
+  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
   void redirty_logged_cards();
@@ -1433,6 +1435,11 @@ public:
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo);
+
+  // WhiteBox testing support.
+  virtual bool supports_concurrent_phase_control() const;
+  virtual const char* const* concurrent_phases() const;
+  virtual bool request_concurrent_phase(const char* phase);
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

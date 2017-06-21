@@ -55,7 +55,7 @@ public class JVMAddModuleExportToAllUnnamed {
         // Define a module for p1.
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
         assertNotNull(m1x, "Module should not be null");
-        ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
+        ModuleHelper.DefineModule(m1x, false, "9.0", "m1x/here", new String[] { "p1" });
         ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Make package p1 in m1x visible to everyone.

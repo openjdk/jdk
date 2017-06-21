@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,60 +47,6 @@ int    HeapRegion::LogOfHRGrainWords = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
-
-HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
-                                 HeapRegion* hr,
-                                 G1ParPushHeapRSClosure* cl,
-                                 CardTableModRefBS::PrecisionStyle precision) :
-  DirtyCardToOopClosure(hr, cl, precision, NULL),
-  _hr(hr), _rs_scan(cl), _g1(g1) { }
-
-FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
-                                                   OopClosure* oc) :
-  _r_bottom(r->bottom()), _r_end(r->end()), _oc(oc) { }
-
-void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
-                                      HeapWord* bottom,
-                                      HeapWord* top) {
-  G1CollectedHeap* g1h = _g1;
-  size_t oop_size;
-  HeapWord* cur = bottom;
-
-  // Start filtering what we add to the remembered set. If the object is
-  // not considered dead, either because it is marked (in the mark bitmap)
-  // or it was allocated after marking finished, then we add it. Otherwise
-  // we can safely ignore the object.
-  if (!g1h->is_obj_dead(oop(cur))) {
-    oop_size = oop(cur)->oop_iterate_size(_rs_scan, mr);
-  } else {
-    oop_size = _hr->block_size(cur);
-  }
-
-  cur += oop_size;
-
-  if (cur < top) {
-    oop cur_oop = oop(cur);
-    oop_size = _hr->block_size(cur);
-    HeapWord* next_obj = cur + oop_size;
-    while (next_obj < top) {
-      // Keep filtering the remembered set.
-      if (!g1h->is_obj_dead(cur_oop)) {
-        // Bottom lies entirely below top, so we can call the
-        // non-memRegion version of oop_iterate below.
-        cur_oop->oop_iterate(_rs_scan);
-      }
-      cur = next_obj;
-      cur_oop = oop(cur);
-      oop_size = _hr->block_size(cur);
-      next_obj = cur + oop_size;
-    }
-
-    // Last object. Need to do dead-obj filtering here too.
-    if (!g1h->is_obj_dead(oop(cur))) {
-      oop(cur)->oop_iterate(_rs_scan, mr);
-    }
-  }
-}
 
 size_t HeapRegion::max_region_size() {
   return HeapRegionBounds::max_size();
@@ -267,6 +213,8 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
+
+  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -274,6 +222,8 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
+
+  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -290,8 +240,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _containing_set(NULL),
 #endif // ASSERT
      _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
-    _predicted_bytes_to_copy(0)
+    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 
@@ -343,119 +292,11 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
-                                                  bool during_conc_mark,
-                                                  size_t marked_bytes) {
+void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
   _prev_top_at_mark_start = top();
   _prev_marked_bytes = marked_bytes;
-}
-
-// Humongous objects are allocated directly in the old-gen.  Need
-// special handling for concurrent processing encountering an
-// in-progress allocation.
-static bool do_oops_on_card_in_humongous(MemRegion mr,
-                                         FilterOutOfRegionClosure* cl,
-                                         HeapRegion* hr,
-                                         G1CollectedHeap* g1h) {
-  assert(hr->is_humongous(), "precondition");
-  HeapRegion* sr = hr->humongous_start_region();
-  oop obj = oop(sr->bottom());
-
-  // If concurrent and klass_or_null is NULL, then space has been
-  // allocated but the object has not yet been published by setting
-  // the klass.  That can only happen if the card is stale.  However,
-  // we've already set the card clean, so we must return failure,
-  // since the allocating thread could have performed a write to the
-  // card that might be missed otherwise.
-  if (!g1h->is_gc_active() && (obj->klass_or_null_acquire() == NULL)) {
-    return false;
-  }
-
-  // We have a well-formed humongous object at the start of sr.
-  // Only filler objects follow a humongous object in the containing
-  // regions, and we can ignore those.  So only process the one
-  // humongous object.
-  if (!g1h->is_obj_dead(obj, sr)) {
-    if (obj->is_objArray() || (sr->bottom() < mr.start())) {
-      // objArrays are always marked precisely, so limit processing
-      // with mr.  Non-objArrays might be precisely marked, and since
-      // it's humongous it's worthwhile avoiding full processing.
-      // However, the card could be stale and only cover filler
-      // objects.  That should be rare, so not worth checking for;
-      // instead let it fall out from the bounded iteration.
-      obj->oop_iterate(cl, mr);
-    } else {
-      // If obj is not an objArray and mr contains the start of the
-      // obj, then this could be an imprecise mark, and we need to
-      // process the entire object.
-      obj->oop_iterate(cl);
-    }
-  }
-  return true;
-}
-
-bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  FilterOutOfRegionClosure* cl) {
-  assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  // Special handling for humongous regions.
-  if (is_humongous()) {
-    return do_oops_on_card_in_humongous(mr, cl, this, g1h);
-  }
-  assert(is_old(), "precondition");
-
-  // Because mr has been trimmed to what's been allocated in this
-  // region, the parts of the heap that are examined here are always
-  // parsable; there's no need to use klass_or_null to detect
-  // in-progress allocation.
-
-  // Cache the boundaries of the memory region in some const locals
-  HeapWord* const start = mr.start();
-  HeapWord* const end = mr.end();
-
-  // Find the obj that extends onto mr.start().
-  // Update BOT as needed while finding start of (possibly dead)
-  // object containing the start of the region.
-  HeapWord* cur = block_start(start);
-
-#ifdef ASSERT
-  {
-    assert(cur <= start,
-           "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
-    HeapWord* next = cur + block_size(cur);
-    assert(start < next,
-           "start: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(start), p2i(next));
-  }
-#endif
-
-  do {
-    oop obj = oop(cur);
-    assert(obj->is_oop(true), "Not an oop at " PTR_FORMAT, p2i(cur));
-    assert(obj->klass_or_null() != NULL,
-           "Unparsable heap at " PTR_FORMAT, p2i(cur));
-
-    if (g1h->is_obj_dead(obj, this)) {
-      // Carefully step over dead object.
-      cur += block_size(cur);
-    } else {
-      // Step over live object, and process its references.
-      cur += obj->size();
-      // Non-objArrays are usually marked imprecise at the object
-      // start, in which case we need to iterate over them in full.
-      // objArrays are precisely marked, but can still be iterated
-      // over in full if completely covered.
-      if (!obj->is_objArray() || (((HeapWord*)obj) >= start && cur <= end)) {
-        obj->oop_iterate(cl);
-      } else {
-        obj->oop_iterate(cl, mr);
-      }
-    }
-  } while (cur < end);
-
-  return true;
 }
 
 // Code roots support
@@ -483,7 +324,6 @@ void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
 
 class VerifyStrongCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
-  nmethod* _nm;
   bool _failures;
   bool _has_oops_in_region;
 
@@ -510,7 +350,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr, nmethod* nm):
+  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -536,7 +376,7 @@ public:
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
       } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr, nm);
+        VerifyStrongCodeRootOopClosure oop_cl(_hr);
         nm->oops_do(&oop_cl);
         if (!oop_cl.has_oops_in_region()) {
           log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
@@ -728,7 +568,6 @@ public:
     Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      bool failed = false;
       HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
@@ -763,11 +602,26 @@ public:
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
           log.error("----------");
           _failures = true;
-          if (!failed) _n_failures++;
+          _n_failures++;
         }
       }
     }
   }
+};
+
+// Closure that applies the given two closures in sequence.
+class G1Mux2Closure : public OopClosure {
+  OopClosure* _c1;
+  OopClosure* _c2;
+public:
+  G1Mux2Closure(OopClosure *c1, OopClosure *c2) { _c1 = c1; _c2 = c2; }
+  template <class T> inline void do_oop_work(T* p) {
+    // Apply first closure; then apply the second.
+    _c1->do_oop(p);
+    _c2->do_oop(p);
+  }
+  virtual inline void do_oop(oop* p) { do_oop_work(p); }
+  virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
@@ -973,7 +827,6 @@ void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
 
 void G1ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  _scan_top = bottom();
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
@@ -1005,40 +858,13 @@ HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
   return _bot_part.threshold();
 }
 
-HeapWord* G1ContiguousSpace::scan_top() const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapWord* local_top = top();
-  OrderAccess::loadload();
-  const unsigned local_time_stamp = _gc_time_stamp;
-  assert(local_time_stamp <= g1h->get_gc_time_stamp(), "invariant");
-  if (local_time_stamp < g1h->get_gc_time_stamp()) {
-    return local_top;
-  } else {
-    return _scan_top;
-  }
-}
-
 void G1ContiguousSpace::record_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   uint curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
   if (_gc_time_stamp < curr_gc_time_stamp) {
-    // Setting the time stamp here tells concurrent readers to look at
-    // scan_top to know the maximum allowed address to look at.
-
-    // scan_top should be bottom for all regions except for the
-    // retained old alloc region which should have scan_top == top
-    HeapWord* st = _scan_top;
-    guarantee(st == _bottom || st == _top, "invariant");
-
     _gc_time_stamp = curr_gc_time_stamp;
   }
-}
-
-void G1ContiguousSpace::record_retained_region() {
-  // scan_top is the maximum address where it's safe for the next gc to
-  // scan this region.
-  _scan_top = top();
 }
 
 void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
@@ -1065,7 +891,6 @@ G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
 void G1ContiguousSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
   _top = bottom();
-  _scan_top = bottom();
   set_saved_mark_word(NULL);
   reset_bot();
 }

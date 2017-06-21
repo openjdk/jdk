@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ class ArrayKlass: public Klass {
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   // Return a handle.
-  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, ModuleEntry* module, TRAPS);
+  static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
 
 
   // jvm support

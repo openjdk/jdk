@@ -41,6 +41,14 @@ public interface ConvertNode extends ValueNodeInterface {
     Constant reverse(Constant c, ConstantReflectionProvider constantReflection);
 
     /**
+     * Checks whether a null check may skip the conversion. This is true if in the conversion NULL
+     * is converted to NULL and if it is the only value converted to NULL.
+     *
+     * @return whether a null check may skip the conversion
+     */
+    boolean mayNullCheckSkipConversion();
+
+    /**
      * Check whether a conversion is lossless.
      *
      * @return true iff reverse(convert(c)) == c for all c

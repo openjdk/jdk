@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,62 @@ class G1ConcurrentMark;
 class ConcurrentGCTimer;
 class G1OldTracer;
 class G1SurvivorRegions;
-typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
+
+#ifdef _MSC_VER
+#pragma warning(push)
+// warning C4522: multiple assignment operators specified
+#pragma warning(disable:4522)
+#endif
+
+// This is a container class for either an oop or a continuation address for
+// mark stack entries. Both are pushed onto the mark stack.
+class G1TaskQueueEntry VALUE_OBJ_CLASS_SPEC {
+private:
+  void* _holder;
+
+  static const uintptr_t ArraySliceBit = 1;
+
+  G1TaskQueueEntry(oop obj) : _holder(obj) {
+    assert(_holder != NULL, "Not allowed to set NULL task queue element");
+  }
+  G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
+public:
+  G1TaskQueueEntry(const G1TaskQueueEntry& other) { _holder = other._holder; }
+  G1TaskQueueEntry() : _holder(NULL) { }
+
+  static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
+  static G1TaskQueueEntry from_oop(oop obj) { return G1TaskQueueEntry(obj); }
+
+  G1TaskQueueEntry& operator=(const G1TaskQueueEntry& t) {
+    _holder = t._holder;
+    return *this;
+  }
+
+  volatile G1TaskQueueEntry& operator=(const volatile G1TaskQueueEntry& t) volatile {
+    _holder = t._holder;
+    return *this;
+  }
+
+  oop obj() const {
+    assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
+    return (oop)_holder;
+  }
+
+  HeapWord* slice() const {
+    assert(is_array_slice(), "Trying to read oop " PTR_FORMAT " as array slice", p2i(_holder));
+    return (HeapWord*)((uintptr_t)_holder & ~ArraySliceBit);
+  }
+
+  bool is_oop() const { return !is_array_slice(); }
+  bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
+  bool is_null() const { return _holder == NULL; }
+};
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
@@ -165,48 +220,44 @@ class G1CMBitMap : public G1CMBitMapRO {
 // list connecting all empty chunks.
 class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
 public:
-  // Number of oops that can fit in a single chunk.
-  static const size_t OopsPerChunk = 1024 - 1 /* One reference for the next pointer */;
+  // Number of TaskQueueEntries that can fit in a single chunk.
+  static const size_t EntriesPerChunk = 1024 - 1 /* One reference for the next pointer */;
 private:
-  struct OopChunk {
-    OopChunk* next;
-    oop data[OopsPerChunk];
+  struct TaskQueueEntryChunk {
+    TaskQueueEntryChunk* next;
+    G1TaskQueueEntry data[EntriesPerChunk];
   };
 
-  size_t _max_chunk_capacity;    // Maximum number of OopChunk elements on the stack.
+  size_t _max_chunk_capacity;    // Maximum number of TaskQueueEntryChunk elements on the stack.
 
-  OopChunk* _base;               // Bottom address of allocated memory area.
-  size_t _chunk_capacity;        // Current maximum number of OopChunk elements.
+  TaskQueueEntryChunk* _base;    // Bottom address of allocated memory area.
+  size_t _chunk_capacity;        // Current maximum number of TaskQueueEntryChunk elements.
 
   char _pad0[DEFAULT_CACHE_LINE_SIZE];
-  OopChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*)];
-  OopChunk* volatile _chunk_list; // List of chunks currently containing data.
+  TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*) - sizeof(size_t)];
+  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   volatile size_t _hwm;          // High water mark within the reserved space.
   char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
 
   // Allocate a new chunk from the reserved memory, using the high water mark. Returns
   // NULL if out of memory.
-  OopChunk* allocate_new_chunk();
-
-  volatile bool _out_of_memory;
+  TaskQueueEntryChunk* allocate_new_chunk();
 
   // Atomically add the given chunk to the list.
-  void add_chunk_to_list(OopChunk* volatile* list, OopChunk* elem);
+  void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns NULL if the
   // list is empty.
-  OopChunk* remove_chunk_from_list(OopChunk* volatile* list);
+  TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
 
-  void add_chunk_to_chunk_list(OopChunk* elem);
-  void add_chunk_to_free_list(OopChunk* elem);
+  void add_chunk_to_chunk_list(TaskQueueEntryChunk* elem);
+  void add_chunk_to_free_list(TaskQueueEntryChunk* elem);
 
-  OopChunk* remove_chunk_from_chunk_list();
-  OopChunk* remove_chunk_from_free_list();
-
-  bool  _should_expand;
+  TaskQueueEntryChunk* remove_chunk_from_chunk_list();
+  TaskQueueEntryChunk* remove_chunk_from_free_list();
 
   // Resizes the mark stack to the given new capacity. Releases any previous
   // memory if successful.
@@ -222,17 +273,17 @@ private:
   // Allocate and initialize the mark stack with the given number of oops.
   bool initialize(size_t initial_capacity, size_t max_capacity);
 
-  // Pushes the given buffer containing at most OopsPerChunk elements on the mark
-  // stack. If less than OopsPerChunk elements are to be pushed, the array must
+  // Pushes the given buffer containing at most EntriesPerChunk elements on the mark
+  // stack. If less than EntriesPerChunk elements are to be pushed, the array must
   // be terminated with a NULL.
   // Returns whether the buffer contents were successfully pushed to the global mark
   // stack.
-  bool par_push_chunk(oop* buffer);
+  bool par_push_chunk(G1TaskQueueEntry* buffer);
 
   // Pops a chunk from this mark stack, copying them into the given buffer. This
-  // chunk may contain up to OopsPerChunk elements. If there are less, the last
+  // chunk may contain up to EntriesPerChunk elements. If there are less, the last
   // element in the array is a NULL pointer.
-  bool par_pop_chunk(oop* buffer);
+  bool par_pop_chunk(G1TaskQueueEntry* buffer);
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
@@ -240,18 +291,12 @@ private:
 
   size_t capacity() const  { return _chunk_capacity; }
 
-  bool is_out_of_memory() const { return _out_of_memory; }
-  void clear_out_of_memory() { _out_of_memory = false; }
-
-  bool should_expand() const { return _should_expand; }
-  void set_should_expand(bool value) { _should_expand = value; }
-
   // Expand the stack, typically in response to an overflow condition
   void expand();
 
   // Return the approximate number of oops on this mark stack. Racy due to
   // unsynchronized access to _chunks_in_chunk_list.
-  size_t size() const { return _chunks_in_chunk_list * OopsPerChunk; }
+  size_t size() const { return _chunks_in_chunk_list * EntriesPerChunk; }
 
   void set_empty();
 
@@ -432,7 +477,7 @@ protected:
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
-  void reset_marking_state(bool clear_overflow = true);
+  void reset_marking_state();
 
   // We do this after we're done with marking so that the marking data
   // structures are initialized to a sensible and predictable state.
@@ -531,19 +576,18 @@ public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
-  bool mark_stack_push(oop* arr) {
+  bool mark_stack_push(G1TaskQueueEntry* arr) {
     if (!_global_mark_stack.par_push_chunk(arr)) {
       set_has_overflown();
       return false;
     }
     return true;
   }
-  bool mark_stack_pop(oop* arr) {
+  bool mark_stack_pop(G1TaskQueueEntry* arr) {
     return _global_mark_stack.par_pop_chunk(arr);
   }
   size_t mark_stack_size()                { return _global_mark_stack.size(); }
   size_t partial_mark_stack_size_target() { return _global_mark_stack.capacity()/3; }
-  bool mark_stack_overflow()              { return _global_mark_stack.is_out_of_memory(); }
   bool mark_stack_empty()                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
@@ -573,7 +617,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
+  bool try_stealing(uint worker_id, int* hash_seed, G1TaskQueueEntry& task_entry);
 
   G1ConcurrentMark(G1CollectedHeap* g1h,
                    G1RegionToSpaceMapper* prev_bitmap_storage,
@@ -828,7 +872,7 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_object(oop obj);
+  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
 public:
   // Apply the closure on the given area of the objArray. Return the number of words
   // scanned.
@@ -893,10 +937,10 @@ public:
   inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.
-  inline void scan_object(oop obj);
+  inline void scan_task_entry(G1TaskQueueEntry task_entry);
 
   // It pushes an object on the local queue.
-  inline void push(oop obj);
+  inline void push(G1TaskQueueEntry task_entry);
 
   // Move entries to the global stack.
   void move_entries_to_global_stack();

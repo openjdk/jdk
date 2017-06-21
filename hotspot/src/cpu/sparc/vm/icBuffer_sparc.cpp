@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,9 @@
 #include "oops/oop.inline.hpp"
 
 int InlineCacheBuffer::ic_stub_code_size() {
-#ifdef _LP64
   return (NativeMovConstReg::instruction_size +  // sethi;add
           NativeJump::instruction_size +          // sethi; jmp; delay slot
           (1*BytesPerInstWord) + 1);            // flush + 1 extra byte
-#else
-  return (2+2+ 1) * wordSize + 1; // set/jump_to/nop + 1 byte so that code_end can be set in CodeBuffer
-#endif
 }
 
 void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {

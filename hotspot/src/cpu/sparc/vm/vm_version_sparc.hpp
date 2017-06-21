@@ -180,30 +180,13 @@ public:
 
   // Prefetch
   static intx prefetch_copy_interval_in_bytes() {
-    intx interval = PrefetchCopyIntervalInBytes;
-    return interval >= 0 ? interval : (has_v9() ? 512 : 0);
+    return (has_v9() ? 512 : 0);
   }
   static intx prefetch_scan_interval_in_bytes() {
-    intx interval = PrefetchScanIntervalInBytes;
-    return interval >= 0 ? interval : (has_v9() ? 512 : 0);
+    return (has_v9() ? 512 : 0);
   }
   static intx prefetch_fields_ahead() {
-    intx count = PrefetchFieldsAhead;
-    return count >= 0 ? count : (is_ultra3() ? 1 : 0);
-  }
-
-  static intx allocate_prefetch_distance() {
-    // This method should be called before allocate_prefetch_style().
-    intx count = AllocatePrefetchDistance;
-    if (count < 0) { // default is not defined ?
-      count = 512;
-    }
-    return count;
-  }
-  static intx allocate_prefetch_style() {
-    assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
-    // Return 0 if AllocatePrefetchDistance was not defined.
-    return AllocatePrefetchDistance > 0 ? AllocatePrefetchStyle : 0;
+    return (is_ultra3() ? 1 : 0);
   }
 
   // Assembler testing

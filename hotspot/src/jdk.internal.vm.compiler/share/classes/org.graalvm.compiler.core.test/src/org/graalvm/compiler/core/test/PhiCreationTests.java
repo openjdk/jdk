@@ -70,7 +70,7 @@ public class PhiCreationTests extends GraalCompilerTest {
     @Test
     public void test3() {
         StructuredGraph graph = parseEager("test3Snippet", AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         Assert.assertFalse(graph.getNodes().filter(ValuePhiNode.class).iterator().hasNext());
     }
 
@@ -86,7 +86,7 @@ public class PhiCreationTests extends GraalCompilerTest {
     @Test
     public void test4() {
         StructuredGraph graph = parseEager("test4Snippet", AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         Assert.assertFalse(graph.getNodes().filter(ValuePhiNode.class).iterator().hasNext());
     }
 

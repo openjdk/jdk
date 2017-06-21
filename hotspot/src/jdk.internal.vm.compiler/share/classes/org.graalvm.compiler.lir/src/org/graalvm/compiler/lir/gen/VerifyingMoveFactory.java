@@ -35,7 +35,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 
 /**
@@ -51,7 +50,7 @@ public final class VerifyingMoveFactory implements MoveFactory {
     }
 
     @Override
-    public boolean canInlineConstant(JavaConstant c) {
+    public boolean canInlineConstant(Constant c) {
         return inner.canInlineConstant(c);
     }
 
@@ -77,7 +76,7 @@ public final class VerifyingMoveFactory implements MoveFactory {
     @Override
     public LIRInstruction createLoad(AllocatableValue result, Constant input) {
         LIRInstruction inst = inner.createLoad(result, input);
-        assert inst instanceof LoadConstantOp && checkResult(inst, result, null);
+        assert LoadConstantOp.isLoadConstantOp(inst) && checkResult(inst, result, null);
         return inst;
     }
 

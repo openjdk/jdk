@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,20 +264,19 @@ class OrderAccess : AllStatic {
   static void     release();
   static void     fence();
 
-  static jbyte    load_acquire(volatile jbyte*   p);
-  static jshort   load_acquire(volatile jshort*  p);
-  static jint     load_acquire(volatile jint*    p);
-  static jlong    load_acquire(volatile jlong*   p);
-  static jubyte   load_acquire(volatile jubyte*  p);
-  static jushort  load_acquire(volatile jushort* p);
-  static juint    load_acquire(volatile juint*   p);
-  static julong   load_acquire(volatile julong*  p);
-  static jfloat   load_acquire(volatile jfloat*  p);
-  static jdouble  load_acquire(volatile jdouble* p);
+  static jbyte    load_acquire(const volatile jbyte*   p);
+  static jshort   load_acquire(const volatile jshort*  p);
+  static jint     load_acquire(const volatile jint*    p);
+  static jlong    load_acquire(const volatile jlong*   p);
+  static jubyte   load_acquire(const volatile jubyte*  p);
+  static jushort  load_acquire(const volatile jushort* p);
+  static juint    load_acquire(const volatile juint*   p);
+  static julong   load_acquire(const volatile julong*  p);
+  static jfloat   load_acquire(const volatile jfloat*  p);
+  static jdouble  load_acquire(const volatile jdouble* p);
 
-  static intptr_t load_ptr_acquire(volatile intptr_t*   p);
-  static void*    load_ptr_acquire(volatile void*       p);
-  static void*    load_ptr_acquire(const volatile void* p);
+  static intptr_t load_ptr_acquire(const volatile intptr_t* p);
+  static void*    load_ptr_acquire(const volatile void*     p);
 
   static void     release_store(volatile jbyte*   p, jbyte   v);
   static void     release_store(volatile jshort*  p, jshort  v);
@@ -314,7 +313,7 @@ class OrderAccess : AllStatic {
   static void StubRoutines_fence();
 
   // Give platforms a variation point to specialize.
-  template<typename T> static T    specialized_load_acquire       (volatile T* p     );
+  template<typename T> static T    specialized_load_acquire       (const volatile T* p);
   template<typename T> static void specialized_release_store      (volatile T* p, T v);
   template<typename T> static void specialized_release_store_fence(volatile T* p, T v);
 
@@ -322,7 +321,7 @@ class OrderAccess : AllStatic {
   static void ordered_store(volatile FieldType* p, FieldType v);
 
   template<typename FieldType, ScopedFenceType FenceType>
-  static FieldType ordered_load(volatile FieldType* p);
+  static FieldType ordered_load(const volatile FieldType* p);
 
   static void    store(volatile jbyte*   p, jbyte   v);
   static void    store(volatile jshort*  p, jshort  v);
@@ -331,12 +330,12 @@ class OrderAccess : AllStatic {
   static void    store(volatile jdouble* p, jdouble v);
   static void    store(volatile jfloat*  p, jfloat  v);
 
-  static jbyte   load (volatile jbyte*   p);
-  static jshort  load (volatile jshort*  p);
-  static jint    load (volatile jint*    p);
-  static jlong   load (volatile jlong*   p);
-  static jdouble load (volatile jdouble* p);
-  static jfloat  load (volatile jfloat*  p);
+  static jbyte   load(const volatile jbyte*   p);
+  static jshort  load(const volatile jshort*  p);
+  static jint    load(const volatile jint*    p);
+  static jlong   load(const volatile jlong*   p);
+  static jdouble load(const volatile jdouble* p);
+  static jfloat  load(const volatile jfloat*  p);
 
   // The following store_fence methods are deprecated and will be removed
   // when all repos conform to the new generalized OrderAccess.

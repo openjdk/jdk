@@ -383,7 +383,11 @@ public abstract class JVMOption {
             runJava.add(VMType);
         }
 
-        if (GCType != null) {
+        if (GCType != null &&
+            !(prepend.contains("-XX:+UseConcMarkSweepGC") ||
+              prepend.contains("-XX:+UseSerialGC") ||
+              prepend.contains("-XX:+UseParallelGC") ||
+              prepend.contains("-XX:+UseG1GC"))) {
             runJava.add(GCType);
         }
 

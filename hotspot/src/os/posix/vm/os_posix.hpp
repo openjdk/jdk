@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ protected:
   static size_t _vm_internal_thread_min_stack_allowed;
 
 public:
+  static void init(void);  // early initialization - no logging available
+  static void init_2(void);// later initialization - logging available
+
   // Return default stack size for the specified thread type
   static size_t default_stack_size(os::ThreadType thr_type);
   // Check and sets minimum stack sizes
@@ -96,6 +99,12 @@ public:
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
 
+  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
+  //   is longer than PATH_MAX.
+  // On success, returns 'outbuf', which now contains the path.
+  // On error, it will return NULL and set errno. The content of 'outbuf' is undefined.
+  // On truncation error ('outbuf' too small), it will return NULL and set errno to ENAMETOOLONG.
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
 };
 
 /*
@@ -117,5 +126,68 @@ private:
   void restore();
   sigjmp_buf _jmpbuf;
 };
+
+#ifndef SOLARIS
+
+/*
+ * This is the platform-specific implementation underpinning
+ * the ParkEvent class, which itself underpins Java-level monitor
+ * operations. See park.hpp for details.
+ * These event objects are type-stable and immortal - we never delete them.
+ * Events are associated with a thread for the lifetime of the thread.
+ */
+class PlatformEvent : public CHeapObj<mtInternal> {
+ private:
+  double cachePad[4];        // Increase odds that _mutex is sole occupant of cache line
+  volatile int _event;       // Event count/permit: -1, 0 or 1
+  volatile int _nParked;     // Indicates if associated thread is blocked: 0 or 1
+  pthread_mutex_t _mutex[1]; // Native mutex for locking
+  pthread_cond_t  _cond[1];  // Native condition variable for blocking
+  double postPad[2];
+
+ protected:       // TODO-FIXME: make dtor private
+  ~PlatformEvent() { guarantee(false, "invariant"); } // immortal so can't delete
+
+ public:
+  PlatformEvent();
+  void park();
+  int  park(jlong millis);
+  void unpark();
+
+  // Use caution with reset() and fired() -- they may require MEMBARs
+  void reset() { _event = 0; }
+  int  fired() { return _event; }
+};
+
+// JSR166 support
+// PlatformParker provides the platform dependent base class for the
+// Parker class. It basically provides the internal data structures:
+// - mutex and convars
+// which are then used directly by the Parker methods defined in the OS
+// specific implementation files.
+// There is significant overlap between the funcionality supported in the
+// combination of Parker+PlatformParker and PlatformEvent (above). If Parker
+// were more like ObjectMonitor we could use PlatformEvent in both (with some
+// API updates of course). But Parker methods use fastpaths that break that
+// level of encapsulation - so combining the two remains a future project.
+
+class PlatformParker : public CHeapObj<mtInternal> {
+ protected:
+  enum {
+    REL_INDEX = 0,
+    ABS_INDEX = 1
+  };
+  int _cur_index;  // which cond is in use: -1, 0, 1
+  pthread_mutex_t _mutex[1];
+  pthread_cond_t  _cond[2]; // one for relative times and one for absolute
+
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformParker() { guarantee(false, "invariant"); }
+
+ public:
+  PlatformParker();
+};
+
+#endif // !SOLARIS
 
 #endif // OS_POSIX_VM_OS_POSIX_HPP

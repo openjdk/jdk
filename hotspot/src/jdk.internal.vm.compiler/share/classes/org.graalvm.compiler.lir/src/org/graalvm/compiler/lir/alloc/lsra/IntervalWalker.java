@@ -89,9 +89,9 @@ public class IntervalWalker {
     IntervalWalker(LinearScan allocator, Interval unhandledFixed, Interval unhandledAny) {
         this.allocator = allocator;
 
-        unhandledLists = new RegisterBindingLists(unhandledFixed, unhandledAny, Interval.EndMarker);
-        activeLists = new RegisterBindingLists(Interval.EndMarker, Interval.EndMarker, Interval.EndMarker);
-        inactiveLists = new RegisterBindingLists(Interval.EndMarker, Interval.EndMarker, Interval.EndMarker);
+        unhandledLists = new RegisterBindingLists(unhandledFixed, unhandledAny, allocator.intervalEndMarker);
+        activeLists = new RegisterBindingLists(allocator.intervalEndMarker, allocator.intervalEndMarker, allocator.intervalEndMarker);
+        inactiveLists = new RegisterBindingLists(allocator.intervalEndMarker, allocator.intervalEndMarker, allocator.intervalEndMarker);
         currentPosition = -1;
     }
 
@@ -184,15 +184,15 @@ public class IntervalWalker {
         Interval any = unhandledLists.any;
         Interval fixed = unhandledLists.fixed;
 
-        if (any != Interval.EndMarker) {
+        if (!any.isEndMarker()) {
             // intervals may start at same position . prefer fixed interval
-            binding = fixed != Interval.EndMarker && fixed.from() <= any.from() ? RegisterBinding.Fixed : RegisterBinding.Any;
+            binding = !fixed.isEndMarker() && fixed.from() <= any.from() ? RegisterBinding.Fixed : RegisterBinding.Any;
 
             assert binding == RegisterBinding.Fixed && fixed.from() <= any.from() || binding == RegisterBinding.Any && any.from() <= fixed.from() : "wrong interval!!!";
-            assert any == Interval.EndMarker || fixed == Interval.EndMarker || any.from() != fixed.from() ||
+            assert any.isEndMarker() || fixed.isEndMarker() || any.from() != fixed.from() ||
                             binding == RegisterBinding.Fixed : "if fixed and any-Interval start at same position, fixed must be processed first";
 
-        } else if (fixed != Interval.EndMarker) {
+        } else if (!fixed.isEndMarker()) {
             binding = RegisterBinding.Fixed;
         } else {
             return null;
@@ -205,7 +205,7 @@ public class IntervalWalker {
 
         currentBinding = binding;
         unhandledLists.set(binding, currentInterval.next);
-        currentInterval.next = Interval.EndMarker;
+        currentInterval.next = allocator.intervalEndMarker;
         currentInterval.rewindRange();
         return currentInterval;
     }
@@ -271,7 +271,7 @@ public class IntervalWalker {
      */
     private void updateUnhandledStackIntervals(int opId) {
         Interval currentInterval = unhandledLists.get(RegisterBinding.Stack);
-        while (currentInterval != Interval.EndMarker && currentInterval.from() <= opId) {
+        while (!currentInterval.isEndMarker() && currentInterval.from() <= opId) {
             Interval next = currentInterval.next;
             if (currentInterval.to() > opId) {
                 currentInterval.state = State.Active;

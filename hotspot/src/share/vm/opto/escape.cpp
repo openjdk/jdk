@@ -2302,20 +2302,34 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //       | |
   //       AddP  ( base == address )
   //
+  // case #9. Mixed unsafe access
+  //    {instance}
+  //        |
+  //      CheckCastPP (raw)
+  //  top   |
+  //     \  |
+  //     AddP  ( base == top )
+  //
   Node *base = addp->in(AddPNode::Base);
-  if (base->uncast()->is_top()) { // The AddP case #3 and #6.
+  if (base->uncast()->is_top()) { // The AddP case #3 and #6 and #9.
     base = addp->in(AddPNode::Address);
     while (base->is_AddP()) {
       // Case #6 (unsafe access) may have several chained AddP nodes.
       assert(base->in(AddPNode::Base)->uncast()->is_top(), "expected unsafe access address only");
       base = base->in(AddPNode::Address);
     }
-    Node* uncast_base = base->uncast();
-    int opcode = uncast_base->Opcode();
-    assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
-           opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
-           (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
-           (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
+    if (base->Opcode() == Op_CheckCastPP &&
+        base->bottom_type()->isa_rawptr() &&
+        _igvn->type(base->in(1))->isa_oopptr()) {
+      base = base->in(1); // Case #9
+    } else {
+      Node* uncast_base = base->uncast();
+      int opcode = uncast_base->Opcode();
+      assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
+             opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
+             (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != NULL)) ||
+             (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
+    }
   }
   return base;
 }

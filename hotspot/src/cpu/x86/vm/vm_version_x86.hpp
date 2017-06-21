@@ -291,6 +291,7 @@ protected:
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
+#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))      // Vzeroupper instruction
 
   enum Extended_Family {
     // AMD
@@ -468,6 +469,7 @@ protected:
         _cpuid_info.xem_xcr0_eax.bits.sse != 0 &&
         _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
       result |= CPU_AVX;
+      result |= CPU_VZEROUPPER;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
         result |= CPU_AVX2;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
@@ -605,8 +607,8 @@ public:
   static address  cpuinfo_cont_addr()           { return _cpuinfo_cont_addr; }
 
   static void clean_cpuFeatures()   { _features = 0; }
-  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
-  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 ); }
+  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
+  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
 
 
   // Initialization
@@ -730,7 +732,9 @@ public:
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
   static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
-  static bool supports_fma()        { return (_features & CPU_FMA) != 0; }
+  static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
+  static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
+
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
@@ -778,9 +782,7 @@ public:
 
   static bool supports_compare_and_exchange() { return true; }
 
-  static intx allocate_prefetch_distance() {
-    // This method should be called before allocate_prefetch_style().
-    //
+  static intx allocate_prefetch_distance(bool use_watermark_prefetch) {
     // Hardware prefetching (distance/size in bytes):
     // Pentium 3 -  64 /  32
     // Pentium 4 - 256 / 128
@@ -796,58 +798,34 @@ public:
     // Core      - 256 / prefetchnta
     // It will be used only when AllocatePrefetchStyle > 0
 
-    intx count = AllocatePrefetchDistance;
-    if (count < 0) {   // default ?
-      if (is_amd()) {  // AMD
-        if (supports_sse2())
-          count = 256; // Opteron
-        else
-          count = 128; // Athlon
-      } else {         // Intel
-        if (supports_sse2())
-          if (cpu_family() == 6) {
-            count = 256; // Pentium M, Core, Core2
-          } else {
-            count = 512; // Pentium 4
-          }
-        else
-          count = 128; // Pentium 3 (and all other old CPUs)
+    if (is_amd()) { // AMD
+      if (supports_sse2()) {
+        return 256; // Opteron
+      } else {
+        return 128; // Athlon
+      }
+    } else { // Intel
+      if (supports_sse3() && cpu_family() == 6) {
+        if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+          return 192;
+        } else if (use_watermark_prefetch) { // watermark prefetching on Core
+#ifdef _LP64
+          return 384;
+#else
+          return 320;
+#endif
+        }
+      }
+      if (supports_sse2()) {
+        if (cpu_family() == 6) {
+          return 256; // Pentium M, Core, Core2
+        } else {
+          return 512; // Pentium 4
+        }
+      } else {
+        return 128; // Pentium 3 (and all other old CPUs)
       }
     }
-    return count;
-  }
-  static intx allocate_prefetch_style() {
-    assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
-    // Return 0 if AllocatePrefetchDistance was not defined.
-    return AllocatePrefetchDistance > 0 ? AllocatePrefetchStyle : 0;
-  }
-
-  // Prefetch interval for gc copy/scan == 9 dcache lines.  Derived from
-  // 50-warehouse specjbb runs on a 2-way 1.8ghz opteron using a 4gb heap.
-  // Tested intervals from 128 to 2048 in increments of 64 == one cache line.
-  // 256 bytes (4 dcache lines) was the nearest runner-up to 576.
-
-  // gc copy/scan is disabled if prefetchw isn't supported, because
-  // Prefetch::write emits an inlined prefetchw on Linux.
-  // Do not use the 3dnow prefetchw instruction.  It isn't supported on em64t.
-  // The used prefetcht0 instruction works for both amd64 and em64t.
-  static intx prefetch_copy_interval_in_bytes() {
-    intx interval = PrefetchCopyIntervalInBytes;
-    return interval >= 0 ? interval : 576;
-  }
-  static intx prefetch_scan_interval_in_bytes() {
-    intx interval = PrefetchScanIntervalInBytes;
-    return interval >= 0 ? interval : 576;
-  }
-  static intx prefetch_fields_ahead() {
-    intx count = PrefetchFieldsAhead;
-    return count >= 0 ? count : 1;
-  }
-  static uint32_t get_xsave_header_lower_segment() {
-    return _cpuid_info.xem_xcr0_eax.value;
-  }
-  static uint32_t get_xsave_header_upper_segment() {
-    return _cpuid_info.xem_xcr0_edx;
   }
 
   // SSE2 and later processors implement a 'pause' instruction

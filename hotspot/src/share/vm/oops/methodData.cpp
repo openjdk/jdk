@@ -205,13 +205,15 @@ int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_rec
 int TypeEntriesAtCall::compute_cell_count(BytecodeStream* stream) {
   assert(Bytecodes::is_invoke(stream->code()), "should be invoke");
   assert(TypeStackSlotEntries::per_arg_count() > ReturnTypeEntry::static_cell_count(), "code to test for arguments/results broken");
-  Bytecode_invoke inv(stream->method(), stream->bci());
+  const methodHandle m = stream->method();
+  int bci = stream->bci();
+  Bytecode_invoke inv(m, bci);
   int args_cell = 0;
-  if (arguments_profiling_enabled()) {
+  if (MethodData::profile_arguments_for_invoke(m, bci)) {
     args_cell = TypeStackSlotEntries::compute_cell_count(inv.signature(), false, TypeProfileArgsLimit);
   }
   int ret_cell = 0;
-  if (return_profiling_enabled() && (inv.result_type() == T_OBJECT || inv.result_type() == T_ARRAY)) {
+  if (MethodData::profile_return_for_invoke(m, bci) && (inv.result_type() == T_OBJECT || inv.result_type() == T_ARRAY)) {
     ret_cell = ReturnTypeEntry::static_cell_count();
   }
   int header_cell = 0;
@@ -1525,6 +1527,18 @@ bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
   return inv.is_invokedynamic() || inv.is_invokehandle();
 }
 
+bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
+  Bytecode_invoke inv(m , bci);
+  if (inv.is_invokevirtual() && inv.klass() == vmSymbols::jdk_internal_misc_Unsafe()) {
+    ResourceMark rm;
+    char* name = inv.name()->as_C_string();
+    if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int MethodData::profile_arguments_flag() {
   return TypeProfileLevel % 10;
 }
@@ -1547,6 +1561,10 @@ bool MethodData::profile_arguments_for_invoke(const methodHandle& m, int bci) {
   }
 
   if (profile_all_arguments()) {
+    return true;
+  }
+
+  if (profile_unsafe(m, bci)) {
     return true;
   }
 

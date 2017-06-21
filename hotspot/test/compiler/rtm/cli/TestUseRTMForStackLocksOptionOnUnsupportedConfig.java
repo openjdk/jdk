@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires !(vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os)
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,22 +40,15 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestUseRTMForStackLocksOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {
     private static final String DEFAULT_VALUE = "false";
 
     private TestUseRTMForStackLocksOptionOnUnsupportedConfig() {
-        super(new NotPredicate(
-                new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM())),
-                "UseRTMForStackLocks", true, true,
+        super("UseRTMForStackLocks", true, true,
                 TestUseRTMForStackLocksOptionOnUnsupportedConfig.DEFAULT_VALUE,
                 "true");
     }
@@ -111,6 +104,6 @@ public class TestUseRTMForStackLocksOptionOnUnsupportedConfig
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMForStackLocksOptionOnUnsupportedConfig().test();
+        new TestUseRTMForStackLocksOptionOnUnsupportedConfig().runTestCases();
     }
 }

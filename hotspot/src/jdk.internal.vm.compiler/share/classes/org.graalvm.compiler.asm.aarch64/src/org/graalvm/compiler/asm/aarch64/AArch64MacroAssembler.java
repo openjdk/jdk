@@ -39,7 +39,7 @@ import static jdk.vm.ci.aarch64.AArch64.zr;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.aarch64.AArch64;
@@ -196,6 +196,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                 break;
             case ADD_TO_INDEX:
                 newIndex = allowOverwrite ? index : additionalReg;
+                assert !newIndex.equals(sp) && !newIndex.equals(zr);
                 if (plan.needsScratch) {
                     mov(additionalReg, scaledDisplacement);
                     add(signExtendIndex ? 32 : 64, newIndex, index, additionalReg);
@@ -206,6 +207,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                 break;
             case ADD_TO_BASE:
                 newBase = allowOverwrite ? base : additionalReg;
+                assert !newBase.equals(sp) && !newBase.equals(zr);
                 if (plan.needsScratch) {
                     mov(additionalReg, displacement);
                     add(64, newBase, base, additionalReg);
@@ -412,6 +414,19 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
+     * Generates a 32-bit immediate move code sequence. The immediate may later be updated by
+     * HotSpot.
+     *
+     * @param dst general purpose register. May not be null, stackpointer or zero-register.
+     * @param imm
+     */
+    public void movNarrowAddress(Register dst, long imm) {
+        assert (imm & 0xFFFF_FFFF_0000_0000L) == 0;
+        movz(64, dst, (int) (imm >>> 16), 16);
+        movk(64, dst, (int) (imm & 0xffff), 0);
+    }
+
+    /**
      * @return Number of instructions necessary to load immediate into register.
      */
     public static int nrInstructionsToMoveImmediate(long imm) {
@@ -456,6 +471,19 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
+     * Loads a srcSize value from address into rt zero-extending it if necessary.
+     *
+     * @param srcSize size of memory read in bits. Must be 8, 16 or 32 and smaller or equal to
+     *            targetSize.
+     * @param rt general purpose register. May not be null or stackpointer.
+     * @param address all addressing modes allowed. May not be null.
+     */
+    @Override
+    public void ldr(int srcSize, Register rt, AArch64Address address) {
+        super.ldr(srcSize, rt, address);
+    }
+
+    /**
      * Conditional move. dst = src1 if condition else src2.
      *
      * @param size register size. Has to be 32 or 64.
@@ -482,52 +510,47 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * dst = src1 + src2.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src1 general purpose register. May not be null or stackpointer.
+     * @param dst general purpose register. May not be null.
+     * @param src1 general purpose register. May not be null.
      * @param src2 general purpose register. May not be null or stackpointer.
      */
     public void add(int size, Register dst, Register src1, Register src2) {
-        super.add(size, dst, src1, src2, ShiftType.LSL, 0);
+        if (dst.equals(sp) || src1.equals(sp)) {
+            super.add(size, dst, src1, src2, ExtendType.UXTX, 0);
+        } else {
+            super.add(size, dst, src1, src2, ShiftType.LSL, 0);
+        }
     }
 
     /**
      * dst = src1 + src2 and sets condition flags.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src1 general purpose register. May not be null or stackpointer.
+     * @param dst general purpose register. May not be null.
+     * @param src1 general purpose register. May not be null.
      * @param src2 general purpose register. May not be null or stackpointer.
      */
     public void adds(int size, Register dst, Register src1, Register src2) {
-        super.adds(size, dst, src1, src2, getNopExtendType(size), 0);
+        if (dst.equals(sp) || src1.equals(sp)) {
+            super.adds(size, dst, src1, src2, ExtendType.UXTX, 0);
+        } else {
+            super.adds(size, dst, src1, src2, ShiftType.LSL, 0);
+        }
     }
 
     /**
      * dst = src1 - src2 and sets condition flags.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src1 general purpose register. May not be null or stackpointer.
+     * @param dst general purpose register. May not be null.
+     * @param src1 general purpose register. May not be null.
      * @param src2 general purpose register. May not be null or stackpointer.
      */
     public void subs(int size, Register dst, Register src1, Register src2) {
-        super.subs(size, dst, src1, src2, getNopExtendType(size), 0);
-    }
-
-    /**
-     * Returns the ExtendType for the given size that corresponds to a no-op.
-     *
-     * I.e. when doing add X0, X1, X2, the actual instruction has the form add X0, X1, X2 UXTX.
-     *
-     * @param size
-     */
-    private static ExtendType getNopExtendType(int size) {
-        if (size == 64) {
-            return ExtendType.UXTX;
-        } else if (size == 32) {
-            return ExtendType.UXTW;
+        if (dst.equals(sp) || src1.equals(sp)) {
+            super.subs(size, dst, src1, src2, ExtendType.UXTX, 0);
         } else {
-            throw GraalError.shouldNotReachHere("No-op ");
+            super.subs(size, dst, src1, src2, ShiftType.LSL, 0);
         }
     }
 
@@ -535,12 +558,16 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * dst = src1 - src2.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src1 general purpose register. May not be null or stackpointer.
+     * @param dst general purpose register. May not be null.
+     * @param src1 general purpose register. May not be null.
      * @param src2 general purpose register. May not be null or stackpointer.
      */
     public void sub(int size, Register dst, Register src1, Register src2) {
-        super.sub(size, dst, src1, src2, ShiftType.LSL, 0);
+        if (dst.equals(sp) || src1.equals(sp)) {
+            super.sub(size, dst, src1, src2, ExtendType.UXTX, 0);
+        } else {
+            super.sub(size, dst, src1, src2, ShiftType.LSL, 0);
+        }
     }
 
     /**
@@ -590,16 +617,26 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * dst = src + immediate.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src general purpose register. May not be null or stackpointer.
-     * @param immediate arithmetic immediate
+     * @param dst general purpose register. May not be null or zero-register.
+     * @param src general purpose register. May not be null or zero-register.
+     * @param immediate 32-bit signed int
      */
     @Override
     public void add(int size, Register dst, Register src, int immediate) {
+        assert (!dst.equals(zr) && !src.equals(zr));
         if (immediate < 0) {
             sub(size, dst, src, -immediate);
-        } else if (!(dst.equals(src) && immediate == 0)) {
-            super.add(size, dst, src, immediate);
+        } else if (isAimm(immediate)) {
+            if (!(dst.equals(src) && immediate == 0)) {
+                super.add(size, dst, src, immediate);
+            }
+        } else if (immediate >= -(1 << 24) && immediate < (1 << 24)) {
+            super.add(size, dst, src, immediate & -(1 << 12));
+            super.add(size, dst, dst, immediate & ((1 << 12) - 1));
+        } else {
+            assert !dst.equals(src);
+            mov(dst, immediate);
+            add(size, src, dst, dst);
         }
     }
 
@@ -613,6 +650,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     @Override
     public void adds(int size, Register dst, Register src, int immediate) {
+        assert (!dst.equals(sp) && !src.equals(zr));
         if (immediate < 0) {
             subs(size, dst, src, -immediate);
         } else if (!(dst.equals(src) && immediate == 0)) {
@@ -624,16 +662,26 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * dst = src - immediate.
      *
      * @param size register size. Has to be 32 or 64.
-     * @param dst general purpose register. May not be null or stackpointer.
-     * @param src general purpose register. May not be null or stackpointer.
-     * @param immediate arithmetic immediate
+     * @param dst general purpose register. May not be null or zero-register.
+     * @param src general purpose register. May not be null or zero-register.
+     * @param immediate 32-bit signed int
      */
     @Override
     public void sub(int size, Register dst, Register src, int immediate) {
+        assert (!dst.equals(zr) && !src.equals(zr));
         if (immediate < 0) {
             add(size, dst, src, -immediate);
-        } else if (!dst.equals(src) || immediate != 0) {
-            super.sub(size, dst, src, immediate);
+        } else if (isAimm(immediate)) {
+            if (!(dst.equals(src) && immediate == 0)) {
+                super.sub(size, dst, src, immediate);
+            }
+        } else if (immediate >= -(1 << 24) && immediate < (1 << 24)) {
+            super.sub(size, dst, src, immediate & -(1 << 12));
+            super.sub(size, dst, dst, immediate & ((1 << 12) - 1));
+        } else {
+            assert !dst.equals(src);
+            mov(dst, immediate);
+            sub(size, src, dst, dst);
         }
     }
 
@@ -647,10 +695,11 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      */
     @Override
     public void subs(int size, Register dst, Register src, int immediate) {
+        assert (!dst.equals(sp) && !src.equals(zr));
         if (immediate < 0) {
             adds(size, dst, src, -immediate);
         } else if (!dst.equals(src) || immediate != 0) {
-            super.sub(size, dst, src, immediate);
+            super.subs(size, dst, src, immediate);
         }
     }
 
@@ -675,6 +724,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param src2 general purpose register. May not be null or the stackpointer.
      */
     public void umulh(int size, Register dst, Register src1, Register src2) {
+        assert (!dst.equals(sp) && !src1.equals(sp) && !src2.equals(sp));
         assert size == 32 || size == 64;
         if (size == 64) {
             super.umulh(dst, src1, src2);
@@ -695,6 +745,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param src2 general purpose register. May not be null or the stackpointer.
      */
     public void smulh(int size, Register dst, Register src1, Register src2) {
+        assert (!dst.equals(sp) && !src1.equals(sp) && !src2.equals(sp));
         assert size == 32 || size == 64;
         if (size == 64) {
             super.smulh(dst, src1, src2);
@@ -715,6 +766,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param d denominator. General purpose register. Divisor May not be null or the stackpointer.
      */
     public void rem(int size, Register dst, Register n, Register d) {
+        assert (!dst.equals(sp) && !n.equals(sp) && !d.equals(sp));
         // There is no irem or similar instruction. Instead we use the relation:
         // n % d = n - Floor(n / d) * d if nd >= 0
         // n % d = n - Ceil(n / d) * d else
@@ -940,16 +992,14 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     /**
      * Sign-extend value from src into dst.
      *
-     * @param destSize destination register size. Has to be 32 or 64.
-     * @param srcSize source register size. May be 8, 16 or 32 and smaller than destSize.
+     * @param destSize destination register size. Must be 32 or 64.
+     * @param srcSize source register size. Must be smaller than destSize.
      * @param dst general purpose register. May not be null, stackpointer or zero-register.
      * @param src general purpose register. May not be null, stackpointer or zero-register.
      */
     public void sxt(int destSize, int srcSize, Register dst, Register src) {
-        assert (destSize == 32 || destSize == 64) && srcSize < destSize;
-        assert srcSize == 8 || srcSize == 16 || srcSize == 32;
-        int[] srcSizeValues = {7, 15, 31};
-        super.sbfm(destSize, dst, src, 0, srcSizeValues[NumUtil.log2Ceil(srcSize / 8)]);
+        assert (srcSize < destSize && srcSize > 0);
+        super.sbfm(destSize, dst, src, 0, srcSize - 1);
     }
 
     /**
@@ -1078,6 +1128,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param y general purpose register. May not be null or stackpointer.
      */
     public void cmp(int size, Register x, Register y) {
+        assert size == 32 || size == 64;
         super.subs(size, zr, x, y, ShiftType.LSL, 0);
     }
 
@@ -1089,6 +1140,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
      * @param y comparison immediate, {@link #isComparisonImmediate(long)} has to be true for it.
      */
     public void cmp(int size, Register x, int y) {
+        assert size == 32 || size == 64;
         if (y < 0) {
             super.adds(size, zr, x, -y);
         } else {
@@ -1109,6 +1161,54 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
+     * Sets overflow flag according to result of x * y.
+     *
+     * @param size register size. Has to be 32 or 64.
+     * @param dst general purpose register. May not be null or stack-pointer.
+     * @param x general purpose register. May not be null or stackpointer.
+     * @param y general purpose register. May not be null or stackpointer.
+     */
+    public void mulvs(int size, Register dst, Register x, Register y) {
+        try (ScratchRegister sc1 = getScratchRegister();
+                        ScratchRegister sc2 = getScratchRegister()) {
+            switch (size) {
+                case 64: {
+                    // Be careful with registers: it's possible that x, y, and dst are the same
+                    // register.
+                    Register rscratch1 = sc1.getRegister();
+                    Register rscratch2 = sc2.getRegister();
+                    mul(64, rscratch1, x, y);     // Result bits 0..63
+                    smulh(64, rscratch2, x, y);  // Result bits 64..127
+                    // Top is pure sign ext
+                    subs(64, zr, rscratch2, rscratch1, ShiftType.ASR, 63);
+                    // Copy all 64 bits of the result into dst
+                    mov(64, dst, rscratch1);
+                    mov(rscratch1, 0x80000000);
+                    // Develop 0 (EQ), or 0x80000000 (NE)
+                    cmov(32, rscratch1, rscratch1, zr, ConditionFlag.NE);
+                    cmp(32, rscratch1, 1);
+                    // 0x80000000 - 1 => VS
+                    break;
+                }
+                case 32: {
+                    Register rscratch1 = sc1.getRegister();
+                    smaddl(rscratch1, x, y, zr);
+                    // Copy the low 32 bits of the result into dst
+                    mov(32, dst, rscratch1);
+                    subs(64, zr, rscratch1, rscratch1, ExtendType.SXTW, 0);
+                    // NE => overflow
+                    mov(rscratch1, 0x80000000);
+                    // Develop 0 (EQ), or 0x80000000 (NE)
+                    cmov(32, rscratch1, rscratch1, zr, ConditionFlag.NE);
+                    cmp(32, rscratch1, 1);
+                    // 0x80000000 - 1 => VS
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * When patching up Labels we have to know what kind of code to generate.
      */
     public enum PatchLabelKind {
@@ -1116,8 +1216,10 @@ public class AArch64MacroAssembler extends AArch64Assembler {
         BRANCH_UNCONDITIONALLY(0x1),
         BRANCH_NONZERO(0x2),
         BRANCH_ZERO(0x3),
-        JUMP_ADDRESS(0x4),
-        ADR(0x5);
+        BRANCH_BIT_NONZERO(0x4),
+        BRANCH_BIT_ZERO(0x5),
+        JUMP_ADDRESS(0x6),
+        ADR(0x7);
 
         /**
          * Offset by which additional information for branch conditionally, branch zero and branch
@@ -1191,6 +1293,46 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int sizeEncoding = (size == 64 ? 1 : 0) << PatchLabelKind.INFORMATION_OFFSET;
             // Encode condition flag so that we know how to patch the instruction later
             emitInt(PatchLabelKind.BRANCH_ZERO.encoding | regEncoding | sizeEncoding);
+        }
+    }
+
+    /**
+     * Test a single bit and branch if the bit is nonzero.
+     *
+     * @param cmp general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param label Can only handle 21-bit word-aligned offsets for now. May be unbound. Non null.
+     */
+    public void tbnz(Register cmp, int uimm6, Label label) {
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        if (label.isBound()) {
+            int offset = label.position() - position();
+            super.tbnz(cmp, uimm6, offset);
+        } else {
+            label.addPatchAt(position());
+            int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
+            int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
+            emitInt(PatchLabelKind.BRANCH_BIT_NONZERO.encoding | indexEncoding | regEncoding);
+        }
+    }
+
+    /**
+     * Test a single bit and branch if the bit is zero.
+     *
+     * @param cmp general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param label Can only handle 21-bit word-aligned offsets for now. May be unbound. Non null.
+     */
+    public void tbz(Register cmp, int uimm6, Label label) {
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        if (label.isBound()) {
+            int offset = label.position() - position();
+            super.tbz(cmp, uimm6, offset);
+        } else {
+            label.addPatchAt(position());
+            int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
+            int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
+            emitInt(PatchLabelKind.BRANCH_BIT_ZERO.encoding | indexEncoding | regEncoding);
         }
     }
 
@@ -1353,7 +1495,8 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                 super.b(branchOffset, branch);
                 break;
             case JUMP_ADDRESS:
-                emitInt(jumpTarget, branch);
+                int offset = instruction >>> PatchLabelKind.INFORMATION_OFFSET;
+                emitInt(jumpTarget - offset, branch);
                 break;
             case BRANCH_NONZERO:
             case BRANCH_ZERO: {
@@ -1369,6 +1512,22 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                         break;
                     case BRANCH_ZERO:
                         super.cbz(size, reg, branchOffset, branch);
+                        break;
+                }
+                break;
+            }
+            case BRANCH_BIT_NONZERO:
+            case BRANCH_BIT_ZERO: {
+                int information = instruction >>> PatchLabelKind.INFORMATION_OFFSET;
+                int sizeEncoding = information & NumUtil.getNbitNumberInt(6);
+                int regEncoding = information >>> 6;
+                Register reg = AArch64.cpuRegisters.get(regEncoding);
+                switch (type) {
+                    case BRANCH_BIT_NONZERO:
+                        super.tbnz(reg, sizeEncoding, branchOffset, branch);
+                        break;
+                    case BRANCH_BIT_ZERO:
+                        super.tbz(reg, sizeEncoding, branchOffset, branch);
                         break;
                 }
                 break;
@@ -1403,5 +1562,15 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     @Override
     public AbstractAddress getPlaceholder(int instructionStartPosition) {
         return AArch64Address.PLACEHOLDER;
+    }
+
+    /**
+     * Loads an address into Register d.
+     *
+     * @param d general purpose register. May not be null.
+     * @param a AArch64Address the address of an operand.
+     */
+    public void lea(Register d, AArch64Address a) {
+        a.lea(this, d);
     }
 }

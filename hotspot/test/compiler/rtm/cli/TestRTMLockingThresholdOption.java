@@ -39,11 +39,11 @@ public class TestRTMLockingThresholdOption
     private static final String DEFAULT_VALUE = "10000";
 
     private TestRTMLockingThresholdOption() {
-        super(Boolean.TRUE::booleanValue, "RTMLockingThreshold", false, true,
+        super("RTMLockingThreshold", false, true,
                 TestRTMLockingThresholdOption.DEFAULT_VALUE);
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMLockingThresholdOption().test();
+        new TestRTMLockingThresholdOption().runTestCases();
     }
 }

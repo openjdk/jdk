@@ -24,8 +24,14 @@ package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
-import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.graph.GraalGraphError;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -36,6 +42,8 @@ import jdk.vm.ci.code.StackLockValue;
 import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.meta.JavaValue;
+import jdk.vm.ci.meta.MetaUtil;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Extends {@link DebugInfoBuilder} to allocate the extra debug information required for locks.
@@ -71,19 +79,48 @@ public class HotSpotDebugInfoBuilder extends DebugInfoBuilder {
         VirtualStackSlot slot = lockStack.makeLockSlot(lockDepth);
         ValueNode lock = state.lockAt(lockIndex);
         JavaValue object = toJavaValue(lock);
-        boolean eliminated = object instanceof VirtualObject || state.monitorIdAt(lockIndex) == null;
-        assert state.monitorIdAt(lockIndex) == null || state.monitorIdAt(lockIndex).getLockDepth() == lockDepth;
+        boolean eliminated = object instanceof VirtualObject || state.monitorIdAt(lockIndex).isEliminated();
+        assert state.monitorIdAt(lockIndex).getLockDepth() == lockDepth;
         return new StackLockValue(object, slot, eliminated);
     }
 
     @Override
     protected BytecodeFrame computeFrameForState(FrameState state) {
         if (isPlaceholderBci(state.bci) && state.bci != BytecodeFrame.BEFORE_BCI) {
-            // This is really a hard error since an incorrect state could crash hotspot
-            throw GraalError.shouldNotReachHere("Invalid state " + BytecodeFrame.getPlaceholderBciName(state.bci) + " " + state);
+            raiseInvalidFrameStateError(state);
         }
         BytecodeFrame result = super.computeFrameForState(state);
         maxInterpreterFrameSize = Math.max(maxInterpreterFrameSize, codeCacheProvider.interpreterFrameSize(result));
         return result;
+    }
+
+    protected void raiseInvalidFrameStateError(FrameState state) throws GraalGraphError {
+        // This is a hard error since an incorrect state could crash hotspot
+        NodeSourcePosition sourcePosition = state.getNodeSourcePosition();
+        List<String> context = new ArrayList<>();
+        ResolvedJavaMethod replacementMethodWithProblematicSideEffect = null;
+        if (sourcePosition != null) {
+            NodeSourcePosition pos = sourcePosition;
+            while (pos != null) {
+                StringBuilder sb = new StringBuilder("parsing ");
+                ResolvedJavaMethod method = pos.getMethod();
+                MetaUtil.appendLocation(sb, method, pos.getBCI());
+                if (method.getAnnotation(MethodSubstitution.class) != null ||
+                                method.getAnnotation(Snippet.class) != null) {
+                    replacementMethodWithProblematicSideEffect = method;
+                }
+                context.add(sb.toString());
+                pos = pos.getCaller();
+            }
+        }
+        String message = "Invalid frame state " + state;
+        if (replacementMethodWithProblematicSideEffect != null) {
+            message += " associated with a side effect in " + replacementMethodWithProblematicSideEffect.format("%H.%n(%p)") + " at a position that cannot be deoptimized to";
+        }
+        GraalGraphError error = new GraalGraphError(message);
+        for (String c : context) {
+            error.addContext(c);
+        }
+        throw error;
     }
 }

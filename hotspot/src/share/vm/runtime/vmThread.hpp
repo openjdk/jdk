@@ -99,7 +99,12 @@ class VMThread: public NamedThread {
   static Monitor * _terminate_lock;
   static PerfCounter* _perf_accumulated_vm_operation_time;
 
+  static const char* _no_op_reason;
+
+  static bool no_op_safepoint_needed(bool check_time);
+
   void evaluate_operation(VM_Operation* op);
+
  public:
   // Constructor
   VMThread();
@@ -126,7 +131,10 @@ class VMThread: public NamedThread {
   static void execute(VM_Operation* op);
 
   // Returns the current vm operation if any.
-  static VM_Operation* vm_operation()             { return _cur_vm_operation;   }
+  static VM_Operation* vm_operation()             { return _cur_vm_operation; }
+
+  // Returns the current vm operation name or set reason
+  static const char* vm_safepoint_description()   { return _cur_vm_operation != NULL ? _cur_vm_operation->name() : _no_op_reason; };
 
   // Returns the single instance of VMThread.
   static VMThread* vm_thread()                    { return _vm_thread; }

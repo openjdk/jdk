@@ -99,9 +99,6 @@ int compare_methods(Method** a, Method** b) {
 
 void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
-  // This HandleMark prevents a huge amount of handles from being added
-  // to the metadata_handles() array on the thread.
-  HandleMark hm(thread);
   methodHandle mh(thread, m);
   if ((m->method_data() != NULL) &&
       (PrintMethodData || CompilerOracle::should_print(mh))) {
@@ -115,7 +112,7 @@ void print_method_profiling_data() {
     ResourceMark rm;
     HandleMark hm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
-    ClassLoaderDataGraph::methods_do(collect_profiled_methods);
+    SystemDictionary::methods_do(collect_profiled_methods);
     collected_profiled_methods->sort(&compare_methods);
 
     int count = collected_profiled_methods->length();
@@ -166,7 +163,7 @@ void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,
@@ -440,6 +437,7 @@ void before_exit(JavaThread* thread) {
   Thread* THREAD = thread;
   JVMCIRuntime::shutdown(THREAD);
   if (HAS_PENDING_EXCEPTION) {
+    HandleMark hm(THREAD);
     Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
     java_lang_Throwable::java_printStackTrace(exception, THREAD);
@@ -729,6 +727,8 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
     index += rc;
     if (_security > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
+      if (rc == -1) return;
+      index += rc;
     }
     if (_patch > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _patch);

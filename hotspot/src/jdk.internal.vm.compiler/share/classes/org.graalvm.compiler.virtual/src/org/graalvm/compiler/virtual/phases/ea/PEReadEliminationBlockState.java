@@ -22,22 +22,22 @@
  */
 package org.graalvm.compiler.virtual.phases.ea;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
+import org.graalvm.word.LocationIdentity;
 
-public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadEliminationBlockState> {
+public final class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadEliminationBlockState> {
 
-    final HashMap<ReadCacheEntry, ValueNode> readCache;
+    final EconomicMap<ReadCacheEntry, ValueNode> readCache;
 
     static final class ReadCacheEntry {
 
@@ -54,7 +54,7 @@ public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadE
         @Override
         public int hashCode() {
             int result = 31 + ((identity == null) ? 0 : identity.hashCode());
-            result = 31 * result + ((object == null) ? 0 : object.hashCode());
+            result = 31 * result + ((object == null) ? 0 : System.identityHashCode(object));
             return result * 31 + index;
         }
 
@@ -64,7 +64,7 @@ public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadE
                 return false;
             }
             ReadCacheEntry other = (ReadCacheEntry) obj;
-            return identity.equals(other.identity) && object == other.object;
+            return identity.equals(other.identity) && object == other.object && index == other.index;
         }
 
         @Override
@@ -73,13 +73,14 @@ public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadE
         }
     }
 
-    public PEReadEliminationBlockState() {
-        readCache = CollectionsFactory.newMap();
+    public PEReadEliminationBlockState(OptionValues options) {
+        super(options);
+        readCache = EconomicMap.create(Equivalence.DEFAULT);
     }
 
     public PEReadEliminationBlockState(PEReadEliminationBlockState other) {
         super(other);
-        readCache = CollectionsFactory.newMap(other.readCache);
+        readCache = EconomicMap.create(Equivalence.DEFAULT, other.readCache);
     }
 
     @Override
@@ -99,7 +100,7 @@ public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadE
 
     @Override
     public boolean equivalentTo(PEReadEliminationBlockState other) {
-        if (!compareMapsNoSize(readCache, other.readCache)) {
+        if (!isSubMapOf(readCache, other.readCache)) {
             return false;
         }
         return super.equivalentTo(other);
@@ -143,16 +144,16 @@ public class PEReadEliminationBlockState extends PartialEscapeBlockState<PEReadE
     }
 
     public void killReadCache(LocationIdentity identity, int index) {
-        Iterator<Map.Entry<ReadCacheEntry, ValueNode>> iter = readCache.entrySet().iterator();
+        Iterator<ReadCacheEntry> iter = readCache.getKeys().iterator();
         while (iter.hasNext()) {
-            ReadCacheEntry entry = iter.next().getKey();
+            ReadCacheEntry entry = iter.next();
             if (entry.identity.equals(identity) && (index == -1 || entry.index == -1 || index == entry.index)) {
                 iter.remove();
             }
         }
     }
 
-    public Map<ReadCacheEntry, ValueNode> getReadCache() {
+    public EconomicMap<ReadCacheEntry, ValueNode> getReadCache() {
         return readCache;
     }
 }

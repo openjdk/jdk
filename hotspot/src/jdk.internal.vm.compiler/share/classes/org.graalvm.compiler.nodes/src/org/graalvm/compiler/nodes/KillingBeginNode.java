@@ -26,10 +26,10 @@ import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_0, size = SIZE_0)
 public final class KillingBeginNode extends AbstractBeginNode implements MemoryCheckpoint.Single {
@@ -42,13 +42,17 @@ public final class KillingBeginNode extends AbstractBeginNode implements MemoryC
         this.locationIdentity = locationIdentity;
     }
 
-    public static KillingBeginNode begin(FixedNode with, LocationIdentity locationIdentity) {
+    public static AbstractBeginNode begin(FixedNode with, LocationIdentity locationIdentity) {
         if (with instanceof KillingBeginNode) {
             return (KillingBeginNode) with;
         }
-        KillingBeginNode begin = with.graph().add(new KillingBeginNode(locationIdentity));
+        AbstractBeginNode begin = with.graph().add(KillingBeginNode.create(locationIdentity));
         begin.setNext(with);
         return begin;
+    }
+
+    public static AbstractBeginNode create(LocationIdentity locationIdentity) {
+        return new KillingBeginNode(locationIdentity);
     }
 
     @Override

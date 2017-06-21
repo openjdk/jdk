@@ -24,7 +24,12 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
+#include "classfile/placeholders.hpp"
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -155,24 +160,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   }
 }
 
-
-// Reverse the order of elements in the hash buckets.
-
-template <MEMFLAGS F> void BasicHashtable<F>::reverse() {
-
-  for (int i = 0; i < _table_size; ++i) {
-    BasicHashtableEntry<F>* new_list = NULL;
-    BasicHashtableEntry<F>* p = bucket(i);
-    while (p != NULL) {
-      BasicHashtableEntry<F>* next = p->next();
-      p->set_next(new_list);
-      new_list = p;
-      p = next;
-    }
-    *bucket_addr(i) = new_list;
-  }
-}
-
 template <MEMFLAGS F> void BasicHashtable<F>::BucketUnlinkContext::free_entry(BasicHashtableEntry<F>* entry) {
   entry->set_next(_removed_head);
   _removed_head = entry;
@@ -231,40 +218,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
   for (i = 0; i < _table_size; ++i) {
     for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
       p->set_shared();
-    }
-  }
-}
-
-
-
-// Reverse the order of elements in the hash buckets.
-
-template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
-
-  for (int i = 0; i < this->table_size(); ++i) {
-    HashtableEntry<T, F>* high_list = NULL;
-    HashtableEntry<T, F>* low_list = NULL;
-    HashtableEntry<T, F>* last_low_entry = NULL;
-    HashtableEntry<T, F>* p = bucket(i);
-    while (p != NULL) {
-      HashtableEntry<T, F>* next = p->next();
-      if ((void*)p->literal() >= boundary) {
-        p->set_next(high_list);
-        high_list = p;
-      } else {
-        p->set_next(low_list);
-        low_list = p;
-        if (last_low_entry == NULL) {
-          last_low_entry = p;
-        }
-      }
-      p = next;
-    }
-    if (low_list != NULL) {
-      *bucket_addr(i) = low_list;
-      last_low_entry->set_next(high_list);
-    } else {
-      *bucket_addr(i) = high_list;
     }
   }
 }
@@ -355,38 +308,43 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
   }
 }
 
-
-template <MEMFLAGS F> void BasicHashtable<F>::verify() {
-  int count = 0;
-  for (int i = 0; i < table_size(); i++) {
-    for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
-      ++count;
+template <MEMFLAGS F>
+template <class T> void BasicHashtable<F>::verify_table(const char* table_name) {
+  int element_count = 0;
+  int max_bucket_count = 0;
+  int max_bucket_number = 0;
+  for (int index = 0; index < table_size(); index++) {
+    int bucket_count = 0;
+    for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+      probe->verify();
+      bucket_count++;
+    }
+    element_count += bucket_count;
+    if (bucket_count > max_bucket_count) {
+      max_bucket_count = bucket_count;
+      max_bucket_number = index;
     }
   }
-  assert(count == number_of_entries(), "number of hashtable entries incorrect");
-}
+  guarantee(number_of_entries() == element_count,
+            "Verify of %s failed", table_name);
 
-
-#endif // PRODUCT
-
-#ifdef ASSERT
-
-template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load, const char *table_name) {
-  if ((!_lookup_warning) && (_lookup_count != 0)
-      && ((double)_lookup_length / (double)_lookup_count > load * 2.0)) {
-    warning("Performance bug: %s lookup_count=%d "
-            "lookup_length=%d average=%lf load=%f",
-            table_name, _lookup_count, _lookup_length,
-            (double)_lookup_length / _lookup_count, load);
-    _lookup_warning = true;
-
-    return false;
+  // Log some statistics about the hashtable
+  log_info(hashtables)("%s max bucket size %d bucket %d element count %d table size %d", table_name,
+                       max_bucket_count, max_bucket_number, _number_of_entries, _table_size);
+  if (_number_of_entries > 0 && log_is_enabled(Debug, hashtables)) {
+    for (int index = 0; index < table_size(); index++) {
+      int bucket_count = 0;
+      for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+        log_debug(hashtables)("bucket %d hash " INTPTR_FORMAT, index, (intptr_t)probe->hash());
+        bucket_count++;
+      }
+      if (bucket_count > 0) {
+        log_debug(hashtables)("bucket %d count %d", index, bucket_count);
+      }
+    }
   }
-  return true;
 }
-
-#endif
-
+#endif // PRODUCT
 
 // Explicitly instantiate these types
 #if INCLUDE_ALL_GCS
@@ -424,3 +382,10 @@ template class HashtableEntry<Symbol*, mtTracing>;
 template class BasicHashtable<mtTracing>;
 #endif
 template class BasicHashtable<mtCompiler>;
+
+template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);
+

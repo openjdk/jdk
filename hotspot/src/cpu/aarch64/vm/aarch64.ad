@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -3564,7 +3564,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
 }
 
 // Vector ideal reg.
-const int Matcher::vector_ideal_reg(int len) {
+const uint Matcher::vector_ideal_reg(int len) {
   switch(len) {
     case  8: return Op_VecD;
     case 16: return Op_VecX;
@@ -3573,7 +3573,7 @@ const int Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::vector_shift_count_ideal_reg(int size) {
+const uint Matcher::vector_shift_count_ideal_reg(int size) {
   return Op_VecX;
 }
 
@@ -5423,6 +5423,16 @@ operand immI_56()
   interface(CONST_INTER);
 %}
 
+operand immI_63()
+%{
+  predicate(n->get_int() == 63);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immI_64()
 %{
   predicate(n->get_int() == 64);
@@ -5453,20 +5463,10 @@ operand immI_65535()
   interface(CONST_INTER);
 %}
 
-operand immL_63()
-%{
-  predicate(n->get_int() == 63);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immL_255()
 %{
-  predicate(n->get_int() == 255);
-  match(ConI);
+  predicate(n->get_long() == 255L);
+  match(ConL);
 
   op_cost(0);
   format %{ %}
@@ -11146,7 +11146,7 @@ instruct divL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   ins_pipe(ldiv_reg_reg);
 %}
 
-instruct signExtractL(iRegLNoSp dst, iRegL src1, immL_63 div1, immL_63 div2) %{
+instruct signExtractL(iRegLNoSp dst, iRegL src1, immI_63 div1, immI_63 div2) %{
   match(Set dst (URShiftL (RShiftL src1 div1) div2));
   ins_cost(INSN_COST);
   format %{ "lsr $dst, $src1, $div1" %}
@@ -11156,7 +11156,7 @@ instruct signExtractL(iRegLNoSp dst, iRegL src1, immL_63 div1, immL_63 div2) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct div2RoundL(iRegLNoSp dst, iRegL src, immL_63 div1, immL_63 div2) %{
+instruct div2RoundL(iRegLNoSp dst, iRegL src, immI_63 div1, immI_63 div2) %{
   match(Set dst (AddL src (URShiftL (RShiftL src div1) div2)));
   ins_cost(INSN_COST);
   format %{ "add $dst, $src, $div1" %}
@@ -15387,9 +15387,9 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
 
   ins_encode %{
-    // TODO
-    // implement proper trap call here
-    __ brk(999);
+    // +1 so NativeInstruction::is_sigill_zombie_not_entrant() doesn't
+    // return true
+    __ dpcs1(0xdead + 1);
   %}
 
   ins_pipe(pipe_class_default);

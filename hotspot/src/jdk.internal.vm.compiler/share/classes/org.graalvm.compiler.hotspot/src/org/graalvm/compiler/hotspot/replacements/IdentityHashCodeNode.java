@@ -26,7 +26,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -40,6 +39,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.JavaConstant;
@@ -67,7 +67,7 @@ public class IdentityHashCodeNode extends FixedWithNextNode implements Canonical
         if (object.isConstant()) {
             assert object.stamp() instanceof AbstractObjectStamp;
             JavaConstant c = (JavaConstant) object.asConstant();
-            if (ImmutableCode.getValue()) {
+            if (ImmutableCode.getValue(getOptions())) {
                 return this;
             }
             JavaConstant identityHashCode = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,10 +504,11 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           morphism++;
         }
         int epsilon = 0;
-        if (TieredCompilation && ProfileInterpreter) {
-          // Interpreter and C1 treat final and special invokes differently.
-          // C1 will record a type, whereas the interpreter will just
-          // increment the count. Detect this case.
+        if (TieredCompilation) {
+          // For a call, it is assumed that either the type of the receiver(s)
+          // is recorded or an associated counter is incremented, but not both. With
+          // tiered compilation, however, both can happen due to the interpreter and
+          // C1 profiling invocations differently. Address that inconsistency here.
           if (morphism == 1 && count > 0) {
             epsilon = count;
             count = 0;
@@ -525,8 +526,8 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           // we will set result._method also.
         }
         // Determine call site's morphism.
-        // The call site count is 0 with known morphism (onlt 1 or 2 receivers)
-        // or < 0 in the case of a type check failured for checkcast, aastore, instanceof.
+        // The call site count is 0 with known morphism (only 1 or 2 receivers)
+        // or < 0 in the case of a type check failure for checkcast, aastore, instanceof.
         // The call site count is > 0 in the case of a polymorphic virtual call.
         if (morphism > 0 && morphism == result._limit) {
            // The morphism <= MorphismLimit.
@@ -593,11 +594,11 @@ void ciMethod::assert_call_type_ok(int bci) {
  * @param [in]bci         bci of the call
  * @param [in]i           argument number
  * @param [out]type       profiled type of argument, NULL if none
- * @param [out]maybe_null true if null was seen for argument
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
@@ -608,7 +609,7 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
           return false;
         }
         type = call->valid_argument_type(i);
-        maybe_null = call->argument_maybe_null(i);
+        ptr_kind = call->argument_ptr_kind(i);
         return true;
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
@@ -617,7 +618,7 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
           return false;
         }
         type = call->valid_argument_type(i);
-        maybe_null = call->argument_maybe_null(i);
+        ptr_kind = call->argument_ptr_kind(i);
         return true;
       }
     }
@@ -631,25 +632,29 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
  *
  * @param [in]bci         bci of the call
  * @param [out]type       profiled type of argument, NULL if none
- * @param [out]maybe_null true if null was seen for argument
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::return_profiled_type(int bci, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_return() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
         ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
-        type = call->valid_return_type();
-        maybe_null = call->return_maybe_null();
-        return true;
+        if (call->has_return()) {
+          type = call->valid_return_type();
+          ptr_kind = call->return_ptr_kind();
+          return true;
+        }
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
         ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
-        type = call->valid_return_type();
-        maybe_null = call->return_maybe_null();
+        if (call->has_return()) {
+          type = call->valid_return_type();
+          ptr_kind = call->return_ptr_kind();
+        }
         return true;
       }
     }
@@ -662,16 +667,16 @@ bool ciMethod::return_profiled_type(int bci, ciKlass*& type, bool& maybe_null) {
  *
  * @param [in]i           parameter number
  * @param [out]type       profiled type of parameter, NULL if none
- * @param [out]maybe_null true if null was seen for parameter
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciParametersTypeData* parameters = method_data()->parameters_type_data();
     if (parameters != NULL && i < parameters->number_of_parameters()) {
       type = parameters->valid_parameter_type(i);
-      maybe_null = parameters->parameter_maybe_null(i);
+      ptr_kind = parameters->parameter_ptr_kind(i);
       return true;
     }
   }
@@ -782,24 +787,24 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    check_is_loaded();
    VM_ENTRY_MARK;
 
-   KlassHandle caller_klass (THREAD, caller->get_Klass());
-   KlassHandle h_recv       (THREAD, exact_receiver->get_Klass());
-   KlassHandle h_resolved   (THREAD, holder()->get_Klass());
+   Klass* caller_klass = caller->get_Klass();
+   Klass* recv         = exact_receiver->get_Klass();
+   Klass* resolved     = holder()->get_Klass();
    Symbol* h_name      = name()->get_symbol();
    Symbol* h_signature = signature()->get_symbol();
 
-   LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass,
+   LinkInfo link_info(resolved, h_name, h_signature, caller_klass,
                       check_access ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
-   if (h_recv->is_array_klass()
+   if (recv->is_array_klass()
         ||
-       InstanceKlass::cast(h_recv())->is_linked() && !exact_receiver->is_interface()) {
+       InstanceKlass::cast(recv)->is_linked() && !exact_receiver->is_interface()) {
      if (holder()->is_interface()) {
-       m = LinkResolver::resolve_interface_call_or_null(h_recv, link_info);
+       m = LinkResolver::resolve_interface_call_or_null(recv, link_info);
      } else {
-       m = LinkResolver::resolve_virtual_call_or_null(h_recv, link_info);
+       m = LinkResolver::resolve_virtual_call_or_null(recv, link_info);
      }
    }
 
@@ -838,13 +843,13 @@ int ciMethod::resolve_vtable_index(ciKlass* caller, ciKlass* receiver) {
            receiver->as_instance_klass()->is_linked())) {
      VM_ENTRY_MARK;
 
-     KlassHandle caller_klass (THREAD, caller->get_Klass());
-     KlassHandle h_recv       (THREAD, receiver->get_Klass());
+     Klass* caller_klass = caller->get_Klass();
+     Klass* recv         = receiver->get_Klass();
      Symbol* h_name = name()->get_symbol();
      Symbol* h_signature = signature()->get_symbol();
 
-     LinkInfo link_info(h_recv, h_name, h_signature, caller_klass);
-     vtable_index = LinkResolver::resolve_virtual_vtable_index(h_recv, link_info);
+     LinkInfo link_info(recv, h_name, h_signature, caller_klass);
+     vtable_index = LinkResolver::resolve_virtual_vtable_index(recv, link_info);
      if (vtable_index == Method::nonvirtual_vtable_index) {
        // A statically bound method.  Return "no such index".
        vtable_index = Method::invalid_vtable_index;

@@ -22,28 +22,43 @@
  */
 package org.graalvm.compiler.phases.verify;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.graalvm.compiler.debug.Debug.BASIC_LEVEL;
+import static org.graalvm.compiler.debug.Debug.DETAILED_LEVEL;
+import static org.graalvm.compiler.debug.Debug.ENABLED_LEVEL;
+import static org.graalvm.compiler.debug.Debug.INFO_LEVEL;
+import static org.graalvm.compiler.debug.Debug.VERBOSE_LEVEL;
+import static org.graalvm.compiler.debug.Debug.VERY_DETAILED_LEVEL;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugMethodMetrics;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.VerifyPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
- *
  * Verifies that call sites calling one of the methods in {@link Debug} use them correctly. Correct
  * usage of the methods in {@link Debug} requires call sites to not eagerly evaluate their
  * arguments. Additionally this phase verifies that no argument is the result of a call to
@@ -62,20 +77,24 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
         return false;
     }
 
+    MetaAccessProvider metaAccess;
+
     @Override
     protected boolean verify(StructuredGraph graph, PhaseContext context) {
-        ResolvedJavaType debugType = context.getMetaAccess().lookupJavaType(Debug.class);
-        ResolvedJavaType nodeType = context.getMetaAccess().lookupJavaType(Node.class);
-        ResolvedJavaType stringType = context.getMetaAccess().lookupJavaType(String.class);
-        ResolvedJavaType debugMethodMetricsType = context.getMetaAccess().lookupJavaType(DebugMethodMetrics.class);
-        ResolvedJavaType graalErrorType = context.getMetaAccess().lookupJavaType(GraalError.class);
+        metaAccess = context.getMetaAccess();
+        ResolvedJavaType debugType = metaAccess.lookupJavaType(Debug.class);
+        ResolvedJavaType nodeType = metaAccess.lookupJavaType(Node.class);
+        ResolvedJavaType stringType = metaAccess.lookupJavaType(String.class);
+        ResolvedJavaType debugMethodMetricsType = metaAccess.lookupJavaType(DebugMethodMetrics.class);
+        ResolvedJavaType graalErrorType = metaAccess.lookupJavaType(GraalError.class);
 
         for (MethodCallTargetNode t : graph.getNodes(MethodCallTargetNode.TYPE)) {
             ResolvedJavaMethod callee = t.targetMethod();
             String calleeName = callee.getName();
             if (callee.getDeclaringClass().equals(debugType)) {
-                if (calleeName.equals("log") || calleeName.equals("logAndIndent") || calleeName.equals("verify") || calleeName.equals("dump")) {
-                    verifyParameters(t, graph, t.arguments(), stringType, calleeName.equals("dump") ? 2 : 1);
+                boolean isDump = calleeName.equals("dump");
+                if (calleeName.equals("log") || calleeName.equals("logAndIndent") || calleeName.equals("verify") || isDump) {
+                    verifyParameters(t, graph, t.arguments(), stringType, isDump ? 2 : 1);
                 }
             }
             if (callee.getDeclaringClass().isAssignableFrom(nodeType)) {
@@ -100,10 +119,10 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
         return true;
     }
 
-    private static void verifyParameters(MethodCallTargetNode callTarget, StructuredGraph callerGraph, NodeInputList<? extends Node> args, ResolvedJavaType stringType, int startArgIdx) {
+    private void verifyParameters(MethodCallTargetNode callTarget, StructuredGraph callerGraph, NodeInputList<? extends ValueNode> args, ResolvedJavaType stringType, int startArgIdx) {
         if (callTarget.targetMethod().isVarArgs() && args.get(args.count() - 1) instanceof NewArrayNode) {
             // unpack the arguments to the var args
-            List<Node> unpacked = new ArrayList<>(args.snapshot());
+            List<ValueNode> unpacked = new ArrayList<>(args.snapshot());
             NewArrayNode varArgParameter = (NewArrayNode) unpacked.remove(unpacked.size() - 1);
             int firstVarArg = unpacked.size();
             for (Node usage : varArgParameter.usages()) {
@@ -112,18 +131,58 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
                     unpacked.add(si.value());
                 }
             }
-            verifyParameters(callerGraph, callTarget.targetMethod(), unpacked, stringType, startArgIdx, firstVarArg);
+            verifyParameters(callerGraph, callTarget, unpacked, stringType, startArgIdx, firstVarArg);
         } else {
-            verifyParameters(callerGraph, callTarget.targetMethod(), args, stringType, startArgIdx, -1);
+            verifyParameters(callerGraph, callTarget, args, stringType, startArgIdx, -1);
         }
     }
 
-    private static void verifyParameters(StructuredGraph callerGraph, ResolvedJavaMethod verifiedCallee, List<? extends Node> args, ResolvedJavaType stringType, int startArgIdx, int varArgsIndex) {
+    private static final Set<Integer> DebugLevels = new HashSet<>(Arrays.asList(ENABLED_LEVEL, BASIC_LEVEL, INFO_LEVEL, VERBOSE_LEVEL, DETAILED_LEVEL, VERY_DETAILED_LEVEL));
+
+    /**
+     * The set of methods allowed to call a {@code Debug.dump(...)} method with the {@code level}
+     * parameter bound to {@link Debug#BASIC_LEVEL} and the {@code object} parameter bound to a
+     * {@link StructuredGraph} value.
+     *
+     * This whitelist exists to ensure any increase in graph dumps is in line with the policy
+     * outlined by {@link Debug#BASIC_LEVEL}. If you add a *justified* graph dump at this level,
+     * then update the whitelist.
+     */
+    private static final Set<String> BasicLevelStructuredGraphDumpWhitelist = new HashSet<>(Arrays.asList(
+                    "org.graalvm.compiler.phases.BasePhase.dumpAfter",
+                    "org.graalvm.compiler.phases.BasePhase.dumpBefore",
+                    "org.graalvm.compiler.core.GraalCompiler.emitFrontEnd",
+                    "org.graalvm.compiler.truffle.PartialEvaluator.fastPartialEvaluation",
+                    "org.graalvm.compiler.truffle.PartialEvaluator$PerformanceInformationHandler.reportPerformanceWarnings",
+                    "org.graalvm.compiler.truffle.TruffleCompiler.compileMethodHelper",
+                    "org.graalvm.compiler.core.test.VerifyDebugUsageTest$ValidDumpUsagePhase.run",
+                    "org.graalvm.compiler.core.test.VerifyDebugUsageTest$InvalidConcatDumpUsagePhase.run",
+                    "org.graalvm.compiler.core.test.VerifyDebugUsageTest$InvalidDumpUsagePhase.run"));
+
+    /**
+     * The set of methods allowed to call a {@code Debug.dump(...)} method with the {@code level}
+     * parameter bound to {@link Debug#INFO_LEVEL} and the {@code object} parameter bound to a
+     * {@link StructuredGraph} value.
+     *
+     * This whitelist exists to ensure any increase in graph dumps is in line with the policy
+     * outlined by {@link Debug#INFO_LEVEL}. If you add a *justified* graph dump at this level, then
+     * update the whitelist.
+     */
+    private static final Set<String> InfoLevelStructuredGraphDumpWhitelist = new HashSet<>(Arrays.asList(
+                    "org.graalvm.compiler.core.GraalCompiler.emitFrontEnd",
+                    "org.graalvm.compiler.phases.BasePhase.dumpAfter",
+                    "org.graalvm.compiler.replacements.ReplacementsImpl$GraphMaker.makeGraph",
+                    "org.graalvm.compiler.replacements.SnippetTemplate.instantiate"));
+
+    private void verifyParameters(StructuredGraph callerGraph, MethodCallTargetNode debugCallTarget, List<? extends ValueNode> args, ResolvedJavaType stringType, int startArgIdx,
+                    int varArgsIndex) {
+        ResolvedJavaMethod verifiedCallee = debugCallTarget.targetMethod();
+        Integer dumpLevel = null;
         int argIdx = startArgIdx;
         int varArgsElementIndex = 0;
         boolean reportVarArgs = false;
         for (int i = 0; i < args.size(); i++) {
-            Node arg = args.get(i);
+            ValueNode arg = args.get(i);
             if (arg instanceof Invoke) {
                 reportVarArgs = varArgsIndex >= 0 && argIdx >= varArgsIndex;
                 Invoke invoke = (Invoke) arg;
@@ -143,10 +202,76 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
                     }
                 }
             }
+            if (i == 0) {
+                if (verifiedCallee.getName().equals("dump")) {
+                    dumpLevel = verifyDumpLevelParameter(callerGraph, debugCallTarget, verifiedCallee, arg);
+                }
+            } else if (i == 1) {
+                if (dumpLevel != null) {
+                    verifyDumpObjectParameter(callerGraph, debugCallTarget, args, verifiedCallee, dumpLevel);
+                }
+            }
             if (varArgsIndex >= 0 && i >= varArgsIndex) {
                 varArgsElementIndex++;
             }
             argIdx++;
+        }
+    }
+
+    /**
+     * The {@code level} arg for the {@code Debug.dump(...)} methods must be a reference to one of
+     * the {@code Debug.*_LEVEL} constants.
+     */
+    protected Integer verifyDumpLevelParameter(StructuredGraph callerGraph, MethodCallTargetNode debugCallTarget, ResolvedJavaMethod verifiedCallee, ValueNode arg)
+                    throws org.graalvm.compiler.phases.VerifyPhase.VerificationError {
+        // The 'level' arg for the Debug.dump(...) methods must be a reference to one of
+        // the Debug.*_LEVEL constants.
+
+        Constant c = arg.asConstant();
+        if (c != null) {
+            Integer dumpLevel = ((PrimitiveConstant) c).asInt();
+            if (!DebugLevels.contains(dumpLevel)) {
+                StackTraceElement e = callerGraph.method().asStackTraceElement(debugCallTarget.invoke().bci());
+                throw new VerificationError(
+                                "In %s: parameter 0 of call to %s does not match a Debug.*_LEVEL constant.%n", e, verifiedCallee.format("%H.%n(%p)"));
+            }
+            return dumpLevel;
+        }
+        StackTraceElement e = callerGraph.method().asStackTraceElement(debugCallTarget.invoke().bci());
+        throw new VerificationError(
+                        "In %s: parameter 0 of call to %s must be a constant.%n", e, verifiedCallee.format("%H.%n(%p)"));
+    }
+
+    protected void verifyDumpObjectParameter(StructuredGraph callerGraph, MethodCallTargetNode debugCallTarget, List<? extends ValueNode> args, ResolvedJavaMethod verifiedCallee, Integer dumpLevel)
+                    throws org.graalvm.compiler.phases.VerifyPhase.VerificationError {
+        ResolvedJavaType arg1Type = ((ObjectStamp) args.get(1).stamp()).type();
+        if (metaAccess.lookupJavaType(Graph.class).isAssignableFrom(arg1Type)) {
+            verifyStructuredGraphDumping(callerGraph, debugCallTarget, verifiedCallee, dumpLevel);
+        }
+    }
+
+    /**
+     * Verifies that dumping a {@link StructuredGraph} at level {@link Debug#BASIC_LEVEL} or
+     * {@link Debug#INFO_LEVEL} only occurs in white-listed methods.
+     */
+    protected void verifyStructuredGraphDumping(StructuredGraph callerGraph, MethodCallTargetNode debugCallTarget, ResolvedJavaMethod verifiedCallee, Integer dumpLevel)
+                    throws org.graalvm.compiler.phases.VerifyPhase.VerificationError {
+        if (dumpLevel == Debug.BASIC_LEVEL) {
+            StackTraceElement e = callerGraph.method().asStackTraceElement(debugCallTarget.invoke().bci());
+            String qualifiedMethod = e.getClassName() + "." + e.getMethodName();
+            if (!BasicLevelStructuredGraphDumpWhitelist.contains(qualifiedMethod)) {
+                throw new VerificationError(
+                                "In %s: call to %s with level == Debug.BASIC_LEVEL not in %s.BasicLevelDumpWhitelist.%n", e, verifiedCallee.format("%H.%n(%p)"),
+                                getClass().getName());
+            }
+        } else if (dumpLevel == Debug.INFO_LEVEL) {
+            StackTraceElement e = callerGraph.method().asStackTraceElement(debugCallTarget.invoke().bci());
+            String qualifiedMethod = e.getClassName() + "." + e.getMethodName();
+            if (!InfoLevelStructuredGraphDumpWhitelist.contains(qualifiedMethod)) {
+                throw new VerificationError(
+                                "In %s: call to %s with level == Debug.INFO_LEVEL not in %s.InfoLevelDumpWhitelist.%n", e, verifiedCallee.format("%H.%n(%p)"),
+                                getClass().getName());
+            }
         }
     }
 

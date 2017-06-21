@@ -36,9 +36,20 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class ResolvedJavaMethodBytecode implements Bytecode {
 
     private final ResolvedJavaMethod method;
+    private final BytecodeProvider origin;
 
     public ResolvedJavaMethodBytecode(ResolvedJavaMethod method) {
+        this(method, ResolvedJavaMethodBytecodeProvider.INSTANCE);
+    }
+
+    public ResolvedJavaMethodBytecode(ResolvedJavaMethod method, BytecodeProvider origin) {
         this.method = method;
+        this.origin = origin;
+    }
+
+    @Override
+    public BytecodeProvider getOrigin() {
+        return origin;
     }
 
     @Override

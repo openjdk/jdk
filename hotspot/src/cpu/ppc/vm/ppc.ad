@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2016 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -2053,12 +2053,12 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Vector ideal reg.
-const int Matcher::vector_ideal_reg(int size) {
+const uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
 
-const int Matcher::vector_shift_count_ideal_reg(int size) {
+const uint Matcher::vector_shift_count_ideal_reg(int size) {
   fatal("vector shift is not supported");
   return Node::NotAMachineReg;
 }
@@ -5838,6 +5838,16 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
     __ relocate(rspec, 1);
     __ ori($dst$$Register, $src1$$Register, $src2$$constant & 0xffff);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
+  effect(DEF dst, USE src, USE shift, USE mask_begin);
+
+  size(4);
+  ins_encode %{
+    __ rldicl($dst$$Register, $src$$Register, $shift$$constant, $mask_begin$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -10519,6 +10529,16 @@ instruct convB2I_reg(iRegIdst dst, iRegIsrc src, immI_24 amount) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct extsh(iRegIdst dst, iRegIsrc src) %{
+  effect(DEF dst, USE src);
+
+  size(4);
+  ins_encode %{
+    __ extsh($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // LShiftI 16 + RShiftI 16 converts short to int.
 instruct convS2I_reg(iRegIdst dst, iRegIsrc src, immI_16 amount) %{
   match(Set dst (RShiftI (LShiftI src amount) amount));
@@ -12682,8 +12702,7 @@ instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
 // Just slightly faster than java implementation.
 instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (ReverseBytesI src));
-  predicate(UseCountLeadingZerosInstructionsPPC64);
-  ins_cost(DEFAULT_COST);
+  ins_cost(7*DEFAULT_COST);
 
   expand %{
     immI16 imm24 %{ (int) 24 %}
@@ -12703,6 +12722,172 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
     insrwi(dst, tmpI3, imm8, imm8);
     insrwi(dst, src, imm0, imm8);
   %}
+%}
+
+instruct bytes_reverse_long_Ex(iRegLdst dst, iRegLsrc src) %{
+  match(Set dst (ReverseBytesL src));
+  ins_cost(15*DEFAULT_COST);
+
+  expand %{
+    immI16 imm56 %{ (int) 56 %}
+    immI16 imm48 %{ (int) 48 %}
+    immI16 imm40 %{ (int) 40 %}
+    immI16 imm32 %{ (int) 32 %}
+    immI16 imm24 %{ (int) 24 %}
+    immI16 imm16 %{ (int) 16 %}
+    immI16  imm8 %{ (int)  8 %}
+    immI16  imm0 %{ (int)  0 %}
+    iRegLdst tmpL1;
+    iRegLdst tmpL2;
+    iRegLdst tmpL3;
+    iRegLdst tmpL4;
+    iRegLdst tmpL5;
+    iRegLdst tmpL6;
+
+                                        // src   : |a|b|c|d|e|f|g|h|
+    rldicl(tmpL1, src, imm8, imm24);    // tmpL1 : | | | |e|f|g|h|a|
+    rldicl(tmpL2, tmpL1, imm32, imm24); // tmpL2 : | | | |a| | | |e|
+    rldicl(tmpL3, tmpL2, imm32, imm0);  // tmpL3 : | | | |e| | | |a|
+    rldicl(tmpL1, src, imm16, imm24);   // tmpL1 : | | | |f|g|h|a|b|
+    rldicl(tmpL2, tmpL1, imm32, imm24); // tmpL2 : | | | |b| | | |f|
+    rldicl(tmpL4, tmpL2, imm40, imm0);  // tmpL4 : | | |f| | | |b| |
+    orL_reg_reg(tmpL5, tmpL3, tmpL4);   // tmpL5 : | | |f|e| | |b|a|
+    rldicl(tmpL1, src, imm24, imm24);   // tmpL1 : | | | |g|h|a|b|c|
+    rldicl(tmpL2, tmpL1, imm32, imm24); // tmpL2 : | | | |c| | | |g|
+    rldicl(tmpL3, tmpL2, imm48, imm0);  // tmpL3 : | |g| | | |c| | |
+    rldicl(tmpL1, src, imm32, imm24);   // tmpL1 : | | | |h|a|b|c|d|
+    rldicl(tmpL2, tmpL1, imm32, imm24); // tmpL2 : | | | |d| | | |h|
+    rldicl(tmpL4, tmpL2, imm56, imm0);  // tmpL4 : |h| | | |d| | | |
+    orL_reg_reg(tmpL6, tmpL3, tmpL4);   // tmpL6 : |h|g| | |d|c| | |
+    orL_reg_reg(dst, tmpL5, tmpL6);     // dst   : |h|g|f|e|d|c|b|a|
+  %}
+%}
+
+instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
+  match(Set dst (ReverseBytesUS src));
+  ins_cost(2*DEFAULT_COST);
+
+  expand %{
+    immI16  imm16 %{ (int) 16 %}
+    immI16   imm8 %{ (int)  8 %}
+
+    urShiftI_reg_imm(dst, src, imm8);
+    insrwi(dst, src, imm16, imm8);
+  %}
+%}
+
+instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
+  match(Set dst (ReverseBytesS src));
+  ins_cost(3*DEFAULT_COST);
+
+  expand %{
+    immI16  imm16 %{ (int) 16 %}
+    immI16   imm8 %{ (int)  8 %}
+    iRegLdst tmpI1;
+
+    urShiftI_reg_imm(tmpI1, src, imm8);
+    insrwi(tmpI1, src, imm16, imm8);
+    extsh(dst, tmpI1);
+  %}
+%}
+
+// Load Integer reversed byte order
+instruct loadI_reversed(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesI (LoadI mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ lwbrx($dst$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Load Long - aligned and reversed
+instruct loadL_reversed(iRegLdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesL (LoadL mem)));
+  predicate(VM_Version::has_ldbrx());
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ ldbrx($dst$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Load unsigned short / char reversed byte order
+instruct loadUS_reversed(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesUS (LoadUS mem)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ lhbrx($dst$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Load short reversed byte order
+instruct loadS_reversed(iRegIdst dst, indirect mem) %{
+  match(Set dst (ReverseBytesS (LoadS mem)));
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(8);
+  ins_encode %{
+    __ lhbrx($dst$$Register, $mem$$Register);
+    __ extsh($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Store Integer reversed byte order
+instruct storeI_reversed(iRegIsrc src, indirect mem) %{
+  match(Set mem (StoreI mem (ReverseBytesI src)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ stwbrx($src$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Store Long reversed byte order
+instruct storeL_reversed(iRegLsrc src, indirect mem) %{
+  match(Set mem (StoreL mem (ReverseBytesL src)));
+  predicate(VM_Version::has_stdbrx());
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ stdbrx($src$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Store unsigned short / char reversed byte order
+instruct storeUS_reversed(iRegIsrc src, indirect mem) %{
+  match(Set mem (StoreC mem (ReverseBytesUS src)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ sthbrx($src$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Store short reversed byte order
+instruct storeS_reversed(iRegIsrc src, indirect mem) %{
+  match(Set mem (StoreC mem (ReverseBytesS src)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  ins_encode %{
+    __ sthbrx($src$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //---------- Replicate Vector Instructions ------------------------------------

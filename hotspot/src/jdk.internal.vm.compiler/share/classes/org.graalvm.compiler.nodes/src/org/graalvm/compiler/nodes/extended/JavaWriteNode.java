@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.nodes.extended;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.StateSplit;
@@ -33,6 +32,7 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 
@@ -47,8 +47,8 @@ public final class JavaWriteNode extends AbstractWriteNode implements Lowerable,
     protected final JavaKind writeKind;
     protected final boolean compressible;
 
-    public JavaWriteNode(JavaKind writeKind, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, boolean compressible, boolean initialization) {
-        super(TYPE, address, location, value, barrierType, initialization);
+    public JavaWriteNode(JavaKind writeKind, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, boolean compressible) {
+        super(TYPE, address, location, value, barrierType);
         this.writeKind = writeKind;
         this.compressible = compressible;
     }

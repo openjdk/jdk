@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -31,6 +30,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * Memory {@code PhiNode}s merge memory dependencies at control flow merges.

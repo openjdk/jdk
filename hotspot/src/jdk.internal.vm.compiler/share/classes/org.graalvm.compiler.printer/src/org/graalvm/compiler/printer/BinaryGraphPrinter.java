@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.GraalDebugConfig.Options;
@@ -69,6 +70,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 
 public class BinaryGraphPrinter implements GraphPrinter {
 
@@ -87,6 +89,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
     private static final int POOL_NODE_CLASS = 0x06;
     private static final int POOL_FIELD = 0x07;
     private static final int POOL_SIGNATURE = 0x08;
+    private static final int POOL_NODE_SOURCE_POSITION = 0x09;
 
     private static final int PROPERTY_POOL = 0x00;
     private static final int PROPERTY_INT = 0x01;
@@ -101,7 +104,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
     private static final int KLASS = 0x00;
     private static final int ENUM_KLASS = 0x01;
 
-    static final int CURRENT_MAJOR_VERSION = 1;
+    static final int CURRENT_MAJOR_VERSION = 4;
     static final int CURRENT_MINOR_VERSION = 0;
 
     static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
@@ -149,16 +152,20 @@ public class BinaryGraphPrinter implements GraphPrinter {
     private final ConstantPool constantPool;
     private final ByteBuffer buffer;
     private final WritableByteChannel channel;
-    private final SnippetReflectionProvider snippetReflection;
+    private SnippetReflectionProvider snippetReflection;
 
     private static final Charset utf8 = Charset.forName("UTF-8");
 
-    public BinaryGraphPrinter(WritableByteChannel channel, SnippetReflectionProvider snippetReflection) throws IOException {
+    public BinaryGraphPrinter(WritableByteChannel channel) throws IOException {
         constantPool = new ConstantPool();
         buffer = ByteBuffer.allocateDirect(256 * 1024);
-        this.snippetReflection = snippetReflection;
         this.channel = channel;
         writeVersion();
+    }
+
+    @Override
+    public void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection) {
+        this.snippetReflection = snippetReflection;
     }
 
     @Override
@@ -166,10 +173,20 @@ public class BinaryGraphPrinter implements GraphPrinter {
         return snippetReflection;
     }
 
+    @SuppressWarnings("all")
     @Override
-    public void print(Graph graph, String title, Map<Object, Object> properties) throws IOException {
+    public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
         writeByte(BEGIN_GRAPH);
-        writePoolObject(title);
+        if (CURRENT_MAJOR_VERSION >= 3) {
+            writeInt(id);
+            writeString(format);
+            writeInt(args.length);
+            for (Object a : args) {
+                writePropertyObject(a);
+            }
+        } else {
+            writePoolObject(formatTitle(id, format, args));
+        }
         writeGraph(graph, properties);
         flush();
     }
@@ -183,9 +200,9 @@ public class BinaryGraphPrinter implements GraphPrinter {
             if (scheduleResult == null) {
 
                 // Also provide a schedule when an error occurs
-                if (Options.PrintIdealGraphSchedule.getValue() || Debug.contextLookup(Throwable.class) != null) {
+                if (Options.PrintGraphWithSchedule.getValue(graph.getOptions()) || Debug.contextLookup(Throwable.class) != null) {
                     try {
-                        SchedulePhase schedule = new SchedulePhase();
+                        SchedulePhase schedule = new SchedulePhase(graph.getOptions());
                         schedule.apply(structuredGraph);
                         scheduleResult = structuredGraph.getLastSchedule();
                     } catch (Throwable t) {
@@ -205,7 +222,18 @@ public class BinaryGraphPrinter implements GraphPrinter {
 
     private void flush() throws IOException {
         buffer.flip();
-        channel.write(buffer);
+        /*
+         * Try not to let interrupted threads aborting the write. There's still a race here but an
+         * interrupt that's been pending for a long time shouldn't stop this writing.
+         */
+        boolean interrupted = Thread.interrupted();
+        try {
+            channel.write(buffer);
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
         buffer.compact();
     }
 
@@ -309,12 +337,14 @@ public class BinaryGraphPrinter implements GraphPrinter {
                 writeByte(POOL_CLASS);
             } else if (object instanceof NodeClass) {
                 writeByte(POOL_NODE_CLASS);
-            } else if (object instanceof ResolvedJavaMethod) {
+            } else if (object instanceof ResolvedJavaMethod || object instanceof Bytecode) {
                 writeByte(POOL_METHOD);
             } else if (object instanceof ResolvedJavaField) {
                 writeByte(POOL_FIELD);
             } else if (object instanceof Signature) {
                 writeByte(POOL_SIGNATURE);
+            } else if (CURRENT_MAJOR_VERSION >= 4 && object instanceof NodeSourcePosition) {
+                writeByte(POOL_NODE_SOURCE_POSITION);
             } else {
                 writeByte(POOL_STRING);
             }
@@ -329,6 +359,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         return getClassName(klass.getComponentType()) + "[]";
     }
 
+    @SuppressWarnings("all")
     private void addPoolEntry(Object object) throws IOException {
         char index = constantPool.add(object);
         writeByte(POOL_NEW);
@@ -359,13 +390,24 @@ public class BinaryGraphPrinter implements GraphPrinter {
         } else if (object instanceof NodeClass) {
             NodeClass<?> nodeClass = (NodeClass<?>) object;
             writeByte(POOL_NODE_CLASS);
-            writeString(nodeClass.getJavaClass().getSimpleName());
-            writeString(nodeClass.getNameTemplate());
+            if (CURRENT_MAJOR_VERSION >= 3) {
+                writePoolObject(nodeClass.getJavaClass());
+                writeString(nodeClass.getNameTemplate());
+            } else {
+                writeString(nodeClass.getJavaClass().getSimpleName());
+                String nameTemplate = nodeClass.getNameTemplate();
+                writeString(nameTemplate.isEmpty() ? nodeClass.shortName() : nameTemplate);
+            }
             writeEdgesInfo(nodeClass, Inputs);
             writeEdgesInfo(nodeClass, Successors);
-        } else if (object instanceof ResolvedJavaMethod) {
+        } else if (object instanceof ResolvedJavaMethod || object instanceof Bytecode) {
             writeByte(POOL_METHOD);
-            ResolvedJavaMethod method = ((ResolvedJavaMethod) object);
+            ResolvedJavaMethod method;
+            if (object instanceof Bytecode) {
+                method = ((Bytecode) object).getMethod();
+            } else {
+                method = ((ResolvedJavaMethod) object);
+            }
             writePoolObject(method.getDeclaringClass());
             writePoolObject(method.getName());
             writePoolObject(method.getSignature());
@@ -387,6 +429,21 @@ public class BinaryGraphPrinter implements GraphPrinter {
                 writePoolObject(signature.getParameterType(i, null).getName());
             }
             writePoolObject(signature.getReturnType(null).getName());
+        } else if (CURRENT_MAJOR_VERSION >= 4 && object instanceof NodeSourcePosition) {
+            writeByte(POOL_NODE_SOURCE_POSITION);
+            NodeSourcePosition pos = (NodeSourcePosition) object;
+            ResolvedJavaMethod method = pos.getMethod();
+            writePoolObject(method);
+            final int bci = pos.getBCI();
+            writeInt(bci);
+            StackTraceElement ste = method.asStackTraceElement(bci);
+            if (ste != null) {
+                writePoolObject(ste.getFileName());
+                writeInt(ste.getLineNumber());
+            } else {
+                writePoolObject(null);
+            }
+            writePoolObject(pos.getCaller());
         } else {
             writeByte(POOL_STRING);
             writeString(object.toString());
@@ -487,7 +544,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         for (Node node : graph.getNodes()) {
             NodeClass<?> nodeClass = node.getNodeClass();
             node.getDebugProperties(props);
-            if (cfg != null && Options.PrintGraphProbabilities.getValue() && node instanceof FixedNode) {
+            if (cfg != null && Options.PrintGraphProbabilities.getValue(graph.getOptions()) && node instanceof FixedNode) {
                 try {
                     props.put("probability", cfg.blockFor(node).probability());
                 } catch (Throwable t) {
@@ -495,6 +552,14 @@ public class BinaryGraphPrinter implements GraphPrinter {
                     props.put("probability-exception", t);
                 }
             }
+
+            try {
+                props.put("NodeCost-Size", node.estimatedNodeSize());
+                props.put("NodeCost-Cycles", node.estimatedNodeCycles());
+            } catch (Throwable t) {
+                props.put("node-cost-exception", t.getMessage());
+            }
+
             if (nodeToBlocks != null) {
                 Object block = getBlockForNode(node, nodeToBlocks);
                 if (block != null) {

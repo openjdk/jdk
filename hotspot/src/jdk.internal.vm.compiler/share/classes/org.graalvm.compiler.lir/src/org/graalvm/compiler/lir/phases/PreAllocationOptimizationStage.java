@@ -25,10 +25,11 @@ package org.graalvm.compiler.lir.phases;
 import org.graalvm.compiler.lir.alloc.SaveCalleeSaveRegisters;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import org.graalvm.compiler.options.OptionValues;
 
 public class PreAllocationOptimizationStage extends LIRPhaseSuite<PreAllocationOptimizationContext> {
-    public PreAllocationOptimizationStage() {
-        if (ConstantLoadOptimization.Options.LIROptConstantLoadOptimization.getValue()) {
+    public PreAllocationOptimizationStage(OptionValues options) {
+        if (ConstantLoadOptimization.Options.LIROptConstantLoadOptimization.getValue(options)) {
             appendPhase(new ConstantLoadOptimization());
             appendPhase(new SaveCalleeSaveRegisters());
         }

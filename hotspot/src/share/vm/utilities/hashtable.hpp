@@ -124,17 +124,9 @@ private:
   // Instance variable
   BasicHashtableEntry<F>*       _entry;
 
-#ifdef ASSERT
-private:
-  unsigned _hits;
-public:
-  unsigned hits()   { return _hits; }
-  void count_hit()  { _hits++; }
-#endif
-
 public:
   // Accessing
-  void clear()                        { _entry = NULL; DEBUG_ONLY(_hits = 0); }
+  void clear()                        { _entry = NULL; }
 
   // The following methods use order access methods to avoid race
   // conditions in multiprocessor systems.
@@ -166,9 +158,6 @@ public:
     return h;
   }
 
-  // Reverse the order of elements in each of the buckets.
-  void reverse();
-
 private:
   // Instance variables
   int               _table_size;
@@ -180,13 +169,6 @@ private:
   volatile int      _number_of_entries;
 
 protected:
-
-#ifdef ASSERT
-  bool              _lookup_warning;
-  mutable int       _lookup_count;
-  mutable int       _lookup_length;
-  bool verify_lookup_length(double load, const char *table_name);
-#endif
 
   void initialize(int table_size, int entry_size, int number_of_entries);
 
@@ -253,16 +235,7 @@ public:
 
   int number_of_entries() { return _number_of_entries; }
 
-  void verify() PRODUCT_RETURN;
-
-#ifdef ASSERT
-  void bucket_count_hit(int i) const {
-    _buckets[i].count_hit();
-  }
-  unsigned bucket_hits(int i) const {
-    return _buckets[i].hits();
-  }
-#endif
+  template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
 
 
@@ -279,12 +252,6 @@ public:
 
   // Debugging
   void print()               PRODUCT_RETURN;
-
-  // Reverse the order of elements in each of the buckets. Hashtable
-  // entries which refer to objects at a lower address than 'boundary'
-  // are separated from those which refer to objects at higher
-  // addresses, and appear first in the list.
-  void reverse(void* boundary = NULL);
 
 protected:
 

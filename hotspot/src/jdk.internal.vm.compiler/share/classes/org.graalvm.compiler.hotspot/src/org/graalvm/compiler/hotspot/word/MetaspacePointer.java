@@ -25,15 +25,15 @@ package org.graalvm.compiler.hotspot.word;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.FROM_POINTER;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.IS_NULL;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
-import org.graalvm.compiler.word.Pointer;
-import org.graalvm.compiler.word.Signed;
-import org.graalvm.compiler.word.Unsigned;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.compiler.word.WordBase;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.Signed;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordBase;
 
 /**
  * Marker type for a metaspace pointer.
@@ -517,17 +517,6 @@ public abstract class MetaspacePointer {
      */
     @Operation(opcode = Opcode.WRITE_POINTER)
     public abstract void writeWord(int offset, WordBase val, LocationIdentity locationIdentity);
-
-    /**
-     * Initializes the memory at address {@code (this + offset)}. Both the base address and offset
-     * are in bytes. The memory must be uninitialized or zero prior to this operation.
-     *
-     * @param offset the signed offset for the memory access
-     * @param locationIdentity the identity of the write
-     * @param val the value to be written to memory
-     */
-    @Operation(opcode = Opcode.INITIALIZE)
-    public abstract void initializeLong(int offset, long val, LocationIdentity locationIdentity);
 
     /**
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in

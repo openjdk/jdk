@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.core.target;
 
-import java.util.Set;
-
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -45,6 +43,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -61,18 +60,26 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 
+import java.util.ArrayList;
+
 /**
  * Represents a compiler backend for Graal.
  */
 public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKind> {
 
     private final Providers providers;
+    private final ArrayList<CodeInstallationTaskFactory> codeInstallationTaskFactories;
 
     public static final ForeignCallDescriptor ARITHMETIC_FREM = new ForeignCallDescriptor("arithmeticFrem", float.class, float.class, float.class);
     public static final ForeignCallDescriptor ARITHMETIC_DREM = new ForeignCallDescriptor("arithmeticDrem", double.class, double.class, double.class);
 
     protected Backend(Providers providers) {
         this.providers = providers;
+        this.codeInstallationTaskFactories = new ArrayList<>();
+    }
+
+    public synchronized void addCodeInstallationTask(CodeInstallationTaskFactory factory) {
+        this.codeInstallationTaskFactories.add(factory);
     }
 
     public Providers getProviders() {
@@ -113,7 +120,13 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      */
     public abstract FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig);
 
-    public abstract RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig);
+    /**
+     * Creates a new configuration for register allocation.
+     *
+     * @param allocationRestrictedTo if not {@code null}, register allocation will be restricted to
+     *            registers whose names appear in this array
+     */
+    public abstract RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo);
 
     public abstract FrameMap newFrameMap(RegisterConfig registerConfig);
 
@@ -151,6 +164,16 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
     }
 
     /**
+     * @see #createInstalledCode(ResolvedJavaMethod, CompilationRequest, CompilationResult,
+     *      SpeculationLog, InstalledCode, boolean, Object[])
+     */
+    @SuppressWarnings("try")
+    public InstalledCode createInstalledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult,
+                    SpeculationLog speculationLog, InstalledCode predefinedInstalledCode, boolean isDefault) {
+        return createInstalledCode(method, compilationRequest, compilationResult, speculationLog, predefinedInstalledCode, isDefault, null);
+    }
+
+    /**
      * Installs code based on a given compilation result.
      *
      * @param method the method compiled to produce {@code compiledCode} or {@code null} if the
@@ -165,15 +188,39 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      *            {@code compRequest.getMethod()}. The default implementation for a method is the
      *            code executed for standard calls to the method. This argument is ignored if
      *            {@code compRequest == null}.
+     * @param context a custom debug context to use for the code installation.
      * @return a reference to the compiled and ready-to-run installed code
      * @throws BailoutException if the code installation failed
      */
     @SuppressWarnings("try")
     public InstalledCode createInstalledCode(ResolvedJavaMethod method, CompilationRequest compilationRequest, CompilationResult compilationResult,
-                    SpeculationLog speculationLog, InstalledCode predefinedInstalledCode, boolean isDefault) {
-        try (Scope s2 = Debug.scope("CodeInstall", getProviders().getCodeCache(), compilationResult)) {
+                    SpeculationLog speculationLog, InstalledCode predefinedInstalledCode, boolean isDefault, Object[] context) {
+        Object[] debugContext = context != null ? context : new Object[]{getProviders().getCodeCache(), method, compilationResult};
+        CodeInstallationTask[] tasks = new CodeInstallationTask[codeInstallationTaskFactories.size()];
+        for (int i = 0; i < codeInstallationTaskFactories.size(); i++) {
+            tasks[i] = codeInstallationTaskFactories.get(i).create();
+        }
+        try (Scope s = Debug.scope("CodeInstall", debugContext)) {
+            for (CodeInstallationTask task : tasks) {
+                task.preProcess(compilationResult);
+            }
+
             CompiledCode compiledCode = createCompiledCode(method, compilationRequest, compilationResult);
-            return getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
+            InstalledCode installedCode = getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
+
+            // Run post-code installation tasks.
+            try {
+                for (CodeInstallationTask task : tasks) {
+                    task.postProcess(installedCode);
+                }
+                for (CodeInstallationTask task : tasks) {
+                    task.releaseInstallation(installedCode);
+                }
+            } catch (Throwable t) {
+                installedCode.invalidate();
+                throw t;
+            }
+            return installedCode;
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
@@ -220,7 +267,7 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      * is needed for architectures where input/output registers are renamed during a call (e.g.
      * register windows on SPARC). Registers which are not visible by the caller are removed.
      */
-    public abstract Set<Register> translateToCallerRegisters(Set<Register> calleeRegisters);
+    public abstract EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters);
 
     /**
      * Gets the compilation id for a given {@link ResolvedJavaMethod}. Returns
@@ -230,5 +277,39 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      */
     public CompilationIdentifier getCompilationIdentifier(ResolvedJavaMethod resolvedJavaMethod) {
         return CompilationIdentifier.INVALID_COMPILATION_ID;
+    }
+
+    /**
+     * Encapsulates custom tasks done before and after code installation.
+     */
+    public abstract static class CodeInstallationTask {
+        /**
+         * Task to run before code installation.
+         */
+        @SuppressWarnings("unused")
+        public void preProcess(CompilationResult compilationResult) {
+        }
+
+        /**
+         * Task to run after the code is installed.
+         */
+        @SuppressWarnings("unused")
+        public void postProcess(InstalledCode installedCode) {
+        }
+
+        /**
+         * Task to run after all the post-code installation tasks are complete, used to release the
+         * installed code.
+         */
+        @SuppressWarnings("unused")
+        public void releaseInstallation(InstalledCode installedCode) {
+        }
+    }
+
+    /**
+     * Creates code installation tasks.
+     */
+    public abstract static class CodeInstallationTaskFactory {
+        public abstract CodeInstallationTask create();
     }
 }

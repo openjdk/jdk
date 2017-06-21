@@ -28,7 +28,7 @@ import sun.misc.Unsafe;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.nodes.extended.UnsafeLoadNode;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -130,7 +130,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
     @Test
     public void testUnsafe1() {
         StructuredGraph graph = processMethod("testUnsafe1Snippet", false);
-        assertDeepEquals(1, graph.getNodes().filter(UnsafeLoadNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
     public static int testUnsafe2Snippet(int v, Object array) {
@@ -143,7 +143,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
     @Test
     public void testUnsafe2() {
         StructuredGraph graph = processMethod("testUnsafe2Snippet", false);
-        assertDeepEquals(3, graph.getNodes().filter(UnsafeLoadNode.class).count());
+        assertDeepEquals(3, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
     private static final long offsetObject1 = Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * 1;
@@ -159,7 +159,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
     @Test
     public void testUnsafe3() {
         StructuredGraph graph = processMethod("testUnsafe3Snippet", false);
-        assertDeepEquals(1, graph.getNodes().filter(UnsafeLoadNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
     public static int testUnsafe4Snippet(int v, Object[] array) {
@@ -173,7 +173,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
     @Test
     public void testUnsafe4() {
         StructuredGraph graph = processMethod("testUnsafe4Snippet", false);
-        assertDeepEquals(3, graph.getNodes().filter(UnsafeLoadNode.class).count());
+        assertDeepEquals(3, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
     private static final long offsetLong1 = Unsafe.ARRAY_LONG_BASE_OFFSET + Unsafe.ARRAY_LONG_INDEX_SCALE * 1;
@@ -189,7 +189,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
     @Test
     public void testUnsafe5() {
         StructuredGraph graph = processMethod("testUnsafe5Snippet", false);
-        assertDeepEquals(1, graph.getNodes().filter(UnsafeLoadNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(RawLoadNode.class).count());
     }
 
     @Override
@@ -197,7 +197,7 @@ public class PEAReadEliminationTest extends EarlyReadEliminationTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         HighTierContext context = getDefaultHighTierContext();
         new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
-        new PartialEscapePhase(false, true, new CanonicalizerPhase(), null).apply(graph, context);
+        new PartialEscapePhase(false, true, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
         return graph;
     }
 }

@@ -46,7 +46,11 @@ public abstract class ArithmeticStamp extends Stamp {
 
     @Override
     public Stamp improveWith(Stamp other) {
-        return this.join(other);
+        if (this.isCompatible(other)) {
+            return this.join(other);
+        }
+        // Cannot improve, because stamps are not compatible.
+        return this;
     }
 
     @Override
@@ -65,7 +69,7 @@ public abstract class ArithmeticStamp extends Stamp {
         if (!(obj instanceof ArithmeticStamp)) {
             return false;
         }
-        assert Objects.equals(ops, ((ArithmeticStamp) obj).ops);
+        assert Objects.equals(ops, ((ArithmeticStamp) obj).ops) : ops + " vs. " + ((ArithmeticStamp) obj).ops;
         return true;
     }
 }

@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_30;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_30;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_32;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_32;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
@@ -46,7 +46,7 @@ import jdk.vm.ci.meta.TriState;
  * against instances. This is used, for instance, to intrinsify
  * {@link Class#isAssignableFrom(Class)} .
  */
-@NodeInfo(cycles = CYCLES_30, size = SIZE_30)
+@NodeInfo(cycles = CYCLES_32, size = SIZE_32)
 public final class ClassIsAssignableFromNode extends BinaryOpLogicNode implements Canonicalizable.Binary<ValueNode>, Lowerable {
 
     public static final NodeClass<ClassIsAssignableFromNode> TYPE = NodeClass.create(ClassIsAssignableFromNode.class);
@@ -55,11 +55,11 @@ public final class ClassIsAssignableFromNode extends BinaryOpLogicNode implement
         super(TYPE, thisClass, otherClass);
     }
 
-    public Object getThisClass() {
+    public ValueNode getThisClass() {
         return getX();
     }
 
-    public Object getOtherClass() {
+    public ValueNode getOtherClass() {
         return getY();
     }
 
@@ -82,12 +82,12 @@ public final class ClassIsAssignableFromNode extends BinaryOpLogicNode implement
     }
 
     @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
+    public Stamp getSucceedingStampForX(boolean negated, Stamp xStamp, Stamp yStamp) {
         return null;
     }
 
     @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
+    public Stamp getSucceedingStampForY(boolean negated, Stamp xStamp, Stamp yStamp) {
         return null;
     }
 

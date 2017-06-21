@@ -343,116 +343,7 @@ public enum Condition {
         if (lt instanceof PrimitiveConstant) {
             PrimitiveConstant lp = (PrimitiveConstant) lt;
             PrimitiveConstant rp = (PrimitiveConstant) rt;
-            switch (lp.getJavaKind()) {
-                case Boolean:
-                case Byte:
-                case Char:
-                case Short:
-                case Int: {
-                    int x = lp.asInt();
-                    int y = rp.asInt();
-                    switch (this) {
-                        case EQ:
-                            return x == y;
-                        case NE:
-                            return x != y;
-                        case LT:
-                            return x < y;
-                        case LE:
-                            return x <= y;
-                        case GT:
-                            return x > y;
-                        case GE:
-                            return x >= y;
-                        case AE:
-                            return UnsignedMath.aboveOrEqual(x, y);
-                        case BE:
-                            return UnsignedMath.belowOrEqual(x, y);
-                        case AT:
-                            return UnsignedMath.aboveThan(x, y);
-                        case BT:
-                            return UnsignedMath.belowThan(x, y);
-                        default:
-                            throw new GraalError("expected condition: %s", this);
-                    }
-                }
-                case Long: {
-                    long x = lp.asLong();
-                    long y = rp.asLong();
-                    switch (this) {
-                        case EQ:
-                            return x == y;
-                        case NE:
-                            return x != y;
-                        case LT:
-                            return x < y;
-                        case LE:
-                            return x <= y;
-                        case GT:
-                            return x > y;
-                        case GE:
-                            return x >= y;
-                        case AE:
-                            return UnsignedMath.aboveOrEqual(x, y);
-                        case BE:
-                            return UnsignedMath.belowOrEqual(x, y);
-                        case AT:
-                            return UnsignedMath.aboveThan(x, y);
-                        case BT:
-                            return UnsignedMath.belowThan(x, y);
-                        default:
-                            throw new GraalError("expected condition: %s", this);
-                    }
-                }
-                case Float: {
-                    float x = lp.asFloat();
-                    float y = rp.asFloat();
-                    if (Float.isNaN(x) || Float.isNaN(y)) {
-                        return unorderedIsTrue;
-                    }
-                    switch (this) {
-                        case EQ:
-                            return x == y;
-                        case NE:
-                            return x != y;
-                        case LT:
-                            return x < y;
-                        case LE:
-                            return x <= y;
-                        case GT:
-                            return x > y;
-                        case GE:
-                            return x >= y;
-                        default:
-                            throw new GraalError("expected condition: %s", this);
-                    }
-                }
-                case Double: {
-                    double x = lp.asDouble();
-                    double y = rp.asDouble();
-                    if (Double.isNaN(x) || Double.isNaN(y)) {
-                        return unorderedIsTrue;
-                    }
-                    switch (this) {
-                        case EQ:
-                            return x == y;
-                        case NE:
-                            return x != y;
-                        case LT:
-                            return x < y;
-                        case LE:
-                            return x <= y;
-                        case GT:
-                            return x > y;
-                        case GE:
-                            return x >= y;
-                        default:
-                            throw new GraalError("expected condition: %s", this);
-                    }
-                }
-                default:
-                    throw new GraalError("expected value kind %s while folding condition: %s", lp.getJavaKind(), this);
-            }
+            return foldCondition(lp, rp, unorderedIsTrue);
         } else {
             Boolean equal = constantReflection.constantEquals(lt, rt);
             if (equal == null) {
@@ -466,6 +357,128 @@ public enum Condition {
                 default:
                     throw new GraalError("expected condition: %s", this);
             }
+        }
+    }
+
+    /**
+     * Attempts to fold a comparison between two primitive constants and return the result.
+     *
+     * @param lp the constant on the left side of the comparison
+     * @param rp the constant on the right side of the comparison
+     * @param unorderedIsTrue true if an undecided float comparison should result in "true"
+     * @return true if the comparison is known to be true, false if the comparison is known to be
+     *         false
+     */
+    public boolean foldCondition(PrimitiveConstant lp, PrimitiveConstant rp, boolean unorderedIsTrue) {
+        switch (lp.getJavaKind()) {
+            case Boolean:
+            case Byte:
+            case Char:
+            case Short:
+            case Int: {
+                int x = lp.asInt();
+                int y = rp.asInt();
+                switch (this) {
+                    case EQ:
+                        return x == y;
+                    case NE:
+                        return x != y;
+                    case LT:
+                        return x < y;
+                    case LE:
+                        return x <= y;
+                    case GT:
+                        return x > y;
+                    case GE:
+                        return x >= y;
+                    case AE:
+                        return UnsignedMath.aboveOrEqual(x, y);
+                    case BE:
+                        return UnsignedMath.belowOrEqual(x, y);
+                    case AT:
+                        return UnsignedMath.aboveThan(x, y);
+                    case BT:
+                        return UnsignedMath.belowThan(x, y);
+                    default:
+                        throw new GraalError("expected condition: %s", this);
+                }
+            }
+            case Long: {
+                long x = lp.asLong();
+                long y = rp.asLong();
+                switch (this) {
+                    case EQ:
+                        return x == y;
+                    case NE:
+                        return x != y;
+                    case LT:
+                        return x < y;
+                    case LE:
+                        return x <= y;
+                    case GT:
+                        return x > y;
+                    case GE:
+                        return x >= y;
+                    case AE:
+                        return UnsignedMath.aboveOrEqual(x, y);
+                    case BE:
+                        return UnsignedMath.belowOrEqual(x, y);
+                    case AT:
+                        return UnsignedMath.aboveThan(x, y);
+                    case BT:
+                        return UnsignedMath.belowThan(x, y);
+                    default:
+                        throw new GraalError("expected condition: %s", this);
+                }
+            }
+            case Float: {
+                float x = lp.asFloat();
+                float y = rp.asFloat();
+                if (Float.isNaN(x) || Float.isNaN(y)) {
+                    return unorderedIsTrue;
+                }
+                switch (this) {
+                    case EQ:
+                        return x == y;
+                    case NE:
+                        return x != y;
+                    case LT:
+                        return x < y;
+                    case LE:
+                        return x <= y;
+                    case GT:
+                        return x > y;
+                    case GE:
+                        return x >= y;
+                    default:
+                        throw new GraalError("expected condition: %s", this);
+                }
+            }
+            case Double: {
+                double x = lp.asDouble();
+                double y = rp.asDouble();
+                if (Double.isNaN(x) || Double.isNaN(y)) {
+                    return unorderedIsTrue;
+                }
+                switch (this) {
+                    case EQ:
+                        return x == y;
+                    case NE:
+                        return x != y;
+                    case LT:
+                        return x < y;
+                    case LE:
+                        return x <= y;
+                    case GT:
+                        return x > y;
+                    case GE:
+                        return x >= y;
+                    default:
+                        throw new GraalError("expected condition: %s", this);
+                }
+            }
+            default:
+                throw new GraalError("expected value kind %s while folding condition: %s", lp.getJavaKind(), this);
         }
     }
 

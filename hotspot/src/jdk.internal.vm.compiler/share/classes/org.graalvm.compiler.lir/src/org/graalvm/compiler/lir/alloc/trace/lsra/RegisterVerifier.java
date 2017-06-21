@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
-import static org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.isVariableOrRegister;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
+import static org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.isVariableOrRegister;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.core.common.util.ArrayMap;
+import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.GraalError;
@@ -40,6 +40,7 @@ import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 
 import jdk.vm.ci.code.Register;
@@ -50,11 +51,11 @@ import jdk.vm.ci.meta.Value;
 final class RegisterVerifier {
 
     TraceLinearScan allocator;
-    List<AbstractBlockBase<?>> workList; // all blocks that must be processed
-    ArrayMap<TraceInterval[]> savedStates; // saved information of previous check
+    ArrayList<AbstractBlockBase<?>> workList; // all blocks that must be processed
+    BlockMap<TraceInterval[]> savedStates; // saved information of previous check
 
     // simplified access to methods of LinearScan
-    TraceInterval intervalAt(Value operand) {
+    TraceInterval intervalAt(Variable operand) {
         return allocator.intervalFor(operand);
     }
 
@@ -65,11 +66,11 @@ final class RegisterVerifier {
 
     // accessors
     TraceInterval[] stateForBlock(AbstractBlockBase<?> block) {
-        return savedStates.get(block.getId());
+        return savedStates.get(block);
     }
 
     void setStateForBlock(AbstractBlockBase<?> block, TraceInterval[] savedState) {
-        savedStates.put(block.getId(), savedState);
+        savedStates.put(block, savedState);
     }
 
     void addToWorkList(AbstractBlockBase<?> block) {
@@ -81,7 +82,7 @@ final class RegisterVerifier {
     RegisterVerifier(TraceLinearScan allocator) {
         this.allocator = allocator;
         workList = new ArrayList<>(16);
-        this.savedStates = new ArrayMap<>();
+        this.savedStates = new BlockMap<>(allocator.getLIR().getControlFlowGraph());
 
     }
 
@@ -190,7 +191,7 @@ final class RegisterVerifier {
             Register reg = asRegister(location);
             int regNum = reg.number;
             if (interval != null) {
-                Debug.log("%s = %s", reg, interval.operand);
+                Debug.log("%s = v%d", reg, interval.operandNumber);
             } else if (inputState[regNum] != null) {
                 Debug.log("%s = null", reg);
             }
@@ -211,26 +212,26 @@ final class RegisterVerifier {
     }
 
     void processOperations(AbstractBlockBase<?> block, final TraceInterval[] inputState) {
-        List<LIRInstruction> ops = allocator.getLIR().getLIRforBlock(block);
+        ArrayList<LIRInstruction> ops = allocator.getLIR().getLIRforBlock(block);
         InstructionValueConsumer useConsumer = new InstructionValueConsumer() {
 
             @Override
             public void visitValue(LIRInstruction op, Value operand, OperandMode mode, EnumSet<OperandFlag> flags) {
                 // we skip spill moves inserted by the spill position optimization
                 if (isVariableOrRegister(operand) && allocator.isProcessed(operand) && op.id() != TraceLinearScanPhase.DOMINATOR_SPILL_MOVE_ID) {
-                    TraceInterval interval = intervalAt(operand);
+                    TraceInterval interval = intervalAt(asVariable(operand));
                     if (op.id() != -1) {
                         interval = interval.getSplitChildAtOpId(op.id(), mode);
                     }
 
-                    assert checkState(block, op, inputState, interval.operand, interval.location(), interval.splitParent());
+                    assert checkState(block, op, inputState, allocator.getOperand(interval), interval.location(), interval.splitParent());
                 }
             }
         };
 
         InstructionValueConsumer defConsumer = (op, operand, mode, flags) -> {
             if (isVariableOrRegister(operand) && allocator.isProcessed(operand)) {
-                TraceInterval interval = intervalAt(operand);
+                TraceInterval interval = intervalAt(asVariable(operand));
                 if (op.id() != -1) {
                     interval = interval.getSplitChildAtOpId(op.id(), mode);
                 }

@@ -763,11 +763,13 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
+  vzeroupper();
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc) {
+  vzeroupper();
   // determine last_java_sp register
   if (!last_java_sp->is_valid()) {
     last_java_sp = rsp;
@@ -1482,7 +1484,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     movl(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
     bind(L_rtm_retry);
   }
-  movptr(tmpReg, Address(objReg, 0));
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
   testptr(tmpReg, markOopDesc::monitor_value);  // inflated vs stack-locked|neutral|biased
   jcc(Assembler::notZero, IsInflated);
 
@@ -1490,14 +1492,14 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
       // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(stack_rtm_counters != NULL, "should not be NULL when profiling RTM");
     atomic_incptr(ExternalAddress((address)stack_rtm_counters->total_count_addr()), scrReg);
     bind(L_noincrement);
   }
   xbegin(L_on_abort);
-  movptr(tmpReg, Address(objReg, 0));       // fetch markword
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));       // fetch markword
   andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
   cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
   jcc(Assembler::equal, DONE_LABEL);        // all done if unlocked
@@ -1551,14 +1553,14 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
       // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
     atomic_incptr(ExternalAddress((address)rtm_counters->total_count_addr()), scrReg);
     bind(L_noincrement);
   }
   xbegin(L_on_abort);
-  movptr(tmpReg, Address(objReg, 0));
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
   movptr(tmpReg, Address(tmpReg, owner_offset));
   testptr(tmpReg, tmpReg);
   jcc(Assembler::zero, DONE_LABEL);
@@ -1751,7 +1753,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     }
 #endif // INCLUDE_RTM_OPT
 
-    movptr(tmpReg, Address(objReg, 0));          // [FETCH]
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
     testptr(tmpReg, markOopDesc::monitor_value); // inflated vs stack-locked|neutral|biased
     jccb(Assembler::notZero, IsInflated);
 
@@ -1761,7 +1763,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
     if (os::is_MP()) {
       lock();
     }
-    cmpxchgptr(boxReg, Address(objReg, 0));      // Updates tmpReg
+    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
     if (counters != NULL) {
       cond_inc32(Assembler::equal,
                  ExternalAddress((address)counters->fast_path_entry_count_addr()));
@@ -1982,7 +1984,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     if (UseRTMForStackLocks && use_rtm) {
       assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
       Label L_regular_unlock;
-      movptr(tmpReg, Address(objReg, 0));           // fetch markword
+      movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));           // fetch markword
       andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
       cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
       jccb(Assembler::notEqual, L_regular_unlock);  // if !HLE RegularLock
@@ -1994,7 +1996,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
     cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD); // Examine the displaced header
     jcc   (Assembler::zero, DONE_LABEL);            // 0 indicates recursive stack-lock
-    movptr(tmpReg, Address(objReg, 0));             // Examine the object's markword
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));             // Examine the object's markword
     testptr(tmpReg, markOopDesc::monitor_value);    // Inflated?
     jccb  (Assembler::zero, Stacked);
 
@@ -2148,7 +2150,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     if (os::is_MP()) {
       lock();
     }
-    cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
     // Intention fall-thru into DONE_LABEL
 
     // DONE_LABEL is a hot target - we'd really like to place it at the
@@ -2245,7 +2247,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
     bind  (Stacked);
     movptr(tmpReg, Address (boxReg, 0));      // re-fetch
     if (os::is_MP()) { lock(); }
-    cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
 
     if (EmitSync & 65536) {
        bind (CheckSucc);
@@ -3163,8 +3165,37 @@ void MacroAssembler::fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegi
   }
 }
 
+// dst = c = a * b + c
+void MacroAssembler::vfmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231pd(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
+// dst = c = a * b + c
+void MacroAssembler::vfmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231ps(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
+// dst = c = a * b + c
+void MacroAssembler::vfmad(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231pd(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
+
+// dst = c = a * b + c
+void MacroAssembler::vfmaf(XMMRegister dst, XMMRegister a, Address b, XMMRegister c, int vector_len) {
+  Assembler::vfmadd231ps(c, a, b, vector_len);
+  if (dst != c) {
+    vmovdqu(dst, c);
+  }
+}
 
 void MacroAssembler::incrementl(AddressLiteral dst) {
   if (reachable(dst)) {
@@ -3672,6 +3703,7 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) 
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
 
+  vzeroupper();
 }
 
 void MacroAssembler::restore_rax(Register tmp) {
@@ -3714,6 +3746,7 @@ void MacroAssembler::set_last_Java_frame(Register java_thread,
                                          Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc) {
+  vzeroupper();
   // determine java_thread register
   if (!java_thread->is_valid()) {
     java_thread = rdi;
@@ -6552,10 +6585,8 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
   }
-  if (VM_Version::supports_avx()) {
-    // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
-    vzeroupper();
-  }
+  // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
+  vzeroupper();
 
 #ifndef _LP64
   // Either restore the x87 floating pointer control word after returning

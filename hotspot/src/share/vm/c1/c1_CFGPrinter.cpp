@@ -32,85 +32,40 @@
 
 #ifndef PRODUCT
 
-
-class CFGPrinterOutput : public CHeapObj<mtCompiler> {
- private:
-  outputStream* _output;
-
-  Compilation*  _compilation;
-  bool _do_print_HIR;
-  bool _do_print_LIR;
-
-  class PrintBlockClosure: public BlockClosure {
-    void block_do(BlockBegin* block) { if (block != NULL) CFGPrinter::output()->print_block(block); }
-  };
-
-
-  outputStream* output() { assert(_output != NULL, ""); return _output; }
-
-  void inc_indent();
-  void dec_indent();
-  void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void print_begin(const char* tag);
-  void print_end(const char* tag);
-
-  char* method_name(ciMethod* method, bool short_name = false);
-
- public:
-  CFGPrinterOutput();
-
-  void set_compilation(Compilation* compilation) { _compilation = compilation; }
-  void set_print_flags(bool do_print_HIR, bool do_print_LIR) { _do_print_HIR = do_print_HIR; _do_print_LIR = do_print_LIR; }
-
-  void print_compilation();
-  void print_intervals(IntervalList* intervals, const char* name);
-
-  void print_state(BlockBegin* block);
-  void print_operand(Value instr);
-  void print_HIR(Value instr);
-  void print_HIR(BlockBegin* block);
-  void print_LIR(BlockBegin* block);
-  void print_block(BlockBegin* block);
-  void print_cfg(BlockList* blocks, const char* name);
-  void print_cfg(IR* blocks, const char* name);
-};
-
-CFGPrinterOutput* CFGPrinter::_output = NULL;
-
-
-
-
 void CFGPrinter::print_compilation(Compilation* compilation) {
-  if (_output == NULL) {
-    _output = new CFGPrinterOutput();
-  }
-  output()->set_compilation(compilation);
-  output()->print_compilation();
+  CFGPrinterOutput* output = compilation->cfg_printer_output();
+  output->print_compilation();
 }
 
 void CFGPrinter::print_cfg(BlockList* blocks, const char* name, bool do_print_HIR, bool do_print_LIR) {
-  output()->set_print_flags(do_print_HIR, do_print_LIR);
-  output()->print_cfg(blocks, name);
+  CFGPrinterOutput* output = Compilation::current()->cfg_printer_output();
+  output->set_print_flags(do_print_HIR, do_print_LIR);
+  output->print_cfg(blocks, name);
 }
 
 void CFGPrinter::print_cfg(IR* blocks, const char* name, bool do_print_HIR, bool do_print_LIR) {
-  output()->set_print_flags(do_print_HIR, do_print_LIR);
-  output()->print_cfg(blocks, name);
+  CFGPrinterOutput* output = Compilation::current()->cfg_printer_output();
+  output->set_print_flags(do_print_HIR, do_print_LIR);
+  output->print_cfg(blocks, name);
 }
-
 
 void CFGPrinter::print_intervals(IntervalList* intervals, const char* name) {
-  output()->print_intervals(intervals, name);
+  CFGPrinterOutput* output = Compilation::current()->cfg_printer_output();
+  output->print_intervals(intervals, name);
 }
 
 
-
-CFGPrinterOutput::CFGPrinterOutput()
- : _output(new(ResourceObj::C_HEAP, mtCompiler) fileStream("output.cfg"))
+CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
+ : _output(NULL),
+   _compilation(compilation),
+   _do_print_HIR(false),
+   _do_print_LIR(false)
 {
+  char file_name[O_BUFLEN];
+  jio_snprintf(file_name, sizeof(file_name), "output_tid" UINTX_FORMAT "_pid%u.cfg",
+               os::current_thread_id(), os::current_process_id());
+  _output = new(ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, "at");
 }
-
-
 
 void CFGPrinterOutput::inc_indent() {
   output()->inc();

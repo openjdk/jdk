@@ -47,6 +47,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/unsafe.hpp"
@@ -238,8 +239,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_notify(vmIntrinsics::ID id);
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
-  int classify_unsafe_addr(Node* &base, Node* &offset);
-  Node* make_unsafe_address(Node* base, Node* offset);
+  int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
+  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
   // Helper for inline_unsafe_access.
   // Generates the guards that check whether the result of
   // Unsafe.getObject should be recorded in an SATB log buffer.
@@ -347,7 +348,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     // methods access VM-internal data.
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, m->get_Method());
-    is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
+    is_available = compiler != NULL && compiler->is_intrinsic_supported(mh, is_virtual) &&
                    !C->directive()->is_intrinsic_disabled(mh) &&
                    !vmIntrinsics::is_disabled_by_flags(mh);
 
@@ -388,8 +389,11 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   // Try to inline the intrinsic.
   if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
+    const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
+                                          : "(intrinsic)";
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -405,22 +409,30 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
-  if (C->print_intrinsics() || C->print_inlining()) {
-    if (jvms->has_method()) {
-      // Not a root compile.
-      const char* msg;
-      if (callee->intrinsic_candidate()) {
-        msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
-      } else {
-        msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
-                           : "failed to inline (intrinsic), method not annotated";
-      }
-      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+  if (jvms->has_method()) {
+    // Not a root compile.
+    const char* msg;
+    if (callee->intrinsic_candidate()) {
+      msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
     } else {
-      // Root compile
-      tty->print("Did not generate intrinsic %s%s at bci:%d in",
-               vmIntrinsics::name_at(intrinsic_id()),
-               (is_virtual() ? " (virtual)" : ""), bci);
+      msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
+                         : "failed to inline (intrinsic), method not annotated";
+    }
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+    }
+  } else {
+    // Root compile
+    ResourceMark rm;
+    stringStream msg_stream;
+    msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
+                     vmIntrinsics::name_at(intrinsic_id()),
+                     is_virtual() ? " (virtual)" : "", bci);
+    const char *msg = msg_stream.as_string();
+    log_debug(jit, inlining)("%s", msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      tty->print("%s", msg);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
@@ -446,8 +458,11 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
 
   Node* slow_ctl = kit.try_to_predicate(predicate);
   if (!kit.failing()) {
+    const char *inline_msg = is_virtual() ? "(intrinsic, virtual, predicate)"
+                                          : "(intrinsic, predicate)";
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual, predicate)" : "(intrinsic, predicate)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -460,16 +475,24 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   }
 
   // The intrinsic bailed out
-  if (C->print_intrinsics() || C->print_inlining()) {
-    if (jvms->has_method()) {
-      // Not a root compile.
-      const char* msg = "failed to generate predicate for intrinsic";
+  if (jvms->has_method()) {
+    // Not a root compile.
+    const char* msg = "failed to generate predicate for intrinsic";
+    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
-    } else {
-      // Root compile
-      C->print_inlining_stream()->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
-                                        vmIntrinsics::name_at(intrinsic_id()),
-                                        (is_virtual() ? " (virtual)" : ""), bci);
+    }
+  } else {
+    // Root compile
+    ResourceMark rm;
+    stringStream msg_stream;
+    msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
+                     vmIntrinsics::name_at(intrinsic_id()),
+                     is_virtual() ? " (virtual)" : "", bci);
+    const char *msg = msg_stream.as_string();
+    log_debug(jit, inlining)("%s", msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      C->print_inlining_stream()->print("%s", msg);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
@@ -2050,7 +2073,7 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
 }
 
 inline int
-LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
+LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type) {
   const TypePtr* base_type = TypePtr::NULL_PTR;
   if (base != NULL)  base_type = _gvn.type(base)->isa_ptr();
   if (base_type == NULL) {
@@ -2065,7 +2088,7 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
     return Type::RawPtr;
   } else if (base_type->isa_oopptr()) {
     // Base is never null => always a heap address.
-    if (base_type->ptr() == TypePtr::NotNull) {
+    if (!TypePtr::NULL_PTR->higher_equal(base_type)) {
       return Type::OopPtr;
     }
     // Offset is small => always a heap address.
@@ -2074,6 +2097,10 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
         base_type->offset() == 0 &&     // (should always be?)
         offset_type->_lo >= 0 &&
         !MacroAssembler::needs_explicit_null_check(offset_type->_hi)) {
+      return Type::OopPtr;
+    } else if (type == T_OBJECT) {
+      // off heap access to an oop doesn't make any sense. Has to be on
+      // heap.
       return Type::OopPtr;
     }
     // Otherwise, it might either be oop+off or NULL+addr.
@@ -2084,11 +2111,43 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
   }
 }
 
-inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
-  int kind = classify_unsafe_addr(base, offset);
+inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type, bool can_cast) {
+  Node* uncasted_base = base;
+  int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
-    return basic_plus_adr(top(), base, offset);
+    return basic_plus_adr(top(), uncasted_base, offset);
+  } else if (kind == Type::AnyPtr) {
+    assert(base == uncasted_base, "unexpected base change");
+    if (can_cast) {
+      if (!_gvn.type(base)->speculative_maybe_null() &&
+          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+        // According to profiling, this access is always on
+        // heap. Casting the base to not null and thus avoiding membars
+        // around the access should allow better optimizations
+        Node* null_ctl = top();
+        base = null_check_oop(base, &null_ctl, true, true, true);
+        assert(null_ctl->is_top(), "no null control here");
+        return basic_plus_adr(base, offset);
+      } else if (_gvn.type(base)->speculative_always_null() &&
+                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+        // According to profiling, this access is always off
+        // heap.
+        base = null_assert(base);
+        Node* raw_base = _gvn.transform(new CastX2PNode(offset));
+        offset = MakeConX(0);
+        return basic_plus_adr(top(), raw_base, offset);
+      }
+    }
+    // We don't know if it's an on heap or off heap access. Fall back
+    // to raw memory access.
+    Node* raw = _gvn.transform(new CheckCastPPNode(control(), base, TypeRawPtr::BOTTOM));
+    return basic_plus_adr(top(), raw, offset);
   } else {
+    assert(base == uncasted_base, "unexpected base change");
+    // We know it's an on heap access so base can't be null
+    if (TypePtr::NULL_PTR->higher_equal(_gvn.type(base))) {
+      base = must_be_not_null(base, true);
+    }
     return basic_plus_adr(base, offset);
   }
 }
@@ -2320,7 +2379,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset);
+  adr = make_unsafe_address(base, offset, type, kind == Relaxed);
+
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
   } else if (type == T_OBJECT) {
@@ -2378,7 +2438,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   bool need_mem_bar = false;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched && !adr_type->isa_aryptr();
+          need_mem_bar = (mismatched && !adr_type->isa_aryptr()) || can_access_non_heap;
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -2482,7 +2542,22 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     if (p == NULL) {
       // To be valid, unsafe loads may depend on other conditions than
       // the one that guards them: pin the Load node
-      p = make_load(control(), adr, value_type, type, adr_type, mo, LoadNode::Pinned, requires_atomic_access, unaligned, mismatched);
+      LoadNode::ControlDependency dep = LoadNode::Pinned;
+      Node* ctrl = control();
+      if (adr_type->isa_instptr()) {
+        assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
+        intptr_t offset = Type::OffsetBot;
+        AddPNode::Ideal_base_and_offset(adr, &_gvn, offset);
+        if (offset >= 0) {
+          int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->klass()->layout_helper());
+          if (offset < s) {
+            // Guaranteed to be a valid access, no need to pin it
+            dep = LoadNode::DependsOnlyOnTest;
+            ctrl = NULL;
+          }
+        }
+      }
+      p = make_load(ctrl, adr, value_type, type, adr_type, mo, dep, requires_atomic_access, unaligned, mismatched);
       // load value
       switch (type) {
       case T_BOOLEAN:
@@ -2731,7 +2806,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
-  Node* adr = make_unsafe_address(base, offset);
+  Node* adr = make_unsafe_address(base, offset, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);

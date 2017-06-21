@@ -24,12 +24,12 @@ package org.graalvm.compiler.nodes.virtual;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
+import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,26 +39,32 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.AbstractNewObjectNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
+import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.word.LocationIdentity;
 
 // @formatter:off
 @NodeInfo(nameTemplate = "Alloc {i#virtualObjects}",
-          allowedUsageTypes = Extension,
+          allowedUsageTypes = {Extension, Memory},
           cycles = CYCLES_UNKNOWN,
           cyclesRationale = "We don't know statically how many, and which, allocations are done.",
           size = SIZE_UNKNOWN,
           sizeRationale = "We don't know statically how much code for which allocations has to be generated."
 )
 // @formatter:on
-public final class CommitAllocationNode extends FixedWithNextNode implements VirtualizableAllocation, Lowerable, Simplifiable {
+public final class CommitAllocationNode extends FixedWithNextNode implements VirtualizableAllocation, Lowerable, Simplifiable, MemoryCheckpoint.Single {
 
     public static final NodeClass<CommitAllocationNode> TYPE = NodeClass.create(CommitAllocationNode.class);
 
@@ -109,6 +115,11 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
             }
         }
         tool.getLowerer().lower(this, tool);
+    }
+
+    @Override
+    public LocationIdentity getLocationIdentity() {
+        return locks.isEmpty() ? LocationIdentity.init() : LocationIdentity.any();
     }
 
     @Override
@@ -163,8 +174,7 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
     public void simplify(SimplifierTool tool) {
         boolean[] used = new boolean[virtualObjects.size()];
         int usedCount = 0;
-        for (Node usage : usages()) {
-            AllocatedObjectNode addObject = (AllocatedObjectNode) usage;
+        for (AllocatedObjectNode addObject : usages().filter(AllocatedObjectNode.class)) {
             int index = virtualObjects.indexOf(addObject.getVirtualObject());
             assert !used[index];
             used[index] = true;
@@ -229,23 +239,27 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
         }
     }
 
-    /**
-     * For all the virtual object nodes that depends on commit allocation, this method maps the node
-     * with its values. For example, a commit allocation could depend on a {@link VirtualArrayNode}
-     * with many {@link ValueNode}s. The map will contain the corresponding {@link VirtualArrayNode}
-     * as a key with the array of {@link ValueNode}s.
-     */
-    public HashMap<VirtualObjectNode, Object[]> getVirtualObjectsArrays() {
-        HashMap<VirtualObjectNode, Object[]> arrayValues = new HashMap<>();
-        int pos = 0;
-        for (int i = 0; i < virtualObjects.size(); i++) {
-            VirtualObjectNode virtualObject = virtualObjects.get(i);
-            int entryCount = virtualObject.entryCount();
-            ValueNode[] array = values.subList(pos, pos + entryCount).toArray(new ValueNode[entryCount]);
-            arrayValues.put(virtualObject, array);
-            pos += entryCount;
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        List<VirtualObjectNode> v = getVirtualObjects();
+        int fieldWriteCount = 0;
+        for (int i = 0; i < v.size(); i++) {
+            fieldWriteCount += v.get(i).entryCount();
         }
-        return arrayValues;
+        int rawValueWrites = NodeCycles.compute(WriteNode.TYPE.cycles(), fieldWriteCount).value;
+        int rawValuesTlabBumps = AbstractNewObjectNode.TYPE.cycles().value;
+        return NodeCycles.compute(rawValueWrites + rawValuesTlabBumps);
     }
 
+    @Override
+    public NodeSize estimatedNodeSize() {
+        List<VirtualObjectNode> v = getVirtualObjects();
+        int fieldWriteCount = 0;
+        for (int i = 0; i < v.size(); i++) {
+            fieldWriteCount += v.get(i).entryCount();
+        }
+        int rawValueWrites = NodeSize.compute(WriteNode.TYPE.size(), fieldWriteCount).value;
+        int rawValuesTlabBumps = AbstractNewObjectNode.TYPE.size().value;
+        return NodeSize.compute(rawValueWrites + rawValuesTlabBumps);
+    }
 }

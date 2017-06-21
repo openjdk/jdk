@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
 // room for filler objects to pad out to the end of the region.
 
 class G1CollectedHeap;
+class G1CMBitMapRO;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;
@@ -70,32 +71,6 @@ class nmethod;
 
 // sentinel value for hrm_index
 #define G1_NO_HRM_INDEX ((uint) -1)
-
-// A dirty card to oop closure for heap regions. It
-// knows how to get the G1 heap and how to use the bitmap
-// in the concurrent marker used by G1 to filter remembered
-// sets.
-
-class HeapRegionDCTOC : public DirtyCardToOopClosure {
-private:
-  HeapRegion* _hr;
-  G1ParPushHeapRSClosure* _rs_scan;
-  G1CollectedHeap* _g1;
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-public:
-  HeapRegionDCTOC(G1CollectedHeap* g1,
-                  HeapRegion* hr,
-                  G1ParPushHeapRSClosure* cl,
-                  CardTableModRefBS::PrecisionStyle precision);
-};
 
 // The complicating factor is that BlockOffsetTable diverged
 // significantly, and we need functionality that is only in the G1 version.
@@ -121,7 +96,6 @@ public:
 class G1ContiguousSpace: public CompactibleSpace {
   friend class VMStructs;
   HeapWord* volatile _top;
-  HeapWord* volatile _scan_top;
  protected:
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
@@ -172,11 +146,9 @@ class G1ContiguousSpace: public CompactibleSpace {
   void mangle_unused_area() PRODUCT_RETURN;
   void mangle_unused_area_complete() PRODUCT_RETURN;
 
-  HeapWord* scan_top() const;
   void record_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
   uint get_gc_time_stamp() { return _gc_time_stamp; }
-  void record_retained_region();
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -248,6 +220,13 @@ class HeapRegion: public G1ContiguousSpace {
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
+  // Returns whether the given object address refers to a dead object, and either the
+  // size of the object (if live) or the size of the block (if dead) in size.
+  // May
+  // - only called with obj < top()
+  // - not called on humongous objects or archive regions
+  inline bool is_obj_dead_with_size(const oop obj, G1CMBitMapRO* prev_bitmap, size_t* size) const;
+
  protected:
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
@@ -311,10 +290,18 @@ class HeapRegion: public G1ContiguousSpace {
   // for the collection set.
   double _predicted_elapsed_time_ms;
 
-  // The predicted number of bytes to copy that was added to
-  // the total value for the collection set.
-  size_t _predicted_bytes_to_copy;
+  // Iterate over the references in a humongous objects and apply the given closure
+  // to them.
+  // Humongous objects are allocated directly in the old-gen. So we need special
+  // handling for concurrent processing encountering an in-progress allocation.
+  template <class Closure, bool is_gc_active>
+  inline bool do_oops_on_card_in_humongous(MemRegion mr,
+                                           Closure* cl,
+                                           G1CollectedHeap* g1h);
 
+  // Returns the block size of the given (dead, potentially having its class unloaded) object
+  // starting at p extending to at most the prev TAMS using the given mark bitmap.
+  inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMapRO* prev_bitmap) const;
  public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
@@ -360,6 +347,9 @@ class HeapRegion: public G1ContiguousSpace {
 
   // All allocated blocks are occupied by objects in a HeapRegion
   bool block_is_obj(const HeapWord* p) const;
+
+  // Returns whether the given object is dead based on TAMS and bitmap.
+  bool is_obj_dead(const oop obj, const G1CMBitMapRO* prev_bitmap) const;
 
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()
@@ -554,9 +544,7 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.
-  void note_self_forwarding_removal_end(bool during_initial_mark,
-                                        bool during_conc_mark,
-                                        size_t marked_bytes);
+  void note_self_forwarding_removal_end(size_t marked_bytes);
 
   // Returns "false" iff no object in the region was allocated when the
   // last mark phase ended.
@@ -658,20 +646,19 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Iterate over the objects overlapping part of a card, applying cl
   // to all references in the region.  This is a helper for
-  // G1RemSet::refine_card, and is tightly coupled with it.
-  // mr: the memory region covered by the card, trimmed to the
+  // G1RemSet::refine_card*, and is tightly coupled with them.
+  // mr is the memory region covered by the card, trimmed to the
   // allocated space for this region.  Must not be empty.
   // This region must be old or humongous.
   // Returns true if the designated objects were successfully
   // processed, false if an unparsable part of the heap was
   // encountered; that only happens when invoked concurrently with the
   // mutator.
-  bool oops_on_card_seq_iterate_careful(MemRegion mr,
-                                        FilterOutOfRegionClosure* cl);
+  template <bool is_gc_active, class Closure>
+  inline bool oops_on_card_seq_iterate_careful(MemRegion mr, Closure* cl);
 
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
-  size_t predicted_bytes_to_copy() const   { return _predicted_bytes_to_copy; }
 
   void set_recorded_rs_length(size_t rs_length) {
     _recorded_rs_length = rs_length;
@@ -679,10 +666,6 @@ class HeapRegion: public G1ContiguousSpace {
 
   void set_predicted_elapsed_time_ms(double ms) {
     _predicted_elapsed_time_ms = ms;
-  }
-
-  void set_predicted_bytes_to_copy(size_t bytes) {
-    _predicted_bytes_to_copy = bytes;
   }
 
   virtual CompactibleSpace* next_compaction_space() const;

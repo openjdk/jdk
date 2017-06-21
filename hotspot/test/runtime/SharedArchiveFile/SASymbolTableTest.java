@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test SASymbolTableTest
  * @summary Walk symbol table using SA, with and without CDS.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
@@ -37,6 +38,7 @@
 
 import java.util.Arrays;
 import java.util.List;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
@@ -55,26 +57,18 @@ public class SASymbolTableTest {
     static String jsaName = "./SASymbolTableTest.jsa";
     private static LingeredApp theApp = null;
 
+
     public static void main(String[] args) throws Exception {
         if (!Platform.shouldSAAttach()) {
             System.out.println("SA attach not expected to work - test skipped.");
             return;
         }
-        createArchive();
+
+        CDSTestUtils.createArchiveAndCheck();
         run(true);
         run(false);
     }
 
-    private static void createArchive()  throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + jsaName,
-            "-Xshare:dump");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
-    }
 
     private static void run(boolean useArchive) throws Exception {
         String flag = useArchive ? "auto" : "off";
@@ -101,17 +95,11 @@ public class SASymbolTableTest {
                     "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.tools=ALL-UNNAMED",
                     "SASymbolTableTestAgent",
                     Long.toString(pid));
-            OutputAnalyzer output = ProcessTools.executeProcess(tool);
-            System.out.println("STDOUT[");
-            System.out.println(output.getOutput());
+            OutputAnalyzer output = CDSTestUtils.executeAndLog(tool, "tool");
             if (output.getStdout().contains("connected too early")) {
                 System.out.println("SymbolTable not created by VM - test skipped");
                 return;
             }
-            System.out.println("]");
-            System.out.println("STDERR[");
-            System.out.print(output.getStderr());
-            System.out.println("]");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);

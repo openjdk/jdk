@@ -36,7 +36,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
-public class TypedNodeIteratorTest2 {
+public class TypedNodeIteratorTest2 extends GraphTest {
 
     @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     static class NodeA extends Node implements TestNodeInterface {
@@ -99,7 +99,7 @@ public class TypedNodeIteratorTest2 {
 
     @Test
     public void simpleSubclassTest() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new NodeB("b"));
         graph.add(new NodeD("d"));
 
@@ -109,7 +109,7 @@ public class TypedNodeIteratorTest2 {
 
     @Test
     public void addingNodeDuringIterationTest() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new NodeB("b1"));
         NodeD d1 = graph.add(new NodeD("d1"));
         StringBuilder sb = new StringBuilder();

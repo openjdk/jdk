@@ -23,9 +23,7 @@
 package org.graalvm.compiler.core.test.debug;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -42,9 +40,7 @@ import org.graalvm.compiler.debug.DebugValueFactory;
 import org.graalvm.compiler.debug.DebugVerifyHandler;
 import org.graalvm.compiler.debug.GraalDebugConfig;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsImpl;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsPrinter;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -127,13 +123,6 @@ public class MethodMetricsTestInterception02 extends MethodMetricsTest {
         });
     }
 
-    @Override
-    protected OverrideScope getOScope() {
-        Map<OptionValue<?>, Object> mapping = new HashMap<>();
-        mapping.put(MethodMetricsPrinter.Options.MethodMeterPrintAscii, true);
-        return OptionValue.override(mapping);
-    }
-
     @Test
     @Override
     public void test() throws Throwable {
@@ -151,13 +140,15 @@ public class MethodMetricsTestInterception02 extends MethodMetricsTest {
     DebugConfig getConfig() {
         List<DebugDumpHandler> dumpHandlers = new ArrayList<>();
         List<DebugVerifyHandler> verifyHandlers = new ArrayList<>();
+        OptionValues options = getInitialOptions();
         GraalDebugConfig debugConfig = new GraalDebugConfig(
-                        GraalDebugConfig.Options.Log.getValue(),
+                        options,
+                        GraalDebugConfig.Options.Log.getValue(options),
                         ""/* unscoped meter */,
-                        GraalDebugConfig.Options.TrackMemUse.getValue(),
+                        GraalDebugConfig.Options.TrackMemUse.getValue(options),
                         ""/* unscoped time */,
-                        GraalDebugConfig.Options.Dump.getValue(),
-                        GraalDebugConfig.Options.Verify.getValue(),
+                        GraalDebugConfig.Options.Dump.getValue(options),
+                        GraalDebugConfig.Options.Verify.getValue(options),
                         null /* no method filter */,
                         "" /* unscoped method metering */,
                         System.out, dumpHandlers, verifyHandlers);

@@ -126,6 +126,13 @@ public abstract class Stamp {
     }
 
     /**
+     * Tests whether this stamp represents all values of this kind.
+     */
+    public boolean isUnrestricted() {
+        return this.equals(this.unrestricted());
+    }
+
+    /**
      * If this stamp represents a single value, the methods returns this single value. It returns
      * null otherwise.
      *
@@ -138,6 +145,8 @@ public abstract class Stamp {
 
     /**
      * Read a value of this stamp from memory.
+     *
+     * @return the value read or null if the value can't be read for some reason.
      */
     public abstract Constant readConstant(MemoryAccessProvider provider, Constant base, long displacement);
 

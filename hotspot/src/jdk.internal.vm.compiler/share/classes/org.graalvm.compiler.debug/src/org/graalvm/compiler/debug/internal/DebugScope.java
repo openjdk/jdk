@@ -235,7 +235,7 @@ public final class DebugScope implements Debug.Scope {
     }
 
     public boolean isDumpEnabled(int dumpLevel) {
-        assert dumpLevel > 0;
+        assert dumpLevel >= 0;
         return currentDumpLevel >= dumpLevel;
     }
 
@@ -333,9 +333,8 @@ public final class DebugScope implements Debug.Scope {
         if (isDumpEnabled(dumpLevel)) {
             DebugConfig config = getConfig();
             if (config != null) {
-                String message = String.format(formatString, args);
                 for (DebugDumpHandler dumpHandler : config.dumpHandlers()) {
-                    dumpHandler.dump(object, message);
+                    dumpHandler.dump(object, formatString, args);
                 }
             }
         }
@@ -347,12 +346,11 @@ public final class DebugScope implements Debug.Scope {
     public static void forceDump(Object object, String format, Object... args) {
         DebugConfig config = getConfig();
         if (config != null) {
-            String message = String.format(format, args);
             for (DebugDumpHandler dumpHandler : config.dumpHandlers()) {
-                dumpHandler.dump(object, message);
+                dumpHandler.dump(object, format, args);
             }
         } else {
-            TTY.println("Forced dump ignored because debugging is disabled - use -Dgraal.Dump=xxx");
+            TTY.println("Forced dump ignored because debugging is disabled - use -Dgraal.ForceDebugEnable=true");
         }
     }
 
@@ -363,9 +361,8 @@ public final class DebugScope implements Debug.Scope {
         if (isVerifyEnabled()) {
             DebugConfig config = getConfig();
             if (config != null) {
-                String message = String.format(formatString, args);
                 for (DebugVerifyHandler handler : config.verifyHandlers()) {
-                    handler.verify(object, message);
+                    handler.verify(object, formatString, args);
                 }
             }
         }
@@ -403,21 +400,27 @@ public final class DebugScope implements Debug.Scope {
 
     public RuntimeException handle(Throwable e) {
         DebugScope lastClosed = lastClosedTL.get();
-        assert lastClosed.parent == this : "Debug.handle() used with no matching Debug.scope(...) or Debug.sandbox(...)";
-        if (e != lastExceptionThrownTL.get()) {
-            RuntimeException newException = null;
-            instanceTL.set(lastClosed);
-            try (DebugScope s = lastClosed) {
-                newException = s.interceptException(e);
+        try {
+            assert lastClosed.parent == this : "Debug.handle() used with no matching Debug.scope(...) or Debug.sandbox(...) " +
+                            "or an exception occurred while opening a scope";
+            if (e != lastExceptionThrownTL.get()) {
+                RuntimeException newException = null;
+                instanceTL.set(lastClosed);
+                try (DebugScope s = lastClosed) {
+                    newException = s.interceptException(e);
+                }
+                assert instanceTL.get() == this;
+                assert lastClosed == lastClosedTL.get();
+                if (newException == null) {
+                    lastExceptionThrownTL.set(e);
+                } else {
+                    lastExceptionThrownTL.set(newException);
+                    throw newException;
+                }
             }
-            assert instanceTL.get() == this;
-            assert lastClosed == lastClosedTL.get();
-            if (newException == null) {
-                lastExceptionThrownTL.set(e);
-            } else {
-                lastExceptionThrownTL.set(newException);
-                throw newException;
-            }
+        } catch (Throwable t) {
+            t.initCause(e);
+            throw t;
         }
         if (e instanceof Error) {
             throw (Error) e;
@@ -435,7 +438,7 @@ public final class DebugScope implements Debug.Scope {
             memUseTrackingEnabled = false;
             timeEnabled = false;
             verifyEnabled = false;
-            currentDumpLevel = 0;
+            currentDumpLevel = -1;
             methodMetricsEnabled = false;
             // Be pragmatic: provide a default log stream to prevent a crash if the stream is not
             // set while logging

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the Inl
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JNIGlobalHandle_lock;            // a lock on creating JNI global handles
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
-extern Mutex*   MemberNameTable_lock;            // a lock on the MemberNameTable updates
+extern Mutex*   ResolvedMethodTable_lock;        // a lock on the ResolvedMethodTable updates
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
@@ -57,6 +57,7 @@ extern Mutex*   MethodData_lock;                 // a lock on installation of me
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derived pointer table
+extern Monitor* CGCPhaseManager_lock;            // a lock to protect a concurrent GC's phase management
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute
 extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting for a vm_operation to terminate
 extern Monitor* Safepoint_lock;                  // a lock used by the safepoint abstraction
@@ -124,7 +125,7 @@ extern Monitor* Service_lock;                    // a lock used for service thre
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
 
-#ifdef INCLUDE_TRACE
+#if INCLUDE_TRACE
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations

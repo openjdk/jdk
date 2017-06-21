@@ -39,12 +39,12 @@ public class TestRTMAbortThresholdOption
     private static final String DEFAULT_VALUE = "1000";
 
     private TestRTMAbortThresholdOption() {
-        super(Boolean.TRUE::booleanValue, "RTMAbortThreshold", false, true,
+        super("RTMAbortThreshold", false, true,
                 TestRTMAbortThresholdOption.DEFAULT_VALUE,
                 "0", "42", "100", "10000");
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMAbortThresholdOption().test();
+        new TestRTMAbortThresholdOption().runTestCases();
     }
 }

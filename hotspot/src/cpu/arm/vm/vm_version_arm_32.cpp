@@ -256,7 +256,9 @@ void VM_Version::initialize() {
     }
   }
 
-  AllocatePrefetchDistance = 128;
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 128);
+  }
 
 #ifdef COMPILER2
   FLAG_SET_DEFAULT(UseFPUForSpilling, true);

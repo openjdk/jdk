@@ -36,9 +36,15 @@ public class NodeSourcePosition extends BytecodePosition {
      * The receiver of the method this frame refers to.
      */
     private final JavaConstant receiver;
+    private final int hashCode;
 
     public NodeSourcePosition(JavaConstant receiver, NodeSourcePosition caller, ResolvedJavaMethod method, int bci) {
         super(caller, method, bci);
+        if (caller == null) {
+            this.hashCode = 31 * bci + method.hashCode();
+        } else {
+            this.hashCode = caller.hashCode * 7 + 31 * bci + method.hashCode();
+        }
         this.receiver = receiver;
         assert receiver == null || method.getDeclaringClass().isInstance(receiver);
     }
@@ -50,12 +56,20 @@ public class NodeSourcePosition extends BytecodePosition {
         }
         if (obj != null && getClass() == obj.getClass()) {
             NodeSourcePosition that = (NodeSourcePosition) obj;
+            if (hashCode != that.hashCode) {
+                return false;
+            }
             if (this.getBCI() == that.getBCI() && Objects.equals(this.getMethod(), that.getMethod()) && Objects.equals(this.getCaller(), that.getCaller()) &&
                             Objects.equals(this.receiver, that.receiver)) {
                 return true;
             }
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
     }
 
     public JavaConstant getReceiver() {
