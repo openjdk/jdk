@@ -437,6 +437,7 @@ void before_exit(JavaThread* thread) {
   Thread* THREAD = thread;
   JVMCIRuntime::shutdown(THREAD);
   if (HAS_PENDING_EXCEPTION) {
+    HandleMark hm(THREAD);
     Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
     java_lang_Throwable::java_printStackTrace(exception, THREAD);

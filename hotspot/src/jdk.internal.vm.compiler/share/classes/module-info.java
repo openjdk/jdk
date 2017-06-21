@@ -39,6 +39,7 @@ module jdk.internal.vm.compiler {
     uses org.graalvm.compiler.debug.TTYStreamProvider;
     uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
+    uses org.graalvm.compiler.hotspot.HotSpotCodeCacheListener;
     uses org.graalvm.compiler.options.OptionValuesAccess;
     uses org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 
