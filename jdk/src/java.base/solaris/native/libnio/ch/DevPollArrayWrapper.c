@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "jlong.h"
 #include "sun_nio_ch_DevPollArrayWrapper.h"
-#include <sys/poll.h>
+#include <poll.h>
 #include <unistd.h>
 #include <sys/time.h>
 
