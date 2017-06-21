@@ -27,7 +27,7 @@
 
 /*
  * @test
- * @bug 4310381
+ * @bug 4310381 8075918
  * @summary Text in multi-row/col JTabbedPane tabs can be truncated/clipped
  * @author Charles Lee
    @run applet/manual=yesno bug4310381.html
