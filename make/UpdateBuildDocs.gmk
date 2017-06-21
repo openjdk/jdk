@@ -39,7 +39,7 @@ ifeq ($(PANDOC), )
   $(error Cannot continue)
 endif
 
-GLOBAL_SPECS_DEFAULT_CSS_FILE := $(JDK_TOPDIR)/make/data/docs-resources/specs/resources/jdk-default.css
+GLOBAL_SPECS_DEFAULT_CSS_FILE := $(JDK_TOPDIR)/make/data/docs-resources/resources/jdk-default.css
 
 ################################################################################
 
@@ -49,6 +49,7 @@ $(eval $(call SetupProcessMarkdown, building, \
   FILES := $(DOCS_DIR)/building.md, \
   DEST := $(DOCS_DIR), \
   CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+  OPTIONS := --toc, \
 ))
 TARGETS += $(building)
 
