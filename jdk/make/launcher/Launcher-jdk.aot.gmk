@@ -45,6 +45,7 @@ $(eval $(call SetupBuildLauncher, jaotc, \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         -XX:+UseAOT \
+        -XX:+CalculateClassFingerprint \
         -Djvmci.UseProfilingInformation=false \
         -Dgraal.UseExceptionProbability=false \
         -Djvmci.Compiler=graal \
