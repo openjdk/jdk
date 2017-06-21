@@ -621,15 +621,17 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
 
         if (tabPane.getTabComponentAt(tabIndex) == null) {
             String title = tabPane.getTitleAt(tabIndex);
+            String clippedTitle = title;
             Font font = ss.getStyle().getFont(ss);
             FontMetrics metrics = SwingUtilities2.getFontMetrics(tabPane, g, font);
             Icon icon = getIconForTab(tabIndex);
 
             layoutLabel(ss, tabPlacement, metrics, tabIndex, title, icon,
                     tabRect, iconRect, textRect, isSelected);
-
+            clippedTitle = SwingUtilities2.clipStringIfNecessary(null, metrics,
+                           title, textRect.width);
             paintText(ss, g, tabPlacement, font, metrics,
-                    tabIndex, title, textRect, isSelected);
+                    tabIndex, clippedTitle, textRect, isSelected);
 
             paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
         }
