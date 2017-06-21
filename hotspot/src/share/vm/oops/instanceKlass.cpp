@@ -1954,7 +1954,7 @@ bool InstanceKlass::supers_have_passed_fingerprint_checks() {
 bool InstanceKlass::should_store_fingerprint() {
 #if INCLUDE_AOT
   // We store the fingerprint into the InstanceKlass only in the following 2 cases:
-  if (EnableJVMCI && !UseJVMCICompiler) {
+  if (CalculateClassFingerprint) {
     // (1) We are running AOT to generate a shared library.
     return true;
   }

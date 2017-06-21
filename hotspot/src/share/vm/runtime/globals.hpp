@@ -3387,6 +3387,9 @@ public:
   diagnostic(bool, UseAOTStrictLoading, false,                              \
           "Exit the VM if any of the AOT libraries has invalid config")     \
                                                                             \
+  product(bool, CalculateClassFingerprint, false,                           \
+          "Calculate class fingerprint")                                    \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
