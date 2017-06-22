@@ -1239,17 +1239,11 @@ s.writeObject(this.parameterArray());
     // Support for resetting final fields while deserializing. Implement Holder
     // pattern to make the rarely needed offset calculation lazy.
     private static class OffsetHolder {
-        private static final long rtypeOffset, ptypesOffset;
-        static {
-            try {
-                rtypeOffset = UNSAFE.objectFieldOffset
-                    (MethodType.class.getDeclaredField("rtype"));
-                ptypesOffset = UNSAFE.objectFieldOffset
-                    (MethodType.class.getDeclaredField("ptypes"));
-            } catch (Exception ex) {
-                throw new Error(ex);
-            }
-        }
+        static final long rtypeOffset
+                = UNSAFE.objectFieldOffset(MethodType.class, "rtype");
+
+        static final long ptypesOffset
+                = UNSAFE.objectFieldOffset(MethodType.class, "ptypes");
     }
 
     /**

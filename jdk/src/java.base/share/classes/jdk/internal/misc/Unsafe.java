@@ -954,6 +954,25 @@ public final class Unsafe {
     }
 
     /**
+     * Reports the location of the field with a given name in the storage
+     * allocation of its class.
+     *
+     * @throws NullPointerException if any parameter is {@code null}.
+     * @throws InternalError if there is no field named {@code name} declared
+     *         in class {@code c}, i.e., if {@code c.getDeclaredField(name)}
+     *         would throw {@code java.lang.NoSuchFieldException}.
+     *
+     * @see #objectFieldOffset(Field)
+     */
+    public long objectFieldOffset(Class<?> c, String name) {
+        if (c == null || name == null) {
+            throw new NullPointerException();
+        }
+
+        return objectFieldOffset1(c, name);
+    }
+
+    /**
      * Reports the location of a given static field, in conjunction with {@link
      * #staticFieldBase}.
      * <p>Do not expect to perform any sort of arithmetic on this offset;
@@ -3685,6 +3704,7 @@ public final class Unsafe {
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
     private native void copySwapMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes, long elemSize);
     private native long objectFieldOffset0(Field f);
+    private native long objectFieldOffset1(Class<?> c, String name);
     private native long staticFieldOffset0(Field f);
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);

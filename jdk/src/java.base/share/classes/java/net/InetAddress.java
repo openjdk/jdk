@@ -1706,20 +1706,10 @@ class InetAddress implements java.io.Serializable {
         }
     }
 
-    private static final long FIELDS_OFFSET;
-    private static final jdk.internal.misc.Unsafe UNSAFE;
-
-    static {
-        try {
-            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                InetAddress.class.getDeclaredField("holder")
-            );
-            UNSAFE = unsafe;
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final jdk.internal.misc.Unsafe UNSAFE
+            = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final long FIELDS_OFFSET
+            = UNSAFE.objectFieldOffset(InetAddress.class, "holder");
 
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {

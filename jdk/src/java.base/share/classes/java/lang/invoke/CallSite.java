@@ -276,11 +276,9 @@ public class CallSite {
         if (offset > 0) {
             return offset;
         }
-        try {
-            offset = TARGET_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
-            assert(offset > 0);
-            return offset;
-        } catch (Exception ex) { throw newInternalError(ex); }
+        offset = TARGET_OFFSET = UNSAFE.objectFieldOffset(CallSite.class, "target");
+        assert(offset > 0);
+        return offset;
     }
 
     /*package-private*/

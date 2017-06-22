@@ -3307,15 +3307,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         private static final Unsafe U = Unsafe.getUnsafe();
-        private static final long LOCKSTATE;
-        static {
-            try {
-                LOCKSTATE = U.objectFieldOffset
-                    (TreeBin.class.getDeclaredField("lockState"));
-            } catch (ReflectiveOperationException e) {
-                throw new Error(e);
-            }
-        }
+        private static final long LOCKSTATE
+                = U.objectFieldOffset(TreeBin.class, "lockState");
     }
 
     /* ----------------Table Traversal -------------- */
@@ -6381,27 +6374,23 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private static final int ASHIFT;
 
     static {
-        try {
-            SIZECTL = U.objectFieldOffset
-                (ConcurrentHashMap.class.getDeclaredField("sizeCtl"));
-            TRANSFERINDEX = U.objectFieldOffset
-                (ConcurrentHashMap.class.getDeclaredField("transferIndex"));
-            BASECOUNT = U.objectFieldOffset
-                (ConcurrentHashMap.class.getDeclaredField("baseCount"));
-            CELLSBUSY = U.objectFieldOffset
-                (ConcurrentHashMap.class.getDeclaredField("cellsBusy"));
+        SIZECTL = U.objectFieldOffset
+            (ConcurrentHashMap.class, "sizeCtl");
+        TRANSFERINDEX = U.objectFieldOffset
+            (ConcurrentHashMap.class, "transferIndex");
+        BASECOUNT = U.objectFieldOffset
+            (ConcurrentHashMap.class, "baseCount");
+        CELLSBUSY = U.objectFieldOffset
+            (ConcurrentHashMap.class, "cellsBusy");
 
-            CELLVALUE = U.objectFieldOffset
-                (CounterCell.class.getDeclaredField("value"));
+        CELLVALUE = U.objectFieldOffset
+            (CounterCell.class, "value");
 
-            ABASE = U.arrayBaseOffset(Node[].class);
-            int scale = U.arrayIndexScale(Node[].class);
-            if ((scale & (scale - 1)) != 0)
-                throw new Error("array index scale not a power of two");
-            ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
+        ABASE = U.arrayBaseOffset(Node[].class);
+        int scale = U.arrayIndexScale(Node[].class);
+        if ((scale & (scale - 1)) != 0)
+            throw new Error("array index scale not a power of two");
+        ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773

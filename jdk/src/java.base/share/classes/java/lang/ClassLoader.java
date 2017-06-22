@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.AccessControlContext;
@@ -2876,12 +2875,7 @@ public abstract class ClassLoader {
         Unsafe unsafe = Unsafe.getUnsafe();
         Class<?> k = ClassLoader.class;
         long offset;
-        try {
-            Field f = k.getDeclaredField(name);
-            offset = unsafe.objectFieldOffset(f);
-        } catch (NoSuchFieldException e) {
-            throw new InternalError(e);
-        }
+        offset = unsafe.objectFieldOffset(k, name);
         return unsafe.compareAndSetObject(this, offset, null, obj);
     }
 }

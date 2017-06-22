@@ -135,17 +135,16 @@ public final class InnocuousThread extends Thread {
             Class<?> tk = Thread.class;
             Class<?> gk = ThreadGroup.class;
 
-            THREAD_LOCALS = UNSAFE.objectFieldOffset
-                    (tk.getDeclaredField("threadLocals"));
+            THREAD_LOCALS = UNSAFE.objectFieldOffset(tk, "threadLocals");
             INHERITABLE_THREAD_LOCALS = UNSAFE.objectFieldOffset
-                    (tk.getDeclaredField("inheritableThreadLocals"));
+                    (tk, "inheritableThreadLocals");
             INHERITEDACCESSCONTROLCONTEXT = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("inheritedAccessControlContext"));
+                (tk, "inheritedAccessControlContext");
             CONTEXTCLASSLOADER = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("contextClassLoader"));
+                (tk, "contextClassLoader");
 
-            long tg = UNSAFE.objectFieldOffset(tk.getDeclaredField("group"));
-            long gp = UNSAFE.objectFieldOffset(gk.getDeclaredField("parent"));
+            long tg = UNSAFE.objectFieldOffset(tk, "group");
+            long gp = UNSAFE.objectFieldOffset(gk, "parent");
             ThreadGroup group = (ThreadGroup)
                 UNSAFE.getObject(Thread.currentThread(), tg);
 
