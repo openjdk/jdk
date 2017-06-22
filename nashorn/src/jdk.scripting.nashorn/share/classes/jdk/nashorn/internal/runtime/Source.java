@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,9 +339,11 @@ public final class Source implements Loggable {
         protected void loadMeta() throws IOException {
             if (length == 0 && lastModified == 0) {
                 final URLConnection c = url.openConnection();
-                length = c.getContentLength();
-                lastModified = c.getLastModified();
-                debug("loaded metadata for ", url);
+                try (InputStream in = c.getInputStream()) {
+                    length = c.getContentLength();
+                    lastModified = c.getLastModified();
+                    debug("loaded metadata for ", url);
+                }
             }
         }
     }
