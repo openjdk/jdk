@@ -54,6 +54,7 @@ import java.beans.PropertyChangeEvent;
 public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     private Handler handler = new Handler();
     private SynthStyle style;
+    private boolean updateKBAction = true;
 
     /**
      * Creates a UI for a JTextField.
@@ -65,7 +66,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
         return new SynthTextFieldUI();
     }
 
-    private void updateStyle(JTextComponent comp) {
+    private void updateStyle(JTextComponent comp, boolean updateKBAction) {
         SynthContext context = getContext(comp, ENABLED);
         SynthStyle oldStyle = style;
 
@@ -74,7 +75,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
         if (style != oldStyle) {
             SynthTextFieldUI.updateStyle(comp, context, getPropertyPrefix());
 
-            if (oldStyle != null) {
+            if (oldStyle != null && updateKBAction) {
                 uninstallKeyboardActions();
                 installKeyboardActions();
             }
@@ -232,8 +233,16 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
      */
     @Override
     protected void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals("keymap")) {
+            if (evt.getNewValue() != null)
+            {
+                updateKBAction = false;
+            } else {
+                updateKBAction = true;
+            }
+        }
         if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JTextComponent)evt.getSource());
+            updateStyle((JTextComponent)evt.getSource(), updateKBAction);
         }
         super.propertyChange(evt);
     }
@@ -245,7 +254,7 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
     protected void installDefaults() {
         // Installs the text cursor on the component
         super.installDefaults();
-        updateStyle(getComponent());
+        updateStyle(getComponent(), true);
         getComponent().addFocusListener(handler);
     }
 

@@ -55,7 +55,7 @@ import java.beans.PropertyChangeEvent;
 public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     private Handler handler = new Handler();
     private SynthStyle style;
-
+    private boolean updateKBAction = true;
     /**
      * Creates a UI object for a JTextArea.
      *
@@ -73,7 +73,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     protected void installDefaults() {
         // Installs the text cursor on the component
         super.installDefaults();
-        updateStyle(getComponent());
+        updateStyle(getComponent(), true);
         getComponent().addFocusListener(handler);
     }
 
@@ -92,7 +92,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
         super.uninstallDefaults();
     }
 
-    private void updateStyle(JTextComponent comp) {
+    private void updateStyle(JTextComponent comp, boolean updateKBAction) {
         SynthContext context = getContext(comp, ENABLED);
         SynthStyle oldStyle = style;
 
@@ -101,7 +101,7 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
         if (style != oldStyle) {
             SynthTextFieldUI.updateStyle(comp, context, getPropertyPrefix());
 
-            if (oldStyle != null) {
+            if (oldStyle != null && updateKBAction) {
                 uninstallKeyboardActions();
                 installKeyboardActions();
             }
@@ -184,8 +184,16 @@ public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
      */
     @Override
     protected void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals("keymap")) {
+            if (evt.getNewValue() != null)
+            {
+                updateKBAction = false;
+            } else {
+                updateKBAction = true;
+            }
+        }
         if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JTextComponent)evt.getSource());
+            updateStyle((JTextComponent)evt.getSource(), updateKBAction);
         }
         super.propertyChange(evt);
     }
