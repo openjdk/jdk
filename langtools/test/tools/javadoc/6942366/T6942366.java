@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 6942366
  * @summary javadoc no longer inherits doc from sourcepath
  * @modules jdk.javadoc
- * @build p.Base Test
+ * @library /tools/javadoc/lib
+ * @build p.Base Test ToyDoclet
  * @run main T6942366
  */
 
@@ -61,9 +62,8 @@ public class T6942366 {
         testDir.mkdirs();
 
         List<String> args = new ArrayList<String>();
-        //args.add("-verbose");
-        args.add("-d");
-        args.add(testDir.getPath());
+        args.add("-doclet");
+        args.add("ToyDoclet");
         if (useSourcePath) {
             args.add("-sourcepath");
             args.add(testSrc.getPath());
@@ -78,9 +78,15 @@ public class T6942366 {
         }
 
         args.add(new File(testSrc, "Test.java").getPath());
-        System.out.println("javadoc: " + args);
+        System.out.println("ToyDoclet: " + args);
 
-        int rc = com.sun.tools.javadoc.Main.execute(args.toArray(new String[args.size()]));
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+
+        int rc = com.sun.tools.javadoc.Main.execute("ToyDoclet", pw, pw, pw,
+                "ToyDoclet", getClass().getClassLoader(),
+                args.toArray(new String[args.size()]));
+
         if (rc != 0)
             throw new Exception("unexpected exit from javadoc, rc=" + rc);
 
@@ -94,7 +100,7 @@ public class T6942366 {
 
         String s = "javadoc-for-Base.m";
         boolean expect = useSourcePath;
-        boolean found = contains(new File(testDir, "Test.html"), s);
+        boolean found = sw.toString().contains(s);
         if (found) {
             if (expect)
                 System.out.println("javadoc content \"" + s + "\" found, as expected");
