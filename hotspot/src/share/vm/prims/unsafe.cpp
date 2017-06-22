@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jni.h"
@@ -583,7 +584,30 @@ UNSAFE_LEAF(jint, Unsafe_PageSize()) {
   return os::vm_page_size();
 } UNSAFE_END
 
-static jint find_field_offset(jobject field, int must_be_static, TRAPS) {
+static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
+  assert(clazz != NULL, "clazz must not be NULL");
+  assert(name != NULL, "name must not be NULL");
+
+  ResourceMark rm(THREAD);
+  char *utf_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
+
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+
+  jint offset = -1;
+  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
+    Symbol *name = fs.name();
+    if (name->equals(utf_name)) {
+      offset = fs.offset();
+      break;
+    }
+  }
+  if (offset < 0) {
+    THROW_0(vmSymbols::java_lang_InternalError());
+  }
+  return field_offset_from_byte_offset(offset);
+}
+
+static jlong find_field_offset(jobject field, int must_be_static, TRAPS) {
   assert(field != NULL, "field must not be NULL");
 
   oop reflected   = JNIHandles::resolve_non_null(field);
@@ -605,6 +629,10 @@ static jint find_field_offset(jobject field, int must_be_static, TRAPS) {
 
 UNSAFE_ENTRY(jlong, Unsafe_ObjectFieldOffset0(JNIEnv *env, jobject unsafe, jobject field)) {
   return find_field_offset(field, 0, THREAD);
+} UNSAFE_END
+
+UNSAFE_ENTRY(jlong, Unsafe_ObjectFieldOffset1(JNIEnv *env, jobject unsafe, jclass c, jstring name)) {
+  return find_field_offset(c, name, THREAD);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_StaticFieldOffset0(JNIEnv *env, jobject unsafe, jobject field)) {
@@ -712,14 +740,10 @@ UNSAFE_ENTRY(jint, Unsafe_ArrayIndexScale0(JNIEnv *env, jobject unsafe, jclass c
 
 
 static inline void throw_new(JNIEnv *env, const char *ename) {
-  char buf[100];
-
-  jio_snprintf(buf, 100, "%s%s", "java/lang/", ename);
-
-  jclass cls = env->FindClass(buf);
+  jclass cls = env->FindClass(ename);
   if (env->ExceptionCheck()) {
     env->ExceptionClear();
-    tty->print_cr("Unsafe: cannot throw %s because FindClass has failed", buf);
+    tty->print_cr("Unsafe: cannot throw %s because FindClass has failed", ename);
     return;
   }
 
@@ -743,7 +767,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
 
   body = NEW_C_HEAP_ARRAY(jbyte, length, mtInternal);
   if (body == NULL) {
-    throw_new(env, "OutOfMemoryError");
+    throw_new(env, "java/lang/OutOfMemoryError");
     return 0;
   }
 
@@ -759,7 +783,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
     if (len >= sizeof(buf)) {
       utfName = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
       if (utfName == NULL) {
-        throw_new(env, "OutOfMemoryError");
+        throw_new(env, "java/lang/OutOfMemoryError");
         goto free_body;
       }
     } else {
@@ -1182,6 +1206,7 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "freeMemory0",        CC "(" ADR ")V",           FN_PTR(Unsafe_FreeMemory0)},
 
     {CC "objectFieldOffset0", CC "(" FLD ")J",           FN_PTR(Unsafe_ObjectFieldOffset0)},
+    {CC "objectFieldOffset1", CC "(" CLS LANG "String;)J", FN_PTR(Unsafe_ObjectFieldOffset1)},
     {CC "staticFieldOffset0", CC "(" FLD ")J",           FN_PTR(Unsafe_StaticFieldOffset0)},
     {CC "staticFieldBase0",   CC "(" FLD ")" OBJ,        FN_PTR(Unsafe_StaticFieldBase0)},
     {CC "ensureClassInitialized0", CC "(" CLS ")V",      FN_PTR(Unsafe_EnsureClassInitialized0)},
