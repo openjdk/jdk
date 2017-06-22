@@ -33,6 +33,10 @@
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1_globals.hpp"
+#endif
+
 class CommandLineFlagConstraint_bool : public CommandLineFlagConstraint {
   CommandLineFlagConstraintFunc_bool _constraint;
   const bool* _ptr;

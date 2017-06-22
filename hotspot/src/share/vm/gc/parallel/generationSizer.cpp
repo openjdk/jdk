@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/shared/collectorPolicy.hpp"
+#include "runtime/globals_extension.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void GenerationSizer::initialize_alignments() {
   _space_alignment = _gen_alignment = default_gen_alignment();
