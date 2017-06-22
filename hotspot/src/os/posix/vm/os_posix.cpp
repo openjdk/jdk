@@ -760,6 +760,7 @@ bool os::Posix::is_valid_signal(int sig) {
 #else
   // Use sigaddset to check for signal validity.
   sigset_t set;
+  sigemptyset(&set);
   if (sigaddset(&set, sig) == -1 && errno == EINVAL) {
     return false;
   }
