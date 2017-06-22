@@ -23,8 +23,11 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectorPolicy.hpp"
-#include "unittest.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "unittest.hpp"
 
 class TestGenCollectorPolicy {
  public:

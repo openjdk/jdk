@@ -89,6 +89,8 @@ class G1Allocator;
 class G1ArchiveAllocator;
 class G1HeapVerifier;
 class G1HeapSizingPolicy;
+class G1HeapSummary;
+class G1EvacSummary;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
