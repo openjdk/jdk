@@ -445,7 +445,7 @@ public class Main implements LogPrinter {
             if (!TieredAOT.hasBeenSet(graalOptions)) {
                 graalOptions = new OptionValues(graalOptions, TieredAOT, options.tiered);
             }
-            graalOptions = new OptionValues(HotSpotGraalOptionValues.HOTSPOT_OPTIONS, GeneratePIC, true, ImmutableCode, true);
+            graalOptions = new OptionValues(graalOptions, GeneratePIC, true, ImmutableCode, true);
             GraalJVMCICompiler graalCompiler = HotSpotGraalCompilerFactory.createCompiler(JVMCI.getRuntime(), graalOptions, CompilerConfigurationFactory.selectFactory(null, graalOptions));
             HotSpotGraalRuntimeProvider runtime = (HotSpotGraalRuntimeProvider) graalCompiler.getGraalRuntime();
             HotSpotHostBackend backend = (HotSpotHostBackend) runtime.getCapability(RuntimeProvider.class).getHostBackend();
