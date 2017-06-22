@@ -576,19 +576,10 @@ class Inet6Address extends InetAddress {
          new ObjectStreamField("ifname", String.class)
     };
 
-    private static final long FIELDS_OFFSET;
-    private static final jdk.internal.misc.Unsafe UNSAFE;
-
-    static {
-        try {
-            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                    Inet6Address.class.getDeclaredField("holder6"));
-            UNSAFE = unsafe;
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final jdk.internal.misc.Unsafe UNSAFE
+            = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final long FIELDS_OFFSET = UNSAFE.objectFieldOffset(
+                Inet6Address.class, "holder6");
 
     /**
      * restore the state of this object from stream

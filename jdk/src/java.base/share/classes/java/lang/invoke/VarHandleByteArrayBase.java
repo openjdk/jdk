@@ -35,32 +35,20 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  */
 abstract class VarHandleByteArrayBase {
     // Buffer.address
-    static final long BUFFER_ADDRESS;
+    static final long BUFFER_ADDRESS
+            = UNSAFE.objectFieldOffset(Buffer.class, "address");
+
     // Buffer.limit
-    static final long BUFFER_LIMIT;
+    static final long BUFFER_LIMIT
+            = UNSAFE.objectFieldOffset(Buffer.class, "limit");
+
     // ByteBuffer.hb
-    static final long BYTE_BUFFER_HB;
+    static final long BYTE_BUFFER_HB
+            = UNSAFE.objectFieldOffset(ByteBuffer.class, "hb");
+
     // ByteBuffer.isReadOnly
-    static final long BYTE_BUFFER_IS_READ_ONLY;
-
-    static {
-        try {
-            BUFFER_ADDRESS = UNSAFE.objectFieldOffset(
-                    Buffer.class.getDeclaredField("address"));
-
-            BUFFER_LIMIT = UNSAFE.objectFieldOffset(
-                    Buffer.class.getDeclaredField("limit"));
-
-            BYTE_BUFFER_HB = UNSAFE.objectFieldOffset(
-                    ByteBuffer.class.getDeclaredField("hb"));
-
-            BYTE_BUFFER_IS_READ_ONLY = UNSAFE.objectFieldOffset(
-                    ByteBuffer.class.getDeclaredField("isReadOnly"));
-        }
-        catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    static final long BYTE_BUFFER_IS_READ_ONLY
+            = UNSAFE.objectFieldOffset(ByteBuffer.class, "isReadOnly");
 
     static final boolean BE = UNSAFE.isBigEndian();
 

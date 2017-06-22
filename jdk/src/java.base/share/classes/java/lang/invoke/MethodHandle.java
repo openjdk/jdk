@@ -1587,12 +1587,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         }
     }
 
-    private static final long FORM_OFFSET;
-    static {
-        try {
-            FORM_OFFSET = UNSAFE.objectFieldOffset(MethodHandle.class.getDeclaredField("form"));
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
-        }
-    }
+    private static final long FORM_OFFSET
+            = UNSAFE.objectFieldOffset(MethodHandle.class, "form");
 }

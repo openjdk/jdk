@@ -2856,26 +2856,14 @@ public final class Class<T> implements java.io.Serializable,
         // and have to avoid calling it in the static initializer of the Class class...
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         // offset of Class.reflectionData instance field
-        private static final long reflectionDataOffset;
+        private static final long reflectionDataOffset
+                = unsafe.objectFieldOffset(Class.class, "reflectionData");
         // offset of Class.annotationType instance field
-        private static final long annotationTypeOffset;
+        private static final long annotationTypeOffset
+                = unsafe.objectFieldOffset(Class.class, "annotationType");
         // offset of Class.annotationData instance field
-        private static final long annotationDataOffset;
-
-        static {
-            Field[] fields = Class.class.getDeclaredFields0(false); // bypass caches
-            reflectionDataOffset = objectFieldOffset(fields, "reflectionData");
-            annotationTypeOffset = objectFieldOffset(fields, "annotationType");
-            annotationDataOffset = objectFieldOffset(fields, "annotationData");
-        }
-
-        private static long objectFieldOffset(Field[] fields, String fieldName) {
-            Field field = searchFields(fields, fieldName);
-            if (field == null) {
-                throw new Error("No " + fieldName + " field found in java.lang.Class");
-            }
-            return unsafe.objectFieldOffset(field);
-        }
+        private static final long annotationDataOffset
+                = unsafe.objectFieldOffset(Class.class, "annotationData");
 
         static <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,

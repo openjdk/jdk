@@ -2236,22 +2236,12 @@ public class File
         UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, fs.prefixLength(path));
     }
 
-    private static final long PATH_OFFSET;
-    private static final long PREFIX_LENGTH_OFFSET;
-    private static final jdk.internal.misc.Unsafe UNSAFE;
-    static {
-        try {
-            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            PATH_OFFSET = unsafe.objectFieldOffset(
-                    File.class.getDeclaredField("path"));
-            PREFIX_LENGTH_OFFSET = unsafe.objectFieldOffset(
-                    File.class.getDeclaredField("prefixLength"));
-            UNSAFE = unsafe;
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
-
+    private static final jdk.internal.misc.Unsafe UNSAFE
+            = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final long PATH_OFFSET
+            = UNSAFE.objectFieldOffset(File.class, "path");
+    private static final long PREFIX_LENGTH_OFFSET
+            = UNSAFE.objectFieldOffset(File.class, "prefixLength");
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = 301077366599181567L;
