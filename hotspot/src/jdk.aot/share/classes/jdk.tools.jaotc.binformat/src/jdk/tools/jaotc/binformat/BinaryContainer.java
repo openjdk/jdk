@@ -308,7 +308,6 @@ public class BinaryContainer implements SymbolTable {
                                    graalHotSpotVMConfig.useCompressedClassPointers,
                                    graalHotSpotVMConfig.compactFields,
                                    graalHotSpotVMConfig.useG1GC,
-                                   graalHotSpotVMConfig.useCMSGC,
                                    graalHotSpotVMConfig.useTLAB,
                                    graalHotSpotVMConfig.useBiasedLocking,
                                    TieredAOT.getValue(graalOptions),
