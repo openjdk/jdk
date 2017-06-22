@@ -47,6 +47,8 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
      */
     private Boolean localTrue = Boolean.TRUE;
 
+    private boolean updateKBAction = true;
+
     /**
      * Creates a new UI object for the given component.
      *
@@ -70,7 +72,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         if (clientProperty == null) {
             c.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, localTrue);
         }
-        updateStyle(getComponent());
+        updateStyle(getComponent(), true);
     }
 
     /**
@@ -106,13 +108,22 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
      */
     @Override
     protected void propertyChange(PropertyChangeEvent evt) {
+
+        if (evt.getPropertyName().equals("keymap")) {
+            if (evt.getNewValue() != null)
+            {
+                updateKBAction = false;
+            } else {
+                updateKBAction = true;
+            }
+        }
         if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JTextComponent)evt.getSource());
+            updateStyle((JTextComponent)evt.getSource(), updateKBAction);
         }
         super.propertyChange(evt);
     }
 
-    private void updateStyle(JTextComponent comp) {
+    private void updateStyle(JTextComponent comp, boolean updateKBAction) {
         SynthContext context = getContext(comp, ENABLED);
         SynthStyle oldStyle = style;
 
@@ -121,7 +132,7 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         if (style != oldStyle) {
             SynthTextFieldUI.updateStyle(comp, context, getPropertyPrefix());
 
-            if (oldStyle != null) {
+            if (oldStyle != null && updateKBAction) {
                 uninstallKeyboardActions();
                 installKeyboardActions();
             }
