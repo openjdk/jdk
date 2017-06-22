@@ -327,7 +327,7 @@ else # HAS_SPEC=true
 	$(call ReportBuildTimes)
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
-	$(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors.\n\n"
+	$(PRINTF) "Hint: See common/doc/building.html#troubleshooting for assistance.\n\n"
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
         endif
