@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logConfiguration.hpp"
+#include "prims/jvm.h"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -201,6 +202,46 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     }
   }
 #endif // ZERO
+}
+
+void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
+
+  // see if it's a valid frame
+  if (fr.pc()) {
+    st->print_cr("Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+    int count = 0;
+    while (count++ < StackPrintLimit) {
+      fr.print_on_error(st, buf, buf_size);
+      st->cr();
+      // Compiled code may use EBP register on x86 so it looks like
+      // non-walkable C frame. Use frame.sender() for java frames.
+      if (t && t->is_Java_thread()) {
+        // Catch very first native frame by using stack address.
+        // For JavaThread stack_base and stack_size should be set.
+        if (!t->on_local_stack((address)(fr.real_fp() + 1))) {
+          break;
+        }
+        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+          RegisterMap map((JavaThread*)t, false); // No update
+          fr = fr.sender(&map);
+        } else {
+          fr = os::get_sender_for_C_frame(&fr);
+        }
+      } else {
+        // is_first_C_frame() does only simple checks for frame pointer,
+        // it will pass if java compiled code has a pointer in EBP.
+        if (os::is_first_C_frame(&fr)) break;
+        fr = os::get_sender_for_C_frame(&fr);
+      }
+    }
+
+    if (count > StackPrintLimit) {
+      st->print_cr("...<more frames>...");
+    }
+
+    st->cr();
+  }
 }
 
 static void print_oom_reasons(outputStream* st) {

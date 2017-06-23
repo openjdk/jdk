@@ -941,7 +941,7 @@ public:
 
   void untested()                                { stop("untested"); }
 
-  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "");
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 

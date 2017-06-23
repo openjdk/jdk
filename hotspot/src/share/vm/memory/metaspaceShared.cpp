@@ -49,6 +49,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "prims/jvm.h"
 #include "runtime/timerTrace.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"

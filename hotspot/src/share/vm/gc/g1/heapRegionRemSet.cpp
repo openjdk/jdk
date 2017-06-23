@@ -35,6 +35,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 

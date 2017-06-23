@@ -35,6 +35,7 @@
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/copy.hpp"

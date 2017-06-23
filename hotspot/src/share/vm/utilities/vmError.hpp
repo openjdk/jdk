@@ -28,6 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Decoder;
+class frame;
 class VM_ReportJavaOutOfMemory;
 
 class VMError : public AllStatic {
@@ -98,6 +99,12 @@ class VMError : public AllStatic {
   // generate a stack trace
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
+
+  // public for use by the internal non-product debugger.
+  NOT_PRODUCT(public:)
+  static void print_native_stack(outputStream* st, frame fr, Thread* t,
+                                 char* buf, int buf_size);
+  NOT_PRODUCT(private:)
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);

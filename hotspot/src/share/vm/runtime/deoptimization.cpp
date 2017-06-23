@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/verifyOopClosure.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"

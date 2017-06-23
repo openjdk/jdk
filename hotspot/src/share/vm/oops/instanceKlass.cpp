@@ -57,6 +57,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.hpp"
