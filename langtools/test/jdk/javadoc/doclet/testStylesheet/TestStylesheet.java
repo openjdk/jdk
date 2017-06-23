@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
- *           8175218 8176452
+ *           8175218 8176452 8181215
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -183,7 +183,6 @@ public class TestStylesheet extends JavadocTester {
                 + "th.colFirst a:link, th.colFirst a:visited,\n"
                 + "th.colSecond a:link, th.colSecond a:visited,\n"
                 + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
-                + "td.colLast a:link, td.colLast a:visited,\n"
                 + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited {\n"
                 + "    font-weight:bold;\n"
                 + "}");
@@ -219,6 +218,15 @@ public class TestStylesheet extends JavadocTester {
                 "a[name]:hover {\n"
                 + "    text-decoration:none;\n"
                 + "    color:#353833;\n"
+                + "}",
+                "td.colFirst a:link, td.colFirst a:visited,\n"
+                + "td.colSecond a:link, td.colSecond a:visited,\n"
+                + "th.colFirst a:link, th.colFirst a:visited,\n"
+                + "th.colSecond a:link, th.colSecond a:visited,\n"
+                + "th.colConstructorName a:link, th.colConstructorName a:visited,\n"
+                + "td.colLast a:link, td.colLast a:visited,\n"
+                + ".constantValuesContainer td a:link, .constantValuesContainer td a:visited {\n"
+                + "    font-weight:bold;\n"
                 + "}");
     }
 }

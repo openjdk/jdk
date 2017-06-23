@@ -26,8 +26,12 @@
  * @bug 4244970
  * @summary Test to see if sealing violation is detected correctly
  * @library /test/lib
- * @build jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.process.OutputAnalyzer
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main CheckSealedTest
  */
 

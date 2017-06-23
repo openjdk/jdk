@@ -27,8 +27,12 @@
  * @summary URLConnection.connect() fails on JAR Entry it creates
  * file handler leak
  * @library /test/lib
- * @build jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.process.ProcessTools
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  *        Test
  * @run main/othervm TestDriver
  */

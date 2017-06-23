@@ -163,6 +163,7 @@ import java.util.Arrays;
  * @see          DecimalFormat
  * @see          MessageFormat
  * @author       Mark Davis
+ * @since 1.1
  */
 public class ChoiceFormat extends NumberFormat {
 

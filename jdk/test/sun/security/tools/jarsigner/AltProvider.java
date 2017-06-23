@@ -25,14 +25,24 @@
  * @test
  * @bug 4906940 8130302
  * @summary -providerPath, -providerClass, -addprovider, and -providerArg
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ * @run main AltProvider
  */
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import java.nio.file.*;
 

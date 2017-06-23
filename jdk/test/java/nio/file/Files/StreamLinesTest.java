@@ -25,6 +25,7 @@
  * @bug 8072773
  * @library /test/lib /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
+ *        jdk.test.lib.RandomFactory
  * @run testng/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
  *          testing the file-channel-based stream stream with supported

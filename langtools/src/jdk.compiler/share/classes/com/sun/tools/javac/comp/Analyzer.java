@@ -30,6 +30,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -246,7 +247,7 @@ public class Analyzer {
                     explicitArgs = explicitArgs.tail;
                 }
                 //exact match
-                log.warning(oldTree.clazz, "diamond.redundant.args");
+                log.warning(oldTree.clazz, Warnings.DiamondRedundantArgs);
             }
         }
     }
@@ -294,7 +295,7 @@ public class Analyzer {
         @Override
         void process (JCNewClass oldTree, JCLambda newTree, boolean hasErrors){
             if (!hasErrors) {
-                log.warning(oldTree.def, "potential.lambda.found");
+                log.warning(oldTree.def, Warnings.PotentialLambdaFound);
             }
         }
     }
@@ -322,7 +323,7 @@ public class Analyzer {
         void process (JCMethodInvocation oldTree, JCMethodInvocation newTree, boolean hasErrors){
             if (!hasErrors) {
                 //exact match
-                log.warning(oldTree, "method.redundant.typeargs");
+                log.warning(oldTree, Warnings.MethodRedundantTypeargs);
             }
         }
     }
@@ -335,12 +336,28 @@ public class Analyzer {
     };
 
     /**
-     * Analyze an AST node if needed.
+     * Create a copy of Env if needed.
      */
-    void analyzeIfNeeded(JCTree tree, Env<AttrContext> env) {
+    Env<AttrContext> copyEnvIfNeeded(JCTree tree, Env<AttrContext> env) {
         if (!analyzerModes.isEmpty() &&
                 !env.info.isSpeculative &&
                 TreeInfo.isStatement(tree)) {
+            Env<AttrContext> analyzeEnv =
+                    env.dup(env.tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+            analyzeEnv.info.returnResult = analyzeEnv.info.returnResult != null ?
+                    attr.new ResultInfo(analyzeEnv.info.returnResult.pkind,
+                                        analyzeEnv.info.returnResult.pt) : null;
+            return analyzeEnv;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Analyze an AST node if needed.
+     */
+    void analyzeIfNeeded(JCTree tree, Env<AttrContext> env) {
+        if (env != null) {
             JCStatement stmt = (JCStatement)tree;
             analyze(stmt, env);
         }

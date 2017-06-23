@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
 /**
@@ -50,7 +50,7 @@ public abstract class DocFileFactory {
      * @param configuration the configuration for this doclet
      * @return the factory associated with this configuration
      */
-    public static synchronized DocFileFactory getFactory(Configuration configuration) {
+    public static synchronized DocFileFactory getFactory(BaseConfiguration configuration) {
         DocFileFactory f = configuration.docFileFactory;
         if (f == null) {
             JavaFileManager fm = configuration.getFileManager();
@@ -64,9 +64,9 @@ public abstract class DocFileFactory {
         return f;
     }
 
-    protected Configuration configuration;
+    protected BaseConfiguration configuration;
 
-    protected DocFileFactory(Configuration configuration) {
+    protected DocFileFactory(BaseConfiguration configuration) {
         this.configuration = configuration;
     }
 

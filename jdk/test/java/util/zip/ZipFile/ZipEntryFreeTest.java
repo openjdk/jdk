@@ -25,6 +25,8 @@
  * @bug 6907252
  * @summary ZipFileInputStream Not Thread-Safe
  * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run main ZipEntryFreeTest
  */
 

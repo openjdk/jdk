@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class InconsistentDebugInfoException extends RuntimeException {
+
     private static final long serialVersionUID = 7964236415376861808L;
+
     public InconsistentDebugInfoException() {
         super();
     }

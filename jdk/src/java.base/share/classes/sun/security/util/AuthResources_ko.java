@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class AuthResources_ko extends java.util.ListResourceBundle {
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 
         // com.sun.security.auth.PolicyFile
-        {".error.parsing.", ": \uAD6C\uBB38 \uBD84\uC11D \uC624\uB958 "},
+        {".error.parsing.", ": \uAD6C\uBB38\uBD84\uC11D \uC624\uB958 "},
         {"COLON", ": "},
         {".error.adding.Permission.", ": \uAD8C\uD55C \uCD94\uAC00 \uC624\uB958 "},
         {"SPACE", " "},

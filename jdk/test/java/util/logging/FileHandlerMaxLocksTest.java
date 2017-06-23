@@ -29,6 +29,8 @@
  *  "logging.properties" file with default value of 100. This property can be
  *  overriden by specifying this property in the custom config file.
  * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @author rpatil
  * @run main/othervm FileHandlerMaxLocksTest
  */

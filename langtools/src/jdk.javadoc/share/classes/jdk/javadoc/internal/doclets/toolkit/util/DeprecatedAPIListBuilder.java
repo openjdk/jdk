@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Build list of all the deprecated packages, classes, constructors, fields and methods.
@@ -49,7 +49,7 @@ public class DeprecatedAPIListBuilder {
      * List of deprecated type Lists.
      */
     private final Map<DeprElementKind, SortedSet<Element>> deprecatedMap;
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Utils utils;
     public static enum DeprElementKind {
         REMOVAL,
@@ -72,7 +72,7 @@ public class DeprecatedAPIListBuilder {
      *
      * @param configuration the current configuration of the doclet
      */
-    public DeprecatedAPIListBuilder(Configuration configuration) {
+    public DeprecatedAPIListBuilder(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         deprecatedMap = new EnumMap<>(DeprElementKind.class);

@@ -25,6 +25,8 @@
  * @bug 4889870 4890033
  * @summary java -Xcheck:jni failing in net code on Solaris / [Datagram]Socket.getLocalAddress() failure
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main/othervm -Xcheck:jni CheckJNI
  */
 

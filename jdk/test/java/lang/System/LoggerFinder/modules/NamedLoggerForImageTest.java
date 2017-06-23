@@ -45,8 +45,8 @@ import static jdk.testlibrary.ProcessTools.executeCommand;
  *               patched system module, or Xbootclasspath
  *          This test does not require existence of java.logging module,
  *          but require jdk.compiler module
- * @library /lib/testlibrary
- * @build Base CompilerUtils jdk.testlibrary.*
+ * @library /lib/testlibrary /test/lib
+ * @build Base jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run main/othervm NamedLoggerForImageTest
  */
 

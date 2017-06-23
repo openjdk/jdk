@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main BitTwiddle
  * @bug     4495754 8078672
  * @summary Basic test for int bit twiddling (use -Dseed=X to set PRNG seed)

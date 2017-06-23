@@ -387,7 +387,7 @@ var getJibProfilesCommon = function (input, data) {
     // on such hardware.
     if (input.build_cpu == "sparcv9") {
        var cpu_brand = $EXEC("bash -c \"kstat -m cpu_info | grep brand | head -n1 | awk '{ print \$2 }'\"");
-       if (cpu_brand.trim().match('SPARC-.7')) {
+       if (cpu_brand.trim().match('SPARC-.[78]')) {
            boot_jdk_revision = "8u20";
            boot_jdk_subdirpart = "1.8.0_20";
        }
@@ -892,6 +892,16 @@ var getJibProfilesProfiles = function (input, common, data) {
                     (artifact.remote != null ? artifact.remote : artifact.local));
             }
         });
+
+    // The windows ri profile needs to add the freetype license file
+    profilesRiFreetype = {
+        "windows-x86-ri": {
+            configure_args: "--with-freetype-license="
+                + input.get("freetype", "install_path")
+                + "/freetype-2.7.1-v120-x86/freetype.md"
+        }
+    };
+    profiles = concatObjects(profiles, profilesRiFreetype);
 
     // Generate the missing platform attributes
     profiles = generatePlatformAttributes(profiles);

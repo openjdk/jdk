@@ -50,7 +50,9 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8170952
  * @library /lib/testlibrary /test/lib
- * @build jdk.testlibrary.JDKToolFinder
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.JDKToolFinder
  * @run testng CLICompatibility
  * @summary Basic test for compatibility of CLI options
  */

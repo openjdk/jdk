@@ -27,10 +27,11 @@
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with single thread
  * @author kshefov
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /lib/testlibrary /java/lang/invoke/common /test/lib
  * @modules java.base/java.lang.ref:open
  *          java.base/java.lang.invoke:open
  *          java.management
+ * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFCachingTestCase

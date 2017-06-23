@@ -65,7 +65,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename Name of the package index file to be generated.
      */
-    public ModulePackageIndexFrameWriter(ConfigurationImpl configuration, DocPath filename)  {
+    public ModulePackageIndexFrameWriter(HtmlConfiguration configuration, DocPath filename)  {
         super(configuration, filename);
     }
 
@@ -75,7 +75,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param mdle the module being documented
      */
-    public static void generate(ConfigurationImpl configuration, ModuleElement mdle) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration, ModuleElement mdle) throws DocFileIOException {
         DocPath filename = DocPaths.moduleFrame(mdle);
         ModulePackageIndexFrameWriter modpackgen = new ModulePackageIndexFrameWriter(configuration, filename);
         modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview", false, mdle);

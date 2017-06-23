@@ -41,6 +41,7 @@ import static java.lang.System.out;
  * @author Kevin Liu
  * @key randomness
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/timeout=180 TestDigestIOStream
  */
 

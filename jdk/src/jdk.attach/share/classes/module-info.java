@@ -26,6 +26,8 @@
 /**
  * Defines the attach API.
  *
+ * @uses com.sun.tools.attach.spi.AttachProvider
+ *
  * @moduleGraph
  * @since 9
  */
@@ -39,4 +41,3 @@ module jdk.attach {
     uses com.sun.tools.attach.spi.AttachProvider;
     provides com.sun.tools.attach.spi.AttachProvider with sun.tools.attach.AttachProviderImpl;
 }
-

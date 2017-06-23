@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param filename   File to be generated.
      * @param classtree  Tree built by {@link ClassTree}.
      */
-    protected AbstractTreeWriter(ConfigurationImpl configuration,
+    protected AbstractTreeWriter(HtmlConfiguration configuration,
                                  DocPath filename, ClassTree classtree) {
         super(configuration, filename);
         this.classtree = classtree;
