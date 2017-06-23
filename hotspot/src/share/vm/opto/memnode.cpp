@@ -885,7 +885,7 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
 // Is the value loaded previously stored by an arraycopy? If so return
 // a load node that reads from the source array so we may be able to
 // optimize out the ArrayCopy node later.
-Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
+Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
   AllocateNode* ld_alloc = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
@@ -893,23 +893,27 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
   if (ac != NULL) {
     assert(ac->is_ArrayCopy(), "what kind of node can this be?");
 
-    Node* ld = clone();
+    Node* mem = ac->in(TypeFunc::Memory);
+    Node* ctl = ac->in(0);
+    Node* src = ac->in(ArrayCopyNode::Src);
+
+    if (!ac->as_ArrayCopy()->is_clonebasic() && !phase->type(src)->isa_aryptr()) {
+      return NULL;
+    }
+
+    LoadNode* ld = clone()->as_Load();
+    Node* addp = in(MemNode::Address)->clone();
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != NULL, "need an alloc");
-      Node* addp = in(MemNode::Address)->clone();
       assert(addp->is_AddP(), "address must be addp");
       assert(addp->in(AddPNode::Base) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Base), "strange pattern");
       assert(addp->in(AddPNode::Address) == ac->in(ArrayCopyNode::Dest)->in(AddPNode::Address), "strange pattern");
-      addp->set_req(AddPNode::Base, ac->in(ArrayCopyNode::Src)->in(AddPNode::Base));
-      addp->set_req(AddPNode::Address, ac->in(ArrayCopyNode::Src)->in(AddPNode::Address));
-      ld->set_req(MemNode::Address, phase->transform(addp));
-      if (in(0) != NULL) {
-        assert(ld_alloc->in(0) != NULL, "alloc must have control");
-        ld->set_req(0, ld_alloc->in(0));
-      }
+      addp->set_req(AddPNode::Base, src->in(AddPNode::Base));
+      addp->set_req(AddPNode::Address, src->in(AddPNode::Address));
     } else {
-      Node* src = ac->in(ArrayCopyNode::Src);
-      Node* addp = in(MemNode::Address)->clone();
+      assert(ac->as_ArrayCopy()->is_arraycopy_validated() ||
+             ac->as_ArrayCopy()->is_copyof_validated() ||
+             ac->as_ArrayCopy()->is_copyofrange_validated(), "only supported cases");
       assert(addp->in(AddPNode::Base) == addp->in(AddPNode::Address), "should be");
       addp->set_req(AddPNode::Base, src);
       addp->set_req(AddPNode::Address, src);
@@ -927,21 +931,17 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
 
       Node* offset = phase->transform(new AddXNode(addp->in(AddPNode::Offset), diff));
       addp->set_req(AddPNode::Offset, offset);
-      ld->set_req(MemNode::Address, phase->transform(addp));
-
-      const TypeX *ld_offs_t = phase->type(offset)->isa_intptr_t();
-
-      if (!ac->as_ArrayCopy()->can_replace_dest_load_with_src_load(ld_offs_t->_lo, ld_offs_t->_hi, phase)) {
-        return NULL;
-      }
-
-      if (in(0) != NULL) {
-        assert(ac->in(0) != NULL, "alloc must have control");
-        ld->set_req(0, ac->in(0));
-      }
     }
+    addp = phase->transform(addp);
+#ifdef ASSERT
+    const TypePtr* adr_type = phase->type(addp)->is_ptr();
+    ld->_adr_type = adr_type;
+#endif
+    ld->set_req(MemNode::Address, addp);
+    ld->set_req(0, ctl);
+    ld->set_req(MemNode::Memory, mem);
     // load depends on the tests that validate the arraycopy
-    ld->as_Load()->_control_dependency = Pinned;
+    ld->_control_dependency = Pinned;
     return ld;
   }
   return NULL;
