@@ -26,6 +26,8 @@
 /**
  * Internal editor support for JDK tools.  Includes the Service Provider
  * Interface to built-in editors.
+ *
+ * @since 9
  */
 module jdk.internal.ed {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class MultipartDataContentHandler implements DataContentHandler {
      *
      * @return The DataFlavors
      */
+    @Override
     public DataFlavor[] getTransferDataFlavors() { // throws Exception;
         return new DataFlavor[] { myDF };
     }
@@ -51,9 +52,10 @@ public class MultipartDataContentHandler implements DataContentHandler {
      * Return the Transfer Data of type DataFlavor from InputStream.
      *
      * @param df The DataFlavor
-     * @param ins The InputStream corresponding to the data
+     * @param ds The DataSource
      * @return String object
      */
+    @Override
     public Object getTransferData(DataFlavor df, DataSource ds) {
         // use myDF.equals to be sure to get ActivationDataFlavor.equals,
         // which properly ignores Content-Type parameters in comparison
@@ -65,7 +67,11 @@ public class MultipartDataContentHandler implements DataContentHandler {
 
     /**
      * Return the content.
+     *
+     * @param ds The DataSource
+     * @return content
      */
+    @Override
     public Object getContent(DataSource ds) {
         try {
             return new MimeMultipart(
@@ -78,6 +84,7 @@ public class MultipartDataContentHandler implements DataContentHandler {
     /**
      * Write the object to the output stream, using the specific MIME type.
      */
+    @Override
     public void writeTo(Object obj, String mimeType, OutputStream os)
                         throws IOException {
         if (obj instanceof MimeMultipart) {

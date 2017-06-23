@@ -25,6 +25,54 @@
 
 /**
  * Defines the foundational APIs of the Java SE Platform.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Providers:</dt>
+ * <dd> The JDK implementation of this module provides an implementation of
+ *      the {@index jrt jrt} {@linkplain java.nio.file.spi.FileSystemProvider
+ *      file system provider} to enumerate and read the class and resource
+ *      files in a run-time image.
+ *      The jrt file system can be created by calling
+ *      {@link java.nio.file.FileSystems#newFileSystem
+ *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
+ *      <p></dd>
+ * <dt class="simpleTagLabel">Tool Guides:</dt>
+ * <dd> {@extLink java_tool_reference java launcher},
+ *      {@extLink keytool_tool_reference keytool}</dd>
+ * </dl>
+ *
+ * @provides java.nio.file.spi.FileSystemProvider
+ *
+ * @uses java.lang.System.LoggerFinder
+ * @uses java.net.ContentHandlerFactory
+ * @uses java.net.spi.URLStreamHandlerProvider
+ * @uses java.nio.channels.spi.AsynchronousChannelProvider
+ * @uses java.nio.channels.spi.SelectorProvider
+ * @uses java.nio.charset.spi.CharsetProvider
+ * @uses java.nio.file.spi.FileSystemProvider
+ * @uses java.nio.file.spi.FileTypeDetector
+ * @uses java.security.Provider
+ * @uses java.text.spi.BreakIteratorProvider
+ * @uses java.text.spi.CollatorProvider
+ * @uses java.text.spi.DateFormatProvider
+ * @uses java.text.spi.DateFormatSymbolsProvider
+ * @uses java.text.spi.DecimalFormatSymbolsProvider
+ * @uses java.text.spi.NumberFormatProvider
+ * @uses java.time.chrono.AbstractChronology
+ * @uses java.time.chrono.Chronology
+ * @uses java.time.zone.ZoneRulesProvider
+ * @uses java.util.spi.CalendarDataProvider
+ * @uses java.util.spi.CalendarNameProvider
+ * @uses java.util.spi.CurrencyNameProvider
+ * @uses java.util.spi.LocaleNameProvider
+ * @uses java.util.spi.ResourceBundleControlProvider
+ * @uses java.util.spi.ResourceBundleProvider
+ * @uses java.util.spi.TimeZoneNameProvider
+ * @uses java.util.spi.ToolProvider
+ * @uses javax.security.auth.spi.LoginModule
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.base {
 
@@ -123,10 +171,9 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.loader to
         java.instrument,
-        java.logging,
-        jdk.jlink;
+        java.logging;
     exports jdk.internal.jmod to
-        jdk.compiler,
+        jdk.compiler,   // reflective dependency
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
@@ -134,14 +181,11 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.scripting.nashorn,
-        jdk.vm.ci;
+        jdk.internal.vm.ci;
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jlink;
     exports jdk.internal.org.objectweb.asm.util to
-        jdk.jlink,
         jdk.scripting.nashorn;
-    exports jdk.internal.org.objectweb.asm.tree.analysis to
-        jdk.jlink;
     exports jdk.internal.org.objectweb.asm.commons to
         jdk.scripting.nashorn;
     exports jdk.internal.org.objectweb.asm.signature to
@@ -155,7 +199,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.misc to
         java.desktop,
-        jdk.incubator.httpclient,
         java.logging,
         java.management,
         java.naming,
@@ -163,9 +206,10 @@ module java.base {
         java.security.jgss,
         java.sql,
         java.xml,
+        jdk.attach,
         jdk.charsets,
-        jdk.compiler,
-        jdk.jartool,
+        jdk.compiler,   // reflective dependency
+        jdk.incubator.httpclient,
         jdk.jdeps,
         jdk.jlink,
         jdk.jshell,
@@ -173,7 +217,7 @@ module java.base {
         jdk.scripting.nashorn,
         jdk.scripting.nashorn.shell,
         jdk.unsupported,
-        jdk.vm.ci;
+        jdk.internal.vm.ci;
     exports jdk.internal.perf to
         java.desktop,
         java.management,
@@ -191,7 +235,8 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.annotation to
         jdk.unsupported,
-        jdk.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.incubator.httpclient;
     exports jdk.internal.util.jar to
         jdk.jartool,
         jdk.jdeps,
@@ -208,11 +253,10 @@ module java.base {
         jdk.naming.dns;
     exports sun.net.util to
         java.desktop,
-        jdk.jconsole,
-        jdk.naming.dns;
+        jdk.jconsole;
     exports sun.net.www to
-        jdk.incubator.httpclient,
         java.desktop,
+        jdk.incubator.httpclient,
         jdk.jartool;
     exports sun.net.www.protocol.http to
         java.security.jgss;
@@ -237,8 +281,7 @@ module java.base {
         java.management.rmi,
         java.rmi,
         java.sql.rowset,
-        java.xml,
-        java.xml.ws;
+        java.xml;
     exports sun.security.action to
         java.desktop,
         java.security.jgss;

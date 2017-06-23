@@ -25,7 +25,6 @@
 
 package jdk.internal.module;
 
-import java.lang.reflect.Module;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.util.ArrayList;

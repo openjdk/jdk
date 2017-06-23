@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
 
 package com.sun.jdi;
 
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.VMDisconnectEvent;
 
 /**
  * A module in the target VM.
  * <p>
- * Any method on {@code ModuleReference} which directly or
- * indirectly takes {@code ModuleReference} as a parameter may throw
- * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
- * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
- * available to be read from the {@link com.sun.jdi.event.EventQueue}.
+ * Any method on {@code ModuleReference} which directly or indirectly takes
+ * {@code ModuleReference} as a parameter may throw {@link VMDisconnectedException}
+ * if the target VM is disconnected and the {@link VMDisconnectEvent} has been or is
+ * available to be read from the {@link EventQueue}.
  * <p>
- * Any method on {@code ModuleReference} which directly or
- * indirectly takes {@code ModuleReference} as a parameter may throw
- * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
+ * Any method on {@code ModuleReference} which directly or indirectly takes
+ * {@code ModuleReference} as a parameter may throw {@link VMOutOfMemoryException}
+ * if the target VM has run out of memory.
  * <p>
  * Any method on {@code ModuleReference} or which directly or indirectly takes
- * {@code ModuleReference} as a parameter may throw
- * {@link com.sun.jdi.InvalidModuleException} if the mirrored module
- * has been unloaded.
+ * {@code ModuleReference} as a parameter may throw {@link InvalidModuleException}
+ * if the mirrored module has been unloaded.
  *
  * Not all target virtual machines support this class.
  * Use {@link VirtualMachine#canGetModuleInfo()}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.tools.Diagnostic;
 import javax.tools.DocumentationTool;
 
 import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Process and manage "-link" and "-linkoffline" to external packages. The
@@ -64,7 +64,7 @@ public class Extern {
     /**
      * The global configuration information for this run.
      */
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
 
     /**
      * True if we are using -linkoffline and false if -link is used instead.
@@ -123,7 +123,7 @@ public class Extern {
         }
     }
 
-    public Extern(Configuration configuration) {
+    public Extern(BaseConfiguration configuration) {
         this.configuration = configuration;
     }
 

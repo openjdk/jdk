@@ -22,15 +22,14 @@
  */
 
 /**
- *  @test LocalRMIServerSocketFactoryTest.java
- *  @bug 6774170
- *  @summary Connect to a server socket returned by the LocalRMIServerSocketFactory.
+ * @test LocalRMIServerSocketFactoryTest.java
+ * @bug 6774170
+ * @summary Connect to a server socket returned by the LocalRMIServerSocketFactory.
  *
- *  @author Daniel Fuchs
+ * @author Daniel Fuchs
  *
- *  @modules jdk.management.agent/sun.management.jmxremote
- *  @run compile -XDignore.symbol.file=true -g LocalRMIServerSocketFactoryTest.java
- *  @run main LocalRMIServerSocketFactoryTest
+ * @run compile -XDignore.symbol.file=true -g LocalRMIServerSocketFactoryTest.java
+ * @run main LocalRMIServerSocketFactoryTest
  */
 
 import sun.management.jmxremote.LocalRMIServerSocketFactory;

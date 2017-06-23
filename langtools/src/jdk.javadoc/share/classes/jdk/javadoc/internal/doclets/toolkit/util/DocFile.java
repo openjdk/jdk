@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.Writer;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Abstraction for handling files, which may be specified directly
@@ -51,17 +51,17 @@ import jdk.javadoc.internal.doclets.toolkit.Configuration;
 public abstract class DocFile {
 
     /** Create a DocFile for a directory. */
-    public static DocFile createFileForDirectory(Configuration configuration, String file) {
+    public static DocFile createFileForDirectory(BaseConfiguration configuration, String file) {
         return DocFileFactory.getFactory(configuration).createFileForDirectory(file);
     }
 
     /** Create a DocFile for a file that will be opened for reading. */
-    public static DocFile createFileForInput(Configuration configuration, String file) {
+    public static DocFile createFileForInput(BaseConfiguration configuration, String file) {
         return DocFileFactory.getFactory(configuration).createFileForInput(file);
     }
 
     /** Create a DocFile for a file that will be opened for writing. */
-    public static DocFile createFileForOutput(Configuration configuration, DocPath path) {
+    public static DocFile createFileForOutput(BaseConfiguration configuration, DocPath path) {
         return DocFileFactory.getFactory(configuration).createFileForOutput(path);
     }
 
@@ -85,7 +85,7 @@ public abstract class DocFile {
      * @param path the subdirectory of the directories of the location for which to
      *  list files
      */
-    public static Iterable<DocFile> list(Configuration configuration, Location location, DocPath path) {
+    public static Iterable<DocFile> list(BaseConfiguration configuration, Location location, DocPath path) {
         return DocFileFactory.getFactory(configuration).list(location, path);
     }
 
@@ -173,7 +173,7 @@ public abstract class DocFile {
             return;
 
         try {
-            InputStream in = Configuration.class.getResourceAsStream(resource.getPath());
+            InputStream in = BaseConfiguration.class.getResourceAsStream(resource.getPath());
             if (in == null)
                 return;
 
