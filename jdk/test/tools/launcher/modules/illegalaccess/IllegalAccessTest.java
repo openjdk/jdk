@@ -26,8 +26,10 @@
  * @modules java.base/jdk.internal.misc
  *          java.base/sun.security.x509
  *          java.activation
- * @library /lib/testlibrary modules
- * @build IllegalAccessTest TryAccess JarUtils CompilerUtils jdk.testlibrary.*
+ * @library /test/lib /lib/testlibrary modules
+ * @build IllegalAccessTest TryAccess JarUtils
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.testlibrary.*
  * @build m/*
  * @run testng/othervm/timeout=180 IllegalAccessTest
  * @summary Basic test for java --illegal-access=$VALUE
@@ -42,6 +44,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
 

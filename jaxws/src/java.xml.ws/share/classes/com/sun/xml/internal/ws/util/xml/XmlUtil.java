@@ -26,30 +26,21 @@
 package com.sun.xml.internal.ws.util.xml;
 
 import com.sun.istack.internal.Nullable;
-import com.sun.xml.internal.ws.server.ServerRtException;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures;
-import javax.xml.catalog.CatalogFeatures.Feature;
-import javax.xml.catalog.CatalogManager;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,7 +56,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.ws.WebServiceException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 import org.w3c.dom.Attr;
@@ -78,6 +68,8 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
@@ -184,7 +176,7 @@ public class XmlUtil {
     }
 
     public static List<String> parseTokenList(String tokenList) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         StringTokenizer tokenizer = new StringTokenizer(tokenList, " ");
         while (tokenizer.hasMoreTokens()) {
             result.add(tokenizer.nextToken());
@@ -247,6 +239,7 @@ public class XmlUtil {
 
     /**
      * Creates a new identity transformer.
+     * @return
      */
     public static Transformer newTransformer() {
         try {
@@ -258,9 +251,17 @@ public class XmlUtil {
 
     /**
      * Performs identity transformation.
+     * @param <T>
+     * @param src
+     * @param result
+     * @return
+     * @throws javax.xml.transform.TransformerException
+     * @throws java.io.IOException
+     * @throws org.xml.sax.SAXException
+     * @throws javax.xml.parsers.ParserConfigurationException
      */
-    public static <T extends Result>
-    T identityTransform(Source src, T result) throws TransformerException, SAXException, ParserConfigurationException, IOException {
+    public static <T extends Result> T identityTransform(Source src, T result)
+            throws TransformerException, SAXException, ParserConfigurationException, IOException {
         if (src instanceof StreamSource) {
             // work around a bug in JAXP in JDK6u4 and earlier where the namespace processing
             // is not turned on by default
@@ -286,67 +287,24 @@ public class XmlUtil {
         return is;
     }
 
-    /*
-    * Gets an EntityResolver using XML catalog
-    */
-     public static EntityResolver createEntityResolver(@Nullable URL catalogUrl) {
-        ArrayList<URL> urlsArray = new ArrayList<URL>();
-        EntityResolver er;
-        if (catalogUrl != null) {
-            urlsArray.add(catalogUrl);
-        }
-        try {
-            er = createCatalogResolver(urlsArray);
-        } catch (Exception e) {
-            throw new ServerRtException("server.rt.err",e);
-        }
-        return er;
+    /**
+     * Gets an EntityResolver using XML catalog
+     *
+     * @param catalogUrl
+     * @return
+     */
+    public static EntityResolver createEntityResolver(@Nullable URL catalogUrl) {
+        return XmlCatalogUtil.createEntityResolver(catalogUrl);
     }
 
     /**
      * Gets a default EntityResolver for catalog at META-INF/jaxws-catalog.xml
+     *
+     * @return
      */
     public static EntityResolver createDefaultCatalogResolver() {
-        EntityResolver er;
-        try {
-            /**
-             * Gets a URLs for catalog defined at META-INF/jaxws-catalog.xml
-             */
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            Enumeration<URL> catalogEnum;
-            if (cl == null) {
-                catalogEnum = ClassLoader.getSystemResources("META-INF/jax-ws-catalog.xml");
-            } else {
-                catalogEnum = cl.getResources("META-INF/jax-ws-catalog.xml");
-            }
-            er = createCatalogResolver(Collections.list(catalogEnum));
-        } catch (Exception e) {
-            throw new WebServiceException(e);
-        }
-
-        return er;
+        return XmlCatalogUtil.createDefaultCatalogResolver();
     }
-
-    /**
-     * Instantiate catalog resolver using new catalog API (javax.xml.catalog.*)
-     * added in JDK9. Usage of new API removes dependency on internal API
-     * (com.sun.org.apache.xml.internal) for modular runtime.
-     */
-    private static EntityResolver createCatalogResolver(ArrayList<URL> urls) throws Exception {
-        // Prepare array of catalog URIs
-        URI[] uris = urls.stream()
-                             .map(u -> URI.create(u.toExternalForm()))
-                             .toArray(URI[]::new);
-
-        //Create CatalogResolver with new JDK9+ API
-        return (EntityResolver) CatalogManager.catalogResolver(catalogFeatures, uris);
-    }
-
-    // Cache CatalogFeatures instance for future usages.
-    // Resolve feature is set to "continue" value for backward compatibility.
-    private static CatalogFeatures catalogFeatures = CatalogFeatures.builder()
-                                                    .with(Feature.RESOLVE, "continue")
-                                                    .build();
 
     /**
      * {@link ErrorHandler} that always treat the error as fatal.
@@ -391,7 +349,7 @@ public class XmlUtil {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, !xmlSecurityDisabled(disableSecurity));
-        } catch (Exception e) {
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
             LOGGER.log(Level.WARNING, "Factory [{0}] doesn't support secure xml processing!", new Object[]{factory.getClass().getName()});
         }
         return factory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import org.xml.sax.SAXParseException;
  * may not attempt to recursively invoke the {@code newSchema} method,
  * even from the same thread.
  *
- * <h2><a name="schemaLanguage"></a>Schema Language</h2>
+ * <h2><a id="schemaLanguage"></a>Schema Language</h2>
  * <p>
  * This spec uses a namespace URI to designate a schema language.
  * The following table shows the values defined by this specification.
@@ -84,7 +84,8 @@ import org.xml.sax.SAXParseException;
  * validation implemented on this interface necessarily deviate from
  * the XML DTD semantics as defined in the XML 1.0</em>.
  *
- * <table border="1" cellpadding="2">
+ * <table class="striped">
+ *   <caption>URIs for Supported Schema languages</caption>
  *   <thead>
  *     <tr>
  *       <th>value</th>

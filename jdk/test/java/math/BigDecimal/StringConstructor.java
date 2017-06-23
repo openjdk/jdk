@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main StringConstructor
  * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460 8078672
  * @summary Tests the BigDecimal string constructor (use -Dseed=X to set PRNG seed).
@@ -33,7 +33,7 @@
 
 import java.math.*;
 import java.util.Random;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class StringConstructor {
 

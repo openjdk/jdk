@@ -26,10 +26,12 @@
  * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
- * @library /lib/testlibrary/
+ * @library /lib/testlibrary/ /test/lib
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
  * @build LightWeightHttpServer
  * @build jdk.testlibrary.SimpleSSLContext
  * @run testng/othervm RequestBodyTest
@@ -53,7 +55,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import static java.nio.charset.StandardCharsets.*;
 import static java.nio.file.StandardOpenOption.*;
 import static jdk.incubator.http.HttpRequest.BodyProcessor.*;

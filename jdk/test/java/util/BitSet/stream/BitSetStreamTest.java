@@ -50,7 +50,7 @@ import static org.testng.Assert.assertTrue;
  * @summary test BitSet stream
  * @bug 8012645 8076442
  * @requires os.maxMemory >= 2g
- * @library ../../stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorTestHelper
  *        java.base/java.util.SpliteratorOfIntDataBuilder
  * @run testng/othervm -Xms512m -Xmx1024m BitSetStreamTest
