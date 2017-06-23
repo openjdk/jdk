@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,12 +490,13 @@
 #define CPU_HEADER_STEM(basename) PASTE_TOKENS(basename, INCLUDE_SUFFIX_CPU)
 #define OS_HEADER_STEM(basename) PASTE_TOKENS(basename, INCLUDE_SUFFIX_OS)
 #define OS_CPU_HEADER_STEM(basename) PASTE_TOKENS(basename, PASTE_TOKENS(INCLUDE_SUFFIX_OS, INCLUDE_SUFFIX_CPU))
+#define COMPILER_HEADER_STEM(basename) PASTE_TOKENS(basename, INCLUDE_SUFFIX_COMPILER)
 
 // Include platform dependent files.
 //
 // This macro constructs from basename and INCLUDE_SUFFIX_OS /
-// INCLUDE_SUFFIX_CPU, which are set on the command line, the name of
-// platform dependent files to be included.
+// INCLUDE_SUFFIX_CPU / INCLUDE_SUFFIX_COMPILER, which are set on
+// the command line, the name of platform dependent files to be included.
 // Example: INCLUDE_SUFFIX_OS=_linux / INCLUDE_SUFFIX_CPU=_sparc
 //   CPU_HEADER_INLINE(macroAssembler) --> macroAssembler_sparc.inline.hpp
 //   OS_CPU_HEADER(vmStructs)          --> vmStructs_linux_sparc.hpp
@@ -511,6 +512,9 @@
 // basename<os><cpu>.hpp / basename<os><cpu>.inline.hpp
 #define OS_CPU_HEADER(basename)        XSTR(OS_CPU_HEADER_STEM(basename).hpp)
 #define OS_CPU_HEADER_INLINE(basename) XSTR(OS_CPU_HEADER_STEM(basename).inline.hpp)
+// basename<compiler>.hpp / basename<compiler>.inline.hpp
+#define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
+#define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
 // To use Atomic::inc(jshort* dest) and Atomic::dec(jshort* dest), the address must be specially
 // aligned, such that (*dest) occupies the upper 16 bits of an aligned 32-bit word. The best way to

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,7 @@
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
+#include "prims/jvm.h"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2009,6 +2010,12 @@ void MacroAssembler::stop(const char* msg) {
   // call(c_rarg3);
   blrt(c_rarg3, 3, 0, 1);
   hlt(0);
+}
+
+void MacroAssembler::unimplemented(const char* what) {
+  char* b = new char[1024];
+  jio_snprintf(b, 1024, "unimplemented: %s", what);
+  stop(b);
 }
 
 // If a constant does not fit in an immediate field, generate some

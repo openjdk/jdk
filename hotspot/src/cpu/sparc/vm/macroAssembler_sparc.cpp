@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -1389,6 +1390,13 @@ void MacroAssembler::untested(const char* what) {
   }
   if (ShowMessageBoxOnError) { STOP(b); }
   else                       { warn(b); }
+}
+
+
+void MacroAssembler::unimplemented(const char* what) {
+  char* b = new char[1024];
+  jio_snprintf(b, 1024, "unimplemented: %s", what);
+  stop(b);
 }
 
 

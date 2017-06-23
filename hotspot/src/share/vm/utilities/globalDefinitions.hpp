@@ -25,54 +25,82 @@
 #ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#ifdef TARGET_COMPILER_gcc
-# include "utilities/globalDefinitions_gcc.hpp"
-#endif
-#ifdef TARGET_COMPILER_visCPP
-# include "utilities/globalDefinitions_visCPP.hpp"
-#endif
-#ifdef TARGET_COMPILER_sparcWorks
-# include "utilities/globalDefinitions_sparcWorks.hpp"
-#endif
-#ifdef TARGET_COMPILER_xlc
-# include "utilities/globalDefinitions_xlc.hpp"
-#endif
+#include "utilities/compilerWarnings.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
+#include COMPILER_HEADER(utilities/globalDefinitions)
+
+// Defaults for macros that might be defined per compiler.
 #ifndef NOINLINE
 #define NOINLINE
 #endif
 #ifndef ALWAYSINLINE
 #define ALWAYSINLINE inline
 #endif
-#ifndef PRAGMA_DIAG_PUSH
-#define PRAGMA_DIAG_PUSH
-#endif
-#ifndef PRAGMA_DIAG_POP
-#define PRAGMA_DIAG_POP
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED
-#endif
-#ifndef PRAGMA_FORMAT_IGNORED
-#define PRAGMA_FORMAT_IGNORED
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-#endif
-#ifndef ATTRIBUTE_PRINTF
-#define ATTRIBUTE_PRINTF(fmt, vargs)
-#endif
-#ifndef ATTRIBUTE_SCANF
-#define ATTRIBUTE_SCANF(fmt, vargs)
-#endif
-
-#include "utilities/macros.hpp"
 
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
+
+//----------------------------------------------------------------------------------------------------
+// Printf-style formatters for fixed- and variable-width types as pointers and
+// integers.  These are derived from the definitions in inttypes.h.  If the platform
+// doesn't provide appropriate definitions, they should be provided in
+// the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
+
+#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
+
+// Format 32-bit quantities.
+#define INT32_FORMAT           "%" PRId32
+#define UINT32_FORMAT          "%" PRIu32
+#define INT32_FORMAT_W(width)  "%" #width PRId32
+#define UINT32_FORMAT_W(width) "%" #width PRIu32
+
+#define PTR32_FORMAT           "0x%08" PRIx32
+#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
+
+// Format 64-bit quantities.
+#define INT64_FORMAT           "%" PRId64
+#define UINT64_FORMAT          "%" PRIu64
+#define UINT64_FORMAT_X        "%" PRIx64
+#define INT64_FORMAT_W(width)  "%" #width PRId64
+#define UINT64_FORMAT_W(width) "%" #width PRIu64
+
+#define PTR64_FORMAT           "0x%016" PRIx64
+
+// Format jlong, if necessary
+#ifndef JLONG_FORMAT
+#define JLONG_FORMAT           INT64_FORMAT
+#endif
+#ifndef JULONG_FORMAT
+#define JULONG_FORMAT          UINT64_FORMAT
+#endif
+#ifndef JULONG_FORMAT_X
+#define JULONG_FORMAT_X        UINT64_FORMAT_X
+#endif
+
+// Format pointers which change size between 32- and 64-bit.
+#ifdef  _LP64
+#define INTPTR_FORMAT "0x%016" PRIxPTR
+#define PTR_FORMAT    "0x%016" PRIxPTR
+#else   // !_LP64
+#define INTPTR_FORMAT "0x%08"  PRIxPTR
+#define PTR_FORMAT    "0x%08"  PRIxPTR
+#endif  // _LP64
+
+#define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
+
+#define SSIZE_FORMAT             "%"   PRIdPTR
+#define SIZE_FORMAT              "%"   PRIuPTR
+#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
+#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
+#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
+#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
+
+#define INTX_FORMAT           "%" PRIdPTR
+#define UINTX_FORMAT          "%" PRIuPTR
+#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
+#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
 //----------------------------------------------------------------------------------------------------
 // Constants
@@ -950,8 +978,6 @@ class RFrame;
 class  CompiledRFrame;
 class  InterpretedRFrame;
 
-class frame;
-
 class vframe;
 class   javaVFrame;
 class     interpretedVFrame;
@@ -1012,10 +1038,8 @@ class JavaValue;
 class methodHandle;
 class JavaCallArguments;
 
-// Basic support for errors (general debug facilities not defined at this point fo the include phase)
-
+// Basic support for errors.
 extern void basic_fatal(const char* msg);
-
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
@@ -1152,35 +1176,27 @@ inline int log2_long(jlong x) {
 
 //* the argument must be exactly a power of 2
 inline int exact_log2(intptr_t x) {
-  #ifdef ASSERT
-    if (!is_power_of_2(x)) basic_fatal("x must be a power of 2");
-  #endif
+  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, x);
   return log2_intptr(x);
 }
 
 //* the argument must be exactly a power of 2
 inline int exact_log2_long(jlong x) {
-  #ifdef ASSERT
-    if (!is_power_of_2_long(x)) basic_fatal("x must be a power of 2");
-  #endif
+  assert(is_power_of_2_long(x), "x must be a power of 2: " JLONG_FORMAT, x);
   return log2_long(x);
 }
 
 
 // returns integer round-up to the nearest multiple of s (s must be a power of two)
 inline intptr_t round_to(intptr_t x, uintx s) {
-  #ifdef ASSERT
-    if (!is_power_of_2(s)) basic_fatal("s must be a power of 2");
-  #endif
+  assert(is_power_of_2(s), "s must be a power of 2: " UINTX_FORMAT, s);
   const uintx m = s - 1;
   return mask_bits(x + m, ~m);
 }
 
 // returns integer round-down to the nearest multiple of s (s must be a power of two)
 inline intptr_t round_down(intptr_t x, uintx s) {
-  #ifdef ASSERT
-    if (!is_power_of_2(s)) basic_fatal("s must be a power of 2");
-  #endif
+  assert(is_power_of_2(s), "s must be a power of 2: " UINTX_FORMAT, s);
   const uintx m = s - 1;
   return mask_bits(x, ~m);
 }
@@ -1331,66 +1347,6 @@ template<class T> static void swap(T& a, T& b) {
   a = b;
   b = tmp;
 }
-
-// Printf-style formatters for fixed- and variable-width types as pointers and
-// integers.  These are derived from the definitions in inttypes.h.  If the platform
-// doesn't provide appropriate definitions, they should be provided in
-// the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
-
-#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
-
-// Format 32-bit quantities.
-#define INT32_FORMAT           "%" PRId32
-#define UINT32_FORMAT          "%" PRIu32
-#define INT32_FORMAT_W(width)  "%" #width PRId32
-#define UINT32_FORMAT_W(width) "%" #width PRIu32
-
-#define PTR32_FORMAT           "0x%08" PRIx32
-#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
-
-// Format 64-bit quantities.
-#define INT64_FORMAT           "%" PRId64
-#define UINT64_FORMAT          "%" PRIu64
-#define UINT64_FORMAT_X        "%" PRIx64
-#define INT64_FORMAT_W(width)  "%" #width PRId64
-#define UINT64_FORMAT_W(width) "%" #width PRIu64
-
-#define PTR64_FORMAT           "0x%016" PRIx64
-
-// Format jlong, if necessary
-#ifndef JLONG_FORMAT
-#define JLONG_FORMAT           INT64_FORMAT
-#endif
-#ifndef JULONG_FORMAT
-#define JULONG_FORMAT          UINT64_FORMAT
-#endif
-#ifndef JULONG_FORMAT_X
-#define JULONG_FORMAT_X        UINT64_FORMAT_X
-#endif
-
-// Format pointers which change size between 32- and 64-bit.
-#ifdef  _LP64
-#define INTPTR_FORMAT "0x%016" PRIxPTR
-#define PTR_FORMAT    "0x%016" PRIxPTR
-#else   // !_LP64
-#define INTPTR_FORMAT "0x%08"  PRIxPTR
-#define PTR_FORMAT    "0x%08"  PRIxPTR
-#endif  // _LP64
-
-#define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
-
-#define SSIZE_FORMAT             "%"   PRIdPTR
-#define SIZE_FORMAT              "%"   PRIuPTR
-#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
-
-#define INTX_FORMAT           "%" PRIdPTR
-#define UINTX_FORMAT          "%" PRIuPTR
-#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
-#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
-
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 

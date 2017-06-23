@@ -25,6 +25,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/javaCalls.hpp"
 #include "runtime/handles.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"

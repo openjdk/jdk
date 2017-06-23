@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/vmError.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
