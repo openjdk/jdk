@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,13 +181,6 @@ public enum ToolOption {
         }
     },
 
-    XMODULE("-Xmodule:", EXTENDED, false) {
-        @Override
-        public void process(Helper helper, String arg) throws InvalidValueException {
-            Option.XMODULE.process(helper.getOptionHelper(), arg);
-        }
-    },
-
     PATCH_MODULE("--patch-module", EXTENDED, true) {
         @Override
         public void process(Helper helper, String arg) throws InvalidValueException {
@@ -336,6 +329,13 @@ public enum ToolOption {
         }
     },
 
+    IGNORE_SOURCE_ERRORS("--ignore-source-errors", HIDDEN) {
+        @Override
+        public void process(Helper helper) {
+            helper.jdtoolOpts.put(IGNORE_SOURCE_ERRORS, true);
+        }
+    },
+
     // ----- help options -----
 
     HELP("--help -help", STANDARD) {
@@ -345,7 +345,7 @@ public enum ToolOption {
         }
     },
 
-    X("-X", STANDARD) {
+    HELP_EXTRA("--help-extra -X", STANDARD) {
         @Override
         public void process(Helper helper) throws OptionException {
            throw new OptionException(OK, helper::Xusage);
@@ -419,9 +419,7 @@ public enum ToolOption {
 
     static ToolOption get(String name) {
         String oname = name;
-        if (name.contains(":")) {
-            oname = name.substring(0, name.indexOf(':') + 1);
-        } else if (name.contains("=")) {
+        if (name.startsWith("--") && name.contains("=")) {
             oname = name.substring(0, name.indexOf('='));
         }
         for (ToolOption o : values()) {

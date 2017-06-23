@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,20 @@
 
 /**
  * Defines the Java Architecture for XML Binding (JAXB) API.
+ *
+ * @uses javax.xml.bind.JAXBContextFactory
+ *
+ * @moduleGraph
+ * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.bind {
     requires transitive java.activation;
     requires transitive java.xml;
     requires java.compiler;
     requires java.desktop;
     requires java.logging;
+    requires jdk.unsupported;
 
     uses javax.xml.bind.JAXBContextFactory;
 

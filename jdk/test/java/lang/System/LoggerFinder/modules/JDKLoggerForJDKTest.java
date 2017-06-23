@@ -45,8 +45,8 @@ import static jdk.testlibrary.ProcessTools.executeCommand;
  *            2. clients are in named/unnamed module,
  *               patched system module, or Xbootclasspath
  *          This test DOES require existence of java.logging module
- * @library /lib/testlibrary
- * @build Base CompilerUtils jdk.testlibrary.*
+ * @library /lib/testlibrary /test/lib
+ * @build Base jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run main/othervm JDKLoggerForJDKTest
  */
 

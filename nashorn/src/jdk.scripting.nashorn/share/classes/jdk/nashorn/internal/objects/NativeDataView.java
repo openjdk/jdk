@@ -416,7 +416,7 @@ public class NativeDataView extends ScriptObject {
      * @return 32-bit unsigned int value at the byteOffset
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, arity = 1)
-    public static long getUint32(final Object self, final Object byteOffset, final Object littleEndian) {
+    public static double getUint32(final Object self, final Object byteOffset, final Object littleEndian) {
         try {
             return 0xFFFFFFFFL & getBuffer(self, littleEndian).getInt(JSType.toInt32(byteOffset));
         } catch (final IllegalArgumentException iae) {
@@ -432,7 +432,7 @@ public class NativeDataView extends ScriptObject {
      * @return 32-bit unsigned int value at the byteOffset
      */
     @SpecializedFunction
-    public static long getUint32(final Object self, final int byteOffset) {
+    public static double getUint32(final Object self, final int byteOffset) {
         try {
             return JSType.toUint32(getBuffer(self, false).getInt(JSType.toInt32(byteOffset)));
         } catch (final IllegalArgumentException iae) {
@@ -449,7 +449,7 @@ public class NativeDataView extends ScriptObject {
      * @return 32-bit unsigned int value at the byteOffset
      */
     @SpecializedFunction
-    public static long getUint32(final Object self, final int byteOffset, final boolean littleEndian) {
+    public static double getUint32(final Object self, final int byteOffset, final boolean littleEndian) {
         try {
             return JSType.toUint32(getBuffer(self, littleEndian).getInt(JSType.toInt32(byteOffset)));
         } catch (final IllegalArgumentException iae) {
@@ -837,9 +837,9 @@ public class NativeDataView extends ScriptObject {
      * @return undefined
      */
     @SpecializedFunction
-    public static Object setUint32(final Object self, final int byteOffset, final long value) {
+    public static Object setUint32(final Object self, final int byteOffset, final double value) {
         try {
-            getBuffer(self, false).putInt(byteOffset, (int)value);
+            getBuffer(self, false).putInt(byteOffset, (int) JSType.toUint32(value));
             return UNDEFINED;
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");
@@ -856,9 +856,9 @@ public class NativeDataView extends ScriptObject {
      * @return undefined
      */
     @SpecializedFunction
-    public static Object setUint32(final Object self, final int byteOffset, final long value, final boolean littleEndian) {
+    public static Object setUint32(final Object self, final int byteOffset, final double value, final boolean littleEndian) {
         try {
-            getBuffer(self, littleEndian).putInt(byteOffset, (int)value);
+            getBuffer(self, littleEndian).putInt(byteOffset, (int) JSType.toUint32(value));
             return UNDEFINED;
         } catch (final IllegalArgumentException iae) {
             throw rangeError(iae, "dataview.offset");

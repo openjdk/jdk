@@ -48,8 +48,15 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
+ * @bug 8165367
  * @summary Verify the restrictions for certificate path on JSSE with custom trust store.
  * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @compile JSSEClient.java
  * @run main/othervm -Djava.security.debug=certpath TLSRestrictions DEFAULT
  * @run main/othervm -Djava.security.debug=certpath TLSRestrictions C1
