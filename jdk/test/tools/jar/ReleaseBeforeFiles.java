@@ -29,6 +29,8 @@
  *          not the --release option is preceded by a file name.
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng ReleaseBeforeFiles
  */
 

@@ -102,6 +102,7 @@ import java.util.function.Function;
  *
  * @author Benjamin Renaud
  * @author Andreas Sterbenz
+ * @since 1.1
  */
 public abstract class Provider extends Properties {
 

@@ -33,6 +33,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
@@ -42,9 +43,10 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8174826
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build BindServices CompilerUtils jdk.testlibrary.ProcessTools
+ * @build BindServices jdk.testlibrary.ProcessTools
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng BindServices
  */
 

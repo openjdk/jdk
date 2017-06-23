@@ -27,7 +27,9 @@
  * @summary Basic argument validation for --add-exports
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build jdk.testlibrary.*
+ * @build jdk.test.lib.compiler.ModuleInfoMaker
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.testlibrary.*
  * @run testng AddExportsTestWarningError
  */
 

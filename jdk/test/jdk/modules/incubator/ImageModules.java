@@ -28,7 +28,9 @@
  * @library /lib/testlibrary /test/lib
  * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
- * @build CompilerUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ImageModules
  */
 
@@ -45,6 +47,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

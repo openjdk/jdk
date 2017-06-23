@@ -24,7 +24,7 @@
  */
 
 /**
- * Locale data provider for locales other than {@linkplain java.util.Locale#US US locale}.
+ * Provides the locale data for locales other than {@linkplain java.util.Locale#US US locale}.
  *
  * @moduleGraph
  * @since 9

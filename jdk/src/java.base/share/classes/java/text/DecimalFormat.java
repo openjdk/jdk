@@ -381,6 +381,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @see          ParsePosition
  * @author       Mark Davis
  * @author       Alan Liu
+ * @since 1.1
  */
 public class DecimalFormat extends NumberFormat {
 

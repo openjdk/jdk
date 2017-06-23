@@ -77,7 +77,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename the name of the generated file
      */
-    public ModuleIndexWriter(ConfigurationImpl configuration, DocPath filename) {
+    public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         groupModuleMap = configuration.group.groupModules(configuration.modules);
         groupList = configuration.group.getGroupList();
@@ -89,7 +89,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the module index page
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
         ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
         mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);

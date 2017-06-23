@@ -32,7 +32,9 @@
  * @summary  Redirect problem with HttpsURLConnection using a proxy
  * @modules java.base/sun.net.www
  * @library .. /test/lib
- * @build HttpCallback TestHttpsServer ClosedChannelList
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        HttpCallback TestHttpsServer ClosedChannelList
  *        HttpTransaction TunnelProxy
  * @key intermittent
  * @run main/othervm B6216082

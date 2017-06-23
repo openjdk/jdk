@@ -63,7 +63,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename Name of the module index file to be generated.
      */
-    public ModuleIndexFrameWriter(ConfigurationImpl configuration,
+    public ModuleIndexFrameWriter(HtmlConfiguration configuration,
                                    DocPath filename) {
         super(configuration, filename);
     }
@@ -73,7 +73,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @throws DocFileIOException
      * @param configuration the configuration object
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.MODULE_OVERVIEW_FRAME;
         ModuleIndexFrameWriter modulegen = new ModuleIndexFrameWriter(configuration, filename);
         modulegen.buildModuleIndexFile("doclet.Window_Overview", false);

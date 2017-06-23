@@ -56,7 +56,9 @@ import static java.util.Arrays.asList;
  * @modules jdk.compiler
  * @summary Basic test for URLStreamHandlerProvider
  * @library /lib/testlibrary /test/lib
- * @build jdk.testlibrary.JDKToolFinder
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.JDKToolFinder
  * @compile Basic.java Child.java
  * @run main Basic
  */

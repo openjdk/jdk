@@ -26,25 +26,41 @@
 /**
  * Interfaces and classes providing access to file and file system attributes.
  *
- * <blockquote><table cellspacing=1 cellpadding=0 summary="Attribute views">
- * <tr><th align="left">Attribute views</th><th align="left">Description</th></tr>
- * <tr><td valign=top><i>{@link java.nio.file.attribute.AttributeView}</i></td>
+ * <blockquote><table class="borderless">
+ *     <caption style="display:none">Attribute views</caption>
+ * <tr><th style="text-align:left">Attribute views</th>
+ *     <th style="text-align:left">Description</th></tr>
+ * <tr><td><i>{@link java.nio.file.attribute.AttributeView}</i></td>
  *     <td>Can read or update non-opaque values associated with objects in a file system</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileAttributeView}</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileAttributeView}</i></td>
  *     <td>Can read or update file attributes</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.BasicFileAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.BasicFileAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update a basic set of file attributes</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.PosixFileAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.PosixFileAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update POSIX defined file attributes</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.DosFileAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.DosFileAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update FAT file attributes</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileOwnerAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.FileOwnerAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update the owner of a file</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.AclFileAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.AclFileAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update Access Control Lists</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.UserDefinedFileAttributeView}&nbsp;&nbsp;</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;&nbsp;&nbsp;
+ *     <i>{@link java.nio.file.attribute.UserDefinedFileAttributeView}&nbsp;&nbsp;</i></td>
  *     <td>Can read or update user-defined file attributes</td></tr>
- * <tr><td valign=top>&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileStoreAttributeView}</i></td>
+ * <tr><td style="vertical-align:top">
+ *     &nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileStoreAttributeView}</i></td>
  *     <td>Can read or update file system attributes</td></tr>
  * </table></blockquote>
  *

@@ -210,7 +210,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 DTD \uC120\uC5B8 \uC774\uBCA4\uD2B8\uB97C \uCC98\uB9AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38\uBD84\uC11D\uAE30\uAC00 DTD \uC120\uC5B8 \uC774\uBCA4\uD2B8\uB97C \uCC98\uB9AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -219,7 +219,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 XML \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uB97C \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38\uBD84\uC11D\uAE30\uAC00 XML \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uB97C \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in

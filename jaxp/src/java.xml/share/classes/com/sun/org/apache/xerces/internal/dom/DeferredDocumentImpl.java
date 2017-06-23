@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -369,6 +369,7 @@ public class DeferredDocumentImpl
      * Creates an element node with a URI in the table and type information.
      * @deprecated
      */
+    @Deprecated
     public int createDeferredElement(String elementURI, String elementName,
                                       Object type) {
 
@@ -389,6 +390,7 @@ public class DeferredDocumentImpl
      * Creates an element node in the table.
      * @deprecated
      */
+    @Deprecated
     public int createDeferredElement(String elementName) {
         return createDeferredElement(null, elementName);
     }
@@ -474,6 +476,7 @@ public class DeferredDocumentImpl
      * Sets an attribute on an element node.
      * @deprecated
      */
+    @Deprecated
     public int setDeferredAttribute(int elementNodeIndex,
                                     String attrName, String attrURI,
                                     String attrValue, boolean specified) {

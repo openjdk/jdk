@@ -32,6 +32,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 
 import static jdk.testlibrary.ProcessTools.*;
@@ -47,7 +48,10 @@ import static org.testng.Assert.*;
  * @modules jdk.compiler jdk.jlink
  * @modules java.base/jdk.internal.module
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @build ModuleTargetHelper UserModuleTest CompilerUtils jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
+ *        ModuleTargetHelper UserModuleTest jdk.testlibrary.ProcessTools
  * @run testng UserModuleTest
  */
 

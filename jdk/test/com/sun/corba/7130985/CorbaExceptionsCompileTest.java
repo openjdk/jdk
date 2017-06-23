@@ -26,8 +26,10 @@
  * @bug 7130985
  * @summary Four helper classes missing in Sun JDK
  * @library /lib/testlibrary /test/lib
- * @build jdk.testlibrary.*
  * @modules java.corba
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.*
  * @run main CorbaExceptionsCompileTest
  */
 

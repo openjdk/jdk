@@ -25,6 +25,7 @@
  * @test
  * @bug 8079136
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run testng SubList
  * @summary Basic functionality of sublists
  * @key randomness

@@ -39,6 +39,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -332,7 +333,7 @@ public class Enter extends JCTree.Visitor {
                         addEnv = true;
                     } else if (pd.annotations.nonEmpty()) {
                         log.error(pd.annotations.head.pos(),
-                                  "pkg.annotations.sb.in.package-info.java");
+                                  Errors.PkgAnnotationsSbInPackageInfoJava);
                     }
                 }
             } else {
@@ -363,8 +364,7 @@ public class Enter extends JCTree.Visitor {
                     JCCompilationUnit tree0 = env0.toplevel;
                     if (!fileManager.isSameFile(tree.sourcefile, tree0.sourcefile)) {
                         log.warning(pd != null ? pd.pid.pos() : null,
-                                    "pkg-info.already.seen",
-                                    tree.packge);
+                                    Warnings.PkgInfoAlreadySeen(tree.packge));
                     }
                 }
                 typeEnvs.put(tree.packge, packageEnv);
@@ -409,7 +409,7 @@ public class Enter extends JCTree.Visitor {
                     topElement = KindName.INTERFACE;
                 }
                 log.error(tree.pos(),
-                          "class.public.should.be.in.file", topElement, tree.name);
+                          Errors.ClassPublicShouldBeInFile(topElement, tree.name));
             }
         } else {
             if (!tree.name.isEmpty() &&
@@ -512,7 +512,7 @@ public class Enter extends JCTree.Visitor {
 
     /** Complain about a duplicate class. */
     protected void duplicateClass(DiagnosticPosition pos, ClassSymbol c) {
-        log.error(pos, "duplicate.class", c.fullname);
+        log.error(pos, Errors.DuplicateClass(c.fullname));
     }
 
     /** Class enter visitor method for type parameters.

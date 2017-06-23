@@ -39,6 +39,7 @@ import sun.security.util.Debug;
  *
  * @author  Li Gong
  * @author  Roland Schemers
+ * @since 1.2
  */
 public class SecureClassLoader extends ClassLoader {
     /*

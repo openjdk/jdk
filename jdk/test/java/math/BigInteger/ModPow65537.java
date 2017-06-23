@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main ModPow65537
  * @bug 4891312 8074460 8078672
  * @summary verify that modPow() not broken by the special case for 65537 (use -Dseed=X to set PRNG seed)
