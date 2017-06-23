@@ -978,6 +978,17 @@ CommaList = \
   )
 
 ################################################################################
+# Converts a space separated list to a colon separated list.
+#
+# Replacing double-colon with a single colon is to workaround the issue with
+# some version of make on windows that doesn't substitute spaces with one colon
+# properly.
+ColonList = \
+  $(strip \
+      $(subst ::,:,$(subst $(SPACE),:,$(strip $1))) \
+  )
+
+################################################################################
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/MakeBase.gmk))

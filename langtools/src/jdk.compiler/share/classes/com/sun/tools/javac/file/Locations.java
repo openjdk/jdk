@@ -215,7 +215,7 @@ public class Locations {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
                     if (warn) {
-                        log.warning(LintCategory.PATH, "invalid.path", s);
+                        log.warning(LintCategory.PATH, Warnings.InvalidPath(s));
                     }
                 }
             }
@@ -311,7 +311,7 @@ public class Locations {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
                     log.warning(Lint.LintCategory.PATH,
-                            "dir.path.element.not.found", dir);
+                                Warnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -357,7 +357,7 @@ public class Locations {
                 /* No such file or directory exists */
                 if (warn) {
                     log.warning(Lint.LintCategory.PATH,
-                            "path.element.not.found", file);
+                                Warnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -380,13 +380,13 @@ public class Locations {
                             FileSystems.newFileSystem(file, null).close();
                             if (warn) {
                                 log.warning(Lint.LintCategory.PATH,
-                                        "unexpected.archive.file", file);
+                                            Warnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
                                 log.warning(Lint.LintCategory.PATH,
-                                        "invalid.archive.file", file);
+                                            Warnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -419,7 +419,7 @@ public class Locations {
                     addFile(f, warn);
                 }
             } catch (IOException e) {
-                log.error("error.reading.file", jarFile, JavacFileManager.getMessage(e));
+                log.error(Errors.ErrorReadingFile(jarFile, JavacFileManager.getMessage(e)));
             }
         }
     }

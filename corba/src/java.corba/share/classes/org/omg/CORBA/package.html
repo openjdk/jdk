@@ -147,9 +147,7 @@ resolve initial object references.  These are:
 <code><b>register_initial_reference</b>(String id, org.omg.CORBA.Object obj)</code>
 </UL>
 
-<P>An example that uses some of these methods is <A
-HREF="{@docRoot}/../technotes/guides/idl/GShome.html">
-<em>Getting Started with Java IDL</em></A>.
+<P>An example that uses some of these methods is {@extLink idl_getting_started Getting Started with Java IDL}.
 
 <H2>
 Exceptions</H2>
@@ -158,9 +156,8 @@ Java programming language. If a method is defined to throw an exception,
 then any code using that method must have a <code>try</code>/<code>catch</code>
 block and handle that exception when it is thrown.
 
-<P>The documentation on <A 
-HREF="{@docRoot}/../technotes/guides/idl/jidlExceptions.html"><em>Java
-IDL exceptions</em></A> has more information and explains the difference between
+<P>The documentation on {@extLink jidlexception Java&nbsp;IDL exceptions }
+has more information and explains the difference between
 system exceptions and user-defined exceptions.
 
 <P>The following is a list of the system exceptions (which are unchecked
@@ -447,8 +444,8 @@ object, whereas the <code>narrow</code> method for an interface that is abstract
 will take an object in the Java programming language.  The helper class for a
 non-abstract interface that has at least one abstract base interface will provide
 both versions of the <code>narrow</code> method.
-<P>The <A HREF="{@docRoot}/../technotes/guides/idl/jidlExample.html"><em>Hello World</em></A>
-tutorial uses a <code>narrow</code> method that looks like this:
+<P>The {@extLink idl_guides Hello World tutorial}
+uses a <code>narrow</code> method that looks like this:
 <PRE>
         // create and initialize the ORB
         ORB orb = ORB.init(args, null);
@@ -548,6 +545,7 @@ abstract public class AccountHelper
 }
 </PRE>
 
+<a id="value"></a>
 <h3>Value Type Helper Classes</h3>
 A helper class for a value type includes different renderings of
 the same methods generated for non-value type methods. The main difference
@@ -861,8 +859,8 @@ ValueMember
 Related Documentation</H1>
 For overviews, guides, and a tutorial, please see:
 <UL>
-<LI>
-<A HREF="{@docRoot}/../technotes/guides/idl/index.html">Java IDL home page</A>
+<LI> {@extLink idl_guides Java&nbsp;IDL tutorial page}.</LI>
+<LI> {@extLink rmi_iiop_guides RMI-IIOP developer's guide}.</LI>
 </UL>
 
 

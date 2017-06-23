@@ -589,6 +589,9 @@ final class WInputMethod extends InputMethodAdapter
                 Component client = getClientComponent();
 
                 if (client != null) {
+                    if (!client.isShowing()) {
+                        return;
+                    }
                     if (haveActiveClient()) {
                             Rectangle rc = inputContext.getTextLocation(TextHitInfo.leading(0));
                             x = rc.x;

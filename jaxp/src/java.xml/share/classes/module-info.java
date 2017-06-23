@@ -27,6 +27,17 @@
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
+ * @uses javax.xml.datatype.DatatypeFactory
+ * @uses javax.xml.parsers.DocumentBuilderFactory
+ * @uses javax.xml.parsers.SAXParserFactory
+ * @uses javax.xml.stream.XMLEventFactory
+ * @uses javax.xml.stream.XMLInputFactory
+ * @uses javax.xml.stream.XMLOutputFactory
+ * @uses javax.xml.transform.TransformerFactory
+ * @uses javax.xml.validation.SchemaFactory
+ * @uses javax.xml.xpath.XPathFactory
+ * @uses org.xml.sax.XMLReader
+ *
  * @moduleGraph
  * @since 9
  */

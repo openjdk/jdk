@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,11 @@ package com.sun.jdi;
 public class VMDisconnectedException extends RuntimeException {
 
     private static final long serialVersionUID = 2892975269768351637L;
+
     public VMDisconnectedException() {
         super();
     }
+
     public VMDisconnectedException(String message) {
         super(message);
     }

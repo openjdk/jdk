@@ -1110,6 +1110,8 @@ public class KeyEvent extends InputEvent {
      *
      * Event source can be changed during processing, but in some cases
      * we need to be able to obtain original source.
+     *
+     * @since 1.8
      */
     private Component originalSource;
 

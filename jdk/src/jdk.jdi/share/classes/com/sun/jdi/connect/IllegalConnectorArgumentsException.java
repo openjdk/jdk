@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.Collections;
 public class IllegalConnectorArgumentsException extends Exception {
 
     private static final long serialVersionUID = -3042212603611350941L;
+
     List<String> names;
 
     /**
@@ -48,8 +49,7 @@ public class IllegalConnectorArgumentsException extends Exception {
      * @param s the detailed message.
      * @param name the name of the invalid or inconsistent argument.
      */
-    public IllegalConnectorArgumentsException(String s,
-                                              String name) {
+    public IllegalConnectorArgumentsException(String s, String name) {
         super(s);
         names = new ArrayList<String>(1);
         names.add(name);
@@ -65,7 +65,6 @@ public class IllegalConnectorArgumentsException extends Exception {
      */
     public IllegalConnectorArgumentsException(String s, List<String> names) {
         super(s);
-
         this.names = new ArrayList<String>(names);
     }
 

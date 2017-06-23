@@ -25,6 +25,8 @@
 
 package com.sun.jdi;
 
+import com.sun.jdi.event.ModificationWatchpointEvent;
+
 /**
  * The mirror for a value in the target VM.
  * This interface is the root of a
@@ -33,11 +35,11 @@ package com.sun.jdi;
  * Some examples of where values may be accessed:
  * <BLOCKQUOTE><TABLE><CAPTION style="display:none">layout</CAPTION>
  * <TR>
- *   <TD>{@link ObjectReference#getValue(com.sun.jdi.Field)
+ *   <TD>{@link ObjectReference#getValue(Field)
  *                 ObjectReference.getValue(Field)}
  *   <TD>- value of a field
  * <TR>
- *   <TD>{@link StackFrame#getValue(com.sun.jdi.LocalVariable)
+ *   <TD>{@link StackFrame#getValue(LocalVariable)
  *                 StackFrame.getValue(LocalVariable)}
  *   <TD>- value of a variable
  * <TR>
@@ -45,7 +47,7 @@ package com.sun.jdi;
  *                 VirtualMachine.mirrorOf(double)}
  *   <TD>- created in the target VM by the JDI client
  * <TR>
- *   <TD>{@link com.sun.jdi.event.ModificationWatchpointEvent#valueToBe()
+ *   <TD>{@link ModificationWatchpointEvent#valueToBe()
  *                 ModificationWatchpointEvent.valueToBe()}
  *   <TD>- returned with an event
  * </TABLE></BLOCKQUOTE>
@@ -170,6 +172,7 @@ package com.sun.jdi;
  */
 
 public interface Value extends Mirror {
+
     /**
      * Returns the run-time type of this value.
      *

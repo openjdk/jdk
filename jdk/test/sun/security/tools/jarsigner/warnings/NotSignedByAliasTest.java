@@ -29,6 +29,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8024302 8026037
  * @summary Test for notSignedByAlias warning
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main NotSignedByAliasTest
  */
 public class NotSignedByAliasTest extends Test {

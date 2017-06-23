@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,6 +54,7 @@ public class NodeSortRecordFactory {
      * @deprecated This constructor is no longer used in generated code.  It
      *             exists only for backwards compatibility.
      */
+     @Deprecated
      public NodeSortRecordFactory(DOM dom, String className, Translet translet,
                  String order[], String type[])
          throws TransletException

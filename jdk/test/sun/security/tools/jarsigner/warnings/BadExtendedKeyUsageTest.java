@@ -29,6 +29,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8024302 8026037
  * @summary Test for badExtendedKeyUsage warning
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main BadExtendedKeyUsageTest
  */
 public class BadExtendedKeyUsageTest extends Test {

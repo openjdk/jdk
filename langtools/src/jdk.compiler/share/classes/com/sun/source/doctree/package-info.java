@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  *
  * @author Jonathan Gibbons
  * @since 1.8
- * @see <a href="http://docs.oracle.com/javase/8/docs/technotes/tools/unix/javadoc.html#CHDJGIJB">http://docs.oracle.com/javase/8/docs/technotes/tools/unix/javadoc.html#CHDJGIJB</a>
+ *
+ * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
+ *      Documentation Comment Specification for the Standard Doclet</a>
  */
 package com.sun.source.doctree;

@@ -28,6 +28,8 @@ package com.sun.tools.javac.comp;
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.Attr.CheckMode;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -238,7 +240,7 @@ public class Infer {
             }
 
             if (resultInfo != null && rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
-                log.note(env.tree.pos, "deferred.method.inst", msym, mt, resultInfo.pt);
+                log.note(env.tree.pos, Notes.DeferredMethodInst(msym, mt, resultInfo.pt));
             }
 
             // return instantiated version of method type
@@ -344,9 +346,8 @@ public class Infer {
                     //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
                     //return type _after_ resolution, and check against target
                     ret = types.erasure(ret);
-                    resultInfo.check(env.tree, ret);
                 }
-                return ret;
+                return resultInfo.check(env.tree, ret);
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
@@ -666,12 +667,12 @@ public class Infer {
             //in the functional interface descriptors)
             List<Type> descParameterTypes = types.findDescriptorType(formalInterface).getParameterTypes();
             if (descParameterTypes.size() != paramTypes.size()) {
-                checkContext.report(pos, diags.fragment("incompatible.arg.types.in.lambda"));
+                checkContext.report(pos, diags.fragment(Fragments.IncompatibleArgTypesInLambda));
                 return types.createErrorType(funcInterface);
             }
             for (Type p : descParameterTypes) {
                 if (!types.isSameType(funcInterfaceContext.asUndetVar(p), paramTypes.head)) {
-                    checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                    checkContext.report(pos, diags.fragment(Fragments.NoSuitableFunctionalIntfInst(funcInterface)));
                     return types.createErrorType(funcInterface);
                 }
                 paramTypes = paramTypes.tail;
@@ -690,7 +691,7 @@ public class Infer {
             if (!chk.checkValidGenericType(owntype)) {
                 //if the inferred functional interface type is not well-formed,
                 //or if it's not a subtype of the original target, issue an error
-                checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
+                checkContext.report(pos, diags.fragment(Fragments.NoSuitableFunctionalIntfInst(funcInterface)));
             }
             //propagate constraints as per JLS 18.2.1
             checkContext.compatible(owntype, funcInterface, types.noWarnings);

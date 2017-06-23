@@ -344,7 +344,13 @@ class HttpClientImpl extends HttpClient {
                                 c.configureBlocking(false);
                                 SelectionKey key = c.keyFor(selector);
                                 SelectorAttachment sa;
-                                if (key == null) {
+                                if (key == null || !key.isValid()) {
+                                    if (key != null) {
+                                        // key is canceled.
+                                        // invoke selectNow() to purge it
+                                        // before registering the new event.
+                                        selector.selectNow();
+                                    }
                                     sa = new SelectorAttachment(c, selector);
                                 } else {
                                     sa = (SelectorAttachment) key.attachment();

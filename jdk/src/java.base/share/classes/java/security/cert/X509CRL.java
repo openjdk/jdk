@@ -103,6 +103,7 @@ import sun.security.x509.X509CRLImpl;
  * }</pre>
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  *
  *
  * @see CRL
