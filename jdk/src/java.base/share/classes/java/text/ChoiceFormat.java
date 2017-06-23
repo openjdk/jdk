@@ -151,7 +151,7 @@ import java.util.Arrays;
  * }</pre>
  * </blockquote>
  *
- * <h3><a name="synchronization">Synchronization</a></h3>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Choice formats are not synchronized.
@@ -163,6 +163,7 @@ import java.util.Arrays;
  * @see          DecimalFormat
  * @see          MessageFormat
  * @author       Mark Davis
+ * @since 1.1
  */
 public class ChoiceFormat extends NumberFormat {
 

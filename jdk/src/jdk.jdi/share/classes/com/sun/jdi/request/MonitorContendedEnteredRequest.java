@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,26 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.MonitorContendedEnteredEvent;
 
 /**
  * Request for notification of a thread in the target VM entering a monitor
  * after waiting for it to be released by another thread.
  * When an enabled MonitorContededEnteredRequest is satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing a
- * {@link com.sun.jdi.event.MonitorContendedEnteredEvent MonitorContendedEnteredEvent}
- * will be placed on the
- * {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * {@link EventSet event set} containing a
+ * {@link MonitorContendedEnteredEvent MonitorContendedEnteredEvent}
+ * will be placed on the {@link EventQueue EventQueue}.
  * The collection of existing MonitorContendedEnteredEvents is
  * managed by the {@link EventRequestManager}
  *
- * @see com.sun.jdi.event.MonitorContendedEnteredEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see MonitorContendedEnteredEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Swamy Venkataramanappa

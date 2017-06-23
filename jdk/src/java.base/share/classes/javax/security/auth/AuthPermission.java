@@ -139,6 +139,7 @@ package javax.security.auth;
  * @implNote
  * Implementations may define additional target names, but should use naming
  * conventions such as reverse domain name notation to avoid name clashes.
+ * @since 1.4
  */
 public final class AuthPermission extends
 java.security.BasicPermission {

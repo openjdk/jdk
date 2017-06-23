@@ -2421,7 +2421,6 @@ cbObjectTagInstance(jvmtiHeapReferenceKind reference_kind,
     /* Check data structure */
     data = (ClassInstancesData*)user_data;
     if (data == NULL) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
     }
 
@@ -2540,7 +2539,6 @@ cbObjectCounterFromRef(jvmtiHeapReferenceKind reference_kind,
     /* Check data structure */
     data = (ClassCountData*)user_data;
     if (data == NULL) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
     }
 
@@ -2598,7 +2596,6 @@ cbObjectCounter(jlong class_tag, jlong size, jlong* tag_ptr, jint length,
     /* Check data structure */
     data = (ClassCountData*)user_data;
     if (data == NULL) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
     }
 
@@ -2757,7 +2754,6 @@ cbObjectTagReferrer(jvmtiHeapReferenceKind reference_kind,
     /* Check data structure */
     data = (ReferrerData*)user_data;
     if (data == NULL) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
     }
 

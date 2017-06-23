@@ -27,7 +27,7 @@
  * @summary Tests NotificationBuffer doesn't hold locks when adding listeners,
  *  if test times out then deadlock is suspected.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NotificationBufferDeadlockTest
  * @run build NotificationBufferDeadlockTest
  * @run main NotificationBufferDeadlockTest

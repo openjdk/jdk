@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ import java.util.Map;
  * <p>
  * When creating a {@code Graphics2D} object,  the
  * {@code GraphicsConfiguration}
- * specifies the <a name="deftransform">default transform</a> for
+ * specifies the <a id="deftransform">default transform</a> for
  * the target of the {@code Graphics2D} (a
  * {@link Component} or {@link Image}).  This default transform maps the
  * user space coordinate system to screen and printer device coordinates
@@ -129,7 +129,7 @@ import java.util.Map;
  * of their particular rendering processes are:
  * <ol>
  * <li>
- * <b><a name="rendershape">{@code Shape} operations</a></b>
+ * <b><a id="rendershape">{@code Shape} operations</a></b>
  * <ol>
  * <li>
  * If the operation is a {@code draw(Shape)} operation, then
@@ -160,7 +160,7 @@ import java.util.Map;
  * colors to render in device space.
  * </ol>
  * <li>
- * <b><a name=rendertext>Text operations</a></b>
+ * <b><a id=rendertext>Text operations</a></b>
  * <ol>
  * <li>
  * The following steps are used to determine the set of glyphs required
@@ -201,7 +201,7 @@ import java.util.Map;
  * the colors to render in device space.
  * </ol>
  * <li>
- * <b><a name= renderingimage>{@code Image} Operations</a></b>
+ * <b><a id= renderingimage>{@code Image} Operations</a></b>
  * <ol>
  * <li>
  * The region of interest is defined by the bounding box of the source

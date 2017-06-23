@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.SignatureException;
 import java.security.Principal;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Signature;
 import javax.security.auth.x500.X500Principal;
 
 import java.math.BigInteger;
@@ -102,6 +103,7 @@ import sun.security.x509.X509CRLImpl;
  * }</pre>
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  *
  *
  * @see CRL
@@ -241,7 +243,17 @@ public abstract class X509CRL extends CRL implements X509Extension {
     public void verify(PublicKey key, Provider sigProvider)
         throws CRLException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException {
-        X509CRLImpl.verify(this, key, sigProvider);
+        Signature sig = (sigProvider == null)
+            ? Signature.getInstance(getSigAlgName())
+            : Signature.getInstance(getSigAlgName(), sigProvider);
+        sig.initVerify(key);
+
+        byte[] tbsCRL = getTBSCertList();
+        sig.update(tbsCRL, 0, tbsCRL.length);
+
+        if (sig.verify(getSignature()) == false) {
+            throw new SignatureException("Signature does not match.");
+        }
     }
 
     /**

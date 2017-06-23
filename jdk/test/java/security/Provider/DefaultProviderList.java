@@ -33,7 +33,6 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.lang.reflect.Module;
 
 public class DefaultProviderList {
 

@@ -48,7 +48,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private static final String BUTTON_TYPE = "JButton.buttonType";
     private static final String SEGMENTED_BUTTON_POSITION = "JButton.segmentPosition";
 
-    protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
+    private static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
     public static ComponentUI createUI(final JComponent c) {
         return buttonUI.get();
     }
@@ -462,7 +462,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         return d;
     }
 
-    static final RecyclableSingleton<AquaHierarchyButtonListener> fHierListener = new RecyclableSingletonFromDefaultConstructor<AquaHierarchyButtonListener>(AquaHierarchyButtonListener.class);
+    private static final RecyclableSingleton<AquaHierarchyButtonListener> fHierListener = new RecyclableSingletonFromDefaultConstructor<AquaHierarchyButtonListener>(AquaHierarchyButtonListener.class);
     static AquaHierarchyButtonListener getAquaHierarchyButtonListener() {
         return fHierListener.get();
     }
