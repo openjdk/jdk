@@ -56,6 +56,8 @@
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
 #include "services/threadService.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 PerfVariable* Management::_begin_vm_creation_time = NULL;

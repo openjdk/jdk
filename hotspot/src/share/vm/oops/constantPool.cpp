@@ -39,6 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/fieldType.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"

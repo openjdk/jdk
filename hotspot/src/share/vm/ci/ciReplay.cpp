@@ -33,6 +33,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
