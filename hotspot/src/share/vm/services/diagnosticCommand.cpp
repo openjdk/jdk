@@ -30,6 +30,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -39,6 +40,8 @@
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
 #include "services/writeableFlags.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "oops/objArrayOop.inline.hpp"
 

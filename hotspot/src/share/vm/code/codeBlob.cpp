@@ -33,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"

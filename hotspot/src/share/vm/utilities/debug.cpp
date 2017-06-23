@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -51,6 +52,7 @@
 #include "services/heapDumper.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -79,14 +81,6 @@
      configuration error: ASSERT et al. must not be defined in PRODUCT version
 #  endif
 #endif // PRODUCT
-
-FormatBufferResource::FormatBufferResource(const char * format, ...)
-  : FormatBufferBase((char*)resource_allocate_bytes(FormatBufferBase::BufferSize)) {
-  va_list argp;
-  va_start(argp, format);
-  jio_vsnprintf(_buf, FormatBufferBase::BufferSize, format, argp);
-  va_end(argp);
-}
 
 ATTRIBUTE_PRINTF(1, 2)
 void warning(const char* format, ...) {
@@ -601,7 +595,7 @@ extern "C" void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-  pd_ps(f);
+    pd_ps(f);
 #endif // PRODUCT
   }
 
@@ -765,57 +759,13 @@ void help() {
   tty->print_cr("  ndebug()      - undo debug");
 }
 
-#endif // !PRODUCT
-
-void print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
-
-  // see if it's a valid frame
-  if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-
-    int count = 0;
-    while (count++ < StackPrintLimit) {
-      fr.print_on_error(st, buf, buf_size);
-      st->cr();
-      // Compiled code may use EBP register on x86 so it looks like
-      // non-walkable C frame. Use frame.sender() for java frames.
-      if (t && t->is_Java_thread()) {
-        // Catch very first native frame by using stack address.
-        // For JavaThread stack_base and stack_size should be set.
-        if (!t->on_local_stack((address)(fr.real_fp() + 1))) {
-          break;
-        }
-        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map((JavaThread*)t, false); // No update
-          fr = fr.sender(&map);
-        } else {
-          fr = os::get_sender_for_C_frame(&fr);
-        }
-      } else {
-        // is_first_C_frame() does only simple checks for frame pointer,
-        // it will pass if java compiled code has a pointer in EBP.
-        if (os::is_first_C_frame(&fr)) break;
-        fr = os::get_sender_for_C_frame(&fr);
-      }
-    }
-
-    if (count > StackPrintLimit) {
-      st->print_cr("...<more frames>...");
-    }
-
-    st->cr();
-  }
-}
-
-#ifndef PRODUCT
-
 extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  print_native_stack(tty, fr, t, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
 }
 
 #endif // !PRODUCT

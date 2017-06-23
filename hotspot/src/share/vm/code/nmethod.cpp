@@ -40,6 +40,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
