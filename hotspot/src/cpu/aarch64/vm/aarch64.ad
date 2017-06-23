@@ -16777,6 +16777,48 @@ instruct vmla4I(vecX dst, vecX src1, vecX src2)
   ins_pipe(vmla128);
 %}
 
+// dst + src1 * src2
+instruct vmla2F(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set dst (FmaVF  dst (Binary src1 src2)));
+  format %{ "fmla  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmla(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp64);
+%}
+
+// dst + src1 * src2
+instruct vmla4F(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set dst (FmaVF  dst (Binary src1 src2)));
+  format %{ "fmla  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmla(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
+%}
+
+// dst + src1 * src2
+instruct vmla2D(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set dst (FmaVD  dst (Binary src1 src2)));
+  format %{ "fmla  $dst,$src1,$src2\t# vector (2D)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmla(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
+%}
+
 // --------------------------------- MLS --------------------------------------
 
 instruct vmls4S(vecD dst, vecD src1, vecD src2)
@@ -16834,6 +16876,51 @@ instruct vmls4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src2$$reg));
   %}
   ins_pipe(vmla128);
+%}
+
+// dst - src1 * src2
+instruct vmls2F(vecD dst, vecD src1, vecD src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set dst (FmaVF  dst (Binary (NegVF src1) src2)));
+  match(Set dst (FmaVF  dst (Binary src1 (NegVF src2))));
+  format %{ "fmls  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmls(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp64);
+%}
+
+// dst - src1 * src2
+instruct vmls4F(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 4);
+  match(Set dst (FmaVF  dst (Binary (NegVF src1) src2)));
+  match(Set dst (FmaVF  dst (Binary src1 (NegVF src2))));
+  format %{ "fmls  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmls(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
+%}
+
+// dst - src1 * src2
+instruct vmls2D(vecX dst, vecX src1, vecX src2) %{
+  predicate(UseFMA && n->as_Vector()->length() == 2);
+  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
+  match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
+  format %{ "fmls  $dst,$src1,$src2\t# vector (2D)" %}
+  ins_cost(INSN_COST);
+  ins_encode %{
+    __ fmls(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vmuldiv_fp128);
 %}
 
 // --------------------------------- DIV --------------------------------------
