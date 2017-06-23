@@ -340,14 +340,6 @@ import java.lang.module.ModuleFinder;
  * </tr>
  *
  * <tr>
- *   <td>usePolicy</td>
- *   <td>Granting this permission disables the Java Plug-In's default
- *   security prompting behavior.</td>
- *   <td>For more information, refer to the <a href=
- *   "../../../technotes/guides/deploy/index.html">deployment guide</a>.
- *   </td>
- * </tr>
- * <tr>
  *   <td>manageProcess</td>
  *   <td>Native process termination and information about processes
  *       {@link ProcessHandle}.</td>
