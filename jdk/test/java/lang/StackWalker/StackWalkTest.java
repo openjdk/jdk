@@ -38,6 +38,7 @@ import jdk.test.lib.RandomFactory;
  * @bug 8140450
  * @summary Stack Walk Test (use -Dseed=X to set PRNG seed)
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java
  * @run main/othervm StackWalkTest
  * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest

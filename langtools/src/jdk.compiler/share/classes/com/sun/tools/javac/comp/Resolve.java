@@ -41,6 +41,7 @@ import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
 import com.sun.tools.javac.comp.Resolve.ReferenceLookupResult.StaticKind;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -253,7 +254,7 @@ public class Resolve {
     JCDiagnostic getVerboseApplicableCandidateDiag(int pos, Symbol sym, Type inst) {
         JCDiagnostic subDiag = null;
         if (sym.type.hasTag(FORALL)) {
-            subDiag = diags.fragment("partial.inst.sig", inst);
+            subDiag = diags.fragment(Fragments.PartialInstSig(inst));
         }
 
         String key = subDiag == null ?
@@ -264,7 +265,7 @@ public class Resolve {
     }
 
     JCDiagnostic getVerboseInapplicableCandidateDiag(int pos, Symbol sym, JCDiagnostic subDiag) {
-        return diags.fragment("not.applicable.method.found", pos, sym, subDiag);
+        return diags.fragment(Fragments.NotApplicableMethodFound(pos, sym, subDiag));
     }
     // </editor-fold>
 
@@ -1452,8 +1453,7 @@ public class Resolve {
         Symbol sym = findField(env, site, name, site.tsym);
         if (sym.kind == VAR) return (VarSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.field",
-                                name));
+                 diags.fragment(Fragments.FatalErrCantLocateField(name)));
     }
 
     /** Find unqualified variable or field with given name.
@@ -2545,8 +2545,8 @@ public class Resolve {
      */
     void checkNonAbstract(DiagnosticPosition pos, Symbol sym) {
         if ((sym.flags() & ABSTRACT) != 0 && (sym.flags() & DEFAULT) == 0)
-            log.error(pos, "abstract.cant.be.accessed.directly",
-                      kindName(sym), sym, sym.location());
+            log.error(pos,
+                      Errors.AbstractCantBeAccessedDirectly(kindName(sym),sym, sym.location()));
     }
 
 /* ***************************************************************************
@@ -2693,8 +2693,7 @@ public class Resolve {
                 site, name, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.meth",
-                                name));
+                 diags.fragment(Fragments.FatalErrCantLocateMeth(name)));
     }
 
     /** Resolve constructor.
@@ -2746,7 +2745,7 @@ public class Resolve {
         Symbol sym = resolveConstructor(resolveContext, pos, env, site, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.ctor", site));
+                 diags.fragment(Fragments.FatalErrCantLocateCtor(site)));
     }
 
     Symbol findConstructor(DiagnosticPosition pos, Env<AttrContext> env,
@@ -3531,14 +3530,15 @@ public class Resolve {
             //find a direct super type that is a subtype of 'c'
             for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
-                    log.error(pos, "illegal.default.super.call", c,
-                            diags.fragment("redundant.supertype", c, i));
+                    log.error(pos,
+                              Errors.IllegalDefaultSuperCall(c,
+                                                             Fragments.RedundantSupertype(c, i)));
                     return syms.errSymbol;
                 }
             }
             Assert.error();
         }
-        log.error(pos, "not.encl.class", c);
+        log.error(pos, Errors.NotEnclClass(c));
         return syms.errSymbol;
     }
     //where
@@ -3572,7 +3572,7 @@ public class Resolve {
                                  boolean isSuperCall) {
         Symbol sym = resolveSelfContainingInternal(env, member, isSuperCall);
         if (sym == null) {
-            log.error(pos, "encl.class.required", member);
+            log.error(pos, Errors.EnclClassRequired(member));
             return syms.errSymbol;
         } else {
             return accessBase(sym, pos, env.enclClass.sym.type, sym.name, true);
@@ -3623,8 +3623,9 @@ public class Resolve {
         Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
                          : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym)
-            log.error(pos, "cant.ref.before.ctor.called", "this");
+        if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym) {
+            log.error(pos, Errors.CantRefBeforeCtorCalled("this"));
+        }
         return thisType;
     }
 
@@ -3847,15 +3848,13 @@ public class Resolve {
         }
         private JCDiagnostic getLocationDiag(Symbol location, Type site) {
             if (location.kind == VAR) {
-                return diags.fragment("location.1",
-                    kindName(location),
-                    location,
-                    location.type);
+                return diags.fragment(Fragments.Location1(kindName(location),
+                                                          location,
+                                                          location.type));
             } else {
-                return diags.fragment("location",
-                    typeKindName(site),
-                    site,
-                    null);
+                return diags.fragment(Fragments.Location(typeKindName(site),
+                                      site,
+                                      null));
             }
         }
     }
@@ -4019,11 +4018,11 @@ public class Resolve {
                 List<JCDiagnostic> details = List.nil();
                 for (Map.Entry<Symbol, JCDiagnostic> _entry : candidatesMap.entrySet()) {
                     Symbol sym = _entry.getKey();
-                    JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
-                            Kinds.kindName(sym),
-                            sym.location(site, types),
-                            sym.asMemberOf(site, types),
-                            _entry.getValue());
+                    JCDiagnostic detailDiag =
+                            diags.fragment(Fragments.InapplicableMethod(Kinds.kindName(sym),
+                                                                        sym.location(site, types),
+                                                                        sym.asMemberOf(site, types),
+                                                                        _entry.getValue()));
                     details = details.prepend(detailDiag);
                 }
                 //typically members are visited in reverse order (see Scope)
@@ -4067,7 +4066,7 @@ public class Resolve {
                 "cant.apply.diamond" :
                 "cant.apply.diamond.1";
             return diags.create(dkind, log.currentSource(), pos, key,
-                    diags.fragment("diamond", site.tsym), details);
+                    Fragments.Diamond(site.tsym), details);
         }
     }
 

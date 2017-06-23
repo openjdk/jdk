@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
  * @run testng JmodNegativeTest
  * @summary Negative tests for jmod
  */
@@ -42,6 +44,7 @@ import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import java.util.zip.ZipOutputStream;
 import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

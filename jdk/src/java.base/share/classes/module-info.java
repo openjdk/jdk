@@ -26,6 +26,51 @@
 /**
  * Defines the foundational APIs of the Java SE Platform.
  *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Providers:</dt>
+ * <dd> The JDK implementation of this module provides an implementation of
+ *      the {@index jrt jrt} {@linkplain java.nio.file.spi.FileSystemProvider
+ *      file system provider} to enumerate and read the class and resource
+ *      files in a run-time image.
+ *      The jrt file system can be created by calling
+ *      {@link java.nio.file.FileSystems#newFileSystem
+ *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
+ *      <p></dd>
+ * <dt class="simpleTagLabel">Tool Guides:</dt>
+ * <dd> {@extLink java_tool_reference java launcher},
+ *      {@extLink keytool_tool_reference keytool}</dd>
+ * </dl>
+ *
+ * @provides java.nio.file.spi.FileSystemProvider
+ *
+ * @uses java.lang.System.LoggerFinder
+ * @uses java.net.ContentHandlerFactory
+ * @uses java.net.spi.URLStreamHandlerProvider
+ * @uses java.nio.channels.spi.AsynchronousChannelProvider
+ * @uses java.nio.channels.spi.SelectorProvider
+ * @uses java.nio.charset.spi.CharsetProvider
+ * @uses java.nio.file.spi.FileSystemProvider
+ * @uses java.nio.file.spi.FileTypeDetector
+ * @uses java.security.Provider
+ * @uses java.text.spi.BreakIteratorProvider
+ * @uses java.text.spi.CollatorProvider
+ * @uses java.text.spi.DateFormatProvider
+ * @uses java.text.spi.DateFormatSymbolsProvider
+ * @uses java.text.spi.DecimalFormatSymbolsProvider
+ * @uses java.text.spi.NumberFormatProvider
+ * @uses java.time.chrono.AbstractChronology
+ * @uses java.time.chrono.Chronology
+ * @uses java.time.zone.ZoneRulesProvider
+ * @uses java.util.spi.CalendarDataProvider
+ * @uses java.util.spi.CalendarNameProvider
+ * @uses java.util.spi.CurrencyNameProvider
+ * @uses java.util.spi.LocaleNameProvider
+ * @uses java.util.spi.ResourceBundleControlProvider
+ * @uses java.util.spi.ResourceBundleProvider
+ * @uses java.util.spi.TimeZoneNameProvider
+ * @uses java.util.spi.ToolProvider
+ * @uses javax.security.auth.spi.LoginModule
+ *
  * @moduleGraph
  * @since 9
  */

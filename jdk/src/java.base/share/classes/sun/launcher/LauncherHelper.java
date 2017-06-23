@@ -564,7 +564,6 @@ public final class LauncherHelper {
         }
 
         validateMainClass(mainClass);
-
         return mainClass;
     }
 
@@ -615,7 +614,7 @@ public final class LauncherHelper {
             }
         } catch (LinkageError le) {
             abort(null, "java.launcher.module.error3", mainClass, m.getName(),
-                    le.getClass().getName() + ": " + le.getLocalizedMessage());
+                le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -703,14 +702,22 @@ public final class LauncherHelper {
 
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
-        Method mainMethod;
+        Method mainMethod = null;
         try {
             mainMethod = mainClass.getMethod("main", String[].class);
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
             abort(null, "java.launcher.cls.error4", mainClass.getName(),
                   JAVAFX_APPLICATION_CLASS_NAME);
-            return; // Avoid compiler issues
+        } catch (Throwable e) {
+            if (mainClass.getModule().isNamed()) {
+                abort(e, "java.launcher.module.error5",
+                      mainClass.getName(), mainClass.getModule(),
+                      e.getClass().getName(), e.getLocalizedMessage());
+            } else {
+                abort(e,"java.launcher.cls.error7", mainClass.getName(),
+                      e.getClass().getName(), e.getLocalizedMessage());
+            }
         }
 
         /*

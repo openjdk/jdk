@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @summary Unit test for java.nio.channels.spi.AsynchronousChannelProvider
+ * @build Provider1 Provider2
+ * @run main/othervm CheckProvider Provider1
+ * @run main/othervm -Djava.nio.channels.spi.AsynchronousChannelProvider=Provider2
+ *                   CheckProvider Provider2
  */
 
 import java.nio.channels.spi.AsynchronousChannelProvider;

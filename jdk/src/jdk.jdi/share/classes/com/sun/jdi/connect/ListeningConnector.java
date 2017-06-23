@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package com.sun.jdi.connect;
 
-import java.util.Map;
 import java.io.IOException;
+import java.util.Map;
+
 import com.sun.jdi.VirtualMachine;
 
 /**
@@ -36,6 +37,7 @@ import com.sun.jdi.VirtualMachine;
  * @since  1.3
  */
 public interface ListeningConnector extends Connector {
+
     /**
      * Indicates whether this listening connector supports multiple
      * connections for a single argument map. If so, a call to
@@ -96,7 +98,6 @@ public interface ListeningConnector extends Connector {
     void stopListening(Map<String,? extends Connector.Argument> arguments)
         throws IOException, IllegalConnectorArgumentsException;
 
-
     /**
      * Waits for a target VM to attach to this connector.
      *
@@ -113,5 +114,4 @@ public interface ListeningConnector extends Connector {
      */
     VirtualMachine accept(Map<String,? extends Connector.Argument> arguments)
         throws IOException, IllegalConnectorArgumentsException;
-
 }

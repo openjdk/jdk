@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -554,7 +554,6 @@ needs_charsets = \
   java/nio/charset/Charset/NIOCharsetAvailabilityTest.java \
   java/nio/charset/Charset/RegisteredCharsets.java \
   java/nio/charset/CharsetEncoder/Flush.java \
-  java/nio/charset/coders/CheckSJISMappingProp.sh \
   java/nio/charset/coders/ResetISO2022JP.java \
   java/util/Locale/InternationalBAT.java \
   java/util/Locale/LocaleProviders.sh \
@@ -641,6 +640,7 @@ needs_compact3 = \
   java/security/PermissionCollection/Concurrent.java \
   java/security/Principal/Implies.java \
   java/security/cert/GetInstance.java \
+  java/util/Arrays/largeMemory/ParallelPrefix.java  \
   java/util/logging/DrainFindDeadlockTest.java \
   java/util/logging/LoggingMXBeanTest.java \
   java/util/logging/TestLogConfigurationDeadLock.java \
@@ -709,7 +709,6 @@ needs_compact2 = \
   java/nio/Buffer/Chars.java  \
   java/nio/file/Files/StreamTest.java  \
   java/security/BasicPermission/Wildcard.java \
-  java/util/Arrays/ParallelPrefix.java  \
   java/util/Arrays/SetAllTest.java  \
   java/util/BitSet/stream/BitSetStreamTest.java  \
   java/util/Collection/CollectionDefaults.java  \

@@ -26,6 +26,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main PrimeTest
  * @bug 8026236 8074460 8078672
  * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)

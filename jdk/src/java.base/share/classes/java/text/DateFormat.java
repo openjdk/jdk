@@ -167,6 +167,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * @see          java.util.GregorianCalendar
  * @see          java.util.TimeZone
  * @author       Mark Davis, Chen-Lieh Huang, Alan Liu
+ * @since 1.1
  */
 public abstract class DateFormat extends Format {
 

@@ -26,6 +26,8 @@
  * @bug 8047031
  * @summary SocketPermission tests for legacy socket types
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run testng/othervm SocketPermissionTest
  */
 

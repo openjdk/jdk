@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
  * This class consists exclusively of static utility methods for invoking the
  * java compiler.
  */
-
 public final class CompilerUtils {
     private CompilerUtils() { }
 
@@ -52,13 +51,21 @@ public final class CompilerUtils {
      *
      * @return true if the compilation is successful
      *
-     * @throws IOException if there is an I/O error scanning the source tree or
-     *                     creating the destination directory
+     * @throws IOException
+     *         if there is an I/O error scanning the source tree or
+     *         creating the destination directory
+     * @throws UnsupportedOperationException
+     *         if there is no system java compiler
      */
-    public static boolean compile(Path source, Path destination, String ... options)
+    public static boolean compile(Path source, Path destination, String... options)
         throws IOException
     {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            // no compiler available
+            throw new UnsupportedOperationException("Unable to get system java compiler. "
+                    + "Perhaps, jdk.compiler module is not available.");
+        }
         StandardJavaFileManager jfm = compiler.getStandardFileManager(null, null, null);
 
         List<Path> sources

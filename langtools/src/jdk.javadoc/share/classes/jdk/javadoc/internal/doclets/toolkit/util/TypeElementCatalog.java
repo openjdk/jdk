@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * This class acts as an artificial container for classes specified on the command line when
@@ -88,7 +88,7 @@ public class TypeElementCatalog {
      */
     private final Map<PackageElement, SortedSet<TypeElement>> interfaces;
 
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Utils utils;
     private final Comparator<Element> comparator;
 
@@ -97,7 +97,7 @@ public class TypeElementCatalog {
      *
      * @param typeElements the array of TypeElements to catalog
      */
-    public TypeElementCatalog(Iterable<TypeElement> typeElements, Configuration config) {
+    public TypeElementCatalog(Iterable<TypeElement> typeElements, BaseConfiguration config) {
         this(config);
         for (TypeElement typeElement : typeElements) {
             addTypeElement(typeElement);
@@ -108,7 +108,7 @@ public class TypeElementCatalog {
      * Construct a new TypeElementCatalog.
      *
      */
-    public TypeElementCatalog(Configuration config) {
+    public TypeElementCatalog(BaseConfiguration config) {
         this.configuration = config;
         this.utils = config.utils;
         comparator = utils.makeGeneralPurposeComparator();

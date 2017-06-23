@@ -26,6 +26,7 @@
  *       8014217 8025003 8026330 8028397 8129544 8165243
  * @summary tests java.util.Base64
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main TestBase64
  * @key randomness
  */

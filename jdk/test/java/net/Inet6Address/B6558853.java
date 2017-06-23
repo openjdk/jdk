@@ -26,6 +26,8 @@
  * @bug 6558853
  * @summary  getHostAddress() on connections using IPv6 link-local addrs should have zone id
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main B6558853
  */
 

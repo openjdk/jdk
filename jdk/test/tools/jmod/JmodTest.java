@@ -25,10 +25,12 @@
  * @test
  * @bug 8142968 8166568 8166286 8170618 8168149
  * @summary Basic test for jmod
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
  * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 
@@ -41,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

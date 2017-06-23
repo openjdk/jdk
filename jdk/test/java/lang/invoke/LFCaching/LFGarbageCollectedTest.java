@@ -29,6 +29,7 @@
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
  * @library /lib/testlibrary /java/lang/invoke/common
+ * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFGarbageCollectedTest

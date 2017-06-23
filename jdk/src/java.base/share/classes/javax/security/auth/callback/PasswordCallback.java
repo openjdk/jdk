@@ -30,6 +30,7 @@ package javax.security.auth.callback;
  * {@code PasswordCallback} to the {@code handle}
  * method of a {@code CallbackHandler} to retrieve password information.
  *
+ * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
 public class PasswordCallback implements Callback, java.io.Serializable {
