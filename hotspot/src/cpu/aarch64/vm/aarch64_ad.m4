@@ -268,21 +268,21 @@ instruct $2$1_rReg(iReg$1NoSp dst, iReg$1 src, iRegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_vshift);
 %}')dnl
 define(ROL_INSN, `
-instruct $3$1_rReg_Var_C$2(iRegLNoSp dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
+instruct $3$1_rReg_Var_C$2(iReg$1NoSp dst, iReg$1 src, iRegI shift, immI$2 c$2, rFlagsReg cr)
 %{
   match(Set dst (Or$1 (LShift$1 src shift) (URShift$1 src (SubI c$2 shift))));
 
   expand %{
-    $3L_rReg(dst, src, shift, cr);
+    $3$1_rReg(dst, src, shift, cr);
   %}
 %}')dnl
 define(ROR_INSN, `
-instruct $3$1_rReg_Var_C$2(iRegLNoSp dst, iRegL src, iRegI shift, immI$2 c$2, rFlagsReg cr)
+instruct $3$1_rReg_Var_C$2(iReg$1NoSp dst, iReg$1 src, iRegI shift, immI$2 c$2, rFlagsReg cr)
 %{
   match(Set dst (Or$1 (URShift$1 src shift) (LShift$1 src (SubI c$2 shift))));
 
   expand %{
-    $3L_rReg(dst, src, shift, cr);
+    $3$1_rReg(dst, src, shift, cr);
   %}
 %}')dnl
 ROL_EXPAND(L, rol, rorv)
@@ -305,7 +305,7 @@ instruct $3Ext$1(iReg$2NoSp dst, iReg$2`'ORL2I($2) src1, iReg$1`'ORL2I($1) src2,
 %{
   match(Set dst ($3$2 src1 (ConvI2L src2)));
   ins_cost(INSN_COST);
-  format %{ "$4  $dst, $src1, $5 $src2" %}
+  format %{ "$4  $dst, $src1, $src2, $5" %}
 
    ins_encode %{
      __ $4(as_Register($dst$$reg), as_Register($src1$$reg),
@@ -321,7 +321,7 @@ instruct $3Ext$1_$6(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) sr
 %{
   match(Set dst ($3$1 src1 EXTEND($1, $4, src2, lshift, rshift)));
   ins_cost(INSN_COST);
-  format %{ "$5  $dst, $src1, $6 $src2" %}
+  format %{ "$5  $dst, $src1, $src2, $6" %}
 
    ins_encode %{
      __ $5(as_Register($dst$$reg), as_Register($src1$$reg),
@@ -363,5 +363,82 @@ ADD_SUB_ZERO_EXTEND(I,65535,Sub,subw,uxth)
 ADD_SUB_ZERO_EXTEND(L,255,Sub,sub,uxtb)
 ADD_SUB_ZERO_EXTEND(L,65535,Sub,sub,uxth)
 ADD_SUB_ZERO_EXTEND(L,4294967295,Sub,sub,uxtw)
+dnl
+dnl ADD_SUB_ZERO_EXTEND_SHIFT(mode, size, add node, insn, ext type)
+define(`ADD_SUB_EXTENDED_SHIFT', `
+instruct $3Ext$1_$6_shift(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, immIExt lshift2, immI_`'eval($7-$2) lshift1, immI_`'eval($7-$2) rshift1, rFlagsReg cr)
+%{
+  match(Set dst ($3$1 src1 (LShift$1 EXTEND($1, $4, src2, lshift1, rshift1) lshift2)));
+  ins_cost(1.9 * INSN_COST);
+  format %{ "$5  $dst, $src1, $src2, $6 #lshift2" %}
 
+   ins_encode %{
+     __ $5(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg), ext::$6, ($lshift2$$constant));
+   %}
+  ins_pipe(ialu_reg_reg_shift);
+%}')
+dnl                   $1 $2 $3   $4   $5   $6  $7
+ADD_SUB_EXTENDED_SHIFT(L,8,Add,RShift,add,sxtb,64)
+ADD_SUB_EXTENDED_SHIFT(L,16,Add,RShift,add,sxth,64)
+ADD_SUB_EXTENDED_SHIFT(L,32,Add,RShift,add,sxtw,64)
+dnl
+ADD_SUB_EXTENDED_SHIFT(L,8,Sub,RShift,sub,sxtb,64)
+ADD_SUB_EXTENDED_SHIFT(L,16,Sub,RShift,sub,sxth,64)
+ADD_SUB_EXTENDED_SHIFT(L,32,Sub,RShift,sub,sxtw,64)
+dnl
+ADD_SUB_EXTENDED_SHIFT(I,8,Add,RShift,addw,sxtb,32)
+ADD_SUB_EXTENDED_SHIFT(I,16,Add,RShift,addw,sxth,32)
+dnl
+ADD_SUB_EXTENDED_SHIFT(I,8,Sub,RShift,subw,sxtb,32)
+ADD_SUB_EXTENDED_SHIFT(I,16,Sub,RShift,subw,sxth,32)
+dnl
+dnl ADD_SUB_CONV_SHIFT(mode, add node, insn, ext type)
+define(`ADD_SUB_CONV_SHIFT', `
+instruct $2ExtI_shift(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iRegIorL2I src2, immIExt lshift, rFlagsReg cr)
+%{
+  match(Set dst ($2$1 src1 (LShiftL (ConvI2L src2) lshift)));
+  ins_cost(1.9 * INSN_COST);
+  format %{ "$3  $dst, $src1, $src2, $4 #lshift" %}
+
+   ins_encode %{
+     __ $3(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg), ext::$4, ($lshift$$constant));
+   %}
+  ins_pipe(ialu_reg_reg_shift);
+%}')
+dnl
+ADD_SUB_CONV_SHIFT(L,Add,add,sxtw);
+ADD_SUB_CONV_SHIFT(L,Sub,sub,sxtw);
+dnl
+dnl ADD_SUB_ZERO_EXTEND(mode, size, add node, insn, ext type)
+define(`ADD_SUB_ZERO_EXTEND_SHIFT', `
+instruct $3Ext$1_$5_and_shift(iReg$1NoSp dst, iReg$1`'ORL2I($1) src1, iReg$1`'ORL2I($1) src2, imm$1_$2 mask, immIExt lshift, rFlagsReg cr)
+%{
+  match(Set dst ($3$1 src1 (LShift$1 (And$1 src2 mask) lshift)));
+  ins_cost(1.9 * INSN_COST);
+  format %{ "$4  $dst, $src1, $src2, $5 #lshift" %}
+
+   ins_encode %{
+     __ $4(as_Register($dst$$reg), as_Register($src1$$reg),
+            as_Register($src2$$reg), ext::$5, ($lshift$$constant));
+   %}
+  ins_pipe(ialu_reg_reg_shift);
+%}')
+dnl
+dnl                       $1 $2  $3  $4  $5
+ADD_SUB_ZERO_EXTEND_SHIFT(L,255,Add,add,uxtb)
+ADD_SUB_ZERO_EXTEND_SHIFT(L,65535,Add,add,uxth)
+ADD_SUB_ZERO_EXTEND_SHIFT(L,4294967295,Add,add,uxtw)
+dnl
+ADD_SUB_ZERO_EXTEND_SHIFT(L,255,Sub,sub,uxtb)
+ADD_SUB_ZERO_EXTEND_SHIFT(L,65535,Sub,sub,uxth)
+ADD_SUB_ZERO_EXTEND_SHIFT(L,4294967295,Sub,sub,uxtw)
+dnl
+ADD_SUB_ZERO_EXTEND_SHIFT(I,255,Add,addw,uxtb)
+ADD_SUB_ZERO_EXTEND_SHIFT(I,65535,Add,addw,uxth)
+dnl
+ADD_SUB_ZERO_EXTEND_SHIFT(I,255,Sub,subw,uxtb)
+ADD_SUB_ZERO_EXTEND_SHIFT(I,65535,Sub,subw,uxth)
+dnl
 // END This section of the file is automatically generated. Do not edit --------------
