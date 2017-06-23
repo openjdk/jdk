@@ -648,9 +648,7 @@ void VM_Version::get_processor_features() {
   }
 
   if( is_intel() ) { // Intel cpus specific settings
-    if ((cpu_family() == 0x06) &&
-        ((extended_cpu_model() == 0x57) ||   // Xeon Phi 3200/5200/7200
-        (extended_cpu_model() == 0x85))) {  // Future Xeon Phi
+    if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
     }
   }
@@ -1177,10 +1175,7 @@ void VM_Version::get_processor_features() {
         FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
     }
-    if ((cpu_family() == 0x06) &&
-        ((extended_cpu_model() == 0x36) || // Centerton
-         (extended_cpu_model() == 0x37) || // Silvermont
-         (extended_cpu_model() == 0x4D))) {
+    if (is_atom_family() || is_knights_family()) {
 #ifdef COMPILER2
       if (FLAG_IS_DEFAULT(OptoScheduling)) {
         OptoScheduling = true;
@@ -1190,6 +1185,9 @@ void VM_Version::get_processor_features() {
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
+      }
+      if (FLAG_IS_DEFAULT(UseIncDec)) {
+        FLAG_SET_DEFAULT(UseIncDec, false);
       }
     }
     if(FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
