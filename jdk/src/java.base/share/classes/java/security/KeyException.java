@@ -33,6 +33,7 @@ package java.security;
  * @see KeyManagementException
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public class KeyException extends GeneralSecurityException {

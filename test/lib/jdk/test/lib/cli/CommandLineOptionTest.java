@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.BooleanSupplier;
 
+import jdk.test.lib.management.InputArguments;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -105,7 +106,7 @@ public abstract class CommandLineOptionTest {
                     throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         if (addTestVMOptions) {
-            Collections.addAll(finalOptions, ProcessTools.getVmInputArgs());
+            Collections.addAll(finalOptions, InputArguments.getVmInputArgs());
             Collections.addAll(finalOptions, Utils.getTestJavaOpts());
         }
         Collections.addAll(finalOptions, options);
@@ -199,6 +200,10 @@ public abstract class CommandLineOptionTest {
             throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
+        if (extraFlagForEmulated != null) {
+            finalOptions.add(extraFlagForEmulated);
+        }
         Collections.addAll(finalOptions, options);
 
         CommandLineOptionTest.verifyJVMStartup(expectedMessages,
@@ -390,6 +395,10 @@ public abstract class CommandLineOptionTest {
             String... additionalVMOpts) throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
+        if (extraFlagForEmulated != null) {
+            finalOptions.add(extraFlagForEmulated);
+        }
         Collections.addAll(finalOptions, additionalVMOpts);
 
         CommandLineOptionTest.verifyOptionValue(optionName, expectedValue,
@@ -495,6 +504,18 @@ public abstract class CommandLineOptionTest {
             return "-graal";
         }
         throw new RuntimeException("Unknown VM mode.");
+    }
+
+    /**
+     * @return addtional VMoptions(Emulated related) required to start a new VM with the same type as current.
+     */
+    private static String getVMTypeOptionForEmulated() {
+        if (Platform.isServer() && !Platform.isEmulatedClient()) {
+            return "-XX:-NeverActAsServerClassMachine";
+        } else if (Platform.isEmulatedClient()) {
+            return "-XX:+NeverActAsServerClassMachine";
+        }
+        return null;
     }
 
     private final BooleanSupplier predicate;

@@ -25,9 +25,26 @@
 
 include LauncherCommon.gmk
 
+# The JVMCI exports are needed since JVMCI is normally dynamically exported
+# (see jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
+
 $(eval $(call SetupBuildLauncher, jaotc, \
     MAIN_CLASS := jdk.tools.jaotc.Main, \
-    JAVA_ARGS := -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+    EXTRA_JAVA_ARGS := -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.code.site=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.code.stack=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+    , \
+    JAVA_ARGS := --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot)  \
         -XX:+UseAOT \
         -Djvmci.UseProfilingInformation=false \
         -Dgraal.UseExceptionProbability=false \

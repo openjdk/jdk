@@ -42,6 +42,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Lint;
@@ -269,7 +270,7 @@ public class Check {
      */
     void warnDivZero(DiagnosticPosition pos) {
         if (lint.isEnabled(LintCategory.DIVZERO))
-            log.warning(LintCategory.DIVZERO, pos, "div.zero");
+            log.warning(LintCategory.DIVZERO, pos, Warnings.DivZero);
     }
 
     /**
@@ -288,7 +289,7 @@ public class Check {
      *  @param ex         The failure to report.
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
-        log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, "cant.access", ex.sym, ex.getDetailValue());
+        log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, Errors.CantAccess(ex.sym, ex.getDetailValue()));
         if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
         else return syms.errType;
     }
@@ -299,14 +300,14 @@ public class Check {
      *                    required.
      *  @param found      The type that was found.
      */
-    Type typeTagError(DiagnosticPosition pos, Object required, Object found) {
+    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
         if (found instanceof Type && ((Type)found).hasTag(VOID)) {
-            log.error(pos, "illegal.start.of.type");
+            log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
-        log.error(pos, "type.found.req", found, required);
+        log.error(pos, Errors.TypeFoundReq(found, required));
         return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
     }
 
@@ -316,7 +317,7 @@ public class Check {
      *  @param sym        The referenced symbol.
      */
     void earlyRefError(DiagnosticPosition pos, Symbol sym) {
-        log.error(pos, "cant.ref.before.ctor.called", sym);
+        log.error(pos, Errors.CantRefBeforeCtorCalled(sym));
     }
 
     /** Report duplicate declaration error.
@@ -326,12 +327,18 @@ public class Check {
             Symbol location = sym.location();
             if (location.kind == MTH &&
                     ((MethodSymbol)location).isStaticOrInstanceInit()) {
-                log.error(pos, "already.defined.in.clinit", kindName(sym), sym,
-                        kindName(sym.location()), kindName(sym.location().enclClass()),
-                        sym.location().enclClass());
+                log.error(pos,
+                          Errors.AlreadyDefinedInClinit(kindName(sym),
+                                                        sym,
+                                                        kindName(sym.location()),
+                                                        kindName(sym.location().enclClass()),
+                                                        sym.location().enclClass()));
             } else {
-                log.error(pos, "already.defined", kindName(sym), sym,
-                        kindName(sym.location()), sym.location());
+                log.error(pos,
+                          Errors.AlreadyDefined(kindName(sym),
+                                                sym,
+                                                kindName(sym.location()),
+                                                sym.location()));
             }
         }
     }
@@ -340,7 +347,7 @@ public class Check {
      */
     void varargsDuplicateError(DiagnosticPosition pos, Symbol sym1, Symbol sym2) {
         if (!sym1.type.isErroneous() && !sym2.type.isErroneous()) {
-            log.error(pos, "array.and.varargs", sym1, sym2, sym2.location());
+            log.error(pos, Errors.ArrayAndVarargs(sym1, sym2, sym2.location()));
         }
     }
 
@@ -530,7 +537,7 @@ public class Check {
      */
     CheckContext basicHandler = new CheckContext() {
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            log.error(pos, "prob.found.req", details);
+            log.error(pos, Errors.ProbFoundReq(details));
         }
         public boolean compatible(Type found, Type req, Warner warn) {
             return types.isAssignable(found, req, warn);
@@ -578,10 +585,10 @@ public class Check {
             return found;
         } else {
             if (found.isNumeric() && req.isNumeric()) {
-                checkContext.report(pos, diags.fragment("possible.loss.of.precision", found, req));
+                checkContext.report(pos, diags.fragment(Fragments.PossibleLossOfPrecision(found, req)));
                 return types.createErrorType(found);
             }
-            checkContext.report(pos, diags.fragment("inconvertible.types", found, req));
+            checkContext.report(pos, diags.fragment(Fragments.InconvertibleTypes(found, req)));
             return types.createErrorType(found);
         }
     }
@@ -599,7 +606,7 @@ public class Check {
         if (types.isCastable(found, req, castWarner(pos, found, req))) {
             return req;
         } else {
-            checkContext.report(pos, diags.fragment("inconvertible.types", found, req));
+            checkContext.report(pos, diags.fragment(Fragments.InconvertibleTypes(found, req)));
             return types.createErrorType(found);
         }
     }
@@ -615,7 +622,7 @@ public class Check {
             deferredLintHandler.report(() -> {
                 if (lint.isEnabled(LintCategory.CAST))
                     log.warning(LintCategory.CAST,
-                            tree.pos(), "redundant.cast", tree.clazz.type);
+                            tree.pos(), Warnings.RedundantCast(tree.clazz.type));
             });
         }
     }
@@ -662,7 +669,7 @@ public class Check {
      */
     Type checkNonVoid(DiagnosticPosition pos, Type t) {
         if (t.hasTag(VOID)) {
-            log.error(pos, "void.not.allowed.here");
+            log.error(pos, Errors.VoidNotAllowedHere);
             return types.createErrorType(t);
         } else {
             return t;
@@ -672,7 +679,7 @@ public class Check {
     Type checkClassOrArrayType(DiagnosticPosition pos, Type t) {
         if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
-                                diags.fragment("type.req.class.array"),
+                                diags.fragment(Fragments.TypeReqClassArray),
                                 asTypeParam(t));
         } else {
             return t;
@@ -686,7 +693,7 @@ public class Check {
     Type checkClassType(DiagnosticPosition pos, Type t) {
         if (!t.hasTag(CLASS) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
-                                diags.fragment("type.req.class"),
+                                diags.fragment(Fragments.TypeReqClass),
                                 asTypeParam(t));
         } else {
             return t;
@@ -695,7 +702,7 @@ public class Check {
     //where
         private Object asTypeParam(Type t) {
             return (t.hasTag(TYPEVAR))
-                                    ? diags.fragment("type.parameter", t)
+                                    ? diags.fragment(Fragments.TypeParameter(t))
                                     : t;
         }
 
@@ -705,17 +712,17 @@ public class Check {
         t = checkClassOrArrayType(pos, t);
         if (t.hasTag(CLASS)) {
             if ((t.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
-                log.error(pos, "abstract.cant.be.instantiated", t.tsym);
+                log.error(pos, Errors.AbstractCantBeInstantiated(t.tsym));
                 t = types.createErrorType(t);
             } else if ((t.tsym.flags() & ENUM) != 0) {
-                log.error(pos, "enum.cant.be.instantiated");
+                log.error(pos, Errors.EnumCantBeInstantiated);
                 t = types.createErrorType(t);
             } else {
                 t = checkClassType(pos, t, true);
             }
         } else if (t.hasTag(ARRAY)) {
             if (!types.isReifiable(((ArrayType)t).elemtype)) {
-                log.error(pos, "generic.array.creation");
+                log.error(pos, Errors.GenericArrayCreation);
                 t = types.createErrorType(t);
             }
         }
@@ -734,7 +741,7 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.hasTag(WILDCARD))
                     return typeTagError(pos,
-                                        diags.fragment("type.req.exact"),
+                                        diags.fragment(Fragments.TypeReqExact),
                                         args.head);
                 args = args.tail;
             }
@@ -752,7 +759,7 @@ public class Check {
             return t;
         else
             return typeTagError(pos,
-                                diags.fragment("type.req.ref"),
+                                diags.fragment(Fragments.TypeReqRef),
                                 t);
     }
 
@@ -779,7 +786,7 @@ public class Check {
             return t;
         else
             return typeTagError(pos,
-                                diags.fragment("type.req.ref"),
+                                diags.fragment(Fragments.TypeReqRef),
                                 t);
     }
 
@@ -793,9 +800,8 @@ public class Check {
     boolean checkDisjoint(DiagnosticPosition pos, long flags, long set1, long set2) {
         if ((flags & set1) != 0 && (flags & set2) != 0) {
             log.error(pos,
-                      "illegal.combination.of.modifiers",
-                      asFlagSet(TreeInfo.firstFlag(flags & set1)),
-                      asFlagSet(TreeInfo.firstFlag(flags & set2)));
+                      Errors.IllegalCombinationOfModifiers(asFlagSet(TreeInfo.firstFlag(flags & set1)),
+                                                           asFlagSet(TreeInfo.firstFlag(flags & set2))));
             return false;
         } else
             return true;
@@ -815,14 +821,14 @@ public class Check {
             }
             if (t.tsym.type.getTypeArguments().isEmpty()) {
                 log.error(tree.clazz.pos(),
-                    "cant.apply.diamond.1",
-                    t, diags.fragment("diamond.non.generic", t));
+                          Errors.CantApplyDiamond1(t,
+                                                   Fragments.DiamondNonGeneric(t)));
                 return types.createErrorType(t);
             } else if (tree.typeargs != null &&
                     tree.typeargs.nonEmpty()) {
                 log.error(tree.clazz.pos(),
-                    "cant.apply.diamond.1",
-                    t, diags.fragment("diamond.and.explicit.params", t));
+                          Errors.CantApplyDiamond1(t,
+                                                   Fragments.DiamondAndExplicitParams(t)));
                 return types.createErrorType(t);
             } else {
                 return t;
@@ -905,24 +911,23 @@ public class Check {
         }
         if (hasTrustMeAnno && !isTrustMeAllowedOnMethod(m)) {
             if (varargElemType != null) {
+                JCDiagnostic msg = allowPrivateSafeVarargs ?
+                        diags.fragment(Fragments.VarargsTrustmeOnVirtualVarargs(m)) :
+                        diags.fragment(Fragments.VarargsTrustmeOnVirtualVarargsFinalOnly(m));
                 log.error(tree,
-                        "varargs.invalid.trustme.anno",
-                          syms.trustMeType.tsym,
-                          allowPrivateSafeVarargs ?
-                          diags.fragment("varargs.trustme.on.virtual.varargs", m) :
-                          diags.fragment("varargs.trustme.on.virtual.varargs.final.only", m));
+                          Errors.VarargsInvalidTrustmeAnno(syms.trustMeType.tsym,
+                                                           msg));
             } else {
                 log.error(tree,
-                            "varargs.invalid.trustme.anno",
-                            syms.trustMeType.tsym,
-                            diags.fragment("varargs.trustme.on.non.varargs.meth", m));
+                          Errors.VarargsInvalidTrustmeAnno(syms.trustMeType.tsym,
+                                                           Fragments.VarargsTrustmeOnNonVarargsMeth(m)));
             }
         } else if (hasTrustMeAnno && varargElemType != null &&
                             types.isReifiable(varargElemType)) {
             warnUnsafeVararg(tree,
                             "varargs.redundant.trustme.anno",
                             syms.trustMeType.tsym,
-                            diags.fragment("varargs.trustme.on.reifiable.varargs", varargElemType));
+                            diags.fragment(Fragments.VarargsTrustmeOnReifiableVarargs(varargElemType)));
         }
         else if (!hasTrustMeAnno && varargElemType != null &&
                 !types.isReifiable(varargElemType)) {
@@ -986,8 +991,8 @@ public class Check {
                 Type lastArg = argtypes.last();
                 if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
                     !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
-                    log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
-                                types.elemtype(varParam), varParam);
+                    log.warning(argtrees.last().pos(),
+                                Warnings.InexactNonVarargsCall(types.elemtype(varParam),varParam));
             }
         }
         if (useVarargs) {
@@ -1172,14 +1177,14 @@ public class Check {
                 mask = LocalClassFlags;
                 if ((sym.owner.flags_field & STATIC) == 0 &&
                     (flags & ENUM) != 0)
-                    log.error(pos, "enums.must.be.static");
+                    log.error(pos, Errors.EnumsMustBeStatic);
             } else if (sym.owner.kind == TYP) {
                 mask = MemberClassFlags;
                 if (sym.owner.owner.kind == PCK ||
                     (sym.owner.flags_field & STATIC) != 0)
                     mask |= STATIC;
                 else if ((flags & ENUM) != 0)
-                    log.error(pos, "enums.must.be.static");
+                    log.error(pos, Errors.EnumsMustBeStatic);
                 // Nested interfaces and enums are always STATIC (Spec ???)
                 if ((flags & (INTERFACE | ENUM)) != 0 ) implicit = STATIC;
             } else {
@@ -1202,12 +1207,12 @@ public class Check {
         long illegal = flags & ExtendedStandardFlags & ~mask;
         if (illegal != 0) {
             if ((illegal & INTERFACE) != 0) {
-                log.error(pos, "intf.not.allowed.here");
+                log.error(pos, Errors.IntfNotAllowedHere);
                 mask |= INTERFACE;
             }
             else {
                 log.error(pos,
-                          "mod.not.allowed.here", asFlagSet(illegal));
+                          Errors.ModNotAllowedHere(asFlagSet(illegal)));
             }
         }
         else if ((sym.kind == TYP ||
@@ -1346,7 +1351,7 @@ public class Check {
                 if (incompatibleArg != null) {
                     for (JCTree arg : tree.arguments) {
                         if (arg.type == incompatibleArg) {
-                            log.error(arg, "not.within.bounds", incompatibleArg, forms.head);
+                            log.error(arg, Errors.NotWithinBounds(incompatibleArg, forms.head));
                         }
                         forms = forms.tail;
                      }
@@ -1369,7 +1374,7 @@ public class Check {
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
                 if (tree.type.getEnclosingType().isRaw())
-                    log.error(tree.pos(), "improperly.formed.type.inner.raw.param");
+                    log.error(tree.pos(), Errors.ImproperlyFormedTypeInnerRawParam);
                 if (tree.clazz.hasTag(SELECT))
                     visitSelectInternal((JCFieldAccess)tree.clazz);
             }
@@ -1395,7 +1400,7 @@ public class Check {
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
                 if (tree.selected.type.isParameterized() && tree.type.tsym.type.getTypeArguments().nonEmpty())
-                    log.error(tree.pos(), "improperly.formed.type.param.missing");
+                    log.error(tree.pos(), Errors.ImproperlyFormedTypeParamMissing);
             }
         }
 
@@ -1405,7 +1410,7 @@ public class Check {
                 // The enclosing type is not a class, so we are
                 // looking at a static member type.  However, the
                 // qualifying expression is parameterized.
-                log.error(tree.pos(), "cant.select.static.class.from.param.type");
+                log.error(tree.pos(), Errors.CantSelectStaticClassFromParamType);
             } else {
                 // otherwise validate the rest of the expression
                 tree.selected.accept(this);
@@ -1420,7 +1425,7 @@ public class Check {
         @Override
         public void visitTypeIdent(JCPrimitiveTypeTree that) {
             if (that.type.hasTag(TypeTag.VOID)) {
-                log.error(that.pos(), "void.not.allowed.here");
+                log.error(that.pos(), Errors.VoidNotAllowedHere);
             }
             super.visitTypeIdent(that);
         }
@@ -1462,7 +1467,7 @@ public class Check {
             !withinAnonConstr(env) &&
             tree.type.isRaw()) {
             log.warning(LintCategory.RAW,
-                    tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
+                    tree.pos(), Warnings.RawClassUse(tree.type, tree.type.tsym.type));
         }
     }
     //where
@@ -1613,15 +1618,16 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    Object cannotOverride(MethodSymbol m, MethodSymbol other) {
-        String key;
+    Fragment cannotOverride(MethodSymbol m, MethodSymbol other) {
+        Symbol mloc = m.location();
+        Symbol oloc = other.location();
+
         if ((other.owner.flags() & INTERFACE) == 0)
-            key = "cant.override";
+            return Fragments.CantOverride(m, mloc, other, oloc);
         else if ((m.owner.flags() & INTERFACE) == 0)
-            key = "cant.implement";
+            return Fragments.CantImplement(m, mloc, other, oloc);
         else
-            key = "clashes.with";
-        return diags.fragment(key, m, m.location(), other, other.location());
+            return Fragments.ClashesWith(m, mloc, other, oloc);
     }
 
     /** A customized "override" warning message.
@@ -1629,15 +1635,16 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    Object uncheckedOverrides(MethodSymbol m, MethodSymbol other) {
-        String key;
+    Fragment uncheckedOverrides(MethodSymbol m, MethodSymbol other) {
+        Symbol mloc = m.location();
+        Symbol oloc = other.location();
+
         if ((other.owner.flags() & INTERFACE) == 0)
-            key = "unchecked.override";
+            return Fragments.UncheckedOverride(m, mloc, other, oloc);
         else if ((m.owner.flags() & INTERFACE) == 0)
-            key = "unchecked.implement";
+            return Fragments.UncheckedImplement(m, mloc, other, oloc);
         else
-            key = "unchecked.clash.with";
-        return diags.fragment(key, m, m.location(), other, other.location());
+            return Fragments.UncheckedClashWith(m, mloc, other, oloc);
     }
 
     /** A customized "override" warning message.
@@ -1645,15 +1652,16 @@ public class Check {
      *  @param other  The overridden method.
      *  @return       An internationalized string.
      */
-    Object varargsOverrides(MethodSymbol m, MethodSymbol other) {
-        String key;
+    Fragment varargsOverrides(MethodSymbol m, MethodSymbol other) {
+        Symbol mloc = m.location();
+        Symbol oloc = other.location();
+
         if ((other.owner.flags() & INTERFACE) == 0)
-            key = "varargs.override";
+            return Fragments.VarargsOverride(m, mloc, other, oloc);
         else  if ((m.owner.flags() & INTERFACE) == 0)
-            key = "varargs.implement";
+            return Fragments.VarargsImplement(m, mloc, other, oloc);
         else
-            key = "varargs.clash.with";
-        return diags.fragment(key, m, m.location(), other, other.location());
+            return Fragments.VarargsClashWith(m, mloc, other, oloc);
     }
 
     /** Check that this method conforms with overridden method 'other'.
@@ -1689,8 +1697,8 @@ public class Check {
         // Error if static method overrides instance method (JLS 8.4.6.2).
         if ((m.flags() & STATIC) != 0 &&
                    (other.flags() & STATIC) == 0) {
-            log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.static",
-                      cannotOverride(m, other));
+            log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                      Errors.OverrideStatic(cannotOverride(m, other)));
             m.flags_field |= BAD_OVERRIDE;
             return;
         }
@@ -1700,9 +1708,9 @@ public class Check {
         if ((other.flags() & FINAL) != 0 ||
                  (m.flags() & STATIC) == 0 &&
                  (other.flags() & STATIC) != 0) {
-            log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.meth",
-                      cannotOverride(m, other),
-                      asFlagSet(other.flags() & (FINAL | STATIC)));
+            log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                      Errors.OverrideMeth(cannotOverride(m, other),
+                                          asFlagSet(other.flags() & (FINAL | STATIC))));
             m.flags_field |= BAD_OVERRIDE;
             return;
         }
@@ -1714,11 +1722,12 @@ public class Check {
 
         // Error if overriding method has weaker access (JLS 8.4.6.3).
         if (protection(m.flags()) > protection(other.flags())) {
-            log.error(TreeInfo.diagnosticPositionFor(m, tree), "override.weaker.access",
-                      cannotOverride(m, other),
+            log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       (other.flags() & AccessFlags) == 0 ?
-                          "package" :
-                          asFlagSet(other.flags() & AccessFlags));
+                              Errors.OverrideWeakerAccess(cannotOverride(m, other),
+                                                          "package") :
+                              Errors.OverrideWeakerAccess(cannotOverride(m, other),
+                                                          asFlagSet(other.flags() & AccessFlags)));
             m.flags_field |= BAD_OVERRIDE;
             return;
         }
@@ -1740,14 +1749,12 @@ public class Check {
         if (!resultTypesOK) {
             if ((m.flags() & STATIC) != 0 && (other.flags() & STATIC) != 0) {
                 log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                        Errors.OverrideIncompatibleRet(Fragments.CantHide(m, m.location(), other,
+                          Errors.OverrideIncompatibleRet(Fragments.CantHide(m, m.location(), other,
                                         other.location()), mtres, otres));
                 m.flags_field |= BAD_OVERRIDE;
             } else {
                 log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                        "override.incompatible.ret",
-                        cannotOverride(m, other),
-                        mtres, otres);
+                          Errors.OverrideIncompatibleRet(cannotOverride(m, other), mtres, otres));
                 m.flags_field |= BAD_OVERRIDE;
             }
             return;
@@ -1765,9 +1772,7 @@ public class Check {
         List<Type> unhandledUnerased = unhandled(mt.getThrownTypes(), otthrown);
         if (unhandledErased.nonEmpty()) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                      "override.meth.doesnt.throw",
-                      cannotOverride(m, other),
-                      unhandledUnerased.head);
+                      Errors.OverrideMethDoesntThrow(cannotOverride(m, other), unhandledUnerased.head));
             m.flags_field |= BAD_OVERRIDE;
             return;
         }
@@ -1784,15 +1789,14 @@ public class Check {
             && lint.isEnabled(LintCategory.OVERRIDES)) {
             log.warning(TreeInfo.diagnosticPositionFor(m, tree),
                         ((m.flags() & Flags.VARARGS) != 0)
-                        ? "override.varargs.missing"
-                        : "override.varargs.extra",
-                        varargsOverrides(m, other));
+                        ? Warnings.OverrideVarargsMissing(varargsOverrides(m, other))
+                        : Warnings.OverrideVarargsExtra(varargsOverrides(m, other)));
         }
 
         // Warn if instance method overrides bridge method (compiler spec ??)
         if ((other.flags() & BRIDGE) != 0) {
-            log.warning(TreeInfo.diagnosticPositionFor(m, tree), "override.bridge",
-                        uncheckedOverrides(m, other));
+            log.warning(TreeInfo.diagnosticPositionFor(m, tree),
+                        Warnings.OverrideBridge(uncheckedOverrides(m, other)));
         }
 
         // Warn if a deprecated method overridden by a non-deprecated one.
@@ -1871,8 +1875,8 @@ public class Check {
                             continue;
                         Type st2 = types.memberType(t2, s2);
                         if (types.overrideEquivalent(st1, st2))
-                            log.error(pos, "concrete.inheritance.conflict",
-                                      s1, t1, s2, t2, sup);
+                            log.error(pos,
+                                      Errors.ConcreteInheritanceConflict(s1, t1, s2, t2, sup));
                     }
                 }
             }
@@ -1971,17 +1975,15 @@ public class Check {
                          types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
-                        log.error(pos, "types.incompatible.diff.ret",
-                            t1, t2, s2.name +
-                            "(" + types.memberType(t2, s2).getParameterTypes() + ")");
+                        log.error(pos, Errors.TypesIncompatibleDiffRet(t1, t2, s2.name +
+                                "(" + types.memberType(t2, s2).getParameterTypes() + ")"));
                         return s2;
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
                         !checkCommonOverriderIn(s1, s2, site)) {
-                    log.error(pos,
-                            "name.clash.same.erasure.no.override",
-                            s1, s1.location(),
-                            s2, s2.location());
+                    log.error(pos, Errors.NameClashSameErasureNoOverride(
+                            s1.name, types.memberType(site, s1).asMethodType().getParameterTypes(), s1.location(),
+                            s2.name, types.memberType(site, s2).asMethodType().getParameterTypes(), s2.location()));
                     return s2;
                 }
             }
@@ -2018,7 +2020,7 @@ public class Check {
         ClassSymbol origin = (ClassSymbol)m.owner;
         if ((origin.flags() & ENUM) != 0 && names.finalize.equals(m.name))
             if (m.overrides(syms.enumFinalFinalize, origin, types, false)) {
-                log.error(tree.pos(), "enum.no.finalize");
+                log.error(tree.pos(), Errors.EnumNoFinalize);
                 return;
             }
         for (Type t = origin.type; t.hasTag(CLASS);
@@ -2098,7 +2100,7 @@ public class Check {
 
             if (overridesEquals && !overridesHashCode) {
                 log.warning(LintCategory.OVERRIDES, pos,
-                        "override.equals.but.not.hashcode", someClass);
+                            Warnings.OverrideEqualsButNotHashcode(someClass));
             }
         }
     }
@@ -2155,8 +2157,8 @@ public class Check {
             MethodSymbol undef1 =
                 new MethodSymbol(undef.flags(), undef.name,
                                  types.memberType(c.type, undef), undef.owner);
-            log.error(pos, "does.not.override.abstract",
-                      c, undef1, undef1.location());
+            log.error(pos,
+                      Errors.DoesNotOverrideAbstract(c, undef1, undef1.location()));
         }
     }
 
@@ -2289,7 +2291,7 @@ public class Check {
         if (seen.contains(t)) {
             tv = (TypeVar)t;
             tv.bound = types.createErrorType(t);
-            log.error(pos, "cyclic.inheritance", t);
+            log.error(pos, Errors.CyclicInheritance(t));
         } else if (t.hasTag(TYPEVAR)) {
             tv = (TypeVar)t;
             seen = seen.prepend(tv);
@@ -2341,7 +2343,7 @@ public class Check {
 
     /** Note that we found an inheritance cycle. */
     private void noteCyclic(DiagnosticPosition pos, ClassSymbol c) {
-        log.error(pos, "cyclic.inheritance", c);
+        log.error(pos, Errors.CyclicInheritance(c));
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
             l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);
@@ -2465,14 +2467,23 @@ public class Check {
                 if (!types.isSubSignature(sym.type, types.memberType(site, m2), allowStrictMethodClashCheck) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
-                    String key = m1 == sym ?
-                            "name.clash.same.erasure.no.override" :
-                            "name.clash.same.erasure.no.override.1";
-                    log.error(pos,
-                            key,
-                            sym, sym.location(),
-                            m2, m2.location(),
-                            m1, m1.location());
+                    if (m1 == sym) {
+                        log.error(pos, Errors.NameClashSameErasureNoOverride(
+                            m1.name, types.memberType(site, m1).asMethodType().getParameterTypes(), m1.location(),
+                            m2.name, types.memberType(site, m2).asMethodType().getParameterTypes(), m2.location()));
+                    } else {
+                        ClassType ct = (ClassType)site;
+                        String kind = ct.isInterface() ? "interface" : "class";
+                        log.error(pos, Errors.NameClashSameErasureNoOverride1(
+                            kind,
+                            ct.tsym.name,
+                            m1.name,
+                            types.memberType(site, m1).asMethodType().getParameterTypes(),
+                            m1.location(),
+                            m2.name,
+                            types.memberType(site, m2).asMethodType().getParameterTypes(),
+                            m2.location()));
+                    }
                     return;
                 }
             }
@@ -2501,9 +2512,7 @@ public class Check {
             if (!types.isSubSignature(sym.type, types.memberType(site, s), allowStrictMethodClashCheck)) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
-                            "name.clash.same.erasure.no.hide",
-                            sym, sym.location(),
-                            s, s.location());
+                              Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
                     return;
                 } else {
                     checkPotentiallyAmbiguousOverloads(pos, site, sym, (MethodSymbol)s);
@@ -2639,9 +2648,9 @@ public class Check {
                 //this means a call site passing an implicit lambda would be ambigiuous
                 msym1.flags_field |= POTENTIALLY_AMBIGUOUS;
                 msym2.flags_field |= POTENTIALLY_AMBIGUOUS;
-                log.warning(LintCategory.OVERLOADS, pos, "potentially.ambiguous.overload",
-                            msym1, msym1.location(),
-                            msym2, msym2.location());
+                log.warning(LintCategory.OVERLOADS, pos,
+                            Warnings.PotentiallyAmbiguousOverload(msym1, msym1.location(),
+                                                                  msym2, msym2.location()));
                 return;
             }
         }
@@ -2671,11 +2680,11 @@ public class Check {
                 if (isLambda) {
                     if (belongsToRestrictedPackage(sym)) {
                         log.warning(LintCategory.SERIAL, tree.pos(),
-                            "access.to.member.from.serializable.lambda", sym);
+                                    Warnings.AccessToMemberFromSerializableLambda(sym));
                     }
                 } else {
                     log.warning(tree.pos(),
-                        "access.to.member.from.serializable.element", sym);
+                                Warnings.AccessToMemberFromSerializableElement(sym));
                 }
             }
         }
@@ -2707,7 +2716,7 @@ public class Check {
      */
     private void syntheticError(DiagnosticPosition pos, Symbol sym) {
         if (!sym.type.isErroneous()) {
-            log.error(pos, "synthetic.name.conflict", sym, sym.location());
+            log.error(pos, Errors.SyntheticNameConflict(sym, sym.location()));
         }
     }
 
@@ -2735,9 +2744,10 @@ public class Check {
                     List<Type> oldparams = oldit.allparams();
                     List<Type> newparams = it.allparams();
                     if (!types.containsTypeEquivalent(oldparams, newparams))
-                        log.error(pos, "cant.inherit.diff.arg",
-                                  it.tsym, Type.toString(oldparams),
-                                  Type.toString(newparams));
+                        log.error(pos,
+                                  Errors.CantInheritDiffArg(it.tsym,
+                                                            Type.toString(oldparams),
+                                                            Type.toString(newparams)));
                 }
                 checkClassBounds(pos, seensofar, it);
             }
@@ -2750,7 +2760,7 @@ public class Check {
      */
     void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Type> its) {
         if (its.contains(it))
-            log.error(pos, "repeated.interface");
+            log.error(pos, Errors.RepeatedInterface);
         else {
             its.add(it);
         }
@@ -2800,7 +2810,7 @@ public class Check {
             validateAnnotationType(pos, types.elemtype(type));
             return;
         }
-        log.error(pos, "invalid.annotation.member.type");
+        log.error(pos, Errors.InvalidAnnotationMemberType);
     }
 
     /**
@@ -2818,7 +2828,7 @@ public class Check {
                 if (sym.kind == MTH &&
                     (sym.flags() & (PUBLIC | PROTECTED)) != 0 &&
                     types.overrideEquivalent(m.type, sym.type))
-                    log.error(pos, "intf.annotation.member.clash", sym, sup);
+                    log.error(pos, Errors.IntfAnnotationMemberClash(sym, sup));
             }
         }
     }
@@ -2843,13 +2853,13 @@ public class Check {
         validateAnnotationTree(a);
 
         if (a.type.tsym.isAnnotationType() && !annotationApplicable(a, s))
-            log.error(a.pos(), "annotation.type.not.applicable");
+            log.error(a.pos(), Errors.AnnotationTypeNotApplicable);
 
         if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
             if (s.kind != TYP) {
-                log.error(a.pos(), "bad.functional.intf.anno");
+                log.error(a.pos(), Errors.BadFunctionalIntfAnno);
             } else if (!s.isInterface() || (s.flags() & ANNOTATION) != 0) {
-                log.error(a.pos(), "bad.functional.intf.anno.1", diags.fragment("not.a.functional.intf", s));
+                log.error(a.pos(), Errors.BadFunctionalIntfAnno1(Fragments.NotAFunctionalIntf(s)));
             }
         }
     }
@@ -2903,11 +2913,13 @@ public class Check {
             MethodSymbol m = (MethodSymbol) sym;
             Type ret = m.getReturnType();
             if (!(ret.hasTag(ARRAY) && types.isSameType(((ArrayType)ret).elemtype, contained.type))) {
-                log.error(pos, "invalid.repeatable.annotation.value.return",
-                        container, ret, types.makeArrayType(contained.type));
+                log.error(pos,
+                          Errors.InvalidRepeatableAnnotationValueReturn(container,
+                                                                        ret,
+                                                                        types.makeArrayType(contained.type)));
             }
         } else {
-            log.error(pos, "invalid.repeatable.annotation.no.value", container);
+            log.error(pos, Errors.InvalidRepeatableAnnotationNoValue(container));
         }
     }
 
@@ -2928,16 +2940,18 @@ public class Check {
             }
         }
         if (error ) {
-            log.error(pos, "invalid.repeatable.annotation.retention",
-                      container, containerRetention,
-                      contained, containedRetention);
+            log.error(pos,
+                      Errors.InvalidRepeatableAnnotationRetention(container,
+                                                                  containerRetention.name(),
+                                                                  contained,
+                                                                  containedRetention.name()));
         }
     }
 
     private void validateDocumented(Symbol container, Symbol contained, DiagnosticPosition pos) {
         if (contained.attribute(syms.documentedType.tsym) != null) {
             if (container.attribute(syms.documentedType.tsym) == null) {
-                log.error(pos, "invalid.repeatable.annotation.not.documented", container, contained);
+                log.error(pos, Errors.InvalidRepeatableAnnotationNotDocumented(container, contained));
             }
         }
     }
@@ -2945,7 +2959,7 @@ public class Check {
     private void validateInherited(Symbol container, Symbol contained, DiagnosticPosition pos) {
         if (contained.attribute(syms.inheritedType.tsym) != null) {
             if (container.attribute(syms.inheritedType.tsym) == null) {
-                log.error(pos, "invalid.repeatable.annotation.not.inherited", container, contained);
+                log.error(pos, Errors.InvalidRepeatableAnnotationNotInherited(container, contained));
             }
         }
     }
@@ -2987,7 +3001,7 @@ public class Check {
         }
 
         if (!isTargetSubsetOf(containerTargets, containedTargets)) {
-            log.error(pos, "invalid.repeatable.annotation.incompatible.target", container, contained);
+            log.error(pos, Errors.InvalidRepeatableAnnotationIncompatibleTarget(container, contained));
         }
     }
 
@@ -3050,9 +3064,7 @@ public class Check {
                 elm.kind == MTH &&
                 ((MethodSymbol)elm).defaultValue == null) {
                 log.error(pos,
-                          "invalid.repeatable.annotation.elem.nondefault",
-                          container,
-                          elm);
+                          Errors.InvalidRepeatableAnnotationElemNondefault(container, elm));
             }
         }
     }
@@ -3201,8 +3213,8 @@ public class Check {
             if (m == null || m.type.isErroneous()) continue;
             if (!elements.remove(m)) {
                 isValid = false;
-                log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
-                        m.name, a.type);
+                log.error(assign.lhs.pos(),
+                          Errors.DuplicateAnnotationMemberValue(m.name, a.type));
             }
         }
 
@@ -3248,7 +3260,7 @@ public class Check {
         for (JCTree elem : na.elems) {
             if (!targets.add(TreeInfo.symbol(elem))) {
                 isValid = false;
-                log.error(elem.pos(), "repeated.annotation.target");
+                log.error(elem.pos(), Errors.RepeatedAnnotationTarget);
             }
         }
         return isValid;
@@ -3260,13 +3272,13 @@ public class Check {
             !syms.deprecatedType.isErroneous() &&
             s.attribute(syms.deprecatedType.tsym) == null) {
             log.warning(LintCategory.DEP_ANN,
-                    pos, "missing.deprecated.annotation");
+                    pos, Warnings.MissingDeprecatedAnnotation);
         }
         // Note: @Deprecated has no effect on local variables, parameters and package decls.
         if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation()) {
             if (!syms.deprecatedType.isErroneous() && s.attribute(syms.deprecatedType.tsym) != null) {
                 log.warning(LintCategory.DEPRECATION, pos,
-                        "deprecated.annotation.has.no.effect", Kinds.kindName(s));
+                            Warnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
             }
         }
     }
@@ -3282,14 +3294,14 @@ public class Check {
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
             deferredLintHandler.report(() -> {
-                log.mandatoryWarning(pos, "sun.proprietary", s);
+                log.mandatoryWarning(pos, Warnings.SunProprietary(s));
             });
         }
     }
 
     void checkProfile(final DiagnosticPosition pos, final Symbol s) {
         if (profile != Profile.DEFAULT && (s.flags() & NOT_IN_PROFILE) != 0) {
-            log.error(pos, "not.in.profile", s, profile);
+            log.error(pos, Errors.NotInProfile(s, profile));
         }
     }
 
@@ -3319,7 +3331,7 @@ public class Check {
         if ((tsym.flags_field & ACYCLIC_ANN) != 0)
             return;
         if ((tsym.flags_field & LOCKED) != 0) {
-            log.error(pos, "cyclic.annotation.element");
+            log.error(pos, Errors.CyclicAnnotationElement(tsym));
             return;
         }
         try {
@@ -3387,7 +3399,7 @@ public class Check {
         if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
             if ((ctor.flags_field & LOCKED) != 0) {
                 log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
-                          "recursive.ctor.invocation");
+                          Errors.RecursiveCtorInvocation);
             } else {
                 ctor.flags_field |= LOCKED;
                 checkCyclicConstructor(tree, callMap.remove(ctor), callMap);
@@ -3425,7 +3437,7 @@ public class Check {
     void checkEmptyIf(JCIf tree) {
         if (tree.thenpart.hasTag(SKIP) && tree.elsepart == null &&
                 lint.isEnabled(LintCategory.EMPTY))
-            log.warning(LintCategory.EMPTY, tree.thenpart.pos(), "empty.if");
+            log.warning(LintCategory.EMPTY, tree.thenpart.pos(), Warnings.EmptyIf);
     }
 
     /** Check that symbol is unique in given scope.
@@ -3465,7 +3477,7 @@ public class Check {
      */
     void duplicateErasureError(DiagnosticPosition pos, Symbol sym1, Symbol sym2) {
         if (!sym1.type.isErroneous() && !sym2.type.isErroneous()) {
-            log.error(pos, "name.clash.same.erasure", sym1, sym2);
+            log.error(pos, Errors.NameClashSameErasure(sym1, sym2));
         }
     }
 
@@ -3523,14 +3535,14 @@ public class Check {
         }
         if (clashing != null) {
             if (staticImport)
-                log.error(pos, "already.defined.static.single.import", clashing);
+                log.error(pos, Errors.AlreadyDefinedStaticSingleImport(clashing));
             else
-                log.error(pos, "already.defined.single.import", clashing);
+                log.error(pos, Errors.AlreadyDefinedSingleImport(clashing));
             return false;
         }
         clashing = topLevelScope.findFirst(sym.name, duplicates);
         if (clashing != null) {
-            log.error(pos, "already.defined.this.unit", clashing);
+            log.error(pos, Errors.AlreadyDefinedThisUnit(clashing));
             return false;
         }
         return true;
@@ -3540,8 +3552,8 @@ public class Check {
      */
     public void checkCanonical(JCTree tree) {
         if (!isCanonical(tree))
-            log.error(tree.pos(), "import.requires.canonical",
-                      TreeInfo.symbol(tree));
+            log.error(tree.pos(),
+                      Errors.ImportRequiresCanonical(TreeInfo.symbol(tree)));
     }
         // where
         private boolean isCanonical(JCTree tree) {
@@ -3562,8 +3574,8 @@ public class Check {
             rs.isAccessible(env, c) &&
             !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
         {
-            log.warning(pos, "auxiliary.class.accessed.from.outside.of.its.source.file",
-                        c, c.sourcefile);
+            log.warning(pos,
+                        Warnings.AuxiliaryClassAccessedFromOutsideOfItsSourceFile(c, c.sourcefile));
         }
     }
 
@@ -3623,7 +3635,7 @@ public class Check {
                         break;
                     }
                 }
-                log.error(pos, "bad.functional.intf.anno.1", ex.getDiagnostic());
+                log.error(pos, Errors.BadFunctionalIntfAnno1(ex.getDiagnostic()));
             }
         }
     }
@@ -3639,11 +3651,14 @@ public class Check {
 
             TypeSymbol site = (TypeSymbol) TreeInfo.symbol(select.selected);
             if (!checkTypeContainsImportableElement(site, site, toplevel.packge, select.name, new HashSet<Symbol>())) {
-                log.error(imp.pos(), "cant.resolve.location",
-                          KindName.STATIC,
-                          select.name, List.<Type>nil(), List.<Type>nil(),
-                          Kinds.typeKindName(TreeInfo.symbol(select.selected).type),
-                          TreeInfo.symbol(select.selected).type);
+                log.error(imp.pos(),
+                          Errors.CantResolveLocation(KindName.STATIC,
+                                                     select.name,
+                                                     null,
+                                                     null,
+                                                     Fragments.Location(kindName(site),
+                                                                        site,
+                                                                        null)));
             }
         }
     }
@@ -3664,7 +3679,7 @@ public class Check {
                     }
                 }
                 if (tsym.kind == PCK && tsym.members().isEmpty() && !tsym.exists()) {
-                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, "doesnt.exist", tsym);
+                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));
                 }
             }
         }

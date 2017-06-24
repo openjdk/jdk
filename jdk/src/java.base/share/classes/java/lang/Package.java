@@ -27,7 +27,6 @@ package java.lang;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -103,14 +102,20 @@ import jdk.internal.reflect.Reflection;
  * with the {@link Package#getPackages Package.getPackages()} and
  * {@link ClassLoader#getDefinedPackages} methods.
  *
+ * @implNote
+ * The <a href="ClassLoader.html#builtinLoaders">builtin class loaders</a>
+ * do not explicitly define {@code Package} objects for packages in
+ * <em>named modules</em>.  Instead those packages are automatically defined
+ * and have no specification and implementation versioning information.
+ *
  * @jvms 5.3 Run-time package
- * @see <a href="../../../technotes/guides/jar/jar.html#versioning">
- * The JAR File Specification: Package Versioning</a>
  * @see <a href="../../../technotes/guides/jar/jar.html#sealing">
  * The JAR File Specification: Package Sealing</a>
  * @see ClassLoader#definePackage(String, String, String, String, String, String, String, URL)
  *
  * @since 1.2
+ * @revised 9
+ * @spec JPMS
  */
 public class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
     /**
@@ -207,6 +212,9 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * is returned if it is not known.
      * @return the vendor that implemented this package, {@code null}
      * is returned if it is not known.
+     *
+     * @revised 9
+     * @spec JPMS
      */
     public String getImplementationVendor() {
         return versionInfo.implVendor;
@@ -334,6 +342,9 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * a {@code Package} for the specified class loader.
      *
      * @see ClassLoader#getDefinedPackage
+     *
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     @Deprecated(since="9")
@@ -356,6 +367,9 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      *          class loader and its ancestors
      *
      * @see ClassLoader#getDefinedPackages
+     *
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static Package[] getPackages() {

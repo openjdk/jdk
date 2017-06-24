@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@
  */
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.javadoc.DocErrorReporter;
+import com.sun.javadoc.RootDoc;
 
 public class MaxWarns {
     public static void main(String... args) throws Exception {
@@ -44,8 +44,7 @@ public class MaxWarns {
 
     void run() throws Exception {
         final int defaultMaxWarns = 100;
-        final int genWarns = 150;
-        File f = genSrc(genWarns);
+        File f = new File(System.getProperty("test.src"), "MaxWarns.java");
         String out = javadoc(f);
         check(out, defaultMaxWarns);
 
@@ -53,38 +52,22 @@ public class MaxWarns {
             throw new Exception(errors + " errors occurred");
     }
 
-    File genSrc(int count) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("package p;\n")
-            .append("public class C {\n")
-            .append("    /**\n");
-        for (int i = 0; i < count; i++)
-            sb.append("     * @param i").append(i).append(" does not exist!\n");
-        sb.append("     */\n")
-            .append("    public void m() { }\n")
-            .append("}\n");
-        File srcDir = new File("src");
-        srcDir.mkdirs();
-        File f = new File(srcDir, "C.java");
-        try (FileWriter fw = new FileWriter(f)) {
-            fw.write(sb.toString());
-        }
-        return f;
-    }
-
     String javadoc(File f) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { "-Xdoclint:none", "-d", "api", f.getPath() };
+        String[] args = { f.getPath() };
         int rc = com.sun.tools.javadoc.Main.execute("javadoc", pw, pw, pw,
-                com.sun.tools.doclets.standard.Standard.class.getName(), args);
+                "MaxWarns$TestDoclet",
+                getClass().getClassLoader(), args);
         pw.flush();
         return sw.toString();
     }
 
+    private static final String WARNING_TEXT = "count ";
+
     void check(String out, int count) {
         System.err.println(out);
-        Pattern warn = Pattern.compile("warning - @param argument \"i[0-9]+\" is not a parameter name");
+        Pattern warn = Pattern.compile("warning - " + WARNING_TEXT + "[0-9]+");
         Matcher m = warn.matcher(out);
         int n = 0;
         for (int start = 0; m.find(start); start = m.start() + 1) {
@@ -109,5 +92,24 @@ public class MaxWarns {
     }
 
     int errors;
+
+    public static class TestDoclet {
+
+        public static boolean start(RootDoc root) {
+            // generate 150 warnings
+            for (int i = 1 ; i <= 150 ; i++) {
+                root.printWarning(WARNING_TEXT + i);
+            }
+            return true;
+        }
+
+        public static int optionLength(String option) {
+            return 0;
+        }
+
+        public static boolean validOptions(String[][] options, DocErrorReporter reporter) {
+            return true;
+        }
+    }
 }
 

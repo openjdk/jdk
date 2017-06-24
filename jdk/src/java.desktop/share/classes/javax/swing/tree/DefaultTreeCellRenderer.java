@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ import sun.swing.DefaultLookup;
  * defaults table. The following table lists the mapping between
  * {@code DefaultTreeCellRenderer} property and defaults table key:
  * <table border="1" cellpadding="1" cellspacing="0" summary="">
- *   <tr valign="top"  align="left">
- *     <th style="background-color:#CCCCFF" align="left">Property:
- *     <th style="background-color:#CCCCFF" align="left">Key:
+ *   <tr valign="top" style="text-align:left">
+ *     <th style="background-color:#CCCCFF;text-align:left">Property:
+ *     <th style="background-color:#CCCCFF;text-align:left">Key:
  *   <tr><td>"leafIcon"<td>"Tree.leafIcon"
  *   <tr><td>"closedIcon"<td>"Tree.closedIcon"
  *   <tr><td>"openIcon"<td>"Tree.openIcon"
@@ -74,7 +74,7 @@ import sun.swing.DefaultLookup;
  *   <tr><td>"borderSelectionColor"<td>"Tree.selectionBorderColor"
  * </table>
  * <p>
- * <strong><a name="override">Implementation Note:</a></strong>
+ * <strong><a id="override">Implementation Note:</a></strong>
  * This class overrides
  * <code>invalidate</code>,
  * <code>validate</code>,

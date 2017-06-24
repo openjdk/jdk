@@ -133,6 +133,8 @@ import jdk.internal.misc.Unsafe;
  *     Class<?> ensureLoaded = LockSupport.class;
  *   }
  * }}</pre>
+ *
+ * @since 1.5
  */
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.

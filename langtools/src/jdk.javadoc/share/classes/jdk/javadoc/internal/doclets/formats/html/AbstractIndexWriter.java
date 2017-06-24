@@ -79,7 +79,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param path       Path to the file which is getting generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
-    protected AbstractIndexWriter(ConfigurationImpl configuration,
+    protected AbstractIndexWriter(HtmlConfiguration configuration,
                                   DocPath path,
                                   IndexBuilder indexbuilder) {
         super(configuration, path);

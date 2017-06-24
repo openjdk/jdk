@@ -126,6 +126,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
      * MouseEvent.MOUSE_EXITED
      * MouseEvent.MOUSE_DRAGGED
      */
+    @SuppressWarnings("deprecation")
     public void handleJavaMouseEvent( MouseEvent mouseEvent ) {
         super.handleJavaMouseEvent(mouseEvent);
 

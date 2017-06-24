@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param filename     Name of the index file to be generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
-    public SingleIndexWriter(ConfigurationImpl configuration,
+    public SingleIndexWriter(HtmlConfiguration configuration,
                              DocPath filename,
                              IndexBuilder indexbuilder) {
         super(configuration, filename, indexbuilder);
@@ -77,7 +77,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index
      */
-    public static void generate(ConfigurationImpl configuration,
+    public static void generate(HtmlConfiguration configuration,
                                 IndexBuilder indexbuilder) throws DocFileIOException {
         DocPath filename = DocPaths.INDEX_ALL;
         SingleIndexWriter indexgen = new SingleIndexWriter(configuration,
