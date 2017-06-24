@@ -112,29 +112,13 @@ public class DOMForest {
         this.entityResolver = entityResolver;
         this.errorReceiver = errReceiver;
         this.logic = logic;
+        // secure xml processing can be switched off if input requires it
+        boolean disableXmlSecurity = options == null ? false : options.disableXmlSecurity;
+
+        DocumentBuilderFactory dbf = XmlUtil.newDocumentBuilderFactory(disableXmlSecurity);
+        this.parserFactory = XmlUtil.newSAXParserFactory(disableXmlSecurity);
         try {
-            // secure xml processing can be switched off if input requires it
-            boolean secureProcessingEnabled = options == null || !options.disableXmlSecurity;
-            DocumentBuilderFactory dbf = XmlUtil.newDocumentBuilderFactory(!secureProcessingEnabled);
-            dbf.setNamespaceAware(true);
             this.documentBuilder = dbf.newDocumentBuilder();
-
-            this.parserFactory = XmlUtil.newSAXParserFactory(secureProcessingEnabled);
-            this.parserFactory.setNamespaceAware(true);
-
-            if(secureProcessingEnabled){
-                dbf.setExpandEntityReferences(false);
-                try {
-                parserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-                parserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-                parserFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-              } catch (SAXNotRecognizedException e){
-                throw new ParserConfigurationException(e.getMessage());
-              } catch (SAXNotSupportedException e) {
-                throw new ParserConfigurationException(e.getMessage());
-              }
-            }
-
         } catch (ParserConfigurationException e) {
             throw new AssertionError(e);
         }
