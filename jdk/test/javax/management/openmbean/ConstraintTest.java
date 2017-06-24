@@ -26,7 +26,7 @@
  * @bug 6204469
  * @summary Test that Open MBean attributes and parameters check constraints
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ConstraintTest
  * @run build ConstraintTest
  * @run main ConstraintTest

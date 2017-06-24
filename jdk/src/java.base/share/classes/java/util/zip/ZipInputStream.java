@@ -40,6 +40,7 @@ import static java.util.zip.ZipUtils.*;
  * entries.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class ZipInputStream extends InflaterInputStream implements ZipConstants {

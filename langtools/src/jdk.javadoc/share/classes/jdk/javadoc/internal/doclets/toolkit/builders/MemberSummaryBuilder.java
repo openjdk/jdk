@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 
 /**
  * Builds the member summary.
+ * There are two anonymous subtype variants of this builder, created
+ * in the {@link #getInstance} methods. One is for general types;
+ * the other is for annotation types.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -56,17 +59,13 @@ import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
  * @author Jamie Ho
  * @author Bhavesh Patel (Modified)
  */
-public class MemberSummaryBuilder extends AbstractMemberBuilder {
+public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
 
-    /**
-     * The XML root for this builder.
+    /*
+     * Comparator used to sort the members in the summary.
      */
-    public static final String NAME = "MemberSummary";
+    private final Comparator<Element> comparator;
 
-    /**
-     * The visible members for the given class.
-     */
-    private final EnumMap<VisibleMemberMap.Kind, VisibleMemberMap> visibleMemberMaps;
     /**
      * The member summary writers for the given class.
      */
@@ -75,7 +74,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * The type being documented.
      */
-    private final TypeElement typeElement;
+    protected final TypeElement typeElement;
 
     /**
      * Construct a new MemberSummaryBuilder.
@@ -88,30 +87,45 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         super(context);
         this.typeElement = typeElement;
         memberSummaryWriters = new EnumMap<>(VisibleMemberMap.Kind.class);
-        visibleMemberMaps = new EnumMap<>(VisibleMemberMap.Kind.class);
-        for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            visibleMemberMaps.put(kind,
-                    new VisibleMemberMap(
-                    typeElement,
-                    kind,
-                    configuration));
-        }
+
+        comparator = utils.makeGeneralPurposeComparator();
     }
 
     /**
-     * Construct a new MemberSummaryBuilder.
+     * Construct a new MemberSummaryBuilder for a general type.
      *
      * @param classWriter   the writer for the class whose members are being
      *                      summarized.
      * @param context       the build context.
+     * @return              the instance
      */
     public static MemberSummaryBuilder getInstance(
             ClassWriter classWriter, Context context) {
-        MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
-                classWriter.getTypeElement());
+        MemberSummaryBuilder builder = new MemberSummaryBuilder(context, classWriter.getTypeElement()) {
+            @Override
+            public void build(Content contentTree) {
+                buildPropertiesSummary(contentTree);
+                buildNestedClassesSummary(contentTree);
+                buildEnumConstantsSummary(contentTree);
+                buildFieldsSummary(contentTree);
+                buildConstructorsSummary(contentTree);
+                buildMethodsSummary(contentTree);
+            }
+
+            @Override
+            public boolean hasMembersToDocument() {
+                for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
+                    VisibleMemberMap members = getVisibleMemberMap(kind);
+                    if (!members.noVisibleMembers()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
         WriterFactory wf = context.configuration.getWriterFactory();
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            MemberSummaryWriter msw = builder.visibleMemberMaps.get(kind).noVisibleMembers()
+            MemberSummaryWriter msw = builder.getVisibleMemberMap(kind).noVisibleMembers()
                     ? null
                     : wf.getMemberSummaryWriter(classWriter, kind);
             builder.memberSummaryWriters.put(kind, msw);
@@ -120,19 +134,32 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * Construct a new MemberSummaryBuilder.
+     * Construct a new MemberSummaryBuilder for an annotation type.
      *
      * @param annotationTypeWriter the writer for the class whose members are
      *                             being summarized.
-     * @param configuration the current configuration of the doclet.
+     * @param context       the build context.
+     * @return              the instance
      */
     public static MemberSummaryBuilder getInstance(
             AnnotationTypeWriter annotationTypeWriter, Context context) {
         MemberSummaryBuilder builder = new MemberSummaryBuilder(context,
-                annotationTypeWriter.getAnnotationTypeElement());
+                annotationTypeWriter.getAnnotationTypeElement()) {
+            @Override
+            public void build(Content contentTree) {
+                buildAnnotationTypeFieldsSummary(contentTree);
+                buildAnnotationTypeRequiredMemberSummary(contentTree);
+                buildAnnotationTypeOptionalMemberSummary(contentTree);
+            }
+
+            @Override
+            public boolean hasMembersToDocument() {
+                return !utils.getAnnotationMembers(typeElement).isEmpty();
+            }
+        };
         WriterFactory wf = context.configuration.getWriterFactory();
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            MemberSummaryWriter msw = builder.visibleMemberMaps.get(kind).noVisibleMembers()
+            MemberSummaryWriter msw = builder.getVisibleMemberMap(kind).noVisibleMembers()
                     ? null
                     : wf.getMemberSummaryWriter(annotationTypeWriter, kind);
             builder.memberSummaryWriters.put(kind, msw);
@@ -141,35 +168,27 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    /**
      * Return the specified visible member map.
      *
-     * @param type the type of visible member map to return.
+     * @param kind the kind of visible member map to return.
      * @return the specified visible member map.
      * @throws ArrayIndexOutOfBoundsException when the type is invalid.
      * @see VisibleMemberMap
      */
-    public VisibleMemberMap getVisibleMemberMap(VisibleMemberMap.Kind type) {
-        return visibleMemberMaps.get(type);
+    public VisibleMemberMap getVisibleMemberMap(VisibleMemberMap.Kind kind) {
+        return configuration.getVisibleMemberMap(typeElement, kind);
     }
 
     /**.
      * Return the specified member summary writer.
      *
-     * @param type the type of member summary writer to return.
+     * @param kind the kind of member summary writer to return.
      * @return the specified member summary writer.
      * @throws ArrayIndexOutOfBoundsException when the type is invalid.
      * @see VisibleMemberMap
      */
-    public MemberSummaryWriter getMemberSummaryWriter(VisibleMemberMap.Kind type) {
-        return memberSummaryWriters.get(type);
+    public MemberSummaryWriter getMemberSummaryWriter(VisibleMemberMap.Kind kind) {
+        return memberSummaryWriters.get(kind);
     }
 
     /**
@@ -177,155 +196,130 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * This information can be used for doclet specific documentation
      * generation.
      *
-     * @param type the type of members to return.
+     * @param kind the kind of elements to return.
      * @return a list of methods that will be documented.
      * @see VisibleMemberMap
      */
-    public SortedSet<Element> members(VisibleMemberMap.Kind type) {
+    public SortedSet<Element> members(VisibleMemberMap.Kind kind) {
         TreeSet<Element> out = new TreeSet<>(comparator);
-        out.addAll(visibleMemberMaps.get(type).getLeafMembers());
+        out.addAll(getVisibleMemberMap(kind).getLeafMembers());
         return out;
-    }
-
-    /**
-     * Return true it there are any members to summarize.
-     *
-     * @return true if there are any members to summarize.
-     */
-    @Override
-    public boolean hasMembersToDocument() {
-        if (utils.isAnnotationType(typeElement)) {
-            return !utils.getAnnotationMethods(typeElement).isEmpty();
-        }
-        for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            VisibleMemberMap members = visibleMemberMaps.get(kind);
-            if (!members.noVisibleMembers()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
      * Build the summary for the enum constants.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildEnumConstantsSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildEnumConstantsSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ENUM_CONSTANTS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ENUM_CONSTANTS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ENUM_CONSTANTS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
     /**
      * Build the summary for fields.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeFieldsSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildAnnotationTypeFieldsSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
     /**
      * Build the summary for the optional members.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeOptionalMemberSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildAnnotationTypeOptionalMemberSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
     /**
      * Build the summary for the optional members.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeRequiredMemberSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildAnnotationTypeRequiredMemberSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
     /**
      * Build the summary for the fields.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildFieldsSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildFieldsSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.FIELDS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.FIELDS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.FIELDS);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
     /**
      * Build the summary for the fields.
+     *
+     * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildPropertiesSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildPropertiesSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.PROPERTIES);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.PROPERTIES);
+                getVisibleMemberMap(VisibleMemberMap.Kind.PROPERTIES);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
     /**
      * Build the summary for the nested classes.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildNestedClassesSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildNestedClassesSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.INNER_CLASSES);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.INNER_CLASSES);
+                getVisibleMemberMap(VisibleMemberMap.Kind.INNER_CLASSES);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
     /**
      * Build the method summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildMethodsSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildMethodsSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.METHODS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.METHODS);
+               getVisibleMemberMap(VisibleMemberMap.Kind.METHODS);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
     /**
      * Build the constructor summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberSummaryTree the content tree to which the documentation will be added
      */
-    public void buildConstructorsSummary(XMLNode node, Content memberSummaryTree) {
+    protected void buildConstructorsSummary(Content memberSummaryTree) {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.CONSTRUCTORS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.CONSTRUCTORS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.CONSTRUCTORS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
@@ -440,16 +434,10 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
 
             if (null != setter) {
                 VariableElement param = setter.getParameters().get(0);
-                String typeName = utils.getTypeName(param.asType(), false);
-                // Removal of type parameters and package information.
-                typeName = typeName.split("<")[0];
-                if (typeName.contains(".")) {
-                    typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
-                }
                 StringBuilder sb = new StringBuilder("#");
                 sb.append(utils.getSimpleName(setter));
                 if (!utils.isTypeVariable(param.asType())) {
-                    sb.append("(").append(typeName).append(")");
+                    sb.append("(").append(utils.getTypeSignature(param.asType(), false, true)).append(")");
                 }
                 blockTags.add(cmtutils.makeSeeTree(sb.toString(), setter));
             }
@@ -532,5 +520,11 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             summaryTreeList.stream().forEach(memberTree::addContent);
             writer.addMemberTree(memberSummaryTree, memberTree);
         }
+    }
+
+    private SortedSet<Element> asSortedSet(Collection<Element> members) {
+        SortedSet<Element> out = new TreeSet<>(comparator);
+        out.addAll(members);
+        return out;
     }
 }

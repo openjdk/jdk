@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.lang;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,21 +77,32 @@ class VersionProps {
 
     // This method is reflectively used by regression tests.
     static List<Integer> parseVersionNumbers(String version) {
-        List<Integer> verNumbers = new ArrayList<>(4);
+        // Let's find the size of an array required to hold $VNUM components
+        int size = 0;
         int prevIndex = 0;
+        do {
+            prevIndex = version.indexOf('.', prevIndex) + 1;
+            size++;
+        } while (prevIndex > 0);
+        Integer[] verNumbers = new Integer[size];
+
+        // Fill in the array with $VNUM components
+        int n = 0;
+        prevIndex = 0;
         int index = version.indexOf('.');
-        while (index > 0) {
-            verNumbers.add(parseVersionNumber(version, prevIndex, index));
+        while (index > -1) {
+            verNumbers[n] = parseVersionNumber(version, prevIndex, index);
             prevIndex = index + 1; // Skip the period
             index = version.indexOf('.', prevIndex);
+            n++;
         }
-        verNumbers.add(parseVersionNumber(version, prevIndex, version.length()));
+        verNumbers[n] = parseVersionNumber(version, prevIndex, version.length());
 
-        if (verNumbers.get(0) == 0 || verNumbers.get(verNumbers.size() - 1) == 0)
-            throw new IllegalArgumentException("Leading/trailing zeros not supported (" +
-                    verNumbers + ")");
+        if (verNumbers[0] == 0 || verNumbers[n] == 0)
+            throw new IllegalArgumentException("Leading/trailing zeros not allowed (" +
+                    Arrays.toString(verNumbers) + ")");
 
-        return verNumbers;
+        return List.of(verNumbers);
     }
 
     static List<Integer> versionNumbers() {

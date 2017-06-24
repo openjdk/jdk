@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,20 @@ import java.util.Arrays;
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h3> <A NAME="format">Textual representation of IP addresses</a> </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
  *
  * <ol>
- *   <li><p> <A NAME="lform">The preferred form</a> is x:x:x:x:x:x:x:x,
+ *   <li><p> <a id="lform">The preferred form</a> is x:x:x:x:x:x:x:x,
  *   where the 'x's are
  *   the hexadecimal values of the eight 16-bit pieces of the
  *   address. This is the full form.  For example,
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code 1080:0:0:0:8:800:200C:417A}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code 1080:0:0:0:8:800:200C:417A}</li>
+ *   </ul></blockquote>
  *
  *   <p> Note that it is not necessary to write the leading zeros in
  *   an individual field. However, there must be at least one numeral
@@ -66,9 +66,9 @@ import java.util.Arrays;
  *   The "::" can also be used to compress the leading and/or trailing
  *   zeros in an address. For example,
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code 1080::8:800:200C:417A}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code 1080::8:800:200C:417A}</li>
+ *   </ul></blockquote>
  *
  *   <li><p> An alternative form that is sometimes more convenient
  *   when dealing with a mixed environment of IPv4 and IPv6 nodes is
@@ -77,35 +77,35 @@ import java.util.Arrays;
  *   are the decimal values of the four low-order 8-bit pieces of the
  *   standard IPv4 representation address, for example,
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code ::FFFF:129.144.52.38}<td></tr>
- *   <tr><td>{@code ::129.144.52.38}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code ::FFFF:129.144.52.38}</li>
+ *   <li>{@code ::129.144.52.38}</li>
+ *   </ul></blockquote>
  *
  *   <p> where "::FFFF:d.d.d.d" and "::d.d.d.d" are, respectively, the
  *   general forms of an IPv4-mapped IPv6 address and an
  *   IPv4-compatible IPv6 address. Note that the IPv4 portion must be
  *   in the "d.d.d.d" form. The following forms are invalid:
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code ::FFFF:d.d.d}<td></tr>
- *   <tr><td>{@code ::FFFF:d.d}<td></tr>
- *   <tr><td>{@code ::d.d.d}<td></tr>
- *   <tr><td>{@code ::d.d}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code ::FFFF:d.d.d}</li>
+ *   <li>{@code ::FFFF:d.d}</li>
+ *   <li>{@code ::d.d.d}</li>
+ *   <li>{@code ::d.d}</li>
+ *   </ul></blockquote>
  *
  *   <p> The following form:
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code ::FFFF:d}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code ::FFFF:d}</li>
+ *   </ul></blockquote>
  *
  *   <p> is valid, however it is an unconventional representation of
  *   the IPv4-compatible IPv6 address,
  *
- *   <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- *   <tr><td>{@code ::255.255.0.d}<td></tr>
- *   </table></blockquote>
+ *   <blockquote><ul style="list-style-type:none">
+ *   <li>{@code ::255.255.0.d}</li>
+ *   </ul></blockquote>
  *
  *   <p> while "::d" corresponds to the general IPv6 address
  *   "0:0:0:0:0:0:0:d".</li>
@@ -119,9 +119,10 @@ import java.util.Arrays;
  * <h4> Special IPv6 address </h4>
  *
  * <blockquote>
- * <table cellspacing=2 summary="Description of IPv4-mapped address">
- * <tr><th valign=top><i>IPv4-mapped address</i></th>
- *         <td>Of the form::ffff:w.x.y.z, this IPv6 address is used to
+ * <table class="borderless">
+ * <caption style="display:none">Description of IPv4-mapped address</caption>
+ * <tr><th style="vertical-align:top; padding-right:2px"><i>IPv4-mapped address</i></th>
+ *         <td>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
  *         represent an IPv4 address. It allows the native program to
  *         use the same address data structure and also the same
  *         socket when communicating with both IPv4 and IPv6 nodes.
@@ -134,7 +135,7 @@ import java.util.Arrays;
  *         address.</td></tr>
  * </table></blockquote>
  *
- * <h4><A NAME="scoped">Textual representation of IPv6 scoped addresses</a></h4>
+ * <h4><a id="scoped">Textual representation of IPv6 scoped addresses</a></h4>
  *
  * <p> The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic

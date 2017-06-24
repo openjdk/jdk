@@ -23,6 +23,21 @@
  * questions.
  */
 
+/**
+ * Defines the JMX graphical tool, <em>{@index jconsole jconsole}</em>,
+ * for monitoring and managing a running application.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jconsole_tool_reference jconsole},
+ *     {@extLink using_jconsole Using JConsole}
+ * </dl>
+ *
+ * @uses com.sun.tools.jconsole.JConsolePlugin
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jconsole {
     requires transitive java.desktop;
     requires transitive java.management;

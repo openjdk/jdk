@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
@@ -758,18 +759,6 @@ public class Lower extends TreeTranslator {
      */
     private MethodSymbol lookupMethod(DiagnosticPosition pos, Name name, Type qual, List<Type> args) {
         return rs.resolveInternalMethod(pos, attrEnv, qual, name, args, List.nil());
-    }
-
-    /** Look up a constructor.
-     */
-    private MethodSymbol lookupConstructor(DiagnosticPosition pos, Type qual, List<Type> args) {
-        return rs.resolveInternalConstructor(pos, attrEnv, qual, args, null);
-    }
-
-    /** Look up a field.
-     */
-    private VarSymbol lookupField(DiagnosticPosition pos, Type qual, Name name) {
-        return rs.resolveInternalField(pos, attrEnv, qual, name);
     }
 
     /** Anon inner classes are used as access constructor tags.
@@ -1772,7 +1761,7 @@ public class Lower extends TreeTranslator {
     JCExpression makeOuterThis(DiagnosticPosition pos, TypeSymbol c) {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
-            log.error(pos, "no.encl.instance.of.type.in.scope", c);
+            log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
             Assert.error();
             return makeNull();
         }
@@ -1783,9 +1772,7 @@ public class Lower extends TreeTranslator {
             do {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
-                    log.error(pos,
-                              "no.encl.instance.of.type.in.scope",
-                              c);
+                    log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
                     Assert.error(); // should have been caught in Attr
                     return tree;
                 }
@@ -1830,7 +1817,7 @@ public class Lower extends TreeTranslator {
         Symbol c = sym.owner;
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
-            log.error(pos, "no.encl.instance.of.type.in.scope", c);
+            log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
             Assert.error();
             return makeNull();
         }
@@ -1841,9 +1828,7 @@ public class Lower extends TreeTranslator {
             do {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
-                    log.error(pos,
-                        "no.encl.instance.of.type.in.scope",
-                        c);
+                    log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
                     Assert.error();
                     return tree;
                 }
@@ -1908,181 +1893,12 @@ public class Lower extends TreeTranslator {
         return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
     }
 
-    /** Return symbol for "class$" method. If there is no method definition
-     *  for class$, construct one as follows:
-     *
-     *    class class$(String x0) {
-     *      try {
-     *        return Class.forName(x0);
-     *      } catch (ClassNotFoundException x1) {
-     *        throw new NoClassDefFoundError(x1.getMessage());
-     *      }
-     *    }
-     */
-    private MethodSymbol classDollarSym(DiagnosticPosition pos) {
-        ClassSymbol outerCacheClass = outerCacheClass();
-        MethodSymbol classDollarSym =
-            (MethodSymbol)lookupSynthetic(classDollar,
-                                          outerCacheClass.members());
-        if (classDollarSym == null) {
-            classDollarSym = new MethodSymbol(
-                STATIC | SYNTHETIC,
-                classDollar,
-                new MethodType(
-                    List.of(syms.stringType),
-                    types.erasure(syms.classType),
-                    List.nil(),
-                    syms.methodClass),
-                outerCacheClass);
-            enterSynthetic(pos, classDollarSym, outerCacheClass.members());
-
-            JCMethodDecl md = make.MethodDef(classDollarSym, null);
-            try {
-                md.body = classDollarSymBody(pos, md);
-            } catch (CompletionFailure ex) {
-                md.body = make.Block(0, List.nil());
-                chk.completionError(pos, ex);
-            }
-            JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
-            outerCacheClassDef.defs = outerCacheClassDef.defs.prepend(md);
-        }
-        return classDollarSym;
-    }
-
-    /** Generate code for class$(String name). */
-    JCBlock classDollarSymBody(DiagnosticPosition pos, JCMethodDecl md) {
-        MethodSymbol classDollarSym = md.sym;
-        ClassSymbol outerCacheClass = (ClassSymbol)classDollarSym.owner;
-
-        JCBlock returnResult;
-
-        // cache the current loader in cl$
-        // clsym = "private static ClassLoader cl$"
-        VarSymbol clsym = new VarSymbol(STATIC | SYNTHETIC,
-                                        names.fromString("cl" + target.syntheticNameChar()),
-                                        syms.classLoaderType,
-                                        outerCacheClass);
-        enterSynthetic(pos, clsym, outerCacheClass.members());
-
-        // emit "private static ClassLoader cl$;"
-        JCVariableDecl cldef = make.VarDef(clsym, null);
-        JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
-        outerCacheClassDef.defs = outerCacheClassDef.defs.prepend(cldef);
-
-        // newcache := "new cache$1[0]"
-        JCNewArray newcache = make.NewArray(make.Type(outerCacheClass.type),
-                                            List.of(make.Literal(INT, 0).setType(syms.intType)),
-                                            null);
-        newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
-                                      syms.arrayClass);
-
-        // forNameSym := java.lang.Class.forName(
-        //     String s,boolean init,ClassLoader loader)
-        Symbol forNameSym = lookupMethod(make_pos, names.forName,
-                                         types.erasure(syms.classType),
-                                         List.of(syms.stringType,
-                                                 syms.booleanType,
-                                                 syms.classLoaderType));
-        // clvalue := "(cl$ == null) ?
-        // $newcache.getClass().getComponentType().getClassLoader() : cl$"
-        JCExpression clvalue =
-                make.Conditional(
-                        makeBinary(EQ, make.Ident(clsym), makeNull()),
-                        make.Assign(make.Ident(clsym),
-                                    makeCall(
-                                            makeCall(makeCall(newcache,
-                                                              names.getClass,
-                                                              List.nil()),
-                                                     names.getComponentType,
-                                                     List.nil()),
-                                            names.getClassLoader,
-                                            List.nil())).setType(syms.classLoaderType),
-                        make.Ident(clsym)).setType(syms.classLoaderType);
-
-        // returnResult := "{ return Class.forName(param1, false, cl$); }"
-        List<JCExpression> args = List.of(make.Ident(md.params.head.sym),
-                                          makeLit(syms.booleanType, 0),
-                                          clvalue);
-        returnResult = make.Block(0, List.of(make.Call(make.App(make.Ident(forNameSym), args))));
-
-        // catchParam := ClassNotFoundException e1
-        VarSymbol catchParam =
-            new VarSymbol(SYNTHETIC, make.paramName(1),
-                          syms.classNotFoundExceptionType,
-                          classDollarSym);
-
-        JCStatement rethrow;
-        // rethrow = "throw new NoClassDefFoundError().initCause(e);
-        JCExpression throwExpr =
-            makeCall(makeNewClass(syms.noClassDefFoundErrorType,
-                                  List.nil()),
-                     names.initCause,
-                     List.of(make.Ident(catchParam)));
-        rethrow = make.Throw(throwExpr);
-
-        // rethrowStmt := "( $rethrow )"
-        JCBlock rethrowStmt = make.Block(0, List.of(rethrow));
-
-        // catchBlock := "catch ($catchParam) $rethrowStmt"
-        JCCatch catchBlock = make.Catch(make.VarDef(catchParam, null),
-                                      rethrowStmt);
-
-        // tryCatch := "try $returnResult $catchBlock"
-        JCStatement tryCatch = make.Try(returnResult,
-                                        List.of(catchBlock), null);
-
-        return make.Block(0, List.of(tryCatch));
-    }
-    // where
-        /** Create an attributed tree of the form left.name(). */
-        private JCMethodInvocation makeCall(JCExpression left, Name name, List<JCExpression> args) {
-            Assert.checkNonNull(left.type);
-            Symbol funcsym = lookupMethod(make_pos, name, left.type,
-                                          TreeInfo.types(args));
-            return make.App(make.Select(left, funcsym), args);
-        }
-
-    /** The Name Of The variable to cache T.class values.
-     *  @param sig      The signature of type T.
-     */
-    private Name cacheName(String sig) {
-        StringBuilder buf = new StringBuilder();
-        if (sig.startsWith("[")) {
-            buf = buf.append("array");
-            while (sig.startsWith("[")) {
-                buf = buf.append(target.syntheticNameChar());
-                sig = sig.substring(1);
-            }
-            if (sig.startsWith("L")) {
-                sig = sig.substring(0, sig.length() - 1);
-            }
-        } else {
-            buf = buf.append("class" + target.syntheticNameChar());
-        }
-        buf = buf.append(sig.replace('.', target.syntheticNameChar()));
-        return names.fromString(buf.toString());
-    }
-
-    /** The variable symbol that caches T.class values.
-     *  If none exists yet, create a definition.
-     *  @param sig      The signature of type T.
-     *  @param pos      The position to report diagnostics, if any.
-     */
-    private VarSymbol cacheSym(DiagnosticPosition pos, String sig) {
-        ClassSymbol outerCacheClass = outerCacheClass();
-        Name cname = cacheName(sig);
-        VarSymbol cacheSym =
-            (VarSymbol)lookupSynthetic(cname, outerCacheClass.members());
-        if (cacheSym == null) {
-            cacheSym = new VarSymbol(
-                STATIC | SYNTHETIC, cname, types.erasure(syms.classType), outerCacheClass);
-            enterSynthetic(pos, cacheSym, outerCacheClass.members());
-
-            JCVariableDecl cacheDef = make.VarDef(cacheSym, null);
-            JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
-            outerCacheClassDef.defs = outerCacheClassDef.defs.prepend(cacheDef);
-        }
-        return cacheSym;
+    /** Create an attributed tree of the form left.name(). */
+    private JCMethodInvocation makeCall(JCExpression left, Name name, List<JCExpression> args) {
+        Assert.checkNonNull(left.type);
+        Symbol funcsym = lookupMethod(make_pos, name, left.type,
+                                      TreeInfo.types(args));
+        return make.App(make.Select(left, funcsym), args);
     }
 
     /** The tree simulating a T.class expression.
@@ -2313,16 +2129,6 @@ public class Lower extends TreeTranslator {
         JCExpression prevEnclOp = this.enclOp;
         this.enclOp = enclOp;
         T res = translate(tree);
-        this.enclOp = prevEnclOp;
-        return res;
-    }
-
-    /** Visitor method: Translate list of trees.
-     */
-    public <T extends JCTree> List<T> translate(List<T> trees, JCExpression enclOp) {
-        JCExpression prevEnclOp = this.enclOp;
-        this.enclOp = enclOp;
-        List<T> res = translate(trees);
         this.enclOp = prevEnclOp;
         return res;
     }
@@ -2949,7 +2755,6 @@ public class Lower extends TreeTranslator {
     /** Visitor method for assert statements. Translate them away.
      */
     public void visitAssert(JCAssert tree) {
-        DiagnosticPosition detailPos = (tree.detail == null) ? tree.pos() : tree.detail.pos();
         tree.cond = translate(tree.cond, syms.booleanType);
         if (!tree.cond.type.isTrue()) {
             JCExpression cond = assertFlagTest(tree.pos());

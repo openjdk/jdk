@@ -445,7 +445,7 @@ public final class Util {
 
         try {
             final Class _clazz = clazz;
-            Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+            Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
             // No MToolkit anymore: nothing to do about it.
             // We may be called from non-X11 system, and this permission cannot be delegated to a test.
             m_addExports.invoke(null, "sun.awt.X11", Util.class.getModule());

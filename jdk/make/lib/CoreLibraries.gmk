@@ -132,7 +132,8 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 ##########################################################################################
 
-LIBJAVA_SRC_DIRS := $(call FindSrcDirsForLib, java.base, java)
+# Allow a custom makefile to add extra src dirs
+LIBJAVA_SRC_DIRS += $(call FindSrcDirsForLib, java.base, java)
 
 LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libfdlibm \
@@ -202,7 +203,7 @@ $(BUILD_LIBJAVA): $(BUILD_LIBFDLIBM)
 
 BUILD_LIBZIP_EXCLUDES :=
 ifeq ($(USE_EXTERNAL_LIBZ), true)
-  LIBZIP_EXCLUDES += zlib-1.2.8
+  LIBZIP_EXCLUDES += zlib
 endif
 
 BUILD_LIBZIP_REORDER :=
@@ -343,7 +344,7 @@ LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
 ifneq ($(USE_EXTERNAL_LIBZ), true)
   LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
   LIBJLI_EXTRA_FILES += \
-      $(addprefix $(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8/, \
+      $(addprefix $(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           inflate.c \
           inftrees.c \
           inffast.c \
