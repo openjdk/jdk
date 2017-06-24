@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package com.sun.jdi.event;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Method;
+import com.sun.jdi.ObjectCollectedException;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 /**
  * Notification of a method return in the target VM. This event
@@ -68,6 +71,5 @@ public interface MethodExitEvent extends LocatableEvent {
      *
      * @since 1.6
      */
-
     public Value returnValue();
 }

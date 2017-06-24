@@ -1,7 +1,7 @@
 compiler.err.already.annotated                          # internal compiler error?
 compiler.err.already.defined.this.unit                  # seems to be masked by compiler.err.duplicate.class
-compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
 compiler.err.bad.functional.intf.anno                   # seems to be masked by compiler.err.annotation.type.not.applicable
+compiler.err.annotation.value.not.allowable.type        # should be detected in advance by the annotation value visitor
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.dc.unterminated.string                     # cannot happen
@@ -56,6 +56,7 @@ compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
+compiler.misc.exception.message                         # uncommon completion failure based on a string
 compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
@@ -94,6 +95,7 @@ compiler.misc.type.req.exact
 compiler.misc.unable.to.access.file                     # ClassFile
 compiler.misc.undecl.type.var                           # ClassReader
 compiler.misc.unicode.str.not.supported                 # ClassReader
+compiler.misc.user.selected.completion.failure          # manual completion failure
 compiler.misc.malformed.vararg.method                   # ClassReader
 compiler.misc.version.not.available                     # JavaCompiler; implies build error
 compiler.misc.where.description.captured

@@ -718,6 +718,15 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   _igvn.replace_node(_ioproj_fallthrough, *io);
   _igvn.replace_node(_fallthroughcatchproj, *ctrl);
 
+#ifdef ASSERT
+  const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
+  if (dest_t->is_known_instance()) {
+    ArrayCopyNode* ac = NULL;
+    assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
+    assert(ac == NULL, "no arraycopy anymore");
+  }
+#endif
+
   return out_mem;
 }
 
@@ -1139,8 +1148,25 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
 
-  if (top_src  == NULL || top_src->klass()  == NULL ||
-      top_dest == NULL || top_dest->klass() == NULL) {
+  BasicType src_elem = T_CONFLICT;
+  BasicType dest_elem = T_CONFLICT;
+
+  if (top_dest != NULL && top_dest->klass() != NULL) {
+    dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
+  }
+  if (top_src != NULL && top_src->klass() != NULL) {
+    src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
+  }
+  if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
+  if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
+
+  if (ac->is_arraycopy_validated() &&
+      dest_elem != T_CONFLICT &&
+      src_elem == T_CONFLICT) {
+    src_elem = dest_elem;
+  }
+
+  if (src_elem == T_CONFLICT || dest_elem == T_CONFLICT) {
     // Conservatively insert a memory barrier on all memory slices.
     // Do not let writes into the source float below the arraycopy.
     {
@@ -1169,13 +1195,11 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     }
     return;
   }
+
+  assert(!ac->is_arraycopy_validated() || (src_elem == dest_elem && dest_elem != T_VOID), "validated but different basic types");
+
   // (2) src and dest arrays must have elements of the same BasicType
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
-  if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
-  if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
-
   if (src_elem != dest_elem || dest_elem == T_VOID) {
     // The component types are not the same or are not recognized.  Punt.
     // (But, avoid the native method wrapper to JVM_ArrayCopy.)

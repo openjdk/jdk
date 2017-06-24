@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.Formatter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLEngine;
 import jdk.incubator.http.internal.common.*;
 import jdk.incubator.http.internal.frame.*;
 import jdk.incubator.http.internal.hpack.Encoder;
@@ -82,8 +83,6 @@ import static jdk.incubator.http.internal.frame.SettingsFrame.*;
  * stream are provided by calling Stream.incoming().
  */
 class Http2Connection  {
-
-
     /*
      *  ByteBuffer pooling strategy for HTTP/2 protocol:
      *
@@ -112,47 +111,56 @@ class Http2Connection  {
      */
 
 
-    // A small class that allows to control the state of
-    // the connection preface. This is just a thin wrapper
-    // over a CountDownLatch.
-    private final class PrefaceController {
+    // A small class that allows to control frames with respect to the state of
+    // the connection preface. Any data received before the connection
+    // preface is sent will be buffered.
+    private final class FramesController {
         volatile boolean prefaceSent;
-        private final CountDownLatch latch = new CountDownLatch(1);
+        volatile List<ByteBufferReference> pending;
 
-        // This method returns immediately if the preface is sent,
-        // and blocks until the preface is sent if not.
-        // In the common case this where the preface is already sent
-        // this will cost not more than a volatile read.
-        void waitUntilPrefaceSent() {
+        boolean processReceivedData(FramesDecoder decoder, ByteBufferReference buf)
+                throws IOException
+        {
+            // if preface is not sent, buffers data in the pending list
             if (!prefaceSent) {
-                try {
-                    // If the preface is not sent then await on the latch
-                    Log.logTrace("Waiting until connection preface is sent");
-                    latch.await();
-                    Log.logTrace("Preface sent: resuming reading");
-                    assert prefaceSent;
-                 } catch (InterruptedException e) {
-                    String msg = Utils.stackTrace(e);
-                    Log.logTrace(msg);
-                    shutdown(e);
+                synchronized (this) {
+                    if (!prefaceSent) {
+                        if (pending == null) pending = new ArrayList<>();
+                        pending.add(buf);
+                        return false;
+                    }
                 }
             }
+
+            // Preface is sent. Checks for pending data and flush it.
+            // We rely on this method being called from within the readlock,
+            // so we know that no other thread could execute this method
+            // concurrently while we're here.
+            // This ensures that later incoming buffers will not
+            // be processed before we have flushed the pending queue.
+            // No additional synchronization is therefore necessary here.
+            List<ByteBufferReference> pending = this.pending;
+            this.pending = null;
+            if (pending != null) {
+                // flush pending data
+                for (ByteBufferReference b : pending) {
+                    decoder.decode(b);
+                }
+            }
+
+            // push the received buffer to the frames decoder.
+            decoder.decode(buf);
+            return true;
         }
 
         // Mark that the connection preface is sent
         void markPrefaceSent() {
             assert !prefaceSent;
-            prefaceSent = true;
-            // Release the latch. If asyncReceive was scheduled it will
-            // be waiting for the release and will be woken up by this
-            // call. If not, then the semaphore will no longer be used after
-            // this.
-            latch.countDown();
+            synchronized (this) {
+                prefaceSent = true;
+            }
         }
 
-        boolean isPrefaceSent() {
-            return prefaceSent;
-        }
     }
 
     volatile boolean closed;
@@ -177,7 +185,7 @@ class Http2Connection  {
      * Each of this connection's Streams MUST use this controller.
      */
     private final WindowController windowController = new WindowController();
-    private final PrefaceController prefaceController = new PrefaceController();
+    private final FramesController framesController = new FramesController();
     final WindowUpdateSender windowUpdater;
 
     static final int DEFAULT_FRAME_SIZE = 16 * 1024;
@@ -241,14 +249,7 @@ class Http2Connection  {
                                                           Http2ClientImpl client2,
                                                           Exchange<?> exchange,
                                                           ByteBuffer initial) {
-        CompletableFuture<Http2Connection> cf = new MinimalFuture<>();
-        try {
-            Http2Connection c = new Http2Connection(connection, client2, exchange, initial);
-            cf.complete(c);
-        } catch (IOException | InterruptedException e) {
-            cf.completeExceptionally(e);
-        }
-        return cf;
+        return MinimalFuture.supply(() -> new Http2Connection(connection, client2, exchange, initial));
     }
 
     /**
@@ -265,13 +266,44 @@ class Http2Connection  {
                 keyFor(request.uri(), request.proxy(h2client.client())));
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
-        connection.connect();
         // start reading
         AsyncConnection asyncConn = (AsyncConnection)connection;
         asyncConn.setAsyncCallbacks(this::asyncReceive, this::shutdown, this::getReadBuffer);
-        connection.configureMode(Mode.ASYNC); // set mode only AFTER setAsyncCallbacks to provide visibility.
-        asyncConn.startReading();
+        connection.connect();
+        checkSSLConfig();
+        // safe to resume async reading now.
+        asyncConn.enableCallback();
         sendConnectionPreface();
+    }
+
+    /**
+     * Throws an IOException if h2 was not negotiated
+     */
+    private void checkSSLConfig() throws IOException {
+        AsyncSSLConnection aconn = (AsyncSSLConnection)connection;
+        SSLEngine engine = aconn.getEngine();
+        String alpn = engine.getApplicationProtocol();
+        if (alpn == null || !alpn.equals("h2")) {
+            String msg;
+            if (alpn == null) {
+                Log.logSSL("ALPN not supported");
+                msg = "ALPN not supported";
+            } else switch (alpn) {
+              case "":
+                Log.logSSL("No ALPN returned");
+                msg = "No ALPN negotiated";
+                break;
+              case "http/1.1":
+                Log.logSSL("HTTP/1.1 ALPN returned");
+                msg = "HTTP/1.1 ALPN returned";
+                break;
+              default:
+                Log.logSSL("unknown ALPN returned");
+                msg = "Unexpected ALPN: " + alpn;
+                throw new IOException(msg);
+            }
+            throw new ALPNException(msg, aconn);
+        }
     }
 
     static String keyFor(HttpConnection connection) {
@@ -386,11 +418,11 @@ class Http2Connection  {
         // SettingsFrame sent by the server) before the connection
         // preface is fully sent might result in the server
         // sending a GOAWAY frame with 'invalid_preface'.
-        prefaceController.waitUntilPrefaceSent();
         synchronized (readlock) {
-            assert prefaceController.isPrefaceSent();
             try {
-                framesDecoder.decode(buffer);
+                // the readlock ensures that the order of incoming buffers
+                // is preserved.
+                framesController.processReceivedData(framesDecoder, buffer);
             } catch (Throwable e) {
                 String msg = Utils.stackTrace(e);
                 Log.logTrace(msg);
@@ -623,7 +655,8 @@ class Http2Connection  {
         Log.logFrames(sf, "OUT");
         // send preface bytes and SettingsFrame together
         connection.write(ref.get());
-
+        // mark preface sent.
+        framesController.markPrefaceSent();
         Log.logTrace("PREFACE_BYTES sent");
         Log.logTrace("Settings Frame sent");
 
@@ -631,8 +664,10 @@ class Http2Connection  {
         // minus the initial 64 K specified in protocol
         final int len = client2.client().getReceiveBufferSize() - (64 * 1024 - 1);
         windowUpdater.sendWindowUpdate(len);
+        // there will be an ACK to the windows update - which should
+        // cause any pending data stored before the preface was sent to be
+        // flushed (see PrefaceController).
         Log.logTrace("finished sending connection preface");
-        prefaceController.markPrefaceSent();
     }
 
     /**
@@ -863,6 +898,23 @@ class Http2Connection  {
         @Override
         int getStreamId() {
             return 0;
+        }
+    }
+
+    /**
+     * Thrown when https handshake negotiates http/1.1 alpn instead of h2
+     */
+    static final class ALPNException extends IOException {
+        private static final long serialVersionUID = 23138275393635783L;
+        final AsyncSSLConnection connection;
+
+        ALPNException(String msg, AsyncSSLConnection connection) {
+            super(msg);
+            this.connection = connection;
+        }
+
+        AsyncSSLConnection getConnection() {
+            return connection;
         }
     }
 }

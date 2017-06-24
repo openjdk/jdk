@@ -24,6 +24,7 @@
 /*
  * @test CorrectnessTest
  * @bug 8038418
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

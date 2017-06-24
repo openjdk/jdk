@@ -50,8 +50,8 @@ requires.properties= \
     vm.cpu.features \
     vm.debug
 
-# Tests using jtreg 4.2 b04 features
-requiredVersion=4.2 b04
+# Tests using jtreg 4.2 b07 features
+requiredVersion=4.2 b07
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
@@ -59,3 +59,6 @@ external.lib.roots = ../../
 
 # Use new module options
 useNewOptions=true
+
+# Use --patch-module instead of -Xmodule:
+useNewPatchModule=true

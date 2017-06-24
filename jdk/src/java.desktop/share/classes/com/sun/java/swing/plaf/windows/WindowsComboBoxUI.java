@@ -41,6 +41,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 import sun.swing.DefaultLookup;
 import sun.swing.StringUIClientPropertyKey;
 
+import com.sun.java.swing.plaf.windows.WindowsBorders.DashedBorder;
 
 /**
  * Windows combo box.
@@ -97,6 +98,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                 } else if (source instanceof XPComboBoxButton) {
                     rv = ((XPComboBoxButton) source)
                         .getWindowsComboBoxUI().comboBox;
+                } else if (source instanceof JTextField &&
+                        ((JTextField) source).getParent() instanceof JComboBox) {
+                    rv = (JComboBox) ((JTextField) source).getParent();
                 }
                 return rv;
             }
@@ -149,6 +153,8 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             //is initialized after installListeners is invoked
             comboBox.addMouseListener(rolloverListener);
             arrowButton.addMouseListener(rolloverListener);
+            // set empty border as default to see vista animated border
+            comboBox.setBorder(new EmptyBorder(0,0,0,0));
         }
     }
 
@@ -224,6 +230,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             state = State.DISABLED;
         } else if (isPopupVisible(comboBox)) {
             state = State.PRESSED;
+        } else if (comboBox.isEditable()
+                && comboBox.getEditor().getEditorComponent().isFocusOwner()) {
+            state = State.PRESSED;
         } else if (isRollover) {
             state = State.HOT;
         }
@@ -242,7 +251,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             skin = xp.getSkin(c, Part.CP_READONLY);
         }
         if (skin == null) {
-            skin = xp.getSkin(c, Part.CP_COMBOBOX);
+            skin = xp.getSkin(c, Part.CP_BORDER);
         }
         skin.paintSkin(g, 0, 0, c.getWidth(), c.getHeight(), state);
     }
@@ -330,11 +339,16 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     public Dimension getMinimumSize( JComponent c ) {
         Dimension d = super.getMinimumSize(c);
         if (XPStyle.getXP() != null) {
-            d.width += 5;
+            d.width += 7;
+            boolean isEditable = false;
+            if (c instanceof JComboBox) {
+                isEditable = ((JComboBox) c).isEditable();
+            }
+            d.height += isEditable ? 4 : 6;
         } else {
             d.width += 4;
+            d.height += 2;
         }
-        d.height += 2;
         return d;
     }
 
@@ -368,7 +382,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     protected ComboPopup createPopup() {
-        return super.createPopup();
+        return new WinComboPopUp(comboBox);
     }
 
     /**
@@ -414,8 +428,10 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPComboBoxButton extends XPStyle.GlyphButton {
+        private State prevState = null;
+
         public XPComboBoxButton(XPStyle xp) {
-            super(null,
+            super(comboBox,
                   (! xp.isSkinDefined(comboBox, Part.CP_DROPDOWNBUTTONRIGHT))
                    ? Part.CP_DROPDOWNBUTTON
                    : (comboBox.getComponentOrientation() == ComponentOrientation.RIGHT_TO_LEFT)
@@ -428,18 +444,33 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         @Override
         protected State getState() {
             State rv;
+
+            getModel().setPressed(comboBox.isPopupVisible());
+
             rv = super.getState();
             XPStyle xp = XPStyle.getXP();
             if (rv != State.DISABLED
-                && comboBox != null && ! comboBox.isEditable()
-                && xp != null && xp.isSkinDefined(comboBox,
-                                                  Part.CP_DROPDOWNBUTTONRIGHT)) {
+                    && comboBox != null && ! comboBox.isEditable()
+                    && xp != null && xp.isSkinDefined(comboBox,
+                            Part.CP_DROPDOWNBUTTONRIGHT)) {
                 /*
                  * for non editable ComboBoxes Vista seems to have the
                  * same glyph for all non DISABLED states
                  */
                 rv = State.NORMAL;
             }
+            if (rv == State.NORMAL && (prevState == State.HOT || prevState == State.PRESSED)) {
+                /*
+                 * State NORMAL of combobox button cannot overpaint states HOT or PRESSED
+                 * Therefore HOT state must be painted from alpha 1 to 0 and not as usual that
+                 * NORMAL state is painted from alpha 0 to alpha 1.
+                 */
+                skin.switchStates(true);
+            }
+            if (rv != prevState) {
+                prevState = rv;
+            }
+
             return rv;
         }
 
@@ -484,6 +515,39 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
+    protected class WinComboPopUp extends BasicComboPopup {
+        private Skin listBoxBorder = null;
+        private XPStyle xp;
+
+        public WinComboPopUp(JComboBox<Object> combo) {
+            super(combo);
+            xp = XPStyle.getXP();
+            if (xp != null && xp.isSkinDefined(combo, Part.LBCP_BORDER_NOSCROLL)) {
+                this.listBoxBorder = new Skin(combo, Part.LBCP_BORDER_NOSCROLL);
+                this.setBorder(new EmptyBorder(1,1,1,1));
+            }
+        }
+
+        protected KeyListener createKeyListener() {
+            return new InvocationKeyHandler();
+        }
+
+        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
+            protected InvocationKeyHandler() {
+                WinComboPopUp.this.super();
+            }
+        }
+
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (this.listBoxBorder != null) {
+                this.listBoxBorder.paintSkinRaw(g, this.getX(), this.getY(),
+                        this.getWidth(), this.getHeight(), State.HOT);
+            }
+        }
+    }
+
 
     /**
      * Subclassed to highlight selected item in an editable combo box.
@@ -498,6 +562,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         protected JTextField createEditorComponent() {
             JTextField editor = super.createEditorComponent();
             Border border = (Border)UIManager.get("ComboBox.editorBorder");
+
             if (border != null) {
                 editor.setBorder(border);
             }
@@ -524,6 +589,31 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         private static final Object BORDER_KEY
             = new StringUIClientPropertyKey("BORDER_KEY");
         private static final Border NULL_BORDER = new EmptyBorder(0, 0, 0, 0);
+
+        // Create own version of DashedBorder with more space on left side
+        private class WindowsComboBoxDashedBorder extends DashedBorder {
+
+            public WindowsComboBoxDashedBorder(Color color, int thickness) {
+                super(color, thickness);
+            }
+
+            public WindowsComboBoxDashedBorder(Color color) {
+                super(color);
+            }
+
+            @Override
+            public Insets getBorderInsets(Component c, Insets i) {
+                return new Insets(0,2,0,0);
+            }
+        }
+
+        public WindowsComboBoxRenderer() {
+            super();
+
+            // correct space on the left side of text items in the combo popup list
+            Insets i = getBorder().getBorderInsets(this);
+            setBorder(new EmptyBorder(0, 2, 0, i.right));
+        }
         /**
          * {@inheritDoc}
          */
@@ -542,7 +632,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                 if (index == -1 && isSelected) {
                     Border border = component.getBorder();
                     Border dashedBorder =
-                        new WindowsBorders.DashedBorder(list.getForeground());
+                        new WindowsComboBoxDashedBorder(list.getForeground());
                     component.setBorder(dashedBorder);
                     //store current border in client property if needed
                     if (component.getClientProperty(BORDER_KEY) == null) {

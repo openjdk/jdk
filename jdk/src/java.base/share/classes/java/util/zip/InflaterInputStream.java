@@ -37,6 +37,7 @@ import java.io.EOFException;
  *
  * @see         Inflater
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class InflaterInputStream extends FilterInputStream {

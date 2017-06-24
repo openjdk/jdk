@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4434232
- *  @summary Test ThreadReference.frames(int,int)
+ * @test
+ * @bug 4434232
+ * @summary Test ThreadReference.frames(int,int)
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g FramesTest.java
- *  @run driver FramesTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g FramesTest.java
+ * @run driver FramesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

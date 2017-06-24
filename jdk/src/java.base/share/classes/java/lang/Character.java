@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * <li><a href="http://www.unicode.org">http://www.unicode.org</a>
  * </ul>
  *
- * <h3><a name="unicode">Unicode Character Representations</a></h3>
+ * <h3><a id="unicode">Unicode Character Representations</a></h3>
  *
  * <p>The {@code char} data type (and therefore the value that a
  * {@code Character} object encapsulates) are based on the
@@ -70,9 +70,9 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * definition</i></a> of the U+<i>n</i> notation in the Unicode
  * Standard.)
  *
- * <p><a name="BMP">The set of characters from U+0000 to U+FFFF</a> is
+ * <p><a id="BMP">The set of characters from U+0000 to U+FFFF</a> is
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
- * <a name="supplementary">Characters</a> whose code points are greater
+ * <a id="supplementary">Characters</a> whose code points are greater
  * than U+FFFF are called <em>supplementary character</em>s.  The Java
  * platform uses the UTF-16 representation in {@code char} arrays and
  * in the {@code String} and {@code StringBuffer} classes. In
@@ -9566,7 +9566,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is ISO-LATIN-1 white space.
      * This method returns {@code true} for the following five
      * characters only:
-     * <table summary="truechars">
+     * <table class="borderless">
+     * <caption style="display:none">truechars</caption>
+     * <tbody>
      * <tr><td>{@code '\t'}</td>            <td>{@code U+0009}</td>
      *     <td>{@code HORIZONTAL TABULATION}</td></tr>
      * <tr><td>{@code '\n'}</td>            <td>{@code U+000A}</td>
@@ -9577,6 +9579,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *     <td>{@code CARRIAGE RETURN}</td></tr>
      * <tr><td>{@code ' '}</td>  <td>{@code U+0020}</td>
      *     <td>{@code SPACE}</td></tr>
+     * </tbody>
      * </table>
      *
      * @param      ch   the character to be tested.

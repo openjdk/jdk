@@ -181,7 +181,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param prevModule   Previous module in the sorted array.
      * @param nextModule   Next module in the sorted array.
      */
-    public ModuleWriterImpl(ConfigurationImpl configuration,
+    public ModuleWriterImpl(HtmlConfiguration configuration,
             ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule) {
         super(configuration, DocPaths.moduleSummary(mdle));
         this.prevModule = prevModule;

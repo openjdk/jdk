@@ -311,7 +311,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         try {
             decoder = getDecoder(encName, ignoreEncodingErrors);
         } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
-            log.error("unsupported.encoding", encName);
+            log.error(Errors.UnsupportedEncoding(encName));
             return (CharBuffer)CharBuffer.allocate(1).flip();
         }
 

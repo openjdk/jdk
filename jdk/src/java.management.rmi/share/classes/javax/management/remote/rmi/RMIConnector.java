@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.module.ModuleDescriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Module;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.rmi.MarshalledObject;
@@ -106,6 +106,8 @@ import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
 import java.io.NotSerializableException;
+
+import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
 
 /**
  * <p>A connection to a remote RMI connector.  Usually, such
@@ -1256,7 +1258,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     + ", listener=" + listener);
 
             final Integer[] ret =
-                    rmiNotifClient.removeNotificationListener(name, listener);
+                    rmiNotifClient.getListenerIds(name, listener);
 
             if (debug) logger.debug("removeNotificationListener",
                     "listenerIDs=" + objects(ret));
@@ -1276,7 +1278,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             } finally {
                 popDefaultClassLoader(old);
             }
-
+            rmiNotifClient.removeNotificationListener(name, listener);
         }
 
         public void removeNotificationListener(ObjectName name,
@@ -1298,7 +1300,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         + ", handback=" + handback);
 
             final Integer ret =
-                    rmiNotifClient.removeNotificationListener(name, listener,
+                    rmiNotifClient.getListenerId(name, listener,
                     filter, handback);
 
             if (debug) logger.debug("removeNotificationListener",
@@ -1318,7 +1320,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             } finally {
                 popDefaultClassLoader(old);
             }
-
+            rmiNotifClient.removeNotificationListener(name, listener,
+                    filter, handback);
         }
     }
 
@@ -2020,8 +2023,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 Module rmiModule = RemoteRef.class.getModule();
 
                 String pkg = packageOf(pRefClassName);
-                assert pkg != null && pkg.length() > 0 && !pkg.equals(packageOf(proxyRefCName));
-                Module m = Modules.defineModule(cl, "jdk.remoteref", Collections.singleton(pkg));
+                assert pkg != null && pkg.length() > 0 &&
+                        !pkg.equals(packageOf(proxyRefCName));
+
+                ModuleDescriptor descriptor =
+                    ModuleDescriptor.newModule("jdk.remoteref", Set.of(SYNTHETIC))
+                        .packages(Set.of(pkg))
+                        .build();
+                Module m = Modules.defineModule(cl, descriptor, null);
 
                 // jdk.remoteref needs to read to java.base and jmxModule
                 Modules.addReads(m, Object.class.getModule());

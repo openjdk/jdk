@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /**
- * A custom system ClassLoader to define the module "m2" to during iterations of
+ * A custom system ClassLoader to define the module "m2x" to during iterations of
  * differing test runs within the test ModuleStress.java
  */
 public class CustomSystemClassLoader extends ClassLoader {
