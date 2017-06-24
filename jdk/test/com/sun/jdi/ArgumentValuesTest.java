@@ -1,13 +1,38 @@
-/** hard coded linenumbers in other tests - DO NOT CHANGE
- *  @test/nodynamiccopyright/
- *  @bug 4490824
- *  @summary JDI: provide arguments when no debug attributes present
+/*
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  @author jjh
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile ArgumentValuesTest.java
- *  @run driver ArgumentValuesTest
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+//    THIS TEST IS LINE NUMBER SENSITIVE
+
+/**
+ * @test
+ * @bug 4490824
+ * @summary JDI: provide arguments when no debug attributes present
+ *
+ * @author jjh
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile ArgumentValuesTest.java
+ * @run driver ArgumentValuesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -35,26 +60,26 @@ class ArgumentValuesTarg {
     static List<Integer> intList;
 
     public static void noArgs() {
-        int index = 0;     // line 38
+        int index = 0;     // line NO_ARGS_LINE_1
     }
 
     public static void allArgs(char p_char, byte p_byte, short p_short,
                                int p_int, long p_long, float p_float,
                                double p_double, int p_iarray[], int p_marray[][],
                                String p_sarray1[], String p_string) {
-        int index = 0;      // line 45
+        int index = 0;      // line ALL_ARGS_LINE_1
     }
 
     public static void varArgs(String ... p1) {
-        int index = 0;     // line 49
+        int index = 0;     // line VAR_ARGS_LINE_1
     }
 
     public static void genericArgs(List<Integer> p1) {
-        int index = 0;     // line 53
+        int index = 0;     // line GENERIC_ARGS_LINE_1
     }
 
     public void instanceMethod(char p_char, byte p_byte) {
-        int index = 0;     // line 57
+        int index = 0;     // line INSTANCE_METHOD_LINE_1
     }
 
     public static void main(String[] args) {
@@ -81,6 +106,12 @@ class ArgumentValuesTarg {
  /********** test program **********/
 
 public class ArgumentValuesTest extends TestScaffold {
+    static final int NO_ARGS_LINE_1 = 63;
+    static final int ALL_ARGS_LINE_1 = 70;
+    static final int VAR_ARGS_LINE_1 = 74;
+    static final int GENERIC_ARGS_LINE_1 = 78;
+    static final int INSTANCE_METHOD_LINE_1 = 82;
+
     // Must be in same order as args to allArgs(....)
     String fieldNames[] = {"s_char1",   "s_byte1",   "s_short1",  "s_int1",
                            "s_long1",   "s_float1",  "s_double1", "s_iarray1",
@@ -118,7 +149,7 @@ public class ArgumentValuesTest extends TestScaffold {
 
         {
             System.out.println("----- Testing each type of arg");
-            bpe = resumeTo("ArgumentValuesTarg", 45);
+            bpe = resumeTo("ArgumentValuesTarg", ALL_ARGS_LINE_1);
             StackFrame frame = bpe.thread().frame(0);
 
             Method mmm = frame.location().method();
@@ -147,7 +178,7 @@ public class ArgumentValuesTest extends TestScaffold {
         // a method with no params
         {
             System.out.println("----- Testing no args");
-            bpe = resumeTo("ArgumentValuesTarg", 38);
+            bpe = resumeTo("ArgumentValuesTarg", NO_ARGS_LINE_1);
             StackFrame frame = bpe.thread().frame(0);
 
             Method mmm = frame.location().method();
@@ -165,7 +196,7 @@ public class ArgumentValuesTest extends TestScaffold {
         // as a String[3] in the method.
         {
             System.out.println("----- Testing var args");
-            bpe = resumeTo("ArgumentValuesTarg", 49);
+            bpe = resumeTo("ArgumentValuesTarg", VAR_ARGS_LINE_1);
             StackFrame frame = bpe.thread().frame(0);
 
             Method mmm = frame.location().method();
@@ -199,7 +230,7 @@ public class ArgumentValuesTest extends TestScaffold {
         // a method with with one generic param
         {
             System.out.println("----- Testing generic args");
-            bpe = resumeTo("ArgumentValuesTarg", 53);
+            bpe = resumeTo("ArgumentValuesTarg", GENERIC_ARGS_LINE_1);
             StackFrame frame = bpe.thread().frame(0);
 
             Method mmm = frame.location().method();
@@ -224,7 +255,7 @@ public class ArgumentValuesTest extends TestScaffold {
         // test instance method call
         {
             System.out.println("----- Testing instance method call");
-            bpe = resumeTo("ArgumentValuesTarg", 57);
+            bpe = resumeTo("ArgumentValuesTarg", INSTANCE_METHOD_LINE_1);
             StackFrame frame = bpe.thread().frame(0);
 
             Method mmm = frame.location().method();

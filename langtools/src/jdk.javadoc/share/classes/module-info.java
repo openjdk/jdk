@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,12 @@
 /** Defines the implementation of the
  *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
  *  and its command line equivalent, <em>javadoc</em>.
+ *
+ *  @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
+ *      Documentation Comment Specification for the Standard Doclet</a>
+ *
+ *  @moduleGraph
+ *  @since 9
  */
 module jdk.javadoc {
     requires transitive java.compiler;
@@ -38,8 +44,6 @@ module jdk.javadoc {
     exports com.sun.tools.javadoc;
 
     exports jdk.javadoc.doclet;
-    exports jdk.javadoc.doclet.taglet;
-    exports jdk.javadoc.doclets;
 
     provides java.util.spi.ToolProvider
         with jdk.javadoc.internal.tool.JavadocToolProvider;

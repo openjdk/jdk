@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ import java.security.Permission;
  * any value (including another null value) but does not imply any
  * other value.</p>
  *
- * <p><a name="action-list">The possible actions are these:</a></p>
+ * <p><a id="action-list">The possible actions are these:</a></p>
  *
  * <ul>
  * <li>addNotificationListener</li>

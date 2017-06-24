@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
 import com.sun.tools.javac.comp.Lower.BasicFreeVarCollector;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -767,13 +768,6 @@ public class LambdaToMethod extends TreeTranslator {
      */
     private MethodSymbol makePrivateSyntheticMethod(long flags, Name name, Type type, Symbol owner) {
         return new MethodSymbol(flags | SYNTHETIC | PRIVATE, name, type, owner);
-    }
-
-    /**
-     * Create new synthetic variable with given flags, name, type, owner
-     */
-    private VarSymbol makeSyntheticVar(long flags, String name, Type type, Symbol owner) {
-        return makeSyntheticVar(flags, names.fromString(name), type, owner);
     }
 
     /**
@@ -1504,7 +1498,7 @@ public class LambdaToMethod extends TreeTranslator {
             } else {
                 super.visitReference(tree);
                 if (dumpLambdaToMethodStats) {
-                    log.note(tree, "mref.stat", rcontext.needsAltMetafactory(), null);
+                    log.note(tree, Notes.MrefStat(rcontext.needsAltMetafactory(), null));
                 }
             }
         }
@@ -2062,7 +2056,7 @@ public class LambdaToMethod extends TreeTranslator {
                         Assert.error(skind.name());
                         throw new AssertionError();
                 }
-                if (ret != sym) {
+                if (ret != sym && skind.propagateAnnotations()) {
                     ret.setDeclarationAttributes(sym.getRawAttributes());
                     ret.setTypeAttributes(sym.getRawTypeAttributes());
                 }
@@ -2098,7 +2092,6 @@ public class LambdaToMethod extends TreeTranslator {
                             if (m.containsKey(lambdaIdent.sym)) {
                                 Symbol tSym = m.get(lambdaIdent.sym);
                                 JCTree t = make.Ident(tSym).setType(lambdaIdent.type);
-                                tSym.setTypeAttributes(lambdaIdent.sym.getRawTypeAttributes());
                                 return t;
                             }
                             break;
@@ -2107,7 +2100,6 @@ public class LambdaToMethod extends TreeTranslator {
                                 // Transform outer instance variable references anchoring them to the captured synthetic.
                                 Symbol tSym = m.get(lambdaIdent.sym.owner);
                                 JCExpression t = make.Ident(tSym).setType(lambdaIdent.sym.owner.type);
-                                tSym.setTypeAttributes(lambdaIdent.sym.owner.getRawTypeAttributes());
                                 t = make.Select(t, lambdaIdent.name);
                                 t.setType(lambdaIdent.type);
                                 TreeInfo.setSymbol(t, lambdaIdent.sym);
@@ -2128,7 +2120,6 @@ public class LambdaToMethod extends TreeTranslator {
                 if (m.containsKey(fieldAccess.sym.owner)) {
                     Symbol tSym = m.get(fieldAccess.sym.owner);
                     JCExpression t = make.Ident(tSym).setType(fieldAccess.sym.owner.type);
-                    tSym.setTypeAttributes(fieldAccess.sym.owner.getRawTypeAttributes());
                     return t;
                 }
                 return null;
@@ -2328,7 +2319,18 @@ public class LambdaToMethod extends TreeTranslator {
         CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
         CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
         CAPTURED_OUTER_THIS, // used when `this' capture is illegal, but outer this capture is legit (JDK-8129740)
-        TYPE_VAR       // original to translated lambda type variables
+        TYPE_VAR;      // original to translated lambda type variables
+
+        boolean propagateAnnotations() {
+            switch (this) {
+                case CAPTURED_VAR:
+                case CAPTURED_THIS:
+                case CAPTURED_OUTER_THIS:
+                    return false;
+                default:
+                    return true;
+           }
+        }
     }
 
     /**

@@ -26,7 +26,7 @@
  * @bug 6244855 6244863
  * @summary Exception thrown by NotificationFilter should be ignored
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean FilterExceptionTest
  * @run build FilterExceptionTest
  * @run main FilterExceptionTest

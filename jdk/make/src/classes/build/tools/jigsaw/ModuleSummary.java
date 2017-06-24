@@ -291,9 +291,9 @@ public class ModuleSummary {
 
     static Configuration resolve(Set<String> roots) {
         return Configuration.empty()
-            .resolveRequires(ModuleFinder.ofSystem(),
-                             ModuleFinder.of(),
-                             roots);
+            .resolve(ModuleFinder.ofSystem(),
+                     ModuleFinder.of(),
+                     roots);
     }
 
     static class HtmlDocument {

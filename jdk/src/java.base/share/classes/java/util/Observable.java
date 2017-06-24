@@ -69,6 +69,8 @@ package java.util;
  * {@link java.beans} package.  For reliable and ordered
  * messaging among threads, consider using one of the concurrent data
  * structures in the {@link java.util.concurrent} package.
+ * For reactive streams style programming, see the
+ * {@link java.util.concurrent.Flow} API.
  */
 @Deprecated(since="9")
 public class Observable {
