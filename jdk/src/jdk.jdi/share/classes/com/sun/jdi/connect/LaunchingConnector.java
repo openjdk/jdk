@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package com.sun.jdi.connect;
 
-import com.sun.jdi.VirtualMachine;
-import java.util.Map;
 import java.io.IOException;
+import java.util.Map;
+
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.VMStartEvent;
 
 /**
  * A connector which can launch a target VM before connecting to it.
@@ -36,6 +38,7 @@ import java.io.IOException;
  * @since  1.3
  */
 public interface LaunchingConnector extends Connector {
+
     /**
      * Launches an application and connects to its VM. Properties
      * of the launch (possibly including options,
@@ -47,14 +50,14 @@ public interface LaunchingConnector extends Connector {
      * Argument map values can be changed, but map entries should not be
      * added or deleted.
      * <p>A target VM launched by a launching connector is not
-     * guaranteed to be stable until after the {@link com.sun.jdi.event.VMStartEvent} has been
+     * guaranteed to be stable until after the {@link VMStartEvent} has been
      * received.
      * <p>
      * <b>Important note:</b> If a target VM is launched through this
      * funcctions, its output and error streams must be read as it
      * executes. These streams are available through the
      * {@link java.lang.Process Process} object returned by
-     * {@link com.sun.jdi.VirtualMachine#process}. If the streams are not periodically
+     * {@link VirtualMachine#process}. If the streams are not periodically
      * read, the target VM will stop executing when the buffers for these
      * streams are filled.
      *

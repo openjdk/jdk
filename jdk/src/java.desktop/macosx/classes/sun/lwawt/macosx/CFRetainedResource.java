@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 package sun.lwawt.macosx;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * Safely holds and disposes of native AppKit resources, using the
  * correct AppKit threading and Objective-C GC semantics.
@@ -35,6 +39,10 @@ public class CFRetainedResource {
     private final boolean disposeOnAppKitThread;
     // TODO this pointer should be private and accessed via CFNativeAction class
     protected volatile long ptr;
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock writeLock = lock.writeLock();
+    private final Lock readLock = lock.readLock();
 
     /**
      * @param ptr CFRetained native object pointer
@@ -50,21 +58,31 @@ public class CFRetainedResource {
      * @param ptr CFRetained native object pointer
      */
     protected void setPtr(final long ptr) {
-        synchronized (this) {
-            if (this.ptr != 0) dispose();
+        writeLock.lock();
+        try {
+            if (this.ptr != 0) {
+                dispose();
+            }
             this.ptr = ptr;
+        } finally {
+            writeLock.unlock();
         }
     }
 
     /**
-     * Manually CFReleases the native resource
+     * Manually CFReleases the native resource.
      */
     protected void dispose() {
         long oldPtr = 0L;
-        synchronized (this) {
-            if (ptr == 0) return;
+        writeLock.lock();
+        try {
+            if (ptr == 0) {
+                return;
+            }
             oldPtr = ptr;
             ptr = 0;
+        } finally {
+            writeLock.unlock();
         }
 
         nativeCFRelease(oldPtr, disposeOnAppKitThread); // perform outside of the synchronized block
@@ -109,9 +127,14 @@ public class CFRetainedResource {
      *
      * @param  action The native operation
      */
-    public final synchronized void execute(final CFNativeAction action) {
-        if (ptr != 0) {
-            action.run(ptr);
+    public final void execute(final CFNativeAction action) {
+        readLock.lock();
+        try {
+            if (ptr != 0) {
+                action.run(ptr);
+            }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -127,14 +150,20 @@ public class CFRetainedResource {
      * @return result of the native operation, usually the native pointer to
      *         some other data
      */
-    final synchronized long executeGet(final CFNativeActionGet action) {
-        if (ptr != 0) {
-            return action.run(ptr);
+    final long executeGet(final CFNativeActionGet action) {
+        readLock.lock();
+        try {
+            if (ptr != 0) {
+                return action.run(ptr);
+            }
+        } finally {
+            readLock.unlock();
         }
         return 0;
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected final void finalize() throws Throwable {
         dispose();
     }

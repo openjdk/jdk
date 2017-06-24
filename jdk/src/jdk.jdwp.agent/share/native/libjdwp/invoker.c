@@ -212,30 +212,6 @@ createGlobalRefs(JNIEnv *env, InvokeRequest *request)
 }
 
 /*
- * Delete saved global references - if any - for:
- * - a potentially thrown Exception
- * - a returned refernce/array value
- * See invoker_doInvoke() and invoke* methods where global references
- * are being saved.
- */
-static void
-deletePotentiallySavedGlobalRefs(JNIEnv *env, InvokeRequest *request)
-{
-    /* Delete potentially saved return value */
-    if ((request->invokeType == INVOKE_CONSTRUCTOR) ||
-        (returnTypeTag(request->methodSignature) == JDWP_TAG(OBJECT)) ||
-        (returnTypeTag(request->methodSignature) == JDWP_TAG(ARRAY))) {
-        if (request->returnValue.l != NULL) {
-            tossGlobalRef(env, &(request->returnValue.l));
-        }
-    }
-    /* Delete potentially saved exception */
-    if (request->exception != NULL) {
-        tossGlobalRef(env, &(request->exception));
-    }
-}
-
-/*
  * Delete global argument references from the request which got put there before a
  * invoke request was carried out. See fillInvokeRequest().
  */
@@ -782,6 +758,7 @@ invoker_completeInvokeRequest(jthread thread)
     jint id;
     InvokeRequest *request;
     jboolean detached;
+    jboolean mustReleaseReturnValue = JNI_FALSE;
 
     JDI_ASSERT(thread);
 
@@ -825,6 +802,13 @@ invoker_completeInvokeRequest(jthread thread)
         id = request->id;
         exc = request->exception;
         returnValue = request->returnValue;
+
+        /* Release return value and exception references, but delay the release
+         * until after the return packet was sent. */
+        mustReleaseReturnValue = request->invokeType == INVOKE_CONSTRUCTOR ||
+           returnTypeTag(request->methodSignature) == JDWP_TAG(OBJECT) ||
+           returnTypeTag(request->methodSignature) == JDWP_TAG(ARRAY);
+
     }
 
     /*
@@ -838,6 +822,12 @@ invoker_completeInvokeRequest(jthread thread)
      * after writing the respone.
      */
     deleteGlobalArgumentRefs(env, request);
+
+    /* From now on, do not access the request structure anymore
+     * for this request id, because once we give up the invokerLock it may
+     * be immediately reused by a new invoke request.
+     */
+    request = NULL;
 
     /*
      * Give up the lock before I/O operation
@@ -859,7 +849,12 @@ invoker_completeInvokeRequest(jthread thread)
      */
     eventHandler_lock(); // for proper lock order
     debugMonitorEnter(invokerLock);
-    deletePotentiallySavedGlobalRefs(env, request);
+    if (mustReleaseReturnValue && returnValue.l != NULL) {
+        tossGlobalRef(env, &returnValue.l);
+    }
+    if (exc != NULL) {
+        tossGlobalRef(env, &exc);
+    }
     debugMonitorExit(invokerLock);
     eventHandler_unlock();
 }
