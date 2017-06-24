@@ -2962,14 +2962,7 @@ JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
   HOTSPOT_THREAD_YIELD();
-
-  // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
-  // Critical for similar threading behaviour
-  if (ConvertYieldToSleep) {
-    os::sleep(thread, MinSleepInterval, false);
-  } else {
-    os::naked_yield();
-  }
+  os::naked_yield();
 JVM_END
 
 
@@ -2993,18 +2986,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   EventThreadSleep event;
 
   if (millis == 0) {
-    // When ConvertSleepToYield is on, this matches the classic VM implementation of
-    // JVM_Sleep. Critical for similar threading behaviour (Win32)
-    // It appears that in certain GUI contexts, it may be beneficial to do a short sleep
-    // for SOLARIS
-    if (ConvertSleepToYield) {
-      os::naked_yield();
-    } else {
-      ThreadState old_state = thread->osthread()->get_state();
-      thread->osthread()->set_state(SLEEPING);
-      os::sleep(thread, MinSleepInterval, false);
-      thread->osthread()->set_state(old_state);
-    }
+    os::naked_yield();
   } else {
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);

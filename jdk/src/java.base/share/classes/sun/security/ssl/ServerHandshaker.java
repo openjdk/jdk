@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ final class ServerHandshaker extends Handshaker {
     private ProtocolVersion clientRequestedVersion;
 
     // client supported elliptic curves
-    private EllipticCurvesExtension requestedCurves;
+    private SupportedGroupsExtension requestedGroups;
 
     // the preferable signature algorithm used by ServerKeyExchange message
     SignatureAndHashAlgorithm preferableSignatureAlgorithm;
@@ -751,8 +751,8 @@ final class ServerHandshaker extends Handshaker {
                 throw new SSLException("Client did not resume a session");
             }
 
-            requestedCurves = (EllipticCurvesExtension)
-                        mesg.extensions.get(ExtensionType.EXT_ELLIPTIC_CURVES);
+            requestedGroups = (SupportedGroupsExtension)
+                    mesg.extensions.get(ExtensionType.EXT_SUPPORTED_GROUPS);
 
             // We only need to handle the "signature_algorithm" extension
             // for full handshakes and TLS 1.2 or later.
@@ -1341,6 +1341,8 @@ final class ServerHandshaker extends Handshaker {
             }
         }
 
+        // The named group used for ECDHE and FFDHE.
+        NamedGroup namedGroup = null;
         switch (keyExchange) {
         case K_RSA:
             // need RSA certs for authentication
@@ -1366,6 +1368,37 @@ final class ServerHandshaker extends Handshaker {
             }
             break;
         case K_DHE_RSA:
+            // Is ephemeral DH cipher suite usable for the connection?
+            //
+            // [RFC 7919] If a compatible TLS server receives a Supported
+            // Groups extension from a client that includes any FFDHE group
+            // (i.e., any codepoint between 256 and 511, inclusive, even if
+            // unknown to the server), and if none of the client-proposed
+            // FFDHE groups are known and acceptable to the server, then
+            // the server MUST NOT select an FFDHE cipher suite.  In this
+            // case, the server SHOULD select an acceptable non-FFDHE cipher
+            // suite from the client's offered list.  If the extension is
+            // present with FFDHE groups, none of the client's offered
+            // groups are acceptable by the server, and none of the client's
+            // proposed non-FFDHE cipher suites are acceptable to the server,
+            // the server MUST end the connection with a fatal TLS alert
+            // of type insufficient_security(71).
+            //
+            // Note: For compatibility, if an application is customized to
+            // use legacy sizes (512 bits for exportable cipher suites and
+            // 768 bits for others), or the cipher suite is exportable, the
+            // FFDHE extension will not be used.
+            if ((!useLegacyEphemeralDHKeys) && (!suite.exportable) &&
+                (requestedGroups != null) && requestedGroups.hasFFDHEGroup()) {
+
+                namedGroup = requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_FFDHE);
+                if (namedGroup == null) {
+                    // no match found, cannot use this cipher suite.
+                    return false;
+                }
+            }
+
             // need RSA certs for authentication
             if (setupPrivateKeyAndChain("RSA") == false) {
                 return false;
@@ -1386,9 +1419,20 @@ final class ServerHandshaker extends Handshaker {
                 }
             }
 
-            setupEphemeralDHKeys(suite.exportable, privateKey);
+            setupEphemeralDHKeys(namedGroup, suite.exportable, privateKey);
             break;
         case K_ECDHE_RSA:
+            // Is ECDHE cipher suite usable for the connection?
+            namedGroup = (requestedGroups != null) ?
+                requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_ECDHE) :
+                SupportedGroupsExtension.getPreferredECGroup(
+                    algorithmConstraints);
+            if (namedGroup == null) {
+                // no match found, cannot use this ciphersuite
+                return false;
+            }
+
             // need RSA certs for authentication
             if (setupPrivateKeyAndChain("RSA") == false) {
                 return false;
@@ -1409,11 +1453,23 @@ final class ServerHandshaker extends Handshaker {
                 }
             }
 
-            if (setupEphemeralECDHKeys() == false) {
-                return false;
-            }
+            setupEphemeralECDHKeys(namedGroup);
             break;
         case K_DHE_DSS:
+            // Is ephemeral DH cipher suite usable for the connection?
+            //
+            // See comment in K_DHE_RSA case.
+            if ((!useLegacyEphemeralDHKeys) && (!suite.exportable) &&
+                (requestedGroups != null) && requestedGroups.hasFFDHEGroup()) {
+
+                namedGroup = requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_FFDHE);
+                if (namedGroup == null) {
+                    // no match found, cannot use this cipher suite.
+                    return false;
+                }
+            }
+
             // get preferable peer signature algorithm for server key exchange
             if (protocolVersion.useTLS12PlusSpec()) {
                 preferableSignatureAlgorithm =
@@ -1434,9 +1490,20 @@ final class ServerHandshaker extends Handshaker {
                 return false;
             }
 
-            setupEphemeralDHKeys(suite.exportable, privateKey);
+            setupEphemeralDHKeys(namedGroup, suite.exportable, privateKey);
             break;
         case K_ECDHE_ECDSA:
+            // Is ECDHE cipher suite usable for the connection?
+            namedGroup = (requestedGroups != null) ?
+                requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_ECDHE) :
+                SupportedGroupsExtension.getPreferredECGroup(
+                    algorithmConstraints);
+            if (namedGroup == null) {
+                // no match found, cannot use this ciphersuite
+                return false;
+            }
+
             // get preferable peer signature algorithm for server key exchange
             if (protocolVersion.useTLS12PlusSpec()) {
                 preferableSignatureAlgorithm =
@@ -1456,9 +1523,8 @@ final class ServerHandshaker extends Handshaker {
             if (setupPrivateKeyAndChain("EC") == false) {
                 return false;
             }
-            if (setupEphemeralECDHKeys() == false) {
-                return false;
-            }
+
+            setupEphemeralECDHKeys(namedGroup);
             break;
         case K_ECDH_RSA:
             // need EC cert
@@ -1475,14 +1541,36 @@ final class ServerHandshaker extends Handshaker {
             setupStaticECDHKeys();
             break;
         case K_DH_ANON:
+            // Is ephemeral DH cipher suite usable for the connection?
+            //
+            // See comment in K_DHE_RSA case.
+            if ((!useLegacyEphemeralDHKeys) && (!suite.exportable) &&
+                (requestedGroups != null) && requestedGroups.hasFFDHEGroup()) {
+                namedGroup = requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_FFDHE);
+                if (namedGroup == null) {
+                    // no match found, cannot use this cipher suite.
+                    return false;
+                }
+            }
+
             // no certs needed for anonymous
-            setupEphemeralDHKeys(suite.exportable, null);
+            setupEphemeralDHKeys(namedGroup, suite.exportable, null);
             break;
         case K_ECDH_ANON:
-            // no certs needed for anonymous
-            if (setupEphemeralECDHKeys() == false) {
+            // Is ECDHE cipher suite usable for the connection?
+            namedGroup = (requestedGroups != null) ?
+                requestedGroups.getPreferredGroup(
+                    algorithmConstraints, NamedGroupType.NAMED_GROUP_ECDHE) :
+                SupportedGroupsExtension.getPreferredECGroup(
+                    algorithmConstraints);
+            if (namedGroup == null) {
+                // no match found, cannot use this ciphersuite
                 return false;
             }
+
+            // no certs needed for anonymous
+            setupEphemeralECDHKeys(namedGroup);
             break;
         default:
             ClientKeyExchangeService p =
@@ -1544,7 +1632,15 @@ final class ServerHandshaker extends Handshaker {
      * Acquire some "ephemeral" Diffie-Hellman  keys for this handshake.
      * We don't reuse these, for improved forward secrecy.
      */
-    private void setupEphemeralDHKeys(boolean export, Key key) {
+    private void setupEphemeralDHKeys(
+            NamedGroup namedGroup, boolean export, Key key) {
+        // Are the client and server willing to negotiate FFDHE groups?
+        if ((!useLegacyEphemeralDHKeys) && (!export) && (namedGroup != null)) {
+            dh = new DHCrypt(namedGroup, sslContext.getSecureRandom());
+
+            return;
+        }   // Otherwise, the client is not compatible with FFDHE extension.
+
         /*
          * 768 bits ephemeral DH private keys were used to be used in
          * ServerKeyExchange except that exportable ciphers max out at 512
@@ -1613,20 +1709,11 @@ final class ServerHandshaker extends Handshaker {
         dh = new DHCrypt(keySize, sslContext.getSecureRandom());
     }
 
-    // Setup the ephemeral ECDH parameters.
-    // If we cannot continue because we do not support any of the curves that
-    // the client requested, return false. Otherwise (all is well), return true.
-    private boolean setupEphemeralECDHKeys() {
-        int index = (requestedCurves != null) ?
-                requestedCurves.getPreferredCurve(algorithmConstraints) :
-                EllipticCurvesExtension.getActiveCurves(algorithmConstraints);
-        if (index < 0) {
-            // no match found, cannot use this ciphersuite
-            return false;
-        }
-
-        ecdh = new ECDHCrypt(index, sslContext.getSecureRandom());
-        return true;
+    /**
+     * Setup the ephemeral ECDH parameters.
+     */
+    private void setupEphemeralECDHKeys(NamedGroup namedGroup) {
+        ecdh = new ECDHCrypt(namedGroup, sslContext.getSecureRandom());
     }
 
     private void setupStaticECDHKeys() {
@@ -1674,9 +1761,11 @@ final class ServerHandshaker extends Handshaker {
                 return false;
             }
             ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
-            int id = EllipticCurvesExtension.getCurveIndex(params);
-            if ((id <= 0) || !EllipticCurvesExtension.isSupported(id) ||
-                ((requestedCurves != null) && !requestedCurves.contains(id))) {
+            NamedGroup namedGroup = NamedGroup.valueOf(params);
+            if ((namedGroup == null) ||
+                (!SupportedGroupsExtension.supports(namedGroup)) ||
+                ((requestedGroups != null) &&
+                        !requestedGroups.contains(namedGroup.id))) {
                 return false;
             }
         }

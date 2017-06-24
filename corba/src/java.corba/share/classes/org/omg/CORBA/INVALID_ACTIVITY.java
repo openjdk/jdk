@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ package org.omg.CORBA;
  * suspended. It is also raised when an attempted invocation is made that
  * is incompatible with the Activity's current state.
  *
- * @see <A href="../../../../technotes/guides/idl/jidlExceptions.html">documentation on
- *      Java&nbsp;IDL exceptions</A>
+ * <p>See also {@extLink jidlexception documentation on Java&nbsp;IDL exceptions}.
+ * </p>
  * @since   J2SE 1.5
  */
 

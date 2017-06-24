@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Provides the implementation of the DNS Java Naming provider.
+ *
+ * @provides javax.naming.spi.InitialContextFactory
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.naming.dns {
     requires java.naming;
 
@@ -32,4 +39,3 @@ module jdk.naming.dns {
     provides javax.naming.spi.InitialContextFactory
         with com.sun.jndi.dns.DnsContextFactory;
 }
-

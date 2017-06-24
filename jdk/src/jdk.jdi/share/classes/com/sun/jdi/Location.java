@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package com.sun.jdi;
 
-import java.util.List;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.request.EventRequestManager;
 
 /**
  * A point within the executing code of the target VM.
@@ -41,7 +43,7 @@ import java.util.List;
  * Several mirror interfaces have locations. Each such mirror
  * extends a {@link Locatable} interface.
  * <p>
- * <a name="strata"><b>Strata</b></a>
+ * <a id="strata"><b>Strata</b></a>
  * <p>
  * The source information for a Location is dependent on the
  * <i>stratum</i> which is used. A stratum is a source code
@@ -75,10 +77,10 @@ import java.util.List;
  * returned as the default.  To determine the available strata
  * use {@link ReferenceType#availableStrata()}.
  *
- * @see com.sun.jdi.request.EventRequestManager
+ * @see EventRequestManager
  * @see StackFrame
- * @see com.sun.jdi.event.BreakpointEvent
- * @see com.sun.jdi.event.ExceptionEvent
+ * @see BreakpointEvent
+ * @see ExceptionEvent
  * @see Locatable
  *
  * @author Robert Field
@@ -128,7 +130,6 @@ public interface Location extends Mirror, Comparable<Location> {
      */
     String sourceName() throws AbsentInformationException;
 
-
     /**
      * Gets an identifing name for the source corresponding to
      * this location. Interpretation of this string is the
@@ -154,8 +155,7 @@ public interface Location extends Mirror, Comparable<Location> {
      *
      * @since 1.4
      */
-    String sourceName(String stratum)
-                        throws AbsentInformationException;
+    String sourceName(String stratum) throws AbsentInformationException;
 
     /**
      * Gets the path to the source corresponding to this
@@ -172,7 +172,6 @@ public interface Location extends Mirror, Comparable<Location> {
      * known
      */
     String sourcePath() throws AbsentInformationException;
-
 
     /**
      * Gets the path to the source corresponding to this
@@ -206,8 +205,7 @@ public interface Location extends Mirror, Comparable<Location> {
      *
      * @since 1.4
      */
-    String sourcePath(String stratum)
-                         throws AbsentInformationException;
+    String sourcePath(String stratum) throws AbsentInformationException;
 
     /**
      * Gets the line number of this Location.

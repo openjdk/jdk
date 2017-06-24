@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,15 @@ import java.security.spec.AlgorithmParameterSpec;
  * <p> In case the client does not explicitly initialize the
  * AlgorithmParameterGenerator (via a call to an {@code engineInit}
  * method), each provider must supply (and document) a default initialization.
- * For example, the Sun provider uses a default modulus prime size of 1024
- * bits for the generation of DSA parameters.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the AlgorithmParameterGenerator defaults
+ * used by JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * AlgorithmParameterGenerator instead of relying on provider-specific defaults.
  *
  * @author Jan Luehe
  *

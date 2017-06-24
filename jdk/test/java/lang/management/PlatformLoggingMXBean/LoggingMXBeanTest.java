@@ -27,7 +27,6 @@
  * @summary Test if proxy for PlatformLoggingMXBean is equivalent
  *          to proxy for LoggingMXBean
  *
- * @modules jdk.management
  * @build LoggingMXBeanTest
  * @run main LoggingMXBeanTest
  */
