@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * For a given class method, build an array of interface methods which it
@@ -52,7 +52,7 @@ public class ImplementedMethods {
     private final TypeElement typeElement;
     private final ExecutableElement method;
 
-    public ImplementedMethods(ExecutableElement method, Configuration configuration) {
+    public ImplementedMethods(ExecutableElement method, BaseConfiguration configuration) {
         this.method = method;
         this.utils = configuration.utils;
         typeElement = utils.getEnclosingTypeElement(method);

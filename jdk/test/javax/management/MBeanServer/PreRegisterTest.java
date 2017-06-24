@@ -26,7 +26,7 @@
  * @bug 4911846
  * @summary Test that MBeanRegistration can change caller ObjectName
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean PreRegisterTest
  * @run build PreRegisterTest
  * @run main PreRegisterTest

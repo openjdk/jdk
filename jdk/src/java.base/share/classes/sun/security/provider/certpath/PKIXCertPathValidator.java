@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                 // if this trust anchor is not worth trying,
                 // we move on to the next one
                 if (selector != null && !selector.match(trustedCert)) {
-                    if (debug != null) {
+                    if (debug != null && Debug.isVerbose()) {
                         debug.println("NO - don't try this trustedCert");
                     }
                     continue;
@@ -172,11 +172,8 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         List<PKIXCertPathChecker> certPathCheckers = new ArrayList<>();
         // add standard checkers that we will be using
         certPathCheckers.add(untrustedChecker);
-        if (params.timestamp() == null) {
-            certPathCheckers.add(new AlgorithmChecker(anchor, params.date()));
-        } else {
-            certPathCheckers.add(new AlgorithmChecker(params.timestamp()));
-        }
+        certPathCheckers.add(new AlgorithmChecker(anchor, null, params.date(),
+                params.timestamp(), params.variant()));
         certPathCheckers.add(new KeyChecker(certPathLen,
                                             params.targetCertConstraints()));
         certPathCheckers.add(new ConstraintsChecker(certPathLen));
@@ -194,13 +191,10 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         certPathCheckers.add(pc);
         // default value for date is current time
         BasicChecker bc;
-        if (params.timestamp() == null) {
-            bc = new BasicChecker(anchor, params.date(), params.sigProvider(),
-                    false);
-        } else {
-            bc = new BasicChecker(anchor, params.timestamp().getTimestamp(),
-                    params.sigProvider(), false);
-        }
+        bc = new BasicChecker(anchor,
+                (params.timestamp() == null ? params.date() :
+                        params.timestamp().getTimestamp()),
+                params.sigProvider(), false);
         certPathCheckers.add(bc);
 
         boolean revCheckerAdded = false;

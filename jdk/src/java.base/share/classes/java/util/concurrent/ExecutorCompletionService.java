@@ -97,6 +97,8 @@ package java.util.concurrent;
  *   if (result != null)
  *     use(result);
  * }}</pre>
+ *
+ * @since 1.5
  */
 public class ExecutorCompletionService<V> implements CompletionService<V> {
     private final Executor executor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.taglets.InheritableTaglet;
 
 /**
@@ -241,7 +241,7 @@ public class DocFinder {
      *
      * @return an Output object representing the documentation that was found.
      */
-    public static Output search(Configuration configuration, Input input) {
+    public static Output search(BaseConfiguration configuration, Input input) {
         Output output = new Output();
         Utils utils = configuration.utils;
         if (input.isInheritDocTag) {

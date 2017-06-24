@@ -165,6 +165,7 @@ endif
 WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e '/^Note: including file:/!d' \
     -e 's|Note: including file: *||' \
+    -e 's|\r||g' \
     -e 's|\\|/|g' \
     -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
     -e '\|$(TOPDIR)|I !d' \

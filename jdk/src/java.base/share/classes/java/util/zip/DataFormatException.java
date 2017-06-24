@@ -29,6 +29,7 @@ package java.util.zip;
  * Signals that a data format error has occurred.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class DataFormatException extends Exception {

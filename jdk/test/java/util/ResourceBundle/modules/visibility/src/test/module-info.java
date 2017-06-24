@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 module test {
-    // jdk.test.resources.classes.MyResourcesProvider is in named.bundles.
+    // jdk.test.resources.classes.spi.MyResourcesProvider is in named.bundles.
     requires named.bundles;
-    uses jdk.test.resources.classes.MyResourcesProvider;
-    uses jdk.test.resources.props.MyResourcesProvider;
+    uses jdk.test.resources.classes.spi.MyResourcesProvider;
+    uses jdk.test.resources.props.spi.MyResourcesProvider;
 }
