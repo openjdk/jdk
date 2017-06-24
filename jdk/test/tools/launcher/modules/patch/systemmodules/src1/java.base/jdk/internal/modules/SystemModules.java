@@ -30,6 +30,8 @@ package jdk.internal.module;
 public final class SystemModules {
     public static final String[] MODULE_NAMES = new String[0];
 
+    public static int PACKAGES_IN_BOOT_LAYER = 1024;
+
     public static boolean hasSplitPackages() {
         return true;
     }

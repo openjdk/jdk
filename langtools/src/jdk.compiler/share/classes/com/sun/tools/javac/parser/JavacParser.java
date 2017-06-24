@@ -1244,7 +1244,7 @@ public class JavacParser implements Parser {
                     if (sel.name != names._class) {
                         return illegal();
                     } else {
-                        log.error(token.pos, "no.annotations.on.dot.class");
+                        log.error(token.pos, Errors.NoAnnotationsOnDotClass);
                         return expr;
                     }
                 }
@@ -3039,7 +3039,7 @@ public class JavacParser implements Parser {
         int pos = token.pos;
         Name name;
         if (lambdaParameter && token.kind == UNDERSCORE) {
-            log.error(pos, "underscore.as.identifier.in.lambda");
+            log.error(pos, Errors.UnderscoreAsIdentifierInLambda);
             name = token.name();
             nextToken();
         } else {
@@ -3049,10 +3049,10 @@ public class JavacParser implements Parser {
                     name = ((JCIdent)pn).name;
                 } else {
                     if ((mods.flags & Flags.VARARGS) != 0) {
-                        log.error(token.pos, "varargs.and.receiver");
+                        log.error(token.pos, Errors.VarargsAndReceiver);
                     }
                     if (token.kind == LBRACKET) {
-                        log.error(token.pos, "array.and.receiver");
+                        log.error(token.pos, Errors.ArrayAndReceiver);
                     }
                     return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
                 }
@@ -3062,7 +3062,7 @@ public class JavacParser implements Parser {
         }
         if ((mods.flags & Flags.VARARGS) != 0 &&
                 token.kind == LBRACKET) {
-            log.error(token.pos, "varargs.and.old.array.syntax");
+            log.error(token.pos, Errors.VarargsAndOldArraySyntax);
         }
         type = bracketsOpt(type);
         return toP(F.at(pos).VarDef(mods, name, type, null));
@@ -3104,7 +3104,7 @@ public class JavacParser implements Parser {
         } else {
             checkVariableInTryWithResources(startPos);
             if (!t.hasTag(IDENT) && !t.hasTag(SELECT)) {
-                log.error(t.pos(), "try.with.resources.expr.needs.var");
+                log.error(t.pos(), Errors.TryWithResourcesExprNeedsVar);
             }
 
             return t;
@@ -4144,52 +4144,52 @@ public class JavacParser implements Parser {
 
     void checkDiamond() {
         if (!allowDiamond) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "diamond.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.DiamondNotSupportedInSource(source.name));
         }
     }
     void checkMulticatch() {
         if (!allowMulticatch) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "multicatch.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.MulticatchNotSupportedInSource(source.name));
         }
     }
     void checkTryWithResources() {
         if (!allowTWR) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "try.with.resources.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.TryWithResourcesNotSupportedInSource(source.name));
         }
     }
     void checkVariableInTryWithResources(int startPos) {
         if (!allowEffectivelyFinalVariablesInTWR) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, startPos, "var.in.try.with.resources.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, startPos, Errors.VarInTryWithResourcesNotSupportedInSource(source.name));
         }
     }
     void checkLambda() {
         if (!allowLambda) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "lambda.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.LambdaNotSupportedInSource(source.name));
         }
     }
     void checkMethodReferences() {
         if (!allowMethodReferences) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "method.references.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.MethodReferencesNotSupportedInSource(source.name));
         }
     }
     void checkDefaultMethods() {
         if (!allowDefaultMethods) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "default.methods.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.DefaultMethodsNotSupportedInSource(source.name));
         }
     }
     void checkIntersectionTypesInCast() {
         if (!allowIntersectionTypesInCast) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "intersection.types.in.cast.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.IntersectionTypesInCastNotSupportedInSource(source.name));
         }
     }
     void checkStaticInterfaceMethods() {
         if (!allowStaticInterfaceMethods) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "static.intf.methods.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.StaticIntfMethodsNotSupportedInSource(source.name));
         }
     }
     void checkTypeAnnotations() {
         if (!allowTypeAnnotations) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, "type.annotations.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, token.pos, Errors.TypeAnnotationsNotSupportedInSource(source.name));
         }
     }
     void checkPrivateInterfaceMethods() {
@@ -4199,7 +4199,7 @@ public class JavacParser implements Parser {
     }
     protected void checkAnnotationsAfterTypeParams(int pos) {
         if (!allowAnnotationsAfterTypeParams) {
-            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, "annotations.after.type.params.not.supported.in.source", source.name);
+            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, Errors.AnnotationsAfterTypeParamsNotSupportedInSource(source.name));
         }
     }
 

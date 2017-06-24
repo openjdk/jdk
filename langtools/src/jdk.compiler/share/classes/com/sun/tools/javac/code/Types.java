@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
@@ -57,6 +58,7 @@ import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ClassFile.externalize;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 /**
  * Utility class containing various operations on types.
@@ -373,7 +375,7 @@ public class Types {
                 if (!chk.checkValidGenericType(site)) {
                     //if the inferred functional interface type is not well-formed,
                     //or if it's not a subtype of the original target, issue an error
-                    throw failure(diags.fragment("no.suitable.functional.intf.inst", site));
+                    throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
                 }
                 return memberType(site, descSym);
             }
@@ -433,13 +435,13 @@ public class Types {
                 } else {
                     //the target method(s) should be the only abstract members of t
                     throw failure("not.a.functional.intf.1",  origin,
-                            diags.fragment("incompatible.abstracts", Kinds.kindName(origin), origin));
+                            diags.fragment(Fragments.IncompatibleAbstracts(Kinds.kindName(origin), origin)));
                 }
             }
             if (abstracts.isEmpty()) {
                 //t must define a suitable non-generic method
                 throw failure("not.a.functional.intf.1", origin,
-                            diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
+                            diags.fragment(Fragments.NoAbstracts(Kinds.kindName(origin), origin)));
             } else if (abstracts.size() == 1) {
                 return new FunctionDescriptor(abstracts.first());
             } else { // size > 1
@@ -455,9 +457,11 @@ public class Types {
                                 desc.type.getReturnType(),
                                 desc.type.getThrownTypes()));
                     }
+                    JCDiagnostic msg =
+                            diags.fragment(Fragments.IncompatibleDescsInFunctionalIntf(Kinds.kindName(origin),
+                                                                                       origin));
                     JCDiagnostic.MultilineDiagnostic incompatibleDescriptors =
-                            new JCDiagnostic.MultilineDiagnostic(diags.fragment("incompatible.descs.in.functional.intf",
-                            Kinds.kindName(origin), origin), descriptors.toList());
+                            new JCDiagnostic.MultilineDiagnostic(msg, descriptors.toList());
                     throw failure(incompatibleDescriptors);
                 }
                 return descRes;
@@ -2095,7 +2099,7 @@ public class Types {
         }
         }
     // where
-        private TypeMapping<Boolean> erasure = new TypeMapping<Boolean>() {
+        private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
             private Type combineMetadata(final Type s,
                                          final Type t) {
                 if (t.getMetadata() != TypeMetadata.EMPTY) {
@@ -3019,7 +3023,7 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
-    private class Subst extends TypeMapping<Void> {
+    private class Subst extends StructuralTypeMapping<Void> {
         List<Type> from;
         List<Type> to;
 
@@ -4706,6 +4710,25 @@ public class Types {
     public static class MapVisitor<S> extends DefaultTypeVisitor<Type,S> {
         final public Type visit(Type t) { return t.accept(this, null); }
         public Type visitType(Type t, S s) { return t; }
+    }
+
+    /**
+     * An abstract class for mappings from types to types (see {@link Type#map(TypeMapping)}.
+     * This class implements the functional interface {@code Function}, that allows it to be used
+     * fluently in stream-like processing.
+     */
+    public static class TypeMapping<S> extends MapVisitor<S> implements Function<Type, Type> {
+        @Override
+        public Type apply(Type type) { return visit(type); }
+
+        List<Type> visit(List<Type> ts, S s) {
+            return ts.map(t -> visit(t, s));
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, S s) {
+            return visitTypeVar(t, s);
+        }
     }
     // </editor-fold>
 
