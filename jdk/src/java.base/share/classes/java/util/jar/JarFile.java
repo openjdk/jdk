@@ -48,7 +48,7 @@ import sun.security.util.SignatureFileVerifier;
  * processing multi-release jar files.  The {@code Manifest} can be used
  * to specify meta-information about the jar file and its entries.
  *
- * <p><a name="multirelease">A multi-release jar file</a> is a jar file that
+ * <p><a id="multirelease">A multi-release jar file</a> is a jar file that
  * contains a manifest with a main attribute named "Multi-Release",
  * a set of "base" entries, some of which are public classes with public
  * or protected methods that comprise the public interface of the jar file,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.*;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 
 /**
@@ -45,7 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.Configuration;
  */
 public class PackageListWriter {
 
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Utils utils;
     private final DocFile file;
 
@@ -54,7 +54,7 @@ public class PackageListWriter {
      *
      * @param configuration the current configuration of the doclet.
      */
-    public PackageListWriter(Configuration configuration) {
+    public PackageListWriter(BaseConfiguration configuration) {
         file = DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST);
         this.configuration = configuration;
         this.utils = configuration.utils;
@@ -66,7 +66,7 @@ public class PackageListWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem writing the output
      */
-    public static void generate(Configuration configuration) throws DocFileIOException {
+    public static void generate(BaseConfiguration configuration) throws DocFileIOException {
         PackageListWriter packgen = new PackageListWriter(configuration);
         packgen.generatePackageListFile(configuration.docEnv);
     }

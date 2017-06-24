@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ char *JLI_List_combine(JLI_List sl);
 char *JLI_List_join(JLI_List l, char sep);
 JLI_List JLI_List_split(const char *str, char sep);
 
-void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile);
+void JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile);
 JLI_List JLI_PreprocessArg(const char *arg);
 jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name);
 

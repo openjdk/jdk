@@ -31,6 +31,7 @@ import java.math.BigInteger;
  * This class specifies an RSA private key.
  *
  * @author Jan Luehe
+ * @since 1.2
  *
  *
  * @see java.security.Key

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package java.lang;
 
 import java.security.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
+import java.lang.module.ModuleFinder;
 
 /**
  * This class is for runtime permissions. A {@code RuntimePermission}
@@ -45,13 +43,17 @@ import java.util.StringTokenizer;
  * target names, and for each provides a description of what the permission
  * allows and a discussion of the risks of granting code the permission.
  *
- * <table border=1 cellpadding=5 summary="permission target name,
- *  what the target allows,and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">permission target name,
+ *  what the target allows, and associated risks</caption>
+ * <thead>
  * <tr>
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>
  * <th>Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
+ * <tbody>
  *
  * <tr>
  *   <td>createClassLoader</td>
@@ -265,6 +267,16 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
+ *   <td>defineClass</td>
+ *   <td>Define a class with
+ * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[])
+ * Lookup.defineClass}.</td>
+ *   <td>This grants code with a suitably privileged {@code Lookup} object
+ * permission to define classes in the same package as the {@code Lookup}'s
+ * lookup class. </td>
+ * </tr>
+ *
+ * <tr>
  *   <td>accessDeclaredMembers</td>
  *   <td>Access to the declared members of a class</td>
  *   <td>This grants code permission to query a class for its public,
@@ -295,6 +307,14 @@ import java.util.StringTokenizer;
  *   <td>This allows retrieval of the stack trace information of
  * another thread.  This might allow malicious code to monitor the
  * execution of threads and discover vulnerabilities in applications.</td>
+ * </tr>
+ *
+ * <tr>
+ *   <td>getStackWalkerWithClassReference</td>
+ *   <td>Get a stack walker that can retrieve stack frames with class reference.</td>
+ *   <td>This allows retrieval of Class objects from stack walking.
+ *   This might allow malicious code to access Class objects on the stack
+ *   outside its own context.</td>
  * </tr>
  *
  * <tr>
@@ -359,6 +379,15 @@ import java.util.StringTokenizer;
  *   <td>See {@link java.lang.System.LoggerFinder java.lang.System.LoggerFinder}
  *   for more information.</td>
  * </tr>
+ *
+ * <tr>
+ *   <td>accessSystemModules</td>
+ *   <td>Access system modules in the runtime image.</td>
+ *   <td>This grants the permission to access resources in the
+ *   {@linkplain ModuleFinder#ofSystem system modules} in the runtime image.</td>
+ * </tr>
+ *
+ * </tbody>
  * </table>
  *
  * @implNote
@@ -374,6 +403,7 @@ import java.util.StringTokenizer;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class RuntimePermission extends BasicPermission {

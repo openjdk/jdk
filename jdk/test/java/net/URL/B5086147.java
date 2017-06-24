@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 /**
  * @test
  * @bug 5086147
- * @run shell B5086147.sh
+ * @requires (os.family == "windows")
+ * @run main B5086147
  * @summary File,URI,URL conversions are strange for UNC path
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.File;
+import java.net.URI;
 
 public class B5086147 {
     public static final void main( String[] aaParamters ) throws Exception{

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,10 @@ import javax.xml.namespace.NamespaceContext;
  * Each NAMESPACE
  * and ATTRIBUTE must be individually written.
  *
- * <table border="1" cellpadding="2" cellspacing="0">
+ * <table class="striped">
+ *     <caption>XML Namespaces, {@code javax.xml.stream.isRepairingNamespaces} and write method behaviour</caption>
  *     <thead>
- *         <tr>
- *             <th colspan="5">XML Namespaces, {@code javax.xml.stream.isRepairingNamespaces} and write method behaviour</th>
- *         </tr>
- *         <tr>
+ *         <tr style="border-bottom: 1px solid black">
  *             <th>Method</th> <!-- method -->
  *             <th colspan="2">{@code isRepairingNamespaces} == true</th>
  *             <th colspan="2">{@code isRepairingNamespaces} == false</th>

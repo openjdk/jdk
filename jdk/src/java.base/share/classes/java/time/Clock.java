@@ -127,10 +127,13 @@ import jdk.internal.misc.VM;
  * document whether or not they do support serialization.
  *
  * @implNote
- * The clock implementation provided here is based on {@link System#currentTimeMillis()}.
- * That method provides little to no guarantee about the accuracy of the clock.
- * Applications requiring a more accurate clock must implement this abstract class
- * themselves using a different external clock, such as an NTP server.
+ * The clock implementation provided here is based on the same underlying clock
+ * as {@link System#currentTimeMillis()}, but may have a precision finer than
+ * milliseconds if available.
+ * However, little to no guarantee is provided about the accuracy of the
+ * underlying clock. Applications requiring a more accurate clock must implement
+ * this abstract class themselves using a different external clock, such as an
+ * NTP server.
  *
  * @since 1.8
  */

@@ -51,6 +51,7 @@ package java.text;
  * records the current position.
  *
  * @author      Mark Davis
+ * @since 1.1
  * @see         java.text.Format
  */
 

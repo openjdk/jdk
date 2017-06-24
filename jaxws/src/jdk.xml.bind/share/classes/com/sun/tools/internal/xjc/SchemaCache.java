@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,9 @@ public final class SchemaCache {
                         schema = schemaFactory.newSchema(source);
 
                     } catch (IOException | SAXException e) {
-                        throw new InternalError(e);
+                        InternalError ie = new InternalError(e.getMessage());
+                        ie.initCause(e);
+                        throw ie;
                     } finally {
                         if (resourceResolver != null) resourceResolver.closeStreams();
                     }
@@ -221,5 +223,3 @@ class Input implements LSInput {
     public void setCertifiedText(boolean certifiedText) {
     }
 }
-
-

@@ -104,7 +104,15 @@ class Http2ClientImpl {
             return connection;
         }
         // we are opening the connection here blocking until it is done.
-        connection = new Http2Connection(req, this);
+        try {
+            connection = new Http2Connection(req, this);
+        } catch (Throwable t) {
+            synchronized (opening) {
+                opening.remove(key);
+                opening.notifyAll();
+            }
+            throw t;
+        }
         synchronized (opening) {
             connections.put(key, connection);
             opening.remove(key);

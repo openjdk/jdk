@@ -23,6 +23,8 @@
 
 package stream.XMLEventWriterTest;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,7 +60,7 @@ public class ReaderToWriterTest {
     private static final XMLOutputFactory XML_OUTPUT_FACTORY = XMLOutputFactory.newInstance();
 
     private static final String INPUT_FILE = "W2JDLR4002TestService.wsdl.data";
-    private static final String OUTPUT_FILE = "Encoded.wsdl";
+    private static final String OUTPUT_FILE = USER_DIR + "Encoded.wsdl";
 
     /**
      * Unit test for writing namespaces when namespaceURI == null.
@@ -126,7 +128,7 @@ public class ReaderToWriterTest {
 
         try {
             InputStream in = getClass().getResourceAsStream("ReaderToWriterTest.wsdl");
-            OutputStream out = new FileOutputStream("ReaderToWriterTest-out.xml");
+            OutputStream out = new FileOutputStream(USER_DIR + "ReaderToWriterTest-out.xml");
 
             XMLEventReader reader = XML_INPUT_FACTORY.createXMLEventReader(in);
             XMLEventWriter writer = XML_OUTPUT_FACTORY.createXMLEventWriter(out, "UTF-8");

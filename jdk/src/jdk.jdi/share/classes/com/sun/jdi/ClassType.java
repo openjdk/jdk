@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.List;
  * @since  1.3
  */
 public interface ClassType extends ReferenceType {
+
     /**
      * Gets the superclass of this class.
      *
@@ -217,9 +218,6 @@ public interface ClassType extends ReferenceType {
      * a member of this class or a superclass, if the size of the argument list
      * does not match the number of declared arguments for the method, or
      * if the method is an initializer, constructor or static intializer.
-     * @throws {@link InvalidTypeException} if any argument in the
-     * argument list is not assignable to the corresponding method argument
-     * type.
      * @throws ClassNotLoadedException if any argument type has not yet been loaded
      * through the appropriate class loader.
      * @throws IncompatibleThreadStateException if the specified thread has not
@@ -322,9 +320,6 @@ public interface ClassType extends ReferenceType {
      * a member of this class, if the size of the argument list
      * does not match the number of declared arguments for the constructor,
      * or if the method is not a constructor.
-     * @throws {@link InvalidTypeException} if any argument in the
-     * argument list is not assignable to the corresponding method argument
-     * type.
      * @throws ClassNotLoadedException if any argument type has not yet been loaded
      * through the appropriate class loader.
      * @throws IncompatibleThreadStateException if the specified thread has not

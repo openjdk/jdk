@@ -242,6 +242,7 @@ import java.util.Locale;
  * @see        Collator
  * @see        CollationElementIterator
  * @author     Helena Shih, Laura Werner, Richard Gillam
+ * @since 1.1
  */
 public class RuleBasedCollator extends Collator{
     // IMPLEMENTATION NOTES:  The implementation of the collation algorithm is

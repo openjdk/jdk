@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,13 +89,14 @@ import javax.crypto.SecretKey;
  * <li>{@code SHA-256}</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
+ * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
  * MessageDigest section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @see DigestInputStream
  * @see DigestOutputStream
@@ -123,8 +124,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param algorithm the standard name of the digest algorithm.
      * See the MessageDigest section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      */
     protected MessageDigest(String algorithm) {
@@ -154,8 +155,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return a {@code MessageDigest} object that implements the
@@ -209,8 +210,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -262,8 +263,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
@@ -497,8 +498,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * implementation details. The name should be a standard
      * Java Security name (such as "SHA", "MD5", and so on).
      * See the MessageDigest section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#MessageDigest">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the name of the algorithm
