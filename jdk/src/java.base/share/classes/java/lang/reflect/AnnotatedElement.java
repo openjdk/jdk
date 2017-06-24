@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,28 +105,32 @@ import sun.reflect.annotation.AnnotationType;
  * <p>The table below summarizes which kind of annotation presence
  * different methods in this interface examine.
  *
- * <table border>
+ * <table class="plain">
  * <caption>Overview of kind of presence detected by different AnnotatedElement methods</caption>
+ * <thead>
  * <tr><th colspan=2></th><th colspan=4>Kind of Presence</th>
  * <tr><th colspan=2>Method</th><th>Directly Present</th><th>Indirectly Present</th><th>Present</th><th>Associated</th>
- * <tr><td align=right>{@code T}</td><td>{@link #getAnnotation(Class) getAnnotation(Class&lt;T&gt;)}
+ * </thead>
+ * <tbody>
+ * <tr><td style="text-align:right">{@code T}</td><td>{@link #getAnnotation(Class) getAnnotation(Class&lt;T&gt;)}
  * <td></td><td></td><td>X</td><td></td>
  * </tr>
- * <tr><td align=right>{@code Annotation[]}</td><td>{@link #getAnnotations getAnnotations()}
+ * <tr><td style="text-align:right">{@code Annotation[]}</td><td>{@link #getAnnotations getAnnotations()}
  * <td></td><td></td><td>X</td><td></td>
  * </tr>
- * <tr><td align=right>{@code T[]}</td><td>{@link #getAnnotationsByType(Class) getAnnotationsByType(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T[]}</td><td>{@link #getAnnotationsByType(Class) getAnnotationsByType(Class&lt;T&gt;)}
  * <td></td><td></td><td></td><td>X</td>
  * </tr>
- * <tr><td align=right>{@code T}</td><td>{@link #getDeclaredAnnotation(Class) getDeclaredAnnotation(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T}</td><td>{@link #getDeclaredAnnotation(Class) getDeclaredAnnotation(Class&lt;T&gt;)}
  * <td>X</td><td></td><td></td><td></td>
  * </tr>
- * <tr><td align=right>{@code Annotation[]}</td><td>{@link #getDeclaredAnnotations getDeclaredAnnotations()}
+ * <tr><td style="text-align:right">{@code Annotation[]}</td><td>{@link #getDeclaredAnnotations getDeclaredAnnotations()}
  * <td>X</td><td></td><td></td><td></td>
  * </tr>
- * <tr><td align=right>{@code T[]}</td><td>{@link #getDeclaredAnnotationsByType(Class) getDeclaredAnnotationsByType(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T[]}</td><td>{@link #getDeclaredAnnotationsByType(Class) getDeclaredAnnotationsByType(Class&lt;T&gt;)}
  * <td>X</td><td>X</td><td></td><td></td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * <p>For an invocation of {@code get[Declared]AnnotationsByType( Class <

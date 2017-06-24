@@ -29,6 +29,7 @@ import java.nio.CharBuffer;
 import java.util.Arrays;
 
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.ArrayUtils;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
@@ -176,7 +177,7 @@ public class UnicodeReader {
                         return;
                     }
                 }
-                log.error(bp, "illegal.unicode.esc");
+                log.error(bp, Errors.IllegalUnicodeEsc);
             } else {
                 bp--;
                 ch = '\\';
@@ -231,7 +232,7 @@ public class UnicodeReader {
         int codePoint = peekSurrogates();
         int result = codePoint >= 0 ? Character.digit(codePoint, base) : Character.digit(c, base);
         if (result >= 0 && c > 0x7f) {
-            log.error(pos + 1, "illegal.nonascii.digit");
+            log.error(pos + 1, Errors.IllegalNonasciiDigit);
             if (codePoint >= 0)
                 scanChar();
             ch = "0123456789abcdef".charAt(result);

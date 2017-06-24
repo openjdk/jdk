@@ -26,7 +26,7 @@
  * @bug 5039210
  * @summary test on a client notification deadlock.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean DeadLockTest
  * @run build DeadLockTest
  * @run main DeadLockTest

@@ -46,9 +46,6 @@ import sun.nio.cs.ArrayEncoder;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.COMPACT_STRINGS;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class for string encoding and decoding.
@@ -63,6 +60,10 @@ class StringCoding {
         new ThreadLocal<>();
     private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
+
+    private static final Charset ISO_8859_1 = Charset.forName("iso-8859-1");
+    private static final Charset US_ASCII = Charset.forName("us-ascii");
+    private static final Charset UTF_8 = Charset.forName("utf-8");
 
     private static boolean warnUnsupportedCharset = true;
 
@@ -271,8 +272,7 @@ class StringCoding {
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
-        // (3)getClass().getClassLoader0() is expensive
-        // (4)There might be a timing gap in isTrusted setting. getClassLoader0()
+        // (3)There might be a timing gap in isTrusted setting. getClassLoader0()
         // is only checked (and then isTrusted gets set) when (SM==null). It is
         // possible that the SM==null for now but then SM is NOT null later
         // when safeTrim() is invoked...the "safe" way to do is to redundant
@@ -298,8 +298,8 @@ class StringCoding {
         if (len == 0) {
             return new Result().with();
         }
-        if (System.getSecurityManager() != null &&
-            cs.getClass().getClassLoader0() != null) {
+        if (cs.getClass().getClassLoader0() != null &&
+            System.getSecurityManager() != null) {
             ba =  Arrays.copyOfRange(ba, off, off + len);
             off = 0;
         }
@@ -608,8 +608,8 @@ class StringCoding {
         if (len == 0) {
             return ba;
         }
-        boolean isTrusted = System.getSecurityManager() == null ||
-                            cs.getClass().getClassLoader0() == null;
+        boolean isTrusted = cs.getClass().getClassLoader0() == null ||
+                            System.getSecurityManager() == null;
         ce.onMalformedInput(CodingErrorAction.REPLACE)
           .onUnmappableCharacter(CodingErrorAction.REPLACE)
           .reset();

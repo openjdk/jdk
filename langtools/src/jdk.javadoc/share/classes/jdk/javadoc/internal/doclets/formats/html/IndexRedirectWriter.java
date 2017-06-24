@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
-import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CONTENT_TYPE;
-
 /**
  * Writes an index.html file that tries to redirect to an alternate page.
  * The redirect uses JavaSCript, if enabled, falling back on
@@ -50,7 +48,7 @@ import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CON
  */
 public class IndexRedirectWriter extends HtmlDocletWriter {
 
-    public static void generate(ConfigurationImpl configuration)
+    public static void generate(HtmlConfiguration configuration)
             throws DocFileIOException {
         IndexRedirectWriter indexRedirect;
         DocPath filename = DocPaths.INDEX;
@@ -58,7 +56,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
             indexRedirect.generateIndexFile();
     }
 
-    IndexRedirectWriter(ConfigurationImpl configuration, DocPath filename) {
+    IndexRedirectWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
     }
 

@@ -29,7 +29,6 @@
  *          and ThreadMXBean.setThreadCpuTimeEnabled().
  * @author  Mandy Chung
  *
- * @modules java.management
  * @run main EnableTest
  */
 

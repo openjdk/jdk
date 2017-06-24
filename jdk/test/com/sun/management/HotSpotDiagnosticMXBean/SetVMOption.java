@@ -29,7 +29,6 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @modules jdk.management
  * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError SetVMOption
  */
 
