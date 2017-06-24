@@ -28,6 +28,18 @@
  * <P>
  * The modules defining CORBA and Java EE APIs are not required by
  * this module, but they are required by {@code java.se.ee}.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Optional for Java SE Platform:</dt>
+ * <dd>
+ *   <a href="../specs/jni/index.html">Java Native Interface (JNI)</a><br>
+ *   <a href="../specs/jvmti.html">Java Virtual Machine Tool Interface (JVM TI)</a><br>
+ *   <a href="../specs/jdwp/jdwp-spec.html">Java Debug Wire Protocol (JDWP)</a><br>
+ * </dd>
+ * </dl>
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.se {
     requires transitive java.compiler;

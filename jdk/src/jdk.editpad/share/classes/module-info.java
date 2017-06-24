@@ -24,7 +24,10 @@
  */
 
 /**
- * Implementation of the edit pad service.
+ * Provides the implementation of the edit pad service used by {@link jdk.jshell}.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.editpad {
     requires jdk.internal.ed;

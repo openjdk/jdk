@@ -25,9 +25,12 @@
 
 package javax.lang.model.util;
 
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
@@ -65,10 +68,54 @@ public interface Elements {
      * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
      * @return the specified package, or {@code null} if it cannot be found
+     * @see #getAllPackageElements
      * @since 9
      */
     default PackageElement getPackageElement(ModuleElement module, CharSequence name) {
         return null;
+    }
+
+    /**
+     * Returns all package elements with the given canonical name.
+     *
+     * There may be more than one package element with the same canonical
+     * name if the package elements are in different modules.
+     *
+     * @implSpec The default implementation of this method calls
+     * {@link #getAllModuleElements() getAllModuleElements} and stores
+     * the result. If the set of modules is empty, {@link
+     * #getPackageElement(CharSequence) getPackageElement(name)} is
+     * called passing through the name argument. If {@code
+     * getPackageElement(name)} is {@code null}, an empty set of
+     * package elements is returned; otherwise, a single-element set
+     * with the found package element is returned. If the set of
+     * modules is nonempty, the modules are iterated over and any
+     * non-{@code null} results of {@link
+     * #getPackageElement(ModuleElement, CharSequence)
+     * getPackageElement(module, name)} are accumulated into a
+     * set. The set is then returned.
+     *
+     * @param name  the canonical name
+     * @return the package elements, or an empty set if no package with the name can be found
+     * @see #getPackageElement(ModuleElement, CharSequence)
+     * @since 9
+     */
+    default Set<? extends PackageElement> getAllPackageElements(CharSequence name) {
+        Set<? extends ModuleElement> modules = getAllModuleElements();
+        if (modules.isEmpty()) {
+            PackageElement packageElt = getPackageElement(name);
+            return (packageElt != null) ?
+                Collections.singleton(packageElt):
+                Collections.emptySet();
+        } else {
+            Set<PackageElement> result = new LinkedHashSet<>(1); // Usually expect at most 1 result
+            for (ModuleElement module: modules) {
+                PackageElement packageElt = getPackageElement(module, name);
+                if (packageElt != null)
+                    result.add(packageElt);
+            }
+            return Collections.unmodifiableSet(result);
+        }
     }
 
     /**
@@ -90,6 +137,7 @@ public interface Elements {
      * @param name  the canonical name
      * @param module module relative to which the lookup should happen
      * @return the named type element, or {@code null} if it cannot be found
+     * @see #getAllTypeElements
      * @since 9
      */
     default TypeElement getTypeElement(ModuleElement module, CharSequence name) {
@@ -97,11 +145,54 @@ public interface Elements {
     }
 
     /**
+     * Returns all type elements with the given canonical name.
+     *
+     * There may be more than one type element with the same canonical
+     * name if the type elements are in different modules.
+     *
+     * @implSpec The default implementation of this method calls
+     * {@link #getAllModuleElements() getAllModuleElements} and stores
+     * the result. If the set of modules is empty, {@link
+     * #getTypeElement(CharSequence) getTypeElement(name)} is called
+     * passing through the name argument. If {@code
+     * getTypeElement(name)} is {@code null}, an empty set of type
+     * elements is returned; otherwise, a single-element set with the
+     * found type element is returned. If the set of modules is
+     * nonempty, the modules are iterated over and any non-{@code null}
+     * results of {@link #getTypeElement(ModuleElement,
+     * CharSequence) getTypeElement(module, name)} are accumulated
+     * into a set. The set is then returned.
+     *
+     * @param name  the canonical name
+     * @return the type elements, or an empty set if no type with the name can be found
+     * @see #getTypeElement(ModuleElement, CharSequence)
+     * @since 9
+     */
+    default Set<? extends TypeElement> getAllTypeElements(CharSequence name) {
+        Set<? extends ModuleElement> modules = getAllModuleElements();
+        if (modules.isEmpty()) {
+            TypeElement typeElt = getTypeElement(name);
+            return (typeElt != null) ?
+                Collections.singleton(typeElt):
+                Collections.emptySet();
+        } else {
+            Set<TypeElement> result = new LinkedHashSet<>(1); // Usually expect at most 1 result
+            for (ModuleElement module: modules) {
+                TypeElement typeElt = getTypeElement(module, name);
+                if (typeElt != null)
+                    result.add(typeElt);
+            }
+            return Collections.unmodifiableSet(result);
+        }
+    }
+
+    /**
      * Returns a module element given its fully qualified name.
-     * If the named module cannot be found, null is returned. One situation where a module
-     * cannot be found is if the environment does not include modules, such as
-     * an annotation processing environment configured for
-     * a {@linkplain
+     *
+     * If the named module cannot be found, {@code null} is
+     * returned. One situation where a module cannot be found is if
+     * the environment does not include modules, such as an annotation
+     * processing environment configured for a {@linkplain
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
      * source version} without modules.
      *
@@ -110,10 +201,33 @@ public interface Elements {
      *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
+     * @see #getAllModuleElements
      * @since 9
+     * @spec JPMS
      */
     default ModuleElement getModuleElement(CharSequence name) {
         return null;
+    }
+
+    /**
+     * Returns all module elements in the current environment.
+     *
+     * If no modules are present, an empty set is returned. One
+     * situation where no modules are present occurs when the
+     * environment does not include modules, such as an annotation
+     * processing environment configured for a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
+     *
+     * @implSpec The default implementation of this method returns
+     * an empty set.
+     *
+     * @return the known module elements, or an empty set if there are no modules
+     * @see #getModuleElement(CharSequence)
+     * @since 9
+     */
+    default Set<? extends ModuleElement> getAllModuleElements() {
+        return Collections.emptySet();
     }
 
     /**
@@ -359,6 +473,7 @@ public interface Elements {
      * @param type the element being examined
      * @return the module of an element
      * @since 9
+     * @spec JPMS
      */
     default ModuleElement getModuleOf(Element type) {
         return null;

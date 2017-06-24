@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class HierarchyBoundsListenerMixingTest {
             components[i].addHierarchyBoundsListener(listener);
             frame.add(components[i]);
         }
-        frame.setSize(300, 300);
+        frame.setBounds(100, 100, 300, 300);
         frame.setVisible(true);
     }
 
@@ -391,8 +391,8 @@ public class HierarchyBoundsListenerMixingTest {
     private int resizeCount = 0;
 
     private boolean passed = true;
-    private boolean moveTriggered = false;
-    private boolean resizeTriggered = false;
+    private volatile boolean moveTriggered = false;
+    private volatile boolean resizeTriggered = false;
     private final Object moveLock = new Object();
     private final Object resizeLock = new Object();
 

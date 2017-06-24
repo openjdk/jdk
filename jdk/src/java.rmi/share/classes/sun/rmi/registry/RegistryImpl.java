@@ -102,10 +102,10 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     private static final String REGISTRY_FILTER_PROPNAME = "sun.rmi.registry.registryFilter";
 
     /** Registry max depth of remote invocations. **/
-    private static int REGISTRY_MAX_DEPTH = 5;
+    private static final int REGISTRY_MAX_DEPTH = 20;
 
     /** Registry maximum array size in remote invocations. **/
-    private static int REGISTRY_MAX_ARRAY_SIZE = 10000;
+    private static final int REGISTRY_MAX_ARRAY_SIZE = 10000;
 
     /**
      * The registryFilter created from the value of the {@code "sun.rmi.registry.registryFilter"}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package com.sun.jdi.connect;
 
-import java.util.Map;
-import java.util.List;
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A method of connection between a debugger and a target VM.
@@ -46,6 +46,7 @@ import java.io.Serializable;
  * @since  1.3
  */
 public interface Connector {
+
     /**
      * Returns a short identifier for the connector. Connector implementors
      * should follow similar naming conventions as are used with packages
@@ -82,7 +83,7 @@ public interface Connector {
      * @return the map associating argument names with argument
      * information and default value.
      */
-    Map<String,Connector.Argument> defaultArguments();
+    Map<String, Connector.Argument> defaultArguments();
 
     /**
      * Specification for and value of a Connector argument.
@@ -92,6 +93,7 @@ public interface Connector {
      * or {@link Connector.SelectedArgument}.
      */
     public interface Argument extends Serializable {
+
         /**
          * Returns a short, unique identifier for the argument.
          * Not intended for exposure to end-user.
@@ -157,6 +159,7 @@ public interface Connector {
      * by the localized versions of the strings "true" and "false".
      */
     public interface BooleanArgument extends Argument {
+
         /**
          * Sets the value of the argument.
          */
@@ -197,6 +200,7 @@ public interface Connector {
      * by their corresponding strings.
      */
     public interface IntegerArgument extends Argument {
+
         /**
          * Sets the value of the argument.
          * The value should be checked with {@link #isValid(int)}
