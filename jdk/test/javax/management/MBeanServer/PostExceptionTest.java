@@ -27,8 +27,7 @@
  * @summary Check behaviour of MBeanServer when postRegister and postDeregister
  *          throw exceptions.
  * @author Daniel Fuchs
- * @modules java.management
- * @compile PostExceptionTest.java
+ *
  * @run main PostExceptionTest
  */
 

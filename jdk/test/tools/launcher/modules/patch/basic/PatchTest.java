@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build PatchTest CompilerUtils JarUtils jdk.testlibrary.*
+ * @build PatchTest JarUtils jdk.testlibrary.*
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchTest
  * @summary Basic test for --patch-module
  */
@@ -37,12 +38,12 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 /**
  * Compiles and launches a test that uses --patch-module with two directories
@@ -105,22 +106,24 @@ public class PatchTest {
                                                 MODS_DIR.resolve("test"));
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches1/$MODULE patches1/$MODULE/**
+        // javac --patch-module $MODULE=patches1/$MODULE -d patches1/$MODULE patches1/$MODULE/**
         // jar cf patches/$MODULE-1.jar -C patches1/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC1_DIR)) {
             Path output = PATCHES1_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
-            compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+            compiled  = CompilerUtils.compile(src, output,
+                                              "--patch-module", mn + "=" + src.toString());
             assertTrue(compiled, "classes did not compile");
             JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-1.jar"), output);
         }
 
-        // javac -Xmodule:$MODULE -d patches2/$MODULE patches2/$MODULE/**
+        // javac --patch-module $MODULE=patches2/$MODULE -d patches2/$MODULE patches2/$MODULE/**
         // jar cf patches/$MODULE-2.jar -C patches2/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC2_DIR)) {
             Path output = PATCHES2_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
-            compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+            compiled  = CompilerUtils.compile(src, output,
+                                              "--patch-module", mn + "=" + src.toString());
             assertTrue(compiled, "classes did not compile");
             JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-2.jar"), output);
         }

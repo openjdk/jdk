@@ -61,7 +61,8 @@ class aarch64 {
   static address _double_sign_mask;
   static address _double_sign_flip;
 
-  static address _zero_longs;
+  static address _zero_blocks;
+  static bool _completed;
 
  public:
 
@@ -115,12 +116,19 @@ class aarch64 {
     return _double_sign_flip;
   }
 
-  static address get_zero_longs()
-  {
-    return _zero_longs;
+  static address zero_blocks() {
+    return _zero_blocks;
   }
 
- private:
+  static bool complete() {
+    return _completed;
+  }
+
+  static void set_completed() {
+    _completed = true;
+  }
+
+private:
   static juint    _crc_table[];
 
 };

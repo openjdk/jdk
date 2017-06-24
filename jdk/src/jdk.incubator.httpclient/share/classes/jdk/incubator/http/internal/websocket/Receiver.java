@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.incubator.http.internal.websocket;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /*
@@ -58,23 +57,24 @@ final class Receiver {
     private final Frame.Reader reader = new Frame.Reader();
     private final RawChannel.RawEvent event = createHandler();
     private final AtomicLong demand = new AtomicLong();
-    private final CooperativeHandler receiveHandler =
-              new CooperativeHandler(this::tryDeliver);
-    /*
-     * Used to ensure registering the channel event at most once (i.e. to avoid
-     * multiple registrations).
-     */
-    private final AtomicBoolean readable = new AtomicBoolean();
+    private final CooperativeHandler handler;
+
     private ByteBuffer data;
+    private volatile int state;
+
+    private static final int UNREGISTERED = 0;
+    private static final int AVAILABLE    = 1;
+    private static final int WAITING      = 2;
 
     Receiver(MessageStreamConsumer messageConsumer, RawChannel channel) {
         this.messageConsumer = messageConsumer;
         this.channel = channel;
-        this.data = channel.initialByteBuffer();
         this.frameConsumer = new FrameConsumer(this.messageConsumer);
-        // To ensure the initial `data` will be read correctly (happens-before)
-        // after readable.get()
-        readable.set(true);
+        this.data = channel.initialByteBuffer();
+        // To ensure the initial non-final `data` will be visible
+        // (happens-before) when `handler` invokes `pushContinuously`
+        // the following assignment is done last:
+        handler = new CooperativeHandler(this::pushContinuously);
     }
 
     private RawChannel.RawEvent createHandler() {
@@ -87,8 +87,8 @@ final class Receiver {
 
             @Override
             public void handle() {
-                readable.set(true);
-                receiveHandler.startOrContinue();
+                state = AVAILABLE;
+                handler.handle();
             }
         };
     }
@@ -98,7 +98,7 @@ final class Receiver {
             throw new IllegalArgumentException("Negative: " + n);
         }
         demand.accumulateAndGet(n, (p, i) -> p + i < 0 ? Long.MAX_VALUE : p + i);
-        receiveHandler.startOrContinue();
+        handler.handle();
     }
 
     void acknowledge() {
@@ -110,50 +110,63 @@ final class Receiver {
 
     /*
      * Stops the machinery from reading and delivering messages permanently,
-     * regardless of the current demand.
+     * regardless of the current demand and data availability.
      */
     void close() {
-        receiveHandler.stop();
+        handler.stop();
     }
 
-    private void tryDeliver() {
-        if (readable.get() && demand.get() > 0) {
-            deliverAtMostOne();
-        }
-    }
-
-    private void deliverAtMostOne() {
-        if (data == null) {
-            try {
-                data = channel.read();
-            } catch (IOException e) {
-                readable.set(false);
-                messageConsumer.onError(e);
-                return;
-            }
-            if (data == null || !data.hasRemaining()) {
-                readable.set(false);
-                if (!data.hasRemaining()) {
+    private void pushContinuously() {
+        while (!handler.isStopped()) {
+            if (data.hasRemaining()) {
+                if (demand.get() > 0) {
                     try {
+                        int oldPos = data.position();
+                        reader.readFrame(data, frameConsumer);
+                        int newPos = data.position();
+                        assert oldPos != newPos : data; // reader always consumes bytes
+                    } catch (FailWebSocketException e) {
+                        handler.stop();
+                        messageConsumer.onError(e);
+                    }
+                    continue;
+                }
+                break;
+            }
+            switch (state) {
+                case WAITING:
+                    return;
+                case UNREGISTERED:
+                    try {
+                        state = WAITING;
                         channel.registerEvent(event);
                     } catch (IOException e) {
+                        handler.stop();
+                        messageConsumer.onError(e);
+                    }
+                    return;
+                case AVAILABLE:
+                    try {
+                        data = channel.read();
+                    } catch (IOException e) {
+                        handler.stop();
                         messageConsumer.onError(e);
                         return;
                     }
-                } else if (data == null) {
-                    messageConsumer.onComplete();
-                }
-                return;
+                    if (data == null) { // EOF
+                        handler.stop();
+                        messageConsumer.onComplete();
+                        return;
+                    } else if (!data.hasRemaining()) { // No data at the moment
+                        // Pretty much a "goto", reusing the existing code path
+                        // for registration
+                        state = UNREGISTERED;
+                    }
+                    continue;
+                default:
+                    throw new InternalError(String.valueOf(state));
             }
-        }
-        try {
-            reader.readFrame(data, frameConsumer);
-        } catch (FailWebSocketException e) {
-            messageConsumer.onError(e);
-            return;
-        }
-        if (!data.hasRemaining()) {
-            data = null;
         }
     }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static javax.tools.Diagnostic.Kind.*;
  * Messages are reported to the doclet's {@link Reporter reporter}.
  */
 public class Messages {
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Resources resources;
     private Reporter reporter;
 
@@ -55,7 +55,7 @@ public class Messages {
      *  the doclet's resources, reporter, and additional methods and state
      *  used to filter out messages, if any, which should be suppressed.
      */
-    public Messages(Configuration configuration) {
+    public Messages(BaseConfiguration configuration) {
         this.configuration = configuration;
         resources = configuration.getResources();
     }
@@ -155,7 +155,7 @@ public class Messages {
     }
 
     // Lazy init the reporter for now, until we can fix/improve
-    // the init of ConfigurationImpl in HtmlDoclet (and similar.)
+    // the init of HtmlConfiguration in HtmlDoclet (and similar.)
     private void initReporter() {
         if (reporter == null) {
             reporter = configuration.reporter;

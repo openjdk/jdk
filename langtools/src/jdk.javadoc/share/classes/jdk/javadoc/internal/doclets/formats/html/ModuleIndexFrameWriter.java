@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -62,7 +63,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename Name of the module index file to be generated.
      */
-    public ModuleIndexFrameWriter(ConfigurationImpl configuration,
+    public ModuleIndexFrameWriter(HtmlConfiguration configuration,
                                    DocPath filename) {
         super(configuration, filename);
     }
@@ -72,7 +73,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
      * @throws DocFileIOException
      * @param configuration the configuration object
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.MODULE_OVERVIEW_FRAME;
         ModuleIndexFrameWriter modulegen = new ModuleIndexFrameWriter(configuration, filename);
         modulegen.buildModuleIndexFile("doclet.Window_Overview", false);
@@ -81,7 +82,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
+    protected void addModulesList(Collection<ModuleElement> modules, String text,
             String tableSummary, Content body) {
         Content heading = HtmlTree.HEADING(HtmlConstants.MODULE_HEADING, true,
                 contents.modulesLabel);
@@ -90,7 +91,7 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
                 : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.modulesLabel);
-        for (ModuleElement mdle: modules.keySet()) {
+        for (ModuleElement mdle: modules) {
             ul.addContent(getModuleLink(mdle));
         }
         htmlTree.addContent(ul);

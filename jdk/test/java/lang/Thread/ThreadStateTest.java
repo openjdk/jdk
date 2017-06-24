@@ -31,7 +31,9 @@ import static java.lang.Thread.State.*;
  *
  * @author  Mandy Chung
  * @library /lib/testlibrary
+ * @library /test/lib
  * @build jdk.testlibrary.*
+ * @build jdk.test.lib.LockFreeLogger
  * @build ThreadStateTest ThreadStateController
  * @run main/othervm -Xmixed ThreadStateTest
  */

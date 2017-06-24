@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,15 +120,19 @@ import java.util.Arrays;
  * preferred scale for representing a result.  The preferred
  * scale for each operation is listed in the table below.
  *
- * <table border>
+ * <table class="plain">
  * <caption><b>Preferred Scales for Results of Arithmetic Operations
  * </b></caption>
+ * <thead>
  * <tr><th>Operation</th><th>Preferred Scale of Result</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>Add</td><td>max(addend.scale(), augend.scale())</td>
  * <tr><td>Subtract</td><td>max(minuend.scale(), subtrahend.scale())</td>
  * <tr><td>Multiply</td><td>multiplier.scale() + multiplicand.scale()</td>
  * <tr><td>Divide</td><td>dividend.scale() - divisor.scale()</td>
  * <tr><td>Square root</td><td>radicand.scale()/2</td>
+ * </tbody>
  * </table>
  *
  * These scales are the ones used by the methods which return exact
@@ -218,6 +222,7 @@ import java.util.Arrays;
  * @author  Mike Cowlishaw
  * @author  Joseph D. Darcy
  * @author  Sergey V. Kuksenko
+ * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
