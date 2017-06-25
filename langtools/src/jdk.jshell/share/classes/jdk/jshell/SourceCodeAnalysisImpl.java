@@ -673,8 +673,16 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 continue;
             }
             String simpleName = simpleName(c);
-            if (c.getKind() == ElementKind.CONSTRUCTOR || c.getKind() == ElementKind.METHOD) {
-                simpleName += paren.apply(hasParams.contains(simpleName));
+            switch (c.getKind()) {
+                case CONSTRUCTOR:
+                case METHOD:
+                    // add trailing open or matched parenthesis, as approriate
+                    simpleName += paren.apply(hasParams.contains(simpleName));
+                    break;
+                case PACKAGE:
+                    // add trailing dot to package names
+                    simpleName += ".";
+                    break;
             }
             result.add(new SuggestionImpl(simpleName, smart.test(c)));
         }
