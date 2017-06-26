@@ -210,7 +210,13 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
 
         NodeInfo info = getAnnotationTimed(clazz, NodeInfo.class);
         assert info != null : "Missing NodeInfo annotation on " + clazz;
-        this.nameTemplate = info.nameTemplate();
+        if (!info.nameTemplate().isEmpty()) {
+            this.nameTemplate = info.nameTemplate();
+        } else if (!info.shortName().isEmpty()) {
+            this.nameTemplate = info.shortName();
+        } else {
+            this.nameTemplate = "";
+        }
 
         try (DebugCloseable t1 = Init_AllowedUsages.start()) {
             allowedUsageTypes = superNodeClass == null ? EnumSet.noneOf(InputType.class) : superNodeClass.allowedUsageTypes.clone();
@@ -809,8 +815,9 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
 
     /**
      * The template used to build the {@link Verbosity#Name} version. Variable parts are specified
-     * using &#123;i#inputName&#125; or &#123;p#propertyName&#125;. Returns empty string if no
-     * special name template is specified.
+     * using &#123;i#inputName&#125; or &#123;p#propertyName&#125;. If no
+     * {@link NodeInfo#nameTemplate() template} is specified, it uses {@link NodeInfo#shortName()}.
+     * If none of the two is specified, it returns an empty string.
      */
     public String getNameTemplate() {
         return nameTemplate;

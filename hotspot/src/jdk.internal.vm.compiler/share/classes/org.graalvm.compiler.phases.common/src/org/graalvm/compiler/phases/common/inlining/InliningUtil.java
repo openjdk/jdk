@@ -516,7 +516,7 @@ public class InliningUtil extends ValueMergeUtil {
         if (inlineGraph.hasUnsafeAccess()) {
             graph.markUnsafeAccess();
         }
-        assert inlineGraph.getSpeculationLog() == null : "Only the root graph should have a speculation log";
+        assert inlineGraph.getSpeculationLog() == null || inlineGraph.getSpeculationLog() == graph.getSpeculationLog() : "Only the root graph should have a speculation log";
 
         return returnValue;
     }

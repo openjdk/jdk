@@ -41,15 +41,30 @@ public interface OptionValues {
     /**
      * Sets the value of {@code optionKey} to {@code value}.
      *
+     * @throws IllegalArgumentException if the given value is not {@link OptionType#validate(Object)
+     *             validated} by the {@link OptionKey#getType() option type} of the key. Please note
+     *             that the operation does not fail if the option key is not described by any of the
+     *             associated {@link #getDescriptors() descriptors}.
+     *
      * @since 1.0
      */
     <T> void set(OptionKey<T> optionKey, T value);
 
     /**
-     * Returns the value of a given option. Returns <code>null</code> if the option does not exist.
+     * Returns the value of a given option. If no value is set or the key is not described by any
+     * {@link #getDescriptors() descriptors} the {@link OptionType#getDefaultValue() default value}
+     * of the given key is returned.
      *
      * @since 1.0
      */
     <T> T get(OptionKey<T> optionKey);
+
+    /**
+     * Determines if a value for {@code optionKey} has been {@link #set} in this set of option
+     * values.
+     *
+     * @since 1.0
+     */
+    boolean hasBeenSet(OptionKey<?> optionKey);
 
 }
