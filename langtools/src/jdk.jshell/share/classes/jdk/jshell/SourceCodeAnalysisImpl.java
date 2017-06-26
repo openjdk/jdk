@@ -188,7 +188,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         int nonCommentNonWhiteLength = trimmedInput.length();
         String src = srcInput.substring(0, unitEndPos);
         switch (status) {
-            case COMPLETE:
+            case COMPLETE: {
                 if (unitEndPos == nonCommentNonWhiteLength) {
                     // The unit is the whole non-coment/white input plus semicolon
                     String compileSource = src
@@ -202,7 +202,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     proc.debug(DBG_COMPA, "          remaining: %s\n", remain);
                     return new CompletionInfoImpl(status, src, remain);
                 }
-            case COMPLETE_WITH_SEMI:
+            }
+            case COMPLETE_WITH_SEMI: {
                 // The unit is the whole non-coment/white input plus semicolon
                 String compileSource = src
                         + ";"
@@ -210,12 +211,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 proc.debug(DBG_COMPA, "Complete with semi: %s\n", compileSource);
                 proc.debug(DBG_COMPA, "   nothing remains.\n");
                 return new CompletionInfoImpl(status, compileSource, "");
+            }
             case DEFINITELY_INCOMPLETE:
                 proc.debug(DBG_COMPA, "Incomplete: %s\n", srcInput);
                 return new CompletionInfoImpl(status, null, srcInput + '\n');
-            case CONSIDERED_INCOMPLETE:
+            case CONSIDERED_INCOMPLETE: {
+                // Since the source is potentually valid, construct the complete source
+                String compileSource = src
+                        + ";"
+                        + mcm.mask().substring(nonCommentNonWhiteLength);
                 proc.debug(DBG_COMPA, "Considered incomplete: %s\n", srcInput);
-                return new CompletionInfoImpl(status, null, srcInput + '\n');
+                return new CompletionInfoImpl(status, compileSource, srcInput + '\n');
+            }
             case EMPTY:
                 proc.debug(DBG_COMPA, "Detected empty: %s\n", srcInput);
                 return new CompletionInfoImpl(status, srcInput, "");
