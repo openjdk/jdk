@@ -23,22 +23,26 @@
 
 /*
  * @test
- * @bug 8178017
+ * @bug 8178017 8181897
  * @summary JDK 9 change to symlink handling causes misleading
- *      class.public.should.be.in.file diagnostic
+ *      class.public.should.be.in.file diagnostic and SourceFile
+ *      attribute content
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SymLinkTest
  */
 
-import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.SourceFile_attribute;
 import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;
@@ -56,16 +60,16 @@ public class SymLinkTest extends TestRunner {
     }
 
     @Test
-    public void testgetKind(Path base) throws IOException {
+    public void testgetKind(Path base) throws Exception {
         test(base, "SOURCE");
     }
 
     @Test
-    public void testSymLink(Path base) throws IOException {
+    public void testSymLink(Path base) throws Exception {
         test(base, "SOURCE.java");
     }
 
-    void test(Path base, String name) throws IOException {
+    void test(Path base, String name) throws Exception{
         Path file = base.resolve(name);
         Path javaFile = base.resolve("HelloWorld.java");
         tb.writeFile(file,
@@ -89,6 +93,14 @@ public class SymLinkTest extends TestRunner {
             .files(javaFile)
             .run()
             .writeAll();
+
+        ClassFile cf = ClassFile.read(classes.resolve("HelloWorld.class"));
+        SourceFile_attribute sf = (SourceFile_attribute) cf.attributes.get(Attribute.SourceFile);
+        String sourceFile = sf.getSourceFile(cf.constant_pool);
+
+        if (!"HelloWorld.java".equals(sourceFile)) {
+            throw new AssertionError("Unexpected SourceFile attribute value: " + sourceFile);
+        }
     }
 }
 
