@@ -123,6 +123,21 @@ public:
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
 };
 
+static void write_memory_serialize_page_with_handler(JavaThread* thread) {
+  // Due to chained nature of SEH handlers we have to be sure
+  // that our handler is always last handler before an attempt to write
+  // into serialization page - it can fault if we access this page
+  // right in the middle of protect/unprotect sequence by remote
+  // membar logic.
+  // __try/__except are very lightweight operations (only several
+  // instructions not affecting control flow directly on x86)
+  // so we can use it here, on very time critical path
+  __try {
+    write_memory_serialize_page(thread);
+  } __except (win32::serialize_fault_filter((_EXCEPTION_POINTERS*)_exception_info()))
+    {}
+}
+
 /*
  * Crash protection for the watcher thread. Wrap the callback
  * with a __try { call() }
