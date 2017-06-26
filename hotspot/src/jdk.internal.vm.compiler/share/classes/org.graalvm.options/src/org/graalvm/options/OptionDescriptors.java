@@ -27,6 +27,9 @@ package org.graalvm.options;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -76,6 +79,41 @@ public interface OptionDescriptors extends Iterable<OptionDescriptor> {
             return new UnionOptionDescriptors(descriptors);
         }
     }
+
+    /**
+     * Create an {@link OptionDescriptors} instance from a list. The option descriptors
+     * implementation is backed by a {@link LinkedHashMap} that preserves ordering.
+     *
+     * @since 1.0
+     */
+    static OptionDescriptors create(List<OptionDescriptor> descriptors) {
+        if (descriptors == null || descriptors.isEmpty()) {
+            return EMPTY;
+        }
+        return new OptionDescriptorsMap(descriptors);
+    }
+}
+
+class OptionDescriptorsMap implements OptionDescriptors {
+
+    final Map<String, OptionDescriptor> descriptors = new LinkedHashMap<>();
+
+    OptionDescriptorsMap(List<OptionDescriptor> descriptorList) {
+        for (OptionDescriptor descriptor : descriptorList) {
+            descriptors.put(descriptor.getName(), descriptor);
+        }
+    }
+
+    @Override
+    public OptionDescriptor get(String optionName) {
+        return descriptors.get(optionName);
+    }
+
+    @Override
+    public Iterator<OptionDescriptor> iterator() {
+        return descriptors.values().iterator();
+    }
+
 }
 
 final class UnionOptionDescriptors implements OptionDescriptors {

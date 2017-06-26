@@ -23,6 +23,8 @@
 //JaCoCo Exclude
 package org.graalvm.compiler.nodes.java;
 
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -96,6 +98,11 @@ public class DynamicNewArrayNode extends AbstractNewArrayNode implements Canonic
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (elementType.isConstant()) {
+            if (GeneratePIC.getValue(tool.getOptions())) {
+                // Can't fold for AOT, because the resulting NewArrayNode will be missing its
+                // ResolveConstantNode for the array class.
+                return this;
+            }
             ResolvedJavaType type = tool.getConstantReflection().asJavaType(elementType.asConstant());
             if (type != null && !throwsIllegalArgumentException(type)) {
                 return createNewArrayNode(type);
