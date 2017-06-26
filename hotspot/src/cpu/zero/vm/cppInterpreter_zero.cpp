@@ -378,14 +378,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   thread->set_thread_state(_thread_in_native_trans);
 
   // Make sure new state is visible in the GC thread
-  if (os::is_MP()) {
-    if (UseMembar) {
-      OrderAccess::fence();
-    }
-    else {
-      InterfaceSupport::serialize_memory(thread);
-    }
-  }
+  InterfaceSupport::serialize_thread_state(thread);
 
   // Handle safepoint operations, pending suspend requests,
   // and pending asynchronous exceptions.

@@ -90,10 +90,32 @@ class InterfaceSupport: AllStatic {
 # endif
 
  public:
-  // OS dependent stuff
+  static void serialize_thread_state_with_handler(JavaThread* thread) {
+    serialize_thread_state_internal(thread, true);
+  }
 
-#include OS_HEADER(interfaceSupport)
+  // Should only call this if we know that we have a proper SEH set up.
+  static void serialize_thread_state(JavaThread* thread) {
+    serialize_thread_state_internal(thread, false);
+  }
 
+ private:
+  static void serialize_thread_state_internal(JavaThread* thread, bool needs_exception_handler) {
+    // Make sure new state is seen by VM thread
+    if (os::is_MP()) {
+      if (UseMembar) {
+        // Force a fence between the write above and read below
+        OrderAccess::fence();
+      } else {
+        // store to serialize page so VM thread can do pseudo remote membar
+        if (needs_exception_handler) {
+          os::write_memory_serialize_page_with_handler(thread);
+        } else {
+          os::write_memory_serialize_page(thread);
+        }
+      }
+    }
+  }
 };
 
 
@@ -118,16 +140,7 @@ class ThreadStateTransition : public StackObj {
     // Change to transition state
     thread->set_thread_state((JavaThreadState)(from + 1));
 
-    // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // store to serialize page so VM thread can do pseudo remote membar
-        os::write_memory_serialize_page(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state(thread);
 
     if (SafepointSynchronize::do_call_back()) {
       SafepointSynchronize::block(thread);
@@ -149,16 +162,7 @@ class ThreadStateTransition : public StackObj {
     // Change to transition state
     thread->set_thread_state((JavaThreadState)(from + 1));
 
-    // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // Must use this rather than serialization page in particular on Windows
-        InterfaceSupport::serialize_memory(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
 
     if (SafepointSynchronize::do_call_back()) {
       SafepointSynchronize::block(thread);
@@ -182,16 +186,7 @@ class ThreadStateTransition : public StackObj {
     // Change to transition state
     thread->set_thread_state(_thread_in_native_trans);
 
-    // Make sure new state is seen by GC thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // Must use this rather than serialization page in particular on Windows
-        InterfaceSupport::serialize_memory(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
 
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set

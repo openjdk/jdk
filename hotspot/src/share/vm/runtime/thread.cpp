@@ -2398,16 +2398,8 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     thread->set_thread_state(_thread_blocked);
     thread->java_suspend_self();
     thread->set_thread_state(state);
-    // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // Must use this rather than serialization page in particular on Windows
-        InterfaceSupport::serialize_memory(thread);
-      }
-    }
+
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
   }
 
   if (SafepointSynchronize::do_call_back()) {
