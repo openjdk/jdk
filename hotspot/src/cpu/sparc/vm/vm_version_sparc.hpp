@@ -252,7 +252,6 @@ public:
   static bool has_fast_bis()     { return (_features & CPU_fast_bis_msk) != 0; }
   static bool has_fast_ld()      { return (_features & CPU_fast_ld_msk) != 0; }
   static bool has_fast_cmove()   { return (_features & CPU_fast_cmove_msk) != 0; }
-  static bool has_fast_fxtof()   { return true; }
 
   // If indirect and direct branching is equally fast.
   static bool has_fast_ind_br()  { return (_features & CPU_fast_ind_br_msk) != 0; }
