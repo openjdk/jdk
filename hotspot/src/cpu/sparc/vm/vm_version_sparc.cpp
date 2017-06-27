@@ -317,7 +317,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (UseFMA) {
+  if (has_fmaf()) {
+    if (FLAG_IS_DEFAULT(UseFMA)) {
+      UseFMA = true;
+    }
+  } else if (UseFMA) {
     warning("FMA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseFMA, false);
   }

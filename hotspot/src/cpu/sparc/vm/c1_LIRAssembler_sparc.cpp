@@ -440,6 +440,31 @@ void LIR_Assembler::klass2reg_with_patching(Register reg, CodeEmitInfo *info) {
 }
 
 void LIR_Assembler::emit_op3(LIR_Op3* op) {
+  switch (op->code()) {
+    case lir_idiv:
+    case lir_irem:  // Both idiv & irem are handled after the switch (below).
+      break;
+    case lir_fmaf:
+      __ fmadd(FloatRegisterImpl::S,
+               op->in_opr1()->as_float_reg(),
+               op->in_opr2()->as_float_reg(),
+               op->in_opr3()->as_float_reg(),
+               op->result_opr()->as_float_reg());
+      return;
+    case lir_fmad:
+      __ fmadd(FloatRegisterImpl::D,
+               op->in_opr1()->as_double_reg(),
+               op->in_opr2()->as_double_reg(),
+               op->in_opr3()->as_double_reg(),
+               op->result_opr()->as_double_reg());
+      return;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+
+  // Handle idiv & irem:
+
   Register Rdividend = op->in_opr1()->as_register();
   Register Rdivisor  = noreg;
   Register Rscratch  = op->in_opr3()->as_register();

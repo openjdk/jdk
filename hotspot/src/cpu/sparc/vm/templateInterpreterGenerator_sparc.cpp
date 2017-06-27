@@ -153,13 +153,12 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     __ delayed()->srl( G4_scratch, 2, G4_scratch );
 
     __ bind(NextArg);
-
   }
 
   __ bind(done);
   __ ret();
-  __ delayed()->
-     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+  __ delayed()->restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+
   return entry;
 }
 
@@ -177,7 +176,6 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
   // returns verified_entry_point or NULL
   // we ignore it in any case
   __ ba_short(Lcontinue);
-
 }
 
 
@@ -196,7 +194,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return entry;
-
 }
 
 void TemplateInterpreterGenerator::save_native_result(void) {
@@ -474,7 +471,6 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     __ delayed()->nop();
     __ bind(done);
   }
-
 }
 
 // Allocate monitor and lock method (asm interpreter)
@@ -590,7 +586,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 //   pop parameters from the callers stack by adjusting Lesp
 //   set O0 to Lesp
 //   compute X = (max_locals - num_parameters)
-//   bump SP up by X to accomadate the extra locals
+//   bump SP up by X to accommodate the extra locals
 //   compute X = max_expression_stack
 //               + vm_local_words
 //               + 16 words of register save area
@@ -688,7 +684,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // 1) Increase caller's SP by for the extra local space needed:
   //    (check for overflow)
   //    Efficient implementation of xload/xstore bytecodes requires
-  //    that arguments and non-argument locals are in a contigously
+  //    that arguments and non-argument locals are in a contiguously
   //    addressable memory block => non-argument locals must be
   //    allocated in the caller's frame.
   //
@@ -782,7 +778,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sub(Gframe_size, Glocals_size, Gframe_size);
 
     //
-    // bump SP to accomodate the extra locals
+    // bump SP to accommodate the extra locals
     //
     __ sub(SP, Glocals_size, SP);
   }
@@ -810,9 +806,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   Register mirror = LcpoolCache;
   __ load_mirror(mirror, Lmethod);
   __ st_ptr(mirror, FP, (frame::interpreter_frame_mirror_offset * wordSize) + STACK_BIAS);
-  __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
+  __ get_constant_pool_cache(LcpoolCache);     // set LcpoolCache
   __ sub(FP, rounded_vm_local_words * BytesPerWord, Lmonitors ); // set Lmonitors
-  __ add( Lmonitors, STACK_BIAS, Lmonitors );   // Account for 64 bit stack bias
+  __ add(Lmonitors, STACK_BIAS, Lmonitors);    // Account for 64 bit stack bias
   __ sub(Lmonitors, BytesPerWord, Lesp);       // set Lesp
 
   // setup interpreter activation registers
@@ -984,7 +980,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       __ ldx( Gargs, 16, buf);
       __ lduw(Gargs, 24, crc);
       __ add(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE), buf); // account for the header size
-      __ add(buf ,offset, buf);
+      __ add(buf, offset, buf);
     }
 
     // Call the crc32 kernel
@@ -1057,8 +1053,58 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return NULL;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+/* Math routines only partially supported.
+ *
+ *   Providing support for fma (float/double) only.
+ */
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind)
+{
+  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
+
+  address entry = __ pc();
+
+  switch (kind) {
+    case Interpreter::java_lang_math_fmaF:
+      if (UseFMA) {
+        // float .fma(float a, float b, float c)
+        const FloatRegister ra = F1;
+        const FloatRegister rb = F2;
+        const FloatRegister rc = F3;
+        const FloatRegister rd = F0; // Result.
+
+        __ ldf(FloatRegisterImpl::S, Gargs,  0, rc);
+        __ ldf(FloatRegisterImpl::S, Gargs,  8, rb);
+        __ ldf(FloatRegisterImpl::S, Gargs, 16, ra);
+
+        __ fmadd(FloatRegisterImpl::S, ra, rb, rc, rd);
+        __ retl();  // Result in F0 (rd).
+        __ delayed()->mov(O5_savedSP, SP);
+
+        return entry;
+      }
+      break;
+    case Interpreter::java_lang_math_fmaD:
+      if (UseFMA) {
+        // double .fma(double a, double b, double c)
+        const FloatRegister ra = F2; // D1
+        const FloatRegister rb = F4; // D2
+        const FloatRegister rc = F6; // D3
+        const FloatRegister rd = F0; // D0 Result.
+
+        __ ldf(FloatRegisterImpl::D, Gargs,  0, rc);
+        __ ldf(FloatRegisterImpl::D, Gargs, 16, rb);
+        __ ldf(FloatRegisterImpl::D, Gargs, 32, ra);
+
+        __ fmadd(FloatRegisterImpl::D, ra, rb, rc, rd);
+        __ retl();  // Result in D0 (rd).
+        __ delayed()->mov(O5_savedSP, SP);
+
+        return entry;
+      }
+      break;
+    default:
+      break;
+  }
   return NULL;
 }
 
@@ -1071,7 +1117,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Doing the banging earlier fails if the caller frame is not an interpreter
   // frame.
   // (Also, the exception throwing code expects to unlock any synchronized
-  // method receiever, so do the banging after locking the receiver.)
+  // method receiver, so do the banging after locking the receiver.)
 
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
@@ -1112,8 +1158,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
   __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
-  {
-    Label L;
+  { Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
     __ br(Assembler::notZero, false, Assembler::pt, L);
     __ delayed()->nop();
@@ -1362,7 +1407,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     //     didn't see any synchronization is progress, and escapes.
     __ set(_thread_in_native_trans, G3_scratch);
     __ st(G3_scratch, thread_state);
-    if(os::is_MP()) {
+    if (os::is_MP()) {
       if (UseMembar) {
         // Force this write out before the read below
         __ membar(Assembler::StoreLoad);
@@ -1425,8 +1470,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // If we have an oop result store it where it will be safe for any further gc
   // until we return now that we've released the handle it might be protected by
 
-  {
-    Label no_oop, store_result;
+  { Label no_oop, store_result;
 
     __ set((intptr_t)AbstractInterpreter::result_handler(T_OBJECT), G3_scratch);
     __ cmp_and_brx_short(G3_scratch, Lscratch, Assembler::notEqual, Assembler::pt, no_oop);
@@ -1484,8 +1528,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // dispose of return address and remove activation
 #ifdef ASSERT
-  {
-    Label ok;
+  { Label ok;
     __ cmp_and_brx_short(I5_savedSP, FP, Assembler::greaterEqualUnsigned, Assembler::pt, ok);
     __ stop("bad I5_savedSP value");
     __ should_not_reach_here();
@@ -1495,14 +1538,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ jmp(Lscratch, 0);
   __ delayed()->nop();
 
-
   if (inc_counter) {
     // handle invocation counter overflow
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(Lcontinue);
   }
-
-
 
   return entry;
 }
@@ -1533,8 +1573,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
   __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
-  {
-    Label L;
+  { Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
     __ br(Assembler::zero, false, Assembler::pt, L);
     __ delayed()->nop();
@@ -1666,7 +1705,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     generate_counter_overflow(Lcontinue);
   }
 
-
   return entry;
 }
 
@@ -1786,8 +1824,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
 #if INCLUDE_JVMTI
-  {
-    Label L_done;
+  { Label L_done;
 
     __ ldub(Address(Lbcp, 0), G1_scratch);  // Load current bytecode
     __ cmp_and_br_short(G1_scratch, Bytecodes::_invokestatic, Assembler::notEqual, Assembler::pn, L_done);
@@ -1827,7 +1864,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ get_vm_result(Oexception);
   __ verify_oop(Oexception);
 
-    const int return_reg_adjustment = frame::pc_return_offset;
+  const int return_reg_adjustment = frame::pc_return_offset;
   Address issuing_pc_addr(I7, return_reg_adjustment);
 
   // We are done with this activation frame; find out where to go next.
