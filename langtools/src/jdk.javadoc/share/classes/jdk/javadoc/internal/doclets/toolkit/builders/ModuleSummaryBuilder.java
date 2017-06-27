@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     public void buildModuleDoc(XMLNode node, Content contentTree) throws DocletException {
-        contentTree = moduleWriter.getModuleHeader(mdle.getSimpleName().toString());
+        contentTree = moduleWriter.getModuleHeader(mdle.getQualifiedName().toString());
         buildChildren(node, contentTree);
         moduleWriter.addModuleFooter(contentTree);
         moduleWriter.printDocument(contentTree);

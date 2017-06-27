@@ -1682,7 +1682,7 @@ public class Utils {
         return new Utils.ElementComparator<Element>() {
             @Override
             public int compare(Element mod1, Element mod2) {
-                return compareNames(mod1, mod2);
+                return compareFullyQualifiedNames(mod1, mod2);
             }
         };
     }
@@ -1772,9 +1772,8 @@ public class Utils {
 
     /**
      * Returns a Comparator for index file presentations, and are sorted as follows.
-     *  If comparing modules then simply compare the simple names,
-     *  comparing packages then simply compare the qualified names, if comparing a package with a
-     *  module/type/member then compare the FullyQualifiedName of the package
+     *  If comparing modules and packages then simply compare the qualified names, if comparing a module
+     *  or a package with a type/member then compare the FullyQualifiedName of the module or a package
      *  with the SimpleName of the entity, otherwise
      *  1. compare the ElementKind ex: Module, Package, Interface etc.
      *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
@@ -1786,10 +1785,9 @@ public class Utils {
     public Comparator<Element> makeIndexUseComparator() {
         return new Utils.ElementComparator<Element>() {
             /**
-             * Compare two given elements, if comparing two modules, return the
-             * comparison of SimpleName, if comparing two packages, return the
-             * comparison of FullyQualifiedName, if comparing a package with a
-             * module/type/member then compare the FullyQualifiedName of the package
+             * Compare two given elements, if comparing two modules or two packages, return the
+             * comparison of FullyQualifiedName, if comparing a module or a package with a
+             * type/member then compare the FullyQualifiedName of the module or the package
              * with the SimpleName of the entity, then sort on the kinds, then on
              * the parameters only if the type is an ExecutableElement,
              * the parameters are compared and finally the qualified names.
@@ -1802,16 +1800,17 @@ public class Utils {
             @Override
             public int compare(Element e1, Element e2) {
                 int result = 0;
-                if (isModule(e1) && isModule(e2)) {
-                    return compareNames(e1, e2);
+                if ((isModule(e1) || isPackage(e1)) && (isModule(e2) || isPackage(e2))) {
+                    result = compareFullyQualifiedNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareElementTypeKinds(e1, e2);
                 }
-                if (isPackage(e1) && isPackage(e2)) {
-                    return compareFullyQualifiedNames(e1, e2);
-                }
-                if (isPackage(e1) || isPackage(e2)) {
-                    result = (isPackage(e1))
-                            ? compareStrings(getFullyQualifiedName(e1), getSimpleName(e2))
-                            : compareStrings(getSimpleName(e1), getFullyQualifiedName(e2));
+                if (isModule(e1) || isPackage(e1)) {
+                    result = compareStrings(getFullyQualifiedName(e1), getSimpleName(e2));
+                } else if (isModule(e2) || isPackage(e2)) {
+                    result = compareStrings(getSimpleName(e1), getFullyQualifiedName(e2));
                 } else {
                     result = compareNames(e1, e2);
                 }
@@ -1915,6 +1914,11 @@ public class Utils {
 
     public String getFullyQualifiedName(Element e, final boolean outer) {
         return new SimpleElementVisitor9<String, Void>() {
+            @Override
+            public String visitModule(ModuleElement e, Void p) {
+                return e.getQualifiedName().toString();
+            }
+
             @Override
             public String visitPackage(PackageElement e, Void p) {
                 return e.getQualifiedName().toString();
@@ -2527,7 +2531,7 @@ public class Utils {
             snvisitor = new SimpleElementVisitor9<String, Void>() {
                 @Override
                 public String visitModule(ModuleElement e, Void p) {
-                    return e.getSimpleName().toString();
+                    return e.getQualifiedName().toString();  // temp fix for 8182736
                 }
 
                 @Override
