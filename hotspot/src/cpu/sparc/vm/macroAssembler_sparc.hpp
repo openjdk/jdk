@@ -662,9 +662,6 @@ class MacroAssembler : public Assembler {
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
 
-  // get PC the best way
-  inline int get_pc( Register d );
-
   // Sparc shorthands(pp 85, V8 manual, pp 289 V9 manual)
   inline void cmp(  Register s1, Register s2 );
   inline void cmp(  Register s1, int simm13a );
@@ -1396,7 +1393,7 @@ public:
   void movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2);
   void movftoi_revbytes(FloatRegister src, Register dst, Register tmp1, Register tmp2);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes0() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes0() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len, Register table);
   // Fold 128-bit data chunk
   void fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register buf, int offset);
@@ -1404,7 +1401,7 @@ public:
   // Fold 8-bit data
   void fold_8bit_crc32(Register xcrc, Register table, Register xtmp, Register tmp);
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
-  // CRC32C code for java.util.zip.CRC32C::updateBytes/updateDirectByteBuffer instrinsic.
+  // CRC32C code for java.util.zip.CRC32C::updateBytes/updateDirectByteBuffer intrinsic.
   void kernel_crc32c(Register crc, Register buf, Register len, Register table);
 
 };
