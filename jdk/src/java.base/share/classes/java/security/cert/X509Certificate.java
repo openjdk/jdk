@@ -95,6 +95,7 @@ import sun.security.x509.X509CertImpl;
  * </pre>
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  *
  *
  * @see Certificate

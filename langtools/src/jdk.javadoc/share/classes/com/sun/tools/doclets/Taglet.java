@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import com.sun.javadoc.*;
  * tag must implement this interface.
  *
  * <p style="font-style: italic; font-size:larger">
- * <b>Note:</b> This interface has been superseded by one
- * in the new package {@code jdk.javadoc.doclet.taglet}.
+ * <b>Note:</b> This interface has been superseded by its replacement,
+ * {@link jdk.javadoc.doclet.Taglet}.
  * </p>
  *
  * To be loaded and used by
@@ -66,7 +66,8 @@ import com.sun.javadoc.*;
  * @author Jamie Ho
  *
  * @deprecated
- *   This interface has been superseded by one in the new package {@code jdk.javadoc.doclet.taglet}.
+ * This interface has been superseded by its replacement,
+ * {@link jdk.javadoc.doclet.Taglet}.
  */
 @Deprecated
 public interface Taglet {

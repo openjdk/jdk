@@ -56,6 +56,7 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -482,7 +483,7 @@ public class JavacFiler implements Filer, Closeable {
                 String base = name.substring(periodIndex);
                 String extn = (isSourceFile ? ".java" : ".class");
                 if (base.equals(extn))
-                    log.warning("proc.suspicious.class.name", name, extn);
+                    log.warning(Warnings.ProcSuspiciousClassName(name, extn));
             }
         }
         checkNameAndExistence(mod, name, isSourceFile);
@@ -500,7 +501,7 @@ public class JavacFiler implements Filer, Closeable {
         checkFileReopening(fileObject, true);
 
         if (lastRound)
-            log.warning("proc.file.create.last.round", name);
+            log.warning(Warnings.ProcFileCreateLastRound(name));
 
         if (isSourceFile)
             aggregateGeneratedSourceNames.add(Pair.of(mod, name));
@@ -690,7 +691,7 @@ public class JavacFiler implements Filer, Closeable {
     private void checkName(String name, boolean allowUnnamedPackageInfo) throws FilerException {
         if (!SourceVersion.isName(name) && !isPackageInfo(name, allowUnnamedPackageInfo)) {
             if (lint)
-                log.warning("proc.illegal.file.name", name);
+                log.warning(Warnings.ProcIllegalFileName(name));
             throw new FilerException("Illegal name " + name);
         }
     }
@@ -722,7 +723,7 @@ public class JavacFiler implements Filer, Closeable {
                                initialInputs.contains(existing.sourcefile));
         if (alreadySeen) {
             if (lint)
-                log.warning("proc.type.recreate", typename);
+                log.warning(Warnings.ProcTypeRecreate(typename));
             throw new FilerException("Attempt to recreate a file for type " + typename);
         }
         if (!mod.isUnnamed() && !typename.contains(".")) {
@@ -737,7 +738,7 @@ public class JavacFiler implements Filer, Closeable {
     private void checkFileReopening(FileObject fileObject, boolean forWriting) throws FilerException {
         if (isInFileObjectHistory(fileObject, forWriting)) {
             if (lint)
-                log.warning("proc.file.reopening", fileObject.getName());
+                log.warning(Warnings.ProcFileReopening(fileObject.getName()));
             throw new FilerException("Attempt to reopen a file for path " + fileObject.getName());
         }
         if (forWriting)
@@ -797,7 +798,7 @@ public class JavacFiler implements Filer, Closeable {
 
     public void warnIfUnclosedFiles() {
         if (!openTypeNames.isEmpty())
-            log.warning("proc.unclosed.type.files", openTypeNames.toString());
+            log.warning(Warnings.ProcUnclosedTypeFiles(openTypeNames));
     }
 
     /**

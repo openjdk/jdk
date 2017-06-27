@@ -31,7 +31,7 @@ import com.sun.tools.doclets.formats.html.*;
 /**
  * This doclet generates HTML-formatted documentation for the specified packages and types.
  * @deprecated The doclet has been superseded by its replacement,
- * {@code jdk.javadoc.doclets.StandardDoclet}.
+ * {@link jdk.javadoc.doclet.StandardDoclet}.
  */
 @Deprecated(forRemoval=true, since="9")
 public class Standard {

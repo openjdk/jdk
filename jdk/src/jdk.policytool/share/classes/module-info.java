@@ -24,7 +24,13 @@
  */
 
 /**
- * GUI tool for managing policy files.
+ * Defines the GUI tool for managing policy files
+ * called <em>{@index policytool policytool}</em>.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink policytool_tool_reference policytool}
+ * </dl>
  *
  * @since 9
  * @deprecated
@@ -39,4 +45,3 @@ module jdk.policytool {
     requires java.security.jgss;
     requires jdk.security.jgss;
 }
-

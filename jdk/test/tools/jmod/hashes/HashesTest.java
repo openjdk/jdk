@@ -31,6 +31,8 @@
  *          jdk.compiler
  *          jdk.jartool
  *          jdk.jlink
+ * @build jdk.test.lib.compiler.ModuleInfoMaker
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng HashesTest
  */
 

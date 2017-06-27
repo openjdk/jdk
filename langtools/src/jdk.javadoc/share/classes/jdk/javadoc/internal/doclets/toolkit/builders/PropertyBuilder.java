@@ -110,14 +110,6 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return "PropertyDetails";
-    }
-
-    /**
      * Returns whether or not there are members to document.
      *
      * @return whether or not there are members to document
@@ -128,13 +120,20 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void build(Content contentTree) throws DocletException {
+        buildPropertyDoc(contentTree);
+    }
+
+    /**
      * Build the property documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPropertyDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
+    protected void buildPropertyDoc(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
@@ -146,7 +145,11 @@ public class PropertyBuilder extends AbstractMemberBuilder {
                 currentProperty = (ExecutableElement)property;
                 Content propertyDocTree = writer.getPropertyDocTreeHeader(currentProperty,
                         propertyDetailsTree);
-                buildChildren(node, propertyDocTree);
+
+                buildSignature(propertyDocTree);
+                buildPropertyComments(propertyDocTree);
+                buildTagInfo(propertyDocTree);
+
                 propertyDetailsTree.addContent(writer.getPropertyDoc(
                         propertyDocTree, currentProperty == lastElement));
             }
@@ -158,20 +161,18 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param propertyDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content propertyDocTree) {
+    protected void buildSignature(Content propertyDocTree) {
         propertyDocTree.addContent(writer.getSignature(currentProperty));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param propertyDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content propertyDocTree) {
+    protected void buildDeprecationInfo(Content propertyDocTree) {
         writer.addDeprecated(currentProperty, propertyDocTree);
     }
 
@@ -179,10 +180,9 @@ public class PropertyBuilder extends AbstractMemberBuilder {
      * Build the comments for the property.  Do nothing if
      * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param propertyDocTree the content tree to which the documentation will be added
      */
-    public void buildPropertyComments(XMLNode node, Content propertyDocTree) {
+    protected void buildPropertyComments(Content propertyDocTree) {
         if (!configuration.nocomment) {
             writer.addComments(currentProperty, propertyDocTree);
         }
@@ -191,10 +191,9 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param propertyDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content propertyDocTree) {
+    protected void buildTagInfo(Content propertyDocTree) {
         writer.addTags(currentProperty, propertyDocTree);
     }
 

@@ -42,6 +42,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import javax.tools.JavaFileObject;
+
 import java.util.*;
 
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
@@ -56,7 +57,9 @@ import static com.sun.tools.javac.tree.JCTree.Tag.ANNOTATION;
 import static com.sun.tools.javac.tree.JCTree.Tag.ASSIGN;
 import static com.sun.tools.javac.tree.JCTree.Tag.IDENT;
 import static com.sun.tools.javac.tree.JCTree.Tag.NEWARRAY;
+
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+
 
 /** Enter annotations onto symbols and types (and trees).
  *
@@ -251,7 +254,7 @@ public class Annotate {
             Lint prevLint = deferPos != null ? null : chk.setLint(lint);
             try {
                 if (s.hasAnnotations() && annotations.nonEmpty())
-                    log.error(annotations.head.pos, "already.annotated", Kinds.kindName(s), s);
+                    log.error(annotations.head.pos, Errors.AlreadyAnnotated(Kinds.kindName(s), s));
 
                 Assert.checkNonNull(s, "Symbol argument to actualEnterAnnotations is null");
 
@@ -339,7 +342,7 @@ public class Annotate {
 
             if (annotated.containsKey(a.type.tsym)) {
                 if (!allowRepeatedAnnos) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), "repeatable.annotations.not.supported.in.source", sourceName);
+                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Errors.RepeatableAnnotationsNotSupportedInSource(sourceName));
                 }
                 ListBuffer<T> l = annotated.get(a.type.tsym);
                 l = l.append(c);
@@ -453,8 +456,7 @@ public class Annotate {
 
         boolean isError = a.type.isErroneous();
         if (!a.type.tsym.isAnnotationType() && !isError) {
-            log.error(a.annotationType.pos(),
-                    "not.annotation.type", a.type.toString());
+            log.error(a.annotationType.pos(), Errors.NotAnnotationType(a.type));
             isError = true;
         }
 
@@ -483,13 +485,13 @@ public class Annotate {
             Type thisAnnotationType, boolean badAnnotation, Env<AttrContext> env, boolean elidedValue)
     {
         if (!nameValuePair.hasTag(ASSIGN)) {
-            log.error(nameValuePair.pos(), "annotation.value.must.be.name.value");
+            log.error(nameValuePair.pos(), Errors.AnnotationValueMustBeNameValue);
             attributeAnnotationValue(nameValuePair.type = syms.errType, nameValuePair, env);
             return null;
         }
         JCAssign assign = (JCAssign)nameValuePair;
         if (!assign.lhs.hasTag(IDENT)) {
-            log.error(nameValuePair.pos(), "annotation.value.must.be.name.value");
+            log.error(nameValuePair.pos(), Errors.AnnotationValueMustBeNameValue);
             attributeAnnotationValue(nameValuePair.type = syms.errType, nameValuePair, env);
             return null;
         }
@@ -502,7 +504,7 @@ public class Annotate {
         left.sym = method;
         left.type = method.type;
         if (method.owner != thisAnnotationType.tsym && !badAnnotation)
-            log.error(left.pos(), "no.annotation.member", left.name, thisAnnotationType);
+            log.error(left.pos(), Errors.NoAnnotationMember(left.name, thisAnnotationType));
         Type resultType = method.type.getReturnType();
 
         // Compute value part
@@ -523,7 +525,7 @@ public class Annotate {
         try {
             expectedElementType.tsym.complete();
         } catch(CompletionFailure e) {
-            log.error(tree.pos(), "cant.resolve", Kinds.kindName(e.sym), e.sym);
+            log.error(tree.pos(), Errors.CantResolve(Kinds.kindName(e.sym), e.sym.getQualifiedName(), null, null));
             expectedElementType = syms.errType;
         }
 
@@ -535,10 +537,10 @@ public class Annotate {
         //error recovery
         if (tree.hasTag(NEWARRAY)) {
             if (!expectedElementType.isErroneous())
-                log.error(tree.pos(), "annotation.value.not.allowable.type");
+                log.error(tree.pos(), Errors.AnnotationValueNotAllowableType);
             JCNewArray na = (JCNewArray)tree;
             if (na.elemtype != null) {
-                log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
+                log.error(na.elemtype.pos(), Errors.NewNotAllowedInAnnotation);
             }
             for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
                 attributeAnnotationValue(syms.errType,
@@ -552,7 +554,7 @@ public class Annotate {
             if (tree.hasTag(ANNOTATION)) {
                 return attributeAnnotation((JCAnnotation)tree, expectedElementType, env);
             } else {
-                log.error(tree.pos(), "annotation.value.must.be.annotation");
+                log.error(tree.pos(), Errors.AnnotationValueMustBeAnnotation);
                 expectedElementType = syms.errType;
             }
         }
@@ -560,9 +562,23 @@ public class Annotate {
         //error recovery
         if (tree.hasTag(ANNOTATION)) {
             if (!expectedElementType.isErroneous())
-                log.error(tree.pos(), "annotation.not.valid.for.type", expectedElementType);
+                log.error(tree.pos(), Errors.AnnotationNotValidForType(expectedElementType));
             attributeAnnotation((JCAnnotation)tree, syms.errType, env);
             return new Attribute.Error(((JCAnnotation)tree).annotationType.type);
+        }
+
+        MemberEnter.InitTreeVisitor initTreeVisitor = new MemberEnter.InitTreeVisitor() {
+            // the methods below are added to allow class literals on top of constant expressions
+            @Override
+            public void visitTypeIdent(JCPrimitiveTypeTree that) {}
+
+            @Override
+            public void visitTypeArray(JCArrayTypeTree that) {}
+        };
+        tree.accept(initTreeVisitor);
+        if (!initTreeVisitor.result) {
+            log.error(tree.pos(), Errors.ExpressionNotAllowableAsAnnotationValue);
+            return new Attribute.Error(syms.errType);
         }
 
         if (expectedElementType.isPrimitive() ||
@@ -581,7 +597,7 @@ public class Annotate {
 
         //error recovery:
         if (!expectedElementType.isErroneous())
-            log.error(tree.pos(), "annotation.value.not.allowable.type");
+            log.error(tree.pos(), Errors.AnnotationValueNotAllowableType);
         return new Attribute.Error(attr.attribExpr(tree, env, expectedElementType));
     }
 
@@ -592,7 +608,7 @@ public class Annotate {
                 TreeInfo.nonstaticSelect(tree) ||
                 sym.kind != VAR ||
                 (sym.flags() & Flags.ENUM) == 0) {
-            log.error(tree.pos(), "enum.annotation.must.be.enum.constant");
+            log.error(tree.pos(), Errors.EnumAnnotationMustBeEnumConstant);
             return new Attribute.Error(result.getOriginalType());
         }
         VarSymbol enumerator = (VarSymbol) sym;
@@ -614,12 +630,6 @@ public class Annotate {
             }
         }
 
-        // Class literals look like field accesses of a field named class
-        // at the tree level
-        if (TreeInfo.name(tree) != names._class) {
-            log.error(tree.pos(), "annotation.value.must.be.class.literal");
-            return new Attribute.Error(syms.errType);
-        }
         return new Attribute.Class(types,
                 (((JCFieldAccess) tree).selected).type);
     }
@@ -629,7 +639,7 @@ public class Annotate {
         if (result.isErroneous())
             return new Attribute.Error(result.getOriginalType());
         if (result.constValue() == null) {
-            log.error(tree.pos(), "attribute.value.must.be.constant");
+            log.error(tree.pos(), Errors.AttributeValueMustBeConstant);
             return new Attribute.Error(expectedElementType);
         }
         result = cfolder.coerce(result, expectedElementType);
@@ -645,7 +655,7 @@ public class Annotate {
 
         JCNewArray na = (JCNewArray)tree;
         if (na.elemtype != null) {
-            log.error(na.elemtype.pos(), "new.not.allowed.in.annotation");
+            log.error(na.elemtype.pos(), Errors.NewNotAllowedInAnnotation);
         }
         ListBuffer<Attribute> buf = new ListBuffer<>();
         for (List<JCExpression> l = na.elems; l.nonEmpty(); l=l.tail) {
@@ -740,7 +750,7 @@ public class Annotate {
         }
 
         if (!repeated.isEmpty() && targetContainerType == null) {
-            log.error(ctx.pos.get(annotations.head), "duplicate.annotation.invalid.repeated", origAnnoType);
+            log.error(ctx.pos.get(annotations.head), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
             return null;
         }
 
@@ -787,7 +797,7 @@ public class Annotate {
                 }
 
                 if (!chk.validateAnnotationDeferErrors(annoTree))
-                    log.error(annoTree.pos(), "duplicate.annotation.invalid.repeated", origAnnoType);
+                    log.error(annoTree.pos(), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
 
                 c = attributeAnnotation(annoTree, targetContainerType, ctx.env);
                 c.setSynthesized(true);
@@ -816,7 +826,7 @@ public class Annotate {
         Attribute.Compound ca = origAnnoDecl.getAnnotationTypeMetadata().getRepeatable();
         if (ca == null) { // has no Repeatable annotation
             if (reportError)
-                log.error(pos, "duplicate.annotation.missing.container", origAnnoType, syms.repeatableType);
+                log.error(pos, Errors.DuplicateAnnotationMissingContainer(origAnnoType));
             return null;
         }
 
@@ -844,17 +854,17 @@ public class Annotate {
 
         // Repeatable must have at least one element
         if (ca.values.isEmpty()) {
-            log.error(pos, "invalid.repeatable.annotation", annoDecl);
+            log.error(pos, Errors.InvalidRepeatableAnnotation(annoDecl));
             return null;
         }
         Pair<MethodSymbol,Attribute> p = ca.values.head;
         Name name = p.fst.name;
         if (name != names.value) { // should contain only one element, named "value"
-            log.error(pos, "invalid.repeatable.annotation", annoDecl);
+            log.error(pos, Errors.InvalidRepeatableAnnotation(annoDecl));
             return null;
         }
         if (!(p.snd instanceof Attribute.Class)) { // check that the value of "value" is an Attribute.Class
-            log.error(pos, "invalid.repeatable.annotation", annoDecl);
+            log.error(pos, Errors.InvalidRepeatableAnnotation(annoDecl));
             return null;
         }
 
@@ -889,14 +899,12 @@ public class Annotate {
         }
         if (error) {
             log.error(pos,
-                    "invalid.repeatable.annotation.multiple.values",
-                    targetContainerType,
-                    nr_value_elems);
+                      Errors.InvalidRepeatableAnnotationMultipleValues(targetContainerType,
+                                                                       nr_value_elems));
             return null;
         } else if (nr_value_elems == 0) {
             log.error(pos,
-                    "invalid.repeatable.annotation.no.value",
-                    targetContainerType);
+                      Errors.InvalidRepeatableAnnotationNoValue(targetContainerType));
             return null;
         }
 
@@ -904,8 +912,7 @@ public class Annotate {
         // probably "impossible" to fail this
         if (containerValueSymbol.kind != MTH) {
             log.error(pos,
-                    "invalid.repeatable.annotation.invalid.value",
-                    targetContainerType);
+                    Errors.InvalidRepeatableAnnotationInvalidValue(targetContainerType));
             fatalError = true;
         }
 
@@ -916,10 +923,9 @@ public class Annotate {
         if (!(types.isArray(valueRetType) &&
                 types.isSameType(expectedType, valueRetType))) {
             log.error(pos,
-                    "invalid.repeatable.annotation.value.return",
-                    targetContainerType,
-                    valueRetType,
-                    expectedType);
+                      Errors.InvalidRepeatableAnnotationValueReturn(targetContainerType,
+                                                                    valueRetType,
+                                                                    expectedType));
             fatalError = true;
         }
 
@@ -940,8 +946,7 @@ public class Annotate {
             ListBuffer<T> manualContainer = ctx.annotated.get(validRepeated.type.tsym);
             if (manualContainer != null) {
                 log.error(ctx.pos.get(manualContainer.first()),
-                        "invalid.repeatable.annotation.repeated.and.container.present",
-                        manualContainer.first().type.tsym);
+                          Errors.InvalidRepeatableAnnotationRepeatedAndContainerPresent(manualContainer.first().type.tsym));
             }
         }
 

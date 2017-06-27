@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,15 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
-public class AbsentInformationException extends Exception
-{
+public class AbsentInformationException extends Exception {
+
     private static final long serialVersionUID = 4988939309582416373L;
-    public AbsentInformationException()
-    {
+
+    public AbsentInformationException() {
         super();
     }
 
-    public AbsentInformationException(String s)
-    {
+    public AbsentInformationException(String s) {
         super(s);
     }
 }

@@ -142,6 +142,7 @@ import sun.security.util.Debug;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  *
  * @serial exclude
  */

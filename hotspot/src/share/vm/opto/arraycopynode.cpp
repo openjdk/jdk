@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM),
@@ -631,41 +632,75 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, ArrayCopyNode*& ac) {
-  if (n->Opcode() == Op_StoreCM ||
-      n->Opcode() == Op_StoreB) {
-    // Ignore card mark stores
-    n = n->in(MemNode::Memory);
-  }
-
-  if (n->is_Proj()) {
-    n = n->in(0);
-    if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
-      if (n->isa_ArrayCopy() != NULL) {
-        ac = n->as_ArrayCopy();
-      }
-      return true;
-    }
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call) {
+  if (n != NULL &&
+      n->is_Call() &&
+      n->as_Call()->may_modify(t_oop, phase) &&
+      (n->as_Call()->is_ArrayCopy() || n->as_Call()->is_call_to_arraycopystub())) {
+    call = n->as_Call();
+    return true;
   }
   return false;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac) {
-  Node* mem = mb->in(TypeFunc::Memory);
-
-  if (mem->is_MergeMem()) {
-    Node* n = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
-    if (may_modify_helper(t_oop, n, phase, ac)) {
-      return true;
-    } else if (n->is_Phi()) {
-      for (uint i = 1; i < n->req(); i++) {
-        if (n->in(i) != NULL) {
-          if (may_modify_helper(t_oop, n->in(i), phase, ac)) {
-            return true;
+static Node* step_over_gc_barrier(Node* c) {
+  if (UseG1GC && !GraphKit::use_ReduceInitialCardMarks() &&
+      c != NULL && c->is_Region() && c->req() == 3) {
+    for (uint i = 1; i < c->req(); i++) {
+      if (c->in(i) != NULL && c->in(i)->is_Region() &&
+          c->in(i)->req() == 3) {
+        Node* r = c->in(i);
+        for (uint j = 1; j < r->req(); j++) {
+          if (r->in(j) != NULL && r->in(j)->is_Proj() &&
+              r->in(j)->in(0) != NULL &&
+              r->in(j)->in(0)->Opcode() == Op_CallLeaf &&
+              r->in(j)->in(0)->as_Call()->entry_point() == CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post)) {
+            Node* call = r->in(j)->in(0);
+            c = c->in(i == 1 ? 2 : 1);
+            if (c != NULL) {
+              c = c->in(0);
+              if (c != NULL) {
+                c = c->in(0);
+                assert(call->in(0) == NULL ||
+                       call->in(0)->in(0) == NULL ||
+                       call->in(0)->in(0)->in(0) == NULL ||
+                       call->in(0)->in(0)->in(0)->in(0) == NULL ||
+                       call->in(0)->in(0)->in(0)->in(0)->in(0) == NULL ||
+                       c == call->in(0)->in(0)->in(0)->in(0)->in(0), "bad barrier shape");
+                return c;
+              }
+            }
           }
         }
       }
     }
+  }
+  return c;
+}
+
+bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac) {
+
+  Node* c = mb->in(0);
+
+  // step over g1 gc barrier if we're at a clone with ReduceInitialCardMarks off
+  c = step_over_gc_barrier(c);
+
+  CallNode* call = NULL;
+  if (c != NULL && c->is_Region()) {
+    for (uint i = 1; i < c->req(); i++) {
+      if (c->in(i) != NULL) {
+        Node* n = c->in(i)->in(0);
+        if (may_modify_helper(t_oop, n, phase, call)) {
+          ac = call->isa_ArrayCopy();
+          assert(c == mb->in(0), "only for clone");
+          return true;
+        }
+      }
+    }
+  } else if (may_modify_helper(t_oop, c->in(0), phase, call)) {
+    ac = call->isa_ArrayCopy();
+    assert(c == mb->in(0) || (ac != NULL && ac->is_clonebasic() && !GraphKit::use_ReduceInitialCardMarks()), "only for clone");
+    return true;
   }
 
   return false;
@@ -677,37 +712,77 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
 // between offset_lo and offset_hi
 // if must_modify is true, return true if the copy is guaranteed to
 // write between offset_lo and offset_hi
-bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) {
+bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const {
   assert(_kind == ArrayCopy || _kind == CopyOf || _kind == CopyOfRange, "only for real array copies");
 
-  Node* dest = in(ArrayCopyNode::Dest);
-  Node* src_pos = in(ArrayCopyNode::SrcPos);
-  Node* dest_pos = in(ArrayCopyNode::DestPos);
-  Node* len = in(ArrayCopyNode::Length);
+  Node* dest = in(Dest);
+  Node* dest_pos = in(DestPos);
+  Node* len = in(Length);
 
   const TypeInt *dest_pos_t = phase->type(dest_pos)->isa_int();
   const TypeInt *len_t = phase->type(len)->isa_int();
   const TypeAryPtr* ary_t = phase->type(dest)->isa_aryptr();
 
-  if (dest_pos_t != NULL && len_t != NULL && ary_t != NULL) {
-    BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
-    uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
-    uint elemsize = type2aelembytes(ary_elem);
+  if (dest_pos_t == NULL || len_t == NULL || ary_t == NULL) {
+    return !must_modify;
+  }
 
-    jlong dest_pos_plus_len_lo = (((jlong)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
-    jlong dest_pos_plus_len_hi = (((jlong)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
-    jlong dest_pos_lo = ((jlong)dest_pos_t->_lo) * elemsize + header;
-    jlong dest_pos_hi = ((jlong)dest_pos_t->_hi) * elemsize + header;
+  BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+  uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+  uint elemsize = type2aelembytes(ary_elem);
 
-    if (must_modify) {
-      if (offset_lo >= dest_pos_hi && offset_hi < dest_pos_plus_len_lo) {
-        return true;
-      }
-    } else {
-      if (offset_hi >= dest_pos_lo && offset_lo < dest_pos_plus_len_hi) {
-        return true;
-      }
+  jlong dest_pos_plus_len_lo = (((jlong)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
+  jlong dest_pos_plus_len_hi = (((jlong)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
+  jlong dest_pos_lo = ((jlong)dest_pos_t->_lo) * elemsize + header;
+  jlong dest_pos_hi = ((jlong)dest_pos_t->_hi) * elemsize + header;
+
+  if (must_modify) {
+    if (offset_lo >= dest_pos_hi && offset_hi < dest_pos_plus_len_lo) {
+      return true;
+    }
+  } else {
+    if (offset_hi >= dest_pos_lo && offset_lo < dest_pos_plus_len_hi) {
+      return true;
     }
   }
+  return false;
+}
+
+// We try to replace a load from the destination of an arraycopy with
+// a load from the source so the arraycopy has a chance to be
+// eliminated. It's only valid if the arraycopy doesn't change the
+// element that would be loaded from the source array.
+bool ArrayCopyNode::can_replace_dest_load_with_src_load(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase) const {
+  assert(_kind == ArrayCopy || _kind == CopyOf || _kind == CopyOfRange, "only for real array copies");
+
+  Node* src = in(Src);
+  Node* dest = in(Dest);
+
+  // Check whether, assuming source and destination are the same
+  // array, the arraycopy modifies the element from the source we
+  // would load.
+  if ((src != dest && in(SrcPos) == in(DestPos)) || !modifies(offset_lo, offset_hi, phase, false)) {
+    // if not the transformation is legal
+    return true;
+  }
+
+  AllocateNode* src_alloc = AllocateNode::Ideal_allocation(src, phase);
+  AllocateNode* dest_alloc = AllocateNode::Ideal_allocation(dest, phase);
+
+  // Check whether source and destination can be proved to be
+  // different arrays
+  const TypeOopPtr* t_src = phase->type(src)->isa_oopptr();
+  const TypeOopPtr* t_dest = phase->type(dest)->isa_oopptr();
+
+  if (t_src != NULL && t_dest != NULL &&
+      (t_src->is_known_instance() || t_dest->is_known_instance()) &&
+      t_src->instance_id() != t_dest->instance_id()) {
+    return true;
+  }
+
+  if (MemNode::detect_ptr_independence(src->uncast(), src_alloc, dest->uncast(), dest_alloc, phase)) {
+    return true;
+  }
+
   return false;
 }

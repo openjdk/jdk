@@ -42,11 +42,21 @@ include TestFilesCompilation.gmk
 # Add more directories here when needed.
 BUILD_JDK_JTREG_NATIVE_SRC := \
     $(JDK_TOPDIR)/test/native_sanity \
+    $(JDK_TOPDIR)/test/java/lang/String/nativeEncoding \
     #
 
 BUILD_JDK_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+    WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
+else ifeq ($(OPENJDK_TARGET_OS), solaris)
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava -lc
+else
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
+endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_LIBRARIES, \
     TYPE := LIBRARY, \

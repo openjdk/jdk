@@ -40,6 +40,7 @@ import java.lang.annotation.Native;
  * DatagramSocket and MulticastSocket.
  *
  * @author David Brown
+ * @since 1.1
  */
 
 

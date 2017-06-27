@@ -27,7 +27,8 @@
  * @summary Basic test StackTraceElement with class loader names
  * @library lib /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build m1/* WithClassLoaderName
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        m1/* WithClassLoaderName
  * @run main/othervm m1/com.app.Main
  * @run main/othervm WithClassLoaderName
  */

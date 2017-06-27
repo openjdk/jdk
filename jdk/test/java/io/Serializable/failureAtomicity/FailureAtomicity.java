@@ -27,6 +27,8 @@
  * @summary Better failure atomicity for default read object.
  * @modules jdk.compiler
  * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @compile FailureAtomicity.java SerialRef.java
  * @run main failureAtomicity.FailureAtomicity
  */

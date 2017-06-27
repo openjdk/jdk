@@ -29,6 +29,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8024302 8026037
  * @summary Checks if jarsigner prints appropriate warnings
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main MultipleWarningsTest
  */
 public class MultipleWarningsTest extends Test {
