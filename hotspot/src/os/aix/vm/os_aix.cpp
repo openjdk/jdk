@@ -4299,9 +4299,6 @@ void os::Aix::initialize_libperfstat() {
 
 // Function to query the current stack size using pthread_getthrds_np.
 static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) {
-  // This only works when invoked on a pthread. As we agreed not to use
-  // primordial threads anyway, I assert here.
-  guarantee(!os::Aix::is_primordial_thread(), "not allowed on the primordial thread");
 
   // Information about this api can be found (a) in the pthread.h header and
   // (b) in http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/pthread_getthrds_np.htm
@@ -4323,7 +4320,6 @@ static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) 
                                      sizeof(pinfo), dummy, &dummy_size);
 
   if (rc != 0) {
-    assert0(false);
     trcVerbose("pthread_getthrds_np failed (%d)", rc);
     return false;
   }

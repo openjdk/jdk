@@ -640,6 +640,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // fallback: use the current context
   ucontext_t local_context;
   if (!uc) {
+    st->print_cr("No context given, using current context.");
     if (getcontext(&local_context) == 0) {
       uc = &local_context;
     } else {
