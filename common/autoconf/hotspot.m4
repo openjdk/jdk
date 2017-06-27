@@ -213,7 +213,7 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
 
   if test "x$ENABLE_AOT" = "xtrue"; then
     # Only enable AOT on X64 platforms.
-    if test "x$OPENJDK_TARGET_OS" != "xwindows" && test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
         if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
