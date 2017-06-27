@@ -3184,7 +3184,7 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, owntype, pkind(), resultInfo);
         Symbol sym = TreeInfo.symbol(tree);
         if (sym != null && sym.kind.matches(KindSelector.TYP_PCK))
-            log.error(tree.pos(), Errors.IllegalStartOfType);
+            log.error(tree.pos(), Errors.IllegalParenthesizedExpression);
     }
 
     public void visitAssign(JCAssign tree) {
