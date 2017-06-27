@@ -92,4 +92,14 @@ public final class OptionKey<T> {
         return values.get(this);
     }
 
+    /**
+     * Returns <code>true</code> if a value for this key has been set for the given option values or
+     * <code>false</code> if no value has been set.
+     *
+     * @since 1.0
+     */
+    public boolean hasBeenSet(OptionValues values) {
+        return values.hasBeenSet(this);
+    }
+
 }

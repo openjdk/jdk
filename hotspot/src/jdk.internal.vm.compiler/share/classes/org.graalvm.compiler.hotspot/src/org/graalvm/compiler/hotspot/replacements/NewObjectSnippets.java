@@ -86,7 +86,6 @@ import org.graalvm.compiler.hotspot.nodes.DimensionsNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyFixedNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
-import org.graalvm.compiler.hotspot.replacements.aot.ResolveConstantSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
@@ -300,10 +299,8 @@ public class NewObjectSnippets implements Snippets {
     public static Object allocateArrayPIC(KlassPointer hub, int length, Word prototypeMarkWord, @ConstantParameter int headerSize, @ConstantParameter int log2ElementSize,
                     @ConstantParameter boolean fillContents, @ConstantParameter Register threadRegister, @ConstantParameter boolean maybeUnroll, @ConstantParameter String typeContext,
                     @ConstantParameter OptionValues options, @ConstantParameter Counters counters) {
-        // We need to resolve array type. While element type is guaranteed to be initialized, we
-        // cannot guarantee initialization of the array class if NewArrayInstance comes from
-        // canonicalization of DynamicNewArrayInstance.
-        KlassPointer picHub = ResolveConstantSnippets.pureInitializeKlass(hub);
+        // Array type would be resolved by dominating resolution.
+        KlassPointer picHub = LoadConstantIndirectlyFixedNode.loadKlass(hub);
         return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, options, counters);
     }
 
@@ -419,6 +416,7 @@ public class NewObjectSnippets implements Snippets {
 
     @Snippet
     public static Object newmultiarrayPIC(KlassPointer hub, @ConstantParameter int rank, @VarargsParameter int[] dimensions) {
+        // Array type would be resolved by dominating resolution.
         KlassPointer picHub = LoadConstantIndirectlyFixedNode.loadKlass(hub);
         return newmultiarray(picHub, rank, dimensions);
     }

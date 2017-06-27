@@ -33,7 +33,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
-public class ByteBufferTest extends GraalCompilerTest {
+public class DirectByteBufferTest extends GraalCompilerTest {
 
     class Ret {
 
@@ -80,7 +80,7 @@ public class ByteBufferTest extends GraalCompilerTest {
 
         @Override
         public String toString() {
-            return String.format("0x%02x, 0x%04x, 0x%08x, 0x%04x, 0x%08x", byteValue, shortValue, intValue, Float.floatToRawIntBits(floatValue), Double.doubleToRawLongBits(doubleValue));
+            return String.format("0x%02x, 0x%04x, 0x%08x, 0x%016x,0x%08x, 0x%016x", byteValue, shortValue, intValue, Float.floatToRawIntBits(floatValue), Double.doubleToRawLongBits(doubleValue));
         }
     }
 
@@ -95,7 +95,7 @@ public class ByteBufferTest extends GraalCompilerTest {
     @Parameter public ByteOrder byteOrder;
 
     Ret alignedReadSnippet(byte[] arg) {
-        ByteBuffer buffer = ByteBuffer.wrap(arg).order(byteOrder);
+        ByteBuffer buffer = makeDirect(arg, byteOrder);
 
         Ret ret = new Ret();
         ret.byteValue = buffer.get();
@@ -120,7 +120,7 @@ public class ByteBufferTest extends GraalCompilerTest {
 
     byte[] alignedWriteSnippet(byte a, byte b, short c, int d, long e, double f, float g) {
         byte[] ret = new byte[28];
-        ByteBuffer buffer = ByteBuffer.wrap(ret).order(byteOrder);
+        ByteBuffer buffer = makeDirect(28, byteOrder);
 
         buffer.put(a);
         buffer.put(b);
@@ -129,6 +129,9 @@ public class ByteBufferTest extends GraalCompilerTest {
         buffer.putLong(e);
         buffer.putDouble(f);
         buffer.putFloat(g);
+
+        buffer.position(0);
+        buffer.get(ret);
 
         return ret;
     }
@@ -139,7 +142,7 @@ public class ByteBufferTest extends GraalCompilerTest {
     }
 
     Ret unalignedReadSnippet(byte[] arg) {
-        ByteBuffer buffer = ByteBuffer.wrap(arg).order(byteOrder);
+        ByteBuffer buffer = makeDirect(arg, byteOrder);
 
         Ret ret = new Ret();
         ret.byteValue = buffer.get();
@@ -163,7 +166,7 @@ public class ByteBufferTest extends GraalCompilerTest {
 
     byte[] unalignedWriteSnippet(byte a, short b, int c, long d, double e, float f) {
         byte[] ret = new byte[27];
-        ByteBuffer buffer = ByteBuffer.wrap(ret).order(byteOrder);
+        ByteBuffer buffer = makeDirect(27, byteOrder);
 
         buffer.put(a);
         buffer.putShort(b);
@@ -172,11 +175,28 @@ public class ByteBufferTest extends GraalCompilerTest {
         buffer.putDouble(e);
         buffer.putFloat(f);
 
+        buffer.position(0);
+        buffer.get(ret);
+
         return ret;
     }
 
     @Test
     public void testWriteUnaligned() {
         test("unalignedWriteSnippet", (byte) -3, (short) 17, 42, 0x3FC30A25644B7130L, 84.72, 1.23f);
+    }
+
+    private static ByteBuffer makeDirect(byte[] bytes, ByteOrder byteOrder) {
+        int length = bytes.length;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(length).order(byteOrder);
+        buffer.put(bytes);
+        buffer.position(0);
+        return buffer;
+    }
+
+    private static ByteBuffer makeDirect(int length, ByteOrder byteOrder) {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(length).order(byteOrder);
+        buffer.position(0);
+        return buffer;
     }
 }
