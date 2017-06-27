@@ -1760,7 +1760,10 @@ const bool Matcher::pass_original_key_for_aes() {
   return true;
 }
 
-// USII supports fxtof through the whole range of number, USIII doesn't
+/* NOTE: All currently supported SPARC HW provides fast conversion.
+ * 
+ * TODO: Clean-out code depending on 'has_fast_fxtof'.
+ */
 const bool Matcher::convL2FSupported(void) {
   return VM_Version::has_fast_fxtof();
 }
@@ -1789,9 +1792,9 @@ const bool Matcher::init_array_count_is_in_bytes = true;
 // No additional cost for CMOVL.
 const int Matcher::long_cmove_cost() { return 0; }
 
-// CMOVF/CMOVD are expensive on T4 and on SPARC64.
+// CMOVF/CMOVD are expensive on e.g., T4 and SPARC64.
 const int Matcher::float_cmove_cost() {
-  return (VM_Version::is_T4() || VM_Version::is_sparc64()) ? ConditionalMoveLimit : 0;
+  return VM_Version::has_fast_cmove() ? 0 : ConditionalMoveLimit;
 }
 
 // Does the CPU require late expand (see block.cpp for description of late expand)?
@@ -3194,7 +3197,7 @@ operand immP() %{
 
 // Pointer Immediate: 64-bit
 operand immP_set() %{
-  predicate(!VM_Version::is_niagara_plus());
+  predicate(!VM_Version::has_fast_ld());
   match(ConP);
 
   op_cost(5);
@@ -3206,7 +3209,7 @@ operand immP_set() %{
 // Pointer Immediate: 64-bit
 // From Niagara2 processors on a load should be better than materializing.
 operand immP_load() %{
-  predicate(VM_Version::is_niagara_plus() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
+  predicate(VM_Version::has_fast_ld() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
   match(ConP);
 
   op_cost(5);
@@ -3217,7 +3220,7 @@ operand immP_load() %{
 
 // Pointer Immediate: 64-bit
 operand immP_no_oop_cheap() %{
-  predicate(VM_Version::is_niagara_plus() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
+  predicate(VM_Version::has_fast_ld() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
   match(ConP);
 
   op_cost(5);
@@ -3341,7 +3344,7 @@ operand immL_32bits() %{
 
 // Long Immediate: cheap (materialize in <= 3 instructions)
 operand immL_cheap() %{
-  predicate(!VM_Version::is_niagara_plus() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
+  predicate(!VM_Version::has_fast_ld() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
   match(ConL);
   op_cost(0);
 
@@ -3351,7 +3354,7 @@ operand immL_cheap() %{
 
 // Long Immediate: expensive (materialize in > 3 instructions)
 operand immL_expensive() %{
-  predicate(VM_Version::is_niagara_plus() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
+  predicate(VM_Version::has_fast_ld() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
   match(ConL);
   op_cost(0);
 

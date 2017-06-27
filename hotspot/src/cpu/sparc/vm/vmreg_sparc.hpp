@@ -27,9 +27,8 @@
 
 inline bool is_Register() { return value() >= 0 && value() < ConcreteRegisterImpl::max_gpr; }
 inline bool is_FloatRegister() { return value() >= ConcreteRegisterImpl::max_gpr &&
-                                                   value() < ConcreteRegisterImpl::max_fpr; }
+                                        value()  < ConcreteRegisterImpl::max_fpr; }
 inline Register as_Register() {
-
   assert( is_Register() && is_even(value()), "even-aligned GPR name" );
   // Yuk
   return ::as_Register(value()>>1);

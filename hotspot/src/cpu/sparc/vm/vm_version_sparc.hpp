@@ -33,150 +33,241 @@ class VM_Version: public Abstract_VM_Version {
   friend class JVMCIVMStructs;
 
 protected:
-  enum Feature_Flag {
-    v8_instructions       = 0,
-    hardware_mul32        = 1,
-    hardware_div32        = 2,
-    hardware_fsmuld       = 3,
-    hardware_popc         = 4,
-    v9_instructions       = 5,
-    vis1_instructions     = 6,
-    vis2_instructions     = 7,
-    sun4v_instructions    = 8,
-    blk_init_instructions = 9,
-    fmaf_instructions     = 10,
-    vis3_instructions     = 11,
-    cbcond_instructions   = 12,
-    sparc64_family        = 13,
-    M_family              = 14,
-    S_family              = 15,
-    T_family              = 16,
-    T1_model              = 17,
-    sparc5_instructions   = 18,
-    aes_instructions      = 19,
-    sha1_instruction      = 20,
-    sha256_instruction    = 21,
-    sha512_instruction    = 22,
-    crc32c_instruction    = 23
+  enum {
+    ISA_V9,
+    ISA_POPC,
+    ISA_VIS1,
+    ISA_VIS2,
+    ISA_BLK_INIT,
+    ISA_FMAF,
+    ISA_VIS3,
+    ISA_HPC,
+    ISA_IMA,
+    ISA_AES,
+    ISA_DES,
+    ISA_KASUMI,
+    ISA_CAMELLIA,
+    ISA_MD5,
+    ISA_SHA1,
+    ISA_SHA256,
+    ISA_SHA512,
+    ISA_MPMUL,
+    ISA_MONT,
+    ISA_PAUSE,
+    ISA_CBCOND,
+    ISA_CRC32C,
+
+    ISA_FJATHPLUS,
+    ISA_VIS3B,
+    ISA_ADI,
+    ISA_SPARC5,
+    ISA_MWAIT,
+    ISA_XMPMUL,
+    ISA_XMONT,
+    ISA_PAUSE_NSEC,
+    ISA_VAMASK,
+
+    // Synthesised properties:
+
+    CPU_FAST_IDIV,
+    CPU_FAST_RDPC,
+    CPU_FAST_BIS,
+    CPU_FAST_LD,
+    CPU_FAST_CMOVE,
+    CPU_FAST_IND_BR,
+    CPU_BLK_ZEROING
   };
 
-  enum Feature_Flag_Set {
-    unknown_m           = 0,
-    all_features_m      = -1,
+private:
+  enum { ISA_last_feature = ISA_VAMASK,
+         CPU_last_feature = CPU_BLK_ZEROING };
 
-    v8_instructions_m       = 1 << v8_instructions,
-    hardware_mul32_m        = 1 << hardware_mul32,
-    hardware_div32_m        = 1 << hardware_div32,
-    hardware_fsmuld_m       = 1 << hardware_fsmuld,
-    hardware_popc_m         = 1 << hardware_popc,
-    v9_instructions_m       = 1 << v9_instructions,
-    vis1_instructions_m     = 1 << vis1_instructions,
-    vis2_instructions_m     = 1 << vis2_instructions,
-    sun4v_m                 = 1 << sun4v_instructions,
-    blk_init_instructions_m = 1 << blk_init_instructions,
-    fmaf_instructions_m     = 1 << fmaf_instructions,
-    vis3_instructions_m     = 1 << vis3_instructions,
-    cbcond_instructions_m   = 1 << cbcond_instructions,
-    sparc64_family_m        = 1 << sparc64_family,
-    M_family_m              = 1 << M_family,
-    S_family_m              = 1 << S_family,
-    T_family_m              = 1 << T_family,
-    T1_model_m              = 1 << T1_model,
-    sparc5_instructions_m   = 1 << sparc5_instructions,
-    aes_instructions_m      = 1 << aes_instructions,
-    sha1_instruction_m      = 1 << sha1_instruction,
-    sha256_instruction_m    = 1 << sha256_instruction,
-    sha512_instruction_m    = 1 << sha512_instruction,
-    crc32c_instruction_m    = 1 << crc32c_instruction,
+  enum {
+    ISA_unknown_msk     = 0,
 
-    generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
-    generic_v9_m        = generic_v8_m | v9_instructions_m,
-    ultra3_m            = generic_v9_m | vis1_instructions_m | vis2_instructions_m,
+    ISA_v9_msk          = UINT64_C(1) << ISA_V9,
 
-    // Temporary until we have something more accurate
-    niagara1_unique_m   = sun4v_m,
-    niagara1_m          = generic_v9_m | niagara1_unique_m
+    ISA_popc_msk        = UINT64_C(1) << ISA_POPC,
+    ISA_vis1_msk        = UINT64_C(1) << ISA_VIS1,
+    ISA_vis2_msk        = UINT64_C(1) << ISA_VIS2,
+    ISA_blk_init_msk    = UINT64_C(1) << ISA_BLK_INIT,
+    ISA_fmaf_msk        = UINT64_C(1) << ISA_FMAF,
+    ISA_vis3_msk        = UINT64_C(1) << ISA_VIS3,
+    ISA_hpc_msk         = UINT64_C(1) << ISA_HPC,
+    ISA_ima_msk         = UINT64_C(1) << ISA_IMA,
+    ISA_aes_msk         = UINT64_C(1) << ISA_AES,
+    ISA_des_msk         = UINT64_C(1) << ISA_DES,
+    ISA_kasumi_msk      = UINT64_C(1) << ISA_KASUMI,
+    ISA_camellia_msk    = UINT64_C(1) << ISA_CAMELLIA,
+    ISA_md5_msk         = UINT64_C(1) << ISA_MD5,
+    ISA_sha1_msk        = UINT64_C(1) << ISA_SHA1,
+    ISA_sha256_msk      = UINT64_C(1) << ISA_SHA256,
+    ISA_sha512_msk      = UINT64_C(1) << ISA_SHA512,
+    ISA_mpmul_msk       = UINT64_C(1) << ISA_MPMUL,
+    ISA_mont_msk        = UINT64_C(1) << ISA_MONT,
+    ISA_pause_msk       = UINT64_C(1) << ISA_PAUSE,
+    ISA_cbcond_msk      = UINT64_C(1) << ISA_CBCOND,
+    ISA_crc32c_msk      = UINT64_C(1) << ISA_CRC32C,
+
+    ISA_fjathplus_msk   = UINT64_C(1) << ISA_FJATHPLUS,
+    ISA_vis3b_msk       = UINT64_C(1) << ISA_VIS3B,
+    ISA_adi_msk         = UINT64_C(1) << ISA_ADI,
+    ISA_sparc5_msk      = UINT64_C(1) << ISA_SPARC5,
+    ISA_mwait_msk       = UINT64_C(1) << ISA_MWAIT,
+    ISA_xmpmul_msk      = UINT64_C(1) << ISA_XMPMUL,
+    ISA_xmont_msk       = UINT64_C(1) << ISA_XMONT,
+    ISA_pause_nsec_msk  = UINT64_C(1) << ISA_PAUSE_NSEC,
+    ISA_vamask_msk      = UINT64_C(1) << ISA_VAMASK,
+
+    CPU_fast_idiv_msk   = UINT64_C(1) << CPU_FAST_IDIV,
+    CPU_fast_rdpc_msk   = UINT64_C(1) << CPU_FAST_RDPC,
+    CPU_fast_bis_msk    = UINT64_C(1) << CPU_FAST_BIS,
+    CPU_fast_ld_msk     = UINT64_C(1) << CPU_FAST_LD,
+    CPU_fast_cmove_msk  = UINT64_C(1) << CPU_FAST_CMOVE,
+    CPU_fast_ind_br_msk = UINT64_C(1) << CPU_FAST_IND_BR,
+    CPU_blk_zeroing_msk = UINT64_C(1) << CPU_BLK_ZEROING,
+
+    last_feature_msk    = CPU_blk_zeroing_msk,
+    full_feature_msk    = (last_feature_msk << 1) - 1
   };
 
-  static unsigned int _L2_data_cache_line_size;
-  static unsigned int L2_data_cache_line_size() { return _L2_data_cache_line_size; }
+/* The following, previously supported, SPARC implementations are no longer
+ * supported.
+ *
+ *  UltraSPARC I/II:
+ *    SPARC-V9, VIS
+ *  UltraSPARC III/+:  (Cheetah/+)
+ *    SPARC-V9, VIS
+ *  UltraSPARC IV:     (Jaguar)
+ *    SPARC-V9, VIS
+ *  UltraSPARC IV+:    (Panther)
+ *    SPARC-V9, VIS, POPC
+ *
+ * The currently supported SPARC implementations are listed below (including
+ * generic V9 support).
+ *
+ *  UltraSPARC T1:     (Niagara)
+ *    SPARC-V9, VIS, ASI_BIS                (Crypto/hash in SPU)
+ *  UltraSPARC T2:     (Niagara-2)
+ *    SPARC-V9, VIS, ASI_BIS, POPC          (Crypto/hash in SPU)
+ *  UltraSPARC T2+:    (Victoria Falls, etc.)
+ *    SPARC-V9, VIS, VIS2, ASI_BIS, POPC    (Crypto/hash in SPU)
+ *
+ *  UltraSPARC T3:     (Rainbow Falls/S2)
+ *    SPARC-V9, VIS, VIS2, ASI_BIS, POPC    (Crypto/hash in SPU)
+ *
+ *  Oracle SPARC T4/T5/M5:  (Core S3)
+ *    SPARC-V9, VIS, VIS2, VIS3, ASI_BIS, HPC, POPC, FMAF, IMA, PAUSE, CBCOND,
+ *    AES, DES, Kasumi, Camellia, MD5, SHA1, SHA256, SHA512, CRC32C, MONT, MPMUL
+ *
+ *  Oracle SPARC M7:   (Core S4)
+ *    SPARC-V9, VIS, VIS2, VIS3, ASI_BIS, HPC, POPC, FMAF, IMA, PAUSE, CBCOND,
+ *    AES, DES, Camellia, MD5, SHA1, SHA256, SHA512, CRC32C, MONT, MPMUL, VIS3b,
+ *    ADI, SPARC5, MWAIT, XMPMUL, XMONT, PAUSE_NSEC, VAMASK
+ *
+ */
+  enum {
+    niagara1_msk = ISA_v9_msk | ISA_vis1_msk | ISA_blk_init_msk,
+    niagara2_msk = niagara1_msk | ISA_popc_msk,
 
+    core_S2_msk  = niagara2_msk | ISA_vis2_msk,
+
+    core_S3_msk  = core_S2_msk | ISA_fmaf_msk | ISA_vis3_msk | ISA_hpc_msk |
+        ISA_ima_msk | ISA_aes_msk | ISA_des_msk | ISA_kasumi_msk |
+        ISA_camellia_msk | ISA_md5_msk | ISA_sha1_msk | ISA_sha256_msk |
+        ISA_sha512_msk | ISA_mpmul_msk | ISA_mont_msk | ISA_pause_msk |
+        ISA_cbcond_msk | ISA_crc32c_msk,
+
+    core_S4_msk  = core_S3_msk - ISA_kasumi_msk |
+        ISA_vis3b_msk | ISA_adi_msk | ISA_sparc5_msk | ISA_mwait_msk |
+        ISA_xmpmul_msk | ISA_xmont_msk | ISA_pause_nsec_msk | ISA_vamask_msk,
+
+    ultra_sparc_t1_msk = niagara1_msk,
+    ultra_sparc_t2_msk = niagara2_msk,
+    ultra_sparc_t3_msk = core_S2_msk,
+    ultra_sparc_m5_msk = core_S3_msk,   // NOTE: First out-of-order pipeline.
+    ultra_sparc_m7_msk = core_S4_msk
+  };
+
+  static uint _L2_data_cache_line_size;
+  static uint L2_data_cache_line_size() { return _L2_data_cache_line_size; }
+
+  static void determine_features();
+  static void platform_features();
   static void print_features();
-  static int  determine_features();
-  static int  platform_features(int features);
 
-  // Returns true if the platform is in the niagara line (T series)
-  static bool is_M_family(int features) { return (features & M_family_m) != 0; }
-  static bool is_S_family(int features) { return (features & S_family_m) != 0; }
-  static bool is_T_family(int features) { return (features & T_family_m) != 0; }
-  static bool is_niagara() { return is_T_family(_features); }
-#ifdef ASSERT
-  static bool is_niagara(int features)  {
-    // 'sun4v_m' may be defined on both Sun/Oracle Sparc CPUs as well as
-    // on Fujitsu Sparc64 CPUs, but only Sun/Oracle Sparcs can be 'niagaras'.
-    return (features & sun4v_m) != 0 && (features & sparc64_family_m) == 0;
-  }
-#endif
-
-  // Returns true if it is niagara1 (T1).
-  static bool is_T1_model(int features) { return is_T_family(features) && ((features & T1_model_m) != 0); }
-
-  static int maximum_niagara1_processor_count() { return 32; }
-  static int parse_features(const char* implementation);
 public:
-  // Initialization
+  enum {
+    // Adopt a conservative behaviour (modelling single-insn-fetch-n-issue) for
+    // Niagara (and SPARC64). While there are at least two entries/slots in the
+    // instruction fetch buffer on any Niagara core (and as many as eight on a
+    // SPARC64), the performance improvement from keeping hot branch targets on
+    // optimally aligned addresses is such a small one (if any) that we choose
+    // not to use the extra code space required.
+
+    insn_fetch_alignment = 4    // Byte alignment in L1 insn. cache.
+  };
+
   static void initialize();
 
-  static void init_before_ergo()        { _features = determine_features(); }
+  static void init_before_ergo() { determine_features(); }
 
-  // Instruction support
-  static bool has_v8()                  { return (_features & v8_instructions_m) != 0; }
-  static bool has_v9()                  { return (_features & v9_instructions_m) != 0; }
-  static bool has_hardware_mul32()      { return (_features & hardware_mul32_m) != 0; }
-  static bool has_hardware_div32()      { return (_features & hardware_div32_m) != 0; }
-  static bool has_hardware_fsmuld()     { return (_features & hardware_fsmuld_m) != 0; }
-  static bool has_hardware_popc()       { return (_features & hardware_popc_m) != 0; }
-  static bool has_vis1()                { return (_features & vis1_instructions_m) != 0; }
-  static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
-  static bool has_vis3()                { return (_features & vis3_instructions_m) != 0; }
-  static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
-  static bool has_cbcond()              { return (_features & cbcond_instructions_m) != 0; }
-  static bool has_sparc5_instr()        { return (_features & sparc5_instructions_m) != 0; }
-  static bool has_aes()                 { return (_features & aes_instructions_m) != 0; }
-  static bool has_sha1()                { return (_features & sha1_instruction_m) != 0; }
-  static bool has_sha256()              { return (_features & sha256_instruction_m) != 0; }
-  static bool has_sha512()              { return (_features & sha512_instruction_m) != 0; }
-  static bool has_crc32c()              { return (_features & crc32c_instruction_m) != 0; }
+  // Instruction feature support:
 
-  static bool supports_compare_and_exchange()
-                                        { return has_v9(); }
+  static bool has_v9()           { return (_features & ISA_v9_msk) != 0; }
+  static bool has_popc()         { return (_features & ISA_popc_msk) != 0; }
+  static bool has_vis1()         { return (_features & ISA_vis1_msk) != 0; }
+  static bool has_vis2()         { return (_features & ISA_vis2_msk) != 0; }
+  static bool has_blk_init()     { return (_features & ISA_blk_init_msk) != 0; }
+  static bool has_fmaf()         { return (_features & ISA_fmaf_msk) != 0; }
+  static bool has_vis3()         { return (_features & ISA_vis3_msk) != 0; }
+  static bool has_hpc()          { return (_features & ISA_hpc_msk) != 0; }
+  static bool has_ima()          { return (_features & ISA_ima_msk) != 0; }
+  static bool has_aes()          { return (_features & ISA_aes_msk) != 0; }
+  static bool has_des()          { return (_features & ISA_des_msk) != 0; }
+  static bool has_kasumi()       { return (_features & ISA_kasumi_msk) != 0; }
+  static bool has_camellia()     { return (_features & ISA_camellia_msk) != 0; }
+  static bool has_md5()          { return (_features & ISA_md5_msk) != 0; }
+  static bool has_sha1()         { return (_features & ISA_sha1_msk) != 0; }
+  static bool has_sha256()       { return (_features & ISA_sha256_msk) != 0; }
+  static bool has_sha512()       { return (_features & ISA_sha512_msk) != 0; }
+  static bool has_mpmul()        { return (_features & ISA_mpmul_msk) != 0; }
+  static bool has_mont()         { return (_features & ISA_mont_msk) != 0; }
+  static bool has_pause()        { return (_features & ISA_pause_msk) != 0; }
+  static bool has_cbcond()       { return (_features & ISA_cbcond_msk) != 0; }
+  static bool has_crc32c()       { return (_features & ISA_crc32c_msk) != 0; }
 
-  // Returns true if the platform is in the niagara line (T series)
-  // and newer than the niagara1.
-  static bool is_niagara_plus()         { return is_T_family(_features) && !is_T1_model(_features); }
+  static bool has_athena_plus()  { return (_features & ISA_fjathplus_msk) != 0; }
+  static bool has_vis3b()        { return (_features & ISA_vis3b_msk) != 0; }
+  static bool has_adi()          { return (_features & ISA_adi_msk) != 0; }
+  static bool has_sparc5()       { return (_features & ISA_sparc5_msk) != 0; }
+  static bool has_mwait()        { return (_features & ISA_mwait_msk) != 0; }
+  static bool has_xmpmul()       { return (_features & ISA_xmpmul_msk) != 0; }
+  static bool has_xmont()        { return (_features & ISA_xmont_msk) != 0; }
+  static bool has_pause_nsec()   { return (_features & ISA_pause_nsec_msk) != 0; }
+  static bool has_vamask()       { return (_features & ISA_vamask_msk) != 0; }
 
-  static bool is_M_series()             { return is_M_family(_features); }
-  static bool is_S_series()             { return is_S_family(_features); }
-  static bool is_T4()                   { return is_T_family(_features) && has_cbcond(); }
-  static bool is_T7()                   { return is_T_family(_features) && has_sparc5_instr(); }
+  static bool has_fast_idiv()    { return (_features & CPU_fast_idiv_msk) != 0; }
+  static bool has_fast_rdpc()    { return (_features & CPU_fast_rdpc_msk) != 0; }
+  static bool has_fast_bis()     { return (_features & CPU_fast_bis_msk) != 0; }
+  static bool has_fast_ld()      { return (_features & CPU_fast_ld_msk) != 0; }
+  static bool has_fast_cmove()   { return (_features & CPU_fast_cmove_msk) != 0; }
+  static bool has_fast_fxtof()   { return true; }
 
-  // Fujitsu SPARC64
-  static bool is_sparc64()              { return (_features & sparc64_family_m) != 0; }
+  // If indirect and direct branching is equally fast.
+  static bool has_fast_ind_br()  { return (_features & CPU_fast_ind_br_msk) != 0; }
+  // If SPARC BIS to the beginning of cache line always zeros it.
+  static bool has_blk_zeroing()  { return (_features & CPU_blk_zeroing_msk) != 0; }
 
-  static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
-  static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m && !is_sun4v() && !is_sparc64(); }
+  static bool supports_compare_and_exchange() { return true; }
 
-  static bool has_fast_fxtof()          { return is_niagara() || is_sparc64() || has_v9() && !is_ultra3(); }
-  static bool has_fast_idiv()           { return is_niagara_plus() || is_sparc64(); }
+  // FIXME: To be removed.
+  static bool is_post_niagara()  {
+    return (_features & niagara2_msk) == niagara2_msk;
+  }
 
-  // T4 and newer Sparc have fast RDPC instruction.
-  static bool has_fast_rdpc()           { return is_T4(); }
-
-  // On T4 and newer Sparc BIS to the beginning of cache line always zeros it.
-  static bool has_block_zeroing()       { return has_blk_init() && is_T4(); }
-
-  // default prefetch block size on sparc
-  static intx prefetch_data_size()      { return L2_data_cache_line_size();  }
+  // Default prefetch block size on SPARC.
+  static uint prefetch_data_size() { return L2_data_cache_line_size(); }
 
  private:
   // Prefetch policy and characteristics:
@@ -228,7 +319,11 @@ public:
   static void revert();
 
   // Override the Abstract_VM_Version implementation.
-  static uint page_size_count() { return is_sun4v() ? 4 : 2; }
+  //
+  // FIXME: Removed broken test on sun4v (always false when invoked prior to the
+  //        proper capability setup), thus always returning 2. Still need to fix
+  //        this properly in order to enable complete page size support.
+  static uint page_size_count() { return 2; }
 
   // Calculates the number of parallel threads
   static unsigned int calc_parallel_worker_threads();

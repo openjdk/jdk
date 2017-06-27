@@ -4613,7 +4613,7 @@ void MacroAssembler::has_negatives(Register inp, Register size, Register result,
 
 // Use BIS for zeroing (count is in bytes).
 void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Label& Ldone) {
-  assert(UseBlockZeroing && VM_Version::has_block_zeroing(), "only works with BIS zeroing");
+  assert(UseBlockZeroing && VM_Version::has_blk_zeroing(), "only works with BIS zeroing");
   Register end = count;
   int cache_line_size = VM_Version::prefetch_data_size();
   assert(cache_line_size > 0, "cache line size should be known for this code");
