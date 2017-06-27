@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         CXX := $(BUILD_CXX), \
         LDEXE := $(BUILD_CXX), \
         generateJvmOffsets.cpp_CXXFLAGS := $(JVM_CFLAGS) -mt -xnolib -norunpath, \
-        generateJvmOffsetsMain.c_CFLAGS := -library=%none -mt -m64 -norunpath -z nodefs, \
+        generateJvmOffsetsMain.c_CFLAGS := -mt -m64 -norunpath -z nodefs, \
         LDFLAGS := -m64, \
         LIBS := -lc, \
         OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \

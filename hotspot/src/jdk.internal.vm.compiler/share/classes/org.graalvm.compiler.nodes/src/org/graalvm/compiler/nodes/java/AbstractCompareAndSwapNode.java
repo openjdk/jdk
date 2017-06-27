@@ -25,7 +25,6 @@ package org.graalvm.compiler.nodes.java;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -37,6 +36,7 @@ import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * Low-level atomic compare-and-swap operation.

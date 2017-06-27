@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -3638,6 +3639,12 @@ void MacroAssembler::os_breakpoint() {
   // instead of directly emitting a breakpoint, call os:breakpoint for better debugability
   // (e.g., MSVC can't call ps() otherwise)
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
+}
+
+void MacroAssembler::unimplemented(const char* what) {
+  char* b = new char[1024];
+  jio_snprintf(b, 1024, "unimplemented: %s", what);
+  stop(b);
 }
 
 #ifdef _LP64

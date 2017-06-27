@@ -30,6 +30,8 @@
  *          java.base/sun.security.provider.certpath
  *          jdk.jartool
  *          jdk.crypto.ec
+ * @build jdk.test.lib.util.JarUtils
+ * @run main Spec
  */
 
 import com.sun.jarsigner.ContentSigner;

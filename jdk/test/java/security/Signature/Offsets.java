@@ -42,6 +42,7 @@ import jdk.test.lib.RandomFactory;
  *          generation, the test tries to verify signature with the above API
  *          and passing in different signature offset (0, 33, 66, 99).
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main Offsets SUN NONEwithDSA
  * @run main Offsets SUN SHA1withDSA
  * @run main Offsets SUN SHA224withDSA

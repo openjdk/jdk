@@ -445,10 +445,11 @@ public:
   virtual ciKlass* speculative_type() const                                   { return NULL; }
   virtual ciKlass* speculative_type_not_null() const                          { return NULL; }
   virtual bool speculative_maybe_null() const                                 { return true; }
+  virtual bool speculative_always_null() const                                { return true; }
   virtual const Type* remove_speculative() const                              { return this; }
   virtual const Type* cleanup_speculative() const                             { return this; }
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const { return exact_kls != NULL; }
-  virtual bool would_improve_ptr(bool maybe_null) const                       { return !maybe_null; }
+  virtual bool would_improve_ptr(ProfilePtrKind ptr_kind) const { return ptr_kind == ProfileAlwaysNull || ptr_kind == ProfileNeverNull; }
   const Type* maybe_remove_speculative(bool include_speculative) const;
 
   virtual bool maybe_null() const { return true; }
@@ -885,10 +886,11 @@ public:
   virtual ciKlass* speculative_type() const;
   virtual ciKlass* speculative_type_not_null() const;
   virtual bool speculative_maybe_null() const;
+  virtual bool speculative_always_null() const;
   virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
-  virtual bool would_improve_ptr(bool maybe_null) const;
+  virtual bool would_improve_ptr(ProfilePtrKind maybe_null) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
 
   virtual bool maybe_null() const { return meet_ptr(Null) == ptr(); }

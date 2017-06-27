@@ -22,9 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import static org.graalvm.api.word.LocationIdentity.any;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
@@ -32,6 +31,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 

@@ -28,7 +28,6 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.Arrays;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
@@ -43,6 +42,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Value;
 

@@ -2656,6 +2656,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
+  declare_constant(Deoptimization::Reason_speculate_null_assert)          \
   declare_constant(Deoptimization::Reason_rtm_state_change)               \
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \

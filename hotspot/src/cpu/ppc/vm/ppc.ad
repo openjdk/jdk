@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2017 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -9312,6 +9312,44 @@ instruct shrP_convP2X_reg_imm6(iRegLdst dst, iRegP_N2P src1, uimmI6 src2) %{
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
     __ srdi($dst$$Register, $src1$$Register, ($src2$$constant) & 0x3f);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Bitfield Extract: URShiftI + AndI
+instruct andI_urShiftI_regI_immI_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immI src2, immIpow2minus1 src3) %{
+  match(Set dst (AndI (URShiftI src1 src2) src3));
+
+  format %{ "EXTRDI  $dst, $src1, shift=$src2, mask=$src3 \t// int bitfield extract" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
+    int rshift = ($src2$$constant) & 0x1f;
+    int length = log2_long(((jlong) $src3$$constant) + 1);
+    if (rshift + length > 32) {
+      // if necessary, adjust mask to omit rotated bits.
+      length = 32 - rshift;
+    }
+    __ extrdi($dst$$Register, $src1$$Register, length, 64 - (rshift + length));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Bitfield Extract: URShiftL + AndL
+instruct andL_urShiftL_regL_immI_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immI src2, immLpow2minus1 src3) %{
+  match(Set dst (AndL (URShiftL src1 src2) src3));
+
+  format %{ "EXTRDI  $dst, $src1, shift=$src2, mask=$src3 \t// long bitfield extract" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
+    int rshift  = ($src2$$constant) & 0x3f;
+    int length = log2_long(((jlong) $src3$$constant) + 1);
+    if (rshift + length > 64) {
+      // if necessary, adjust mask to omit rotated bits.
+      length = 64 - rshift;
+    }
+    __ extrdi($dst$$Register, $src1$$Register, length, 64 - (rshift + length));
   %}
   ins_pipe(pipe_class_default);
 %}

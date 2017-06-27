@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/verifyOopClosure.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
@@ -2179,6 +2180,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "loop_limit_check",
   "speculate_class_check",
   "speculate_null_check",
+  "speculate_null_assert",
   "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",

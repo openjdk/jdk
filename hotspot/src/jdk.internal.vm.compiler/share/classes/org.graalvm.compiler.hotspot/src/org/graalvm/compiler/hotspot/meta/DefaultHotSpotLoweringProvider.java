@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot.meta;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.core.common.GraalOptions.AlwaysInlineVTableStubs;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.InlineVTableStubs;
@@ -38,10 +37,10 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.HUB_WRITE_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.KLASS_LAYOUT_HELPER_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.OBJ_ARRAY_KLASS_ELEMENT_KLASS_LOCATION;
+import static org.graalvm.word.LocationIdentity.any;
 
 import java.lang.ref.Reference;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
@@ -155,6 +154,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.nodes.AssertionNode;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
@@ -364,11 +364,17 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         } else if (n instanceof IdentityHashCodeNode) {
             hashCodeSnippets.lower((IdentityHashCodeNode) n, tool);
         } else if (n instanceof ResolveConstantNode) {
-            resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
+            }
         } else if (n instanceof ResolveMethodAndLoadCountersNode) {
-            resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
+            }
         } else if (n instanceof InitializeKlassNode) {
-            resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
+            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
+            }
         } else if (n instanceof ProfileNode) {
             profileSnippets.lower((ProfileNode) n, tool);
         } else {

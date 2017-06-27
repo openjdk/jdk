@@ -39,6 +39,7 @@ import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
@@ -1760,7 +1761,7 @@ public class Lower extends TreeTranslator {
     JCExpression makeOuterThis(DiagnosticPosition pos, TypeSymbol c) {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
-            log.error(pos, "no.encl.instance.of.type.in.scope", c);
+            log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
             Assert.error();
             return makeNull();
         }
@@ -1771,9 +1772,7 @@ public class Lower extends TreeTranslator {
             do {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
-                    log.error(pos,
-                              "no.encl.instance.of.type.in.scope",
-                              c);
+                    log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
                     Assert.error(); // should have been caught in Attr
                     return tree;
                 }
@@ -1818,7 +1817,7 @@ public class Lower extends TreeTranslator {
         Symbol c = sym.owner;
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
-            log.error(pos, "no.encl.instance.of.type.in.scope", c);
+            log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
             Assert.error();
             return makeNull();
         }
@@ -1829,9 +1828,7 @@ public class Lower extends TreeTranslator {
             do {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
-                    log.error(pos,
-                        "no.encl.instance.of.type.in.scope",
-                        c);
+                    log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
                     Assert.error();
                     return tree;
                 }

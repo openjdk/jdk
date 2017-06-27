@@ -32,6 +32,7 @@
  *          (number of pages, sizes, colors). Use -Dseed=X to set
  *          the random generator seed.
  *
+ * @build   jdk.test.lib.RandomFactory
  * @run     main MultiPageTest
  * @key     randomness
  */

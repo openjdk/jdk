@@ -28,8 +28,6 @@ import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFI
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.VERIFY_OOP;
 import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
@@ -60,6 +58,8 @@ import org.graalvm.compiler.replacements.ReplacementsUtil;
 import org.graalvm.compiler.replacements.nodes.ReadRegisterNode;
 import org.graalvm.compiler.replacements.nodes.WriteRegisterNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.Register;

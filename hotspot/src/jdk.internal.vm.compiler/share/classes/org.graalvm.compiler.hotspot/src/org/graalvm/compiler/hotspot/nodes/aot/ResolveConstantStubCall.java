@@ -110,5 +110,4 @@ public class ResolveConstantStubCall extends DeoptimizingStubCall implements Can
         }
         gen.setResult(this, result);
     }
-
 }

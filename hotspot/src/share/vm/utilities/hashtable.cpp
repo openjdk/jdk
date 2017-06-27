@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/placeholders.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "memory/allocation.inline.hpp"
@@ -307,11 +308,11 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
   }
 }
 
-
 template <MEMFLAGS F>
 template <class T> void BasicHashtable<F>::verify_table(const char* table_name) {
   int element_count = 0;
   int max_bucket_count = 0;
+  int max_bucket_number = 0;
   for (int index = 0; index < table_size(); index++) {
     int bucket_count = 0;
     for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
@@ -319,28 +320,31 @@ template <class T> void BasicHashtable<F>::verify_table(const char* table_name) 
       bucket_count++;
     }
     element_count += bucket_count;
-    max_bucket_count = MAX2(max_bucket_count, bucket_count);
+    if (bucket_count > max_bucket_count) {
+      max_bucket_count = bucket_count;
+      max_bucket_number = index;
+    }
   }
   guarantee(number_of_entries() == element_count,
             "Verify of %s failed", table_name);
-  DEBUG_ONLY(verify_lookup_length(max_bucket_count, table_name));
+
+  // Log some statistics about the hashtable
+  log_info(hashtables)("%s max bucket size %d bucket %d element count %d table size %d", table_name,
+                       max_bucket_count, max_bucket_number, _number_of_entries, _table_size);
+  if (_number_of_entries > 0 && log_is_enabled(Debug, hashtables)) {
+    for (int index = 0; index < table_size(); index++) {
+      int bucket_count = 0;
+      for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+        log_debug(hashtables)("bucket %d hash " INTPTR_FORMAT, index, (intptr_t)probe->hash());
+        bucket_count++;
+      }
+      if (bucket_count > 0) {
+        log_debug(hashtables)("bucket %d count %d", index, bucket_count);
+      }
+    }
+  }
 }
-
-
 #endif // PRODUCT
-
-#ifdef ASSERT
-
-// Assert if the longest bucket is 10x longer than the average bucket size.
-// Could change back to a warning, but warnings are not noticed.
-template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(int max_bucket_count, const char *table_name) {
-  log_info(hashtables)("%s max bucket size %d element count %d table size %d", table_name,
-                       max_bucket_count, _number_of_entries, _table_size);
-  assert (max_bucket_count < ((1 + number_of_entries()/table_size())*10), "Table is unbalanced");
-}
-
-#endif
-
 
 // Explicitly instantiate these types
 #if INCLUDE_ALL_GCS
@@ -383,3 +387,5 @@ template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);
+

@@ -98,7 +98,6 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 
 import java.util.EnumMap;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.debug.GraalError;
@@ -122,6 +121,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordTypes;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;

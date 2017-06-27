@@ -24,7 +24,6 @@ package org.graalvm.compiler.hotspot;
 
 import java.util.EnumSet;
 
-import org.graalvm.api.word.Pointer;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -69,6 +68,7 @@ import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.MapCursor;
+import org.graalvm.word.Pointer;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;

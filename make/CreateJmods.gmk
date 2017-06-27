@@ -81,6 +81,7 @@ endif
 
 LEGAL_NOTICES := \
     $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
+    $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)) \
     $(call FindModuleLegalDirs, $(MODULE)) \
     #
 

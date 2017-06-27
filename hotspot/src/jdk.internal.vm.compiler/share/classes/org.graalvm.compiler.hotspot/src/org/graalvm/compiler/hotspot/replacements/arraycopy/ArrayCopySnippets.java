@@ -39,8 +39,6 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probabil
 import java.lang.reflect.Method;
 import java.util.EnumMap;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
@@ -76,6 +74,8 @@ import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
 import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;

@@ -344,6 +344,7 @@ import java.util.Locale;
  * @see          SimpleDateFormat
  *
  * @author       Mark Davis
+ * @since 1.1
  */
 
 public class MessageFormat extends Format {

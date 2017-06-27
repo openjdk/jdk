@@ -35,11 +35,6 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.any;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
-
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Unsigned;
-import org.graalvm.api.word.WordFactory;
-
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -58,6 +53,9 @@ import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.word.ObjectAccess;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordFactory;
 import org.graalvm.compiler.replacements.Snippets;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;

@@ -28,6 +28,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"

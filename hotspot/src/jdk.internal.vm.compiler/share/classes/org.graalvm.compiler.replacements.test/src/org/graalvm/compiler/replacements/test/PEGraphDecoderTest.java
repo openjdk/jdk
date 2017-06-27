@@ -24,7 +24,6 @@ package org.graalvm.compiler.replacements.test;
 
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createStandardInlineInfo;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.junit.Test;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
@@ -47,6 +46,7 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.replacements.CachingPEGraphDecoder;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

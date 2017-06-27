@@ -120,7 +120,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
         if (address instanceof AArch64AddressValue) {
             return (AArch64AddressValue) address;
         } else {
-            return new AArch64AddressValue(address.getValueKind(), asAllocatable(address), Value.ILLEGAL, 0, false, AddressingMode.BASE_REGISTER_ONLY);
+            return new AArch64AddressValue(address.getValueKind(), asAllocatable(address), Value.ILLEGAL, 0, 1, AddressingMode.BASE_REGISTER_ONLY);
         }
     }
 

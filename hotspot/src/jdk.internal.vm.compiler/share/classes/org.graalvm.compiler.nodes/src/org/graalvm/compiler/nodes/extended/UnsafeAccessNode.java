@@ -25,7 +25,6 @@ package org.graalvm.compiler.nodes.extended;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -36,6 +35,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.type.StampTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.JavaKind;

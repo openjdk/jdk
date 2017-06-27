@@ -68,8 +68,6 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 import static org.graalvm.compiler.replacements.nodes.ExplodeLoopNode.explodeLoop;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -119,6 +117,8 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.MemoryBarriers;
@@ -290,6 +290,7 @@ public class NewObjectSnippets implements Snippets {
     public static Object allocatePrimitiveArrayPIC(KlassPointer hub, int length, Word prototypeMarkWord, @ConstantParameter int headerSize, @ConstantParameter int log2ElementSize,
                     @ConstantParameter boolean fillContents, @ConstantParameter Register threadRegister, @ConstantParameter boolean maybeUnroll, @ConstantParameter String typeContext,
                     @ConstantParameter OptionValues options, @ConstantParameter Counters counters) {
+        // Primitive array types are eagerly pre-resolved. We can use a floating load.
         KlassPointer picHub = LoadConstantIndirectlyNode.loadKlass(hub);
         return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, options, counters);
     }
@@ -298,6 +299,7 @@ public class NewObjectSnippets implements Snippets {
     public static Object allocateArrayPIC(KlassPointer hub, int length, Word prototypeMarkWord, @ConstantParameter int headerSize, @ConstantParameter int log2ElementSize,
                     @ConstantParameter boolean fillContents, @ConstantParameter Register threadRegister, @ConstantParameter boolean maybeUnroll, @ConstantParameter String typeContext,
                     @ConstantParameter OptionValues options, @ConstantParameter Counters counters) {
+        // Array type would be resolved by dominating resolution.
         KlassPointer picHub = LoadConstantIndirectlyFixedNode.loadKlass(hub);
         return allocateArrayImpl(picHub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, options, counters);
     }
@@ -414,6 +416,7 @@ public class NewObjectSnippets implements Snippets {
 
     @Snippet
     public static Object newmultiarrayPIC(KlassPointer hub, @ConstantParameter int rank, @VarargsParameter int[] dimensions) {
+        // Array type would be resolved by dominating resolution.
         KlassPointer picHub = LoadConstantIndirectlyFixedNode.loadKlass(hub);
         return newmultiarray(picHub, rank, dimensions);
     }

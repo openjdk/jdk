@@ -22,9 +22,9 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.word.LocationIdentity;
 
 public interface Access extends GuardedNode, HeapAccess {
 

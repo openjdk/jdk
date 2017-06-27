@@ -22,21 +22,29 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.GraalDebugConfig;
-
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.GraalDebugConfig;
+import org.graalvm.compiler.serviceprovider.GraalServices;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class HotSpotGraalVMEventListener implements HotSpotVMEventListener {
 
     private final HotSpotGraalRuntime runtime;
+    private List<HotSpotCodeCacheListener> listeners;
 
     HotSpotGraalVMEventListener(HotSpotGraalRuntime runtime) {
         this.runtime = runtime;
+        listeners = new ArrayList<>();
+        for (HotSpotCodeCacheListener listener : GraalServices.load(HotSpotCodeCacheListener.class)) {
+            listeners.add(listener);
+        }
     }
 
     @Override
@@ -53,6 +61,9 @@ public class HotSpotGraalVMEventListener implements HotSpotVMEventListener {
         }
         if (Debug.isLogEnabled()) {
             Debug.log("%s", codeCache.disassemble(installedCode));
+        }
+        for (HotSpotCodeCacheListener listener : listeners) {
+            listener.notifyInstall(codeCache, installedCode, compiledCode);
         }
     }
 

@@ -177,7 +177,7 @@ HeapWord* MutableSpace::allocate(size_t size) {
   if (pointer_delta(end(), obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_object_aligned((intptr_t)obj) && is_object_aligned((intptr_t)new_top),
+    assert(is_ptr_object_aligned(obj) && is_ptr_object_aligned(new_top),
            "checking alignment");
     return obj;
   } else {
@@ -198,7 +198,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
       if (result != obj) {
         continue; // another thread beat us to the allocation, try again
       }
-      assert(is_object_aligned((intptr_t)obj) && is_object_aligned((intptr_t)new_top),
+      assert(is_ptr_object_aligned(obj) && is_ptr_object_aligned(new_top),
              "checking alignment");
       return obj;
     } else {

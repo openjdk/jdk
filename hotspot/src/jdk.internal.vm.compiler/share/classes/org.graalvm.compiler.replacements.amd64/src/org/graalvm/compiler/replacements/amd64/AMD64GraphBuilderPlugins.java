@@ -31,7 +31,6 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool.RoundingMode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -54,6 +53,7 @@ import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode.BinaryOpe
 import org.graalvm.compiler.replacements.nodes.BitCountNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;

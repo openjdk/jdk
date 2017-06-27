@@ -525,6 +525,8 @@ void SafepointSynchronize::end() {
 }
 
 bool SafepointSynchronize::is_cleanup_needed() {
+  // Need a safepoint if there are many monitors to deflate.
+  if (ObjectSynchronizer::is_cleanup_needed()) return true;
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
   return false;

@@ -58,6 +58,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "prims/methodHandles.hpp"

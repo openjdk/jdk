@@ -594,11 +594,11 @@ void ciMethod::assert_call_type_ok(int bci) {
  * @param [in]bci         bci of the call
  * @param [in]i           argument number
  * @param [out]type       profiled type of argument, NULL if none
- * @param [out]maybe_null true if null was seen for argument
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
@@ -609,7 +609,7 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
           return false;
         }
         type = call->valid_argument_type(i);
-        maybe_null = call->argument_maybe_null(i);
+        ptr_kind = call->argument_ptr_kind(i);
         return true;
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
@@ -618,7 +618,7 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
           return false;
         }
         type = call->valid_argument_type(i);
-        maybe_null = call->argument_maybe_null(i);
+        ptr_kind = call->argument_ptr_kind(i);
         return true;
       }
     }
@@ -632,25 +632,29 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, bool& mayb
  *
  * @param [in]bci         bci of the call
  * @param [out]type       profiled type of argument, NULL if none
- * @param [out]maybe_null true if null was seen for argument
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::return_profiled_type(int bci, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_return() && method_data() != NULL && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != NULL) {
       if (data->is_VirtualCallTypeData()) {
         assert_virtual_call_type_ok(bci);
         ciVirtualCallTypeData* call = (ciVirtualCallTypeData*)data->as_VirtualCallTypeData();
-        type = call->valid_return_type();
-        maybe_null = call->return_maybe_null();
-        return true;
+        if (call->has_return()) {
+          type = call->valid_return_type();
+          ptr_kind = call->return_ptr_kind();
+          return true;
+        }
       } else if (data->is_CallTypeData()) {
         assert_call_type_ok(bci);
         ciCallTypeData* call = (ciCallTypeData*)data->as_CallTypeData();
-        type = call->valid_return_type();
-        maybe_null = call->return_maybe_null();
+        if (call->has_return()) {
+          type = call->valid_return_type();
+          ptr_kind = call->return_ptr_kind();
+        }
         return true;
       }
     }
@@ -663,16 +667,16 @@ bool ciMethod::return_profiled_type(int bci, ciKlass*& type, bool& maybe_null) {
  *
  * @param [in]i           parameter number
  * @param [out]type       profiled type of parameter, NULL if none
- * @param [out]maybe_null true if null was seen for parameter
+ * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
  */
-bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, bool& maybe_null) {
+bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind) {
   if (MethodData::profile_parameters() && method_data() != NULL && method_data()->is_mature()) {
     ciParametersTypeData* parameters = method_data()->parameters_type_data();
     if (parameters != NULL && i < parameters->number_of_parameters()) {
       type = parameters->valid_parameter_type(i);
-      maybe_null = parameters->parameter_maybe_null(i);
+      ptr_kind = parameters->parameter_ptr_kind(i);
       return true;
     }
   }

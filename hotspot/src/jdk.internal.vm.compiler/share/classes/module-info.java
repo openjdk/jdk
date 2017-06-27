@@ -39,10 +39,10 @@ module jdk.internal.vm.compiler {
     uses org.graalvm.compiler.debug.TTYStreamProvider;
     uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
+    uses org.graalvm.compiler.hotspot.HotSpotCodeCacheListener;
     uses org.graalvm.compiler.options.OptionValuesAccess;
     uses org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 
-    exports org.graalvm.api.word                        to jdk.aot;
     exports org.graalvm.compiler.api.directives         to jdk.aot;
     exports org.graalvm.compiler.api.runtime            to jdk.aot;
     exports org.graalvm.compiler.api.replacements       to jdk.aot;
@@ -71,4 +71,5 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.runtime                to jdk.aot;
     exports org.graalvm.compiler.replacements           to jdk.aot;
     exports org.graalvm.compiler.word                   to jdk.aot;
+    exports org.graalvm.word                            to jdk.aot;
 }

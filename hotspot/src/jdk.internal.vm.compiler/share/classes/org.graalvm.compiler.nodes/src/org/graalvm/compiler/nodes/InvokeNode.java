@@ -23,7 +23,7 @@
 package org.graalvm.compiler.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.api.word.LocationIdentity;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.UncheckedInterfaceProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.word.LocationIdentity;
 
 import java.util.Map;
 

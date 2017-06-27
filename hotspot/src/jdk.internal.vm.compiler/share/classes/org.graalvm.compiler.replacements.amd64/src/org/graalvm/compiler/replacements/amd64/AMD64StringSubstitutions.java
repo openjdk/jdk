@@ -22,11 +22,11 @@
  */
 package org.graalvm.compiler.replacements.amd64;
 
-import org.graalvm.api.word.Pointer;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.Pointer;
 
 import sun.misc.Unsafe;
 

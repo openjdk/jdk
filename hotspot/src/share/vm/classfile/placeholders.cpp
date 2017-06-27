@@ -218,27 +218,19 @@ void PlaceholderEntry::verify() const {
 }
 
 void PlaceholderTable::verify() {
-  int element_count = 0;
-  for (int pindex = 0; pindex < table_size(); pindex++) {
-    for (PlaceholderEntry* probe = bucket(pindex);
-                           probe != NULL;
-                           probe = probe->next()) {
-      probe->verify();
-      element_count++;  // both klasses and place holders count
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of system dictionary failed");
+  verify_table<PlaceholderEntry>("Placeholder Table");
 }
 
 
 #ifndef PRODUCT
 void PlaceholderTable::print() {
+  tty->print_cr("Placeholder table table_size=%d, entries=%d",
+                table_size(), number_of_entries());
   for (int pindex = 0; pindex < table_size(); pindex++) {
     for (PlaceholderEntry* probe = bucket(pindex);
                            probe != NULL;
                            probe = probe->next()) {
-      if (Verbose) tty->print("%4d: ", pindex);
+      tty->print("%4d: ", pindex);
       tty->print(" place holder ");
 
       probe->print();

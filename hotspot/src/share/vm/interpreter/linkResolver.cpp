@@ -40,6 +40,7 @@
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/compilationPolicy.hpp"

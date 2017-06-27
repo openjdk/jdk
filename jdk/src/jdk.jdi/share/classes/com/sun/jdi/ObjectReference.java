@@ -28,26 +28,29 @@ package com.sun.jdi;
 import java.util.List;
 import java.util.Map;
 
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.VMDisconnectEvent;
+
 /**
  * An object that currently exists in the target VM. An ObjectReference
  * mirrors only the object itself and is not specific to any
  * {@link Field} or {@link LocalVariable} to which it is currently
- * assigned. An ObjectReference can
- * have 0 or more references from field(s) and/or variable(s).
+ * assigned. An ObjectReference can have 0 or more references from
+ * field(s) and/or variable(s).
  * <p>
- * Any method on <code>ObjectReference</code> which directly or
- * indirectly takes <code>ObjectReference</code> as an parameter may throw
- * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
- * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
- * available to be read from the {@link com.sun.jdi.event.EventQueue}.
+ * Any method on <code>ObjectReference</code> which directly or indirectly
+ * takes <code>ObjectReference</code> as a parameter may throw
+ * {@link VMDisconnectedException} if the target VM is disconnected and the
+ * {@link VMDisconnectEvent} has been or is available to be read from the
+ * {@link EventQueue}.
  * <p>
- * Any method on <code>ObjectReference</code> which directly or
- * indirectly takes <code>ObjectReference</code> as an parameter may throw
- * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
+ * Any method on <code>ObjectReference</code> which directly or indirectly
+ * takes <code>ObjectReference</code> as a parameter may throw
+ * {@link VMOutOfMemoryException} if the target VM has run out of memory.
  * <p>
- * Any method on <code>ObjectReference</code> or which directly or indirectly takes
- * <code>ObjectReference</code> as parameter may throw
- * {@link com.sun.jdi.ObjectCollectedException} if the mirrored object has been
+ * Any method on <code>ObjectReference</code> or which directly or indirectly
+ * takes <code>ObjectReference</code> as parameter may throw
+ * {@link ObjectCollectedException} if the mirrored object has been
  * garbage collected.
  *
  * @author Robert Field
@@ -421,7 +424,6 @@ public interface ObjectReference extends Value {
      * @since 1.6
      */
     List<ObjectReference> referringObjects(long maxReferrers);
-
 
     /**
      * Compares the specified Object with this ObjectReference for equality.

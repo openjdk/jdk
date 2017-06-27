@@ -74,6 +74,7 @@ class Deoptimization : AllStatic {
     Reason_loop_limit_check,      // compiler generated loop limits check failed
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
+    Reason_speculate_null_assert, // saw unexpected null from type speculation
     Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
@@ -365,6 +366,8 @@ JVMCI_ONLY(public:)
       return Reason_class_check;
     else if (reason == Reason_speculate_null_check)
       return Reason_null_check;
+    else if (reason == Reason_speculate_null_assert)
+      return Reason_null_assert;
     else if (reason == Reason_unstable_if)
       return Reason_intrinsic;
     else if (reason == Reason_unstable_fused_if)
@@ -374,7 +377,9 @@ JVMCI_ONLY(public:)
   }
 
   static bool reason_is_speculate(int reason) {
-    if (reason == Reason_speculate_class_check || reason == Reason_speculate_null_check) {
+    if (reason == Reason_speculate_class_check ||
+        reason == Reason_speculate_null_check ||
+        reason == Reason_speculate_null_assert) {
       return true;
     }
     return false;
@@ -386,6 +391,10 @@ JVMCI_ONLY(public:)
 
   static DeoptReason reason_class_check(bool speculative) {
     return speculative ? Deoptimization::Reason_speculate_class_check : Deoptimization::Reason_class_check;
+  }
+
+  static DeoptReason reason_null_assert(bool speculative) {
+    return speculative ? Deoptimization::Reason_speculate_null_assert : Deoptimization::Reason_null_assert;
   }
 
   static uint per_method_trap_limit(int reason) {

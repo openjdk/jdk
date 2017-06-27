@@ -51,6 +51,7 @@ import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
 import org.graalvm.compiler.lir.StandardOp.MoveOp;
 import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
@@ -414,6 +415,20 @@ public abstract class LIRInstruction {
     public void verify() {
     }
 
+    /**
+     * Adds a comment to this instruction.
+     */
+    public final void setComment(LIRGenerationResult res, String comment) {
+        res.setComment(this, comment);
+    }
+
+    /**
+     * Gets the comment attached to this instruction.
+     */
+    public final String getComment(LIRGenerationResult res) {
+        return res.getComment(this);
+    }
+
     public final String toStringWithIdPrefix() {
         if (id != -1) {
             return String.format("%4d %s", id, toString());
@@ -424,6 +439,18 @@ public abstract class LIRInstruction {
     @Override
     public String toString() {
         return instructionClass.toString(this);
+    }
+
+    public String toString(LIRGenerationResult res) {
+        String toString = toString();
+        if (res == null) {
+            return toString;
+        }
+        String comment = getComment(res);
+        if (comment == null) {
+            return toString;
+        }
+        return String.format("%s // %s", toString, comment);
     }
 
     public LIRInstructionClass<?> getLIRInstructionClass() {

@@ -27,6 +27,7 @@
 #include "compiler/compilerDirectives.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 

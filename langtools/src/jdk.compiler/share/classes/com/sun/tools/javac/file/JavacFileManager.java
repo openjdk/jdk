@@ -69,6 +69,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
@@ -390,7 +391,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log.error("error.reading.file", userPath, getMessage(ex));
+                log.error(Errors.ErrorReadingFile(userPath, getMessage(ex)));
             }
         }
 

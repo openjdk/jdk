@@ -35,8 +35,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
@@ -52,6 +50,8 @@ import org.graalvm.compiler.nodes.SnippetAnchorNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 

@@ -221,6 +221,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * and the next is a word; otherwise, it's the material between words.)
  * </blockquote>
  *
+ * @since 1.1
  * @see CharacterIterator
  *
  */

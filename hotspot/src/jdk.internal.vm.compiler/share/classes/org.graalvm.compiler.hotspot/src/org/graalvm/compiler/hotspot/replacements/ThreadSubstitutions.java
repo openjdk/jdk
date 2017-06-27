@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_OSTHREAD_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadInterruptedOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.threadObjectOffset;
+import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;

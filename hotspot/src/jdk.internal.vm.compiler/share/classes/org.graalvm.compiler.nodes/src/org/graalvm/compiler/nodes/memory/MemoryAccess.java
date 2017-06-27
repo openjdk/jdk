@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * This interface marks nodes that access some memory location, and that have an edge to the last

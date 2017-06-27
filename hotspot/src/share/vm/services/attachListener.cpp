@@ -38,6 +38,8 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/heapDumper.hpp"
 #include "services/writeableFlags.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 
 volatile bool AttachListener::_initialized;
 

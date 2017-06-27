@@ -962,6 +962,21 @@ static inline ObjectMonitor* next(ObjectMonitor* block) {
   return block;
 }
 
+static bool monitors_used_above_threshold() {
+  if (gMonitorPopulation == 0) {
+    return false;
+  }
+  int monitors_used = gMonitorPopulation - gMonitorFreeCount;
+  int monitor_usage = (monitors_used * 100LL) / gMonitorPopulation;
+  return monitor_usage > MonitorUsedDeflationThreshold;
+}
+
+bool ObjectSynchronizer::is_cleanup_needed() {
+  if (MonitorUsedDeflationThreshold > 0) {
+    return monitors_used_above_threshold();
+  }
+  return false;
+}
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
   if (MonitorInUseLists) {

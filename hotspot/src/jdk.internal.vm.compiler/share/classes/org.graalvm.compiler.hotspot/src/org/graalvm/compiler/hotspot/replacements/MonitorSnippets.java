@@ -71,10 +71,6 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import java.util.List;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordBase;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -122,6 +118,10 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.Register;

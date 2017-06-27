@@ -101,6 +101,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
 import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
@@ -408,6 +409,12 @@ public class InliningUtil extends ValueMergeUtil {
      */
     @SuppressWarnings("try")
     public static EconomicSet<Node> inlineForCanonicalization(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod) {
+        return inlineForCanonicalization(invoke, inlineGraph, receiverNullCheck, inlineeMethod, null);
+    }
+
+    @SuppressWarnings("try")
+    public static EconomicSet<Node> inlineForCanonicalization(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod,
+                    Consumer<UnmodifiableEconomicMap<Node, Node>> duplicatesConsumer) {
         HashSetNodeEventListener listener = new HashSetNodeEventListener();
         /*
          * This code relies on the fact that Graph.addDuplicates doesn't trigger the
@@ -415,7 +422,10 @@ public class InliningUtil extends ValueMergeUtil {
          * the graph into the current graph.
          */
         try (NodeEventScope nes = invoke.asNode().graph().trackNodeEvents(listener)) {
-            InliningUtil.inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod);
+            UnmodifiableEconomicMap<Node, Node> duplicates = InliningUtil.inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod);
+            if (duplicatesConsumer != null) {
+                duplicatesConsumer.accept(duplicates);
+            }
         }
         return listener.getNodes();
     }
@@ -506,7 +516,7 @@ public class InliningUtil extends ValueMergeUtil {
         if (inlineGraph.hasUnsafeAccess()) {
             graph.markUnsafeAccess();
         }
-        assert inlineGraph.getSpeculationLog() == null : "Only the root graph should have a speculation log";
+        assert inlineGraph.getSpeculationLog() == null || inlineGraph.getSpeculationLog() == graph.getSpeculationLog() : "Only the root graph should have a speculation log";
 
         return returnValue;
     }

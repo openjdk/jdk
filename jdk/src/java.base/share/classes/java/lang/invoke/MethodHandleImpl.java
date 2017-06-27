@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,7 +592,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 names[nameCursor++] = new Name(getFunction(NF_checkSpreadArgument), array, spreadArgCount);
                 for (int j = 0; j < spreadArgCount; i++, j++) {
                     indexes[i] = nameCursor;
-                    names[nameCursor++] = new Name(aload, array, j);
+                    names[nameCursor++] = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), array, j);
                 }
             } else if (i < indexes.length) {
                 indexes[i] = argIndex;
@@ -937,7 +937,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             names[PROFILE] = new Name(getFunction(NF_profileBoolean), names[CALL_TEST], names[GET_COUNTERS]);
         }
         // call selectAlternative
-        names[SELECT_ALT] = new Name(getConstantHandle(MH_selectAlternative), names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
+        names[SELECT_ALT] = new Name(new NamedFunction(getConstantHandle(MH_selectAlternative), Intrinsic.SELECT_ALTERNATIVE), names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
 
         // call target or fallback
         invokeArgs[0] = names[SELECT_ALT];
@@ -1008,7 +1008,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         Object[] args = new Object[invokeBasic.type().parameterCount()];
         args[0] = names[GET_COLLECT_ARGS];
         System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[BOXED_ARGS] = new Name(makeIntrinsic(invokeBasic, Intrinsic.GUARD_WITH_CATCH), args);
+        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.GUARD_WITH_CATCH), args);
 
         // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
@@ -1896,7 +1896,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             Object[] args = new Object[invokeBasic.type().parameterCount()];
             args[0] = names[GET_COLLECT_ARGS];
             System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT - ARG_BASE);
-            names[BOXED_ARGS] = new Name(makeIntrinsic(invokeBasic, Intrinsic.LOOP), args);
+            names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.LOOP), args);
 
             // t_{i+1}:L=MethodHandleImpl.loop(localTypes:L,clauses:L,t_{i}:L);
             Object[] lArgs =
@@ -2133,7 +2133,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         Object[] args = new Object[invokeBasic.type().parameterCount()];
         args[0] = names[GET_COLLECT_ARGS];
         System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[BOXED_ARGS] = new Name(makeIntrinsic(invokeBasic, Intrinsic.TRY_FINALLY), args);
+        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic, Intrinsic.TRY_FINALLY), args);
 
         // t_{i+1}:L=MethodHandleImpl.tryFinally(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] tfArgs = new Object[] {names[GET_TARGET], names[GET_CLEANUP], names[BOXED_ARGS]};
@@ -2225,9 +2225,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "fillNewTypedArray",
                             MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
                 case MH_selectAlternative:
-                    return makeIntrinsic(IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
-                            MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class)),
-                        Intrinsic.SELECT_ALTERNATIVE);
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
+                            MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class));
                 case MH_countedLoopPred:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "countedLoopPredicate",
                             MethodType.methodType(boolean.class, int.class, int.class));

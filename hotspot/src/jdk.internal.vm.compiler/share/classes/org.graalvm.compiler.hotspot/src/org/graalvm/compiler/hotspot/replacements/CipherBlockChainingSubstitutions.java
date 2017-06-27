@@ -26,11 +26,6 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.DECRYPT;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.DECRYPT_WITH_ORIGINAL_KEY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.ENCRYPT;
 import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
-
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordFactory;
-
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
@@ -45,6 +40,9 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.meta.JavaKind;
 

@@ -81,11 +81,10 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     private final CompilationCounters compilationCounters;
     private final BootstrapWatchDog bootstrapWatchDog;
 
-    HotSpotGraalCompiler(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalRuntimeProvider graalRuntime) {
+    HotSpotGraalCompiler(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalRuntimeProvider graalRuntime, OptionValues options) {
         this.jvmciRuntime = jvmciRuntime;
         this.graalRuntime = graalRuntime;
         // It is sufficient to have one compilation counter object per Graal compiler object.
-        OptionValues options = graalRuntime.getOptions();
         this.compilationCounters = Options.CompilationCountLimit.getValue(options) > 0 ? new CompilationCounters(options) : null;
         this.bootstrapWatchDog = graalRuntime.isBootstrapping() && !GraalDebugConfig.Options.BootstrapInitializeOnly.getValue(options) ? BootstrapWatchDog.maybeCreate(graalRuntime) : null;
     }
@@ -96,8 +95,12 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     }
 
     @Override
-    @SuppressWarnings("try")
     public CompilationRequestResult compileMethod(CompilationRequest request) {
+        return compileMethod(request, true);
+    }
+
+    @SuppressWarnings("try")
+    CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault) {
         if (graalRuntime.isShutdown()) {
             return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
         }
@@ -124,8 +127,8 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             }
             // Ensure a debug configuration for this thread is initialized
             DebugEnvironment.ensureInitialized(options, graalRuntime.getHostProviders().getSnippetReflection());
-            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, true, options);
-            CompilationRequestResult r = null;
+            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, installAsDefault, options);
+            CompilationRequestResult r;
             try (DebugConfigScope dcs = Debug.setConfig(new TopLevelDebugConfig());
                             Debug.Scope s = Debug.methodMetricsScope("HotSpotGraalCompiler", MethodMetricsRootScopeInfo.create(method), true, method)) {
                 r = task.runCompilation();

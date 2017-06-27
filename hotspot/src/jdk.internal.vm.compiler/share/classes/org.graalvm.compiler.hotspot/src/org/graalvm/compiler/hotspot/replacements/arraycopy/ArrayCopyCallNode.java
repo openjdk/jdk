@@ -26,9 +26,6 @@ package org.graalvm.compiler.hotspot.replacements.arraycopy;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
-
-import org.graalvm.api.word.LocationIdentity;
-
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
@@ -60,6 +57,7 @@ import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.JavaConstant;

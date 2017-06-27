@@ -31,7 +31,9 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This

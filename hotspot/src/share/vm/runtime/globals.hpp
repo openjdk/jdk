@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
-#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <float.h> // for DBL_MAX
@@ -1184,14 +1184,18 @@ public:
                                                                             \
   product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
+  experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
+                "Percentage of used monitors before triggering cleanup "    \
+                "safepoint which deflates monitors (0 is off). "            \
+                "The check is performed on GuaranteedSafepointInterval.")   \
+                range(0, 100)                                               \
+                                                                            \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
                                                                             \
   experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
   diagnostic(bool, InlineNotify, true, "intrinsify subset of notify")       \
-                                                                            \
-  experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
                                                                             \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
@@ -3382,6 +3386,9 @@ public:
                                                                             \
   diagnostic(bool, UseAOTStrictLoading, false,                              \
           "Exit the VM if any of the AOT libraries has invalid config")     \
+                                                                            \
+  product(bool, CalculateClassFingerprint, false,                           \
+          "Calculate class fingerprint")                                    \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \

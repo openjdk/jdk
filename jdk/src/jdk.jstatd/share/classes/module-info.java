@@ -24,8 +24,13 @@
  */
 
 /**
- * Defines the tool for starting a daemon for the jstat tool to monitor
- * JVM statistics remotely.
+ * Defines the <em>{@index jstatd jstatd tool}</em> tool for starting a daemon
+ * for the jstat tool to monitor JVM statistics remotely.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jstatd_tool_reference jstatd}
+ * </dl>
  *
  * @moduleGraph
  * @since 9

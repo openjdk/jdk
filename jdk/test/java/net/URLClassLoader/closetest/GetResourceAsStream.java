@@ -26,7 +26,10 @@
  * @bug 6899919
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build JarUtils jdk.test.lib.compiler.CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
+ *        JarUtils
  * @run main/othervm GetResourceAsStream
  */
 

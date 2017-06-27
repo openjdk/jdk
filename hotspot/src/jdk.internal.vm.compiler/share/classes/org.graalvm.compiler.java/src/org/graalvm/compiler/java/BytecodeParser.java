@@ -247,7 +247,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.StressInvokeWithExce
 import static org.graalvm.compiler.core.common.type.StampFactory.objectNonNull;
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static org.graalvm.compiler.debug.GraalError.shouldNotReachHere;
-import static org.graalvm.compiler.java.BytecodeParserOptions.DumpWithInfopoints;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlinePartialIntrinsicExitDuringParsing;
 import static org.graalvm.compiler.java.BytecodeParserOptions.TraceBytecodeParserLevel;
 import static org.graalvm.compiler.java.BytecodeParserOptions.TraceInlineDuringParsing;
@@ -264,7 +263,6 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
@@ -407,6 +405,7 @@ import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.util.ValueMergeUtil;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.BytecodeFrame;
@@ -1422,7 +1421,7 @@ public class BytecodeParser implements GraphBuilderContext {
     @Override
     public void handleReplacedInvoke(CallTargetNode callTarget, JavaKind resultType) {
         BytecodeParser intrinsicCallSiteParser = getNonIntrinsicAncestor();
-        boolean withExceptionEdge = intrinsicCallSiteParser == null ? false : intrinsicCallSiteParser.omitInvokeExceptionEdge(null);
+        boolean withExceptionEdge = intrinsicCallSiteParser == null ? !omitInvokeExceptionEdge(null) : !intrinsicCallSiteParser.omitInvokeExceptionEdge(null);
         createNonInlinedInvoke(withExceptionEdge, bci(), callTarget, resultType);
     }
 
@@ -1929,6 +1928,15 @@ public class BytecodeParser implements GraphBuilderContext {
                 }
                 /* Do not inline, and do not ask the remaining plugins. */
                 return inlineInfo;
+            }
+        }
+
+        // There was no inline plugin with a definite answer to whether or not
+        // to inline. If we're parsing an intrinsic, then we need to enforce the
+        // invariant here that methods are always force inlined in intrinsics/snippets.
+        if (parsingIntrinsic()) {
+            if (inline(targetMethod, targetMethod, this.bytecodeProvider, args)) {
+                return SUCCESSFULLY_INLINED;
             }
         }
         return null;
@@ -2799,7 +2807,7 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     private DebugCloseable openNodeContext() {
-        if ((graphBuilderConfig.trackNodeSourcePosition() || (Debug.isDumpEnabledForMethod() && DumpWithInfopoints.getValue(options))) && !parsingIntrinsic()) {
+        if ((graphBuilderConfig.trackNodeSourcePosition() || Debug.isDumpEnabledForMethod()) && !parsingIntrinsic()) {
             return graph.withNodeSourcePosition(createBytecodePosition());
         }
         return null;

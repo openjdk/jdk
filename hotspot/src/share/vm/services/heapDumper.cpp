@@ -34,6 +34,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"

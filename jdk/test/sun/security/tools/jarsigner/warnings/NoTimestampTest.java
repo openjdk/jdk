@@ -30,6 +30,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8024302 8026037
  * @summary Checks warnings if -tsa and -tsacert options are not specified
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main NoTimestampTest
  */
 public class NoTimestampTest extends Test {

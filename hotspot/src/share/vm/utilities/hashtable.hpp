@@ -170,10 +170,6 @@ private:
 
 protected:
 
-#ifdef ASSERT
-  void verify_lookup_length(int max_bucket_count, const char *table_name);
-#endif
-
   void initialize(int table_size, int entry_size, int number_of_entries);
 
   // Accessor
