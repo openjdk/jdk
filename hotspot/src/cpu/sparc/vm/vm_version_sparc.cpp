@@ -466,15 +466,11 @@ void VM_Version::print_features() {
 }
 
 void VM_Version::determine_features() {
-  if (UseV8InstrsOnly) {
-    log_info(os, cpu)("SPARC V8 not supported");
-  }
-
-  platform_features(); // platform_features() is os_arch specific
+  platform_features();      // platform_features() is os_arch specific.
 
   assert(has_v9(), "must be");
 
-  if (UseNiagaraInstrs) { // Limit code generation to Niagara.
+  if (UseNiagaraInstrs) {   // Limit code generation to Niagara.
     _features &= niagara1_msk;
   }
 }
