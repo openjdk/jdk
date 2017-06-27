@@ -67,11 +67,8 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_illegal();
   bool is_zombie() {
     int x = long_at(0);
-    return is_op3(x,
-                  Assembler::ldsw_op3,
-                  Assembler::ldst_op)
-        && Assembler::inv_rs1(x) == G0
-        && Assembler::inv_rd(x) == O7;
+    return (is_op3(x, Assembler::ldsw_op3, Assembler::ldst_op) &&
+            inv_rs1(x) == G0 && inv_rd(x) == O7);
   }
   bool is_ic_miss_trap();       // Inline-cache uses a trap to detect a miss
   bool is_return() {
@@ -129,29 +126,11 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_load_store_with_small_offset(Register reg);
 
  public:
-#ifdef ASSERT
-  static int rdpc_instruction()        { return Assembler::op(Assembler::arith_op ) | Assembler::op3(Assembler::rdreg_op3) | Assembler::u_field(5, 18, 14) | Assembler::rd(O7); }
-#else
-  // Temporary fix: in optimized mode, u_field is a macro for efficiency reasons (see Assembler::u_field) - needs to be fixed
-  static int rdpc_instruction()        { return Assembler::op(Assembler::arith_op ) | Assembler::op3(Assembler::rdreg_op3) |            u_field(5, 18, 14) | Assembler::rd(O7); }
-#endif
   static int nop_instruction()         { return Assembler::op(Assembler::branch_op) | Assembler::op2(Assembler::sethi_op2); }
   static int illegal_instruction();    // the output of __ breakpoint_trap()
   static int call_instruction(address destination, address pc) { return Assembler::op(Assembler::call_op) | Assembler::wdisp((intptr_t)destination, (intptr_t)pc, 30); }
 
-  static int branch_instruction(Assembler::op2s op2val, Assembler::Condition c, bool a) {
-    return Assembler::op(Assembler::branch_op) | Assembler::op2(op2val) | Assembler::annul(a) | Assembler::cond(c);
-  }
-
-  static int op3_instruction(Assembler::ops opval, Register rd, Assembler::op3s op3val, Register rs1, int simm13a) {
-    return Assembler::op(opval) | Assembler::rd(rd) | Assembler::op3(op3val) | Assembler::rs1(rs1) | Assembler::immed(true) | Assembler::simm(simm13a, 13);
-  }
-
-  static int sethi_instruction(Register rd, int imm22a) {
-    return Assembler::op(Assembler::branch_op) | Assembler::rd(rd) | Assembler::op2(Assembler::sethi_op2) | Assembler::hi22(imm22a);
-  }
-
- protected:
+protected:
   address  addr_at(int offset) const    { return address(this) + offset; }
   int      long_at(int offset) const    { return *(int*)addr_at(offset); }
   void set_long_at(int offset, int i);      /* deals with I-cache */

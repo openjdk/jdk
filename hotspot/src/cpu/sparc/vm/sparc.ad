@@ -1072,7 +1072,13 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
 
     __ rdpc(r);
 
-    if (disp != 0) {
+    if (disp == 0) {
+      // Emitting an additional 'nop' instruction in order not to cause a code
+      // size adjustment in the code following the table setup (if the instruction
+      // immediately following after this section is a CTI).
+      __ nop();
+    }
+    else {
       assert(r != O7, "need temporary");
       __ sub(r, __ ensure_simm13_or_reg(disp, O7), r);
     }
@@ -8624,7 +8630,7 @@ instruct branch_short(label labl) %{
   predicate(UseCBCond);
   effect(USE labl);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl\t! short branch" %}
   ins_encode %{
@@ -8965,7 +8971,7 @@ instruct cmpI_reg_branch_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
   ins_encode %{
@@ -8983,7 +8989,7 @@ instruct cmpI_imm_branch_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
   ins_encode %{
@@ -9001,7 +9007,7 @@ instruct cmpU_reg_branch_short(cmpOpU cmp, iRegI op1, iRegI op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
   ins_encode %{
@@ -9019,7 +9025,7 @@ instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
   ins_encode %{
@@ -9037,7 +9043,7 @@ instruct cmpL_reg_branch_short(cmpOp cmp, iRegL op1, iRegL op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL xcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
   ins_encode %{
@@ -9055,7 +9061,7 @@ instruct cmpL_imm_branch_short(cmpOp cmp, iRegL op1, immL5 op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL xcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
   ins_encode %{
@@ -9074,7 +9080,7 @@ instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL pcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp $op1,$op2,$labl\t! ptr" %}
   ins_encode %{
@@ -9092,7 +9098,7 @@ instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, f
   predicate(UseCBCond);
   effect(USE labl, KILL pcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp $op1,0,$labl\t! ptr" %}
   ins_encode %{
@@ -9110,7 +9116,7 @@ instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! compressed ptr" %}
   ins_encode %{
@@ -9128,7 +9134,7 @@ instruct cmpN_null_branch_short(cmpOp cmp, iRegN op1, immN0 null, label labl, fl
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,0,$labl\t! compressed ptr" %}
   ins_encode %{
@@ -9147,7 +9153,7 @@ instruct cmpI_reg_branchLoopEnd_short(cmpOp cmp, iRegI op1, iRegI op2, label lab
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
   ins_encode %{
@@ -9165,7 +9171,7 @@ instruct cmpI_imm_branchLoopEnd_short(cmpOp cmp, iRegI op1, immI5 op2, label lab
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
   ins_encode %{
