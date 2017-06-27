@@ -634,18 +634,12 @@ class Assembler : public AbstractAssembler  {
   // instruction only in VIS3
   static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
-  // instruction only in v9
-  static void v9_only() { } // do nothing
-
   // instruction deprecated in v9
   static void v9_dep()  { } // do nothing for now
 
-  // v8 has no CC field
-  static void v8_no_cc(CC cc)  { if (cc)  v9_only(); }
-
  protected:
   // Simple delay-slot scheme:
-  // In order to check the programmer, the assembler keeps track of deley slots.
+  // In order to check the programmer, the assembler keeps track of delay slots.
   // It forbids CTIs in delay slots (conservative, but should be OK).
   // Also, when putting an instruction into a delay slot, you must say
   // asm->delayed()->add(...), in order to check that you don't omit
