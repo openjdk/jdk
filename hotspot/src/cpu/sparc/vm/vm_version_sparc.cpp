@@ -207,7 +207,7 @@ void VM_Version::initialize() {
 
   char buf[512];
   jio_snprintf(buf, sizeof(buf),
-               "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v9()          ? "v9" : ""),
                (has_popc()        ? ", popc" : ""),
                (has_vis1()        ? ", vis1" : ""),
@@ -245,7 +245,6 @@ void VM_Version::initialize() {
                (has_fast_bis()    ? ", *bis" : ""),
                (has_fast_ld()     ? ", *ld" : ""),
                (has_fast_cmove()  ? ", *cmove" : ""),
-               (has_fast_fxtof()  ? ", *fxtof" : ""),
                (has_fast_ind_br() ? ", *ind_br" : ""),
                (has_blk_zeroing() ? ", *blk_zeroing" : ""));
 

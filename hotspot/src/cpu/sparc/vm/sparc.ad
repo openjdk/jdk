@@ -1760,13 +1760,8 @@ const bool Matcher::pass_original_key_for_aes() {
   return true;
 }
 
-/* NOTE: All currently supported SPARC HW provides fast conversion.
- * 
- * TODO: Clean-out code depending on 'has_fast_fxtof'.
- */
-const bool Matcher::convL2FSupported(void) {
-  return VM_Version::has_fast_fxtof();
-}
+// NOTE: All currently supported SPARC HW provides fast conversion.
+const bool Matcher::convL2FSupported(void) { return true; }
 
 // Is this branch offset short enough that a short branch can be used?
 //
@@ -8244,40 +8239,6 @@ instruct mulD_regD_regD(regD dst, regD src1, regD src2) %{
   ins_pipe(fmulD_reg_reg);
 %}
 
-instruct convL2D_reg_slow_fxtof(regD dst, stackSlotL src) %{
-  match(Set dst (ConvL2D src));
-  ins_cost(DEFAULT_COST*8 + MEMORY_REF_COST*6);
-
-  expand %{
-    regD_low   tmpsrc;
-    iRegI      ix43300000;
-    iRegI      ix41f00000;
-    stackSlotL lx43300000;
-    stackSlotL lx41f00000;
-    regD_low   dx43300000;
-    regD       dx41f00000;
-    regD       tmp1;
-    regD_low   tmp2;
-    regD       tmp3;
-    regD       tmp4;
-
-    stkL_to_regD(tmpsrc, src);
-
-    loadConI_x43300000(ix43300000);
-    loadConI_x41f00000(ix41f00000);
-    regI_to_stkLHi(lx43300000, ix43300000);
-    regI_to_stkLHi(lx41f00000, ix41f00000);
-    stkL_to_regD(dx43300000, lx43300000);
-    stkL_to_regD(dx41f00000, lx41f00000);
-
-    convI2D_regDHi_regD(tmp1, tmpsrc);
-    regDHi_regDLo_to_regD(tmp2, dx43300000, tmpsrc);
-    subD_regD_regD(tmp3, tmp2, dx43300000);
-    mulD_regD_regD(tmp4, tmp1, dx41f00000);
-    addD_regD_regD(dst, tmp3, tmp4);
-  %}
-%}
-
 // Long to Double conversion using fast fxtof
 instruct convL2D_helper(regD dst, regD tmp) %{
   effect(DEF dst, USE tmp);
@@ -8289,7 +8250,6 @@ instruct convL2D_helper(regD dst, regD tmp) %{
 %}
 
 instruct convL2D_stk_fast_fxtof(regD dst, stackSlotL src) %{
-  predicate(VM_Version::has_fast_fxtof());
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST + 3 * MEMORY_REF_COST);
   expand %{
