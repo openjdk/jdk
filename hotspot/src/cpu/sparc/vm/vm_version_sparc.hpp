@@ -178,17 +178,51 @@ public:
   // default prefetch block size on sparc
   static intx prefetch_data_size()      { return L2_data_cache_line_size();  }
 
-  // Prefetch
+ private:
+  // Prefetch policy and characteristics:
+  //
+  // These support routines are used in order to isolate any CPU/core specific
+  // logic from the actual flag/option processing.  They should reflect the HW
+  // characteristics for the associated options on the current platform.
+  //
+  // The three Prefetch* options below (assigned -1 in the configuration) are
+  // treated according to (given the accepted range [-1..<maxint>]):
+  //  -1: Determine a proper HW-specific value for the current HW.
+  //   0: Off
+  //  >0: Command-line supplied value to use.
+  //
+  // FIXME: The documentation string in the configuration is wrong, saying that
+  //        -1 is also interpreted as off.
+  //
   static intx prefetch_copy_interval_in_bytes() {
-    return (has_v9() ? 512 : 0);
+    intx bytes = PrefetchCopyIntervalInBytes;
+    return bytes < 0 ? 512 : bytes;
   }
   static intx prefetch_scan_interval_in_bytes() {
-    return (has_v9() ? 512 : 0);
+    intx bytes = PrefetchScanIntervalInBytes;
+    return bytes < 0 ? 512 : bytes;
   }
   static intx prefetch_fields_ahead() {
-    return (is_ultra3() ? 1 : 0);
+    intx count = PrefetchFieldsAhead;
+    return count < 0 ? 0 : count;
   }
 
+  // AllocatePrefetchDistance is treated under the same interpretation as the
+  // Prefetch* options above (i.e., -1, 0, >0).
+  static intx allocate_prefetch_distance() {
+    intx count = AllocatePrefetchDistance;
+    return count < 0 ? 512 : count;
+  }
+
+  // AllocatePrefetchStyle is guaranteed to be in range [0..3] defined by the
+  // configuration.
+  static intx allocate_prefetch_style() {
+    intx distance = allocate_prefetch_distance();
+    // Return 0 (off/none) if AllocatePrefetchDistance was not defined.
+    return distance > 0 ? AllocatePrefetchStyle : 0;
+  }
+
+ public:
   // Assembler testing
   static void allow_all();
   static void revert();

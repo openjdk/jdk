@@ -38,46 +38,36 @@ void VM_Version::initialize() {
   assert(_features != 0, "System pre-initialization is not complete.");
   guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
 
-  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, prefetch_copy_interval_in_bytes());
-  }
-  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, prefetch_scan_interval_in_bytes());
-  }
-  if (FLAG_IS_DEFAULT(PrefetchFieldsAhead)) {
-    FLAG_SET_DEFAULT(PrefetchFieldsAhead, prefetch_fields_ahead());
-  }
+  PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
+  PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
+  PrefetchFieldsAhead         = prefetch_fields_ahead();
 
   // Allocation prefetch settings
+
+  AllocatePrefetchDistance = allocate_prefetch_distance();
+  AllocatePrefetchStyle    = allocate_prefetch_style();
+
   intx cache_line_size = prefetch_data_size();
-  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
-      (cache_line_size > AllocatePrefetchStepSize)) {
-    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+
+  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize)) {
+    AllocatePrefetchStepSize = MAX2(AllocatePrefetchStepSize, cache_line_size);
   }
 
-  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 512);
-  }
-
-  if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
-    assert(!FLAG_IS_DEFAULT(AllocatePrefetchDistance), "default value should not be 0");
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-      warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
-    }
-    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
-  }
-
-  if ((AllocatePrefetchInstr == 1) && (!has_blk_init() || cache_line_size <= 0)) {
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+  if (AllocatePrefetchInstr == 1) {
+    if (!has_blk_init()) {
       warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
     }
-    FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    if (cache_line_size <= 0) {
+      warning("Cache-line size must be known for AllocatePrefetchInstr 1 to work");
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    }
   }
 
-  UseSSE = 0; // Only on x86 and x64
+  UseSSE = false;                   // Only used on x86 and x64.
 
-  _supports_cx8 = has_v9();
-  _supports_atomic_getset4 = true; // swap instruction
+  _supports_cx8 = true;             // All SPARC V9 implementations.
+  _supports_atomic_getset4 = true;  // Using the 'swap' instruction.
 
   if (is_niagara()) {
     // Indirect branch is the same cost as direct
