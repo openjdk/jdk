@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 
 #ifdef PRODUCT

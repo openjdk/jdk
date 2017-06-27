@@ -25,7 +25,6 @@ package org.graalvm.compiler.hotspot.test;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugConfig;
@@ -64,6 +63,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosu
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 

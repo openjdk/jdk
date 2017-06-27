@@ -55,16 +55,16 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
-        optimizeSpillPosition();
+        optimizeSpillPosition(lirGenRes);
         allocator.printIntervals("After optimize spill position");
     }
 
     @SuppressWarnings("try")
-    private void optimizeSpillPosition() {
+    private void optimizeSpillPosition(LIRGenerationResult res) {
         try (Indent indent0 = Debug.logAndIndent("OptimizeSpillPositions")) {
             LIRInsertionBuffer[] insertionBuffers = new LIRInsertionBuffer[allocator.getLIR().linearScanOrder().length];
             for (Interval interval : allocator.intervals()) {
-                optimizeInterval(insertionBuffers, interval);
+                optimizeInterval(insertionBuffers, interval, res);
             }
             for (LIRInsertionBuffer insertionBuffer : insertionBuffers) {
                 if (insertionBuffer != null) {
@@ -76,7 +76,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
     }
 
     @SuppressWarnings("try")
-    private void optimizeInterval(LIRInsertionBuffer[] insertionBuffers, Interval interval) {
+    private void optimizeInterval(LIRInsertionBuffer[] insertionBuffers, Interval interval, LIRGenerationResult res) {
         if (interval == null || !interval.isSplitParent() || interval.spillState() != SpillState.SpillInDominator) {
             return;
         }
@@ -165,6 +165,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
             AllocatableValue fromLocation = interval.getSplitChildAtOpId(spillOpId, OperandMode.DEF, allocator).location();
             AllocatableValue toLocation = LinearScan.canonicalSpillOpr(interval);
             LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
+            move.setComment(res, "LSRAOptimizeSpillPos: optimize spill pos");
             Debug.log(Debug.VERBOSE_LEVEL, "Insert spill move %s", move);
             move.setId(LinearScan.DOMINATOR_SPILL_MOVE_ID);
             /*

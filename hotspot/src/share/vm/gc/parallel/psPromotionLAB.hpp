@@ -122,7 +122,7 @@ class PSOldPromotionLAB : public PSPromotionLAB {
     // The 'new_top>obj' check is needed to detect overflow of obj+size.
     if (new_top > obj && new_top <= end()) {
       set_top(new_top);
-      assert(is_object_aligned((intptr_t)obj) && is_object_aligned((intptr_t)new_top),
+      assert(is_ptr_object_aligned(obj) && is_ptr_object_aligned(new_top),
              "checking alignment");
       _start_array->allocate_block(obj);
       return obj;

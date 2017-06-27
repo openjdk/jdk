@@ -25,6 +25,7 @@
  * @bug 4607272 6842687 6878369 6944810 7023403
  * @summary Unit test for AsynchronousSocketChannel(use -Dseed=X to set PRNG seed)
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main Basic -skipSlowConnectTest
  * @key randomness intermittent
  */

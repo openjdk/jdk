@@ -75,12 +75,12 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
-        eliminateSpillMoves();
+        eliminateSpillMoves(lirGenRes);
     }
 
     /**
      * @return the index of the first instruction that is of interest for
-     *         {@link #eliminateSpillMoves()}
+     *         {@link #eliminateSpillMoves}
      */
     protected int firstInstructionOfInterest() {
         // skip the first because it is always a label
@@ -89,7 +89,7 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
 
     // called once before assignment of register numbers
     @SuppressWarnings("try")
-    void eliminateSpillMoves() {
+    void eliminateSpillMoves(LIRGenerationResult res) {
         try (Indent indent = Debug.logAndIndent("Eliminating unnecessary spill moves")) {
 
             /*
@@ -168,6 +168,7 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
 
                                         LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
                                         insertionBuffer.append(j + 1, move);
+                                        move.setComment(res, "LSRAEliminateSpillMove: store at definition");
 
                                         if (Debug.isLogEnabled()) {
                                             Debug.log("inserting move after definition of interval %d to stack slot %s at opId %d", interval.operandNumber, interval.spillSlot(), opId);

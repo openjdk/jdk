@@ -84,8 +84,8 @@ public class AArch64Unary {
 
         @Override
         public boolean makeNullCheckFor(Value value, LIRFrameState nullCheckState, int implicitNullCheckLimit) {
-            int immediate = input.getImmediate();
-            if (state == null && value.equals(input.getBase()) && input.getOffset().equals(Value.ILLEGAL) && immediate >= 0 && immediate < implicitNullCheckLimit) {
+            int displacement = input.getDisplacement();
+            if (state == null && value.equals(input.getBase()) && input.getOffset().equals(Value.ILLEGAL) && displacement >= 0 && displacement < implicitNullCheckLimit) {
                 state = nullCheckState;
                 return true;
             }

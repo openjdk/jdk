@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ JVM_CFLAGS_TARGET_DEFINES += \
     -DTARGET_ARCH_$(HOTSPOT_TARGET_CPU_ARCH) \
     -DINCLUDE_SUFFIX_OS=_$(HOTSPOT_TARGET_OS) \
     -DINCLUDE_SUFFIX_CPU=_$(HOTSPOT_TARGET_CPU_ARCH) \
+    -DINCLUDE_SUFFIX_COMPILER=_$(HOTSPOT_TOOLCHAIN_TYPE) \
     -DTARGET_COMPILER_$(HOTSPOT_TOOLCHAIN_TYPE) \
     -D$(HOTSPOT_TARGET_CPU_DEFINE) \
     -DHOTSPOT_LIB_ARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' \

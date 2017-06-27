@@ -49,7 +49,6 @@ import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.replacements.TypeCheckSnippetUtils.Counters;
 import org.graalvm.compiler.hotspot.replacements.TypeCheckSnippetUtils.Hints;
-import org.graalvm.compiler.hotspot.replacements.aot.ResolveConstantSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
@@ -147,12 +146,6 @@ public class InstanceOfSnippets implements Snippets {
         return trueValue;
     }
 
-    @Snippet
-    public static Object instanceofExactPIC(Object object, KlassPointer exactHub, Object trueValue, Object falseValue, @ConstantParameter Counters counters) {
-        KlassPointer exactHubPIC = ResolveConstantSnippets.resolveKlassConstant(exactHub);
-        return instanceofExact(object, exactHubPIC, trueValue, falseValue, counters);
-    }
-
     /**
      * A test against a primary type.
      */
@@ -170,12 +163,6 @@ public class InstanceOfSnippets implements Snippets {
         }
         counters.displayHit.inc();
         return trueValue;
-    }
-
-    @Snippet
-    public static Object instanceofPrimaryPIC(KlassPointer hub, Object object, @ConstantParameter int superCheckOffset, Object trueValue, Object falseValue, @ConstantParameter Counters counters) {
-        KlassPointer resolvedHub = ResolveConstantSnippets.resolveKlassConstant(hub);
-        return instanceofPrimary(resolvedHub, object, superCheckOffset, trueValue, falseValue, counters);
     }
 
     /**
@@ -205,13 +192,6 @@ public class InstanceOfSnippets implements Snippets {
             return falseValue;
         }
         return trueValue;
-    }
-
-    @Snippet
-    public static Object instanceofSecondaryPIC(KlassPointer hub, Object object, @VarargsParameter KlassPointer[] hints, @VarargsParameter boolean[] hintIsPositive, Object trueValue,
-                    Object falseValue, @ConstantParameter Counters counters) {
-        KlassPointer resolvedHub = ResolveConstantSnippets.resolveKlassConstant(hub);
-        return instanceofSecondary(resolvedHub, object, hints, hintIsPositive, trueValue, falseValue, counters);
     }
 
     /**
@@ -272,11 +252,8 @@ public class InstanceOfSnippets implements Snippets {
 
         private final SnippetInfo instanceofWithProfile = snippet(InstanceOfSnippets.class, "instanceofWithProfile");
         private final SnippetInfo instanceofExact = snippet(InstanceOfSnippets.class, "instanceofExact");
-        private final SnippetInfo instanceofExactPIC = snippet(InstanceOfSnippets.class, "instanceofExactPIC");
         private final SnippetInfo instanceofPrimary = snippet(InstanceOfSnippets.class, "instanceofPrimary");
-        private final SnippetInfo instanceofPrimaryPIC = snippet(InstanceOfSnippets.class, "instanceofPrimaryPIC");
         private final SnippetInfo instanceofSecondary = snippet(InstanceOfSnippets.class, "instanceofSecondary", SECONDARY_SUPER_CACHE_LOCATION);
-        private final SnippetInfo instanceofSecondaryPIC = snippet(InstanceOfSnippets.class, "instanceofSecondaryPIC", SECONDARY_SUPER_CACHE_LOCATION);
         private final SnippetInfo instanceofDynamic = snippet(InstanceOfSnippets.class, "instanceofDynamic", SECONDARY_SUPER_CACHE_LOCATION);
         private final SnippetInfo isAssignableFrom = snippet(InstanceOfSnippets.class, "isAssignableFrom", SECONDARY_SUPER_CACHE_LOCATION);
 
@@ -316,20 +293,17 @@ public class InstanceOfSnippets implements Snippets {
                     args.addVarargs("hints", KlassPointer.class, KlassPointerStamp.klassNonNull(), hints.hubs);
                     args.addVarargs("hintIsPositive", boolean.class, StampFactory.forKind(JavaKind.Boolean), hints.isPositive);
                 } else if (hintInfo.exact != null) {
-                    SnippetInfo snippet = GeneratePIC.getValue(localOptions) ? instanceofExactPIC : instanceofExact;
-                    args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+                    args = new Arguments(instanceofExact, graph.getGuardsStage(), tool.getLoweringStage());
                     args.add("object", object);
                     args.add("exactHub", ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), ((HotSpotResolvedObjectType) hintInfo.exact).klass(), providers.getMetaAccess(), graph));
                 } else if (type.isPrimaryType()) {
-                    SnippetInfo snippet = GeneratePIC.getValue(localOptions) ? instanceofPrimaryPIC : instanceofPrimary;
-                    args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+                    args = new Arguments(instanceofPrimary, graph.getGuardsStage(), tool.getLoweringStage());
                     args.add("hub", hub);
                     args.add("object", object);
                     args.addConst("superCheckOffset", type.superCheckOffset());
                 } else {
                     Hints hints = createHints(hintInfo, providers.getMetaAccess(), false, graph);
-                    SnippetInfo snippet = GeneratePIC.getValue(localOptions) ? instanceofSecondaryPIC : instanceofSecondary;
-                    args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+                    args = new Arguments(instanceofSecondary, graph.getGuardsStage(), tool.getLoweringStage());
                     args.add("hub", hub);
                     args.add("object", object);
                     args.addVarargs("hints", KlassPointer.class, KlassPointerStamp.klassNonNull(), hints.hubs);

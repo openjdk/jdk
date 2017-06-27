@@ -150,6 +150,7 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
      */
     private static final Set<String> BasicLevelStructuredGraphDumpWhitelist = new HashSet<>(Arrays.asList(
                     "org.graalvm.compiler.phases.BasePhase.dumpAfter",
+                    "org.graalvm.compiler.phases.BasePhase.dumpBefore",
                     "org.graalvm.compiler.core.GraalCompiler.emitFrontEnd",
                     "org.graalvm.compiler.truffle.PartialEvaluator.fastPartialEvaluation",
                     "org.graalvm.compiler.truffle.PartialEvaluator$PerformanceInformationHandler.reportPerformanceWarnings",

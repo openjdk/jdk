@@ -26,9 +26,6 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 
 import java.util.zip.CRC32;
 
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordBase;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -41,6 +38,9 @@ import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.meta.JavaKind;
 

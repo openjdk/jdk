@@ -34,7 +34,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
@@ -44,6 +43,7 @@ import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.replacements.HotSpotClassSubstitutions;
 import org.graalvm.compiler.hotspot.word.MetaspacePointer;
 import org.graalvm.compiler.replacements.Snippets;
+import org.graalvm.word.WordBase;
 
 public class GraalFilters {
     private List<ResolvedJavaType> specialClasses;

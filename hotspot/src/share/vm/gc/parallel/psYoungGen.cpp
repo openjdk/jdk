@@ -193,9 +193,9 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
   char *from_end   = from_start + survivor_size;
 
   assert(from_end == virtual_space()->high(), "just checking");
-  assert(is_object_aligned((intptr_t)eden_start), "checking alignment");
-  assert(is_object_aligned((intptr_t)to_start),   "checking alignment");
-  assert(is_object_aligned((intptr_t)from_start), "checking alignment");
+  assert(is_ptr_object_aligned(eden_start), "checking alignment");
+  assert(is_ptr_object_aligned(to_start),   "checking alignment");
+  assert(is_ptr_object_aligned(from_start), "checking alignment");
 
   MemRegion eden_mr((HeapWord*)eden_start, (HeapWord*)to_start);
   MemRegion to_mr  ((HeapWord*)to_start, (HeapWord*)from_start);
@@ -611,9 +611,9 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
             "from start moved to the right");
   guarantee((HeapWord*)from_end >= from_space()->top(),
             "from end moved into live data");
-  assert(is_object_aligned((intptr_t)eden_start), "checking alignment");
-  assert(is_object_aligned((intptr_t)from_start), "checking alignment");
-  assert(is_object_aligned((intptr_t)to_start), "checking alignment");
+  assert(is_ptr_object_aligned(eden_start), "checking alignment");
+  assert(is_ptr_object_aligned(from_start), "checking alignment");
+  assert(is_ptr_object_aligned(to_start), "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
   MemRegion toMR  ((HeapWord*)to_start,   (HeapWord*)to_end);

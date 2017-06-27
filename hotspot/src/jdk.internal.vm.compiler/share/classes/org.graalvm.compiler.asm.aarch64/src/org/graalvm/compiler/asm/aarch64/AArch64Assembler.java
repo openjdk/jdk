@@ -94,6 +94,8 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.STR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.STXR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.SUB;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.SUBS;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.TBZ;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.TBNZ;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.UBFM;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.UDIV;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.InstructionType.FP32;
@@ -475,6 +477,8 @@ public abstract class AArch64Assembler extends Assembler {
         BCOND(0x54000000),
         CBNZ(0x01000000),
         CBZ(0x00000000),
+        TBZ(0x36000000),
+        TBNZ(0x37000000),
 
         B(0x00000000),
         BL(0x80000000),
@@ -806,6 +810,82 @@ public abstract class AArch64Assembler extends Assembler {
      */
     protected void cbz(int size, Register reg, int imm21, int pos) {
         conditionalBranchInstruction(reg, imm21, generalFromSize(size), Instruction.CBZ, pos);
+    }
+
+    /**
+     * Test a single bit and branch if the bit is nonzero.
+     *
+     * @param reg general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param imm16 signed 16 bit offset
+     */
+    protected void tbnz(Register reg, int uimm6, int imm16) {
+        tbnz(reg, uimm6, imm16, -1);
+    }
+
+    /**
+     * Test a single bit and branch if the bit is zero.
+     *
+     * @param reg general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param imm16 signed 16 bit offset
+     */
+    protected void tbz(Register reg, int uimm6, int imm16) {
+        tbz(reg, uimm6, imm16, -1);
+    }
+
+    /**
+     * Test a single bit and branch if the bit is nonzero.
+     *
+     * @param reg general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param imm16 signed 16 bit offset
+     * @param pos Position at which instruction is inserted into buffer. -1 means insert at end.
+     */
+    protected void tbnz(Register reg, int uimm6, int imm16, int pos) {
+        assert reg.getRegisterCategory().equals(CPU);
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        assert NumUtil.isSignedNbit(18, imm16);
+        assert (imm16 & 3) == 0;
+        // size bit is overloaded as top bit of uimm6 bit index
+        int size = (((uimm6 >> 5) & 1) == 0 ? 32 : 64);
+        // remaining 5 bits are encoded lower down
+        int uimm5 = uimm6 >> 1;
+        int offset = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
+        InstructionType type = generalFromSize(size);
+        int encoding = type.encoding | TBNZ.encoding | (uimm5 << 19) | (offset << 5) | rd(reg);
+        if (pos == -1) {
+            emitInt(encoding);
+        } else {
+            emitInt(encoding, pos);
+        }
+    }
+
+    /**
+     * Test a single bit and branch if the bit is zero.
+     *
+     * @param reg general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param imm16 signed 16 bit offset
+     * @param pos Position at which instruction is inserted into buffer. -1 means insert at end.
+     */
+    protected void tbz(Register reg, int uimm6, int imm16, int pos) {
+        assert reg.getRegisterCategory().equals(CPU);
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        assert NumUtil.isSignedNbit(18, imm16);
+        assert (imm16 & 3) == 0;
+        // size bit is overloaded as top bit of uimm6 bit index
+        int size = (((uimm6 >> 5) & 1) == 0 ? 32 : 64);
+        // remaining 5 bits are encoded lower down
+        int uimm5 = uimm6 >> 1;
+        int offset = (imm16 & NumUtil.getNbitNumberInt(16)) >> 2;
+        InstructionType type = generalFromSize(size);
+        int encoding = type.encoding | TBZ.encoding | (uimm5 << 19) | (offset << 5) | rd(reg);
+        if (pos == -1) {
+            emitInt(encoding);
+        } else {
+            emitInt(encoding, pos);
+        }
     }
 
     private void conditionalBranchInstruction(Register reg, int imm21, InstructionType type, Instruction instr, int pos) {

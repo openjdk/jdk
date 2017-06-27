@@ -41,9 +41,6 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.handlePendingException
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
-
-import org.graalvm.api.word.WordFactory;
-
 import static jdk.vm.ci.hotspot.HotSpotMetaAccessProvider.computeArrayAllocationSize;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -62,6 +59,7 @@ import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;

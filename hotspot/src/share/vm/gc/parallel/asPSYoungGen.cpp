@@ -419,9 +419,9 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
             "from start moved to the right");
   guarantee((HeapWord*)from_end >= from_space()->top(),
             "from end moved into live data");
-  assert(is_object_aligned((intptr_t)eden_start), "checking alignment");
-  assert(is_object_aligned((intptr_t)from_start), "checking alignment");
-  assert(is_object_aligned((intptr_t)to_start), "checking alignment");
+  assert(is_ptr_object_aligned(eden_start), "checking alignment");
+  assert(is_ptr_object_aligned(from_start), "checking alignment");
+  assert(is_ptr_object_aligned(to_start), "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
   MemRegion toMR  ((HeapWord*)to_start,   (HeapWord*)to_end);

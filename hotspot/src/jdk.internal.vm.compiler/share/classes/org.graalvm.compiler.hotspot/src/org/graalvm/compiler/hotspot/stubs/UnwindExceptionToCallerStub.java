@@ -32,7 +32,6 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.decipher;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 
-import org.graalvm.api.word.Pointer;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
@@ -48,6 +47,7 @@ import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.Pointer;
 
 import jdk.vm.ci.code.Register;
 

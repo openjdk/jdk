@@ -150,8 +150,12 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
     }
 
     private boolean dumpBefore(final StructuredGraph graph, final C context, boolean isTopLevel) {
-        if (isTopLevel && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
-            Debug.dump(Debug.VERBOSE_LEVEL, graph, "Before phase %s", getName());
+        if (isTopLevel && (Debug.isDumpEnabled(Debug.VERBOSE_LEVEL) || shouldDumpBeforeAtBasicLevel() && Debug.isDumpEnabled(Debug.BASIC_LEVEL))) {
+            if (shouldDumpBeforeAtBasicLevel()) {
+                Debug.dump(Debug.BASIC_LEVEL, graph, "Before phase %s", getName());
+            } else {
+                Debug.dump(Debug.VERBOSE_LEVEL, graph, "Before phase %s", getName());
+            }
         } else if (!isTopLevel && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL + 1)) {
             Debug.dump(Debug.VERBOSE_LEVEL + 1, graph, "Before subphase %s", getName());
         } else if (Debug.isDumpEnabled(Debug.ENABLED_LEVEL) && shouldDump(graph, context)) {
@@ -161,7 +165,11 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
         return false;
     }
 
-    protected boolean isInliningPhase() {
+    protected boolean shouldDumpBeforeAtBasicLevel() {
+        return false;
+    }
+
+    protected boolean shouldDumpAfterAtBasicLevel() {
         return false;
     }
 
@@ -207,7 +215,7 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
     private void dumpAfter(final StructuredGraph graph, boolean isTopLevel, boolean dumpedBefore) {
         boolean dumped = false;
         if (isTopLevel) {
-            if (isInliningPhase()) {
+            if (shouldDumpAfterAtBasicLevel()) {
                 if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
                     Debug.dump(Debug.BASIC_LEVEL, graph, "After phase %s", getName());
                     dumped = true;

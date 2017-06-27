@@ -22,9 +22,6 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -39,6 +36,9 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordCastNode;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

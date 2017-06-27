@@ -25,7 +25,7 @@ package org.graalvm.compiler.nodes;
 import java.util.EnumMap;
 
 import org.graalvm.util.Equivalence;
-import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.word.LocationIdentity;
 import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.meta.JavaKind;

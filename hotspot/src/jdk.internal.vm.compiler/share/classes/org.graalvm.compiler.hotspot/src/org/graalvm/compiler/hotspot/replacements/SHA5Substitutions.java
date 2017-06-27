@@ -25,8 +25,6 @@ package org.graalvm.compiler.hotspot.replacements;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.debug.GraalError;
@@ -35,6 +33,8 @@ import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.meta.JavaKind;
 

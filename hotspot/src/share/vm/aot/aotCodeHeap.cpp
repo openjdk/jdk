@@ -152,7 +152,6 @@ void AOTLib::verify_config() {
   verify_flag(_config->_useCompressedOops, UseCompressedOops, "UseCompressedOops");
   verify_flag(_config->_useCompressedClassPointers, UseCompressedClassPointers, "UseCompressedClassPointers");
   verify_flag(_config->_useG1GC, UseG1GC, "UseG1GC");
-  verify_flag(_config->_useCMSGC, UseConcMarkSweepGC, "UseConcMarkSweepGC");
   verify_flag(_config->_useTLAB, UseTLAB, "UseTLAB");
   verify_flag(_config->_useBiasedLocking, UseBiasedLocking, "UseBiasedLocking");
   verify_flag(_config->_objectAlignment, ObjectAlignmentInBytes, "ObjectAlignmentInBytes");

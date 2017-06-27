@@ -29,6 +29,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8024302 8026037
  * @summary Test for hasUnsignedEntry warning
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main HasUnsignedEntryTest
  */
 public class HasUnsignedEntryTest extends Test {

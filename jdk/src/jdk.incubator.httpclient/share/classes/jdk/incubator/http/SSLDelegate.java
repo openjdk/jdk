@@ -274,9 +274,7 @@ class SSLDelegate {
                 int x;
                 do {
                     if (needData) {
-                        do {
-                            x = chan.read (unwrap_src);
-                        } while (x == 0);
+                        x = chan.read (unwrap_src);
                         if (x == -1) {
                             throw new IOException ("connection closed for reading");
                         }

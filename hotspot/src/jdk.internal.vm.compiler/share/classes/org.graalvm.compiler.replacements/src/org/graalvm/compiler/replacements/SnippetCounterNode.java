@@ -29,7 +29,6 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -50,6 +49,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.word.ObjectAccess;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.TargetDescription;
 import sun.misc.Unsafe;

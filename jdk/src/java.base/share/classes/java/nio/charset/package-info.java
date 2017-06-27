@@ -27,17 +27,19 @@
  * Defines charsets, decoders, and encoders, for translating between
  * bytes and Unicode characters.
  *
- * <blockquote><table cellspacing=1 cellpadding=0 summary="Summary of charsets, decoders, and encoders in this package">
- *  <tr><th align="left">Class name</th><th align="left">Description</th></tr>
- *   <tr><td valign=top>{@link java.nio.charset.Charset}</td>
+ * <blockquote><table class="borderless">
+ *     <caption style="display:none">Summary of charsets, decoders, and encoders in this package</caption>
+ *  <tr><th style="text-align:left">Class name</th>
+ *      <th style="text-align:left"><th>DescriptiPath
+ *   <tr><td style="vertical-align:top">{@link java.nio.charset.Charset}</td>
  *       <td>A named mapping between characters<br>and bytes</td></tr>
- *   <tr><td valign=top>{@link java.nio.charset.CharsetDecoder}</td>
+ *   <tr><td style="vertical-align:top">{@link java.nio.charset.CharsetDecoder}</td>
  *       <td>Decodes bytes into characters</td></tr>
- *   <tr><td valign=top>{@link java.nio.charset.CharsetEncoder}&nbsp;&nbsp;</td>
+ *   <tr><td style="vertical-align:top">{@link java.nio.charset.CharsetEncoder}</td>
  *       <td>Encodes characters into bytes</td></tr>
- *   <tr><td valign=top>{@link java.nio.charset.CoderResult}&nbsp;&nbsp;</td>
+ *   <tr><td style="vertical-align:top">{@link java.nio.charset.CoderResult}</td>
  *       <td>Describes coder results</td></tr>
- *   <tr><td valign=top>{@link java.nio.charset.CodingErrorAction}&nbsp;&nbsp;</td>
+ *   <tr><td style="vertical-align:top">{@link java.nio.charset.CodingErrorAction}</td>
  *       <td>Describes actions to take when<br>coding errors are detected</td></tr>
  *
  * </table></blockquote>

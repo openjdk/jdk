@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
@@ -84,6 +83,7 @@ import org.graalvm.compiler.phases.verify.VerifyUpdateUsages;
 import org.graalvm.compiler.phases.verify.VerifyUsageWithEquals;
 import org.graalvm.compiler.phases.verify.VerifyVirtualizableUsage;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

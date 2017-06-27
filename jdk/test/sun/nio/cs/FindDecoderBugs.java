@@ -26,6 +26,7 @@
  * @bug 6380723
  * @summary Decode many byte sequences in many ways (use -Dseed=X to set PRNG seed)
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/timeout=1800 FindDecoderBugs
  * @author Martin Buchholz
  * @key randomness

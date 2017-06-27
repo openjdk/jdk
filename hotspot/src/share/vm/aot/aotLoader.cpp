@@ -27,6 +27,7 @@
 #include "aot/aotLoader.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.hpp"
+#include "prims/jvm.h"
 #include "runtime/os.hpp"
 
 GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, true);

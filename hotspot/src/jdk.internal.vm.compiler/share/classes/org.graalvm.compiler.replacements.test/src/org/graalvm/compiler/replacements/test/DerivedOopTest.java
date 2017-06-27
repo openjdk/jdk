@@ -196,6 +196,7 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
             internalPointer = getRawPointer(o2) + offsetB;
             SideEffect2 = internalPointer;
         }
+        GraalDirectives.controlFlowAnchor();
         // make sure the internal pointer is computed before the safepoint
         GraalDirectives.blackhole(internalPointer);
         objResult.beforeGC.basePointer = getRawPointer(objResult);
@@ -215,6 +216,7 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
             internalPointer = getRawPointer(o2) + offsetB;
             SideEffect2 = internalPointer;
         }
+        GraalDirectives.controlFlowAnchor();
         // make sure the internal pointer is computed before the safepoint
         GraalDirectives.blackhole(internalPointer);
         objResult.beforeGC.basePointer = getRawPointer(objResult);
@@ -233,6 +235,7 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
             internalPointer = getRawPointer(b) + offsetB;
             SideEffect2 = internalPointer;
         }
+        GraalDirectives.controlFlowAnchor();
         // make sure the internal pointer is computed before the safepoint
         GraalDirectives.blackhole(internalPointer);
         objResult.beforeGC.basePointer = getRawPointer(objResult);

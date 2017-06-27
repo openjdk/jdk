@@ -88,7 +88,8 @@ typedef struct {
 } AOTHeader;
 
 typedef struct {
-  enum { CONFIG_SIZE = 12 + 7 * 4 };
+  enum { CONFIG_SIZE = 7 * jintSize + 11 };
+  // 7 int values
   int _config_size;
   int _narrowOopShift;
   int _narrowKlassShift;
@@ -102,7 +103,6 @@ typedef struct {
   bool _useCompressedClassPointers;
   bool _compactFields;
   bool _useG1GC;
-  bool _useCMSGC;
   bool _useTLAB;
   bool _useBiasedLocking;
   bool _tieredAOT;

@@ -240,7 +240,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
   int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
-  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL);
+  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL, bool can_cast = false);
   // Helper for inline_unsafe_access.
   // Generates the guards that check whether the result of
   // Unsafe.getObject should be recorded in an SATB log buffer.
@@ -2111,13 +2111,33 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type)
   }
 }
 
-inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type) {
+inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type, bool can_cast) {
   Node* uncasted_base = base;
   int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
     return basic_plus_adr(top(), uncasted_base, offset);
   } else if (kind == Type::AnyPtr) {
     assert(base == uncasted_base, "unexpected base change");
+    if (can_cast) {
+      if (!_gvn.type(base)->speculative_maybe_null() &&
+          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+        // According to profiling, this access is always on
+        // heap. Casting the base to not null and thus avoiding membars
+        // around the access should allow better optimizations
+        Node* null_ctl = top();
+        base = null_check_oop(base, &null_ctl, true, true, true);
+        assert(null_ctl->is_top(), "no null control here");
+        return basic_plus_adr(base, offset);
+      } else if (_gvn.type(base)->speculative_always_null() &&
+                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+        // According to profiling, this access is always off
+        // heap.
+        base = null_assert(base);
+        Node* raw_base = _gvn.transform(new CastX2PNode(offset));
+        offset = MakeConX(0);
+        return basic_plus_adr(top(), raw_base, offset);
+      }
+    }
     // We don't know if it's an on heap or off heap access. Fall back
     // to raw memory access.
     Node* raw = _gvn.transform(new CheckCastPPNode(control(), base, TypeRawPtr::BOTTOM));
@@ -2359,7 +2379,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset, type);
+  adr = make_unsafe_address(base, offset, type, kind == Relaxed);
+
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
   } else if (type == T_OBJECT) {
@@ -2417,7 +2438,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   bool need_mem_bar = false;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched && !adr_type->isa_aryptr();
+          need_mem_bar = (mismatched && !adr_type->isa_aryptr()) || can_access_non_heap;
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -2521,7 +2542,22 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     if (p == NULL) {
       // To be valid, unsafe loads may depend on other conditions than
       // the one that guards them: pin the Load node
-      p = make_load(control(), adr, value_type, type, adr_type, mo, LoadNode::Pinned, requires_atomic_access, unaligned, mismatched);
+      LoadNode::ControlDependency dep = LoadNode::Pinned;
+      Node* ctrl = control();
+      if (adr_type->isa_instptr()) {
+        assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
+        intptr_t offset = Type::OffsetBot;
+        AddPNode::Ideal_base_and_offset(adr, &_gvn, offset);
+        if (offset >= 0) {
+          int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->klass()->layout_helper());
+          if (offset < s) {
+            // Guaranteed to be a valid access, no need to pin it
+            dep = LoadNode::DependsOnlyOnTest;
+            ctrl = NULL;
+          }
+        }
+      }
+      p = make_load(ctrl, adr, value_type, type, adr_type, mo, dep, requires_atomic_access, unaligned, mismatched);
       // load value
       switch (type) {
       case T_BOOLEAN:
@@ -2770,7 +2806,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
-  Node* adr = make_unsafe_address(base, offset, type);
+  Node* adr = make_unsafe_address(base, offset, type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);

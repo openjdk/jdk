@@ -1294,7 +1294,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   float ok_prob = PROB_MAX;  // a priori estimate:  nulls never happen
   Deoptimization::DeoptReason reason;
   if (assert_null) {
-    reason = Deoptimization::Reason_null_assert;
+    reason = Deoptimization::reason_null_assert(speculative);
   } else if (type == T_OBJECT) {
     reason = Deoptimization::reason_null_check(speculative);
   } else {
@@ -2133,7 +2133,7 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
  *
  * @return           node with improved type
  */
-Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool maybe_null) {
+Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, ProfilePtrKind ptr_kind) {
   const Type* current_type = _gvn.type(n);
   assert(UseTypeSpeculation, "type speculation must be on");
 
@@ -2145,19 +2145,24 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
-    const TypePtr* ptr = (maybe_null && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
+    assert(ptr_kind != ProfileAlwaysNull, "impossible here");
+    const TypePtr* ptr = (ptr_kind == ProfileMaybeNull && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
     // record the new speculative type's depth
     speculative = xtype->cast_to_ptr_type(ptr->ptr())->is_ptr();
     speculative = speculative->with_inline_depth(jvms()->depth());
-  } else if (current_type->would_improve_ptr(maybe_null)) {
+  } else if (current_type->would_improve_ptr(ptr_kind)) {
     // Profiling report that null was never seen so we can change the
     // speculative type to non null ptr.
-    assert(!maybe_null, "nothing to improve");
-    if (speculative == NULL) {
-      speculative = TypePtr::NOTNULL;
+    if (ptr_kind == ProfileAlwaysNull) {
+      speculative = TypePtr::NULL_PTR;
     } else {
+      assert(ptr_kind == ProfileNeverNull, "nothing else is an improvement");
       const TypePtr* ptr = TypePtr::NOTNULL;
-      speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+      if (speculative != NULL) {
+        speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+      } else {
+        speculative = ptr;
+      }
     }
   }
 
@@ -2191,14 +2196,30 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
     return n;
   }
   ciKlass* exact_kls = profile_has_unique_klass();
-  bool maybe_null = true;
-  if (java_bc() == Bytecodes::_checkcast ||
-      java_bc() == Bytecodes::_instanceof ||
-      java_bc() == Bytecodes::_aastore) {
+  ProfilePtrKind ptr_kind = ProfileMaybeNull;
+  if ((java_bc() == Bytecodes::_checkcast ||
+       java_bc() == Bytecodes::_instanceof ||
+       java_bc() == Bytecodes::_aastore) &&
+      method()->method_data()->is_mature()) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
-    maybe_null = data == NULL ? true : data->as_BitData()->null_seen();
+    if (data != NULL) {
+      if (!data->as_BitData()->null_seen()) {
+        ptr_kind = ProfileNeverNull;
+      } else {
+        assert(data->is_ReceiverTypeData(), "bad profile data type");
+        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+        uint i = 0;
+        for (; i < call->row_limit(); i++) {
+          ciKlass* receiver = call->receiver(i);
+          if (receiver != NULL) {
+            break;
+          }
+        }
+        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
+      }
+    }
   }
-  return record_profile_for_speculation(n, exact_kls, maybe_null);
+  return record_profile_for_speculation(n, exact_kls, ptr_kind);
 }
 
 /**
@@ -2218,10 +2239,10 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
   for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
     const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
-      bool maybe_null = true;
+      ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = NULL;
-      if (method()->argument_profiled_type(bci(), i, better_type, maybe_null)) {
-        record_profile_for_speculation(argument(j), better_type, maybe_null);
+      if (method()->argument_profiled_type(bci(), i, better_type, ptr_kind)) {
+        record_profile_for_speculation(argument(j), better_type, ptr_kind);
       }
       i++;
     }
@@ -2238,10 +2259,10 @@ void GraphKit::record_profiled_parameters_for_speculation() {
   }
   for (int i = 0, j = 0; i < method()->arg_size() ; i++) {
     if (_gvn.type(local(i))->isa_oopptr()) {
-      bool maybe_null = true;
+      ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = NULL;
-      if (method()->parameter_profiled_type(j, better_type, maybe_null)) {
-        record_profile_for_speculation(local(i), better_type, maybe_null);
+      if (method()->parameter_profiled_type(j, better_type, ptr_kind)) {
+        record_profile_for_speculation(local(i), better_type, ptr_kind);
       }
       j++;
     }
@@ -2256,13 +2277,13 @@ void GraphKit::record_profiled_return_for_speculation() {
   if (!UseTypeSpeculation) {
     return;
   }
-  bool maybe_null = true;
+  ProfilePtrKind ptr_kind = ProfileMaybeNull;
   ciKlass* better_type = NULL;
-  if (method()->return_profiled_type(bci(), better_type, maybe_null)) {
+  if (method()->return_profiled_type(bci(), better_type, ptr_kind)) {
     // If profiling reports a single type for the return value,
     // feed it to the type system so it can propagate it as a
     // speculative type
-    record_profile_for_speculation(stack(sp()-1), better_type, maybe_null);
+    record_profile_for_speculation(stack(sp()-1), better_type, ptr_kind);
   }
 }
 
@@ -2938,12 +2959,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
     }
   }
 
-  if (known_statically && UseTypeSpeculation) {
-    // If we know the type check always succeeds then we don't use the
-    // profiling data at this bytecode. Don't lose it, feed it to the
-    // type system as a speculative type.
-    not_null_obj = record_profiled_receiver_for_speculation(not_null_obj);
-  } else {
+  if (!known_statically) {
     const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
     // We may not have profiling here or it may not help us. If we
     // have a speculative type use it to perform an exact cast.
@@ -2977,6 +2993,15 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
+
+  // If we know the type check always succeeds then we don't use the
+  // profiling data at this bytecode. Don't lose it, feed it to the
+  // type system as a speculative type.
+  if (safe_for_replace) {
+    Node* casted_obj = record_profiled_receiver_for_speculation(obj);
+    replace_in_map(obj, casted_obj);
+  }
+
   return _gvn.transform(phi);
 }
 
@@ -3117,7 +3142,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
-  return res;
+
+  return record_profiled_receiver_for_speculation(res);
 }
 
 //------------------------------next_monitor-----------------------------------

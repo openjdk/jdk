@@ -1754,8 +1754,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // Load the offset of the area within the MDO used for
     // parameters. If it's negative we're not profiling any parameters
     ldr(tmp1, Address(mdp, in_bytes(MethodData::parameters_type_data_di_offset()) - in_bytes(MethodData::data_offset())));
-    cmp(tmp1, 0u);
-    br(Assembler::LT, profile_continue);
+    tbnz(tmp1, 63, profile_continue);  // i.e. sign bit set
 
     // Compute a pointer to the area for parameters from the offset
     // and move the pointer to the slot for the last

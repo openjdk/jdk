@@ -64,7 +64,6 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -81,6 +80,7 @@ import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;

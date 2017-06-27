@@ -26,6 +26,8 @@
  * @bug 4686717
  * @summary Test MulticastSocket.setLoopbackMode
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main/othervm SetLoopbackMode
  */
 

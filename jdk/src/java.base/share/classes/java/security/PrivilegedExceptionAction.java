@@ -35,6 +35,7 @@ package java.security;
  * computations that do not throw
  * checked exceptions should use {@code PrivilegedAction} instead.
  *
+ * @since 1.2
  * @see AccessController
  * @see AccessController#doPrivileged(PrivilegedExceptionAction)
  * @see AccessController#doPrivileged(PrivilegedExceptionAction,

@@ -25,6 +25,8 @@
  * @test
  * @bug 8048604
  * @library ../ /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main CipherNCFuncTest
  * @summary This test verifies the assertion "There should be no transformation
  *          on the plaintext/ciphertext in encryption/decryption mechanism" for
  *          feature "NullCipher".

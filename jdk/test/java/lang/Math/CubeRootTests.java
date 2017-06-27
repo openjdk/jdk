@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main CubeRootTests
  * @bug 4347132 4939441 8078672
  * @summary Tests for {Math, StrictMath}.cbrt (use -Dseed=X to set PRNG seed)

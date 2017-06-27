@@ -1216,8 +1216,10 @@ public class AArch64MacroAssembler extends AArch64Assembler {
         BRANCH_UNCONDITIONALLY(0x1),
         BRANCH_NONZERO(0x2),
         BRANCH_ZERO(0x3),
-        JUMP_ADDRESS(0x4),
-        ADR(0x5);
+        BRANCH_BIT_NONZERO(0x4),
+        BRANCH_BIT_ZERO(0x5),
+        JUMP_ADDRESS(0x6),
+        ADR(0x7);
 
         /**
          * Offset by which additional information for branch conditionally, branch zero and branch
@@ -1291,6 +1293,46 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             int sizeEncoding = (size == 64 ? 1 : 0) << PatchLabelKind.INFORMATION_OFFSET;
             // Encode condition flag so that we know how to patch the instruction later
             emitInt(PatchLabelKind.BRANCH_ZERO.encoding | regEncoding | sizeEncoding);
+        }
+    }
+
+    /**
+     * Test a single bit and branch if the bit is nonzero.
+     *
+     * @param cmp general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param label Can only handle 21-bit word-aligned offsets for now. May be unbound. Non null.
+     */
+    public void tbnz(Register cmp, int uimm6, Label label) {
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        if (label.isBound()) {
+            int offset = label.position() - position();
+            super.tbnz(cmp, uimm6, offset);
+        } else {
+            label.addPatchAt(position());
+            int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
+            int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
+            emitInt(PatchLabelKind.BRANCH_BIT_NONZERO.encoding | indexEncoding | regEncoding);
+        }
+    }
+
+    /**
+     * Test a single bit and branch if the bit is zero.
+     *
+     * @param cmp general purpose register. May not be null, zero-register or stackpointer.
+     * @param uimm6 Unsigned 6-bit bit index.
+     * @param label Can only handle 21-bit word-aligned offsets for now. May be unbound. Non null.
+     */
+    public void tbz(Register cmp, int uimm6, Label label) {
+        assert NumUtil.isUnsignedNbit(6, uimm6);
+        if (label.isBound()) {
+            int offset = label.position() - position();
+            super.tbz(cmp, uimm6, offset);
+        } else {
+            label.addPatchAt(position());
+            int indexEncoding = uimm6 << PatchLabelKind.INFORMATION_OFFSET;
+            int regEncoding = cmp.encoding << (PatchLabelKind.INFORMATION_OFFSET + 6);
+            emitInt(PatchLabelKind.BRANCH_BIT_ZERO.encoding | indexEncoding | regEncoding);
         }
     }
 
@@ -1470,6 +1512,22 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                         break;
                     case BRANCH_ZERO:
                         super.cbz(size, reg, branchOffset, branch);
+                        break;
+                }
+                break;
+            }
+            case BRANCH_BIT_NONZERO:
+            case BRANCH_BIT_ZERO: {
+                int information = instruction >>> PatchLabelKind.INFORMATION_OFFSET;
+                int sizeEncoding = information & NumUtil.getNbitNumberInt(6);
+                int regEncoding = information >>> 6;
+                Register reg = AArch64.cpuRegisters.get(regEncoding);
+                switch (type) {
+                    case BRANCH_BIT_NONZERO:
+                        super.tbnz(reg, sizeEncoding, branchOffset, branch);
+                        break;
+                    case BRANCH_BIT_ZERO:
+                        super.tbz(reg, sizeEncoding, branchOffset, branch);
                         break;
                 }
                 break;

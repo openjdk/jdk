@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -641,18 +642,13 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_VZEROUPPER;
   }
 
-  if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
-    _features &= ~CPU_AES;
-
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
     _features &= ~CPU_HT;
   }
 
   if( is_intel() ) { // Intel cpus specific settings
-    if ((cpu_family() == 0x06) &&
-        ((extended_cpu_model() == 0x57) ||   // Xeon Phi 3200/5200/7200
-        (extended_cpu_model() == 0x85))) {  // Future Xeon Phi
+    if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
     }
   }
@@ -812,7 +808,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (supports_fma()) {
+  if (supports_fma() && UseSSE >= 2) { // Check UseSSE since FMA code uses SSE instructions
     if (FLAG_IS_DEFAULT(UseFMA)) {
       UseFMA = true;
     }
@@ -1103,18 +1099,18 @@ void VM_Version::get_processor_features() {
     if ( cpu_family() == 0x15 ) {
       // On family 15h processors default is no sw prefetch
       if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-        AllocatePrefetchStyle = 0;
+        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
       }
       // Also, if some other prefetch style is specified, default instruction type is PREFETCHW
       if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
-        AllocatePrefetchInstr = 3;
+        FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
       }
       // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
       if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        UseXMMForArrayCopy = true;
+        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
       }
       if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-        UseUnalignedLoadStores = true;
+        FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
     }
 
@@ -1179,10 +1175,7 @@ void VM_Version::get_processor_features() {
         FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
     }
-    if ((cpu_family() == 0x06) &&
-        ((extended_cpu_model() == 0x36) || // Centerton
-         (extended_cpu_model() == 0x37) || // Silvermont
-         (extended_cpu_model() == 0x4D))) {
+    if (is_atom_family() || is_knights_family()) {
 #ifdef COMPILER2
       if (FLAG_IS_DEFAULT(OptoScheduling)) {
         OptoScheduling = true;
@@ -1193,9 +1186,12 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
+      if (FLAG_IS_DEFAULT(UseIncDec)) {
+        FLAG_SET_DEFAULT(UseIncDec, false);
+      }
     }
     if(FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
-      AllocatePrefetchInstr = 3;
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
   }
 
@@ -1291,45 +1287,68 @@ void VM_Version::get_processor_features() {
   }
 #endif // COMPILER2
 
-  if( AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch() ) AllocatePrefetchInstr=0;
-  if( !supports_sse() && supports_3dnow_prefetch() ) AllocatePrefetchInstr = 3;
+  if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+    if (AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch()) {
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    } else if (!supports_sse() && supports_3dnow_prefetch()) {
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+    }
+  }
 
   // Allocation prefetch settings
   intx cache_line_size = prefetch_data_size();
-  if( cache_line_size > AllocatePrefetchStepSize )
-    AllocatePrefetchStepSize = cache_line_size;
+  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
+      (cache_line_size > AllocatePrefetchStepSize)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+  }
 
-  AllocatePrefetchDistance = allocate_prefetch_distance();
-  AllocatePrefetchStyle    = allocate_prefetch_style();
+  if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
+    assert(!FLAG_IS_DEFAULT(AllocatePrefetchDistance), "default value should not be 0");
+    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
+    }
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+  }
+
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    bool use_watermark_prefetch = (AllocatePrefetchStyle == 2);
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
+  }
 
   if (is_intel() && cpu_family() == 6 && supports_sse3()) {
-    if (AllocatePrefetchStyle == 2) { // watermark prefetching on Core
-#ifdef _LP64
-      AllocatePrefetchDistance = 384;
-#else
-      AllocatePrefetchDistance = 320;
-#endif
-    }
-    if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
-      AllocatePrefetchDistance = 192;
-      if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
-        FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
-      }
+    if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
+        supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+      FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
     }
 #ifdef COMPILER2
-    if (supports_sse4_2()) {
-      if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
-      }
+    if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
+      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
     }
 #endif
   }
 
 #ifdef _LP64
   // Prefetch settings
-  PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
-  PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
-  PrefetchFieldsAhead         = prefetch_fields_ahead();
+
+  // Prefetch interval for gc copy/scan == 9 dcache lines.  Derived from
+  // 50-warehouse specjbb runs on a 2-way 1.8ghz opteron using a 4gb heap.
+  // Tested intervals from 128 to 2048 in increments of 64 == one cache line.
+  // 256 bytes (4 dcache lines) was the nearest runner-up to 576.
+
+  // gc copy/scan is disabled if prefetchw isn't supported, because
+  // Prefetch::write emits an inlined prefetchw on Linux.
+  // Do not use the 3dnow prefetchw instruction.  It isn't supported on em64t.
+  // The used prefetcht0 instruction works for both amd64 and em64t.
+
+  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 576);
+  }
+  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 576);
+  }
+  if (FLAG_IS_DEFAULT(PrefetchFieldsAhead)) {
+    FLAG_SET_DEFAULT(PrefetchFieldsAhead, 1);
+  }
 #endif
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&

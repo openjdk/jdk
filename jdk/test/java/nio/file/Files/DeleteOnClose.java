@@ -26,6 +26,13 @@
  * @bug 4313887
  * @summary Unit test for DELETE_ON_CLOSE open option
  * @library /test/lib ..
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ * @run main DeleteOnClose
  */
 
 import java.io.IOException;

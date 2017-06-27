@@ -29,13 +29,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.graalvm.api.word.ComparableWord;
-import org.graalvm.api.word.LocationIdentity;
-import org.graalvm.api.word.Pointer;
-import org.graalvm.api.word.Signed;
-import org.graalvm.api.word.Unsigned;
-import org.graalvm.api.word.WordBase;
-import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
 import org.graalvm.compiler.debug.GraalError;
@@ -55,6 +48,13 @@ import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.address.AddressNode.Address;
+import org.graalvm.word.ComparableWord;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.Signed;
+import org.graalvm.word.Unsigned;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 
 public abstract class Word extends WordFactory implements Signed, Unsigned, Pointer {
 
@@ -716,7 +716,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
     public <T extends WordBase> T readWord(int offset, LocationIdentity locationIdentity) {
-        return readWord(signed(offset), locationIdentity);
+        return readWord((WordBase)signed(offset), locationIdentity);
     }
 
     @Override
@@ -943,7 +943,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
     public <T extends WordBase> T readWord(int offset) {
-        return readWord(signed(offset));
+        return readWord((WordBase)signed(offset));
     }
 
     @Override
@@ -1116,7 +1116,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.CAS_POINTER)
     public <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity) {
-        return compareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
+        return compareAndSwapWord((WordBase)signed(offset), expectedValue, newValue, locationIdentity);
     }
 
     @Override

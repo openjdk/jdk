@@ -33,6 +33,7 @@ import java.util.Base64;
  * @bug 8024302 8026037
  * @summary Test for badNetscapeCertType warning
  * @library /lib/testlibrary /test/lib ../
+ * @build jdk.test.lib.util.JarUtils
  * @run main BadNetscapeCertTypeTest
  */
 public class BadNetscapeCertTypeTest extends Test {

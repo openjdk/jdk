@@ -38,6 +38,7 @@
  * 8176029
  *
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main RegExTest
  * @key randomness
  */

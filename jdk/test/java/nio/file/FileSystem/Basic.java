@@ -25,6 +25,8 @@
  * @bug 4313887 6838333 8132497
  * @summary Unit test for java.nio.file.FileSystem
  * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run main/othervm Basic
  */
 

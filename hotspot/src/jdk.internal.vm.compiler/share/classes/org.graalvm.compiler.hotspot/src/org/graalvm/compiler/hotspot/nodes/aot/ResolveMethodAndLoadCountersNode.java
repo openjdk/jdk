@@ -28,15 +28,15 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_16;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.nodes.type.MethodCountersPointerStamp;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 @NodeInfo(cycles = CYCLES_4, size = SIZE_16)
-public class ResolveMethodAndLoadCountersNode extends FloatingNode implements Lowerable {
+public class ResolveMethodAndLoadCountersNode extends DeoptimizingFixedWithNextNode implements Lowerable {
     public static final NodeClass<ResolveMethodAndLoadCountersNode> TYPE = NodeClass.create(ResolveMethodAndLoadCountersNode.class);
 
     ResolvedJavaMethod method;
@@ -59,5 +59,10 @@ public class ResolveMethodAndLoadCountersNode extends FloatingNode implements Lo
 
     public ValueNode getHub() {
         return hub;
+    }
+
+    @Override
+    public boolean canDeoptimize() {
+        return true;
     }
 }

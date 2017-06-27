@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.testlibrary.TimeLimitedRunner;
+import jdk.test.lib.TimeLimitedRunner;
 import jdk.testlibrary.Utils;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 import test.java.lang.invoke.lib.Helper;

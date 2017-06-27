@@ -25,7 +25,6 @@ package org.graalvm.compiler.nodes.cfg;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.Loop;
@@ -38,6 +37,7 @@ import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
+import org.graalvm.word.LocationIdentity;
 
 public final class Block extends AbstractBlockBase<Block> {
 

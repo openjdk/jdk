@@ -73,7 +73,9 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
 
         AllocatableValue baseReference = LIRKind.derivedBaseFromValue(baseValue);
         AllocatableValue indexReference;
-        if (scale.equals(Scale.Times1)) {
+        if (index == null) {
+            indexReference = null;
+        } else if (scale.equals(Scale.Times1)) {
             indexReference = LIRKind.derivedBaseFromValue(indexValue);
         } else {
             if (LIRKind.isValue(indexValue)) {

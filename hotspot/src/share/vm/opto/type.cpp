@@ -2531,7 +2531,8 @@ const Type* TypePtr::cleanup_speculative() const {
   const TypeOopPtr* spec_oopptr = speculative()->isa_oopptr();
   // If the speculative may be null and is an inexact klass then it
   // doesn't help
-  if (speculative()->maybe_null() && (spec_oopptr == NULL || !spec_oopptr->klass_is_exact())) {
+  if (speculative() != TypePtr::NULL_PTR && speculative()->maybe_null() &&
+      (spec_oopptr == NULL || !spec_oopptr->klass_is_exact())) {
     return no_spec;
   }
   return this;
@@ -2660,6 +2661,14 @@ bool TypePtr::speculative_maybe_null() const {
   return true;
 }
 
+bool TypePtr::speculative_always_null() const {
+  if (_speculative != NULL) {
+    const TypePtr* speculative = _speculative->join(this)->is_ptr();
+    return speculative == TypePtr::NULL_PTR;
+  }
+  return false;
+}
+
 /**
  * Same as TypePtr::speculative_type() but return the klass only if
  * the speculative tells us is not null
@@ -2684,6 +2693,9 @@ bool TypePtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
   if (exact_kls == NULL) {
     return false;
   }
+  if (speculative() == TypePtr::NULL_PTR) {
+    return false;
+  }
   // no speculative type or non exact speculative type?
   if (speculative_type() == NULL) {
     return true;
@@ -2703,21 +2715,32 @@ bool TypePtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
  * Check whether new profiling would improve ptr (= tells us it is non
  * null)
  *
- * @param   maybe_null true if profiling tells the ptr may be null
+ * @param   ptr_kind always null or not null?
  *
  * @return  true if ptr profile is valuable
  */
-bool TypePtr::would_improve_ptr(bool maybe_null) const {
+bool TypePtr::would_improve_ptr(ProfilePtrKind ptr_kind) const {
   // profiling doesn't tell us anything useful
-  if (maybe_null) {
+  if (ptr_kind != ProfileAlwaysNull && ptr_kind != ProfileNeverNull) {
     return false;
   }
-  // We already know this is not be null
+  // We already know this is not null
   if (!this->maybe_null()) {
     return false;
   }
   // We already know the speculative type cannot be null
   if (!speculative_maybe_null()) {
+    return false;
+  }
+  // We already know this is always null
+  if (this == TypePtr::NULL_PTR) {
+    return false;
+  }
+  // We already know the speculative type is always null
+  if (speculative_always_null()) {
+    return false;
+  }
+  if (ptr_kind == ProfileAlwaysNull && speculative() != NULL && speculative()->isa_oopptr()) {
     return false;
   }
   return true;

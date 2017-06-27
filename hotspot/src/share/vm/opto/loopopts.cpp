@@ -913,7 +913,11 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   if (n->is_ConstraintCast()) {
     Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
-    if (dom_cast != NULL) {
+    // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
+    // Node control inputs don't necessarily agree with loop control info (due to
+    // transformations happened in between), thus additional dominance check is needed
+    // to keep loop info valid.
+    if (dom_cast != NULL && is_dominator(get_ctrl(dom_cast), get_ctrl(n))) {
       _igvn.replace_node(n, dom_cast);
       return dom_cast;
     }

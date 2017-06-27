@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
@@ -51,8 +52,10 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/timerTrace.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif

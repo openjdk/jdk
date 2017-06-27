@@ -54,19 +54,19 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
             return;
         }
         LIR lir = lirGenRes.getLIR();
-        RegisterMap<Variable> savedRegisters = saveAtEntry(lir, context.lirGen, calleeSaveRegisters, target.arch);
+        RegisterMap<Variable> savedRegisters = saveAtEntry(lir, context.lirGen, lirGenRes, calleeSaveRegisters, target.arch);
 
         for (AbstractBlockBase<?> block : lir.codeEmittingOrder()) {
             if (block == null) {
                 continue;
             }
             if (block.getSuccessorCount() == 0) {
-                restoreAtExit(lir, context.lirGen.getSpillMoveFactory(), savedRegisters, block);
+                restoreAtExit(lir, context.lirGen.getSpillMoveFactory(), lirGenRes, savedRegisters, block);
             }
         }
     }
 
-    private static RegisterMap<Variable> saveAtEntry(LIR lir, LIRGeneratorTool lirGen, RegisterArray calleeSaveRegisters, Architecture arch) {
+    private static RegisterMap<Variable> saveAtEntry(LIR lir, LIRGeneratorTool lirGen, LIRGenerationResult lirGenRes, RegisterArray calleeSaveRegisters, Architecture arch) {
         AbstractBlockBase<?> startBlock = lir.getControlFlowGraph().getStartBlock();
         ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(startBlock);
         int insertionIndex = 1;
@@ -83,6 +83,7 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
             Variable saveVariable = lirGen.newVariable(lirKind);
             LIRInstruction save = lirGen.getSpillMoveFactory().createMove(saveVariable, registerValue);
             buffer.append(insertionIndex, save);
+            save.setComment(lirGenRes, "SaveCalleeSavedRegisters: saveAtEntry");
             saveMap.put(register, saveVariable);
             savedRegisterValues[savedRegisterValueIndex++] = registerValue;
         }
@@ -91,7 +92,7 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
         return saveMap;
     }
 
-    private static void restoreAtExit(LIR lir, LIRGeneratorTool.MoveFactory moveFactory, RegisterMap<Variable> calleeSaveRegisters, AbstractBlockBase<?> block) {
+    private static void restoreAtExit(LIR lir, LIRGeneratorTool.MoveFactory moveFactory, LIRGenerationResult lirGenRes, RegisterMap<Variable> calleeSaveRegisters, AbstractBlockBase<?> block) {
         ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
         int insertionIndex = instructions.size() - 1;
         LIRInsertionBuffer buffer = new LIRInsertionBuffer();
@@ -100,6 +101,7 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
         calleeSaveRegisters.forEach((Register register, Variable saved) -> {
             LIRInstruction restore = moveFactory.createMove(register.asValue(saved.getValueKind()), saved);
             buffer.append(insertionIndex, restore);
+            restore.setComment(lirGenRes, "SaveCalleeSavedRegisters: restoreAtExit");
         });
         buffer.finish();
     }

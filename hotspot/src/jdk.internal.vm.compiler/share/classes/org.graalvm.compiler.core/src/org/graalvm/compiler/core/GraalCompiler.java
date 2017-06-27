@@ -310,7 +310,7 @@ public class GraalCompiler {
             LIRGenerationContext context = new LIRGenerationContext(lirGen, nodeLirGen, graph, schedule);
             new LIRGenerationPhase().apply(backend.getTarget(), lirGenRes, context);
 
-            try (Scope s = Debug.scope("LIRStages", nodeLirGen, lir)) {
+            try (Scope s = Debug.scope("LIRStages", nodeLirGen, lirGenRes, lir)) {
                 // Dump LIR along with HIR (the LIR is looked up from context)
                 Debug.dump(Debug.BASIC_LEVEL, graph.getLastSchedule(), "After LIR generation");
                 LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig, allocationRestrictedTo));
