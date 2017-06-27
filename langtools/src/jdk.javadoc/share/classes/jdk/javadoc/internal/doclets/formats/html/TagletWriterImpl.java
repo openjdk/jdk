@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
                     si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getSimpleName(element));
+                    si.setHolder(utils.getFullyQualifiedName(element));
                     return null;
                 }
 
