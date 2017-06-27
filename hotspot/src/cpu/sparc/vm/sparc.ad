@@ -2627,6 +2627,33 @@ enc_class fsqrtd (dflt_reg dst, dflt_reg src) %{
     __ fsqrt(FloatRegisterImpl::D, Fsrc, Fdst);
 %}
 
+
+
+enc_class fmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_SingleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_SingleFloatRegister_object($c$$reg);
+
+    __ fmadd(FloatRegisterImpl::S, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_DoubleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_DoubleFloatRegister_object($c$$reg);
+
+    __ fmadd(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
+%}
+
+
+
+
 enc_class fmovs (dflt_reg dst, dflt_reg src) %{
     MacroAssembler _masm(&cbuf);
 
@@ -4538,6 +4565,26 @@ pipe_class fdivD_reg_reg(regD dst, regD src1, regD src2) %{
     src2  : E(read);
     FM    : R;
     FDIV  : C(17);
+%}
+
+// Fused floating-point multiply-add float.
+pipe_class fmaF_regx4(regF dst, regF src1, regF src2, regF src3) %{
+    single_instruction;
+    dst   : X(write);
+    src1  : E(read);
+    src2  : E(read);
+    src3  : E(read);
+    FM    : R;
+%}
+
+// Fused gloating-point multiply-add double.
+pipe_class fmaD_regx4(regD dst, regD src1, regD src2, regD src3) %{
+    single_instruction;
+    dst   : X(write);
+    src1  : E(read);
+    src2  : E(read);
+    src3  : E(read);
+    FM    : R;
 %}
 
 // Floating Point Move/Negate/Abs Float
@@ -7529,6 +7576,24 @@ instruct sqrtD_reg_reg(regD dst, regD src) %{
   format %{ "FSQRTD $src,$dst" %}
   ins_encode(fsqrtd(dst, src));
   ins_pipe(fdivD_reg_reg);
+%}
+
+// Single precision fused floating-point multiply-add (d = a * b + c).
+instruct fmaF_regx4(regF dst, regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF c (Binary a b)));
+  format %{ "fmadds $a,$b,$c,$dst\t# $dst = $a * $b + $c" %}
+  ins_encode(fmadds(dst, a, b, c));
+  ins_pipe(fmaF_regx4);
+%}
+
+// Double precision fused floating-point multiply-add (d = a * b + c).
+instruct fmaD_regx4(regD dst, regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD c (Binary a b)));
+  format %{ "fmaddd $a,$b,$c,$dst\t# $dst = $a * $b + $c" %}
+  ins_encode(fmaddd(dst, a, b, c));
+  ins_pipe(fmaD_regx4);
 %}
 
 //----------Logical Instructions-----------------------------------------------

@@ -628,6 +628,9 @@ class Assembler : public AbstractAssembler {
   // CRC32C instruction supported only on certain processors
   static void crc32c_only() { assert(VM_Version::has_crc32c(), "This instruction only works on SPARC with CRC32C"); }
 
+  // FMAf instructions supported only on certain processors
+  static void fmaf_only() { assert(VM_Version::has_fmaf(), "This instruction only works on SPARC with FMAf"); }
+
   // instruction only in VIS1
   static void vis1_only() { assert(VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
 
@@ -922,6 +925,10 @@ class Assembler : public AbstractAssembler {
   // pp 164
 
   inline void fsqrt(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
+
+  // fmaf instructions.
+
+  inline void fmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
 
   // pp 165
 
