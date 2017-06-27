@@ -22,10 +22,17 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import java.lang.annotation.Annotation;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
+
+import java.util.Arrays;
 import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
@@ -33,35 +40,27 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.ExceptionHandler;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LineNumberTable;
-import jdk.vm.ci.meta.LocalVariableTable;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Signature;
-import jdk.vm.ci.meta.SpeculationLog;
+
 import org.graalvm.compiler.debug.GraalDebugConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalMBean;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.test.GraalTest;
 import org.graalvm.util.EconomicMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assume;
 import org.junit.Test;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 public class HotSpotGraalMBeanTest {
+
+    public HotSpotGraalMBeanTest() {
+        // No support for registering Graal MBean yet on JDK9 (GR-4025). We cannot
+        // rely on an exception being thrown when accessing ManagementFactory.platformMBeanServer
+        // via reflection as recent JDK9 changes now allow this and issue a warning instead.
+        Assume.assumeTrue(GraalTest.Java8OrEarlier);
+    }
+
     @Test
     public void registration() throws Exception {
         ObjectName name;
@@ -224,8 +223,9 @@ public class HotSpotGraalMBeanTest {
 
         OptionValues empty = new OptionValues(EconomicMap.create());
         OptionValues unsetDump = realBean.optionsFor(empty, null);
-
-        final OptionValues forMethod = realBean.optionsFor(unsetDump, new MockResolvedJavaMethod());
+        final MetaAccessProvider metaAccess = jdk.vm.ci.runtime.JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(Arrays.class.getMethod("asList", Object[].class));
+        final OptionValues forMethod = realBean.optionsFor(unsetDump, method);
         assertNotSame(unsetDump, forMethod);
         Object nothing = unsetDump.getMap().get(GraalDebugConfig.Options.Dump);
         assertEquals("Empty string", "", nothing);
@@ -238,468 +238,4 @@ public class HotSpotGraalMBeanTest {
         assertEquals("Empty string", "", noSpecialValue);
     }
 
-    private static class MockResolvedJavaMethod implements HotSpotResolvedJavaMethod {
-        MockResolvedJavaMethod() {
-        }
-
-        @Override
-        public boolean isCallerSensitive() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public HotSpotResolvedObjectType getDeclaringClass() {
-            return new MockResolvedObjectType();
-        }
-
-        @Override
-        public boolean isForceInline() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hasReservedStackAccess() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setNotInlineable() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean ignoredBySecurityStackWalk() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ResolvedJavaMethod uniqueConcreteMethod(HotSpotResolvedObjectType receiver) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hasCompiledCode() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hasCompiledCodeAtLevel(int level) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int vtableEntryOffset(ResolvedJavaType resolved) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int intrinsicId() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int allocateCompileId(int entryBCI) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hasCodeAtLevel(int entryBCI, int level) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public byte[] getCode() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getCodeSize() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getMaxLocals() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getMaxStackSize() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isSynthetic() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isVarArgs() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isBridge() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isClassInitializer() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isConstructor() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean canBeStaticallyBound() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ExceptionHandler[] getExceptionHandlers() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public StackTraceElement asStackTraceElement(int bci) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void reprofile() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ConstantPool getConstantPool() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Annotation[][] getParameterAnnotations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Type[] getGenericParameterTypes() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean canBeInlined() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean hasNeverInlineDirective() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean shouldBeInlined() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public LineNumberTable getLineNumberTable() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public LocalVariableTable getLocalVariableTable() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Constant getEncoding() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isInVirtualMethodTable(ResolvedJavaType resolved) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpeculationLog getSpeculationLog() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getName() {
-            return "asList";
-        }
-
-        @Override
-        public Signature getSignature() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getModifiers() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Annotation[] getAnnotations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Annotation[] getDeclaredAnnotations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isIntrinsicCandidate() {
-            return true;
-        }
-
-        private static class MockResolvedObjectType implements HotSpotResolvedObjectType {
-            MockResolvedObjectType() {
-            }
-
-            @Override
-            public long getFingerprint() {
-                return 0L;
-            }
-
-            @Override
-            public HotSpotResolvedObjectType getArrayClass() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaType getComponentType() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Assumptions.AssumptionResult<ResolvedJavaType> findLeafConcreteSubtype() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public HotSpotResolvedObjectType getSuperclass() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public HotSpotResolvedObjectType[] getInterfaces() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public HotSpotResolvedObjectType getSupertype() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public HotSpotResolvedObjectType findLeastCommonAncestor(ResolvedJavaType otherType) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ConstantPool getConstantPool() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int instanceSize() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int getVtableLength() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Assumptions.AssumptionResult<ResolvedJavaMethod> findUniqueConcreteMethod(ResolvedJavaMethod method) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isDefinitelyResolvedWithRespectTo(ResolvedJavaType accessingClass) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Constant klass() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isPrimaryType() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int superCheckOffset() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long prototypeMarkWord() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int layoutHelper() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public HotSpotResolvedObjectType getEnclosingType() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaMethod getClassInitializer() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean hasFinalizer() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Assumptions.AssumptionResult<Boolean> hasFinalizableSubclass() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isInterface() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isInstanceClass() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isInitialized() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void initialize() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isLinked() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isAssignableFrom(ResolvedJavaType other) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isInstance(JavaConstant obj) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaType getSingleImplementor() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaMethod resolveMethod(ResolvedJavaMethod method, ResolvedJavaType callerType) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaField[] getStaticFields() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaField findInstanceFieldWithOffset(long offset, JavaKind expectedKind) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getSourceFileName() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isLocal() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isMember() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaMethod[] getDeclaredConstructors() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ResolvedJavaMethod[] getDeclaredMethods() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isCloneableWithAllocation() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getName() {
-                return "Ljava/util/Arrays;";
-            }
-
-            @Override
-            public ResolvedJavaType resolve(ResolvedJavaType accessingClass) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int getModifiers() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Annotation[] getAnnotations() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Annotation[] getDeclaredAnnotations() {
-                throw new UnsupportedOperationException();
-            }
-        }
-    }
 }

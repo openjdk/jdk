@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,19 @@
  */
 package org.graalvm.compiler.nodes.test;
 
-import java.lang.reflect.Constructor;
-
-import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-public class StaticFieldAccessTest extends GraalCompilerTest {
-
-    static StaticFieldAccessTest tester;
-
-    public static class Inner {
-        static Object o;
-
-        static {
-            Constructor<?>[] c = Inner.class.getConstructors();
-            if (c.length != 1) {
-                throw new InternalError("can't find single constructor");
-            }
-            tester.parseDebug(tester.asResolvedJavaMethod(c[0]), AllowAssumptions.YES);
-        }
-
-        public Inner(Object o) {
-            Inner.o = o;
-        }
-    }
-
+public class AddNodeTest {
     @Test
-    public void test() {
-        tester = this;
+    public void checkTemplateAndName() {
+        AddNode add = new AddNode(ConstantNode.forInt(30), ConstantNode.forInt(12));
+        NodeClass<? extends Node> addClass = add.getNodeClass();
+        assertEquals("+", addClass.shortName());
+        assertEquals("Using short name as template", "+", addClass.getNameTemplate());
     }
 }

@@ -212,6 +212,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     }
 
     public final boolean useG1GC = getFlag("UseG1GC", Boolean.class);
+    public final boolean useCMSGC = getFlag("UseConcMarkSweepGC", Boolean.class);
 
     public final int allocatePrefetchStyle = getFlag("AllocatePrefetchStyle", Integer.class);
     public final int allocatePrefetchInstr = getFlag("AllocatePrefetchInstr", Integer.class);
