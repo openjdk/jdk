@@ -27,16 +27,16 @@
  * @summary Unit test for internal ClassLoader#initializePath().
  *          Quoted entries should get unquoted on Windows.
  *          Empty entries should be replaced with dot.
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/java.lang:open
- * @build jdk.testlibrary.Platform
+ * @build jdk.test.lib.Platform
  * @run main LibraryPathProperty
  */
 
 import java.lang.reflect.Method;
 import java.io.File;
 import java.util.Arrays;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class LibraryPathProperty {
 
