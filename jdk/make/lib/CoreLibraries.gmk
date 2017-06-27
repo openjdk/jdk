@@ -132,7 +132,8 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 ##########################################################################################
 
-LIBJAVA_SRC_DIRS := $(call FindSrcDirsForLib, java.base, java)
+# Allow a custom makefile to add extra src dirs
+LIBJAVA_SRC_DIRS += $(call FindSrcDirsForLib, java.base, java)
 
 LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libfdlibm \

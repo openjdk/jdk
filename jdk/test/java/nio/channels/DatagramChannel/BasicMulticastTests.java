@@ -25,7 +25,9 @@
  * @bug 4527345
  * @summary Unit test for DatagramChannel's multicast support
  * @library /test/lib
- * @build BasicMulticastTests
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        BasicMulticastTests
  * @run main BasicMulticastTests
  */
 

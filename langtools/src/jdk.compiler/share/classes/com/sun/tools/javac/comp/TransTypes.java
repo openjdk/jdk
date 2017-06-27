@@ -541,8 +541,7 @@ public class TransTypes extends TreeTranslator {
             if (sym != tree.sym &&
                 types.isSameType(erasure(sym.type), tree.type)) {
                 log.error(tree.pos(),
-                          "name.clash.same.erasure", tree.sym,
-                          sym);
+                          Errors.NameClashSameErasure(tree.sym, sym));
                 return;
             }
         }
@@ -683,8 +682,8 @@ public class TransTypes extends TreeTranslator {
         else
             if (tree.args.length() != argtypes.length()) {
                 log.error(tree.pos(),
-                              "method.invoked.with.incorrect.number.arguments",
-                              tree.args.length(), argtypes.length());
+                          Errors.MethodInvokedWithIncorrectNumberArguments(tree.args.length(),
+                                                                           argtypes.length()));
             }
         tree.args = translateArgs(tree.args, argtypes, tree.varargsElement);
 

@@ -27,6 +27,7 @@ package java.lang;
 
 import java.io.ObjectStreamField;
 import java.io.UnsupportedEncodingException;
+import java.lang.annotation.Native;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -3063,8 +3064,8 @@ public final class String
         return COMPACT_STRINGS && coder == LATIN1;
     }
 
-    static final byte LATIN1 = 0;
-    static final byte UTF16  = 1;
+    @Native static final byte LATIN1 = 0;
+    @Native static final byte UTF16  = 1;
 
     /*
      * StringIndexOutOfBoundsException  if {@code index} is

@@ -26,6 +26,8 @@
  * @bug 4091811 4148753 4102731
  * @summary Test java.net.MulticastSocket joinGroup and leaveGroup
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main JoinLeave
  */
 

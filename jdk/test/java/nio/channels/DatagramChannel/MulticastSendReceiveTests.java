@@ -25,7 +25,9 @@
  * @bug 4527345 7026376 6633549
  * @summary Unit test for DatagramChannel's multicast support
  * @library /test/lib
- * @build MulticastSendReceiveTests
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        MulticastSendReceiveTests
  * @run main MulticastSendReceiveTests
  * @run main/othervm -Djava.net.preferIPv4Stack=true MulticastSendReceiveTests
  * @key randomness

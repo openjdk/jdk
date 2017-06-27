@@ -216,16 +216,17 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * the caller module, those resource bundles need to be loaded from service
  * providers of {@link ResourceBundleProvider}. The caller module must declare
  * "{@code uses}" and the service interface name is the concatenation of the
- * base name of the bundles and the string "{@code Provider}". The
+ * package name of the base name, string "{@code .spi.}", the simple class
+ * name of the base name, and the string "{@code Provider}". The
  * <em>bundle provider modules</em> containing resource bundles must
  * declare "{@code provides}" with the service interface name and
  * its implementation class name. For example, if the base name is
  * "{@code com.example.app.MyResources}", the caller module must declare
- * "{@code uses com.example.app.MyResourcesProvider;}" and a module containing resource
- * bundles must declare "{@code provides com.example.app.MyResourcesProvider
+ * "{@code uses com.example.app.spi.MyResourcesProvider;}" and a module containing resource
+ * bundles must declare "{@code provides com.example.app.spi.MyResourcesProvider
  * with com.example.app.internal.MyResourcesProviderImpl;}"
  * where {@code com.example.app.internal.MyResourcesProviderImpl} is an
- * implementation class of {@code com.example.app.MyResourcesProvider}.</li>
+ * implementation class of {@code com.example.app.spi.MyResourcesProvider}.</li>
  * <li>If you want to use non-standard formats in named modules, such as XML,
  * {@link ResourceBundleProvider} needs to be used.</li>
  * <li>The {@code getBundle} method with a {@code ClassLoader} may not be able to
@@ -243,9 +244,10 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  *
  * The {@code getBundle} factory methods load service providers of
  * {@link ResourceBundleProvider}, if available, using {@link ServiceLoader}.
- * The service type is designated by {@code basename+"Provider"}. For
+ * The service type is designated by
+ * {@code <package name> + ".spi." + <simple name> + "Provider"}. For
  * example, if the base name is "{@code com.example.app.MyResources}", the service
- * type is {@code com.example.app.MyResourcesProvider}.
+ * type is {@code com.example.app.spi.MyResourcesProvider}.
  * <p>
  * In named modules, the loaded service providers for the given base name are
  * used to load resource bundles. If no service provider is available, or if
@@ -923,7 +925,12 @@ public abstract class ResourceBundle {
      * <p> Resource bundles in named modules may be encapsulated.  When
      * the resource bundle is loaded from a provider, the caller module
      * must have an appropriate <i>uses</i> clause in its <i>module descriptor</i>
-     * to declare that the module uses implementations of {@code "baseName"Provider}.
+     * to declare that the module uses implementations of
+     * {@code <package name> + ".spi." + <simple name> + "Provider"}.
+     * Otherwise, it will load the resource bundles that are local in the
+     * given module or that are visible to the class loader of the given module
+     * (refer to the <a href="#bundleprovider">Resource Bundles in Named Modules</a>
+     * section for details).
      * When the resource bundle is loaded from the specified module, it is
      * subject to the encapsulation rules specified by
      * {@link Module#getResourceAsStream Module.getResourceAsStream}.
@@ -958,18 +965,15 @@ public abstract class ResourceBundle {
      * <p> Resource bundles in named modules may be encapsulated.  When
      * the resource bundle is loaded from a provider, the caller module
      * must have an appropriate <i>uses</i> clause in its <i>module descriptor</i>
-     * to declare that the module uses implementations of {@code "baseName"Provider}.
+     * to declare that the module uses implementations of
+     * {@code <package name> + ".spi." + <simple name> + "Provider"}.
+     * Otherwise, it will load the resource bundles that are local in the
+     * given module or that are visible to the class loader of the given module
+     * (refer to the <a href="#bundleprovider">Resource Bundles in Named Modules</a>
+     * section for details).
      * When the resource bundle is loaded from the specified module, it is
      * subject to the encapsulation rules specified by
      * {@link Module#getResourceAsStream Module.getResourceAsStream}.
-     *
-     * <p>
-     * If the given {@code module} is a named module, this method will
-     * load the service providers for {@link java.util.spi.ResourceBundleProvider}
-     * and also resource bundles that are local in the given module or that
-     * are visible to the class loader of the given module (refer to the
-     * <a href="#bundleprovider">Resource Bundles in Named Modules</a> section
-     * for details).
      *
      * <p>
      * If the given {@code module} is an unnamed module, then this method is
@@ -1070,8 +1074,10 @@ public abstract class ResourceBundle {
      * Resource bundles in a named module are private to that module.  If
      * the caller is in a named module, this method will find resource bundles
      * from the service providers of {@link java.util.spi.ResourceBundleProvider}
-     * and also find resource bundles that are in the caller's module or
-     * that are visible to the given class loader.
+     * if any. Otherwise, it will load the resource bundles that are visible to
+     * the given {@code loader} (refer to the
+     * <a href="#bundleprovider">Resource Bundles in Named Modules</a> section
+     * for details).
      * If the caller is in a named module and the given {@code loader} is
      * different than the caller's class loader, or if the caller is not in
      * a named module, this method will not find resource bundles from named
@@ -1883,8 +1889,15 @@ public abstract class ResourceBundle {
     private static Class<ResourceBundleProvider>
             getResourceBundleProviderType(String baseName, ClassLoader loader)
     {
-        // Look up <baseName> + "Provider"
-        String providerName = baseName + "Provider";
+        // Look up <packagename> + ".spi." + <name>"Provider"
+        int i = baseName.lastIndexOf('.');
+        if (i <= 0) {
+            return null;
+        }
+
+        String name = baseName.substring(i+1, baseName.length()) + "Provider";
+        String providerName = baseName.substring(0, i) + ".spi." + name;
+
         // Use the class loader of the getBundle caller so that the caller's
         // visibility of the provider type is checked.
         return AccessController.doPrivileged(

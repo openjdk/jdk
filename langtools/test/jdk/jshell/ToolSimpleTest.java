@@ -388,6 +388,14 @@ public class ToolSimpleTest extends ReplToolTesting {
         );
     }
 
+    @Test
+    public void testConfusedUserPseudoCommands() {
+        test(
+                (a) -> assertHelp(a, "/-<n>", "last snippet", "digits"),
+                (a) -> assertHelp(a, "/<id>", "last snippet", "digits")
+        );
+    }
+
     private void assertHelp(boolean a, String command, String... find) {
         assertCommandCheckOutput(a, command, s -> {
             for (String f : find) {

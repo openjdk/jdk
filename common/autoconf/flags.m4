@@ -910,7 +910,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2CFLAGS_JDK="[$]$2CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
     $2CXXFLAGS_JDK="[$]$2CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_REENTRANT -D__STDC_FORMAT_MACROS"
+    $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_REENTRANT"
     $2CFLAGS_JDK="[$]$2CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     $2CXXFLAGS_JDK="[$]$2CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -975,6 +975,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     fi
   fi
 
+  # Always enable optional macros for VM.
+  $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D__STDC_FORMAT_MACROS"
+  $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D__STDC_LIMIT_MACROS"
+  $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D__STDC_CONSTANT_MACROS"
+
   # Setup target OS define. Use OS target name but in upper case.
   OPENJDK_$1_OS_UPPERCASE=`$ECHO $OPENJDK_$1_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
   $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D$OPENJDK_$1_OS_UPPERCASE"
@@ -1012,7 +1017,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   elif test "x$OPENJDK_$1_OS" = xsolaris; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DSOLARIS"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -template=no%extdef -features=no%split_init \
-        -D_Crun_inline_placement -library=%none $PICFLAG -mt -features=no%except"
+        -D_Crun_inline_placement -library=stlport4 $PICFLAG -mt -features=no%except"
   elif test "x$OPENJDK_$1_OS" = xmacosx; then
     $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_ALLBSD_SOURCE"
