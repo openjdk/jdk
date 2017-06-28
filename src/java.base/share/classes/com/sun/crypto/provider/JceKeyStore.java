@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ package com.sun.crypto.provider;
 
 import java.io.*;
 import java.util.*;
+import java.security.AccessController;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.PrivateKey;
+import java.security.PrivilegedAction;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
@@ -835,11 +837,21 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // read the sealed key
                         try {
                             ois = new ObjectInputStream(dis);
+                            final ObjectInputStream ois2 = ois;
+                            // Set a deserialization checker
+                            AccessController.doPrivileged(
+                                (PrivilegedAction<Void>)() -> {
+                                    ois2.setObjectInputFilter(
+                                        new DeserializationChecker());
+                                    return null;
+                            });
                             entry.sealedKey = (SealedObject)ois.readObject();
                             // NOTE: don't close ois here since we are still
                             // using dis!!!
                         } catch (ClassNotFoundException cnfe) {
                             throw new IOException(cnfe.getMessage());
+                        } catch (InvalidClassException ice) {
+                            throw new IOException("Invalid secret key format");
                         }
 
                         // Add the entry to the list
@@ -915,5 +927,35 @@ public final class JceKeyStore extends KeyStoreSpi {
         }
 
         return JCEKS_MAGIC == dataStream.readInt();
+    }
+
+    /*
+     * An ObjectInputFilter that checks the format of the secret key being
+     * deserialized.
+     */
+    private static class DeserializationChecker implements ObjectInputFilter {
+        private static final int MAX_NESTED_DEPTH = 2;
+
+        @Override
+        public ObjectInputFilter.Status
+            checkInput(ObjectInputFilter.FilterInfo info) {
+
+            // First run a custom filter
+            long nestedDepth = info.depth();
+            if ((nestedDepth == 1 &&
+                info.serialClass() != SealedObjectForKeyProtector.class) ||
+                nestedDepth > MAX_NESTED_DEPTH) {
+                return Status.REJECTED;
+            }
+
+            // Next run the default filter, if available
+            ObjectInputFilter defaultFilter =
+                ObjectInputFilter.Config.getSerialFilter();
+            if (defaultFilter != null) {
+                return defaultFilter.checkInput(info);
+            }
+
+            return Status.UNDECIDED;
+        }
     }
 }
