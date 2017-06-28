@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -873,8 +874,8 @@ void PhiNode::verify_adr_type(VectorSet& visited, const TypePtr* at) const {
 
 // Verify a whole nest of phis rooted at this one.
 void PhiNode::verify_adr_type(bool recursive) const {
-  if (is_error_reported())  return;  // muzzle asserts when debugging an error
-  if (Node::in_dump())      return;  // muzzle asserts when printing
+  if (VMError::is_error_reported())  return;  // muzzle asserts when debugging an error
+  if (Node::in_dump())               return;  // muzzle asserts when printing
 
   assert((_type == Type::MEMORY) == (_adr_type != NULL), "adr_type for memory phis only");
 

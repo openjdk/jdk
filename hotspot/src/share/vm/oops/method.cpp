@@ -59,6 +59,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/quickSort.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Implementation of Method
@@ -242,7 +243,7 @@ int Method::bci_from(address bcp) const {
 #ifdef ASSERT
   {
     ResourceMark rm;
-    assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
+    assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
            "bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s",
            p2i(bcp), name_and_sig_as_C_string());
   }

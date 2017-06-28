@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/vmError.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -238,7 +239,7 @@ static void test_arraycopy_func(address func, int alignment) {
 static void test_safefetch32() {
   if (CanUseSafeFetch32()) {
     int dummy = 17;
-    int* const p_invalid = (int*) get_segfault_address();
+    int* const p_invalid = (int*) VMError::get_segfault_address();
     int* const p_valid = &dummy;
     int result_invalid = SafeFetch32(p_invalid, 0xABC);
     assert(result_invalid == 0xABC, "SafeFetch32 error");
@@ -258,7 +259,7 @@ static void test_safefetchN() {
     const intptr_t v2 = 0xDEFDDEFD;
 #endif
     intptr_t dummy = v1;
-    intptr_t* const p_invalid = (intptr_t*) get_segfault_address();
+    intptr_t* const p_invalid = (intptr_t*) VMError::get_segfault_address();
     intptr_t* const p_valid = &dummy;
     intptr_t result_invalid = SafeFetchN(p_invalid, v2);
     assert(result_invalid == v2, "SafeFetchN error");

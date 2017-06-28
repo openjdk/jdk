@@ -200,32 +200,4 @@ void report_insufficient_metaspace(size_t required_size);
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
 
-// Support for self-destruct
-bool is_error_reported();
-void set_error_reported();
-
-/* Test vmassert(), fatal(), guarantee(), etc. */
-NOT_PRODUCT(void test_error_handler();)
-
-// crash in a controlled way:
-// how can be one of:
-// 1,2 - asserts
-// 3,4 - guarantee
-// 5-7 - fatal
-// 8 - vm_exit_out_of_memory
-// 9 - ShouldNotCallThis
-// 10 - ShouldNotReachHere
-// 11 - Unimplemented
-// 12,13 - (not guaranteed) crashes
-// 14 - SIGSEGV
-// 15 - SIGFPE
-NOT_PRODUCT(void controlled_crash(int how);)
-
-// returns an address which is guaranteed to generate a SIGSEGV on read,
-// for test purposes, which is not NULL and contains bits in every word
-NOT_PRODUCT(void* get_segfault_address();)
-
-class frame;
-void pd_ps(frame f);
-
 #endif // SHARE_VM_UTILITIES_DEBUG_HPP

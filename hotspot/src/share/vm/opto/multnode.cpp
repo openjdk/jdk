@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/type.hpp"
+#include "utilities/vmError.hpp"
 
 //=============================================================================
 //------------------------------MultiNode--------------------------------------
@@ -106,7 +107,7 @@ const TypePtr *ProjNode::adr_type() const {
     if (ctrl == NULL)  return NULL; // node is dead
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
-    if (!is_error_reported() && !Node::in_dump())
+    if (!VMError::is_error_reported() && !Node::in_dump())
       assert(adr_type != NULL, "source must have adr_type");
     #endif
     return adr_type;

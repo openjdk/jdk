@@ -2095,7 +2095,7 @@ extern "C" {
   static void UserHandler(int sig, void *siginfo, void *context) {
     // Ctrl-C is pressed during error reporting, likely because the error
     // handler fails to abort. Let VM die immediately.
-    if (sig == SIGINT && is_error_reported()) {
+    if (sig == SIGINT && VMError::is_error_reported()) {
       os::die();
     }
 

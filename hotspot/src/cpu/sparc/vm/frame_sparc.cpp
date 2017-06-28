@@ -404,7 +404,55 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpret
 frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (address)pc, NULL);
 }
-#endif
+
+extern "C" void findpc(intptr_t x);
+
+void frame::pd_ps() {
+  intptr_t* curr_sp = sp();
+  intptr_t* prev_sp = curr_sp - 1;
+  intptr_t *pc = NULL;
+  intptr_t *next_pc = NULL;
+  int count = 0;
+  tty->print_cr("register window backtrace from " INTPTR_FORMAT ":", p2i(curr_sp));
+  while (curr_sp != NULL && ((intptr_t)curr_sp & 7) == 0 && curr_sp > prev_sp && curr_sp < prev_sp+1000) {
+    pc      = next_pc;
+    next_pc = (intptr_t*) curr_sp[I7->sp_offset_in_saved_window()];
+    tty->print("[%d] curr_sp=" INTPTR_FORMAT " pc=", count, p2i(curr_sp));
+    findpc((intptr_t)pc);
+    if (WizardMode && Verbose) {
+      // print register window contents also
+      tty->print_cr("    L0..L7: {"
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " "
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " ",
+                    curr_sp[0+0], curr_sp[0+1], curr_sp[0+2], curr_sp[0+3],
+                    curr_sp[0+4], curr_sp[0+5], curr_sp[0+6], curr_sp[0+7]);
+      tty->print_cr("    I0..I7: {"
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " "
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " ",
+                    curr_sp[8+0], curr_sp[8+1], curr_sp[8+2], curr_sp[8+3],
+                    curr_sp[8+4], curr_sp[8+5], curr_sp[8+6], curr_sp[8+7]);
+      // (and print stack frame contents too??)
+
+      CodeBlob *b = CodeCache::find_blob((address) pc);
+      if (b != NULL) {
+        if (b->is_nmethod()) {
+          Method* m = ((nmethod*)b)->method();
+          int nlocals = m->max_locals();
+          int nparams  = m->size_of_parameters();
+          tty->print_cr("compiled java method (locals = %d, params = %d)", nlocals, nparams);
+        }
+      }
+    }
+    prev_sp = curr_sp;
+    curr_sp = (intptr_t *)curr_sp[FP->sp_offset_in_saved_window()];
+    curr_sp = (intptr_t *)((intptr_t)curr_sp + STACK_BIAS);
+    count += 1;
+  }
+  if (curr_sp != NULL)
+    tty->print("[%d] curr_sp=" INTPTR_FORMAT " [bogus sp!]", count, p2i(curr_sp));
+}
+
+#endif // PRODUCT
 
 bool frame::is_interpreted_frame() const  {
   return Interpreter::contains(pc());
