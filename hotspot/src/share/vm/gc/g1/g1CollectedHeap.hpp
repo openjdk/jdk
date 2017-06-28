@@ -60,7 +60,6 @@
 class HeapRegion;
 class HRRSCleanupTask;
 class GenerationSpec;
-class OopsInHeapRegionClosure;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1KlassScanClosure;
