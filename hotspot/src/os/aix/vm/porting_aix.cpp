@@ -35,6 +35,7 @@
 
 #include <demangle.h>
 #include <sys/debug.h>
+#include <pthread.h>
 #include <ucontext.h>
 
 //////////////////////////////////
@@ -680,13 +681,14 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // retrieve it from the OS.
   stackptr_t stack_base = NULL;
   size_t stack_size = NULL;
-  Thread* const thread = Thread::current_or_null_safe();
-  if (thread) {
-    stack_base = (stackptr_t) thread->stack_base();
-    stack_size = thread->stack_size();
-  } else {
-    stack_base = (stackptr_t) os::current_stack_base();
-    stack_size = os::current_stack_size();
+  {
+    AixMisc::stackbounds_t stackbounds;
+    if (!AixMisc::query_stack_bounds_for_current_thread(&stackbounds)) {
+      st->print_cr("Cannot retrieve stack bounds.");
+      return;
+    }
+    stack_base = (stackptr_t)stackbounds.base;
+    stack_size = stackbounds.size;
   }
 
   st->print_cr("------ current frame:");
@@ -805,6 +807,74 @@ end_walk_callstack:
 cleanup:
 
   return;
+
+}
+
+
+bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
+
+  // Information about this api can be found (a) in the pthread.h header and
+  // (b) in http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/pthread_getthrds_np.htm
+  //
+  // The use of this API to find out the current stack is kind of undefined.
+  // But after a lot of tries and asking IBM about it, I concluded that it is safe
+  // enough for cases where I let the pthread library create its stacks. For cases
+  // where I create an own stack and pass this to pthread_create, it seems not to
+  // work (the returned stack size in that case is 0).
+
+  pthread_t tid = pthread_self();
+  struct __pthrdsinfo pinfo;
+  char dummy[1]; // Just needed to satisfy pthread_getthrds_np.
+  int dummy_size = sizeof(dummy);
+
+  memset(&pinfo, 0, sizeof(pinfo));
+
+  const int rc = pthread_getthrds_np(&tid, PTHRDSINFO_QUERY_ALL, &pinfo,
+                                     sizeof(pinfo), dummy, &dummy_size);
+
+  if (rc != 0) {
+    fprintf(stderr, "pthread_getthrds_np failed (%d)\n", rc);
+    fflush(stdout);
+    return false;
+  }
+
+  // The following may happen when invoking pthread_getthrds_np on a pthread
+  // running on a user provided stack (when handing down a stack to pthread
+  // create, see pthread_attr_setstackaddr).
+  // Not sure what to do then.
+  if (pinfo.__pi_stackend == NULL || pinfo.__pi_stackaddr == NULL) {
+    fprintf(stderr, "pthread_getthrds_np - invalid values\n");
+    fflush(stdout);
+    return false;
+  }
+
+  // Note: we get three values from pthread_getthrds_np:
+  //       __pi_stackaddr, __pi_stacksize, __pi_stackend
+  //
+  // high addr    ---------------------                                                           base, high
+  //
+  //    |         pthread internal data, like ~2K
+  //    |
+  //    |         ---------------------   __pi_stackend   (usually not page aligned, (xxxxF890))
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |          ---------------------   (__pi_stackend - __pi_stacksize)
+  //    |
+  //    |          padding to align the following AIX guard pages, if enabled.
+  //    |
+  //    V          ---------------------   __pi_stackaddr                                        low, base - size
+  //
+  // low addr      AIX guard pages, if enabled (AIXTHREAD_GUARDPAGES > 0)
+  //
+
+  out->base = (address)pinfo.__pi_stackend;
+  address low = (address)pinfo.__pi_stackaddr;
+  out->size = out->base - low;
+  return true;
 
 }
 
