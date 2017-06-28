@@ -39,7 +39,7 @@ G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par
 { }
 
 G1ScanClosureBase::G1ScanClosureBase(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-  _g1(g1), _par_scan_state(par_scan_state)
+  _g1(g1), _par_scan_state(par_scan_state), _from(NULL)
 { }
 
 void G1KlassScanClosure::do_klass(Klass* klass) {

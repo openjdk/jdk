@@ -35,15 +35,16 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 
-class UpdateRSetDeferred : public OopsInHeapRegionClosure {
+class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
   G1CollectedHeap* _g1;
   DirtyCardQueue *_dcq;
   G1SATBCardTableModRefBS* _ct_bs;
+  HeapRegion* _from;
 
 public:
   UpdateRSetDeferred(DirtyCardQueue* dcq) :
-    _g1(G1CollectedHeap::heap()), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
+    _g1(G1CollectedHeap::heap()), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq), _from(NULL) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -58,6 +59,8 @@ public:
       }
     }
   }
+
+  void set_region(HeapRegion* from) { _from = from; }
 };
 
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
@@ -66,14 +69,14 @@ private:
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
-  OopsInHeapRegionClosure *_update_rset_cl;
+  UpdateRSetDeferred* _update_rset_cl;
   bool _during_initial_mark;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
-                                 OopsInHeapRegionClosure* update_rset_cl,
+                                 UpdateRSetDeferred* update_rset_cl,
                                  bool during_initial_mark,
                                  uint worker_id) :
     _g1(G1CollectedHeap::heap()),

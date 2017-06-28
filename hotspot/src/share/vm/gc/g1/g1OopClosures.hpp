@@ -39,19 +39,11 @@ class G1ParScanThreadState;
 class G1CMTask;
 class ReferenceProcessor;
 
-// A class that scans oops in a given heap region (much as OopsInGenClosure
-// scans oops in a generation.)
-class OopsInHeapRegionClosure: public ExtendedOopClosure {
-protected:
-  HeapRegion* _from;
-public:
-  void set_region(HeapRegion* from) { _from = from; }
-};
-
-class G1ScanClosureBase : public OopsInHeapRegionClosure {
+class G1ScanClosureBase : public ExtendedOopClosure {
 protected:
   G1CollectedHeap* _g1;
   G1ParScanThreadState* _par_scan_state;
+  HeapRegion* _from;
 
   G1ScanClosureBase(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
   ~G1ScanClosureBase() { }
@@ -64,6 +56,7 @@ protected:
 public:
   // This closure needs special handling for InstanceRefKlass.
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+  void set_region(HeapRegion* from) { _from = from; }
 };
 
 // Used during the Update RS phase to refine remaining cards in the DCQ during garbage collection.
