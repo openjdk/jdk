@@ -1108,7 +1108,7 @@ void G1CollectedHeap::clear_rsets_post_compaction() {
 
 class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*   _g1h;
-  UpdateRSOopClosure _cl;
+  RebuildRSOopClosure _cl;
 public:
   RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, uint worker_i = 0) :
     _cl(g1->g1_rem_set(), worker_i),

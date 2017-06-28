@@ -326,10 +326,10 @@ void G1RemSet::initialize(size_t capacity, uint max_regions) {
   }
 }
 
-G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
-                                 G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
-                                 CodeBlobClosure* code_root_cl,
-                                 uint worker_i) :
+G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
+                                                   G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
+                                                   CodeBlobClosure* code_root_cl,
+                                                   uint worker_i) :
   _scan_state(scan_state),
   _scan_objs_on_card_cl(scan_obj_on_card),
   _code_root_cl(code_root_cl),
@@ -341,10 +341,9 @@ G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
   _g1h = G1CollectedHeap::heap();
   _bot = _g1h->bot();
   _ct_bs = _g1h->g1_barrier_set();
-  _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
 }
 
-void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
+void G1ScanRSForRegionClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
   MemRegion card_region(card_start, BOTConstants::N_words);
   MemRegion pre_gc_allocated(r->bottom(), _scan_state->scan_top(r->hrm_index()));
   MemRegion mr = pre_gc_allocated.intersection(card_region);
@@ -359,13 +358,13 @@ void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *
   }
 }
 
-void G1ScanRSClosure::scan_strong_code_roots(HeapRegion* r) {
+void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
   double scan_start = os::elapsedTime();
   r->strong_code_roots_do(_code_root_cl);
   _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
 }
 
-bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
+bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
   assert(r->in_collection_set(), "should only be called on elements of CS.");
   uint region_idx = r->hrm_index();
 
@@ -379,15 +378,16 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     _scan_state->add_dirty_region(region_idx);
   }
 
+  // We claim cards in blocks so as to reduce the contention.
+  size_t const block_size = G1RSetScanBlockSize;
+
   HeapRegionRemSetIterator iter(r->rem_set());
   size_t card_index;
 
-  // We claim cards in block so as to reduce the contention. The block size is determined by
-  // the G1RSetScanBlockSize parameter.
-  size_t claimed_card_block = _scan_state->iter_claimed_next(region_idx, _block_size);
+  size_t claimed_card_block = _scan_state->iter_claimed_next(region_idx, block_size);
   for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
-    if (current_card >= claimed_card_block + _block_size) {
-      claimed_card_block = _scan_state->iter_claimed_next(region_idx, _block_size);
+    if (current_card >= claimed_card_block + block_size) {
+      claimed_card_block = _scan_state->iter_claimed_next(region_idx, block_size);
     }
     if (current_card < claimed_card_block) {
       _cards_skipped++;
@@ -419,7 +419,7 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
   double rs_time_start = os::elapsedTime();
 
   G1ScanObjsDuringScanRSClosure scan_cl(_g1, pss);
-  G1ScanRSClosure cl(_scan_state, &scan_cl, heap_region_codeblobs, worker_i);
+  G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, heap_region_codeblobs, worker_i);
   _g1->collection_set_iterate_from(&cl, worker_i);
 
   double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
