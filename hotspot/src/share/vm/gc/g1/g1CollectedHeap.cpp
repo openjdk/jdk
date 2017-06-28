@@ -2397,12 +2397,10 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
-void
-G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
-                                         uint worker_id,
-                                         HeapRegionClaimer *hrclaimer,
-                                         bool concurrent) const {
-  _hrm.par_iterate(cl, worker_id, hrclaimer, concurrent);
+void G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
+                                              uint worker_id,
+                                              HeapRegionClaimer *hrclaimer) const {
+  _hrm.par_iterate(cl, worker_id, hrclaimer);
 }
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
