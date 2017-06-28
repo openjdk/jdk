@@ -47,6 +47,10 @@ hotspot_misc = \
 hotspot_native_sanity = \
   native_sanity
 
+hotspot_tier1_common = \
+  sanity/BasicVMTest.java \
+  native/GTestWrapper.java
+
 hotspot_tier1_compiler_1 = \
   compiler/aot/ \
   compiler/arraycopy/ \
@@ -196,6 +200,7 @@ hotspot_tier1_serviceability = \
   serviceability/logging
 
 hotspot_tier1 = \
+  :hotspot_tier1_common \
   :hotspot_tier1_compiler_1 \
   :hotspot_tier1_compiler_2 \
   :hotspot_tier1_compiler_3 \

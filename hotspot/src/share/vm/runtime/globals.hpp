@@ -1304,7 +1304,7 @@ public:
   product(bool, UseBiasedLocking, true,                                     \
           "Enable biased locking in JVM")                                   \
                                                                             \
-  product(intx, BiasedLockingStartupDelay, 4000,                            \
+  product(intx, BiasedLockingStartupDelay, 0,                               \
           "Number of milliseconds to wait before enabling biased locking")  \
           range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
           constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \

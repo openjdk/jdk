@@ -86,7 +86,7 @@ public class ClassAndLibraryNotMatchTest {
 
     private void compileAotLibrary() {
         AotCompiler.launchCompiler(LIB_NAME, HELLO_WORLD_CLASS_NAME,
-                Arrays.asList("-classpath", Utils.TEST_CLASS_PATH + ":."), null);
+                Arrays.asList("-classpath", Utils.TEST_CLASS_PATH + File.pathSeparator + "."), null);
     }
 
     private void runAndCheckHelloWorld(String checkString) {
