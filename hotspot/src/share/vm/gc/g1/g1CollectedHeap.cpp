@@ -2360,20 +2360,6 @@ bool G1CollectedHeap::is_in_exact(const void* p) const {
 
 // Iteration functions.
 
-// Applies an ExtendedOopClosure onto all references of objects within a HeapRegion.
-
-class IterateOopClosureRegionClosure: public HeapRegionClosure {
-  ExtendedOopClosure* _cl;
-public:
-  IterateOopClosureRegionClosure(ExtendedOopClosure* cl) : _cl(cl) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->is_continues_humongous()) {
-      r->oop_iterate(_cl);
-    }
-    return false;
-  }
-};
-
 // Iterates an ObjectClosure over all objects within a HeapRegion.
 
 class IterateObjectClosureRegionClosure: public HeapRegionClosure {
