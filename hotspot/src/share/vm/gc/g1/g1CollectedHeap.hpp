@@ -1195,17 +1195,14 @@ public:
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
   // Iterate over the heap regions in parallel. Assumes that this will be called
-  // in parallel by ParallelGCThreads worker threads with distinct worker ids
-  // in the range [0..max(ParallelGCThreads-1, 1)]. Applies "blk->doHeapRegion"
+  // in parallel by a number of worker threads with distinct worker ids
+  // in the range passed to the HeapRegionClaimer. Applies "blk->doHeapRegion"
   // to each of the regions, by attempting to claim the region using the
   // HeapRegionClaimer and, if successful, applying the closure to the claimed
-  // region. The concurrent argument should be set to true if iteration is
-  // performed concurrently, during which no assumptions are made for consistent
-  // attributes of the heap regions (as they might be modified while iterating).
+  // region.
   void heap_region_par_iterate(HeapRegionClosure* cl,
                                uint worker_id,
-                               HeapRegionClaimer* hrclaimer,
-                               bool concurrent = false) const;
+                               HeapRegionClaimer* hrclaimer) const;
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
