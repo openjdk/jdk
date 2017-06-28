@@ -438,15 +438,14 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
 // Closure used for updating RSets and recording references that
 // point into the collection set. Only called during an
 // evacuation pause.
-
-class RefineRecordRefsIntoCSCardTableEntryClosure: public CardTableEntryClosure {
+class G1RefineCardClosure: public CardTableEntryClosure {
   G1RemSet* _g1rs;
   DirtyCardQueue* _into_cset_dcq;
   G1ScanObjsDuringUpdateRSClosure* _update_rs_cl;
 public:
-  RefineRecordRefsIntoCSCardTableEntryClosure(G1CollectedHeap* g1h,
-                                              DirtyCardQueue* into_cset_dcq,
-                                              G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
+  G1RefineCardClosure(G1CollectedHeap* g1h,
+                      DirtyCardQueue* into_cset_dcq,
+                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
     _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq), _update_rs_cl(update_rs_cl)
   {}
 
@@ -474,16 +473,16 @@ void G1RemSet::update_rem_set(DirtyCardQueue* into_cset_dcq,
                               G1ParScanThreadState* pss,
                               uint worker_i) {
   G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1, pss, worker_i);
-  RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq, &update_rs_cl);
+  G1RefineCardClosure refine_card_cl(_g1, into_cset_dcq, &update_rs_cl);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
   if (G1HotCardCache::default_use_cache()) {
     // Apply the closure to the entries of the hot card cache.
     G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
-    _g1->iterate_hcc_closure(&into_cset_update_rs_cl, worker_i);
+    _g1->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
   // Apply the closure to all remaining log entries.
-  _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, worker_i);
+  _g1->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 }
 
 void G1RemSet::cleanupHRRS() {
