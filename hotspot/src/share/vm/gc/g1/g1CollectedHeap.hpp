@@ -1136,6 +1136,7 @@ public:
   // set. Assumes that the reference points into the heap.
   inline bool is_in_cset(const HeapRegion *hr);
   inline bool is_in_cset(oop obj);
+  inline bool is_in_cset(HeapWord* addr);
 
   inline bool is_in_cset_or_humongous(const oop obj);
 
