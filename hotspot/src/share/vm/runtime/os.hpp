@@ -38,6 +38,7 @@
 #endif
 
 class AgentLibrary;
+class frame;
 
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-

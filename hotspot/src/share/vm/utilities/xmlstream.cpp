@@ -32,11 +32,12 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Do not assert this condition if there's already another error reported.
 #define assert_if_no_error(cond, msg) \
-  vmassert((cond) || is_error_reported(), msg)
+  vmassert((cond) || VMError::is_error_reported(), msg)
 
 void xmlStream::initialize(outputStream* out) {
   _out = out;
@@ -198,7 +199,7 @@ void xmlStream::pop_tag(const char* tag) {
     _element_depth -= 1;
   }
   if (bad_tag && !VMThread::should_terminate() && !VM_Exit::vm_exited() &&
-      !is_error_reported())
+      !VMError::is_error_reported())
   {
     assert(false, "bad tag in log");
   }

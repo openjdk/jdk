@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -713,7 +714,7 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
   #ifdef PRODUCT
   cross_check = NULL;
   #else
-  if (!VerifyAliases || is_error_reported() || Node::in_dump())  cross_check = NULL;
+  if (!VerifyAliases || VMError::is_error_reported() || Node::in_dump())  cross_check = NULL;
   #endif
   const TypePtr* tp = t->isa_ptr();
   if (tp == NULL) {
@@ -4385,9 +4386,9 @@ static bool might_be_same(Node* a, Node* b) {
 
 // verify a narrow slice (either incoming or outgoing)
 static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
-  if (!VerifyAliases)       return;  // don't bother to verify unless requested
-  if (is_error_reported())  return;  // muzzle asserts when debugging an error
-  if (Node::in_dump())      return;  // muzzle asserts when printing
+  if (!VerifyAliases)                return;  // don't bother to verify unless requested
+  if (VMError::is_error_reported())  return;  // muzzle asserts when debugging an error
+  if (Node::in_dump())               return;  // muzzle asserts when printing
   assert(alias_idx >= Compile::AliasIdxRaw, "must not disturb base_memory or sentinel");
   assert(n != NULL, "");
   // Elide intervening MergeMem's
@@ -4447,7 +4448,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
   } else {
     // make sure the stored slice is sane
     #ifdef ASSERT
-    if (is_error_reported() || Node::in_dump()) {
+    if (VMError::is_error_reported() || Node::in_dump()) {
     } else if (might_be_same(n, base_memory())) {
       // Give it a pass:  It is a mostly harmless repetition of the base.
       // This can arise normally from node subsumption during optimization.

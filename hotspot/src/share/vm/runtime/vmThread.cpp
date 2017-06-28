@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Dummy VM operation to act as first element in our circular double-linked list
@@ -433,7 +434,7 @@ void VMThread::loop() {
                                       GuaranteedSafepointInterval);
 
         // Support for self destruction
-        if ((SelfDestructTimer != 0) && !is_error_reported() &&
+        if ((SelfDestructTimer != 0) && !VMError::is_error_reported() &&
             (os::elapsedTime() > (double)SelfDestructTimer * 60.0)) {
           tty->print_cr("VM self-destructed");
           exit(-1);

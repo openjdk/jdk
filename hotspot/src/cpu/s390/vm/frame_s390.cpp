@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -496,6 +496,8 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 }
 
+
+void frame::pd_ps() {}
 #endif // !PRODUCT
 
 intptr_t *frame::initial_deoptimization_info() {

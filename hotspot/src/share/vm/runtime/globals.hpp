@@ -928,11 +928,11 @@ public:
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
-          "in debug.cpp.")                                                  \
+          "in vmError.cpp.")                                                \
                                                                             \
   notproduct(uintx, TestCrashInErrorHandler, 0,                             \
           "If > 0, provokes an error inside VM error handler (a secondary " \
-          "crash). see test_error_handler() in debug.cpp.")                 \
+          "crash). see test_error_handler() in vmError.cpp")                \
                                                                             \
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \

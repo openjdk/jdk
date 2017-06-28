@@ -84,6 +84,7 @@
 #include "utilities/histogram.hpp"
 #include "utilities/internalVMTests.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -3983,7 +3984,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
-    test_error_handler();
+    VMError::test_error_handler();
     if (ExecuteInternalVMTests) {
       InternalVMTests::run();
     }

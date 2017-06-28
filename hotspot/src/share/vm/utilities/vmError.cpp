@@ -22,7 +22,6 @@
  *
  */
 
-#include <fcntl.h>
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -48,6 +47,26 @@
 #include "utilities/errorReporter.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
+
+#ifndef PRODUCT
+#include <signal.h>
+#endif // PRODUCT
+
+bool VMError::_error_reported = false;
+
+// call this when the VM is dying--it might loosen some asserts
+bool VMError::is_error_reported() { return _error_reported; }
+
+// returns an address which is guaranteed to generate a SIGSEGV on read,
+// for test purposes, which is not NULL and contains bits in every word
+void* VMError::get_segfault_address() {
+  return (void*)
+#ifdef _LP64
+    0xABC0000000000ABCULL;
+#else
+    0x00000ABC;
+#endif
+}
 
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {
@@ -1259,7 +1278,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args);
 
     // first time
-    set_error_reported();
+    _error_reported = true;
 
     reporting_started();
     record_reporting_start_time();
@@ -1573,4 +1592,93 @@ bool VMError::check_timeout() {
   return false;
 
 }
+
+#ifndef PRODUCT
+typedef void (*voidfun_t)();
+// Crash with an authentic sigfpe
+static void crash_with_sigfpe() {
+  // generate a native synchronous SIGFPE where possible;
+  // if that did not cause a signal (e.g. on ppc), just
+  // raise the signal.
+  volatile int x = 0;
+  volatile int y = 1/x;
+#ifndef _WIN32
+  // OSX implements raise(sig) incorrectly so we need to
+  // explicitly target the current thread
+  pthread_kill(pthread_self(), SIGFPE);
+#endif
+} // end: crash_with_sigfpe
+
+// crash with sigsegv at non-null address.
+static void crash_with_segfault() {
+
+  char* const crash_addr = (char*) VMError::get_segfault_address();
+  *crash_addr = 'X';
+
+} // end: crash_with_segfault
+
+void VMError::test_error_handler() {
+  controlled_crash(ErrorHandlerTest);
+}
+
+// crash in a controlled way:
+// how can be one of:
+// 1,2 - asserts
+// 3,4 - guarantee
+// 5-7 - fatal
+// 8 - vm_exit_out_of_memory
+// 9 - ShouldNotCallThis
+// 10 - ShouldNotReachHere
+// 11 - Unimplemented
+// 12,13 - (not guaranteed) crashes
+// 14 - SIGSEGV
+// 15 - SIGFPE
+void VMError::controlled_crash(int how) {
+  if (how == 0) return;
+
+  // If asserts are disabled, use the corresponding guarantee instead.
+  NOT_DEBUG(if (how <= 2) how += 2);
+
+  const char* const str = "hello";
+  const size_t      num = (size_t)os::vm_page_size();
+
+  const char* const eol = os::line_separator();
+  const char* const msg = "this message should be truncated during formatting";
+  char * const dataPtr = NULL;  // bad data pointer
+  const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
+
+  // Keep this in sync with test/runtime/ErrorHandling/ErrorHandler.java
+  switch (how) {
+    case  1: vmassert(str == NULL, "expected null");
+    case  2: vmassert(num == 1023 && *str == 'X',
+                      "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+    case  3: guarantee(str == NULL, "expected null");
+    case  4: guarantee(num == 1023 && *str == 'X',
+                       "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+    case  5: fatal("expected null");
+    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
+    case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                   "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                   "%s%s#    %s%s#    %s%s#    %s%s#    %s",
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg);
+    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate");
+    case  9: ShouldNotCallThis();
+    case 10: ShouldNotReachHere();
+    case 11: Unimplemented();
+    // There's no guarantee the bad data pointer will crash us
+    // so "break" out to the ShouldNotReachHere().
+    case 12: *dataPtr = '\0'; break;
+    // There's no guarantee the bad function pointer will crash us
+    // so "break" out to the ShouldNotReachHere().
+    case 13: (*funcPtr)(); break;
+    case 14: crash_with_segfault(); break;
+    case 15: crash_with_sigfpe(); break;
+
+    default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
+  }
+  ShouldNotReachHere();
+}
+#endif // !PRODUCT
 
