@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   InCSetState       _dest[InCSetState::Num];
   // Local tenuring threshold.
   uint              _tenuring_threshold;
-  G1ParScanClosure  _scanner;
+  G1ScanEvacuatedObjClosure  _scanner;
 
   int  _hash_seed;
   uint _worker_id;

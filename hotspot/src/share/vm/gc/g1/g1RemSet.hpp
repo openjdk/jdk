@@ -41,10 +41,12 @@ class G1BlockOffsetTable;
 class CodeBlobClosure;
 class G1CollectedHeap;
 class G1HotCardCache;
-class G1ParPushHeapRSClosure;
 class G1RemSetScanState;
+class G1ParScanThreadState;
 class G1Policy;
 class G1SATBCardTableModRefBS;
+class G1ScanObjsDuringScanRSClosure;
+class G1ScanObjsDuringUpdateRSClosure;
 class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
@@ -94,21 +96,12 @@ public:
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
-  // Invoke "cl->do_oop" on all pointers into the collection set
-  // from objects in regions outside the collection set (having
-  // invoked "cl->set_region" to set the "from" region correctly
-  // beforehand.)
+  // Process all oops in the collection set from the cards in the refinement buffers and
+  // remembered sets using pss.
   //
-  // Apply non_heap_roots on the oops of the unmarked nmethods
-  // on the strong code roots list for each region in the
-  // collection set.
-  //
-  // The "worker_i" param is for the parallel case where the id
-  // of the worker thread calling this function can be helpful in
-  // partitioning the work to be done. It should be the same as
-  // the "i" passed to the calling thread's work(i) function.
-  // In the sequential case this param will be ignored.
-  void oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
+  // Further applies heap_region_codeblobs on the oops of the unmarked nmethods on the strong code
+  // roots list for each region in the collection set.
+  void oops_into_collection_set_do(G1ParScanThreadState* pss,
                                    CodeBlobClosure* heap_region_codeblobs,
                                    uint worker_i);
 
@@ -120,15 +113,14 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
 
-  void scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
+  void scan_rem_set(G1ParScanThreadState* pss,
                     CodeBlobClosure* heap_region_codeblobs,
                     uint worker_i);
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
-  // Flush remaining refinement buffers into the remembered set,
-  // applying oops_in_heap_closure on the references found.
-  void update_rem_set(DirtyCardQueue* into_cset_dcq, G1ParPushHeapRSClosure* oops_in_heap_closure, uint worker_i);
+  // Flush remaining refinement buffers into the remembered set.
+  void update_rem_set(DirtyCardQueue* into_cset_dcq, G1ParScanThreadState* pss, uint worker_i);
 
   // Record, if necessary, the fact that *p (where "p" is in region "from",
   // which is required to be non-NULL) has changed to a new non-NULL value.
@@ -149,8 +141,7 @@ public:
   // Refine the card corresponding to "card_ptr". Returns "true" if the given card contains
   // oops that have references into the current collection set.
   bool refine_card_during_gc(jbyte* card_ptr,
-                             uint worker_i,
-                             G1ParPushHeapRSClosure* oops_in_heap_closure);
+                             G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();
@@ -188,7 +179,7 @@ class G1ScanRSClosure : public HeapRegionClosure {
 
   G1CollectedHeap* _g1h;
 
-  G1ParPushHeapRSClosure* _push_heap_cl;
+  G1ScanObjsDuringScanRSClosure* _scan_objs_on_card_cl;
   CodeBlobClosure* _code_root_cl;
 
   G1BlockOffsetTable* _bot;
@@ -202,7 +193,7 @@ class G1ScanRSClosure : public HeapRegionClosure {
   void scan_strong_code_roots(HeapRegion* r);
 public:
   G1ScanRSClosure(G1RemSetScanState* scan_state,
-                  G1ParPushHeapRSClosure* push_heap_cl,
+                  G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
                   CodeBlobClosure* code_root_cl,
                   uint worker_i);
 

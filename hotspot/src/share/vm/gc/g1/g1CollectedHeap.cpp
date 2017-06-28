@@ -3458,13 +3458,11 @@ public:
 
       _root_processor->evacuate_roots(pss->closures(), worker_id);
 
-      G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
-
       // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
       // treating the nmethods visited to act as roots for concurrent marking.
       // We only want to make sure that the oops in the nmethods are adjusted with regard to the
       // objects copied by the current evacuation.
-      _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
+      _g1h->g1_rem_set()->oops_into_collection_set_do(pss,
                                                       pss->closures()->weak_codeblobs(),
                                                       worker_id);
 
