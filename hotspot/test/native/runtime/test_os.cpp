@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,42 @@ TEST_VM(os, page_size_for_region_unaligned) {
     ASSERT_EQ(small_page, actual);
   }
 }
+
+TEST(os, test_random) {
+  const double m = 2147483647;
+  double mean = 0.0, variance = 0.0, t;
+  const int reps = 10000;
+  unsigned int seed = 1;
+
+  // tty->print_cr("seed %ld for %ld repeats...", seed, reps);
+  os::init_random(seed);
+  int num;
+  for (int k = 0; k < reps; k++) {
+    num = os::random();
+    double u = (double)num / m;
+    ASSERT_TRUE(u >= 0.0 && u <= 1.0) << "bad random number!";
+
+    // calculate mean and variance of the random sequence
+    mean += u;
+    variance += (u*u);
+  }
+  mean /= reps;
+  variance /= (reps - 1);
+
+  ASSERT_EQ(num, 1043618065) << "bad seed";
+  // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
+  int intmean = mean*100;
+  ASSERT_EQ(intmean, 50);
+  // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
+  int intvariance = variance*100;
+  ASSERT_EQ(intvariance, 33);
+  const double eps = 0.0001;
+  t = fabsd(mean - 0.5018);
+  ASSERT_LT(t, eps) << "bad mean";
+  t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
+  ASSERT_LT(t, eps) << "bad variance";
+}
+
 
 #ifdef ASSERT
 TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {

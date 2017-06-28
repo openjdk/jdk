@@ -70,7 +70,7 @@ OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
 volatile int32_t* os::_mem_serialize_page = NULL;
 uintptr_t         os::_serialize_page_mask = 0;
-long              os::_rand_seed          = 1;
+volatile unsigned int os::_rand_seed      = 1;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
@@ -722,12 +722,12 @@ void  os::free(void *memblock) {
 #endif
 }
 
-void os::init_random(long initval) {
+void os::init_random(unsigned int initval) {
   _rand_seed = initval;
 }
 
 
-long os::random() {
+static int random_helper(unsigned int rand_seed) {
   /* standard, well-known linear congruential random generator with
    * next_rand = (16807*seed) mod (2**31-1)
    * see
@@ -736,14 +736,14 @@ long os::random() {
    * (2) "Two Fast Implementations of the 'Minimal Standard' Random
    *     Number Generator", David G. Carta, Comm. ACM 33, 1 (Jan 1990), pp. 87-88.
   */
-  const long a = 16807;
-  const unsigned long m = 2147483647;
-  const long q = m / a;        assert(q == 127773, "weird math");
-  const long r = m % a;        assert(r == 2836, "weird math");
+  const unsigned int a = 16807;
+  const unsigned int m = 2147483647;
+  const int q = m / a;        assert(q == 127773, "weird math");
+  const int r = m % a;        assert(r == 2836, "weird math");
 
   // compute az=2^31p+q
-  unsigned long lo = a * (long)(_rand_seed & 0xFFFF);
-  unsigned long hi = a * (long)((unsigned long)_rand_seed >> 16);
+  unsigned int lo = a * (rand_seed & 0xFFFF);
+  unsigned int hi = a * (rand_seed >> 16);
   lo += (hi & 0x7FFF) << 16;
 
   // if q overflowed, ignore the overflow and increment q
@@ -758,7 +758,18 @@ long os::random() {
     lo &= m;
     ++lo;
   }
-  return (_rand_seed = lo);
+  return lo;
+}
+
+int os::random() {
+  // Make updating the random seed thread safe.
+  while (true) {
+    unsigned int seed = _rand_seed;
+    int rand = random_helper(seed);
+    if (Atomic::cmpxchg(rand, &_rand_seed, seed) == seed) {
+      return rand;
+    }
+  }
 }
 
 // The INITIALIZED state is distinguished from the SUSPENDED state because the
@@ -1129,39 +1140,6 @@ bool os::is_first_C_frame(frame* fr) {
   return false;
 #endif
 }
-
-#ifdef ASSERT
-extern "C" void test_random() {
-  const double m = 2147483647;
-  double mean = 0.0, variance = 0.0, t;
-  long reps = 10000;
-  unsigned long seed = 1;
-
-  tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-  os::init_random(seed);
-  long num;
-  for (int k = 0; k < reps; k++) {
-    num = os::random();
-    double u = (double)num / m;
-    assert(u >= 0.0 && u <= 1.0, "bad random number!");
-
-    // calculate mean and variance of the random sequence
-    mean += u;
-    variance += (u*u);
-  }
-  mean /= reps;
-  variance /= (reps - 1);
-
-  assert(num == 1043618065, "bad seed");
-  tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-  tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-  const double eps = 0.0001;
-  t = fabsd(mean - 0.5018);
-  assert(t < eps, "bad mean");
-  t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
-  assert(t < eps, "bad variance");
-}
-#endif
 
 
 // Set up the boot classpath.

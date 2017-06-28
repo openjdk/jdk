@@ -2839,7 +2839,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
 
 #ifdef ASSERT
   // Variable for the failure injection
-  long ran_num = os::random();
+  int ran_num = os::random();
   size_t fail_after = ran_num % bytes;
 #endif
 
