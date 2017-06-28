@@ -139,7 +139,11 @@ inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_in_cset(oop obj) {
-  return _in_cset_fast_test.is_in_cset((HeapWord*)obj);
+  return is_in_cset((HeapWord*)obj);
+}
+
+inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) {
+  return _in_cset_fast_test.is_in_cset(addr);
 }
 
 bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,13 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms):");
   _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms):");
+
+  _scan_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_scanned_cards, ScannedCards);
+  _scan_rs_claimed_cards = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_claimed_cards, ClaimedCards);
+  _scan_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_skipped_cards, SkippedCards);
 
   _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
   _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers);
@@ -210,8 +217,8 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs
   _gc_par_phases[phase]->add(worker_i, secs);
 }
 
-void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count) {
-  _gc_par_phases[phase]->set_thread_work_item(worker_i, count);
+void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
+  _gc_par_phases[phase]->set_thread_work_item(worker_i, count, index);
 }
 
 // return the average time for a phase in milliseconds
@@ -219,9 +226,9 @@ double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
   return _gc_par_phases[phase]->average() * 1000.0;
 }
 
-size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->sum();
+size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
+  assert(_gc_par_phases[phase]->thread_work_items(index) != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items(index)->sum();
 }
 
 template <class T>
@@ -239,11 +246,13 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
   phase->print_summary_on(out, print_sum);
   details(phase, Indents[indent]);
 
-  WorkerDataArray<size_t>* work_items = phase->thread_work_items();
-  if (work_items != NULL) {
-    out->print("%s", Indents[indent + 1]);
-    work_items->print_summary_on(out, true);
-    details(work_items, Indents[indent + 1]);
+  for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
+    WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
+    if (work_items != NULL) {
+      out->print("%s", Indents[indent + 1]);
+      work_items->print_summary_on(out, true);
+      details(work_items, Indents[indent + 1]);
+    }
   }
 }
 
