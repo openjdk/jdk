@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     GCParPhasesSentinel
   };
 
+  enum GCScanRSWorkItems {
+    ScannedCards,
+    ClaimedCards,
+    SkippedCards
+  };
+
  private:
   // Markers for grouping the phases in the GCPhases enum above
   static const int GCMainParPhasesLast = GCWorkerEnd;
@@ -83,8 +89,15 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   static const int StringDedupPhasesLast = StringDedupTableFixup;
 
   WorkerDataArray<double>* _gc_par_phases[GCParPhasesSentinel];
+
   WorkerDataArray<size_t>* _update_rs_processed_buffers;
+
+  WorkerDataArray<size_t>* _scan_rs_scanned_cards;
+  WorkerDataArray<size_t>* _scan_rs_claimed_cards;
+  WorkerDataArray<size_t>* _scan_rs_skipped_cards;
+
   WorkerDataArray<size_t>* _termination_attempts;
+
   WorkerDataArray<size_t>* _redirtied_cards;
 
   double _cur_collection_par_time_ms;
@@ -170,12 +183,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   // add a number of seconds to a phase
   void add_time_secs(GCParPhases phase, uint worker_i, double secs);
 
-  void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count);
+  void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
 
   // return the average time for a phase in milliseconds
   double average_time_ms(GCParPhases phase);
 
-  size_t sum_thread_work_items(GCParPhases phase);
+  size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
  public:
 

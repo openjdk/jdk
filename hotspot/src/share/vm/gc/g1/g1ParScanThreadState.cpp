@@ -337,16 +337,6 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   return _states[worker_id];
 }
 
-void G1ParScanThreadStateSet::add_cards_scanned(uint worker_id, size_t cards_scanned) {
-  assert(worker_id < _n_workers, "out of bounds access");
-  _cards_scanned[worker_id] += cards_scanned;
-}
-
-size_t G1ParScanThreadStateSet::total_cards_scanned() const {
-  assert(_flushed, "thread local state from the per thread states should have been flushed");
-  return _total_cards_scanned;
-}
-
 const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   return _surviving_young_words_total;
@@ -354,7 +344,6 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
 
 void G1ParScanThreadStateSet::flush() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
-  assert(_total_cards_scanned == 0, "should have been cleared");
 
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
@@ -362,8 +351,6 @@ void G1ParScanThreadStateSet::flush() {
     if (pss == NULL) {
       continue;
     }
-
-    _total_cards_scanned += _cards_scanned[worker_index];
 
     pss->flush(_surviving_young_words_total);
     delete pss;
