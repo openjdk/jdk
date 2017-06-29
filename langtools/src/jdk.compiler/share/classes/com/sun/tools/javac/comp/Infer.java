@@ -416,8 +416,6 @@ public class Infer {
             if (needsEagerInstantiation((UndetVar)qtype, to, inferenceContext) &&
                     (allowGraphInference || !to.isPrimitive())) {
                 to = generateReferenceToTargetConstraint(tree, (UndetVar)qtype, to, resultInfo, inferenceContext);
-            } else if (to.isPrimitive()) {
-                to = types.boxedClass(to).type;
             }
         } else if (rsInfoInfContext.free(resultInfo.pt)) {
             //propagation - cache captured vars

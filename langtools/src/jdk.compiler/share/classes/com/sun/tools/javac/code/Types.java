@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,15 @@ public class Types {
         if (tPrimitive == sPrimitive) {
             return isSubtypeUnchecked(t, s, warn);
         }
+        boolean tUndet = t.hasTag(UNDETVAR);
+        boolean sUndet = s.hasTag(UNDETVAR);
+
+        if (tUndet || sUndet) {
+            return tUndet ?
+                    isSubtype(t, boxedTypeOrType(s)) :
+                    isSubtype(boxedTypeOrType(t), s);
+        }
+
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
