@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "code/codeCache.hpp"
-#include "code/nmethod.hpp"
-#include "runtime/frame.hpp"
-#include "runtime/init.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
+package sanity;
 
-void pd_ps(frame f) {}
+import jdk.test.lib.process.ProcessTools;
+
+import java.util.List;
+
+/*
+ * @test
+ * @summary make sure various basic java options work
+ * @library /test/lib
+ *
+ * @run driver sanity.BasicVMTest
+ */
+public class BasicVMTest {
+    public static void main(String[] args) throws Exception {
+        List<String> flags = List.of(
+                "-version",
+                "-Xinternalversion",
+                "-X",
+                "-help");
+        for (String flag : flags) {
+            ProcessTools.executeTestJvm(flag)
+                        .shouldHaveExitValue(0);
+        }
+    }
+}

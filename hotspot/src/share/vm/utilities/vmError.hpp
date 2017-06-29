@@ -86,6 +86,10 @@ class VMError : public AllStatic {
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
 
+  static bool _error_reported;
+
+ public:
+
   // set signal handlers on Solaris/Linux or the default exception filter
   // on Windows, to handle recursive crashes.
   static void reset_signal_handlers();
@@ -183,6 +187,15 @@ public:
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
   static bool check_timeout();
 
-};
+  // Support for avoiding multiple asserts
+  static bool is_error_reported();
 
+  // Test vmassert(), fatal(), guarantee(), etc.
+  NOT_PRODUCT(static void test_error_handler();)
+  NOT_PRODUCT(static void controlled_crash(int how);)
+
+  // returns an address which is guaranteed to generate a SIGSEGV on read,
+  // for test purposes, which is not NULL and contains bits in every word
+  static void* get_segfault_address();
+};
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP

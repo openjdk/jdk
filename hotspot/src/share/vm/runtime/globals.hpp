@@ -928,11 +928,11 @@ public:
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
-          "in debug.cpp.")                                                  \
+          "in vmError.cpp.")                                                \
                                                                             \
   notproduct(uintx, TestCrashInErrorHandler, 0,                             \
           "If > 0, provokes an error inside VM error handler (a secondary " \
-          "crash). see test_error_handler() in debug.cpp.")                 \
+          "crash). see test_error_handler() in vmError.cpp")                \
                                                                             \
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
@@ -1304,7 +1304,7 @@ public:
   product(bool, UseBiasedLocking, true,                                     \
           "Enable biased locking in JVM")                                   \
                                                                             \
-  product(intx, BiasedLockingStartupDelay, 4000,                            \
+  product(intx, BiasedLockingStartupDelay, 0,                               \
           "Number of milliseconds to wait before enabling biased locking")  \
           range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
           constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \

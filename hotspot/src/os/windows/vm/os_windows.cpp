@@ -1979,7 +1979,7 @@ void os::signal_raise(int signal_number) {
 static BOOL WINAPI consoleHandler(DWORD event) {
   switch (event) {
   case CTRL_C_EVENT:
-    if (is_error_reported()) {
+    if (VMError::is_error_reported()) {
       // Ctrl-C is pressed during error reporting, likely because the error
       // handler fails to abort. Let VM die immediately.
       os::die();
@@ -2839,7 +2839,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
 
 #ifdef ASSERT
   // Variable for the failure injection
-  long ran_num = os::random();
+  int ran_num = os::random();
   size_t fail_after = ran_num % bytes;
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,6 +417,8 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 
   int pd_oop_map_offset_adjustment() const;
+
+  NOT_PRODUCT(void pd_ps();)  // platform dependent frame printing
 
 #include CPU_HEADER(frame)
 

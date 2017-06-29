@@ -179,7 +179,7 @@ bool error_is_suppressed(const char* file_name, int line_no) {
     return true;
   }
 
-  if (!is_error_reported() && !SuppressFatalErrorMessage) {
+  if (!VMError::is_error_reported() && !SuppressFatalErrorMessage) {
     // print a friendly hint:
     fdStream out(defaultStream::output_fd());
     out.print_raw_cr("# To suppress the following error report, specify this argument");
@@ -341,107 +341,6 @@ void report_java_out_of_memory(const char* message) {
   }
 }
 
-static bool error_reported = false;
-
-// call this when the VM is dying--it might loosen some asserts
-void set_error_reported() {
-  error_reported = true;
-}
-
-bool is_error_reported() {
-    return error_reported;
-}
-
-#ifndef PRODUCT
-#include <signal.h>
-
-typedef void (*voidfun_t)();
-// Crash with an authentic sigfpe
-static void crash_with_sigfpe() {
-  // generate a native synchronous SIGFPE where possible;
-  // if that did not cause a signal (e.g. on ppc), just
-  // raise the signal.
-  volatile int x = 0;
-  volatile int y = 1/x;
-#ifndef _WIN32
-  // OSX implements raise(sig) incorrectly so we need to
-  // explicitly target the current thread
-  pthread_kill(pthread_self(), SIGFPE);
-#endif
-} // end: crash_with_sigfpe
-
-// crash with sigsegv at non-null address.
-static void crash_with_segfault() {
-
-  char* const crash_addr = (char*) get_segfault_address();
-  *crash_addr = 'X';
-
-} // end: crash_with_segfault
-
-// returns an address which is guaranteed to generate a SIGSEGV on read,
-// for test purposes, which is not NULL and contains bits in every word
-void* get_segfault_address() {
-  return (void*)
-#ifdef _LP64
-    0xABC0000000000ABCULL;
-#else
-    0x00000ABC;
-#endif
-}
-
-void test_error_handler() {
-  controlled_crash(ErrorHandlerTest);
-}
-
-void controlled_crash(int how) {
-  if (how == 0) return;
-
-  // If asserts are disabled, use the corresponding guarantee instead.
-  NOT_DEBUG(if (how <= 2) how += 2);
-
-  const char* const str = "hello";
-  const size_t      num = (size_t)os::vm_page_size();
-
-  const char* const eol = os::line_separator();
-  const char* const msg = "this message should be truncated during formatting";
-  char * const dataPtr = NULL;  // bad data pointer
-  const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
-
-  // Keep this in sync with test/runtime/ErrorHandling/ErrorHandler.java
-  switch (how) {
-    case  1: vmassert(str == NULL, "expected null");
-    case  2: vmassert(num == 1023 && *str == 'X',
-                      "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  3: guarantee(str == NULL, "expected null");
-    case  4: guarantee(num == 1023 && *str == 'X',
-                       "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  5: fatal("expected null");
-    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s",
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg);
-    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate");
-    case  9: ShouldNotCallThis();
-    case 10: ShouldNotReachHere();
-    case 11: Unimplemented();
-    // There's no guarantee the bad data pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 12: *dataPtr = '\0'; break;
-    // There's no guarantee the bad function pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 13: (*funcPtr)(); break;
-    case 14: crash_with_segfault(); break;
-    case 15: crash_with_sigfpe(); break;
-
-    default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
-  }
-  ShouldNotReachHere();
-}
-#endif // !PRODUCT
-
 // ------ helper functions for debugging go here ------------
 
 // All debug entries should be wrapped with a stack allocated
@@ -595,7 +494,7 @@ extern "C" void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    pd_ps(f);
+    f.pd_ps();
 #endif // PRODUCT
   }
 

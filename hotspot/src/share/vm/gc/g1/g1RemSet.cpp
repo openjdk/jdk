@@ -326,24 +326,24 @@ void G1RemSet::initialize(size_t capacity, uint max_regions) {
   }
 }
 
-G1ScanRSClosure::G1ScanRSClosure(G1RemSetScanState* scan_state,
-                                 G1ParPushHeapRSClosure* push_heap_cl,
-                                 CodeBlobClosure* code_root_cl,
-                                 uint worker_i) :
+G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
+                                                   G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
+                                                   CodeBlobClosure* code_root_cl,
+                                                   uint worker_i) :
   _scan_state(scan_state),
-  _push_heap_cl(push_heap_cl),
+  _scan_objs_on_card_cl(scan_obj_on_card),
   _code_root_cl(code_root_cl),
   _strong_code_root_scan_time_sec(0.0),
-  _cards(0),
-  _cards_done(0),
+  _cards_claimed(0),
+  _cards_scanned(0),
+  _cards_skipped(0),
   _worker_i(worker_i) {
   _g1h = G1CollectedHeap::heap();
   _bot = _g1h->bot();
   _ct_bs = _g1h->g1_barrier_set();
-  _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
 }
 
-void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
+void G1ScanRSForRegionClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
   MemRegion card_region(card_start, BOTConstants::N_words);
   MemRegion pre_gc_allocated(r->bottom(), _scan_state->scan_top(r->hrm_index()));
   MemRegion mr = pre_gc_allocated.intersection(card_region);
@@ -352,19 +352,19 @@ void G1ScanRSClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *
     // but they're benign), which reduces the number of duplicate
     // scans (the rsets of the regions in the cset can intersect).
     _ct_bs->set_card_claimed(index);
-    _push_heap_cl->set_region(r);
-    r->oops_on_card_seq_iterate_careful<true>(mr, _push_heap_cl);
-    _cards_done++;
+    _scan_objs_on_card_cl->set_region(r);
+    r->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
+    _cards_scanned++;
   }
 }
 
-void G1ScanRSClosure::scan_strong_code_roots(HeapRegion* r) {
+void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
   double scan_start = os::elapsedTime();
   r->strong_code_roots_do(_code_root_cl);
   _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
 }
 
-bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
+bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
   assert(r->in_collection_set(), "should only be called on elements of CS.");
   uint region_idx = r->hrm_index();
 
@@ -378,23 +378,25 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
     _scan_state->add_dirty_region(region_idx);
   }
 
+  // We claim cards in blocks so as to reduce the contention.
+  size_t const block_size = G1RSetScanBlockSize;
+
   HeapRegionRemSetIterator iter(r->rem_set());
   size_t card_index;
 
-  // We claim cards in block so as to reduce the contention. The block size is determined by
-  // the G1RSetScanBlockSize parameter.
-  size_t claimed_card_block = _scan_state->iter_claimed_next(region_idx, _block_size);
+  size_t claimed_card_block = _scan_state->iter_claimed_next(region_idx, block_size);
   for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
-    if (current_card >= claimed_card_block + _block_size) {
-      claimed_card_block = _scan_state->iter_claimed_next(region_idx, _block_size);
+    if (current_card >= claimed_card_block + block_size) {
+      claimed_card_block = _scan_state->iter_claimed_next(region_idx, block_size);
     }
     if (current_card < claimed_card_block) {
+      _cards_skipped++;
       continue;
     }
     HeapWord* card_start = _g1h->bot()->address_for_index(card_index);
 
     HeapRegion* card_region = _g1h->heap_region_containing(card_start);
-    _cards++;
+    _cards_claimed++;
 
     _scan_state->add_dirty_region(card_region->hrm_index());
 
@@ -411,36 +413,40 @@ bool G1ScanRSClosure::doHeapRegion(HeapRegion* r) {
   return false;
 }
 
-size_t G1RemSet::scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
-                              CodeBlobClosure* heap_region_codeblobs,
-                              uint worker_i) {
+void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
+                            CodeBlobClosure* heap_region_codeblobs,
+                            uint worker_i) {
   double rs_time_start = os::elapsedTime();
 
-  G1ScanRSClosure cl(_scan_state, oops_in_heap_closure, heap_region_codeblobs, worker_i);
+  G1ScanObjsDuringScanRSClosure scan_cl(_g1, pss);
+  G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, heap_region_codeblobs, worker_i);
   _g1->collection_set_iterate_from(&cl, worker_i);
 
-   double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
-                              cl.strong_code_root_scan_time_sec();
+  double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
+                             cl.strong_code_root_scan_time_sec();
 
-  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
-  _g1p->phase_times()->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
+  G1GCPhaseTimes* p = _g1p->phase_times();
 
-  return cl.cards_done();
+  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScannedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ClaimedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::SkippedCards);
+
+  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
 }
 
 // Closure used for updating RSets and recording references that
 // point into the collection set. Only called during an
 // evacuation pause.
-
-class RefineRecordRefsIntoCSCardTableEntryClosure: public CardTableEntryClosure {
+class G1RefineCardClosure: public CardTableEntryClosure {
   G1RemSet* _g1rs;
   DirtyCardQueue* _into_cset_dcq;
-  G1ParPushHeapRSClosure* _cl;
+  G1ScanObjsDuringUpdateRSClosure* _update_rs_cl;
 public:
-  RefineRecordRefsIntoCSCardTableEntryClosure(G1CollectedHeap* g1h,
-                                              DirtyCardQueue* into_cset_dcq,
-                                              G1ParPushHeapRSClosure* cl) :
-    _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq), _cl(cl)
+  G1RefineCardClosure(G1CollectedHeap* g1h,
+                      DirtyCardQueue* into_cset_dcq,
+                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
+    _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq), _update_rs_cl(update_rs_cl)
   {}
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
@@ -449,9 +455,8 @@ public:
     // is during RSet updating within an evacuation pause.
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
-    assert(worker_i < ParallelGCThreads, "should be a GC worker");
 
-    if (_g1rs->refine_card_during_gc(card_ptr, worker_i, _cl)) {
+    if (_g1rs->refine_card_during_gc(card_ptr, _update_rs_cl)) {
       // 'card_ptr' contains references that point into the collection
       // set. We need to record the card in the DCQS
       // (_into_cset_dirty_card_queue_set)
@@ -465,27 +470,28 @@ public:
 };
 
 void G1RemSet::update_rem_set(DirtyCardQueue* into_cset_dcq,
-                              G1ParPushHeapRSClosure* oops_in_heap_closure,
+                              G1ParScanThreadState* pss,
                               uint worker_i) {
-  RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq, oops_in_heap_closure);
+  G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1, pss, worker_i);
+  G1RefineCardClosure refine_card_cl(_g1, into_cset_dcq, &update_rs_cl);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
   if (G1HotCardCache::default_use_cache()) {
     // Apply the closure to the entries of the hot card cache.
     G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
-    _g1->iterate_hcc_closure(&into_cset_update_rs_cl, worker_i);
+    _g1->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
   // Apply the closure to all remaining log entries.
-  _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, worker_i);
+  _g1->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 }
 
 void G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
 
-size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
-                                             CodeBlobClosure* heap_region_codeblobs,
-                                             uint worker_i) {
+void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
+                                           CodeBlobClosure* heap_region_codeblobs,
+                                           uint worker_i) {
   // A DirtyCardQueue that is used to hold cards containing references
   // that point into the collection set. This DCQ is associated with a
   // special DirtyCardQueueSet (see g1CollectedHeap.hpp).  Under normal
@@ -497,8 +503,8 @@ size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* cl,
   // DirtyCardQueueSet that is used to manage RSet updates
   DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
 
-  update_rem_set(&into_cset_dcq, cl, worker_i);
-  return scan_rem_set(cl, heap_region_codeblobs, worker_i);;
+  update_rem_set(&into_cset_dcq, pss, worker_i);
+  scan_rem_set(pss, heap_region_codeblobs, worker_i);;
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
@@ -572,17 +578,6 @@ inline void check_card_ptr(jbyte* card_ptr, CardTableModRefBS* ct_bs) {
          g1->addr_to_region(ct_bs->addr_for(card_ptr)));
 #endif
 }
-
-G1UpdateRSOrPushRefOopClosure::G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
-                                                             G1ParPushHeapRSClosure* push_ref_cl,
-                                                             bool record_refs_into_cset,
-                                                             uint worker_i) :
-  _g1(g1h),
-  _from(NULL),
-  _record_refs_into_cset(record_refs_into_cset),
-  _has_refs_into_cset(false),
-  _push_ref_cl(push_ref_cl),
-  _worker_i(worker_i) { }
 
 void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
                                         uint worker_i) {
@@ -734,8 +729,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
 }
 
 bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
-                                     uint worker_i,
-                                     G1ParPushHeapRSClosure*  oops_in_heap_closure) {
+                                     G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1->is_gc_active(), "Only call during GC");
 
   check_card_ptr(card_ptr, _ct_bs);
@@ -769,19 +763,14 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
-                                                 oops_in_heap_closure,
-                                                 true,
-                                                 worker_i);
-  update_rs_oop_cl.set_from(r);
+  update_rs_cl->set_region(r);
+  update_rs_cl->reset_has_refs_into_cset();
 
-  bool card_processed =
-    r->oops_on_card_seq_iterate_careful<true>(dirty_region,
-                                              &update_rs_oop_cl);
+  bool card_processed = r->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
   _conc_refine_cards++;
 
-  return update_rs_oop_cl.has_refs_into_cset();
+  return update_rs_cl->has_refs_into_cset();
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {

@@ -50,6 +50,7 @@
 #include "runtime/sweeper.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compilation.hpp"
@@ -593,7 +594,7 @@ bool CodeCache::contains(nmethod *nm) {
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   // We could potentially look up non_entrant methods
-  guarantee(result == NULL || !result->is_zombie() || result->is_locked_by_vm() || is_error_reported(), "unsafe access to zombie method");
+  guarantee(result == NULL || !result->is_zombie() || result->is_locked_by_vm() || VMError::is_error_reported(), "unsafe access to zombie method");
   return result;
 }
 

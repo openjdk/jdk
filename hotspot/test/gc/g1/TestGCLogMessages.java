@@ -94,7 +94,14 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Other", Level.INFO),
 
         // Update RS
+        new LogMessageWithLevel("Update RS", Level.DEBUG),
+        new LogMessageWithLevel("Processed Buffers", Level.DEBUG),
         new LogMessageWithLevel("Scan HCC", Level.TRACE),
+        // Scan RS
+        new LogMessageWithLevel("Scan RS", Level.DEBUG),
+        new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
+        new LogMessageWithLevel("Claimed Cards", Level.DEBUG),
+        new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
         new LogMessageWithLevel("StringTable Roots", Level.TRACE),
