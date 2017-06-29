@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,10 @@
  * {@code Key} classes for hardware devices, please refer
  * to these cryptographic provider developer guides:
  * <ul>
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
- *     <b>How to Implement a Provider for the
- *     Java&trade; Cryptography Architecture
- *     </b></a></li>
+ *   <li>
+ *     {@extLink security_guide_impl_provider
+ *       How to Implement a Provider in the Java Cryptography Architecture}
+ *   </li>
  * </ul>
  *
  * <h2>Package Specification</h2>
@@ -61,12 +60,8 @@
  *
  * For further documentation, please see:
  * <ul>
- *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *       <b>Java&trade;
- *       Cryptography Architecture API Specification and Reference
- *       </b></a></li>
+ *   <li> {extLink security_guide_jca
+ *       Java Cryptography Architecture Reference Guide}</li>
  * </ul>
  *
  * @since 1.1

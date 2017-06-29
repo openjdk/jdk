@@ -46,13 +46,14 @@ class SSLConnection extends HttpConnection {
     PlainHttpConnection delegate;
     SSLDelegate sslDelegate;
     final String[] alpn;
+    final String serverName;
 
     @Override
     public CompletableFuture<Void> connectAsync() {
         return delegate.connectAsync()
                 .thenCompose((Void v) ->
                                 MinimalFuture.supply( () -> {
-                                    this.sslDelegate = new SSLDelegate(delegate.channel(), client, alpn);
+                                    this.sslDelegate = new SSLDelegate(delegate.channel(), client, alpn, serverName);
                                     return null;
                                 }));
     }
@@ -60,12 +61,13 @@ class SSLConnection extends HttpConnection {
     @Override
     public void connect() throws IOException {
         delegate.connect();
-        this.sslDelegate = new SSLDelegate(delegate.channel(), client, alpn);
+        this.sslDelegate = new SSLDelegate(delegate.channel(), client, alpn, serverName);
     }
 
     SSLConnection(InetSocketAddress addr, HttpClientImpl client, String[] ap) {
         super(addr, client);
         this.alpn = ap;
+        this.serverName = Utils.getServerName(addr);
         delegate = new PlainHttpConnection(addr, client);
     }
 
@@ -77,8 +79,9 @@ class SSLConnection extends HttpConnection {
         super(c.address, c.client);
         this.delegate = c.plainConnection;
         AsyncSSLDelegate adel = c.sslDelegate;
-        this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client);
+        this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client, adel.serverName);
         this.alpn = adel.alpn;
+        this.serverName = adel.serverName;
     }
 
     @Override

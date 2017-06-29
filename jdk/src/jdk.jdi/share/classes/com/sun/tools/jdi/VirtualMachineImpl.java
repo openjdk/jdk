@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,56 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.ModuleReference;
-import com.sun.jdi.connect.spi.Connection;
-import com.sun.jdi.request.EventRequestManager;
-import com.sun.jdi.request.EventRequest;
-import com.sun.jdi.request.BreakpointRequest;
-import com.sun.jdi.event.EventQueue;
-
-import java.util.*;
-import java.text.MessageFormat;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+
+import com.sun.jdi.BooleanType;
+import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ByteType;
+import com.sun.jdi.ByteValue;
+import com.sun.jdi.CharType;
+import com.sun.jdi.CharValue;
+import com.sun.jdi.ClassLoaderReference;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.DoubleType;
+import com.sun.jdi.DoubleValue;
+import com.sun.jdi.FloatType;
+import com.sun.jdi.FloatValue;
+import com.sun.jdi.IntegerType;
+import com.sun.jdi.IntegerValue;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.LongType;
+import com.sun.jdi.LongValue;
+import com.sun.jdi.ModuleReference;
+import com.sun.jdi.PathSearchingVirtualMachine;
+import com.sun.jdi.PrimitiveType;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ShortType;
+import com.sun.jdi.ShortValue;
+import com.sun.jdi.StringReference;
+import com.sun.jdi.ThreadGroupReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Type;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.VirtualMachineManager;
+import com.sun.jdi.VoidType;
+import com.sun.jdi.VoidValue;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.request.EventRequestManager;
 
 class VirtualMachineImpl extends MirrorImpl
              implements PathSearchingVirtualMachine, ThreadListener {
@@ -84,11 +120,11 @@ class VirtualMachineImpl extends MirrorImpl
 
     // ObjectReference cache
     // "objectsByID" protected by "synchronized(this)".
-    private final Map<Long, SoftObjectReference> objectsByID = new HashMap<Long, SoftObjectReference>();
-    private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<ObjectReferenceImpl>();
+    private final Map<Long, SoftObjectReference> objectsByID = new HashMap<>();
+    private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<>();
     static private final int DISPOSE_THRESHOLD = 50;
     private final List<SoftObjectReference> batchedDisposeRequests =
-            Collections.synchronizedList(new ArrayList<SoftObjectReference>(DISPOSE_THRESHOLD + 10));
+            Collections.synchronizedList(new ArrayList<>(DISPOSE_THRESHOLD + 10));
 
     // These are cached once for the life of the VM
     private JDWP.VirtualMachine.Version versionInfo;
@@ -296,13 +332,13 @@ class VirtualMachineImpl extends MirrorImpl
         }
         ArrayList<ReferenceType> a;
         synchronized (this) {
-            a = new ArrayList<ReferenceType>(typesBySignature);
+            a = new ArrayList<>(typesBySignature);
         }
         return Collections.unmodifiableList(a);
     }
 
     public void
-        redefineClasses(Map<? extends ReferenceType,byte[]> classToBytes)
+        redefineClasses(Map<? extends ReferenceType, byte[]> classToBytes)
     {
         int cnt = classToBytes.size();
         JDWP.VirtualMachine.RedefineClasses.ClassDef[] defs =
@@ -313,7 +349,8 @@ class VirtualMachineImpl extends MirrorImpl
         }
         Iterator<?> it = classToBytes.entrySet().iterator();
         for (int i = 0; it.hasNext(); i++) {
-            Map.Entry<?,?> entry = (Map.Entry)it.next();
+            @SuppressWarnings("rawtypes")
+            Map.Entry<?, ?> entry = (Map.Entry)it.next();
             ReferenceTypeImpl refType = (ReferenceTypeImpl)entry.getKey();
             validateMirror(refType);
             defs[i] = new JDWP.VirtualMachine.RedefineClasses
@@ -330,44 +367,44 @@ class VirtualMachineImpl extends MirrorImpl
             switch (exc.errorCode()) {
             case JDWP.Error.INVALID_CLASS_FORMAT :
                 throw new ClassFormatError(
-                        "class not in class file format");
+                    "class not in class file format");
             case JDWP.Error.CIRCULAR_CLASS_DEFINITION :
                 throw new ClassCircularityError(
-       "circularity has been detected while initializing a class");
+                    "circularity has been detected while initializing a class");
             case JDWP.Error.FAILS_VERIFICATION :
                 throw new VerifyError(
-   "verifier detected internal inconsistency or security problem");
+                    "verifier detected internal inconsistency or security problem");
             case JDWP.Error.UNSUPPORTED_VERSION :
                 throw new UnsupportedClassVersionError(
                     "version numbers of class are not supported");
             case JDWP.Error.ADD_METHOD_NOT_IMPLEMENTED:
                 throw new UnsupportedOperationException(
-                              "add method not implemented");
+                    "add method not implemented");
             case JDWP.Error.SCHEMA_CHANGE_NOT_IMPLEMENTED :
                 throw new UnsupportedOperationException(
-                              "schema change not implemented");
+                    "schema change not implemented");
             case JDWP.Error.HIERARCHY_CHANGE_NOT_IMPLEMENTED:
                 throw new UnsupportedOperationException(
-                              "hierarchy change not implemented");
+                    "hierarchy change not implemented");
             case JDWP.Error.DELETE_METHOD_NOT_IMPLEMENTED :
                 throw new UnsupportedOperationException(
-                              "delete method not implemented");
+                    "delete method not implemented");
             case JDWP.Error.CLASS_MODIFIERS_CHANGE_NOT_IMPLEMENTED:
                 throw new UnsupportedOperationException(
-                       "changes to class modifiers not implemented");
+                    "changes to class modifiers not implemented");
             case JDWP.Error.METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED :
                 throw new UnsupportedOperationException(
-                       "changes to method modifiers not implemented");
+                    "changes to method modifiers not implemented");
             case JDWP.Error.NAMES_DONT_MATCH :
                 throw new NoClassDefFoundError(
-                              "class names do not match");
+                    "class names do not match");
             default:
                 throw exc.toJDIException();
             }
         }
 
         // Delete any record of the breakpoints
-        List<BreakpointRequest> toDelete = new ArrayList<BreakpointRequest>();
+        List<BreakpointRequest> toDelete = new ArrayList<>();
         EventRequestManager erm = eventRequestManager();
         it = erm.breakpointRequests().iterator();
         while (it.hasNext()) {
@@ -523,8 +560,8 @@ class VirtualMachineImpl extends MirrorImpl
     public StringReference mirrorOf(String value) {
         validateVM();
         try {
-            return (StringReference)JDWP.VirtualMachine.CreateString.
-                             process(vm, value).stringObject;
+            return JDWP.VirtualMachine.CreateString.
+                process(vm, value).stringObject;
         } catch (JDWPException exc) {
             throw exc.toJDIException();
         }
@@ -621,26 +658,32 @@ class VirtualMachineImpl extends MirrorImpl
         validateVM();
         return capabilities().canWatchFieldModification;
     }
+
     public boolean canWatchFieldAccess() {
         validateVM();
         return capabilities().canWatchFieldAccess;
     }
+
     public boolean canGetBytecodes() {
         validateVM();
         return capabilities().canGetBytecodes;
     }
+
     public boolean canGetSyntheticAttribute() {
         validateVM();
         return capabilities().canGetSyntheticAttribute;
     }
+
     public boolean canGetOwnedMonitorInfo() {
         validateVM();
         return capabilities().canGetOwnedMonitorInfo;
     }
+
     public boolean canGetCurrentContendedMonitor() {
         validateVM();
         return capabilities().canGetCurrentContendedMonitor;
     }
+
     public boolean canGetMonitorInfo() {
         validateVM();
         return capabilities().canGetMonitorInfo;
@@ -661,30 +704,36 @@ class VirtualMachineImpl extends MirrorImpl
         return hasNewCapabilities() &&
             capabilitiesNew().canUseInstanceFilters;
     }
+
     public boolean canRedefineClasses() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canRedefineClasses;
     }
+
     public boolean canAddMethod() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canAddMethod;
     }
+
     public boolean canUnrestrictedlyRedefineClasses() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canUnrestrictedlyRedefineClasses;
     }
+
     public boolean canPopFrames() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canPopFrames;
     }
+
     public boolean canGetMethodReturnValues() {
         return versionInfo().jdwpMajor > 1 ||
             versionInfo().jdwpMinor >= 6;
     }
+
     public boolean canGetInstanceInfo() {
         if (versionInfo().jdwpMajor > 1 ||
             versionInfo().jdwpMinor >= 6) {
@@ -695,47 +744,57 @@ class VirtualMachineImpl extends MirrorImpl
             return false;
         }
     }
+
     public boolean canUseSourceNameFilters() {
         return versionInfo().jdwpMajor > 1 ||
             versionInfo().jdwpMinor >= 6;
     }
+
     public boolean canForceEarlyReturn() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canForceEarlyReturn;
     }
+
     public boolean canBeModified() {
         return true;
     }
+
     public boolean canGetSourceDebugExtension() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canGetSourceDebugExtension;
     }
+
     public boolean canGetClassFileVersion() {
         return versionInfo().jdwpMajor > 1 ||
             versionInfo().jdwpMinor >= 6;
     }
+
     public boolean canGetConstantPool() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canGetConstantPool;
     }
+
     public boolean canRequestVMDeathEvent() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canRequestVMDeathEvent;
     }
+
     public boolean canRequestMonitorEvents() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canRequestMonitorEvents;
     }
+
     public boolean canGetMonitorFrameInfo() {
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canGetMonitorFrameInfo;
     }
+
     public boolean canGetModuleInfo() {
         validateVM();
         return versionInfo().jdwpMajor >= 9;
@@ -761,8 +820,8 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     private synchronized ReferenceTypeImpl addReferenceType(long id,
-                                                       int tag,
-                                                       String signature) {
+                                                            int tag,
+                                                            String signature) {
         if (typesByID == null) {
             initReferenceTypes();
         }
@@ -824,9 +883,8 @@ class VirtualMachineImpl extends MirrorImpl
                    vm.printTrace("Uncaching ReferenceType, sig=" + signature +
                                  ", id=" + type.ref());
                 }
-/* fix for 4359077 , don't break out. list is no longer sorted
-        in the order we think
- */
+                // fix for 4359077, don't break out. list is no longer sorted
+                // in the order we think
             }
         }
 
@@ -841,26 +899,25 @@ class VirtualMachineImpl extends MirrorImpl
 
     private synchronized List<ReferenceType> findReferenceTypes(String signature) {
         if (typesByID == null) {
-            return new ArrayList<ReferenceType>(0);
+            return new ArrayList<>(0);
         }
         Iterator<ReferenceType> iter = typesBySignature.iterator();
-        List<ReferenceType> list = new ArrayList<ReferenceType>();
+        List<ReferenceType> list = new ArrayList<>();
         while (iter.hasNext()) {
             ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
             int comp = signature.compareTo(type.signature());
             if (comp == 0) {
                 list.add(type);
-/* fix for 4359077 , don't break out. list is no longer sorted
-        in the order we think
- */
+                // fix for 4359077, don't break out. list is no longer sorted
+                // in the order we think
             }
         }
         return list;
     }
 
     private void initReferenceTypes() {
-        typesByID = new HashMap<Long, ReferenceType>(300);
-        typesBySignature = new TreeSet<ReferenceType>();
+        typesByID = new HashMap<>(300);
+        typesBySignature = new TreeSet<>();
     }
 
     ReferenceTypeImpl referenceType(long ref, byte tag) {
@@ -879,8 +936,7 @@ class VirtualMachineImpl extends MirrorImpl
         return (ArrayTypeImpl)referenceType(ref, JDWP.TypeTag.ARRAY, null);
     }
 
-    ReferenceTypeImpl referenceType(long id, int tag,
-                                                 String signature) {
+    ReferenceTypeImpl referenceType(long id, int tag, String signature) {
         if ((vm.traceFlags & VirtualMachine.TRACE_REFTYPES) != 0) {
             StringBuilder sb = new StringBuilder();
             sb.append("Looking up ");
@@ -941,7 +997,7 @@ class VirtualMachineImpl extends MirrorImpl
 
     private synchronized ModuleReference addModule(long id) {
         if (modulesByID == null) {
-            modulesByID = new HashMap<Long, ModuleReference>(77);
+            modulesByID = new HashMap<>(77);
         }
         ModuleReference module = new ModuleReferenceImpl(vm, id);
         modulesByID.put(id, module);
@@ -994,7 +1050,7 @@ class VirtualMachineImpl extends MirrorImpl
         }
 
         int count = cinfos.length;
-        List<ReferenceType> list = new ArrayList<ReferenceType>(count);
+        List<ReferenceType> list = new ArrayList<>(count);
 
         // Hold lock during processing to improve performance
         synchronized (this) {
@@ -1025,9 +1081,8 @@ class VirtualMachineImpl extends MirrorImpl
             if (!retrievedAllTypes) {
                 // Number of classes
                 int count = cinfos.length;
-                for (int i=0; i<count; i++) {
-                    JDWP.VirtualMachine.AllClasses.ClassInfo ci =
-                                                               cinfos[i];
+                for (int i = 0; i < count; i++) {
+                    JDWP.VirtualMachine.AllClasses.ClassInfo ci = cinfos[i];
                     ReferenceTypeImpl type = referenceType(ci.typeID,
                                                            ci.refTypeTag,
                                                            ci.signature);
@@ -1052,7 +1107,6 @@ class VirtualMachineImpl extends MirrorImpl
          * To save time (assuming the caller will be
          * using then) we will get the generic sigs too.
          */
-
         JDWP.VirtualMachine.AllClassesWithGeneric.ClassInfo[] cinfos;
         try {
             cinfos = JDWP.VirtualMachine.AllClassesWithGeneric.process(vm).classes;
@@ -1066,7 +1120,7 @@ class VirtualMachineImpl extends MirrorImpl
             if (!retrievedAllTypes) {
                 // Number of classes
                 int count = cinfos.length;
-                for (int i=0; i<count; i++) {
+                for (int i = 0; i < count; i++) {
                     JDWP.VirtualMachine.AllClassesWithGeneric.ClassInfo ci =
                                                                cinfos[i];
                     ReferenceTypeImpl type = referenceType(ci.typeID,
@@ -1360,7 +1414,6 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     synchronized void removeObjectMirror(ObjectReferenceImpl object) {
-
         // Handle any queue elements that are not strongly reachable
         processQueue();
 

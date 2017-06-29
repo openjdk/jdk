@@ -94,13 +94,16 @@ import java.beans.*;
  * <code>Action</code> that is <code>null</code>) results in the
  * button's corresponding property being set to <code>null</code>.
  *
- * <table border="1" cellpadding="1" cellspacing="0"
- *         summary="Supported Action properties">
- *  <tr valign="top" style="text-align:left">
- *    <th style="background-color:#CCCCFF;text-align:left">Component Property
- *    <th style="background-color:#CCCCFF;text-align:left">Components
- *    <th style="background-color:#CCCCFF;text-align:left">Action Key
- *    <th style="background-color:#CCCCFF;text-align:left">Notes
+ * <table class="striped">
+ * <caption>Supported Action properties</caption>
+ * <thead>
+ *  <tr>
+ *    <th>Component Property
+ *    <th>Components
+ *    <th>Action Key
+ *    <th>Notes
+ * </thead>
+ * <tbody>
  *  <tr valign="top" style="text-align:left">
  *      <td><b><code>enabled</code></b>
  *      <td>All
@@ -191,6 +194,7 @@ import java.beans.*;
  *          use the same {@code Action} that defines a value for the
  *          {@code SELECTED_KEY} property with multiple mutually
  *          exclusive buttons.
+ * </tbody>
  * </table>
  * <p>
  * <code>JPopupMenu</code>, <code>JToolBar</code> and <code>JMenu</code>

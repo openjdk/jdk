@@ -290,11 +290,15 @@ public class MetalLookAndFeel extends BasicLookAndFeel
     /**
      * Populates {@code table} with system colors. The following values are
      * added to {@code table}:
-     * <table border="1" cellpadding="1" cellspacing="0"
-     *         summary="Metal's system color mapping">
-     *  <tr valign="top" style="text-align:left">
-     *    <th style="background-color:#CCCCFF;text-align:left">Key
-     *    <th style="background-color:#CCCCFF;text-align:left">Value
+     *
+     * <table class="striped">
+     * <caption>Metal's system color mapping</caption>
+     * <thead>
+     *  <tr>
+     *    <th>Key
+     *    <th>Value
+     * </thead>
+     * <tbody>
      *  <tr valign="top" style="text-align:left">
      *    <td>"desktop"
      *    <td>{@code theme.getDesktopColor()}
@@ -373,6 +377,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      *  <tr valign="top" style="text-align:left">
      *    <td>"infoText"
      *    <td>{@code theme.getPrimaryControlInfo()}
+     * </tbody>
      * </table>
      * The value {@code theme} corresponds to the current {@code MetalTheme}.
      *

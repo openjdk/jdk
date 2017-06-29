@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
 import java.util.EventObject;
 
+import com.sun.jdi.ThreadReference;
+
 /*
- * The name "action" is used to avoid confusion
- * with JDI events.
+ * The name "action" is used to avoid confusion with JDI events.
  */
 class ThreadAction extends EventObject {
+
     private static final long serialVersionUID = 5690763191100515283L;
+
     // Event ids
     /*static final int THREAD_SUSPENDED = 1;*/
     static final int THREAD_RESUMABLE = 2;
@@ -44,9 +46,11 @@ class ThreadAction extends EventObject {
         super(thread);
         this.id = id;
     }
+
     ThreadReference thread() {
         return (ThreadReference)getSource();
     }
+
     int id() {
         return id;
     }

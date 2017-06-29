@@ -36,7 +36,8 @@ import java.io.PrintStream;
  * vertically or horizontally. The components will not wrap so, for
  * example, a vertical arrangement of components will stay vertically
  * arranged when the frame is resized.
- * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
+ * <table class="borderless" style="float:right">
+ * <caption>Example:</caption>
  *    <TR>
  *      <TD style="text-align:center">
  *         <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/BoxLayout-1.gif"

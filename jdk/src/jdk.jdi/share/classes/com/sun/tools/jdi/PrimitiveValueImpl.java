@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.PrimitiveValue;
+import com.sun.jdi.VirtualMachine;
 
 public abstract class PrimitiveValueImpl extends ValueImpl
-                                         implements PrimitiveValue {
-
+                                         implements PrimitiveValue
+{
     PrimitiveValueImpl(VirtualMachine aVm) {
         super(aVm);
     }
@@ -92,14 +97,14 @@ public abstract class PrimitiveValueImpl extends ValueImpl
     }
 
     ValueImpl prepareForAssignmentTo(ValueContainer destination)
-                    throws InvalidTypeException {
-
+        throws InvalidTypeException
+    {
         return convertForAssignmentTo(destination);
     }
 
     ValueImpl convertForAssignmentTo(ValueContainer destination)
-                 throws InvalidTypeException {
-
+        throws InvalidTypeException
+    {
         /*
          * TO DO: Centralize JNI signature knowledge
          */

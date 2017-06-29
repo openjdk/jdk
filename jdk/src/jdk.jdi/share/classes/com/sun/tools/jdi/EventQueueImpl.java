@@ -25,11 +25,12 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import java.util.LinkedList;
+
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
-
-import java.util.*;
 
 public class EventQueueImpl extends MirrorImpl implements EventQueue {
 
@@ -37,7 +38,7 @@ public class EventQueueImpl extends MirrorImpl implements EventQueue {
      * Note this is not a synchronized list. Iteration/update should be
      * protected through the 'this' monitor.
      */
-    LinkedList<EventSet> eventSets = new LinkedList<EventSet>();
+    LinkedList<EventSet> eventSets = new LinkedList<>();
 
     TargetVM target;
     boolean closed = false;

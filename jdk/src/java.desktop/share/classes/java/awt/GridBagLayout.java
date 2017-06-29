@@ -122,13 +122,16 @@ import java.util.Arrays;
  * are not.  Baseline relative values are calculated relative to the
  * baseline.  Valid values are:
  *
- * <center><table BORDER=0 style="width:800"
- *        SUMMARY="absolute, relative and baseline values as described above">
+ * <table class="striped" style="margin: 0px auto">
+ * <caption>Absolute, relative and baseline values as described above</caption>
+ * <thead>
  * <tr>
- * <th><P style="text-align:left">Absolute Values</th>
- * <th><P style="text-align:left">Orientation Relative Values</th>
- * <th><P style="text-align:left">Baseline Relative Values</th>
+ * <th><p style="text-align:center">Absolute Values</th>
+ * <th><p style="text-align:center">Orientation Relative Values</th>
+ * <th><p style="text-align:center">Baseline Relative Values</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  * <td>
  * <ul style="list-style-type:none">
@@ -169,7 +172,8 @@ import java.util.Arrays;
  * </ul>
  * </td>
  * </tr>
- * </table></center>
+ * </tbody>
+ * </table>
  * <dt>{@link GridBagConstraints#weightx},
  * {@link GridBagConstraints#weighty}
  * <dd>Used to determine how to distribute space, which is
@@ -197,13 +201,14 @@ import java.util.Arrays;
  * <p>
  * The following figure shows a baseline layout and includes a
  * component that spans rows:
- * <center><table summary="Baseline Layout">
+ * <table class="borderless" style="margin: 0px auto">
+ * <caption>Baseline Layout</caption>
  * <tr style="text-align:center">
  * <td>
  * <img src="doc-files/GridBagLayout-baseline.png"
  *  alt="The following text describes this graphic (Figure 1)." style="float:center">
  * </td>
- * </table></center>
+ * </table>
  * This layout consists of three components:
  * <ul><li>A panel that starts in row 0 and ends in row 1.  The panel
  *   has a baseline-resize behavior of {@code CONSTANT_DESCENT} and has
@@ -252,7 +257,8 @@ import java.util.Arrays;
  * left-to-right container and Figure 3 shows the layout for a horizontal,
  * right-to-left container.
  *
- * <center><table style="width:600" summary="layout">
+ * <table class="borderless" style="margin: 0px auto">
+ * <caption style="width:600;display:none">Figures</caption>
  * <tr style="text-align:center">
  * <td>
  * <img src="doc-files/GridBagLayout-1.gif" alt="The preceding text describes this graphic (Figure 1)." style="float:center; margin: 7px 10px;">
@@ -264,7 +270,7 @@ import java.util.Arrays;
  * <td>Figure 2: Horizontal, Left-to-Right</td>
  * <td>Figure 3: Horizontal, Right-to-Left</td>
  * </tr>
- * </table></center>
+ * </table>
  * <p>
  * Each of the ten components has the {@code fill} field
  * of its associated {@code GridBagConstraints} object

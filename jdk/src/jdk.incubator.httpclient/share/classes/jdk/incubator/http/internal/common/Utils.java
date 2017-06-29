@@ -27,6 +27,7 @@ package jdk.incubator.http.internal.common;
 
 import jdk.internal.misc.InnocuousThread;
 import sun.net.NetProperties;
+import sun.net.util.IPAddressUtil;
 
 import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.net.NetPermission;
 import java.net.URI;
 import java.net.URLPermission;
@@ -162,6 +164,22 @@ public final class Utils {
             }
         }
         return !token.isEmpty();
+    }
+
+    /**
+     * If the address was created with a domain name, then return
+     * the domain name string. If created with a literal IP address
+     * then return null. We do this to avoid doing a reverse lookup
+     * Used to populate the TLS SNI parameter. So, SNI is only set
+     * when a domain name was supplied.
+     */
+    public static String getServerName(InetSocketAddress addr) {
+        String host = addr.getHostString();
+        if (IPAddressUtil.textToNumericFormatV4(host) != null)
+            return null;
+        if (IPAddressUtil.textToNumericFormatV6(host) != null)
+            return null;
+        return host;
     }
 
     /*

@@ -108,6 +108,7 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
     final SSLParameters sslParameters;
     final HttpConnection lowerOutput;
     final HttpClientImpl client;
+    final String serverName;
     // should be volatile to provide proper synchronization(visibility) action
     volatile Consumer<ByteBufferReference> asyncReceiver;
     volatile Consumer<Throwable> errorHandler;
@@ -121,9 +122,10 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
 
     // alpn[] may be null. upcall is callback which receives incoming decoded bytes off socket
 
-    AsyncSSLDelegate(HttpConnection lowerOutput, HttpClientImpl client, String[] alpn)
+    AsyncSSLDelegate(HttpConnection lowerOutput, HttpClientImpl client, String[] alpn, String sname)
     {
         SSLContext context = client.sslContext();
+        this.serverName = sname;
         engine = context.createSSLEngine();
         engine.setUseClientMode(true);
         SSLParameters sslp = client.sslParameters()
@@ -134,6 +136,10 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
             sslParameters.setApplicationProtocols(alpn);
         } else {
             Log.logSSL("AsyncSSLDelegate: no applications set!");
+        }
+        if (serverName != null) {
+            SNIHostName sn = new SNIHostName(serverName);
+            sslParameters.setServerNames(List.of(sn));
         }
         logParams(sslParameters);
         engine.setSSLParameters(sslParameters);

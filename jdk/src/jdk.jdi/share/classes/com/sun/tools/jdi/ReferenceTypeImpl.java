@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,34 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.*;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public abstract class ReferenceTypeImpl extends TypeImpl
-implements ReferenceType {
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ClassLoaderReference;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassObjectReference;
+import com.sun.jdi.Field;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.ModuleReference;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.Type;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
+
+public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceType {
     protected long ref;
     private String signature = null;
     private String genericSignature = null;
@@ -52,14 +73,12 @@ implements ReferenceType {
     private int status = 0;
     private boolean isPrepared = false;
 
-
     private boolean versionNumberGotten = false;
     private int majorVersion;
     private int minorVersion;
 
     private boolean constantPoolInfoGotten = false;
     private int constanPoolCount;
-    private byte[] constantPoolBytes;
     private SoftReference<byte[]> constantPoolBytesRef = null;
 
     /* to mark a SourceFile request that returned a genuine JDWP.Error.ABSENT_INFORMATION */
@@ -71,7 +90,6 @@ implements ReferenceType {
     // bits set when initialization was attempted (succeeded or failed)
     private static final int INITIALIZED_OR_FAILED =
         JDWP.ClassStatus.INITIALIZED | JDWP.ClassStatus.ERROR;
-
 
     protected ReferenceTypeImpl(VirtualMachine aVm, long aRef) {
         super(aVm);
@@ -209,8 +227,7 @@ implements ReferenceType {
             // Does not need synchronization, since worst-case
             // static info is fetched twice
             try {
-                classLoader = (ClassLoaderReference)
-                    JDWP.ReferenceType.ClassLoader.
+                classLoader = JDWP.ReferenceType.ClassLoader.
                     process(vm, this).classLoader;
                 isClassLoaderCached = true;
             } catch (JDWPException exc) {
@@ -330,7 +347,7 @@ implements ReferenceType {
                 } catch (JDWPException exc) {
                     throw exc.toJDIException();
                 }
-                fields = new ArrayList<Field>(jdwpFields.length);
+                fields = new ArrayList<>(jdwpFields.length);
                 for (int i=0; i<jdwpFields.length; i++) {
                     JDWP.ReferenceType.FieldsWithGeneric.FieldInfo fi
                         = jdwpFields[i];
@@ -349,7 +366,7 @@ implements ReferenceType {
                 } catch (JDWPException exc) {
                     throw exc.toJDIException();
                 }
-                fields = new ArrayList<Field>(jdwpFields.length);
+                fields = new ArrayList<>(jdwpFields.length);
                 for (int i=0; i<jdwpFields.length; i++) {
                     JDWP.ReferenceType.Fields.FieldInfo fi = jdwpFields[i];
 
@@ -395,7 +412,7 @@ implements ReferenceType {
          * hash map provides an efficient way to lookup visible fields
          * by name, important for finding hidden or ambiguous fields.
          */
-        List<Field> visibleList = new ArrayList<Field>();
+        List<Field> visibleList = new ArrayList<>();
         Map<String, Field>  visibleTable = new HashMap<String, Field>();
 
         /* Track fields removed from above collection due to ambiguity */
@@ -416,7 +433,7 @@ implements ReferenceType {
          * Insert fields from this type, removing any inherited fields they
          * hide.
          */
-        List<Field> retList = new ArrayList<Field>(fields());
+        List<Field> retList = new ArrayList<>(fields());
         for (Field field : retList) {
             Field hidden = visibleTable.get(field.name());
             if (hidden != null) {
@@ -430,7 +447,7 @@ implements ReferenceType {
     void addAllFields(List<Field> fieldList, Set<ReferenceType> typeSet) {
         /* Continue the recursion only if this type is new */
         if (!typeSet.contains(this)) {
-            typeSet.add((ReferenceType)this);
+            typeSet.add(this);
 
             /* Add local fields */
             fieldList.addAll(fields());
@@ -445,7 +462,7 @@ implements ReferenceType {
         }
     }
     public List<Field> allFields() {
-        List<Field> fieldList = new ArrayList<Field>();
+        List<Field> fieldList = new ArrayList<>();
         Set<ReferenceType> typeSet = new HashSet<ReferenceType>();
         addAllFields(fieldList, typeSet);
         return fieldList;
@@ -454,7 +471,7 @@ implements ReferenceType {
     public Field fieldByName(String fieldName) {
         List<Field> searchList = visibleFields();
 
-        for (int i=0; i<searchList.size(); i++) {
+        for (int i = 0; i < searchList.size(); i++) {
             Field f = searchList.get(i);
 
             if (f.name().equals(fieldName)) {
@@ -478,8 +495,8 @@ implements ReferenceType {
                 } catch (JDWPException exc) {
                     throw exc.toJDIException();
                 }
-                methods = new ArrayList<Method>(declared.length);
-                for (int i=0; i<declared.length; i++) {
+                methods = new ArrayList<>(declared.length);
+                for (int i = 0; i < declared.length; i++) {
                     JDWP.ReferenceType.MethodsWithGeneric.MethodInfo
                         mi = declared[i];
 

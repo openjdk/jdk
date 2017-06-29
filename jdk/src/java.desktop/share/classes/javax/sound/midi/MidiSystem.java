@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,16 @@ import com.sun.media.sound.ReferenceCountingDevice;
  * following table lists the available property keys and which methods consider
  * them:
  *
- * <table border=0>
- *  <caption>MIDI System Property Keys</caption>
+ * <table class="striped">
+ * <caption>MIDI System Property Keys</caption>
+ * <thead>
  *  <tr>
  *   <th>Property Key</th>
  *   <th>Interface</th>
  *   <th>Affected Method</th>
  *  </tr>
+ * </thead>
+ * <tbody>
  *  <tr>
  *   <td>{@code javax.sound.midi.Receiver}</td>
  *   <td>{@link Receiver}</td>
@@ -101,6 +104,7 @@ import com.sun.media.sound.ReferenceCountingDevice;
  *   <td>{@link Transmitter}</td>
  *   <td>{@link #getTransmitter}</td>
  *  </tr>
+ * </tbody>
  * </table>
  *
  * The property value consists of the provider class name and the device name,

@@ -63,8 +63,8 @@ public class LayerInstantiationException extends RuntimeException {
     }
 
     /**
-     * Constructs a {@code FindException} with the given detail message
-     * and cause.
+     * Constructs a {@code LayerInstantiationException} with the given detail
+     * message and cause.
      *
      * @param msg
      *        The detail message; can be {@code null}
@@ -74,6 +74,5 @@ public class LayerInstantiationException extends RuntimeException {
     public LayerInstantiationException(String msg, Throwable cause) {
         super(msg, cause);
     }
-
 }
 

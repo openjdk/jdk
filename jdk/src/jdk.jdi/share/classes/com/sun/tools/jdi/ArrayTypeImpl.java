@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,22 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.sun.jdi.ArrayReference;
+import com.sun.jdi.ArrayType;
+import com.sun.jdi.ClassLoaderReference;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.Method;
+import com.sun.jdi.PrimitiveType;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class ArrayTypeImpl extends ReferenceTypeImpl
     implements ArrayType
@@ -68,7 +77,7 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
     }
 
     public List<Method> allMethods() {
-        return new ArrayList<Method>(0);   // arrays don't have methods
+        return new ArrayList<>(0);   // arrays don't have methods
     }
 
     /*

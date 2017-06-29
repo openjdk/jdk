@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,20 @@ import java.util.ListResourceBundle;
 
 /**
  * A resource bundle containing the localized strings in the accessibility
- * package.  This is meant only for internal use by Java Accessibility and
- * is not meant to be used by assistive technologies or applications.
+ * package. This is meant only for internal use by Java Accessibility and is not
+ * meant to be used by assistive technologies or applications.
  *
- * @author      Willie Walker
- * @deprecated This class is deprecated as of version 1.3 of the
- *             Java Platform.
+ * @author Willie Walker
+ * @deprecated This class is deprecated as of version 1.3 of the Java Platform
  */
 @Deprecated
 public class AccessibleResourceBundle extends ListResourceBundle {
 
     /**
-     * Returns the mapping between the programmatic keys and the
-     * localized display strings.
+     * Returns the mapping between the programmatic keys and the localized
+     * display strings.
+     *
+     * @return an array of an {@code Object} array representing a key-value pair
      */
     public Object[][] getContents() {
         // The table holding the mapping between the programmatic keys

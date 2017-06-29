@@ -35,5 +35,6 @@ module jdk.httpserver {
 
     exports com.sun.net.httpserver;
     exports com.sun.net.httpserver.spi;
+
     uses com.sun.net.httpserver.spi.HttpServerProvider;
 }

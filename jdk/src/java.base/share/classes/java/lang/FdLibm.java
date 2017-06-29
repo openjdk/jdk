@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,10 @@ class FdLibm {
         private static final double F =  0x1.9b6db6db6db6ep0;  //   45/28   ~= 1.60714285714285720630e+00
         private static final double G =  0x1.6db6db6db6db7p-2; //    5/14   ~= 3.57142857142857150787e-01
 
+        private Cbrt() {
+            throw new UnsupportedOperationException();
+        }
+
         public static strictfp double compute(double x) {
             double  t = 0.0;
             double sign;
@@ -194,6 +198,10 @@ class FdLibm {
     public static class Hypot {
         public static final double TWO_MINUS_600 = 0x1.0p-600;
         public static final double TWO_PLUS_600  = 0x1.0p+600;
+
+        private Hypot() {
+            throw new UnsupportedOperationException();
+        }
 
         public static strictfp double compute(double x, double y) {
             double a = Math.abs(x);
@@ -331,6 +339,10 @@ class FdLibm {
      *      representable.
      */
     public static class Pow {
+        private Pow() {
+            throw new UnsupportedOperationException();
+        }
+
         public static strictfp double compute(final double x, final double y) {
             double z;
             double r, s, t, u, v, w;
@@ -663,6 +675,10 @@ class FdLibm {
         private static final double P3   =  0x1.1566aaf25de2cp-14; //  6.61375632143793436117e-05
         private static final double P4   = -0x1.bbd41c5d26bf1p-20; // -1.65339022054652515390e-06
         private static final double P5   =  0x1.6376972bea4d0p-25; //  4.13813679705723846039e-08
+
+        private Exp() {
+            throw new UnsupportedOperationException();
+        }
 
         // should be able to forgo strictfp due to controlled over/underflow
         public static strictfp double compute(double x) {

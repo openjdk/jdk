@@ -31,6 +31,8 @@
  */
 module java.smartcardio {
     exports javax.smartcardio;
-    provides java.security.Provider with sun.security.smartcardio.SunPCSC;
+
+    provides java.security.Provider with
+        sun.security.smartcardio.SunPCSC;
 }
 

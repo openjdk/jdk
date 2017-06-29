@@ -73,12 +73,15 @@ import sun.awt.AWTAccessor;
  * <code>showXxxDialog</code> methods shown below:
  * <blockquote>
  *
- *
- * <table border=1 summary="Common JOptionPane method names and their descriptions">
+ * <table class="striped">
+ * <caption>Common JOptionPane method names and their descriptions</caption>
+ * <thead>
  * <tr>
  *    <th>Method Name</th>
  *    <th>Description</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  *    <td>showConfirmDialog</td>
  *    <td>Asks a confirming question, like yes/no/cancel.</td>
@@ -95,6 +98,7 @@ import sun.awt.AWTAccessor;
  *   <td>showOptionDialog</td>
  *   <td>The Grand Unification of the above three.</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * </blockquote>
@@ -107,7 +111,8 @@ import sun.awt.AWTAccessor;
  * All dialogs are modal. Each <code>showXxxDialog</code> method blocks
  * the caller until the user's interaction is complete.
  *
- * <table cellspacing=6 cellpadding=4 border=0 style="float:right" summary="layout">
+ * <table class="borderless">
+ * <caption>Common dialog</caption>
  * <tr>
  *  <td style="background-color:#FFe0d0" rowspan=2>icon</td>
  *  <td style="background-color:#FFe0d0">message</td>
@@ -121,7 +126,7 @@ import sun.awt.AWTAccessor;
  * </table>
  *
  * The basic appearance of one of these dialog boxes is generally
- * similar to the picture at the right, although the various
+ * similar to the picture above, although the various
  * look-and-feels are
  * ultimately responsible for the final result.  In particular, the
  * look-and-feels will adjust the layout to accommodate the option pane's
