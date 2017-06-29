@@ -128,6 +128,18 @@ public class ICC_ColorSpace extends ColorSpace {
     }
 
     /**
+     * Validate an ICC_ColorSpace read from an object input stream
+     */
+    private void readObject(java.io.ObjectInputStream s)
+        throws ClassNotFoundException, java.io.IOException {
+
+        s.defaultReadObject();
+        if (thisProfile == null) {
+            thisProfile = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
+        }
+    }
+
+    /**
     * Returns the ICC_Profile for this ICC_ColorSpace.
     * @return the ICC_Profile for this ICC_ColorSpace.
     */
