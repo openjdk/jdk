@@ -96,15 +96,18 @@ import jdk.internal.misc.SharedSecrets;
  * </UL>
  *
  * <h4>Summary of attributes</h4>
- * <table style="float:center;width:95%" border="0" cellspacing="0" cellpadding="2"
- *     summary="Key, value type, principal constants, and default value
- *     behavior of all TextAttributes">
- * <tr style="background-color:#ccccff">
+ * <table style="float:center;width:95%" class="striped">
+ * <caption>Key, value type, principal constants, and
+ * default value behavior of all TextAttributes</caption>
+ * <thead>
+ * <tr>
  * <th valign="TOP" style="text-align:center">Key</th>
  * <th valign="TOP" style="text-align:center">Value Type</th>
  * <th valign="TOP" style="text-align:center">Principal Constants</th>
  * <th valign="TOP" style="text-align:center">Default Value</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  * <td valign="TOP">{@link #FAMILY}</td>
  * <td valign="TOP">String</td>
@@ -114,7 +117,7 @@ import jdk.internal.misc.SharedSecrets;
  * </td>
  * <td valign="TOP">"Default" (use platform default)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #WEIGHT}</td>
  * <td valign="TOP">Number</td>
  * <td valign="TOP">WEIGHT_REGULAR, WEIGHT_BOLD</td>
@@ -126,7 +129,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">WIDTH_CONDENSED, WIDTH_REGULAR,<br>WIDTH_EXTENDED</td>
  * <td valign="TOP">WIDTH_REGULAR</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #POSTURE}</td>
  * <td valign="TOP">Number</td>
  * <td valign="TOP">POSTURE_REGULAR, POSTURE_OBLIQUE</td>
@@ -138,7 +141,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">none</td>
  * <td valign="TOP">12.0</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #TRANSFORM}</td>
  * <td valign="TOP">{@link TransformAttribute}</td>
  * <td valign="TOP">See TransformAttribute {@link TransformAttribute#IDENTITY IDENTITY}</td>
@@ -150,7 +153,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">SUPERSCRIPT_SUPER, SUPERSCRIPT_SUB</td>
  * <td valign="TOP">0 (use the standard glyphs and metrics)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #FONT}</td>
  * <td valign="TOP">{@link java.awt.Font}</td>
  * <td valign="TOP">none</td>
@@ -162,7 +165,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">none</td>
  * <td valign="TOP">null (draw text using font glyphs)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #FOREGROUND}</td>
  * <td valign="TOP">{@link java.awt.Paint}</td>
  * <td valign="TOP">none</td>
@@ -174,7 +177,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">none</td>
  * <td valign="TOP">null (do not render background)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #UNDERLINE}</td>
  * <td valign="TOP">Integer</td>
  * <td valign="TOP">UNDERLINE_ON</td>
@@ -186,7 +189,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">STRIKETHROUGH_ON</td>
  * <td valign="TOP">false (do not render strikethrough)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #RUN_DIRECTION}</td>
  * <td valign="TOP">Boolean</td>
  * <td valign="TOP">RUN_DIRECTION_LTR<br>RUN_DIRECTION_RTL</td>
@@ -198,7 +201,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">none</td>
  * <td valign="TOP">0 (use base line direction)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #JUSTIFICATION}</td>
  * <td valign="TOP">Number</td>
  * <td valign="TOP">JUSTIFICATION_FULL</td>
@@ -210,7 +213,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">(see class)</td>
  * <td valign="TOP">null (do not apply input highlighting)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #INPUT_METHOD_UNDERLINE}</td>
  * <td valign="TOP">Integer</td>
  * <td valign="TOP">UNDERLINE_LOW_ONE_PIXEL,<br>UNDERLINE_LOW_TWO_PIXEL</td>
@@ -222,7 +225,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">SWAP_COLORS_ON</td>
  * <td valign="TOP">false (do not swap colors)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #NUMERIC_SHAPING}</td>
  * <td valign="TOP">{@link java.awt.font.NumericShaper}</td>
  * <td valign="TOP">none</td>
@@ -234,7 +237,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">KERNING_ON</td>
  * <td valign="TOP">0 (do not request kerning)</td>
  * </tr>
- * <tr style="background-color:#eeeeff">
+ * <tr>
  * <td valign="TOP">{@link #LIGATURES}</td>
  * <td valign="TOP">Integer</td>
  * <td valign="TOP">LIGATURES_ON</td>
@@ -246,6 +249,7 @@ import jdk.internal.misc.SharedSecrets;
  * <td valign="TOP">TRACKING_LOOSE, TRACKING_TIGHT</td>
  * <td valign="TOP">0 (do not add tracking)</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @see java.awt.Font

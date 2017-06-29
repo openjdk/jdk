@@ -43,7 +43,7 @@
  *
  * <ul>
  *   <li><a href="{@docRoot}/../specs/security/standard-names.html">
- *     <b>Java&trade; Security Standard Algorithm Names Specification
+ *     <b>Java Security Standard Algorithm Names Specification
  *     </b></a></li>
  * </ul>
  *
@@ -52,15 +52,11 @@
  * For further documentation, please see:
  * <ul>
  *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *       <b>Java&trade; Cryptography Architecture (JCA) Reference Guide
- *       </b></a></li>
+ *     {@extLink security_guide_jca
+ *       Java Cryptography Architecture (JCA) Reference Guide}</li>
  *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
- *       <b>How to Implement a Provider in the Java&trade; Cryptography
- *          Architecture </b></a></li>
+ *     {@extLink security_guide_impl_provider
+ *       How to Implement a Provider in the Java Cryptography Architecture}</li>
  * </ul>
  *
  * @since 1.4

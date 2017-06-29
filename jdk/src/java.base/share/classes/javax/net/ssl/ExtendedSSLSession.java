@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * <p>
      * The signature algorithm name must be a standard Java Security
      * name (such as "SHA1withRSA", "SHA256withECDSA", and so on).
-     * See Appendix A in the <a href=
-     * "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard algorithm names.
      * <p>
      * Note: the local supported signature algorithms should conform to
@@ -72,9 +72,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * <p>
      * The signature algorithm name must be a standard Java Security
      * name (such as "SHA1withRSA", "SHA256withECDSA", and so on).
-     * See Appendix A in the <a href=
-     * "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard algorithm names.
      *
      * @return An array of supported signature algorithms, in descending

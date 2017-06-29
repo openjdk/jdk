@@ -55,7 +55,8 @@ import java.beans.Transient;
  * a section in <em>The Java Tutorial</em>.  Note that
  * <code>JScrollPane</code> does not support heavyweight components.
  *
- * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
+ * <table class="borderless" style="float:right">
+ * <caption>Example</caption>
  *    <TR>
  *    <TD style="text-align:center">
  *      <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/JScrollPane-1.gif"

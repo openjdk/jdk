@@ -75,7 +75,8 @@ public class AddExportsAndOpensInManifest {
                 Paths.get("Test1.class"), Paths.get("Test2.class"));
 
         // java -jar test.jar
-        return ProcessTools.executeTestJava("-jar", jarfile.toString())
+        return ProcessTools.executeTestJava("--illegal-access=deny",
+                                            "-jar", jarfile.toString())
                 .outputTo(System.out)
                 .errorTo(System.out);
     }

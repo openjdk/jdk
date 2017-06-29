@@ -27,9 +27,9 @@
  * @summary Check that notification dispatch is not linear in number of MBeans.
  * @author Eamonn McManus
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  *
- * @run build jdk.testlibrary.* ListenerScaleTest
+ * @run build jdk.test.lib.Platform ListenerScaleTest
  * @run main ListenerScaleTest
  */
 
@@ -71,7 +71,7 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class ListenerScaleTest {
     private static final int WARMUP_WITH_ONE_MBEAN = 1000;

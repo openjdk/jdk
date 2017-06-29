@@ -32,8 +32,8 @@
  * @moduleGraph
  * @since 9
  */
-@SuppressWarnings({"deprecation",
-                   "removal"}) // java.corba and other modules
+// suppress warning for java.corba and other modules
+@SuppressWarnings({"deprecation", "removal"})
 @Deprecated(since="9", forRemoval=true)
 module java.se.ee {
 

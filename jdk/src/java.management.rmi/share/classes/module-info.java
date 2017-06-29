@@ -51,9 +51,10 @@
  */
 module java.management.rmi {
 
+    requires java.naming;
+
     requires transitive java.management;
     requires transitive java.rmi;
-    requires java.naming;
 
     exports javax.management.remote.rmi;
 
@@ -68,9 +69,9 @@ module java.management.rmi {
     // The java.management.rmi module provides implementations
     // of the JMXConnectorProvider and JMXConnectorServerProvider
     // services supporting the RMI protocol.
-    provides javax.management.remote.JMXConnectorProvider
-        with com.sun.jmx.remote.protocol.rmi.ClientProvider;
-    provides javax.management.remote.JMXConnectorServerProvider
-        with com.sun.jmx.remote.protocol.rmi.ServerProvider;
+    provides javax.management.remote.JMXConnectorProvider with
+        com.sun.jmx.remote.protocol.rmi.ClientProvider;
+    provides javax.management.remote.JMXConnectorServerProvider with
+        com.sun.jmx.remote.protocol.rmi.ServerProvider;
 
 }

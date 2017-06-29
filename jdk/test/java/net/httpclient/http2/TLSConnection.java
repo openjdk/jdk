@@ -65,7 +65,7 @@ public class TLSConnection {
 
         Handler handler = new Handler();
 
-        try (Http2TestServer server = new Http2TestServer(true, 0)) {
+        try (Http2TestServer server = new Http2TestServer("127.0.0.1", true, 0)) {
             server.addHandler(handler, "/");
             server.start();
 

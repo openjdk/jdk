@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,15 @@
  */
 package com.sun.tools.jdi;
 
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
+import java.util.Map;
+
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
 
 /*
- * An ListeningConnector that uses the SocketTransportService
+ * A ListeningConnector that uses the SocketTransportService
  */
 public class SocketListeningConnector extends GenericListeningConnector {
 
@@ -62,7 +63,6 @@ public class SocketListeningConnector extends GenericListeningConnector {
             }
         };
     }
-
 
     public String
         startListening(Map<String,? extends Connector.Argument> args)

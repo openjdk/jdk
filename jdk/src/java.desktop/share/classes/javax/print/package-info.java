@@ -46,8 +46,7 @@
  * IPP printers or JINI printers, a print-service provider can write
  * implementations of {@code PrintServiceLookup}. The print-service provider can
  * dynamically install these {@code PrintServiceLookup} implementations using
- * the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">
- * SPI JAR file specification</a>.
+ * the {@link java.util.ServiceLoader} facility.
  *
  * <h3>Attribute Definitions</h3>
  * The {@link javax.print.attribute} and {@link javax.print.attribute.standard}

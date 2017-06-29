@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,20 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.tools.jdi.*;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import com.sun.jdi.VirtualMachine;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Random;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.Random;
 
-public class SunCommandLineLauncher extends AbstractLauncher implements LaunchingConnector {
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
+import com.sun.jdi.connect.VMStartException;
+import com.sun.jdi.connect.spi.TransportService;
+
+public class SunCommandLineLauncher extends AbstractLauncher {
 
     static private final String ARG_HOME = "home";
     static private final String ARG_OPTIONS = "options";
@@ -64,10 +67,9 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
          * transport or the socket transport
          */
         try {
-            @SuppressWarnings("deprecation")
-            Object o =
-                Class.forName("com.sun.tools.jdi.SharedMemoryTransportService").newInstance();
-            transportService = (TransportService)o;
+            transportService = (TransportService)Class.
+                forName("com.sun.tools.jdi.SharedMemoryTransportService").
+                getDeclaredConstructor().newInstance();
             transport = new Transport() {
                 public String name() {
                     return "dt_shmem";
@@ -77,7 +79,9 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
         } catch (ClassNotFoundException |
                  UnsatisfiedLinkError |
                  InstantiationException |
-                 IllegalAccessException x) {
+                 InvocationTargetException |
+                 IllegalAccessException |
+                 NoSuchMethodException x) {
         };
         if (transportService == null) {
             transportService = new SocketTransportService();
@@ -139,7 +143,7 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
     }
 
     public VirtualMachine
-        launch(Map<String,? extends Connector.Argument> arguments)
+        launch(Map<String, ? extends Connector.Argument> arguments)
         throws IOException, IllegalConnectorArgumentsException,
                VMStartException
     {
@@ -237,6 +241,5 @@ public class SunCommandLineLauncher extends AbstractLauncher implements Launchin
 
     public String description() {
         return getString("sun.description");
-
     }
 }

@@ -278,7 +278,6 @@ SUNWprivate_1.1 {
                 Java_java_lang_Module_addExports0;
                 Java_java_lang_Module_addExportsToAll0;
                 Java_java_lang_Module_addExportsToAllUnnamed0;
-                Java_java_lang_Module_addPackage0;
 
 		Java_jdk_internal_loader_BootLoader_getSystemPackageLocation;
 		Java_jdk_internal_loader_BootLoader_getSystemPackageNames;
