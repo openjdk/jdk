@@ -4106,6 +4106,10 @@ void ChunkManager_test_list_index() {
   }
 }
 
+#endif // !PRODUCT
+
+#ifdef ASSERT
+
 // ChunkManagerReturnTest stresses taking/returning chunks from the ChunkManager. It takes and
 // returns chunks from/to the ChunkManager while keeping track of the expected ChunkManager
 // content.
@@ -4415,4 +4419,4 @@ void SpaceManager_test_adjust_initial_chunk_size() {
   SpaceManagerTest::test_adjust_initial_chunk_size();
 }
 
-#endif
+#endif // ASSERT
