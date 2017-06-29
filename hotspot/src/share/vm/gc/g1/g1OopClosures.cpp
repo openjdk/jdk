@@ -38,7 +38,7 @@ G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par
   _cm(_g1->concurrent_mark())
 { }
 
-G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
+G1ScanClosureBase::G1ScanClosureBase(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
   _g1(g1), _par_scan_state(par_scan_state)
 { }
 

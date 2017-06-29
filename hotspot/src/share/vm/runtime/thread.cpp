@@ -101,6 +101,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
@@ -1288,7 +1289,7 @@ void WatcherThread::run() {
     // should be done, and sleep that amount of time.
     int time_waited = sleep();
 
-    if (is_error_reported()) {
+    if (VMError::is_error_reported()) {
       // A fatal error has happened, the error handler(VMError::report_and_die)
       // should abort JVM after creating an error log file. However in some
       // rare cases, the error handler itself might deadlock. Here periodically
@@ -4148,7 +4149,7 @@ bool Threads::destroy_vm() {
   }
 
   // Hang forever on exit if we are reporting an error.
-  if (ShowMessageBoxOnError && is_error_reported()) {
+  if (ShowMessageBoxOnError && VMError::is_error_reported()) {
     os::infinite_sleep();
   }
   os::wait_for_keypress_at_exit();

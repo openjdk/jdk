@@ -130,8 +130,6 @@ extern "C" int getargs   (procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// Query dimensions of the stack of the calling thread.
-static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
 static address resolve_function_descriptor_to_code_pointer(address p);
 
 static void vmembk_print_on(outputStream* os);
@@ -764,11 +762,8 @@ static void *thread_native_entry(Thread *thread) {
   // find out my own stack dimensions
   {
     // actually, this should do exactly the same as thread->record_stack_base_and_size...
-    address base = 0;
-    size_t size = 0;
-    query_stack_dimensions(&base, &size);
-    thread->set_stack_base(base);
-    thread->set_stack_size(size);
+    thread->set_stack_base(os::current_stack_base());
+    thread->set_stack_size(os::current_stack_size());
   }
 
   const pthread_t pthread_id = ::pthread_self();
@@ -1623,7 +1618,7 @@ UserHandler(int sig, void *siginfo, void *context) {
 
   // Ctrl-C is pressed during error reporting, likely because the error
   // handler fails to abort. Let VM die immediately.
-  if (sig == SIGINT && is_error_reported()) {
+  if (sig == SIGINT && VMError::is_error_reported()) {
     os::die();
   }
 
@@ -4297,91 +4292,28 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// Function to query the current stack size using pthread_getthrds_np.
-static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) {
-
-  // Information about this api can be found (a) in the pthread.h header and
-  // (b) in http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/pthread_getthrds_np.htm
-  //
-  // The use of this API to find out the current stack is kind of undefined.
-  // But after a lot of tries and asking IBM about it, I concluded that it is safe
-  // enough for cases where I let the pthread library create its stacks. For cases
-  // where I create an own stack and pass this to pthread_create, it seems not to
-  // work (the returned stack size in that case is 0).
-
-  pthread_t tid = pthread_self();
-  struct __pthrdsinfo pinfo;
-  char dummy[1]; // Just needed to satisfy pthread_getthrds_np.
-  int dummy_size = sizeof(dummy);
-
-  memset(&pinfo, 0, sizeof(pinfo));
-
-  const int rc = pthread_getthrds_np(&tid, PTHRDSINFO_QUERY_ALL, &pinfo,
-                                     sizeof(pinfo), dummy, &dummy_size);
-
-  if (rc != 0) {
-    trcVerbose("pthread_getthrds_np failed (%d)", rc);
-    return false;
-  }
-  guarantee0(pinfo.__pi_stackend);
-
-  // The following may happen when invoking pthread_getthrds_np on a pthread
-  // running on a user provided stack (when handing down a stack to pthread
-  // create, see pthread_attr_setstackaddr).
-  // Not sure what to do then.
-
-  guarantee0(pinfo.__pi_stacksize);
-
-  // Note: we get three values from pthread_getthrds_np:
-  //       __pi_stackaddr, __pi_stacksize, __pi_stackend
-  //
-  // high addr    ---------------------
-  //
-  //    |         pthread internal data, like ~2K
-  //    |
-  //    |         ---------------------   __pi_stackend   (usually not page aligned, (xxxxF890))
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |          ---------------------   (__pi_stackend - __pi_stacksize)
-  //    |
-  //    |          padding to align the following AIX guard pages, if enabled.
-  //    |
-  //    V          ---------------------   __pi_stackaddr
-  //
-  // low addr      AIX guard pages, if enabled (AIXTHREAD_GUARDPAGES > 0)
-  //
-
-  address stack_base = (address)(pinfo.__pi_stackend);
-  address stack_low_addr = (address)align_ptr_up(pinfo.__pi_stackaddr,
-    os::vm_page_size());
-  size_t stack_size = stack_base - stack_low_addr;
-
-  if (p_stack_base) {
-    *p_stack_base = stack_base;
-  }
-
-  if (p_stack_size) {
-    *p_stack_size = stack_size;
-  }
-
-  return true;
-}
-
 // Get the current stack base from the OS (actually, the pthread library).
+// Note: usually not page aligned.
 address os::current_stack_base() {
-  address p;
-  query_stack_dimensions(&p, 0);
-  return p;
+  AixMisc::stackbounds_t bounds;
+  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
+  guarantee(rc, "Unable to retrieve stack bounds.");
+  return bounds.base;
 }
 
 // Get the current stack size from the OS (actually, the pthread library).
+// Returned size is such that (base - size) is always aligned to page size.
 size_t os::current_stack_size() {
-  size_t s;
-  query_stack_dimensions(0, &s);
+  AixMisc::stackbounds_t bounds;
+  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
+  guarantee(rc, "Unable to retrieve stack bounds.");
+  // Align the returned stack size such that the stack low address
+  // is aligned to page size (Note: base is usually not and we do not care).
+  // We need to do this because caller code will assume stack low address is
+  // page aligned and will place guard pages without checking.
+  address low = bounds.base - bounds.size;
+  address low_aligned = (address)align_ptr_up(low, os::vm_page_size());
+  size_t s = bounds.base - low_aligned;
   return s;
 }
 

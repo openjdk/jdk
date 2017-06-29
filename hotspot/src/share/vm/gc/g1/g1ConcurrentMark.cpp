@@ -703,7 +703,7 @@ public:
 
   void work(uint worker_id) {
     SuspendibleThreadSetJoiner sts_join(_suspendible);
-    G1CollectedHeap::heap()->heap_region_par_iterate(&_cl, worker_id, &_hr_claimer, true);
+    G1CollectedHeap::heap()->heap_region_par_iterate(&_cl, worker_id, &_hr_claimer);
   }
 
   bool is_complete() {

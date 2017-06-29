@@ -4322,7 +4322,7 @@ public:
     const int num_max_ops = num_chunks * 100;
     int num_ops = num_max_ops;
     const int average_phase_length = (int)(phase_length_factor * num_chunks);
-    int num_ops_until_switch = MAX2(1, (int)(average_phase_length + os::random() % 8 - 4));
+    int num_ops_until_switch = MAX2(1, (average_phase_length + os::random() % 8 - 4));
     bool return_phase = true;
     while (num_ops > 0) {
       int chunks_moved = 0;
@@ -4333,7 +4333,7 @@ public:
             chunks_moved = 1;
           }
         } else {
-          const int list_length = MAX2(1, (int)(os::random() % num_ops_until_switch));
+          const int list_length = MAX2(1, (os::random() % num_ops_until_switch));
           chunks_moved = return_random_chunk_list_to_chunkmanager(list_length);
         }
       } else {
@@ -4346,7 +4346,7 @@ public:
       num_ops_until_switch -= chunks_moved;
       if (chunks_moved == 0 || num_ops_until_switch <= 0) {
         return_phase = !return_phase;
-        num_ops_until_switch = MAX2(1, (int)(average_phase_length + os::random() % 8 - 4));
+        num_ops_until_switch = MAX2(1, (average_phase_length + os::random() % 8 - 4));
       }
     }
   }

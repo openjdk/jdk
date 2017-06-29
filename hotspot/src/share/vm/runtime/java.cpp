@@ -446,7 +446,7 @@ void before_exit(JavaThread* thread) {
 #endif
 
   // Hang forever on exit if we're reporting an error.
-  if (ShowMessageBoxOnError && is_error_reported()) {
+  if (ShowMessageBoxOnError && VMError::is_error_reported()) {
     os::infinite_sleep();
   }
 

@@ -672,8 +672,7 @@ static markOop ReadStableMark(oop obj) {
 static inline intptr_t get_next_hash(Thread * Self, oop obj) {
   intptr_t value = 0;
   if (hashCode == 0) {
-    // This form uses an unguarded global Park-Miller RNG,
-    // so it's possible for two threads to race and generate the same RNG.
+    // This form uses global Park-Miller RNG.
     // On MP system we'll have lots of RW access to a global, so the
     // mechanism induces lots of coherency traffic.
     value = os::random();

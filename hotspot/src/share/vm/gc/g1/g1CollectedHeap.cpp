@@ -1108,7 +1108,7 @@ void G1CollectedHeap::clear_rsets_post_compaction() {
 
 class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*   _g1h;
-  UpdateRSOopClosure _cl;
+  RebuildRSOopClosure _cl;
 public:
   RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, uint worker_i = 0) :
     _cl(g1->g1_rem_set(), worker_i),
@@ -2360,20 +2360,6 @@ bool G1CollectedHeap::is_in_exact(const void* p) const {
 
 // Iteration functions.
 
-// Applies an ExtendedOopClosure onto all references of objects within a HeapRegion.
-
-class IterateOopClosureRegionClosure: public HeapRegionClosure {
-  ExtendedOopClosure* _cl;
-public:
-  IterateOopClosureRegionClosure(ExtendedOopClosure* cl) : _cl(cl) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->is_continues_humongous()) {
-      r->oop_iterate(_cl);
-    }
-    return false;
-  }
-};
-
 // Iterates an ObjectClosure over all objects within a HeapRegion.
 
 class IterateObjectClosureRegionClosure: public HeapRegionClosure {
@@ -2397,12 +2383,10 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
-void
-G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
-                                         uint worker_id,
-                                         HeapRegionClaimer *hrclaimer,
-                                         bool concurrent) const {
-  _hrm.par_iterate(cl, worker_id, hrclaimer, concurrent);
+void G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
+                                              uint worker_id,
+                                              HeapRegionClaimer *hrclaimer) const {
+  _hrm.par_iterate(cl, worker_id, hrclaimer);
 }
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
@@ -3274,7 +3258,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // investigate this in CR 7178365.
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        size_t total_cards_scanned = per_thread_states.total_cards_scanned();
+        size_t total_cards_scanned = g1_policy()->phase_times()->sum_thread_work_items(G1GCPhaseTimes::ScanRS, G1GCPhaseTimes::ScannedCards);
         g1_policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned, heap_used_bytes_before_gc);
 
         evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
@@ -3458,17 +3442,13 @@ public:
 
       _root_processor->evacuate_roots(pss->closures(), worker_id);
 
-      G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
-
       // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
       // treating the nmethods visited to act as roots for concurrent marking.
       // We only want to make sure that the oops in the nmethods are adjusted with regard to the
       // objects copied by the current evacuation.
-      size_t cards_scanned = _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
-                                                                             pss->closures()->weak_codeblobs(),
-                                                                             worker_id);
-
-      _pss->add_cards_scanned(worker_id, cards_scanned);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(pss,
+                                                      pss->closures()->weak_codeblobs(),
+                                                      worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
