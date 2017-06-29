@@ -32,124 +32,123 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_sparc.hpp"
 
-unsigned int VM_Version::_L2_data_cache_line_size = 0;
+#include <sys/mman.h>
+
+uint VM_Version::_L2_data_cache_line_size = 0;
 
 void VM_Version::initialize() {
   assert(_features != 0, "System pre-initialization is not complete.");
   guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
 
-  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, prefetch_copy_interval_in_bytes());
-  }
-  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, prefetch_scan_interval_in_bytes());
-  }
-  if (FLAG_IS_DEFAULT(PrefetchFieldsAhead)) {
-    FLAG_SET_DEFAULT(PrefetchFieldsAhead, prefetch_fields_ahead());
-  }
+  PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
+  PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
+  PrefetchFieldsAhead         = prefetch_fields_ahead();
 
   // Allocation prefetch settings
+
+  AllocatePrefetchDistance = allocate_prefetch_distance();
+  AllocatePrefetchStyle    = allocate_prefetch_style();
+
   intx cache_line_size = prefetch_data_size();
-  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
-      (cache_line_size > AllocatePrefetchStepSize)) {
-    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+
+  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize)) {
+    AllocatePrefetchStepSize = MAX2(AllocatePrefetchStepSize, cache_line_size);
   }
 
-  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 512);
-  }
-
-  if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
-    assert(!FLAG_IS_DEFAULT(AllocatePrefetchDistance), "default value should not be 0");
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-      warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
-    }
-    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
-  }
-
-  if ((AllocatePrefetchInstr == 1) && (!has_blk_init() || cache_line_size <= 0)) {
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+  if (AllocatePrefetchInstr == 1) {
+    if (!has_blk_init()) {
       warning("BIS instructions required for AllocatePrefetchInstr 1 unavailable");
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
     }
-    FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    if (cache_line_size <= 0) {
+      warning("Cache-line size must be known for AllocatePrefetchInstr 1 to work");
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+    }
   }
 
-  UseSSE = 0; // Only on x86 and x64
+  UseSSE = false;                   // Only used on x86 and x64.
 
-  _supports_cx8 = has_v9();
-  _supports_atomic_getset4 = true; // swap instruction
+  _supports_cx8 = true;             // All SPARC V9 implementations.
+  _supports_atomic_getset4 = true;  // Using the 'swap' instruction.
 
-  if (is_niagara()) {
-    // Indirect branch is the same cost as direct
-    if (FLAG_IS_DEFAULT(UseInlineCaches)) {
-      FLAG_SET_DEFAULT(UseInlineCaches, false);
-    }
-    // Align loops on a single instruction boundary.
-    if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
-      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
-    }
-    // 32-bit oops don't make sense for the 64-bit VM on sparc
-    // since the 32-bit VM has the same registers and smaller objects.
-    Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
-    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+  if (has_fast_ind_br() && FLAG_IS_DEFAULT(UseInlineCaches)) {
+    // Indirect and direct branches are cost equivalent.
+    FLAG_SET_DEFAULT(UseInlineCaches, false);
+  }
+  // Align loops on the proper instruction boundary to fill the instruction
+  // fetch buffer.
+  if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
+    FLAG_SET_DEFAULT(OptoLoopAlignment, VM_Version::insn_fetch_alignment);
+  }
+
+  // 32-bit oops don't make sense for the 64-bit VM on SPARC since the 32-bit
+  // VM has the same registers and smaller objects.
+  Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+  Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+
 #ifdef COMPILER2
-    // Indirect branch is the same cost as direct
-    if (FLAG_IS_DEFAULT(UseJumpTables)) {
-      FLAG_SET_DEFAULT(UseJumpTables, true);
-    }
-    // Single-issue, so entry and loop tops are
-    // aligned on a single instruction boundary
-    if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
-      FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
-    }
-    if (is_niagara_plus()) {
-      if (has_blk_init() && (cache_line_size > 0) && UseTLAB &&
-          FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
-        if (!has_sparc5_instr()) {
-          // Use BIS instruction for TLAB allocation prefetch
-          // on Niagara plus processors other than those based on CoreS4
-          FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
-        } else {
-          // On CoreS4 processors use prefetch instruction
-          // to avoid partial RAW issue, also use prefetch style 3
-          FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
-          if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-            FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
-          }
-        }
-      }
-      if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-        if (AllocatePrefetchInstr == 0) {
-          // Use different prefetch distance without BIS
-          FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
-        } else {
-          // Use smaller prefetch distance with BIS
-          FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
-        }
-      }
-      if (is_T4()) {
-        // Double number of prefetched cache lines on T4
-        // since L2 cache line size is smaller (32 bytes).
-        if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
-          FLAG_SET_ERGO(intx, AllocatePrefetchLines, AllocatePrefetchLines*2);
-        }
-        if (FLAG_IS_DEFAULT(AllocateInstancePrefetchLines)) {
-          FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, AllocateInstancePrefetchLines*2);
-        }
-      }
-    }
-
-    if ((AllocatePrefetchInstr == 1) && (AllocatePrefetchStyle != 3)) {
-      if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-        warning("AllocatePrefetchStyle set to 3 because BIS instructions require aligned memory addresses");
-      }
-      FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
-    }
-#endif /* COMPILER2 */
+  if (has_fast_ind_br() && FLAG_IS_DEFAULT(UseJumpTables)) {
+    // Indirect and direct branches are cost equivalent.
+    FLAG_SET_DEFAULT(UseJumpTables, true);
   }
+  // Entry and loop tops are aligned to fill the instruction fetch buffer.
+  if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
+    FLAG_SET_DEFAULT(InteriorEntryAlignment, VM_Version::insn_fetch_alignment);
+  }
+  if (UseTLAB && cache_line_size > 0 &&
+      FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+    if (has_fast_bis()) {
+      // Use BIS instruction for TLAB allocation prefetch.
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
+    }
+    else if (has_sparc5()) {
+      // Use prefetch instruction to avoid partial RAW issue on Core S4 processors,
+      // also use prefetch style 3.
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+      if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+      }
+    }
+  }
+  if (AllocatePrefetchInstr == 1) {
+    // Use allocation prefetch style 3 because BIS instructions require
+    // aligned memory addresses.
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+  }
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    if (AllocatePrefetchInstr == 0) {
+      // Use different prefetch distance without BIS
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
+    } else {
+      // Use smaller prefetch distance with BIS
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
+    }
+  }
+
+  // We increase the number of prefetched cache lines, to use just a bit more
+  // aggressive approach, when the L2-cache line size is small (32 bytes), or
+  // when running on newer processor implementations, such as the Core S4.
+  bool inc_prefetch = cache_line_size > 0 && (cache_line_size < 64 || has_sparc5());
+
+  if (inc_prefetch) {
+    // We use a factor two for small cache line sizes (as before) but a slightly
+    // more conservative increase when running on more recent hardware that will
+    // benefit from just a bit more aggressive prefetching.
+    if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
+      const int ap_lns = AllocatePrefetchLines;
+      const int ap_inc = cache_line_size < 64 ? ap_lns : (ap_lns + 1) / 2;
+      FLAG_SET_ERGO(intx, AllocatePrefetchLines, ap_lns + ap_inc);
+    }
+    if (FLAG_IS_DEFAULT(AllocateInstancePrefetchLines)) {
+      const int ip_lns = AllocateInstancePrefetchLines;
+      const int ip_inc = cache_line_size < 64 ? ip_lns : (ip_lns + 1) / 2;
+      FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, ip_lns + ip_inc);
+    }
+  }
+#endif /* COMPILER2 */
 
   // Use hardware population count instruction if available.
-  if (has_hardware_popc()) {
+  if (has_popc()) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
@@ -158,7 +157,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  // T4 and newer Sparc cpus have new compare and branch instruction.
+  // Use compare and branch instructions if available.
   if (has_cbcond()) {
     if (FLAG_IS_DEFAULT(UseCBCond)) {
       FLAG_SET_DEFAULT(UseCBCond, true);
@@ -169,7 +168,8 @@ void VM_Version::initialize() {
   }
 
   assert(BlockZeroingLowLimit > 0, "invalid value");
-  if (has_block_zeroing() && cache_line_size > 0) {
+
+  if (has_blk_zeroing() && cache_line_size > 0) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
@@ -179,7 +179,8 @@ void VM_Version::initialize() {
   }
 
   assert(BlockCopyLowLimit > 0, "invalid value");
-  if (has_block_zeroing() && cache_line_size > 0) { // has_blk_init() && is_T4(): core's local L2 cache
+
+  if (has_blk_zeroing() && cache_line_size > 0) {
     if (FLAG_IS_DEFAULT(UseBlockCopy)) {
       FLAG_SET_DEFAULT(UseBlockCopy, true);
     }
@@ -189,7 +190,6 @@ void VM_Version::initialize() {
   }
 
 #ifdef COMPILER2
-  // T4 and newer Sparc cpus have fast RDPC.
   if (has_fast_rdpc() && FLAG_IS_DEFAULT(UseRDPCForConstantTableBase)) {
     FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
   }
@@ -206,44 +206,67 @@ void VM_Version::initialize() {
   assert((OptoLoopAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_v9() ? ", v9" : (has_v8() ? ", v8" : "")),
-               (has_hardware_popc() ? ", popc" : ""),
-               (has_vis1() ? ", vis1" : ""),
-               (has_vis2() ? ", vis2" : ""),
-               (has_vis3() ? ", vis3" : ""),
-               (has_blk_init() ? ", blk_init" : ""),
-               (has_cbcond() ? ", cbcond" : ""),
-               (has_aes() ? ", aes" : ""),
-               (has_sha1() ? ", sha1" : ""),
-               (has_sha256() ? ", sha256" : ""),
-               (has_sha512() ? ", sha512" : ""),
-               (has_crc32c() ? ", crc32c" : ""),
-               (is_ultra3() ? ", ultra3" : ""),
-               (has_sparc5_instr() ? ", sparc5" : ""),
-               (is_sun4v() ? ", sun4v" : ""),
-               (is_niagara_plus() ? ", niagara_plus" : (is_niagara() ? ", niagara" : "")),
-               (is_sparc64() ? ", sparc64" : ""),
-               (!has_hardware_mul32() ? ", no-mul32" : ""),
-               (!has_hardware_div32() ? ", no-div32" : ""),
-               (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
+  jio_snprintf(buf, sizeof(buf),
+               "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               (has_v9()          ? "v9" : ""),
+               (has_popc()        ? ", popc" : ""),
+               (has_vis1()        ? ", vis1" : ""),
+               (has_vis2()        ? ", vis2" : ""),
+               (has_blk_init()    ? ", blk_init" : ""),
+               (has_fmaf()        ? ", fmaf" : ""),
+               (has_hpc()         ? ", hpc" : ""),
+               (has_ima()         ? ", ima" : ""),
+               (has_aes()         ? ", aes" : ""),
+               (has_des()         ? ", des" : ""),
+               (has_kasumi()      ? ", kas" : ""),
+               (has_camellia()    ? ", cam" : ""),
+               (has_md5()         ? ", md5" : ""),
+               (has_sha1()        ? ", sha1" : ""),
+               (has_sha256()      ? ", sha256" : ""),
+               (has_sha512()      ? ", sha512" : ""),
+               (has_mpmul()       ? ", mpmul" : ""),
+               (has_mont()        ? ", mont" : ""),
+               (has_pause()       ? ", pause" : ""),
+               (has_cbcond()      ? ", cbcond" : ""),
+               (has_crc32c()      ? ", crc32c" : ""),
 
-  // buf is started with ", " or is empty
-  _features_string = os::strdup(strlen(buf) > 2 ? buf + 2 : buf);
+               (has_athena_plus() ? ", athena_plus" : ""),
+               (has_vis3b()       ? ", vis3b" : ""),
+               (has_adi()         ? ", adi" : ""),
+               (has_sparc5()      ? ", sparc5" : ""),
+               (has_mwait()       ? ", mwait" : ""),
+               (has_xmpmul()      ? ", xmpmul" : ""),
+               (has_xmont()       ? ", xmont" : ""),
+               (has_pause_nsec()  ? ", pause_nsec" : ""),
+               (has_vamask()      ? ", vamask" : ""),
 
-  // UseVIS is set to the smallest of what hardware supports and what
-  // the command line requires.  I.e., you cannot set UseVIS to 3 on
-  // older UltraSparc which do not support it.
-  if (UseVIS > 3) UseVIS=3;
-  if (UseVIS < 0) UseVIS=0;
+               (has_fast_idiv()   ? ", *idiv" : ""),
+               (has_fast_rdpc()   ? ", *rdpc" : ""),
+               (has_fast_bis()    ? ", *bis" : ""),
+               (has_fast_ld()     ? ", *ld" : ""),
+               (has_fast_cmove()  ? ", *cmove" : ""),
+               (has_fast_ind_br() ? ", *ind_br" : ""),
+               (has_blk_zeroing() ? ", *blk_zeroing" : ""));
+
+  assert(strlen(buf) >= 2, "must be");
+
+  _features_string = os::strdup(buf);
+
+  log_info(os, cpu)("SPARC features detected: %s", _features_string);
+
+  // UseVIS is set to the smallest of what hardware supports and what the command
+  // line requires, i.e. you cannot set UseVIS to 3 on older UltraSparc which do
+  // not support it.
+
+  if (UseVIS > 3) UseVIS = 3;
+  if (UseVIS < 0) UseVIS = 0;
   if (!has_vis3()) // Drop to 2 if no VIS3 support
-    UseVIS = MIN2((intx)2,UseVIS);
+    UseVIS = MIN2((intx)2, UseVIS);
   if (!has_vis2()) // Drop to 1 if no VIS2 support
-    UseVIS = MIN2((intx)1,UseVIS);
+    UseVIS = MIN2((intx)1, UseVIS);
   if (!has_vis1()) // Drop to 0 if no VIS1 support
     UseVIS = 0;
 
-  // SPARC T4 and above should have support for AES instructions
   if (has_aes()) {
     if (FLAG_IS_DEFAULT(UseAES)) {
       FLAG_SET_DEFAULT(UseAES, true);
@@ -294,12 +317,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (UseFMA) {
+  if (has_fmaf()) {
+    if (FLAG_IS_DEFAULT(UseFMA)) {
+      UseFMA = true;
+    }
+  } else if (UseFMA) {
     warning("FMA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseFMA, false);
   }
 
-  // SHA1, SHA256, and SHA512 instructions were added to SPARC T-series at different times
+  // SHA1, SHA256, and SHA512 instructions were added to SPARC at different times
   if (has_sha1() || has_sha256() || has_sha512()) {
     if (UseVIS > 0) { // SHA intrinsics use VIS1 instructions
       if (FLAG_IS_DEFAULT(UseSHA)) {
@@ -347,7 +374,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  // SPARC T4 and above should have support for CRC32C instruction
   if (has_crc32c()) {
     if (UseVIS > 2) { // CRC32C intrinsics use VIS3 instructions
       if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
@@ -435,96 +461,42 @@ void VM_Version::initialize() {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version:%s", _features);
+  tty->print("ISA features [0x%0" PRIx64 "]:", _features);
+  if (_features_string != NULL) {
+    tty->print(" %s", _features_string);
+  }
+  tty->cr();
 }
 
-int VM_Version::determine_features() {
-  if (UseV8InstrsOnly) {
-    log_info(os, cpu)("Version is Forced-V8");
-    return generic_v8_m;
+void VM_Version::determine_features() {
+  platform_features();      // platform_features() is os_arch specific.
+
+  assert(has_v9(), "must be");
+
+  if (UseNiagaraInstrs) {   // Limit code generation to Niagara.
+    _features &= niagara1_msk;
   }
-
-  int features = platform_features(unknown_m); // platform_features() is os_arch specific
-
-  if (features == unknown_m) {
-    features = generic_v9_m;
-    log_info(os)("Cannot recognize SPARC version. Default to V9");
-  }
-
-  assert(is_T_family(features) == is_niagara(features), "Niagara should be T series");
-  if (UseNiagaraInstrs) { // Force code generation for Niagara
-    if (is_T_family(features)) {
-      // Happy to accomodate...
-    } else {
-      log_info(os, cpu)("Version is Forced-Niagara");
-      features |= T_family_m;
-    }
-  } else {
-    if (is_T_family(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
-      log_info(os, cpu)("Version is Forced-Not-Niagara");
-      features &= ~(T_family_m | T1_model_m);
-    } else {
-      // Happy to accomodate...
-    }
-  }
-
-  return features;
 }
 
 static uint64_t saved_features = 0;
 
 void VM_Version::allow_all() {
   saved_features = _features;
-  _features      = all_features_m;
+  _features      = full_feature_msk;
 }
 
 void VM_Version::revert() {
   _features = saved_features;
 }
 
+/* Determine a suitable number of threads on this particular machine.
+ *
+ * FIXME: Simply checking the processor family is insufficient.
+ */
 unsigned int VM_Version::calc_parallel_worker_threads() {
-  unsigned int result;
-  if (is_M_series() || is_S_series()) {
-    // for now, use same gc thread calculation for M-series and S-series as for
-    // niagara-plus. In future, we may want to tweak parameters for
-    // nof_parallel_worker_thread
-    result = nof_parallel_worker_threads(5, 16, 8);
-  } else if (is_niagara_plus()) {
-    result = nof_parallel_worker_threads(5, 16, 8);
-  } else {
-    result = nof_parallel_worker_threads(5, 8, 8);
-  }
-  return result;
-}
+  const int num = 5;
+  const int den = is_post_niagara() ? 16 : 8;
+  const int threshold = 8;
 
-
-int VM_Version::parse_features(const char* implementation) {
-  int features = unknown_m;
-  // Convert to UPPER case before compare.
-  char* impl = os::strdup_check_oom(implementation);
-
-  for (int i = 0; impl[i] != 0; i++)
-    impl[i] = (char)toupper((uint)impl[i]);
-
-  if (strstr(impl, "SPARC64") != NULL) {
-    features |= sparc64_family_m;
-  } else if (strstr(impl, "SPARC-M") != NULL) {
-    // M-series SPARC is based on T-series.
-    features |= (M_family_m | T_family_m);
-  } else if (strstr(impl, "SPARC-S") != NULL) {
-    // S-series SPARC is based on T-series.
-    features |= (S_family_m | T_family_m);
-  } else if (strstr(impl, "SPARC-T") != NULL) {
-    features |= T_family_m;
-    if (strstr(impl, "SPARC-T1") != NULL) {
-      features |= T1_model_m;
-    }
-  } else if (strstr(impl, "SUN4V-CPU") != NULL) {
-    // Generic or migration class LDOM
-    features |= T_family_m;
-  } else {
-    log_info(os, cpu)("Failed to parse CPU implementation = '%s'", impl);
-  }
-  os::free((void*)impl);
-  return features;
+  return nof_parallel_worker_threads(num, den, threshold);
 }

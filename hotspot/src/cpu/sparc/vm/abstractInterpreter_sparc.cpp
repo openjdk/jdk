@@ -52,8 +52,16 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   return i;
 }
 
+// These should never be compiled since the interpreter will prefer the compiled
+// version to the intrinsic version.
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  // No special entry points that preclude compilation
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_fmaD:
+    case Interpreter::java_lang_math_fmaF:
+      return false;
+    default:
+      break;
+  }
   return true;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 #include "asm/register.hpp"
 
 // The SPARC Assembler: Pure assembler doing NO optimizations on the instruction
-// level; i.e., what you write
-// is what you get. The Assembler is generating code into a CodeBuffer.
+// level; i.e., what you write is what you get. The Assembler is generating code
+// into a CodeBuffer.
 
-class Assembler : public AbstractAssembler  {
+class Assembler : public AbstractAssembler {
   friend class AbstractAssembler;
   friend class AddressLiteral;
 
@@ -244,18 +244,18 @@ class Assembler : public AbstractAssembler  {
   };
 
   enum op5s {
-    aes_eround01_op5     = 0x00,
-    aes_eround23_op5     = 0x01,
-    aes_dround01_op5     = 0x02,
-    aes_dround23_op5     = 0x03,
-    aes_eround01_l_op5   = 0x04,
-    aes_eround23_l_op5   = 0x05,
-    aes_dround01_l_op5   = 0x06,
-    aes_dround23_l_op5   = 0x07,
-    aes_kexpand1_op5     = 0x08
+    aes_eround01_op5   = 0x00,
+    aes_eround23_op5   = 0x01,
+    aes_dround01_op5   = 0x02,
+    aes_dround23_op5   = 0x03,
+    aes_eround01_l_op5 = 0x04,
+    aes_eround23_l_op5 = 0x05,
+    aes_dround01_l_op5 = 0x06,
+    aes_dround23_l_op5 = 0x07,
+    aes_kexpand1_op5   = 0x08
   };
 
-  enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7, rc_last = rc_gez  };
+  enum RCondition { rc_z = 1, rc_lez = 2, rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7, rc_last = rc_gez };
 
   enum Condition {
      // for FBfcc & FBPfcc instruction
@@ -278,59 +278,38 @@ class Assembler : public AbstractAssembler  {
     f_unorderedOrLessOrEqual    = 14,
     f_ordered                   = 15,
 
-    // V8 coproc, pp 123 v8 manual
-
-    cp_always  = 8,
-    cp_never   = 0,
-    cp_3       = 7,
-    cp_2       = 6,
-    cp_2or3    = 5,
-    cp_1       = 4,
-    cp_1or3    = 3,
-    cp_1or2    = 2,
-    cp_1or2or3 = 1,
-    cp_0       = 9,
-    cp_0or3    = 10,
-    cp_0or2    = 11,
-    cp_0or2or3 = 12,
-    cp_0or1    = 13,
-    cp_0or1or3 = 14,
-    cp_0or1or2 = 15,
-
-
     // for integers
 
-    never                 =  0,
-    equal                 =  1,
-    zero                  =  1,
-    lessEqual             =  2,
-    less                  =  3,
-    lessEqualUnsigned     =  4,
-    lessUnsigned          =  5,
-    carrySet              =  5,
-    negative              =  6,
-    overflowSet           =  7,
-    always                =  8,
-    notEqual              =  9,
-    notZero               =  9,
-    greater               =  10,
-    greaterEqual          =  11,
-    greaterUnsigned       =  12,
-    greaterEqualUnsigned  =  13,
-    carryClear            =  13,
-    positive              =  14,
-    overflowClear         =  15
+    never                = 0,
+    equal                = 1,
+    zero                 = 1,
+    lessEqual            = 2,
+    less                 = 3,
+    lessEqualUnsigned    = 4,
+    lessUnsigned         = 5,
+    carrySet             = 5,
+    negative             = 6,
+    overflowSet          = 7,
+    always               = 8,
+    notEqual             = 9,
+    notZero              = 9,
+    greater              = 10,
+    greaterEqual         = 11,
+    greaterUnsigned      = 12,
+    greaterEqualUnsigned = 13,
+    carryClear           = 13,
+    positive             = 14,
+    overflowClear        = 15
   };
 
   enum CC {
-    icc  = 0,  xcc  = 2,
     // ptr_cc is the correct condition code for a pointer or intptr_t:
-    ptr_cc = NOT_LP64(icc) LP64_ONLY(xcc),
-    fcc0 = 0,  fcc1 = 1, fcc2 = 2, fcc3 = 3
+    icc  = 0, xcc  = 2, ptr_cc = xcc,
+    fcc0 = 0, fcc1 = 1, fcc2 = 2, fcc3 = 3
   };
 
   enum PrefetchFcn {
-    severalReads = 0,  oneRead = 1,  severalWritesAndPossiblyReads = 2, oneWrite = 3, page = 4
+    severalReads = 0, oneRead = 1, severalWritesAndPossiblyReads = 2, oneWrite = 3, page = 4
   };
 
  public:
@@ -354,7 +333,7 @@ class Assembler : public AbstractAssembler  {
     return is_simm(d, nbits + 2);
   }
 
-  address target_distance(Label& L) {
+  address target_distance(Label &L) {
     // Assembler::target(L) should be called only when
     // a branch instruction is emitted since non-bound
     // labels record current pc() as a branch address.
@@ -364,7 +343,7 @@ class Assembler : public AbstractAssembler  {
   }
 
   // test if label is in simm16 range in words (wdisp16).
-  bool is_in_wdisp16_range(Label& L) {
+  bool is_in_wdisp16_range(Label &L) {
     return is_in_wdisp_range(target_distance(L), pc(), 16);
   }
   // test if the distance between two addresses fits in simm30 range in words
@@ -392,41 +371,39 @@ class Assembler : public AbstractAssembler  {
   // and be sign-extended. Check the range.
 
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert(nbits == 32 || (-(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
            "value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits);
   }
 
   static void assert_signed_word_disp_range(intptr_t x, int nbits) {
-    assert( (x & 3) == 0, "not word aligned");
+    assert((x & 3) == 0, "not word aligned");
     assert_signed_range(x, nbits + 2);
   }
 
   static void assert_unsigned_const(int x, int nbits) {
-    assert( juint(x)  <  juint(1 << nbits), "unsigned constant out of range");
+    assert(juint(x) < juint(1 << nbits), "unsigned constant out of range");
   }
 
-  // fields: note bits numbered from LSB = 0,
-  //  fields known by inclusive bit range
+  // fields: note bits numbered from LSB = 0, fields known by inclusive bit range
 
   static int fmask(juint hi_bit, juint lo_bit) {
-    assert( hi_bit >= lo_bit  &&  0 <= lo_bit  &&  hi_bit < 32, "bad bits");
-    return (1 << ( hi_bit-lo_bit + 1 )) - 1;
+    assert(hi_bit >= lo_bit && 0 <= lo_bit && hi_bit < 32, "bad bits");
+    return (1 << (hi_bit-lo_bit + 1)) - 1;
   }
 
   // inverse of u_field
 
   static int inv_u_field(int x, int hi_bit, int lo_bit) {
     juint r = juint(x) >> lo_bit;
-    r &= fmask( hi_bit, lo_bit);
+    r &= fmask(hi_bit, lo_bit);
     return int(r);
   }
-
 
   // signed version: extract from field and sign-extend
 
   static int inv_s_field(int x, int hi_bit, int lo_bit) {
     int sign_shift = 31 - hi_bit;
-    return inv_u_field( ((x << sign_shift) >> sign_shift), hi_bit, lo_bit);
+    return inv_u_field(((x << sign_shift) >> sign_shift), hi_bit, lo_bit);
   }
 
   // given a field that ranges from hi_bit to lo_bit (inclusive,
@@ -435,72 +412,102 @@ class Assembler : public AbstractAssembler  {
 
 #ifdef ASSERT
   static int u_field(int x, int hi_bit, int lo_bit) {
-    assert( ( x & ~fmask(hi_bit, lo_bit))  == 0,
+    assert((x & ~fmask(hi_bit, lo_bit)) == 0,
             "value out of range");
     int r = x << lo_bit;
-    assert( inv_u_field(r, hi_bit, lo_bit) == x, "just checking");
+    assert(inv_u_field(r, hi_bit, lo_bit) == x, "just checking");
     return r;
   }
 #else
   // make sure this is inlined as it will reduce code size significantly
-  #define u_field(x, hi_bit, lo_bit)   ((x) << (lo_bit))
+  #define u_field(x, hi_bit, lo_bit) ((x) << (lo_bit))
 #endif
 
-  static int inv_op(  int x ) { return inv_u_field(x, 31, 30); }
-  static int inv_op2( int x ) { return inv_u_field(x, 24, 22); }
-  static int inv_op3( int x ) { return inv_u_field(x, 24, 19); }
-  static int inv_cond( int x ){ return inv_u_field(x, 28, 25); }
+  static int inv_op(int x)   { return inv_u_field(x, 31, 30); }
+  static int inv_op2(int x)  { return inv_u_field(x, 24, 22); }
+  static int inv_op3(int x)  { return inv_u_field(x, 24, 19); }
+  static int inv_cond(int x) { return inv_u_field(x, 28, 25); }
 
-  static bool inv_immed( int x ) { return (x & Assembler::immed(true)) != 0; }
+  static bool inv_immed(int x)   { return (x & Assembler::immed(true)) != 0; }
 
-  static Register inv_rd(  int x ) { return as_Register(inv_u_field(x, 29, 25)); }
-  static Register inv_rs1( int x ) { return as_Register(inv_u_field(x, 18, 14)); }
-  static Register inv_rs2( int x ) { return as_Register(inv_u_field(x,  4,  0)); }
+  static Register inv_rd(int x)  { return as_Register(inv_u_field(x, 29, 25)); }
+  static Register inv_rs1(int x) { return as_Register(inv_u_field(x, 18, 14)); }
+  static Register inv_rs2(int x) { return as_Register(inv_u_field(x,  4,  0)); }
 
-  static int op(       int         x)  { return  u_field(x,             31, 30); }
-  static int rd(       Register    r)  { return  u_field(r->encoding(), 29, 25); }
-  static int fcn(      int         x)  { return  u_field(x,             29, 25); }
-  static int op3(      int         x)  { return  u_field(x,             24, 19); }
-  static int rs1(      Register    r)  { return  u_field(r->encoding(), 18, 14); }
-  static int rs2(      Register    r)  { return  u_field(r->encoding(),  4,  0); }
-  static int annul(    bool        a)  { return  u_field(a ? 1 : 0,     29, 29); }
-  static int cond(     int         x)  { return  u_field(x,             28, 25); }
-  static int cond_mov( int         x)  { return  u_field(x,             17, 14); }
-  static int rcond(    RCondition  x)  { return  u_field(x,             12, 10); }
-  static int op2(      int         x)  { return  u_field(x,             24, 22); }
-  static int predict(  bool        p)  { return  u_field(p ? 1 : 0,     19, 19); }
-  static int branchcc( CC       fcca)  { return  u_field(fcca,          21, 20); }
-  static int cmpcc(    CC       fcca)  { return  u_field(fcca,          26, 25); }
-  static int imm_asi(  int         x)  { return  u_field(x,             12,  5); }
-  static int immed(    bool        i)  { return  u_field(i ? 1 : 0,     13, 13); }
-  static int opf_low6( int         w)  { return  u_field(w,             10,  5); }
-  static int opf_low5( int         w)  { return  u_field(w,              9,  5); }
-  static int op5(      int         x)  { return  u_field(x,              8,  5); }
-  static int trapcc(   CC         cc)  { return  u_field(cc,            12, 11); }
-  static int sx(       int         i)  { return  u_field(i,             12, 12); } // shift x=1 means 64-bit
-  static int opf(      int         x)  { return  u_field(x,             13,  5); }
+  static int op(int x)           { return u_field(x,             31, 30); }
+  static int rd(Register r)      { return u_field(r->encoding(), 29, 25); }
+  static int fcn(int x)          { return u_field(x,             29, 25); }
+  static int op3(int x)          { return u_field(x,             24, 19); }
+  static int rs1(Register r)     { return u_field(r->encoding(), 18, 14); }
+  static int rs2(Register r)     { return u_field(r->encoding(),  4,  0); }
+  static int annul(bool a)       { return u_field(a ? 1 : 0,     29, 29); }
+  static int cond(int x)         { return u_field(x,             28, 25); }
+  static int cond_mov(int x)     { return u_field(x,             17, 14); }
+  static int rcond(RCondition x) { return u_field(x,             12, 10); }
+  static int op2(int x)          { return u_field(x,             24, 22); }
+  static int predict(bool p)     { return u_field(p ? 1 : 0,     19, 19); }
+  static int branchcc(CC fcca)   { return u_field(fcca,          21, 20); }
+  static int cmpcc(CC fcca)      { return u_field(fcca,          26, 25); }
+  static int imm_asi(int x)      { return u_field(x,             12,  5); }
+  static int immed(bool i)       { return u_field(i ? 1 : 0,     13, 13); }
+  static int opf_low6(int w)     { return u_field(w,             10,  5); }
+  static int opf_low5(int w)     { return u_field(w,              9,  5); }
+  static int op5(int x)          { return u_field(x,              8,  5); }
+  static int trapcc(CC cc)       { return u_field(cc,            12, 11); }
+  static int sx(int i)           { return u_field(i,             12, 12); } // shift x=1 means 64-bit
+  static int opf(int x)          { return u_field(x,             13,  5); }
 
-  static bool is_cbcond( int x ) {
+  static bool is_cbcond(int x) {
     return (VM_Version::has_cbcond() && (inv_cond(x) > rc_last) &&
             inv_op(x) == branch_op && inv_op2(x) == bpr_op2);
   }
-  static bool is_cxb( int x ) {
+  static bool is_cxb(int x) {
     assert(is_cbcond(x), "wrong instruction");
-    return (x & (1<<21)) != 0;
+    return (x & (1 << 21)) != 0;
   }
-  static int cond_cbcond( int         x)  { return  u_field((((x & 8)<<1) + 8 + (x & 7)), 29, 25); }
-  static int inv_cond_cbcond(int      x)  {
-    assert(is_cbcond(x), "wrong instruction");
-    return inv_u_field(x, 27, 25) | (inv_u_field(x, 29, 29)<<3);
+  static bool is_branch(int x) {
+    if (inv_op(x) != Assembler::branch_op) return false;
+
+    bool is_bpr = inv_op2(x) == Assembler::bpr_op2;
+    bool is_bp  = inv_op2(x) == Assembler::bp_op2;
+    bool is_br  = inv_op2(x) == Assembler::br_op2;
+    bool is_fp  = inv_op2(x) == Assembler::fb_op2;
+    bool is_fbp = inv_op2(x) == Assembler::fbp_op2;
+
+    return is_bpr || is_bp || is_br || is_fp || is_fbp;
+  }
+  static bool is_call(int x) {
+    return inv_op(x) == Assembler::call_op;
+  }
+  static bool is_jump(int x) {
+    if (inv_op(x) != Assembler::arith_op) return false;
+
+    bool is_jmpl = inv_op3(x) == Assembler::jmpl_op3;
+    bool is_rett = inv_op3(x) == Assembler::rett_op3;
+
+    return is_jmpl || is_rett;
+  }
+  static bool is_rdpc(int x) {
+    return (inv_op(x) == Assembler::arith_op && inv_op3(x) == Assembler::rdreg_op3 &&
+            inv_u_field(x, 18, 14) == 5);
+  }
+  static bool is_cti(int x) {
+      return is_branch(x) || is_call(x) || is_jump(x); // Ignoring done/retry
   }
 
-  static int opf_cc(   CC          c, bool useFloat ) { return u_field((useFloat ? 0 : 4) + c, 13, 11); }
-  static int mov_cc(   CC          c, bool useFloat ) { return u_field(useFloat ? 0 : 1,  18, 18) | u_field(c, 12, 11); }
+  static int cond_cbcond(int x) { return  u_field((((x & 8) << 1) + 8 + (x & 7)), 29, 25); }
+  static int inv_cond_cbcond(int x) {
+    assert(is_cbcond(x), "wrong instruction");
+    return inv_u_field(x, 27, 25) | (inv_u_field(x, 29, 29) << 3);
+  }
 
-  static int fd( FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 29, 25); };
-  static int fs1(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 18, 14); };
-  static int fs2(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa),  4,  0); };
-  static int fs3(FloatRegister r,  FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 13,  9); };
+  static int opf_cc(CC c, bool useFloat) { return u_field((useFloat ? 0 : 4) + c, 13, 11); }
+  static int mov_cc(CC c, bool useFloat) { return u_field(useFloat ? 0 : 1, 18, 18) | u_field(c, 12, 11); }
+
+  static int fd(FloatRegister r, FloatRegisterImpl::Width fwa)  { return u_field(r->encoding(fwa), 29, 25); };
+  static int fs1(FloatRegister r, FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 18, 14); };
+  static int fs2(FloatRegister r, FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa),  4,  0); };
+  static int fs3(FloatRegister r, FloatRegisterImpl::Width fwa) { return u_field(r->encoding(fwa), 13,  9); };
 
   // some float instructions use this encoding on the op3 field
   static int alt_op3(int op, FloatRegisterImpl::Width w) {
@@ -514,23 +521,22 @@ class Assembler : public AbstractAssembler  {
     return op3(r);
   }
 
-
   // compute inverse of simm
   static int inv_simm(int x, int nbits) {
     return (int)(x << (32 - nbits)) >> (32 - nbits);
   }
 
-  static int inv_simm13( int x ) { return inv_simm(x, 13); }
+  static int inv_simm13(int x) { return inv_simm(x, 13); }
 
   // signed immediate, in low bits, nbits long
   static int simm(int x, int nbits) {
     assert_signed_range(x, nbits);
-    return x  &  (( 1 << nbits ) - 1);
+    return x & ((1 << nbits) - 1);
   }
 
   // compute inverse of wdisp16
   static intptr_t inv_wdisp16(int x, intptr_t pos) {
-    int lo = x & (( 1 << 14 ) - 1);
+    int lo = x & ((1 << 14) - 1);
     int hi = (x >> 20) & 3;
     if (hi >= 2) hi |= ~1;
     return (((hi << 14) | lo) << 2) + pos;
@@ -540,9 +546,8 @@ class Assembler : public AbstractAssembler  {
   static int wdisp16(intptr_t x, intptr_t off) {
     intptr_t xx = x - off;
     assert_signed_word_disp_range(xx, 16);
-    int r =  (xx >> 2) & ((1 << 14) - 1)
-           |  (  ( (xx>>(2+14)) & 3 )  <<  20 );
-    assert( inv_wdisp16(r, off) == x,  "inverse is not inverse");
+    int r = (xx >> 2) & ((1 << 14) - 1) | (((xx >> (2+14)) & 3) << 20);
+    assert(inv_wdisp16(r, off) == x, "inverse is not inverse");
     return r;
   }
 
@@ -560,260 +565,292 @@ class Assembler : public AbstractAssembler  {
     assert(VM_Version::has_cbcond(), "This CPU does not have CBCOND instruction");
     intptr_t xx = x - off;
     assert_signed_word_disp_range(xx, 10);
-    int r =  ( ( (xx >>  2   ) & ((1 << 8) - 1) ) <<  5 )
-           | ( ( (xx >> (2+8)) & 3              ) << 19 );
+    int r = (((xx >> 2) & ((1 << 8) - 1)) << 5) | (((xx >> (2+8)) & 3) << 19);
     // Have to fake cbcond instruction to pass assert in inv_wdisp10()
-    assert(inv_wdisp10((r | op(branch_op) | cond_cbcond(rc_last+1) | op2(bpr_op2)), off) == x,  "inverse is not inverse");
+    assert(inv_wdisp10((r | op(branch_op) | cond_cbcond(rc_last+1) | op2(bpr_op2)), off) == x, "inverse is not inverse");
     return r;
   }
 
   // word displacement in low-order nbits bits
 
-  static intptr_t inv_wdisp( int x, intptr_t pos, int nbits ) {
-    int pre_sign_extend = x & (( 1 << nbits ) - 1);
-    int r =  pre_sign_extend >= ( 1 << (nbits-1) )
-       ?   pre_sign_extend | ~(( 1 << nbits ) - 1)
-       :   pre_sign_extend;
+  static intptr_t inv_wdisp(int x, intptr_t pos, int nbits) {
+    int pre_sign_extend = x & ((1 << nbits) - 1);
+    int r = (pre_sign_extend >= (1 << (nbits - 1)) ?
+             pre_sign_extend | ~((1 << nbits) - 1) : pre_sign_extend);
     return (r << 2) + pos;
   }
 
-  static int wdisp( intptr_t x, intptr_t off, int nbits ) {
+  static int wdisp(intptr_t x, intptr_t off, int nbits) {
     intptr_t xx = x - off;
     assert_signed_word_disp_range(xx, nbits);
-    int r =  (xx >> 2) & (( 1 << nbits ) - 1);
-    assert( inv_wdisp( r, off, nbits )  ==  x, "inverse not inverse");
+    int r = (xx >> 2) & ((1 << nbits) - 1);
+    assert(inv_wdisp(r, off, nbits) == x, "inverse not inverse");
     return r;
   }
 
 
   // Extract the top 32 bits in a 64 bit word
-  static int32_t hi32( int64_t x ) {
-    int32_t r = int32_t( (uint64_t)x >> 32 );
+  static int32_t hi32(int64_t x) {
+    int32_t r = int32_t((uint64_t)x >> 32);
     return r;
   }
 
   // given a sethi instruction, extract the constant, left-justified
-  static int inv_hi22( int x ) {
+  static int inv_hi22(int x) {
     return x << 10;
   }
 
   // create an imm22 field, given a 32-bit left-justified constant
-  static int hi22( int x ) {
-    int r = int( juint(x) >> 10 );
-    assert( (r & ~((1 << 22) - 1))  ==  0, "just checkin'");
+  static int hi22(int x) {
+    int r = int(juint(x) >> 10);
+    assert((r & ~((1 << 22) - 1)) == 0, "just checkin'");
     return r;
   }
 
   // create a low10 __value__ (not a field) for a given a 32-bit constant
-  static int low10( int x ) {
+  static int low10(int x) {
     return x & ((1 << 10) - 1);
   }
 
   // create a low12 __value__ (not a field) for a given a 32-bit constant
-  static int low12( int x ) {
+  static int low12(int x) {
     return x & ((1 << 12) - 1);
   }
 
   // AES crypto instructions supported only on certain processors
-  static void aes_only() { assert( VM_Version::has_aes(), "This instruction only works on SPARC with AES instructions support"); }
+  static void aes_only() { assert(VM_Version::has_aes(), "This instruction only works on SPARC with AES instructions support"); }
 
   // SHA crypto instructions supported only on certain processors
-  static void sha1_only()   { assert( VM_Version::has_sha1(),   "This instruction only works on SPARC with SHA1"); }
-  static void sha256_only() { assert( VM_Version::has_sha256(), "This instruction only works on SPARC with SHA256"); }
-  static void sha512_only() { assert( VM_Version::has_sha512(), "This instruction only works on SPARC with SHA512"); }
+  static void sha1_only()   { assert(VM_Version::has_sha1(),   "This instruction only works on SPARC with SHA1"); }
+  static void sha256_only() { assert(VM_Version::has_sha256(), "This instruction only works on SPARC with SHA256"); }
+  static void sha512_only() { assert(VM_Version::has_sha512(), "This instruction only works on SPARC with SHA512"); }
 
   // CRC32C instruction supported only on certain processors
-  static void crc32c_only() { assert( VM_Version::has_crc32c(), "This instruction only works on SPARC with CRC32C"); }
+  static void crc32c_only() { assert(VM_Version::has_crc32c(), "This instruction only works on SPARC with CRC32C"); }
+
+  // FMAf instructions supported only on certain processors
+  static void fmaf_only() { assert(VM_Version::has_fmaf(), "This instruction only works on SPARC with FMAf"); }
 
   // instruction only in VIS1
-  static void vis1_only() { assert( VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
+  static void vis1_only() { assert(VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
 
   // instruction only in VIS2
-  static void vis2_only() { assert( VM_Version::has_vis2(), "This instruction only works on SPARC with VIS2"); }
+  static void vis2_only() { assert(VM_Version::has_vis2(), "This instruction only works on SPARC with VIS2"); }
 
   // instruction only in VIS3
-  static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
-
-  // instruction only in v9
-  static void v9_only() { } // do nothing
+  static void vis3_only() { assert(VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
   // instruction deprecated in v9
-  static void v9_dep()  { } // do nothing for now
-
-  // v8 has no CC field
-  static void v8_no_cc(CC cc)  { if (cc)  v9_only(); }
+  static void v9_dep() { } // do nothing for now
 
  protected:
-  // Simple delay-slot scheme:
-  // In order to check the programmer, the assembler keeps track of deley slots.
-  // It forbids CTIs in delay slots (conservative, but should be OK).
-  // Also, when putting an instruction into a delay slot, you must say
-  // asm->delayed()->add(...), in order to check that you don't omit
-  // delay-slot instructions.
-  // To implement this, we use a simple FSA
-
 #ifdef ASSERT
-  #define CHECK_DELAY
+#define VALIDATE_PIPELINE
 #endif
-#ifdef CHECK_DELAY
-  enum Delay_state { no_delay, at_delay_slot, filling_delay_slot } delay_state;
+
+#ifdef VALIDATE_PIPELINE
+  // A simple delay-slot scheme:
+  // In order to check the programmer, the assembler keeps track of delay-slots.
+  // It forbids CTIs in delay-slots (conservative, but should be OK). Also, when
+  // emitting an instruction into a delay-slot, you must do so using delayed(),
+  // e.g. asm->delayed()->add(...), in order to check that you do not omit the
+  // delay-slot instruction. To implement this, we use a simple FSA.
+  enum { NoDelay, AtDelay, FillDelay } _delay_state;
+
+  // A simple hazard scheme:
+  // In order to avoid pipeline stalls, due to single cycle pipeline hazards, we
+  // adopt a simplistic state tracking mechanism that will enforce an additional
+  // 'nop' instruction to be inserted prior to emitting an instruction that can
+  // expose a given hazard (currently, PC-related hazards only).
+  enum { NoHazard, PcHazard } _hazard_state;
 #endif
 
  public:
-  // Tells assembler next instruction must NOT be in delay slot.
-  // Use at start of multinstruction macros.
+  // Tell the assembler that the next instruction must NOT be in delay-slot.
+  // Use at start of multi-instruction macros.
   void assert_not_delayed() {
-    // This is a separate overloading to avoid creation of string constants
-    // in non-asserted code--with some compilers this pollutes the object code.
-#ifdef CHECK_DELAY
-    assert_not_delayed("next instruction should not be a delay slot");
-#endif
-  }
-  void assert_not_delayed(const char* msg) {
-#ifdef CHECK_DELAY
-    assert(delay_state == no_delay, msg);
+    // This is a separate entry to avoid the creation of string constants in
+    // non-asserted code, with some compilers this pollutes the object code.
+#ifdef VALIDATE_PIPELINE
+    assert_no_delay("Next instruction should not be in a delay-slot.");
 #endif
   }
 
  protected:
-  // Insert a nop if the previous is cbcond
-  inline void insert_nop_after_cbcond();
+  void assert_no_delay(const char* msg) {
+#ifdef VALIDATE_PIPELINE
+    assert(_delay_state == NoDelay, msg);
+#endif
+  }
 
-  // Delay slot helpers
-  // cti is called when emitting control-transfer instruction,
-  // BEFORE doing the emitting.
-  // Only effective when assertion-checking is enabled.
+  void assert_no_hazard() {
+#ifdef VALIDATE_PIPELINE
+    assert(_hazard_state == NoHazard, "Unsolicited pipeline hazard.");
+#endif
+  }
+
+ private:
+  inline int32_t prev_insn() {
+    assert(offset() > 0, "Interface violation.");
+    int32_t* addr = (int32_t*)pc() - 1;
+    return *addr;
+  }
+
+#ifdef VALIDATE_PIPELINE
+  void validate_no_pipeline_hazards();
+#endif
+
+ protected:
+  // Avoid possible pipeline stall by inserting an additional 'nop' instruction,
+  // if the previous instruction is a 'cbcond' or a 'rdpc'.
+  inline void avoid_pipeline_stall();
+
+  // A call to cti() is made before emitting a control-transfer instruction (CTI)
+  // in order to assert a CTI is not emitted right after a 'cbcond', nor in the
+  // delay-slot of another CTI. Only effective when assertions are enabled.
   void cti() {
-    // A cbcond instruction immediately followed by a CTI
-    // instruction introduces pipeline stalls, we need to avoid that.
-    no_cbcond_before();
-#ifdef CHECK_DELAY
-    assert_not_delayed("cti should not be in delay slot");
+    // A 'cbcond' or 'rdpc' instruction immediately followed by a CTI introduces
+    // a pipeline stall, which we make sure to prohibit.
+    assert_no_cbcond_before();
+    assert_no_rdpc_before();
+#ifdef VALIDATE_PIPELINE
+    assert_no_hazard();
+    assert_no_delay("CTI in delay-slot.");
 #endif
   }
 
-  // called when emitting cti with a delay slot, AFTER emitting
-  void has_delay_slot() {
-#ifdef CHECK_DELAY
-    assert_not_delayed("just checking");
-    delay_state = at_delay_slot;
+  // Called when emitting CTI with a delay-slot, AFTER emitting.
+  inline void induce_delay_slot() {
+#ifdef VALIDATE_PIPELINE
+    assert_no_delay("Already in delay-slot.");
+    _delay_state = AtDelay;
 #endif
   }
 
-  // cbcond instruction should not be generated one after an other
-  bool cbcond_before() {
-    if (offset() == 0) return false; // it is first instruction
-    int x = *(int*)(intptr_t(pc()) - 4); // previous instruction
-    return is_cbcond(x);
+  inline void induce_pc_hazard() {
+#ifdef VALIDATE_PIPELINE
+    assert_no_hazard();
+    _hazard_state = PcHazard;
+#endif
   }
 
-  void no_cbcond_before() {
-    assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
-  }
-public:
+  bool is_cbcond_before() { return offset() > 0 ? is_cbcond(prev_insn()) : false; }
 
-  bool use_cbcond(Label& L) {
-    if (!UseCBCond || cbcond_before()) return false;
+  bool is_rdpc_before() { return offset() > 0 ? is_rdpc(prev_insn()) : false; }
+
+  void assert_no_cbcond_before() {
+    assert(offset() == 0 || !is_cbcond_before(), "CBCOND should not be followed by CTI.");
+  }
+
+  void assert_no_rdpc_before() {
+    assert(offset() == 0 || !is_rdpc_before(), "RDPC should not be followed by CTI.");
+  }
+
+ public:
+
+  bool use_cbcond(Label &L) {
+    if (!UseCBCond || is_cbcond_before()) return false;
     intptr_t x = intptr_t(target_distance(L)) - intptr_t(pc());
-    assert( (x & 3) == 0, "not word aligned");
+    assert((x & 3) == 0, "not word aligned");
     return is_simm12(x);
   }
 
   // Tells assembler you know that next instruction is delayed
   Assembler* delayed() {
-#ifdef CHECK_DELAY
-    assert ( delay_state == at_delay_slot, "delayed instruction is not in delay slot");
-    delay_state = filling_delay_slot;
+#ifdef VALIDATE_PIPELINE
+    assert(_delay_state == AtDelay, "Delayed instruction not in delay-slot.");
+    _delay_state = FillDelay;
 #endif
     return this;
   }
 
   void flush() {
-#ifdef CHECK_DELAY
-    assert ( delay_state == no_delay, "ending code with a delay slot");
+#ifdef VALIDATE_PIPELINE
+    assert(_delay_state == NoDelay, "Ending code with a delay-slot.");
+    validate_no_pipeline_hazards();
 #endif
     AbstractAssembler::flush();
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
-  inline void emit_data(int x);
-  inline void emit_data(int, RelocationHolder const&);
+  inline void emit_data(int);
+  inline void emit_data(int, RelocationHolder const &rspec);
   inline void emit_data(int, relocInfo::relocType rtype);
-  // helper for above fcns
+  // helper for above functions
   inline void check_delay();
 
 
  public:
   // instructions, refer to page numbers in the SPARC Architecture Manual, V9
 
-  // pp 135 (addc was addx in v8)
+  // pp 135
 
-  inline void add(Register s1, Register s2, Register d );
-  inline void add(Register s1, int simm13a, Register d );
+  inline void add(Register s1, Register s2, Register d);
+  inline void add(Register s1, int simm13a, Register d);
 
-  inline void addcc(  Register s1, Register s2, Register d );
-  inline void addcc(  Register s1, int simm13a, Register d );
-  inline void addc(   Register s1, Register s2, Register d );
-  inline void addc(   Register s1, int simm13a, Register d );
-  inline void addccc( Register s1, Register s2, Register d );
-  inline void addccc( Register s1, int simm13a, Register d );
+  inline void addcc(Register s1, Register s2, Register d);
+  inline void addcc(Register s1, int simm13a, Register d);
+  inline void addc(Register s1, Register s2, Register d);
+  inline void addc(Register s1, int simm13a, Register d);
+  inline void addccc(Register s1, Register s2, Register d);
+  inline void addccc(Register s1, int simm13a, Register d);
 
 
   // 4-operand AES instructions
 
-  inline void aes_eround01(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_eround23(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_dround01(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_dround23(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_eround01_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_eround23_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_dround01_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_dround23_l(  FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d );
-  inline void aes_kexpand1(  FloatRegister s1, FloatRegister s2, int imm5a, FloatRegister d );
+  inline void aes_eround01(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_eround23(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_dround01(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_dround23(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_eround01_l(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_eround23_l(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_dround01_l(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_dround23_l(FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
+  inline void aes_kexpand1(FloatRegister s1, FloatRegister s2, int imm5a, FloatRegister d);
 
 
   // 3-operand AES instructions
 
-  inline void aes_kexpand0(  FloatRegister s1, FloatRegister s2, FloatRegister d );
-  inline void aes_kexpand2(  FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void aes_kexpand0(FloatRegister s1, FloatRegister s2, FloatRegister d);
+  inline void aes_kexpand2(FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // pp 136
 
   inline void bpr(RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none);
-  inline void bpr(RCondition c, bool a, Predict p, Register s1, Label& L);
+  inline void bpr(RCondition c, bool a, Predict p, Register s1, Label &L);
 
   // compare and branch
-  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label& L);
-  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label& L);
+  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label &L);
+  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label &L);
 
  protected: // use MacroAssembler::br instead
 
   // pp 138
 
-  inline void fb( Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void fb( Condition c, bool a, Label& L );
+  inline void fb(Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void fb(Condition c, bool a, Label &L);
 
   // pp 141
 
-  inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
+  inline void fbp(Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void fbp(Condition c, bool a, CC cc, Predict p, Label &L);
 
   // pp 144
 
-  inline void br( Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void br( Condition c, bool a, Label& L );
+  inline void br(Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void br(Condition c, bool a, Label &L);
 
   // pp 146
 
-  inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
+  inline void bp(Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void bp(Condition c, bool a, CC cc, Predict p, Label &L);
 
   // pp 149
 
-  inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
-  inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
+  inline void call(address d, relocInfo::relocType rt = relocInfo::runtime_call_type);
+  inline void call(Label &L,  relocInfo::relocType rt = relocInfo::runtime_call_type);
 
-  inline void call( address d,  RelocationHolder const& rspec );
+  inline void call(address d, RelocationHolder const &rspec);
 
  public:
 
@@ -824,19 +861,19 @@ public:
   // at address s1 is swapped with the data in d. If the values are not equal,
   // the the contents of memory at s1 is loaded into d, without the swap.
 
-  inline void casa(  Register s1, Register s2, Register d, int ia = -1 );
-  inline void casxa( Register s1, Register s2, Register d, int ia = -1 );
+  inline void casa(Register s1, Register s2, Register d, int ia = -1);
+  inline void casxa(Register s1, Register s2, Register d, int ia = -1);
 
   // pp 152
 
-  inline void udiv(   Register s1, Register s2, Register d );
-  inline void udiv(   Register s1, int simm13a, Register d );
-  inline void sdiv(   Register s1, Register s2, Register d );
-  inline void sdiv(   Register s1, int simm13a, Register d );
-  inline void udivcc( Register s1, Register s2, Register d );
-  inline void udivcc( Register s1, int simm13a, Register d );
-  inline void sdivcc( Register s1, Register s2, Register d );
-  inline void sdivcc( Register s1, int simm13a, Register d );
+  inline void udiv(Register s1, Register s2, Register d);
+  inline void udiv(Register s1, int simm13a, Register d);
+  inline void sdiv(Register s1, Register s2, Register d);
+  inline void sdiv(Register s1, int simm13a, Register d);
+  inline void udivcc(Register s1, Register s2, Register d);
+  inline void udivcc(Register s1, int simm13a, Register d);
+  inline void sdivcc(Register s1, Register s2, Register d);
+  inline void sdivcc(Register s1, int simm13a, Register d);
 
   // pp 155
 
@@ -845,54 +882,58 @@ public:
 
   // pp 156
 
-  inline void fadd( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d );
-  inline void fsub( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void fadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d);
+  inline void fsub(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // pp 157
 
-  inline void fcmp(  FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2);
-  inline void fcmpe( FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2);
+  inline void fcmp(FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2);
+  inline void fcmpe(FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2);
 
   // pp 159
 
-  inline void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
-  inline void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void ftox(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
+  inline void ftoi(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
 
   // pp 160
 
-  inline void ftof( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw, FloatRegister s, FloatRegister d );
+  inline void ftof(FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw, FloatRegister s, FloatRegister d);
 
   // pp 161
 
-  inline void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
-  inline void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void fxtof(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
+  inline void fitof(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
 
   // pp 162
 
-  inline void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void fmov(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
 
-  inline void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void fneg(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
 
-  inline void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void fabs(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
 
   // pp 163
 
-  inline void fmul( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d );
-  inline void fmul( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw,  FloatRegister s1, FloatRegister s2, FloatRegister d );
-  inline void fdiv( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void fmul(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d);
+  inline void fmul(FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw, FloatRegister s1, FloatRegister s2, FloatRegister d);
+  inline void fdiv(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // FXORs/FXORd instructions
 
-  inline void fxor( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void fxor(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // pp 164
 
-  inline void fsqrt( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d );
+  inline void fsqrt(FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
+
+  // fmaf instructions.
+
+  inline void fmadd(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister s3, FloatRegister d);
 
   // pp 165
 
-  inline void flush( Register s1, Register s2 );
-  inline void flush( Register s1, int simm13a);
+  inline void flush(Register s1, Register s2);
+  inline void flush(Register s1, int simm13a);
 
   // pp 167
 
@@ -900,139 +941,140 @@ public:
 
   // pp 168
 
-  void illtrap( int const22a);
-  // v8 unimp == illtrap(0)
+  void illtrap(int const22a);
 
   // pp 169
 
-  void impdep1( int id1, int const19a );
-  void impdep2( int id1, int const19a );
+  void impdep1(int id1, int const19a);
+  void impdep2(int id1, int const19a);
 
   // pp 170
 
-  void jmpl( Register s1, Register s2, Register d );
-  void jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec = RelocationHolder() );
+  void jmpl(Register s1, Register s2, Register d);
+  void jmpl(Register s1, int simm13a, Register d,
+            RelocationHolder const &rspec = RelocationHolder());
 
   // 171
 
   inline void ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d);
-  inline void ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec = RelocationHolder());
+  inline void ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d,
+                  RelocationHolder const &rspec = RelocationHolder());
 
 
-  inline void ldfsr(  Register s1, Register s2 );
-  inline void ldfsr(  Register s1, int simm13a);
-  inline void ldxfsr( Register s1, Register s2 );
-  inline void ldxfsr( Register s1, int simm13a);
+  inline void ldfsr(Register s1, Register s2);
+  inline void ldfsr(Register s1, int simm13a);
+  inline void ldxfsr(Register s1, Register s2);
+  inline void ldxfsr(Register s1, int simm13a);
 
   // 173
 
-  inline void ldfa(  FloatRegisterImpl::Width w, Register s1, Register s2, int ia, FloatRegister d );
-  inline void ldfa(  FloatRegisterImpl::Width w, Register s1, int simm13a,         FloatRegister d );
+  inline void ldfa(FloatRegisterImpl::Width w, Register s1, Register s2, int ia, FloatRegister d);
+  inline void ldfa(FloatRegisterImpl::Width w, Register s1, int simm13a,         FloatRegister d);
 
-  // pp 175, lduw is ld on v8
+  // pp 175
 
-  inline void ldsb(  Register s1, Register s2, Register d );
-  inline void ldsb(  Register s1, int simm13a, Register d);
-  inline void ldsh(  Register s1, Register s2, Register d );
-  inline void ldsh(  Register s1, int simm13a, Register d);
-  inline void ldsw(  Register s1, Register s2, Register d );
-  inline void ldsw(  Register s1, int simm13a, Register d);
-  inline void ldub(  Register s1, Register s2, Register d );
-  inline void ldub(  Register s1, int simm13a, Register d);
-  inline void lduh(  Register s1, Register s2, Register d );
-  inline void lduh(  Register s1, int simm13a, Register d);
-  inline void lduw(  Register s1, Register s2, Register d );
-  inline void lduw(  Register s1, int simm13a, Register d);
-  inline void ldx(   Register s1, Register s2, Register d );
-  inline void ldx(   Register s1, int simm13a, Register d);
-  inline void ldd(   Register s1, Register s2, Register d );
-  inline void ldd(   Register s1, int simm13a, Register d);
+  inline void ldsb(Register s1, Register s2, Register d);
+  inline void ldsb(Register s1, int simm13a, Register d);
+  inline void ldsh(Register s1, Register s2, Register d);
+  inline void ldsh(Register s1, int simm13a, Register d);
+  inline void ldsw(Register s1, Register s2, Register d);
+  inline void ldsw(Register s1, int simm13a, Register d);
+  inline void ldub(Register s1, Register s2, Register d);
+  inline void ldub(Register s1, int simm13a, Register d);
+  inline void lduh(Register s1, Register s2, Register d);
+  inline void lduh(Register s1, int simm13a, Register d);
+  inline void lduw(Register s1, Register s2, Register d);
+  inline void lduw(Register s1, int simm13a, Register d);
+  inline void ldx(Register s1, Register s2, Register d);
+  inline void ldx(Register s1, int simm13a, Register d);
+  inline void ldd(Register s1, Register s2, Register d);
+  inline void ldd(Register s1, int simm13a, Register d);
 
   // pp 177
 
-  inline void ldsba(  Register s1, Register s2, int ia, Register d );
-  inline void ldsba(  Register s1, int simm13a,         Register d );
-  inline void ldsha(  Register s1, Register s2, int ia, Register d );
-  inline void ldsha(  Register s1, int simm13a,         Register d );
-  inline void ldswa(  Register s1, Register s2, int ia, Register d );
-  inline void ldswa(  Register s1, int simm13a,         Register d );
-  inline void lduba(  Register s1, Register s2, int ia, Register d );
-  inline void lduba(  Register s1, int simm13a,         Register d );
-  inline void lduha(  Register s1, Register s2, int ia, Register d );
-  inline void lduha(  Register s1, int simm13a,         Register d );
-  inline void lduwa(  Register s1, Register s2, int ia, Register d );
-  inline void lduwa(  Register s1, int simm13a,         Register d );
-  inline void ldxa(   Register s1, Register s2, int ia, Register d );
-  inline void ldxa(   Register s1, int simm13a,         Register d );
+  inline void ldsba(Register s1, Register s2, int ia, Register d);
+  inline void ldsba(Register s1, int simm13a,         Register d);
+  inline void ldsha(Register s1, Register s2, int ia, Register d);
+  inline void ldsha(Register s1, int simm13a,         Register d);
+  inline void ldswa(Register s1, Register s2, int ia, Register d);
+  inline void ldswa(Register s1, int simm13a,         Register d);
+  inline void lduba(Register s1, Register s2, int ia, Register d);
+  inline void lduba(Register s1, int simm13a,         Register d);
+  inline void lduha(Register s1, Register s2, int ia, Register d);
+  inline void lduha(Register s1, int simm13a,         Register d);
+  inline void lduwa(Register s1, Register s2, int ia, Register d);
+  inline void lduwa(Register s1, int simm13a,         Register d);
+  inline void ldxa(Register s1, Register s2, int ia, Register d);
+  inline void ldxa(Register s1, int simm13a,         Register d);
 
   // pp 181
 
-  inline void and3(    Register s1, Register s2, Register d );
-  inline void and3(    Register s1, int simm13a, Register d );
-  inline void andcc(   Register s1, Register s2, Register d );
-  inline void andcc(   Register s1, int simm13a, Register d );
-  inline void andn(    Register s1, Register s2, Register d );
-  inline void andn(    Register s1, int simm13a, Register d );
-  inline void andncc(  Register s1, Register s2, Register d );
-  inline void andncc(  Register s1, int simm13a, Register d );
-  inline void or3(     Register s1, Register s2, Register d );
-  inline void or3(     Register s1, int simm13a, Register d );
-  inline void orcc(    Register s1, Register s2, Register d );
-  inline void orcc(    Register s1, int simm13a, Register d );
-  inline void orn(     Register s1, Register s2, Register d );
-  inline void orn(     Register s1, int simm13a, Register d );
-  inline void orncc(   Register s1, Register s2, Register d );
-  inline void orncc(   Register s1, int simm13a, Register d );
-  inline void xor3(    Register s1, Register s2, Register d );
-  inline void xor3(    Register s1, int simm13a, Register d );
-  inline void xorcc(   Register s1, Register s2, Register d );
-  inline void xorcc(   Register s1, int simm13a, Register d );
-  inline void xnor(    Register s1, Register s2, Register d );
-  inline void xnor(    Register s1, int simm13a, Register d );
-  inline void xnorcc(  Register s1, Register s2, Register d );
-  inline void xnorcc(  Register s1, int simm13a, Register d );
+  inline void and3(Register s1, Register s2, Register d);
+  inline void and3(Register s1, int simm13a, Register d);
+  inline void andcc(Register s1, Register s2, Register d);
+  inline void andcc(Register s1, int simm13a, Register d);
+  inline void andn(Register s1, Register s2, Register d);
+  inline void andn(Register s1, int simm13a, Register d);
+  inline void andncc(Register s1, Register s2, Register d);
+  inline void andncc(Register s1, int simm13a, Register d);
+  inline void or3(Register s1, Register s2, Register d);
+  inline void or3(Register s1, int simm13a, Register d);
+  inline void orcc(Register s1, Register s2, Register d);
+  inline void orcc(Register s1, int simm13a, Register d);
+  inline void orn(Register s1, Register s2, Register d);
+  inline void orn(Register s1, int simm13a, Register d);
+  inline void orncc(Register s1, Register s2, Register d);
+  inline void orncc(Register s1, int simm13a, Register d);
+  inline void xor3(Register s1, Register s2, Register d);
+  inline void xor3(Register s1, int simm13a, Register d);
+  inline void xorcc(Register s1, Register s2, Register d);
+  inline void xorcc(Register s1, int simm13a, Register d);
+  inline void xnor(Register s1, Register s2, Register d);
+  inline void xnor(Register s1, int simm13a, Register d);
+  inline void xnorcc(Register s1, Register s2, Register d);
+  inline void xnorcc(Register s1, int simm13a, Register d);
 
   // pp 183
 
-  inline void membar( Membar_mask_bits const7a );
+  inline void membar(Membar_mask_bits const7a);
 
   // pp 185
 
-  inline void fmov( FloatRegisterImpl::Width w, Condition c,  bool floatCC, CC cca, FloatRegister s2, FloatRegister d );
+  inline void fmov(FloatRegisterImpl::Width w, Condition c,  bool floatCC, CC cca, FloatRegister s2, FloatRegister d);
 
   // pp 189
 
-  inline void fmov( FloatRegisterImpl::Width w, RCondition c, Register s1,  FloatRegister s2, FloatRegister d );
+  inline void fmov(FloatRegisterImpl::Width w, RCondition c, Register s1,  FloatRegister s2, FloatRegister d);
 
   // pp 191
 
-  inline void movcc( Condition c, bool floatCC, CC cca, Register s2, Register d );
-  inline void movcc( Condition c, bool floatCC, CC cca, int simm11a, Register d );
+  inline void movcc(Condition c, bool floatCC, CC cca, Register s2, Register d);
+  inline void movcc(Condition c, bool floatCC, CC cca, int simm11a, Register d);
 
   // pp 195
 
-  inline void movr( RCondition c, Register s1, Register s2,  Register d );
-  inline void movr( RCondition c, Register s1, int simm10a,  Register d );
+  inline void movr(RCondition c, Register s1, Register s2,  Register d);
+  inline void movr(RCondition c, Register s1, int simm10a,  Register d);
 
   // pp 196
 
-  inline void mulx(  Register s1, Register s2, Register d );
-  inline void mulx(  Register s1, int simm13a, Register d );
-  inline void sdivx( Register s1, Register s2, Register d );
-  inline void sdivx( Register s1, int simm13a, Register d );
-  inline void udivx( Register s1, Register s2, Register d );
-  inline void udivx( Register s1, int simm13a, Register d );
+  inline void mulx(Register s1, Register s2, Register d);
+  inline void mulx(Register s1, int simm13a, Register d);
+  inline void sdivx(Register s1, Register s2, Register d);
+  inline void sdivx(Register s1, int simm13a, Register d);
+  inline void udivx(Register s1, Register s2, Register d);
+  inline void udivx(Register s1, int simm13a, Register d);
 
   // pp 197
 
-  inline void umul(   Register s1, Register s2, Register d );
-  inline void umul(   Register s1, int simm13a, Register d );
-  inline void smul(   Register s1, Register s2, Register d );
-  inline void smul(   Register s1, int simm13a, Register d );
-  inline void umulcc( Register s1, Register s2, Register d );
-  inline void umulcc( Register s1, int simm13a, Register d );
-  inline void smulcc( Register s1, Register s2, Register d );
-  inline void smulcc( Register s1, int simm13a, Register d );
+  inline void umul(Register s1, Register s2, Register d);
+  inline void umul(Register s1, int simm13a, Register d);
+  inline void smul(Register s1, Register s2, Register d);
+  inline void smul(Register s1, int simm13a, Register d);
+  inline void umulcc(Register s1, Register s2, Register d);
+  inline void umulcc(Register s1, int simm13a, Register d);
+  inline void smulcc(Register s1, Register s2, Register d);
+  inline void smulcc(Register s1, int simm13a, Register d);
 
   // pp 201
 
@@ -1042,40 +1084,40 @@ public:
 
   // pp 202
 
-  inline void popc( Register s,  Register d);
-  inline void popc( int simm13a, Register d);
+  inline void popc(Register s,  Register d);
+  inline void popc(int simm13a, Register d);
 
   // pp 203
 
-  inline void prefetch(   Register s1, Register s2, PrefetchFcn f);
-  inline void prefetch(   Register s1, int simm13a, PrefetchFcn f);
+  inline void prefetch(Register s1, Register s2, PrefetchFcn f);
+  inline void prefetch(Register s1, int simm13a, PrefetchFcn f);
 
-  inline void prefetcha(  Register s1, Register s2, int ia, PrefetchFcn f );
-  inline void prefetcha(  Register s1, int simm13a,         PrefetchFcn f );
+  inline void prefetcha(Register s1, Register s2, int ia, PrefetchFcn f);
+  inline void prefetcha(Register s1, int simm13a,         PrefetchFcn f);
 
   // pp 208
 
   // not implementing read privileged register
 
-  inline void rdy(    Register d);
-  inline void rdccr(  Register d);
-  inline void rdasi(  Register d);
-  inline void rdtick( Register d);
-  inline void rdpc(   Register d);
-  inline void rdfprs( Register d);
+  inline void rdy(Register d);
+  inline void rdccr(Register d);
+  inline void rdasi(Register d);
+  inline void rdtick(Register d);
+  inline void rdpc(Register d);
+  inline void rdfprs(Register d);
 
   // pp 213
 
-  inline void rett( Register s1, Register s2);
-  inline void rett( Register s1, int simm13a, relocInfo::relocType rt = relocInfo::none);
+  inline void rett(Register s1, Register s2);
+  inline void rett(Register s1, int simm13a, relocInfo::relocType rt = relocInfo::none);
 
   // pp 214
 
-  inline void save(    Register s1, Register s2, Register d );
-  inline void save(    Register s1, int simm13a, Register d );
+  inline void save(Register s1, Register s2, Register d);
+  inline void save(Register s1, int simm13a, Register d);
 
-  inline void restore( Register s1 = G0,  Register s2 = G0, Register d = G0 );
-  inline void restore( Register s1,       int simm13a,      Register d      );
+  inline void restore(Register s1 = G0, Register s2 = G0, Register d = G0);
+  inline void restore(Register s1,      int simm13a,      Register d);
 
   // pp 216
 
@@ -1084,26 +1126,27 @@ public:
 
   // pp 217
 
-  inline void sethi( int imm22a, Register d, RelocationHolder const& rspec = RelocationHolder() );
+  inline void sethi(int imm22a, Register d, RelocationHolder const &rspec = RelocationHolder());
+
   // pp 218
 
-  inline void sll(  Register s1, Register s2, Register d );
-  inline void sll(  Register s1, int imm5a,   Register d );
-  inline void srl(  Register s1, Register s2, Register d );
-  inline void srl(  Register s1, int imm5a,   Register d );
-  inline void sra(  Register s1, Register s2, Register d );
-  inline void sra(  Register s1, int imm5a,   Register d );
+  inline void sll(Register s1, Register s2, Register d);
+  inline void sll(Register s1, int imm5a,   Register d);
+  inline void srl(Register s1, Register s2, Register d);
+  inline void srl(Register s1, int imm5a,   Register d);
+  inline void sra(Register s1, Register s2, Register d);
+  inline void sra(Register s1, int imm5a,   Register d);
 
-  inline void sllx( Register s1, Register s2, Register d );
-  inline void sllx( Register s1, int imm6a,   Register d );
-  inline void srlx( Register s1, Register s2, Register d );
-  inline void srlx( Register s1, int imm6a,   Register d );
-  inline void srax( Register s1, Register s2, Register d );
-  inline void srax( Register s1, int imm6a,   Register d );
+  inline void sllx(Register s1, Register s2, Register d);
+  inline void sllx(Register s1, int imm6a,   Register d);
+  inline void srlx(Register s1, Register s2, Register d);
+  inline void srlx(Register s1, int imm6a,   Register d);
+  inline void srax(Register s1, Register s2, Register d);
+  inline void srax(Register s1, int imm6a,   Register d);
 
   // pp 220
 
-  inline void sir( int simm13a );
+  inline void sir(int simm13a);
 
   // pp 221
 
@@ -1111,125 +1154,125 @@ public:
 
   // pp 222
 
-  inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2);
-  inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a);
+  inline void stf(FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2);
+  inline void stf(FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a);
 
-  inline void stfsr(  Register s1, Register s2 );
-  inline void stfsr(  Register s1, int simm13a);
-  inline void stxfsr( Register s1, Register s2 );
-  inline void stxfsr( Register s1, int simm13a);
+  inline void stfsr(Register s1, Register s2);
+  inline void stfsr(Register s1, int simm13a);
+  inline void stxfsr(Register s1, Register s2);
+  inline void stxfsr(Register s1, int simm13a);
 
-  //  pp 224
+  // pp 224
 
-  inline void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2, int ia );
-  inline void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a         );
+  inline void stfa(FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2, int ia);
+  inline void stfa(FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a);
 
-  // p 226
+  // pp 226
 
-  inline void stb(  Register d, Register s1, Register s2 );
-  inline void stb(  Register d, Register s1, int simm13a);
-  inline void sth(  Register d, Register s1, Register s2 );
-  inline void sth(  Register d, Register s1, int simm13a);
-  inline void stw(  Register d, Register s1, Register s2 );
-  inline void stw(  Register d, Register s1, int simm13a);
-  inline void stx(  Register d, Register s1, Register s2 );
-  inline void stx(  Register d, Register s1, int simm13a);
-  inline void std(  Register d, Register s1, Register s2 );
-  inline void std(  Register d, Register s1, int simm13a);
+  inline void stb(Register d, Register s1, Register s2);
+  inline void stb(Register d, Register s1, int simm13a);
+  inline void sth(Register d, Register s1, Register s2);
+  inline void sth(Register d, Register s1, int simm13a);
+  inline void stw(Register d, Register s1, Register s2);
+  inline void stw(Register d, Register s1, int simm13a);
+  inline void stx(Register d, Register s1, Register s2);
+  inline void stx(Register d, Register s1, int simm13a);
+  inline void std(Register d, Register s1, Register s2);
+  inline void std(Register d, Register s1, int simm13a);
 
   // pp 177
 
-  inline void stba(  Register d, Register s1, Register s2, int ia );
-  inline void stba(  Register d, Register s1, int simm13a         );
-  inline void stha(  Register d, Register s1, Register s2, int ia );
-  inline void stha(  Register d, Register s1, int simm13a         );
-  inline void stwa(  Register d, Register s1, Register s2, int ia );
-  inline void stwa(  Register d, Register s1, int simm13a         );
-  inline void stxa(  Register d, Register s1, Register s2, int ia );
-  inline void stxa(  Register d, Register s1, int simm13a         );
-  inline void stda(  Register d, Register s1, Register s2, int ia );
-  inline void stda(  Register d, Register s1, int simm13a         );
+  inline void stba(Register d, Register s1, Register s2, int ia);
+  inline void stba(Register d, Register s1, int simm13a);
+  inline void stha(Register d, Register s1, Register s2, int ia);
+  inline void stha(Register d, Register s1, int simm13a);
+  inline void stwa(Register d, Register s1, Register s2, int ia);
+  inline void stwa(Register d, Register s1, int simm13a);
+  inline void stxa(Register d, Register s1, Register s2, int ia);
+  inline void stxa(Register d, Register s1, int simm13a);
+  inline void stda(Register d, Register s1, Register s2, int ia);
+  inline void stda(Register d, Register s1, int simm13a);
 
   // pp 230
 
-  inline void sub(    Register s1, Register s2, Register d );
-  inline void sub(    Register s1, int simm13a, Register d );
+  inline void sub(Register s1, Register s2, Register d);
+  inline void sub(Register s1, int simm13a, Register d);
 
-  inline void subcc(  Register s1, Register s2, Register d );
-  inline void subcc(  Register s1, int simm13a, Register d );
-  inline void subc(   Register s1, Register s2, Register d );
-  inline void subc(   Register s1, int simm13a, Register d );
-  inline void subccc( Register s1, Register s2, Register d );
-  inline void subccc( Register s1, int simm13a, Register d );
+  inline void subcc(Register s1, Register s2, Register d);
+  inline void subcc(Register s1, int simm13a, Register d);
+  inline void subc(Register s1, Register s2, Register d);
+  inline void subc(Register s1, int simm13a, Register d);
+  inline void subccc(Register s1, Register s2, Register d);
+  inline void subccc(Register s1, int simm13a, Register d);
 
   // pp 231
 
-  inline void swap( Register s1, Register s2, Register d );
-  inline void swap( Register s1, int simm13a, Register d);
+  inline void swap(Register s1, Register s2, Register d);
+  inline void swap(Register s1, int simm13a, Register d);
 
   // pp 232
 
-  inline void swapa(   Register s1, Register s2, int ia, Register d );
-  inline void swapa(   Register s1, int simm13a,         Register d );
+  inline void swapa(Register s1, Register s2, int ia, Register d);
+  inline void swapa(Register s1, int simm13a,         Register d);
 
   // pp 234, note op in book is wrong, see pp 268
 
-  inline void taddcc(    Register s1, Register s2, Register d );
-  inline void taddcc(    Register s1, int simm13a, Register d );
+  inline void taddcc(Register s1, Register s2, Register d);
+  inline void taddcc(Register s1, int simm13a, Register d);
 
   // pp 235
 
-  inline void tsubcc(    Register s1, Register s2, Register d );
-  inline void tsubcc(    Register s1, int simm13a, Register d );
+  inline void tsubcc(Register s1, Register s2, Register d);
+  inline void tsubcc(Register s1, int simm13a, Register d);
 
   // pp 237
 
-  inline void trap( Condition c, CC cc, Register s1, Register s2 );
-  inline void trap( Condition c, CC cc, Register s1, int trapa   );
+  inline void trap(Condition c, CC cc, Register s1, Register s2);
+  inline void trap(Condition c, CC cc, Register s1, int trapa);
   // simple uncond. trap
-  inline void trap( int trapa );
+  inline void trap(int trapa);
 
   // pp 239 omit write priv register for now
 
-  inline void wry(    Register d);
+  inline void wry(Register d);
   inline void wrccr(Register s);
   inline void wrccr(Register s, int simm13a);
   inline void wrasi(Register d);
   // wrasi(d, imm) stores (d xor imm) to asi
   inline void wrasi(Register d, int simm13a);
-  inline void wrfprs( Register d);
+  inline void wrfprs(Register d);
 
-  //  VIS1 instructions
+  // VIS1 instructions
 
-  inline void alignaddr( Register s1, Register s2, Register d );
+  inline void alignaddr(Register s1, Register s2, Register d);
 
-  inline void faligndata( FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void faligndata(FloatRegister s1, FloatRegister s2, FloatRegister d);
 
-  inline void fzero( FloatRegisterImpl::Width w, FloatRegister d );
+  inline void fzero(FloatRegisterImpl::Width w, FloatRegister d);
 
-  inline void fsrc2( FloatRegisterImpl::Width w, FloatRegister s2, FloatRegister d );
+  inline void fsrc2(FloatRegisterImpl::Width w, FloatRegister s2, FloatRegister d);
 
-  inline void fnot1( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister d );
+  inline void fnot1(FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister d);
 
-  inline void fpmerge( FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void fpmerge(FloatRegister s1, FloatRegister s2, FloatRegister d);
 
-  inline void stpartialf( Register s1, Register s2, FloatRegister d, int ia = -1 );
+  inline void stpartialf(Register s1, Register s2, FloatRegister d, int ia = -1);
 
-  //  VIS2 instructions
+  // VIS2 instructions
 
-  inline void edge8n( Register s1, Register s2, Register d );
+  inline void edge8n(Register s1, Register s2, Register d);
 
-  inline void bmask( Register s1, Register s2, Register d );
-  inline void bshuffle( FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void bmask(Register s1, Register s2, Register d);
+  inline void bshuffle(FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // VIS3 instructions
 
-  inline void movstosw( FloatRegister s, Register d );
-  inline void movstouw( FloatRegister s, Register d );
-  inline void movdtox(  FloatRegister s, Register d );
+  inline void movstosw(FloatRegister s, Register d);
+  inline void movstouw(FloatRegister s, Register d);
+  inline void movdtox(FloatRegister s, Register d);
 
-  inline void movwtos( Register s, FloatRegister d );
-  inline void movxtod( Register s, FloatRegister d );
+  inline void movwtos(Register s, FloatRegister d);
+  inline void movxtod(Register s, FloatRegister d);
 
   inline void xmulx(Register s1, Register s2, Register d);
   inline void xmulxhi(Register s1, Register s2, Register d);
@@ -1242,12 +1285,13 @@ public:
 
   // CRC32C instruction
 
-  inline void crc32c( FloatRegister s1, FloatRegister s2, FloatRegister d );
+  inline void crc32c(FloatRegister s1, FloatRegister s2, FloatRegister d);
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
-#ifdef CHECK_DELAY
-    delay_state = no_delay;
+#ifdef VALIDATE_PIPELINE
+    _delay_state  = NoDelay;
+    _hazard_state = NoHazard;
 #endif
   }
 };

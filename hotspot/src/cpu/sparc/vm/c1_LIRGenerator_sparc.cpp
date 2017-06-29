@@ -953,7 +953,29 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
 }
 
 void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
-  fatal("FMA intrinsic is not implemented on this platform");
+  assert(x->number_of_arguments() == 3, "wrong type");
+  assert(UseFMA, "Needs FMA instructions support.");
+
+  LIRItem a(x->argument_at(0), this);
+  LIRItem b(x->argument_at(1), this);
+  LIRItem c(x->argument_at(2), this);
+
+  a.load_item();
+  b.load_item();
+  c.load_item();
+
+  LIR_Opr ina = a.result();
+  LIR_Opr inb = b.result();
+  LIR_Opr inc = c.result();
+  LIR_Opr res = rlock_result(x);
+
+  switch (x->id()) {
+    case vmIntrinsics::_fmaF: __ fmaf(ina, inb, inc, res); break;
+    case vmIntrinsics::_fmaD: __ fmad(ina, inb, inc, res); break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
 }
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
