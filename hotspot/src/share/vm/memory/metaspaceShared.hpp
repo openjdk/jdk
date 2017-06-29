@@ -172,7 +172,10 @@ class MetaspaceShared : AllStatic {
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
-  static bool is_string_region(int idx) NOT_CDS_RETURN_(false);
+  static bool is_string_region(int idx) {
+      CDS_ONLY(return (idx >= first_string && idx < first_string + max_strings));
+      NOT_CDS(return false);
+  }
 
   static intptr_t* allocate_cpp_vtable_clones(intptr_t* top, intptr_t* end);
   static intptr_t* clone_cpp_vtables(intptr_t* p);

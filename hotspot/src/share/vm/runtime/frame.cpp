@@ -1074,16 +1074,6 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
 }
 
 
-oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
-  if(reg->is_reg()) {
-    // If it is passed in a register, it got spilled in the stub frame.
-    return (oop *)reg_map->location(reg);
-  } else {
-    int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
-    return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
-  }
-}
-
 BasicLock* frame::get_native_monitor() {
   nmethod* nm = (nmethod*)_cb;
   assert(_cb != NULL && _cb->is_nmethod() && nm->method()->is_native(),
