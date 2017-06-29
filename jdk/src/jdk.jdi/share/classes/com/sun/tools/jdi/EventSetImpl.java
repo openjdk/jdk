@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,48 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 
-import java.util.*;
+import com.sun.jdi.Field;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.Locatable;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.AccessWatchpointEvent;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.event.ClassUnloadEvent;
+import com.sun.jdi.event.Event;
+import com.sun.jdi.event.EventIterator;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.event.MethodEntryEvent;
+import com.sun.jdi.event.MethodExitEvent;
+import com.sun.jdi.event.ModificationWatchpointEvent;
+import com.sun.jdi.event.MonitorContendedEnterEvent;
+import com.sun.jdi.event.MonitorContendedEnteredEvent;
+import com.sun.jdi.event.MonitorWaitEvent;
+import com.sun.jdi.event.MonitorWaitedEvent;
+import com.sun.jdi.event.StepEvent;
+import com.sun.jdi.event.ThreadDeathEvent;
+import com.sun.jdi.event.ThreadStartEvent;
+import com.sun.jdi.event.VMDeathEvent;
+import com.sun.jdi.event.VMDisconnectEvent;
+import com.sun.jdi.event.VMStartEvent;
+import com.sun.jdi.event.WatchpointEvent;
+import com.sun.jdi.request.EventRequest;
+
 enum EventDestination {UNKNOWN_EVENT, INTERNAL_EVENT, CLIENT_EVENT};
 
 /*
@@ -186,7 +223,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     }
 
     abstract class LocatableEventImpl extends ThreadedEventImpl
-                                            implements Locatable {
+                                      implements Locatable {
         private Location location;
 
         LocatableEventImpl(JDWP.Event.Composite.Events.EventsCommon evt,
@@ -215,7 +252,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     }
 
     class BreakpointEventImpl extends LocatableEventImpl
-                            implements BreakpointEvent {
+                              implements BreakpointEvent {
         BreakpointEventImpl(JDWP.Event.Composite.Events.Breakpoint evt) {
             super(evt, evt.requestID, evt.thread, evt.location);
         }
@@ -236,7 +273,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     }
 
     class MethodEntryEventImpl extends LocatableEventImpl
-                            implements MethodEntryEvent {
+                               implements MethodEntryEvent {
         MethodEntryEventImpl(JDWP.Event.Composite.Events.MethodEntry evt) {
             super(evt, evt.requestID, evt.thread, evt.location);
         }

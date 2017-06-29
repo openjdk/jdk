@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,20 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.HashMap;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.LocalVariable;
+import com.sun.jdi.Location;
+import com.sun.jdi.VirtualMachine;
+import com.sun.tools.jdi.JDWP.Method.VariableTable;
+import com.sun.tools.jdi.JDWP.Method.VariableTableWithGeneric;
 
 /**
  * Represents methods with method bodies.
@@ -47,9 +51,9 @@ public class ConcreteMethodImpl extends MethodImpl {
      * A subset of the line number info that is softly cached
      */
     static private class SoftLocationXRefs {
-        final String stratumID;   // The stratum of this information
-        final Map<Integer, List<Location>> lineMapper;     // Maps line number to location(s)
-        final List<Location> lineLocations; // List of locations ordered by code index
+        final String stratumID;                        // The stratum of this information
+        final Map<Integer, List<Location>> lineMapper; // Maps line number to location(s)
+        final List<Location> lineLocations;            // List of locations ordered by code index
 
         /*
          * Note: these do not necessarily correspond to
@@ -57,15 +61,16 @@ public class ConcreteMethodImpl extends MethodImpl {
          * in the lineLocations list. Use these only for bounds
          * checking and with lineMapper.
          */
+        @SuppressWarnings("unused")
         final int lowestLine;
+        @SuppressWarnings("unused")
         final int highestLine;
 
-        SoftLocationXRefs(String stratumID, Map<Integer, List<Location>> lineMapper, List<Location> lineLocations,
-                     int lowestLine, int highestLine) {
+        SoftLocationXRefs(String stratumID, Map<Integer, List<Location>> lineMapper,
+                          List<Location> lineLocations, int lowestLine, int highestLine) {
             this.stratumID = stratumID;
             this.lineMapper = Collections.unmodifiableMap(lineMapper);
-            this.lineLocations =
-                Collections.unmodifiableList(lineLocations);
+            this.lineLocations = Collections.unmodifiableList(lineLocations);
             this.lowestLine = lowestLine;
             this.highestLine = highestLine;
         }
@@ -82,13 +87,11 @@ public class ConcreteMethodImpl extends MethodImpl {
     private int argSlotCount = -1;
 
     ConcreteMethodImpl(VirtualMachine vm, ReferenceTypeImpl declaringType,
-                       long ref,
-                       String name, String signature,
-                       String genericSignature, int modifiers) {
-
+                       long ref, String name, String signature,
+                       String genericSignature, int modifiers)
+    {
         // The generic signature is set when this is created
-        super(vm, declaringType, ref, name, signature,
-              genericSignature, modifiers);
+        super(vm, declaringType, ref, name, signature, genericSignature, modifiers);
     }
 
     public Location location() {
@@ -99,14 +102,14 @@ public class ConcreteMethodImpl extends MethodImpl {
     }
 
     List<Location> sourceNameFilter(List<Location> list,
-                          SDE.Stratum stratum,
-                          String sourceName)
+                                    SDE.Stratum stratum,
+                                    String sourceName)
                             throws AbsentInformationException {
         if (sourceName == null) {
             return list;
         } else {
             /* needs sourceName filteration */
-            List<Location> locs = new ArrayList<Location>();
+            List<Location> locs = new ArrayList<>();
             for (Location loc : list) {
                 if (((LocationImpl)loc).sourceName(stratum).equals(sourceName)) {
                     locs.add(loc);
@@ -117,7 +120,7 @@ public class ConcreteMethodImpl extends MethodImpl {
     }
 
     List<Location> allLineLocations(SDE.Stratum stratum,
-                          String sourceName)
+                                    String sourceName)
                             throws AbsentInformationException {
         List<Location> lineLocations = getLocations(stratum).lineLocations;
 
@@ -126,12 +129,12 @@ public class ConcreteMethodImpl extends MethodImpl {
         }
 
         return Collections.unmodifiableList(
-          sourceNameFilter(lineLocations, stratum, sourceName));
+            sourceNameFilter(lineLocations, stratum, sourceName));
     }
 
     List<Location> locationsOfLine(SDE.Stratum stratum,
-                         String sourceName,
-                         int lineNumber)
+                                   String sourceName,
+                                   int lineNumber)
                             throws AbsentInformationException {
         SoftLocationXRefs info = getLocations(stratum);
 
@@ -146,12 +149,11 @@ public class ConcreteMethodImpl extends MethodImpl {
         List<Location> list = info.lineMapper.get(lineNumber);
 
         if (list == null) {
-            list = new ArrayList<Location>(0);
+            list = new ArrayList<>(0);
         }
         return Collections.unmodifiableList(
-          sourceNameFilter(list, stratum, sourceName));
+            sourceNameFilter(list, stratum, sourceName));
     }
-
 
     public Location locationOfCodeIndex(long codeIndex) {
         if (firstIndex == -1) {
@@ -168,7 +170,6 @@ public class ConcreteMethodImpl extends MethodImpl {
         return new LocationImpl(virtualMachine(), this, codeIndex);
     }
 
-
     LineInfo codeIndexToLineInfo(SDE.Stratum stratum,
                                  long codeIndex) {
         if (firstIndex == -1) {
@@ -179,8 +180,7 @@ public class ConcreteMethodImpl extends MethodImpl {
          * Check for invalid code index.
          */
         if (codeIndex < firstIndex || codeIndex > lastIndex) {
-            throw new InternalError(
-                    "Location with invalid code index");
+            throw new InternalError("Location with invalid code index");
         }
 
         List<Location> lineLocations = getLocations(stratum).lineLocations;
@@ -212,7 +212,6 @@ public class ConcreteMethodImpl extends MethodImpl {
         return bestMatch.getLineInfo(stratum);
     }
 
-
     public List<LocalVariable> variables() throws AbsentInformationException {
         return getVariables();
     }
@@ -220,7 +219,7 @@ public class ConcreteMethodImpl extends MethodImpl {
     public List<LocalVariable> variablesByName(String name) throws AbsentInformationException {
         List<LocalVariable> variables = getVariables();
 
-        List<LocalVariable> retList = new ArrayList<LocalVariable>(2);
+        List<LocalVariable> retList = new ArrayList<>(2);
         Iterator<LocalVariable> iter = variables.iterator();
         while(iter.hasNext()) {
             LocalVariable variable = iter.next();
@@ -234,7 +233,7 @@ public class ConcreteMethodImpl extends MethodImpl {
     public List<LocalVariable> arguments() throws AbsentInformationException {
         List<LocalVariable> variables = getVariables();
 
-        List<LocalVariable> retList = new ArrayList<LocalVariable>(variables.size());
+        List<LocalVariable> retList = new ArrayList<>(variables.size());
         Iterator<LocalVariable> iter = variables.iterator();
         while(iter.hasNext()) {
             LocalVariable variable = iter.next();
@@ -255,7 +254,7 @@ public class ConcreteMethodImpl extends MethodImpl {
             } catch (JDWPException exc) {
                 throw exc.toJDIException();
             }
-            bytecodesRef = new SoftReference<byte[]>(bytecodes);
+            bytecodesRef = new SoftReference<>(bytecodes);
         }
         /*
          * Arrays are always modifiable, so it is a little unsafe
@@ -285,19 +284,17 @@ public class ConcreteMethodImpl extends MethodImpl {
         }
 
         List<Location> lineLocations = new ArrayList<Location>();
-        Map<Integer, List<Location>> lineMapper = new HashMap<Integer, List<Location>>();
+        Map<Integer, List<Location>> lineMapper = new HashMap<>();
         int lowestLine = -1;
         int highestLine = -1;
         SDE.LineStratum lastLineStratum = null;
-        SDE.Stratum baseStratum =
-            declaringType.stratum(SDE.BASE_STRATUM_NAME);
+        SDE.Stratum baseStratum = declaringType.stratum(SDE.BASE_STRATUM_NAME);
         Iterator<Location> it = getBaseLocations().lineLocations.iterator();
         while(it.hasNext()) {
             LocationImpl loc = (LocationImpl)it.next();
             int baseLineNumber = loc.lineNumber(baseStratum);
             SDE.LineStratum lineStratum =
-                  stratum.lineStratum(declaringType,
-                                      baseLineNumber);
+                  stratum.lineStratum(declaringType, baseLineNumber);
 
             if (lineStratum == null) {
                 // location not mapped in this stratum
@@ -320,10 +317,10 @@ public class ConcreteMethodImpl extends MethodImpl {
                 }
 
                 loc.addStratumLineInfo(
-                  new StratumLineInfo(stratumID,
-                                      lineNumber,
-                                      lineStratum.sourceName(),
-                                      lineStratum.sourcePath()));
+                    new StratumLineInfo(stratumID,
+                                        lineNumber,
+                                        lineStratum.sourceName(),
+                                        lineStratum.sourcePath()));
 
                 // Add to the location list
                 lineLocations.add(loc);
@@ -339,10 +336,9 @@ public class ConcreteMethodImpl extends MethodImpl {
             }
         }
 
-        info = new SoftLocationXRefs(stratumID,
-                                lineMapper, lineLocations,
-                                lowestLine, highestLine);
-        softOtherLocationXRefsRef = new SoftReference<SoftLocationXRefs>(info);
+        info = new SoftLocationXRefs(stratumID, lineMapper, lineLocations,
+                                     lowestLine, highestLine);
+        softOtherLocationXRefsRef = new SoftReference<>(info);
         return info;
     }
 
@@ -366,8 +362,8 @@ public class ConcreteMethodImpl extends MethodImpl {
 
         int count  = lntab.lines.length;
 
-        List<Location> lineLocations = new ArrayList<Location>(count);
-        Map<Integer, List<Location>>lineMapper = new HashMap<Integer, List<Location>>();
+        List<Location> lineLocations = new ArrayList<>(count);
+        Map<Integer, List<Location>>lineMapper = new HashMap<>();
         int lowestLine = -1;
         int highestLine = -1;
         for (int i = 0; i < count; i++) {
@@ -402,7 +398,7 @@ public class ConcreteMethodImpl extends MethodImpl {
                 Integer key = lineNumber;
                 List<Location> mappedLocs = lineMapper.get(key);
                 if (mappedLocs == null) {
-                    mappedLocs = new ArrayList<Location>(1);
+                    mappedLocs = new ArrayList<>(1);
                     lineMapper.put(key, mappedLocs);
                 }
                 mappedLocs.add(loc);
@@ -431,8 +427,8 @@ public class ConcreteMethodImpl extends MethodImpl {
         }
 
         info = new SoftLocationXRefs(SDE.BASE_STRATUM_NAME,
-                                lineMapper, lineLocations,
-                                lowestLine, highestLine);
+                                     lineMapper, lineLocations,
+                                     lowestLine, highestLine);
         softBaseLocationXRefsRef = new SoftReference<SoftLocationXRefs>(info);
         return info;
     }
@@ -454,7 +450,7 @@ public class ConcreteMethodImpl extends MethodImpl {
         // Get the number of slots used by argument variables
         argSlotCount = vartab.argCnt;
         int count = vartab.slots.length;
-        List<LocalVariable> variables = new ArrayList<LocalVariable>(count);
+        List<LocalVariable> variables = new ArrayList<>(count);
         for (int i=0; i<count; i++) {
             JDWP.Method.VariableTable.SlotInfo si = vartab.slots[i];
 
@@ -533,13 +529,13 @@ public class ConcreteMethodImpl extends MethodImpl {
         }
 
         List<LocalVariable> variables = (variablesRef == null) ? null :
-                                        variablesRef.get();
+                                         variablesRef.get();
         if (variables != null) {
             return variables;
         }
         variables = getVariables1();
         variables = Collections.unmodifiableList(variables);
-        variablesRef = new SoftReference<List<LocalVariable>>(variables);
+        variablesRef = new SoftReference<>(variables);
         return variables;
     }
 }
