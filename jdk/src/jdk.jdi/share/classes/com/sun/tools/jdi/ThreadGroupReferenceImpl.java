@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+
+import com.sun.jdi.ThreadGroupReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
 
 public class ThreadGroupReferenceImpl extends ObjectReferenceImpl
-    implements ThreadGroupReference, VMListener
+    implements ThreadGroupReference
 {
     // Cached components that cannot change
     String name;
@@ -45,8 +49,8 @@ public class ThreadGroupReferenceImpl extends ObjectReferenceImpl
         return new Cache();
     }
 
-    ThreadGroupReferenceImpl(VirtualMachine aVm,long aRef) {
-        super(aVm,aRef);
+    ThreadGroupReferenceImpl(VirtualMachine aVm, long aRef) {
+        super(aVm, aRef);
         vm.state().addListener(this);
     }
 

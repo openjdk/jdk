@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,23 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.connect.*;
-import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.VirtualMachineManager;
-import java.io.IOException;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.LaunchingConnector;
 
 /**
  * VirtualMachineManager SPI
  */
 public interface VirtualMachineManagerService extends VirtualMachineManager {
+
     /**
      * Replaces the default connector.
+     *
+     * @param connector the new default connector
      *
      * @throws java.lang.IllegalArgumentException if the given
      * connector is not a member of the list returned by
      * {@link #launchingConnectors}
-     *
-     * @param connector the new default connector
      */
     void setDefaultConnector(LaunchingConnector connector);
 
@@ -58,5 +58,4 @@ public interface VirtualMachineManagerService extends VirtualMachineManager {
      * @param connector the connector to be removed
      */
     void removeConnector(Connector connector);
-
 }

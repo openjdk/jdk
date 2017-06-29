@@ -25,15 +25,17 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.IntegerValue;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class IntegerValueImpl extends PrimitiveValueImpl
                               implements IntegerValue {
     private int value;
 
-    IntegerValueImpl(VirtualMachine aVm,int aValue) {
+    IntegerValueImpl(VirtualMachine aVm, int aValue) {
         super(aVm);
-
         value = aValue;
     }
 
@@ -67,19 +69,19 @@ public class IntegerValueImpl extends PrimitiveValueImpl
     }
 
     public boolean booleanValue() {
-        return(value == 0)?false:true;
+        return (value == 0 ? false : true);
     }
 
     public byte byteValue() {
-        return(byte)value;
+        return (byte)value;
     }
 
     public char charValue() {
-        return(char)value;
+        return (char)value;
     }
 
     public short shortValue() {
-        return(short)value;
+        return (short)value;
     }
 
     public int intValue() {
@@ -87,15 +89,15 @@ public class IntegerValueImpl extends PrimitiveValueImpl
     }
 
     public long longValue() {
-        return(long)value;
+        return value;
     }
 
     public float floatValue() {
-        return(float)value;
+        return value;
     }
 
     public double doubleValue() {
-        return(double)value;
+        return value;
     }
 
     byte checkedByteValue() throws InvalidTypeException {

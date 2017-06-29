@@ -30,8 +30,12 @@ import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
+import com.sun.jdi.connect.AttachingConnector;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.connect.spi.TransportService;
 
 /*
  * An AttachingConnector to attach to a running VM using any
@@ -60,11 +64,11 @@ public class GenericAttachingConnector
     {
         transportService = ts;
         transport = new Transport() {
-                public String name() {
-                    // delegate name to the transport service
-                    return transportService.name();
-                }
-            };
+            public String name() {
+                // delegate name to the transport service
+                return transportService.name();
+            }
+        };
 
         if (addAddressArgument) {
             addStringArgument(
@@ -74,7 +78,6 @@ public class GenericAttachingConnector
                 "",
                 true);
         }
-
 
         addIntegerArgument(
                 ARG_TIMEOUT,
@@ -122,8 +125,7 @@ public class GenericAttachingConnector
      * of the target VM is specified by the <code>address</code> connector
      * argument.
      */
-    public VirtualMachine
-        attach(Map<String,? extends Connector.Argument> args)
+    public VirtualMachine attach(Map<String, ? extends Connector.Argument> args)
         throws IOException, IllegalConnectorArgumentsException
     {
         String address = argument(ARG_ADDRESS, args).value();
@@ -141,5 +143,4 @@ public class GenericAttachingConnector
     public Transport transport() {
         return transport;
     }
-
 }

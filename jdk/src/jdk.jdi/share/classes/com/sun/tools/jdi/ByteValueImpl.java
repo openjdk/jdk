@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,18 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.ByteValue;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class ByteValueImpl extends PrimitiveValueImpl
-                           implements ByteValue {
+                           implements ByteValue
+{
     private byte value;
 
-    ByteValueImpl(VirtualMachine aVm,byte aValue) {
+    ByteValueImpl(VirtualMachine aVm, byte aValue) {
         super(aVm);
-
         value = aValue;
     }
 
@@ -58,7 +61,6 @@ public class ByteValueImpl extends PrimitiveValueImpl
         return value() - other;
     }
 
-
     public Type type() {
         return vm.theByteType();
     }
@@ -68,7 +70,7 @@ public class ByteValueImpl extends PrimitiveValueImpl
     }
 
     public boolean booleanValue() {
-        return(value == 0)?false:true;
+        return (value == 0 ? false : true);
     }
 
     public byte byteValue() {
@@ -76,27 +78,27 @@ public class ByteValueImpl extends PrimitiveValueImpl
     }
 
     public char charValue() {
-        return(char)value;
+        return (char)value;
     }
 
     public short shortValue() {
-        return(short)value;
+        return value;
     }
 
     public int intValue() {
-        return(int)value;
+        return value;
     }
 
     public long longValue() {
-        return(long)value;
+        return value;
     }
 
     public float floatValue() {
-        return(float)value;
+        return value;
     }
 
     public double doubleValue() {
-        return(double)value;
+        return value;
     }
 
     char checkedCharValue() throws InvalidTypeException {

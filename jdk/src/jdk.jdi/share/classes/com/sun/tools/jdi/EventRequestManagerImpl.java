@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,41 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.request.*;
-import com.sun.tools.jdi.JDWP;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import com.sun.jdi.Field;
+import com.sun.jdi.Location;
+import com.sun.jdi.NativeMethodException;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.AccessWatchpointRequest;
+import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.ClassUnloadRequest;
+import com.sun.jdi.request.DuplicateRequestException;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.request.EventRequestManager;
+import com.sun.jdi.request.ExceptionRequest;
+import com.sun.jdi.request.InvalidRequestStateException;
+import com.sun.jdi.request.MethodEntryRequest;
+import com.sun.jdi.request.MethodExitRequest;
+import com.sun.jdi.request.ModificationWatchpointRequest;
+import com.sun.jdi.request.MonitorContendedEnterRequest;
+import com.sun.jdi.request.MonitorContendedEnteredRequest;
+import com.sun.jdi.request.MonitorWaitRequest;
+import com.sun.jdi.request.MonitorWaitedRequest;
+import com.sun.jdi.request.StepRequest;
+import com.sun.jdi.request.ThreadDeathRequest;
+import com.sun.jdi.request.ThreadStartRequest;
+import com.sun.jdi.request.VMDeathRequest;
+import com.sun.jdi.request.WatchpointRequest;
 
 /**
  * This interface is used to create and remove Breakpoints, Watchpoints,
@@ -41,7 +71,7 @@ import java.util.*;
 // and List[] requestLists. The generic array is not supported.
 @SuppressWarnings({"unchecked", "rawtypes"})
 class EventRequestManagerImpl extends MirrorImpl
-                                       implements EventRequestManager
+                              implements EventRequestManager
 {
     private final List<? extends EventRequest>[] requestLists;
     private static int methodExitEventCmd = 0;
@@ -101,7 +131,6 @@ class EventRequestManagerImpl extends MirrorImpl
         EventRequestImpl() {
             super(EventRequestManagerImpl.this.vm);
         }
-
 
         /*
          * Override superclass back to default equality
@@ -222,7 +251,7 @@ class EventRequestManagerImpl extends MirrorImpl
          */
         private Map<Object, Object> getProperties() {
             if (clientProperties == null) {
-                clientProperties = new HashMap<Object, Object>(2);
+                clientProperties = new HashMap<>(2);
             }
             return clientProperties;
         }
@@ -340,7 +369,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ClassPrepareRequestImpl extends ClassVisibleEventRequestImpl
-                                     implements ClassPrepareRequest {
+                                  implements ClassPrepareRequest {
         ClassPrepareRequestImpl() {
             requestList().add(this);
         }
@@ -371,7 +400,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ClassUnloadRequestImpl extends ClassVisibleEventRequestImpl
-                                     implements ClassUnloadRequest {
+                                 implements ClassUnloadRequest {
         ClassUnloadRequestImpl() {
             requestList().add(this);
         }
@@ -386,7 +415,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ExceptionRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements ExceptionRequest {
+                               implements ExceptionRequest {
         ReferenceType exception = null;
         boolean caught = true;
         boolean uncaught = true;
@@ -431,7 +460,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class MethodEntryRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements MethodEntryRequest {
+                                 implements MethodEntryRequest {
         MethodEntryRequestImpl() {
             requestList().add(this);
         }
@@ -446,7 +475,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class MethodExitRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements MethodExitRequest {
+                                implements MethodExitRequest {
         MethodExitRequestImpl() {
             if (methodExitEventCmd == 0) {
                 /*
@@ -478,7 +507,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class MonitorContendedEnterRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements MonitorContendedEnterRequest {
+                                           implements MonitorContendedEnterRequest {
         MonitorContendedEnterRequestImpl() {
             requestList().add(this);
         }
@@ -493,7 +522,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class MonitorContendedEnteredRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements MonitorContendedEnteredRequest {
+                                             implements MonitorContendedEnteredRequest {
         MonitorContendedEnteredRequestImpl() {
             requestList().add(this);
         }
@@ -523,7 +552,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class MonitorWaitedRequestImpl extends ClassVisibleEventRequestImpl
-                                 implements MonitorWaitedRequest {
+                                   implements MonitorWaitedRequest {
         MonitorWaitedRequestImpl() {
             requestList().add(this);
         }
@@ -538,7 +567,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class StepRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements StepRequest {
+                          implements StepRequest {
         ThreadReferenceImpl thread;
         int size;
         int depth;
@@ -620,7 +649,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ThreadDeathRequestImpl extends ThreadVisibleEventRequestImpl
-                                      implements ThreadDeathRequest {
+                                 implements ThreadDeathRequest {
         ThreadDeathRequestImpl() {
             requestList().add(this);
         }
@@ -635,7 +664,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ThreadStartRequestImpl extends ThreadVisibleEventRequestImpl
-                                      implements ThreadStartRequest {
+                                 implements ThreadStartRequest {
         ThreadStartRequestImpl() {
             requestList().add(this);
         }
@@ -650,7 +679,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     abstract class WatchpointRequestImpl extends ClassVisibleEventRequestImpl
-                                      implements WatchpointRequest {
+                                         implements WatchpointRequest {
         final Field field;
 
         WatchpointRequestImpl(Field field) {
@@ -667,7 +696,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class AccessWatchpointRequestImpl extends WatchpointRequestImpl
-                                  implements AccessWatchpointRequest {
+                                      implements AccessWatchpointRequest {
         AccessWatchpointRequestImpl(Field field) {
             super(field);
             requestList().add(this);
@@ -683,7 +712,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class ModificationWatchpointRequestImpl extends WatchpointRequestImpl
-                                  implements ModificationWatchpointRequest {
+                                            implements ModificationWatchpointRequest {
         ModificationWatchpointRequestImpl(Field field) {
             super(field);
             requestList().add(this);
@@ -699,7 +728,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     class VMDeathRequestImpl extends EventRequestImpl
-                                        implements VMDeathRequest {
+                             implements VMDeathRequest {
         VMDeathRequestImpl() {
             requestList().add(this);
         }
@@ -908,8 +937,7 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     public List<MethodExitRequest> methodExitRequests() {
-        return (List<MethodExitRequest>)unmodifiableRequestList(
-                               EventRequestManagerImpl.methodExitEventCmd);
+        return (List<MethodExitRequest>)unmodifiableRequestList(EventRequestManagerImpl.methodExitEventCmd);
     }
 
     public List<MonitorContendedEnterRequest> monitorContendedEnterRequests() {
@@ -951,9 +979,7 @@ class EventRequestManagerImpl extends MirrorImpl
         return null;
     }
 
-    private List<? extends EventRequest>  requestList(int eventCmd) {
+    private List<? extends EventRequest> requestList(int eventCmd) {
         return requestLists[eventCmd];
     }
-
 }
-
