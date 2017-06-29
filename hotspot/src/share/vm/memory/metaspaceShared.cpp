@@ -1219,11 +1219,6 @@ bool MetaspaceShared::is_in_shared_region(const void* p, int idx) {
   return UseSharedSpaces && FileMapInfo::current_info()->is_in_shared_region(p, idx);
 }
 
-bool MetaspaceShared::is_string_region(int idx) {
-  return (idx >= MetaspaceShared::first_string &&
-          idx < MetaspaceShared::first_string + MetaspaceShared::max_strings);
-}
-
 void MetaspaceShared::print_shared_spaces() {
   if (UseSharedSpaces) {
     FileMapInfo::current_info()->print_shared_spaces();
