@@ -185,7 +185,8 @@ inline void MacroAssembler::br( Condition c, bool a, Predict p, address d, reloc
 }
 
 inline void MacroAssembler::br( Condition c, bool a, Predict p, Label& L ) {
-  insert_nop_after_cbcond();
+  // See note[+] on 'avoid_pipeline_stalls()', in "assembler_sparc.inline.hpp".
+  avoid_pipeline_stall();
   br(c, a, p, target(L));
 }
 
@@ -197,7 +198,7 @@ inline void MacroAssembler::brx( Condition c, bool a, Predict p, address d, relo
 }
 
 inline void MacroAssembler::brx( Condition c, bool a, Predict p, Label& L ) {
-  insert_nop_after_cbcond();
+  avoid_pipeline_stall();
   brx(c, a, p, target(L));
 }
 
@@ -219,7 +220,7 @@ inline void MacroAssembler::fb( Condition c, bool a, Predict p, address d, reloc
 }
 
 inline void MacroAssembler::fb( Condition c, bool a, Predict p, Label& L ) {
-  insert_nop_after_cbcond();
+  avoid_pipeline_stall();
   fb(c, a, p, target(L));
 }
 
@@ -268,11 +269,10 @@ inline void MacroAssembler::call( address d, RelocationHolder const& rspec ) {
   }
 }
 
-inline void MacroAssembler::call( Label& L,   relocInfo::relocType rt ) {
-  insert_nop_after_cbcond();
-  MacroAssembler::call( target(L), rt);
+inline void MacroAssembler::call( Label& L, relocInfo::relocType rt ) {
+  avoid_pipeline_stall();
+  MacroAssembler::call(target(L), rt);
 }
-
 
 
 inline void MacroAssembler::callr( Register s1, Register s2 ) { jmpl( s1, s2, O7 ); }
@@ -304,13 +304,6 @@ inline void MacroAssembler::retl( bool trace ) {
   }
 }
 
-// clobbers o7 on V8!!
-// returns delta from gotten pc to addr after
-inline int MacroAssembler::get_pc( Register d ) {
-  int x = offset();
-  rdpc(d);
-  return offset() - x;
-}
 
 inline void MacroAssembler::cmp(  Register s1, Register s2 ) { subcc( s1, s2, G0 ); }
 inline void MacroAssembler::cmp(  Register s1, int simm13a ) { subcc( s1, simm13a, G0 ); }

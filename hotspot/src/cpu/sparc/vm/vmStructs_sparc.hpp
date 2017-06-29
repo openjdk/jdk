@@ -71,28 +71,43 @@
   declare_c2_constant(R_G5_num)                                           \
   declare_c2_constant(R_G6_num)                                           \
   declare_c2_constant(R_G7_num)                                           \
-  declare_constant(VM_Version::vis1_instructions_m)                       \
-  declare_constant(VM_Version::vis2_instructions_m)                       \
-  declare_constant(VM_Version::vis3_instructions_m)                       \
-  declare_constant(VM_Version::cbcond_instructions_m)                     \
-  declare_constant(VM_Version::v8_instructions_m)                         \
-  declare_constant(VM_Version::hardware_mul32_m)                          \
-  declare_constant(VM_Version::hardware_div32_m)                          \
-  declare_constant(VM_Version::hardware_fsmuld_m)                         \
-  declare_constant(VM_Version::hardware_popc_m)                           \
-  declare_constant(VM_Version::v9_instructions_m)                         \
-  declare_constant(VM_Version::sun4v_m)                                   \
-  declare_constant(VM_Version::blk_init_instructions_m)                   \
-  declare_constant(VM_Version::fmaf_instructions_m)                       \
-  declare_constant(VM_Version::sparc64_family_m)                          \
-  declare_constant(VM_Version::M_family_m)                                \
-  declare_constant(VM_Version::T_family_m)                                \
-  declare_constant(VM_Version::T1_model_m)                                \
-  declare_constant(VM_Version::sparc5_instructions_m)                     \
-  declare_constant(VM_Version::aes_instructions_m)                        \
-  declare_constant(VM_Version::sha1_instruction_m)                        \
-  declare_constant(VM_Version::sha256_instruction_m)                      \
-  declare_constant(VM_Version::sha512_instruction_m)
+  declare_constant(VM_Version::ISA_V9)                  \
+  declare_constant(VM_Version::ISA_POPC)                \
+  declare_constant(VM_Version::ISA_VIS1)                \
+  declare_constant(VM_Version::ISA_VIS2)                \
+  declare_constant(VM_Version::ISA_BLK_INIT)            \
+  declare_constant(VM_Version::ISA_FMAF)                \
+  declare_constant(VM_Version::ISA_VIS3)                \
+  declare_constant(VM_Version::ISA_HPC)                 \
+  declare_constant(VM_Version::ISA_IMA)                 \
+  declare_constant(VM_Version::ISA_AES)                 \
+  declare_constant(VM_Version::ISA_DES)                 \
+  declare_constant(VM_Version::ISA_KASUMI)              \
+  declare_constant(VM_Version::ISA_CAMELLIA)            \
+  declare_constant(VM_Version::ISA_MD5)                 \
+  declare_constant(VM_Version::ISA_SHA1)                \
+  declare_constant(VM_Version::ISA_SHA256)              \
+  declare_constant(VM_Version::ISA_SHA512)              \
+  declare_constant(VM_Version::ISA_MPMUL)               \
+  declare_constant(VM_Version::ISA_MONT)                \
+  declare_constant(VM_Version::ISA_PAUSE)               \
+  declare_constant(VM_Version::ISA_CBCOND)              \
+  declare_constant(VM_Version::ISA_CRC32C)              \
+  declare_constant(VM_Version::ISA_VIS3B)               \
+  declare_constant(VM_Version::ISA_ADI)                 \
+  declare_constant(VM_Version::ISA_SPARC5)              \
+  declare_constant(VM_Version::ISA_MWAIT)               \
+  declare_constant(VM_Version::ISA_XMPMUL)              \
+  declare_constant(VM_Version::ISA_XMONT)               \
+  declare_constant(VM_Version::ISA_PAUSE_NSEC)          \
+  declare_constant(VM_Version::ISA_VAMASK)              \
+  declare_constant(VM_Version::CPU_FAST_IDIV)           \
+  declare_constant(VM_Version::CPU_FAST_RDPC)           \
+  declare_constant(VM_Version::CPU_FAST_BIS)            \
+  declare_constant(VM_Version::CPU_FAST_LD)             \
+  declare_constant(VM_Version::CPU_FAST_CMOVE)          \
+  declare_constant(VM_Version::CPU_FAST_IND_BR)         \
+  declare_constant(VM_Version::CPU_BLK_ZEROING)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 

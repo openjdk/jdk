@@ -651,9 +651,9 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base,
 void MacroAssembler::internal_sethi(const AddressLiteral& addrlit, Register d, bool ForceRelocatable) {
   address save_pc;
   int shiftcnt;
-# ifdef CHECK_DELAY
-  assert_not_delayed((char*) "cannot put two instructions in delay slot");
-# endif
+#ifdef VALIDATE_PIPELINE
+  assert_no_delay("Cannot put two instructions in delay-slot.");
+#endif
   v9_dep();
   save_pc = pc();
 
@@ -752,7 +752,7 @@ void MacroAssembler::internal_set(const AddressLiteral& addrlit, Register d, boo
       return;
     }
   }
-  assert_not_delayed((char*) "cannot put two instructions in delay slot");
+  assert_no_delay("Cannot put two instructions in delay-slot.");
   internal_sethi(addrlit, d, ForceRelocatable);
   if (ForceRelocatable || addrlit.rspec().type() != relocInfo::none || addrlit.low10() != 0) {
     add(d, addrlit.low10(), d, addrlit.rspec());
@@ -4613,7 +4613,7 @@ void MacroAssembler::has_negatives(Register inp, Register size, Register result,
 
 // Use BIS for zeroing (count is in bytes).
 void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Label& Ldone) {
-  assert(UseBlockZeroing && VM_Version::has_block_zeroing(), "only works with BIS zeroing");
+  assert(UseBlockZeroing && VM_Version::has_blk_zeroing(), "only works with BIS zeroing");
   Register end = count;
   int cache_line_size = VM_Version::prefetch_data_size();
   assert(cache_line_size > 0, "cache line size should be known for this code");

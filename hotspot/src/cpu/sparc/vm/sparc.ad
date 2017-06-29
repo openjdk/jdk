@@ -1072,7 +1072,13 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
 
     __ rdpc(r);
 
-    if (disp != 0) {
+    if (disp == 0) {
+      // Emitting an additional 'nop' instruction in order not to cause a code
+      // size adjustment in the code following the table setup (if the instruction
+      // immediately following after this section is a CTI).
+      __ nop();
+    }
+    else {
       assert(r != O7, "need temporary");
       __ sub(r, __ ensure_simm13_or_reg(disp, O7), r);
     }
@@ -1760,10 +1766,8 @@ const bool Matcher::pass_original_key_for_aes() {
   return true;
 }
 
-// USII supports fxtof through the whole range of number, USIII doesn't
-const bool Matcher::convL2FSupported(void) {
-  return VM_Version::has_fast_fxtof();
-}
+// NOTE: All currently supported SPARC HW provides fast conversion.
+const bool Matcher::convL2FSupported(void) { return true; }
 
 // Is this branch offset short enough that a short branch can be used?
 //
@@ -1789,9 +1793,9 @@ const bool Matcher::init_array_count_is_in_bytes = true;
 // No additional cost for CMOVL.
 const int Matcher::long_cmove_cost() { return 0; }
 
-// CMOVF/CMOVD are expensive on T4 and on SPARC64.
+// CMOVF/CMOVD are expensive on e.g., T4 and SPARC64.
 const int Matcher::float_cmove_cost() {
-  return (VM_Version::is_T4() || VM_Version::is_sparc64()) ? ConditionalMoveLimit : 0;
+  return VM_Version::has_fast_cmove() ? 0 : ConditionalMoveLimit;
 }
 
 // Does the CPU require late expand (see block.cpp for description of late expand)?
@@ -2623,6 +2627,33 @@ enc_class fsqrtd (dflt_reg dst, dflt_reg src) %{
     __ fsqrt(FloatRegisterImpl::D, Fsrc, Fdst);
 %}
 
+
+
+enc_class fmadds (sflt_reg dst, sflt_reg a, sflt_reg b, sflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_SingleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_SingleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_SingleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_SingleFloatRegister_object($c$$reg);
+
+    __ fmadd(FloatRegisterImpl::S, Fra, Frb, Frc, Frd);
+%}
+
+enc_class fmaddd (dflt_reg dst, dflt_reg a, dflt_reg b, dflt_reg c) %{
+    MacroAssembler _masm(&cbuf);
+
+    FloatRegister Frd = reg_to_DoubleFloatRegister_object($dst$$reg);
+    FloatRegister Fra = reg_to_DoubleFloatRegister_object($a$$reg);
+    FloatRegister Frb = reg_to_DoubleFloatRegister_object($b$$reg);
+    FloatRegister Frc = reg_to_DoubleFloatRegister_object($c$$reg);
+
+    __ fmadd(FloatRegisterImpl::D, Fra, Frb, Frc, Frd);
+%}
+
+
+
+
 enc_class fmovs (dflt_reg dst, dflt_reg src) %{
     MacroAssembler _masm(&cbuf);
 
@@ -3194,7 +3225,7 @@ operand immP() %{
 
 // Pointer Immediate: 64-bit
 operand immP_set() %{
-  predicate(!VM_Version::is_niagara_plus());
+  predicate(!VM_Version::has_fast_ld());
   match(ConP);
 
   op_cost(5);
@@ -3206,7 +3237,7 @@ operand immP_set() %{
 // Pointer Immediate: 64-bit
 // From Niagara2 processors on a load should be better than materializing.
 operand immP_load() %{
-  predicate(VM_Version::is_niagara_plus() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
+  predicate(VM_Version::has_fast_ld() && (n->bottom_type()->isa_oop_ptr() || (MacroAssembler::insts_for_set(n->get_ptr()) > 3)));
   match(ConP);
 
   op_cost(5);
@@ -3217,7 +3248,7 @@ operand immP_load() %{
 
 // Pointer Immediate: 64-bit
 operand immP_no_oop_cheap() %{
-  predicate(VM_Version::is_niagara_plus() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
+  predicate(VM_Version::has_fast_ld() && !n->bottom_type()->isa_oop_ptr() && (MacroAssembler::insts_for_set(n->get_ptr()) <= 3));
   match(ConP);
 
   op_cost(5);
@@ -3341,7 +3372,7 @@ operand immL_32bits() %{
 
 // Long Immediate: cheap (materialize in <= 3 instructions)
 operand immL_cheap() %{
-  predicate(!VM_Version::is_niagara_plus() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
+  predicate(!VM_Version::has_fast_ld() || MacroAssembler::insts_for_set64(n->get_long()) <= 3);
   match(ConL);
   op_cost(0);
 
@@ -3351,7 +3382,7 @@ operand immL_cheap() %{
 
 // Long Immediate: expensive (materialize in > 3 instructions)
 operand immL_expensive() %{
-  predicate(VM_Version::is_niagara_plus() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
+  predicate(VM_Version::has_fast_ld() && MacroAssembler::insts_for_set64(n->get_long()) > 3);
   match(ConL);
   op_cost(0);
 
@@ -4534,6 +4565,26 @@ pipe_class fdivD_reg_reg(regD dst, regD src1, regD src2) %{
     src2  : E(read);
     FM    : R;
     FDIV  : C(17);
+%}
+
+// Fused floating-point multiply-add float.
+pipe_class fmaF_regx4(regF dst, regF src1, regF src2, regF src3) %{
+    single_instruction;
+    dst   : X(write);
+    src1  : E(read);
+    src2  : E(read);
+    src3  : E(read);
+    FM    : R;
+%}
+
+// Fused gloating-point multiply-add double.
+pipe_class fmaD_regx4(regD dst, regD src1, regD src2, regD src3) %{
+    single_instruction;
+    dst   : X(write);
+    src1  : E(read);
+    src2  : E(read);
+    src3  : E(read);
+    FM    : R;
 %}
 
 // Floating Point Move/Negate/Abs Float
@@ -7527,6 +7578,24 @@ instruct sqrtD_reg_reg(regD dst, regD src) %{
   ins_pipe(fdivD_reg_reg);
 %}
 
+// Single precision fused floating-point multiply-add (d = a * b + c).
+instruct fmaF_regx4(regF dst, regF a, regF b, regF c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF c (Binary a b)));
+  format %{ "fmadds $a,$b,$c,$dst\t# $dst = $a * $b + $c" %}
+  ins_encode(fmadds(dst, a, b, c));
+  ins_pipe(fmaF_regx4);
+%}
+
+// Double precision fused floating-point multiply-add (d = a * b + c).
+instruct fmaD_regx4(regD dst, regD a, regD b, regD c) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD c (Binary a b)));
+  format %{ "fmaddd $a,$b,$c,$dst\t# $dst = $a * $b + $c" %}
+  ins_encode(fmaddd(dst, a, b, c));
+  ins_pipe(fmaD_regx4);
+%}
+
 //----------Logical Instructions-----------------------------------------------
 // And Instructions
 // Register And
@@ -8241,40 +8310,6 @@ instruct mulD_regD_regD(regD dst, regD src1, regD src2) %{
   ins_pipe(fmulD_reg_reg);
 %}
 
-instruct convL2D_reg_slow_fxtof(regD dst, stackSlotL src) %{
-  match(Set dst (ConvL2D src));
-  ins_cost(DEFAULT_COST*8 + MEMORY_REF_COST*6);
-
-  expand %{
-    regD_low   tmpsrc;
-    iRegI      ix43300000;
-    iRegI      ix41f00000;
-    stackSlotL lx43300000;
-    stackSlotL lx41f00000;
-    regD_low   dx43300000;
-    regD       dx41f00000;
-    regD       tmp1;
-    regD_low   tmp2;
-    regD       tmp3;
-    regD       tmp4;
-
-    stkL_to_regD(tmpsrc, src);
-
-    loadConI_x43300000(ix43300000);
-    loadConI_x41f00000(ix41f00000);
-    regI_to_stkLHi(lx43300000, ix43300000);
-    regI_to_stkLHi(lx41f00000, ix41f00000);
-    stkL_to_regD(dx43300000, lx43300000);
-    stkL_to_regD(dx41f00000, lx41f00000);
-
-    convI2D_regDHi_regD(tmp1, tmpsrc);
-    regDHi_regDLo_to_regD(tmp2, dx43300000, tmpsrc);
-    subD_regD_regD(tmp3, tmp2, dx43300000);
-    mulD_regD_regD(tmp4, tmp1, dx41f00000);
-    addD_regD_regD(dst, tmp3, tmp4);
-  %}
-%}
-
 // Long to Double conversion using fast fxtof
 instruct convL2D_helper(regD dst, regD tmp) %{
   effect(DEF dst, USE tmp);
@@ -8286,7 +8321,6 @@ instruct convL2D_helper(regD dst, regD tmp) %{
 %}
 
 instruct convL2D_stk_fast_fxtof(regD dst, stackSlotL src) %{
-  predicate(VM_Version::has_fast_fxtof());
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST + 3 * MEMORY_REF_COST);
   expand %{
@@ -8661,7 +8695,7 @@ instruct branch_short(label labl) %{
   predicate(UseCBCond);
   effect(USE labl);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl\t! short branch" %}
   ins_encode %{
@@ -9002,7 +9036,7 @@ instruct cmpI_reg_branch_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
   ins_encode %{
@@ -9020,7 +9054,7 @@ instruct cmpI_imm_branch_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
   ins_encode %{
@@ -9038,7 +9072,7 @@ instruct cmpU_reg_branch_short(cmpOpU cmp, iRegI op1, iRegI op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
   ins_encode %{
@@ -9056,7 +9090,7 @@ instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
   ins_encode %{
@@ -9074,7 +9108,7 @@ instruct cmpL_reg_branch_short(cmpOp cmp, iRegL op1, iRegL op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL xcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
   ins_encode %{
@@ -9092,7 +9126,7 @@ instruct cmpL_imm_branch_short(cmpOp cmp, iRegL op1, immL5 op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL xcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
   ins_encode %{
@@ -9111,7 +9145,7 @@ instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, fla
   predicate(UseCBCond);
   effect(USE labl, KILL pcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp $op1,$op2,$labl\t! ptr" %}
   ins_encode %{
@@ -9129,7 +9163,7 @@ instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, f
   predicate(UseCBCond);
   effect(USE labl, KILL pcc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CXB$cmp $op1,0,$labl\t! ptr" %}
   ins_encode %{
@@ -9147,7 +9181,7 @@ instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flag
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! compressed ptr" %}
   ins_encode %{
@@ -9165,7 +9199,7 @@ instruct cmpN_null_branch_short(cmpOp cmp, iRegN op1, immN0 null, label labl, fl
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,0,$labl\t! compressed ptr" %}
   ins_encode %{
@@ -9184,7 +9218,7 @@ instruct cmpI_reg_branchLoopEnd_short(cmpOp cmp, iRegI op1, iRegI op2, label lab
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
   ins_encode %{
@@ -9202,7 +9236,7 @@ instruct cmpI_imm_branchLoopEnd_short(cmpOp cmp, iRegI op1, immI5 op2, label lab
   predicate(UseCBCond);
   effect(USE labl, KILL icc);
 
-  size(4);
+  size(4); // Assuming no NOP inserted.
   ins_cost(BRANCH_COST);
   format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
   ins_encode %{

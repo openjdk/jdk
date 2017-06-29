@@ -30,9 +30,7 @@
 #include "vm_version_sparc.hpp"
 
 #include <sys/auxv.h>
-#include <sys/auxv_SPARC.h>
 #include <sys/systeminfo.h>
-#include <kstat.h>
 #include <picl.h>
 #include <dlfcn.h>
 #include <link.h>
@@ -263,21 +261,6 @@ void PICL::close_library() {
   _dl_handle = NULL;
 }
 
-// We need to keep these here as long as we have to build on Solaris
-// versions before 10.
-
-#ifndef SI_ARCHITECTURE_32
-#define SI_ARCHITECTURE_32      516     /* basic 32-bit SI_ARCHITECTURE */
-#endif
-
-#ifndef SI_ARCHITECTURE_64
-#define SI_ARCHITECTURE_64      517     /* basic 64-bit SI_ARCHITECTURE */
-#endif
-
-#ifndef SI_CPUBRAND
-#define SI_CPUBRAND             523     /* return cpu brand string */
-#endif
-
 class Sysinfo {
   char* _string;
 public:
@@ -343,115 +326,156 @@ public:
 #define _SC_L2CACHE_LINESZ      527     /* Size of L2 cache line */
 #endif
 
-// Hardware capability bits that appeared after Solaris 11.1
-#ifndef AV_SPARC_FMAF
-#define AV_SPARC_FMAF    0x00000100 /* Fused Multiply-Add */
-#endif
-#ifndef AV2_SPARC_SPARC5
-#define AV2_SPARC_SPARC5 0x00000008 /* The 29 new fp and sub instructions */
-#endif
+void VM_Version::platform_features() {
+  uint64_t features = ISA_v9_msk;   // Basic SPARC-V9 required (V8 not supported).
 
-int VM_Version::platform_features(int features) {
-
-  // Check 32-bit architecture.
-  if (Sysinfo(SI_ARCHITECTURE_32).match("sparc")) {
-    features |= v8_instructions_m;
-  }
-
-  // Check 64-bit architecture.
-  if (Sysinfo(SI_ARCHITECTURE_64).match("sparcv9")) {
-    features |= generic_v9_m;
-  }
+  assert(Sysinfo(SI_ARCHITECTURE_64).match("sparcv9"), "must be");
 
   // Extract valid instruction set extensions.
-  uint_t avs[AV_HW2_IDX + 1];
-  uint_t avn = getisax(avs, ARRAY_SIZE(avs));
+  uint32_t avs[AV_HW2_IDX + 1];
+  uint_t avn = getisax(avs, AV_HW2_IDX + 1);
+  assert(avn <= 2, "should return two or less av's");
 
   log_info(os, cpu)("getisax(2) returned %d words:", avn);
   for (int i = 0; i < avn; i++) {
     log_info(os, cpu)("    word %d: " PTR32_FORMAT, i, avs[i]);
   }
 
-  uint_t av1 = avs[AV_HW1_IDX];
-  if (av1 & AV_SPARC_MUL32)        features |= hardware_mul32_m;
-  if (av1 & AV_SPARC_DIV32)        features |= hardware_div32_m;
-  if (av1 & AV_SPARC_FSMULD)       features |= hardware_fsmuld_m;
-  if (av1 & AV_SPARC_V8PLUS)       features |= v9_instructions_m;
-  if (av1 & AV_SPARC_POPC)         features |= hardware_popc_m;
-  if (av1 & AV_SPARC_VIS)          features |= vis1_instructions_m;
-  if (av1 & AV_SPARC_VIS2)         features |= vis2_instructions_m;
-  if (av1 & AV_SPARC_ASI_BLK_INIT) features |= blk_init_instructions_m;
-  if (av1 & AV_SPARC_FMAF)         features |= fmaf_instructions_m;
-  if (av1 & AV_SPARC_VIS3)         features |= vis3_instructions_m;
-  if (av1 & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
-  if (av1 & AV_SPARC_CRC32C)       features |= crc32c_instruction_m;
-  if (av1 & AV_SPARC_AES)          features |= aes_instructions_m;
-  if (av1 & AV_SPARC_SHA1)         features |= sha1_instruction_m;
-  if (av1 & AV_SPARC_SHA256)       features |= sha256_instruction_m;
-  if (av1 & AV_SPARC_SHA512)       features |= sha512_instruction_m;
+  uint32_t av = avs[AV_HW1_IDX];
 
-  if (avn > AV_HW2_IDX) {
-    uint_t av2 = avs[AV_HW2_IDX];
-    if (av2 & AV2_SPARC_SPARC5)    features |= sparc5_instructions_m;
+  // These are SPARC V8 legacy features.
+
+  assert((av & AV_SPARC_MUL32)  == 0, "unsupported V8");
+  assert((av & AV_SPARC_DIV32)  == 0, "unsupported V8");
+  assert((av & AV_SPARC_FSMULD) == 0, "unsupported V8");
+  assert((av & AV_SPARC_V8PLUS) == 0, "unsupported V8");
+
+  if (av & AV_SPARC_POPC) features |= ISA_popc_msk;
+  if (av & AV_SPARC_VIS)  features |= ISA_vis1_msk;
+  if (av & AV_SPARC_VIS2) features |= ISA_vis2_msk;
+
+  // Hardware capability defines introduced after Solaris 11.1:
+
+#ifndef AV_SPARC_FMAF
+#define AV_SPARC_FMAF         0x00000100 // Fused Multiply-Add
+#endif
+
+  if (av & AV_SPARC_ASI_BLK_INIT) features |= ISA_blk_init_msk;
+  if (av & AV_SPARC_FMAF)         features |= ISA_fmaf_msk;
+  if (av & AV_SPARC_VIS3)         features |= ISA_vis3_msk;
+  if (av & AV_SPARC_HPC)          features |= ISA_hpc_msk;
+  if (av & AV_SPARC_IMA)          features |= ISA_ima_msk;
+  if (av & AV_SPARC_AES)          features |= ISA_aes_msk;
+  if (av & AV_SPARC_DES)          features |= ISA_des_msk;
+  if (av & AV_SPARC_KASUMI)       features |= ISA_kasumi_msk;
+  if (av & AV_SPARC_CAMELLIA)     features |= ISA_camellia_msk;
+  if (av & AV_SPARC_MD5)          features |= ISA_md5_msk;
+  if (av & AV_SPARC_SHA1)         features |= ISA_sha1_msk;
+  if (av & AV_SPARC_SHA256)       features |= ISA_sha256_msk;
+  if (av & AV_SPARC_SHA512)       features |= ISA_sha512_msk;
+  if (av & AV_SPARC_MPMUL)        features |= ISA_mpmul_msk;
+  if (av & AV_SPARC_MONT)         features |= ISA_mont_msk;
+  if (av & AV_SPARC_PAUSE)        features |= ISA_pause_msk;
+  if (av & AV_SPARC_CBCOND)       features |= ISA_cbcond_msk;
+  if (av & AV_SPARC_CRC32C)       features |= ISA_crc32c_msk;
+
+#ifndef AV2_SPARC_FJATHPLUS
+#define AV2_SPARC_FJATHPLUS  0x00000001 // Fujitsu Athena+
+#endif
+#ifndef AV2_SPARC_VIS3B
+#define AV2_SPARC_VIS3B      0x00000002 // VIS3 present on multiple chips
+#endif
+#ifndef AV2_SPARC_ADI
+#define AV2_SPARC_ADI        0x00000004 // Application Data Integrity
+#endif
+#ifndef AV2_SPARC_SPARC5
+#define AV2_SPARC_SPARC5     0x00000008 // The 29 new fp and sub instructions
+#endif
+#ifndef AV2_SPARC_MWAIT
+#define AV2_SPARC_MWAIT      0x00000010 // mwait instruction and load/monitor ASIs
+#endif
+#ifndef AV2_SPARC_XMPMUL
+#define AV2_SPARC_XMPMUL     0x00000020 // XOR multiple precision multiply
+#endif
+#ifndef AV2_SPARC_XMONT
+#define AV2_SPARC_XMONT      0x00000040 // XOR Montgomery mult/sqr instructions
+#endif
+#ifndef AV2_SPARC_PAUSE_NSEC
+#define AV2_SPARC_PAUSE_NSEC 0x00000080 // pause instruction with support for nsec timings
+#endif
+#ifndef AV2_SPARC_VAMASK
+#define AV2_SPARC_VAMASK     0x00000100 // Virtual Address masking
+#endif
+
+  if (avn > 1) {
+    uint32_t av2 = avs[AV_HW2_IDX];
+
+    if (av2 & AV2_SPARC_FJATHPLUS)  features |= ISA_fjathplus_msk;
+    if (av2 & AV2_SPARC_VIS3B)      features |= ISA_vis3b_msk;
+    if (av2 & AV2_SPARC_ADI)        features |= ISA_adi_msk;
+    if (av2 & AV2_SPARC_SPARC5)     features |= ISA_sparc5_msk;
+    if (av2 & AV2_SPARC_MWAIT)      features |= ISA_mwait_msk;
+    if (av2 & AV2_SPARC_XMPMUL)     features |= ISA_xmpmul_msk;
+    if (av2 & AV2_SPARC_XMONT)      features |= ISA_xmont_msk;
+    if (av2 & AV2_SPARC_PAUSE_NSEC) features |= ISA_pause_nsec_msk;
+    if (av2 & AV2_SPARC_VAMASK)     features |= ISA_vamask_msk;
   }
 
-  // Determine the machine type.
-  if (Sysinfo(SI_MACHINE).match("sun4v")) {
-    features |= sun4v_m;
-  }
+  _features = features;     // ISA feature set completed, update state.
 
-  // If SI_CPUBRAND works, that means Solaris 12 API to get the cache line sizes
-  // is available to us as well
-  Sysinfo cpu_info(SI_CPUBRAND);
-  bool use_solaris_12_api = cpu_info.valid();
-  const char* impl = "unknown";
-  int impl_m = 0;
-  if (use_solaris_12_api) {
-    impl = cpu_info.value();
-    log_info(os, cpu)("Parsing CPU implementation from %s", impl);
-    impl_m = parse_features(impl);
-  } else {
-    // Otherwise use kstat to determine the machine type.
-    kstat_ctl_t* kc = kstat_open();
-    if (kc != NULL) {
-      kstat_t* ksp = kstat_lookup(kc, (char*)"cpu_info", -1, NULL);
-      if (ksp != NULL) {
-        if (kstat_read(kc, ksp, NULL) != -1 && ksp->ks_data != NULL) {
-          kstat_named_t* knm = (kstat_named_t *)ksp->ks_data;
-          for (int i = 0; i < ksp->ks_ndata; i++) {
-            if (strcmp((const char*)&(knm[i].name), "implementation") == 0) {
-              impl = KSTAT_NAMED_STR_PTR(&knm[i]);
-              log_info(os, cpu)("Parsing CPU implementation from %s", impl);
-              impl_m = parse_features(impl);
-              break;
-            }
-          }
-        }
+  Sysinfo machine(SI_MACHINE);
+
+  bool is_sun4v = machine.match("sun4v");   // All Oracle SPARC + Fujitsu Athena+
+  bool is_sun4u = machine.match("sun4u");   // All other Fujitsu
+
+  // Handle Athena+ conservatively (simply because we are lacking info.).
+
+  bool do_sun4v = is_sun4v && !has_athena_plus();
+  bool do_sun4u = is_sun4u ||  has_athena_plus();
+
+  uint64_t synthetic = 0;
+
+  if (do_sun4v) {
+    // Indirect and direct branches are equally fast.
+    synthetic = CPU_fast_ind_br_msk;
+    // Fast IDIV, BIS and LD available on Niagara Plus.
+    if (has_vis2()) {
+      synthetic |= (CPU_fast_idiv_msk | CPU_fast_ld_msk);
+      // ...on Core S4 however, we prefer not to use BIS.
+      if (!has_sparc5()) {
+        synthetic |= CPU_fast_bis_msk;
       }
-      kstat_close(kc);
     }
-  }
-  assert(impl_m != 0, "Unrecognized CPU implementation: %s", impl);
-  features |= impl_m;
-
-  bool is_sun4v = (features & sun4v_m) != 0;
-  if (use_solaris_12_api && is_sun4v) {
-    // If Solaris 12 API is supported and it's sun4v use sysconf() to get the cache line sizes
-    Sysconf l1_dcache_line_size(_SC_DCACHE_LINESZ);
-    if (l1_dcache_line_size.valid()) {
-      _L1_data_cache_line_size =  l1_dcache_line_size.value();
+    // Niagara Core S3 supports fast RDPC and block zeroing.
+    if (has_ima()) {
+      synthetic |= (CPU_fast_rdpc_msk | CPU_blk_zeroing_msk);
     }
-
-    Sysconf l2_dcache_line_size(_SC_L2CACHE_LINESZ);
-    if (l2_dcache_line_size.valid()) {
-      _L2_data_cache_line_size = l2_dcache_line_size.value();
+    // Niagara Core S3 and S4 have slow CMOVE.
+    if (!has_ima()) {
+      synthetic |= CPU_fast_cmove_msk;
     }
+  } else if (do_sun4u) {
+    // SPARC64 only have fast IDIV and RDPC.
+    synthetic |= (CPU_fast_idiv_msk | CPU_fast_rdpc_msk);
   } else {
-    // Otherwise figure out the cache line sizes using PICL
-    bool is_fujitsu = (features & sparc64_family_m) != 0;
-    PICL picl(is_fujitsu, is_sun4v);
+    log_info(os, cpu)("Unable to derive CPU features: %s", machine.value());
+  }
+
+  _features += synthetic;   // Including CPU derived/synthetic features.
+
+  Sysconf l1_dcache_line_size(_SC_DCACHE_LINESZ);
+  Sysconf l2_dcache_line_size(_SC_L2CACHE_LINESZ);
+
+  // Require both Sysconf requests to be valid or use fall-back.
+
+  if (l1_dcache_line_size.valid() &&
+      l2_dcache_line_size.valid()) {
+    _L1_data_cache_line_size = l1_dcache_line_size.value();
+    _L2_data_cache_line_size = l2_dcache_line_size.value();
+  } else {
+    // Otherwise figure out the cache line sizes using PICL.
+    PICL picl(is_sun4u, is_sun4v);
     _L1_data_cache_line_size = picl.L1_data_cache_line_size();
     _L2_data_cache_line_size = picl.L2_data_cache_line_size();
   }
-  return features;
 }

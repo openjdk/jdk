@@ -117,9 +117,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Minimum size in bytes when block copy will be used")             \
           range(1, max_jint)                                                \
                                                                             \
-  develop(bool, UseV8InstrsOnly, false,                                     \
-          "Use SPARC-V8 Compliant instruction subset")                      \
-                                                                            \
   product(bool, UseNiagaraInstrs, false,                                    \
           "Use Niagara-efficient instruction subset")                       \
                                                                             \
