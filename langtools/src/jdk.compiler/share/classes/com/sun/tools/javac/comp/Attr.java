@@ -2515,14 +2515,9 @@ public class Attr extends JCTree.Visitor {
                 //add thrown types as bounds to the thrown types free variables if needed:
                 if (resultInfo.checkContext.inferenceContext().free(lambdaType.getThrownTypes())) {
                     List<Type> inferredThrownTypes = flow.analyzeLambdaThrownTypes(env, that, make);
-                    List<Type> thrownTypes = resultInfo.checkContext.inferenceContext().asUndetVars(lambdaType.getThrownTypes());
-
-                    chk.unhandled(inferredThrownTypes, thrownTypes);
-
-                    //18.2.5: "In addition, for all j (1 <= j <= n), the constraint reduces to the bound throws Ej"
-                    thrownTypes.stream()
-                            .filter(t -> t.hasTag(UNDETVAR))
-                            .forEach(t -> ((UndetVar)t).setThrow());
+                    if(!checkExConstraints(inferredThrownTypes, lambdaType.getThrownTypes(), resultInfo.checkContext.inferenceContext())) {
+                        log.error(that, Errors.IncompatibleThrownTypesInMref(lambdaType.getThrownTypes()));
+                    }
                 }
 
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), lambdaType, currentTarget);
@@ -3111,15 +3106,70 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!speculativeAttr) {
-            List<Type> thrownTypes = inferenceContext.asUndetVars(descriptor.getThrownTypes());
-            if (chk.unhandled(refType.getThrownTypes(), thrownTypes).nonEmpty()) {
+            if (!checkExConstraints(refType.getThrownTypes(), descriptor.getThrownTypes(), inferenceContext)) {
                 log.error(tree, Errors.IncompatibleThrownTypesInMref(refType.getThrownTypes()));
             }
-            //18.2.5: "In addition, for all j (1 <= j <= n), the constraint reduces to the bound throws Ej"
-            thrownTypes.stream()
-                    .filter(t -> t.hasTag(UNDETVAR))
-                    .forEach(t -> ((UndetVar)t).setThrow());
         }
+    }
+
+    boolean checkExConstraints(
+            List<Type> thrownByFuncExpr,
+            List<Type> thrownAtFuncType,
+            InferenceContext inferenceContext) {
+        /** 18.2.5: Otherwise, let E1, ..., En be the types in the function type's throws clause that
+         *  are not proper types
+         */
+        List<Type> nonProperList = thrownAtFuncType.stream()
+                .filter(e -> inferenceContext.free(e)).collect(List.collector());
+        List<Type> properList = thrownAtFuncType.diff(nonProperList);
+
+        /** Let X1,...,Xm be the checked exception types that the lambda body can throw or
+         *  in the throws clause of the invocation type of the method reference's compile-time
+         *  declaration
+         */
+        List<Type> checkedList = thrownByFuncExpr.stream()
+                .filter(e -> chk.isChecked(e)).collect(List.collector());
+
+        /** If n = 0 (the function type's throws clause consists only of proper types), then
+         *  if there exists some i (1 <= i <= m) such that Xi is not a subtype of any proper type
+         *  in the throws clause, the constraint reduces to false; otherwise, the constraint
+         *  reduces to true
+         */
+        ListBuffer<Type> uncaughtByProperTypes = new ListBuffer<>();
+        for (Type checked : checkedList) {
+            boolean isSubtype = false;
+            for (Type proper : properList) {
+                if (types.isSubtype(checked, proper)) {
+                    isSubtype = true;
+                    break;
+                }
+            }
+            if (!isSubtype) {
+                uncaughtByProperTypes.add(checked);
+            }
+        }
+
+        if (nonProperList.isEmpty() && !uncaughtByProperTypes.isEmpty()) {
+            return false;
+        }
+
+        /** If n > 0, the constraint reduces to a set of subtyping constraints:
+         *  for all i (1 <= i <= m), if Xi is not a subtype of any proper type in the
+         *  throws clause, then the constraints include, for all j (1 <= j <= n), <Xi <: Ej>
+         */
+        List<Type> nonProperAsUndet = inferenceContext.asUndetVars(nonProperList);
+        uncaughtByProperTypes.forEach(checkedEx -> {
+            nonProperAsUndet.forEach(nonProper -> {
+                types.isSubtype(checkedEx, nonProper);
+            });
+        });
+
+        /** In addition, for all j (1 <= j <= n), the constraint reduces to the bound throws Ej
+         */
+        nonProperAsUndet.stream()
+                .filter(t -> t.hasTag(UNDETVAR))
+                .forEach(t -> ((UndetVar)t).setThrow());
+        return true;
     }
 
     /**

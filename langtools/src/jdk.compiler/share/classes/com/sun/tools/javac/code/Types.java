@@ -2106,7 +2106,7 @@ public class Types {
             Type out = erasure.visit(t, recurse);
             return out;
         }
-        }
+    }
     // where
         private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
             private Type combineMetadata(final Type s,
