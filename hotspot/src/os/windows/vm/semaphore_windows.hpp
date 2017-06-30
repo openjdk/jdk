@@ -43,6 +43,8 @@ class WindowsSemaphore : public CHeapObj<mtInternal> {
   void signal(uint count = 1);
 
   void wait();
+
+  bool trywait();
 };
 
 typedef WindowsSemaphore SemaphoreImpl;
