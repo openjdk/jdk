@@ -1568,6 +1568,10 @@ public class Check {
             exc.hasTag(BOT);
     }
 
+    boolean isChecked(Type exc) {
+        return !isUnchecked(exc);
+    }
+
     /** Same, but handling completion failures.
      */
     boolean isUnchecked(DiagnosticPosition pos, Type exc) {
