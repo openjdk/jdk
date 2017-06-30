@@ -38,6 +38,10 @@ import org.testng.annotations.Test;
 @Test
 public class ToolMultilineSnippetHistoryTest extends UITesting {
 
+    public ToolMultilineSnippetHistoryTest() {
+        super(true);
+    }
+
     public void testUpArrow() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("int x=\n44\n");
