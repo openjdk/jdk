@@ -1940,6 +1940,12 @@ void WindowsSemaphore::wait() {
   assert(ret == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", ret);
 }
 
+bool WindowsSemaphore::trywait() {
+  DWORD ret = ::WaitForSingleObject(_semaphore, 0);
+  assert(ret != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+  return ret == WAIT_OBJECT_0;
+}
+
 // sun.misc.Signal
 // NOTE that this is a workaround for an apparent kernel bug where if
 // a signal handler for SIGBREAK is installed then that signal handler

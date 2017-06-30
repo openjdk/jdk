@@ -52,6 +52,8 @@ class Semaphore : public CHeapObj<mtInternal> {
   void signal(uint count = 1) { _impl.signal(count); }
 
   void wait()                 { _impl.wait(); }
+
+  bool trywait()              { return _impl.trywait(); }
 };
 
 
