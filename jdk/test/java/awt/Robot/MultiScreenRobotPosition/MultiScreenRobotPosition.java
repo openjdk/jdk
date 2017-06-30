@@ -31,6 +31,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * @test
+ * @key headful
  * @bug 8176009
  */
 public class MultiScreenRobotPosition {
