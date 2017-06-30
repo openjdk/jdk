@@ -38,6 +38,7 @@ import java.awt.event.*;
 
 /**
  * @test
+ * @key headful
  * @bug 8160270
  * @run main/timeout=300 PopupMenuLocation
  */

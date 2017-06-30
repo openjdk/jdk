@@ -39,6 +39,7 @@ import javax.swing.UIManager;
 
 /**
  * @test
+ * @key headful
  * @bug 8176448
  * @run main/timeout=600 JComboBoxPopupLocation
  */
