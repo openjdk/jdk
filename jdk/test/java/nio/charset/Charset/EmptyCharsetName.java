@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
  * @bug 4786884
  * @summary Ensure that passing the empty string to Charset methods and
  *          constructors causes an IllegalArgumentException to be thrown
- *
- * @build EmptyCharsetName
- * @run main EmptyCharsetName
- * @run main/othervm -Dsun.nio.cs.bugLevel=1.4 EmptyCharsetName
  */
 
 import java.io.*;
@@ -38,8 +34,6 @@ import java.nio.charset.*;
 
 public class EmptyCharsetName {
 
-    static boolean compat;
-
     static abstract class Test {
 
         public abstract void go() throws Exception;
@@ -48,13 +42,6 @@ public class EmptyCharsetName {
             try {
                 go();
             } catch (Exception x) {
-                if (compat) {
-                    if (x instanceof UnsupportedCharsetException) {
-                        System.err.println("Thrown as expected: " + x);
-                        return;
-                    }
-                    throw new Exception("Exception thrown", x);
-                }
                 if (x instanceof IllegalCharsetNameException) {
                     System.err.println("Thrown as expected: " + x);
                     return;
@@ -63,17 +50,12 @@ public class EmptyCharsetName {
                                     + x.getClass().getName(),
                                     x);
             }
-            if (!compat)
-                throw new Exception("No exception thrown");
+            throw new Exception("No exception thrown");
         }
 
     }
 
     public static void main(String[] args) throws Exception {
-
-        // If sun.nio.cs.bugLevel == 1.4 then we want the 1.4 behavior
-        String bl = System.getProperty("sun.nio.cs.bugLevel");
-        compat = (bl != null && bl.equals("1.4"));
 
         new Test() {
                 public void go() throws Exception {

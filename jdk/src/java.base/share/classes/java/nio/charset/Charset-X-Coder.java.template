@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,12 +195,10 @@ public abstract class Charset$Coder$ {
         if (max$ItypesPerOtype$ <= 0.0f)
             throw new IllegalArgumentException("Non-positive "
                                                + "max$ItypesPerOtype$");
-        if (!Charset.atBugLevel("1.4")) {
-            if (average$ItypesPerOtype$ > max$ItypesPerOtype$)
-                throw new IllegalArgumentException("average$ItypesPerOtype$"
-                                                   + " exceeds "
-                                                   + "max$ItypesPerOtype$");
-        }
+        if (average$ItypesPerOtype$ > max$ItypesPerOtype$)
+            throw new IllegalArgumentException("average$ItypesPerOtype$"
+                                               + " exceeds "
+                                               + "max$ItypesPerOtype$");
         this.replacement = replacement;
         this.average$ItypesPerOtype$ = average$ItypesPerOtype$;
         this.max$ItypesPerOtype$ = max$ItypesPerOtype$;
