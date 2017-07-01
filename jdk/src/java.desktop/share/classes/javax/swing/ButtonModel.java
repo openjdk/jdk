@@ -199,6 +199,21 @@ public interface ButtonModel extends ItemSelectable {
     public void setGroup(ButtonGroup group);
 
     /**
+     * Returns the group that the button belongs to.
+     * Normally used with radio buttons, which are mutually
+     * exclusive within their group.
+     *
+     * @implSpec The default implementation of this method returns {@code null}.
+     * Subclasses should return the group set by setGroup().
+     *
+     * @return the <code>ButtonGroup</code> that the button belongs to
+     * @since 10
+     */
+    default ButtonGroup getGroup() {
+        return null;
+    }
+
+    /**
      * Adds an <code>ActionListener</code> to the model.
      *
      * @param l the listener to add

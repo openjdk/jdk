@@ -238,19 +238,18 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         } else if (aComponent instanceof JComponent) {
             if (SunToolkit.isInstanceOf(aComponent,
                                                  "javax.swing.JToggleButton")) {
-                JToggleButton.ToggleButtonModel model =
-                        (JToggleButton.ToggleButtonModel) ((JToggleButton)
-                                aComponent).getModel();
+                ButtonModel model = ((JToggleButton)aComponent).getModel();
                 if (model != null) {
                     ButtonGroup group = model.getGroup();
                     if (group != null) {
                         Enumeration<AbstractButton> elements =
-                                                            group.getElements();
+                                                        group.getElements();
                         int idx = 0;
                         while (elements.hasMoreElements()) {
                             AbstractButton member = elements.nextElement();
-                            if (member.isVisible() && member.isDisplayable() &&
-                                   member.isEnabled() && member.isFocusable()) {
+                            if (member instanceof JToggleButton &&
+                                 member.isVisible() && member.isDisplayable() &&
+                                 member.isEnabled() && member.isFocusable()) {
                                 if (member == aComponent) {
                                     return idx == 0;
                                 }
