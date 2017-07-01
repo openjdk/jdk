@@ -2306,7 +2306,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                             if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
                                 grabLog.fine("Generating UngrabEvent on {0} because not inside of shell", this);
                             }
-                            postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            // Do not post Ungrab Event for mouse scroll
+                            if ((xbe.get_button() != XConstants.buttons[3])
+                                && (xbe.get_button() != XConstants.buttons[4])) {
+                                postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            }
                             return;
                         }
                     }
@@ -2327,14 +2331,26 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                             if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
                                 grabLog.fine("Generating UngrabEvent on {0} because hierarchy ended", this);
                             }
-                            postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            // For mouse wheel event, do not send UngrabEvent
+                            if (xbe.get_type() != XConstants.ButtonPress) {
+                                postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            } else if ((xbe.get_button() != XConstants.buttons[3])
+                                   && (xbe.get_button() != XConstants.buttons[4])) {
+                                postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                            }
                         }
                     } else {
                         // toplevel is null - outside of hierarchy
                         if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
                             grabLog.fine("Generating UngrabEvent on {0} because toplevel is null", this);
                         }
-                        postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                        // For mouse wheel event, do not send UngrabEvent
+                        if (xbe.get_type() != XConstants.ButtonPress) {
+                            postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                        } else if ((xbe.get_button() != XConstants.buttons[3])
+                               && (xbe.get_button() != XConstants.buttons[4])) {
+                            postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                        }
                         return;
                     }
                 } else {
@@ -2342,7 +2358,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
                         grabLog.fine("Generating UngrabEvent on because target is null {0}", this);
                     }
-                    postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                    // For mouse wheel event, do not send UngrabEvent
+                    if (xbe.get_type() != XConstants.ButtonPress) {
+                        postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                    } else if ((xbe.get_button() != XConstants.buttons[3])
+                            && (xbe.get_button() != XConstants.buttons[4])) {
+                        postEventToEventQueue(new sun.awt.UngrabEvent(getEventSource()));
+                    }
                     return;
                 }
             }
