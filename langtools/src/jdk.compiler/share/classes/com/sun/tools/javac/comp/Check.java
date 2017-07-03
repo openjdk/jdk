@@ -2052,7 +2052,7 @@ public class Check {
                 }
             }
             log.error(pos,
-                      explicitOverride ? Errors.MethodDoesNotOverrideSuperclass :
+                      explicitOverride ? (m.isStatic() ? Errors.StaticMethodsCannotBeAnnotatedWithOverride : Errors.MethodDoesNotOverrideSuperclass) :
                                 Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
         }
     }
