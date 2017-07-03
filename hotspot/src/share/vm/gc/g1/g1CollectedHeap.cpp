@@ -3266,29 +3266,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         MemoryService::track_memory_usage();
 
-        // In prepare_for_verify() below we'll need to scan the deferred
-        // update buffers to bring the RSets up-to-date if
-        // G1HRRSFlushLogBuffersOnVerify has been set. While scanning
-        // the update buffers we'll probably need to scan cards on the
-        // regions we just allocated to (i.e., the GC alloc
-        // regions). However, during the last GC we called
-        // set_saved_mark() on all the GC alloc regions, so card
-        // scanning might skip the [saved_mark_word()...top()] area of
-        // those regions (i.e., the area we allocated objects into
-        // during the last GC). But it shouldn't. Given that
-        // saved_mark_word() is conditional on whether the GC time stamp
-        // on the region is current or not, by incrementing the GC time
-        // stamp here we invalidate all the GC time stamps on all the
-        // regions and saved_mark_word() will simply return top() for
-        // all the regions. This is a nicer way of ensuring this rather
-        // than iterating over the regions and fixing them. In fact, the
-        // GC time stamp increment here also ensures that
-        // saved_mark_word() will return top() between pauses, i.e.,
-        // during concurrent refinement. So we don't need the
-        // is_gc_active() check to decided which top to use when
-        // scanning cards (see CR 7039627).
-        increment_gc_time_stamp();
-
         if (VerifyRememberedSets) {
           log_info(gc, verify)("[Verifying RemSets after GC]");
           VerifyRegionRemSetClosure v_cl;
