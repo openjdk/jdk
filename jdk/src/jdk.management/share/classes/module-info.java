@@ -24,7 +24,7 @@
  */
 
 /**
- * Defines the JDK-specific Management Interfaces for JVM.
+ * Defines JDK-specific management interfaces for the JVM.
  *
  * @moduleGraph
  * @since 9

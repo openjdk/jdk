@@ -24,7 +24,7 @@
  */
 
 /**
- * Defines the JDK-specific API for HTTP server.
+ * Defines the JDK-specific HTTP server API.
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *
