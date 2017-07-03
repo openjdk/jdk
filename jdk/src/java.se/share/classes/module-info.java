@@ -26,11 +26,12 @@
 /**
  * Defines the core Java SE API.
  * <P>
- * The modules defining CORBA and Java EE APIs are not required by
- * this module, but they are required by {@code java.se.ee}.
+ * The modules defining the CORBA and Java EE APIs are not required by
+ * this module, but they are required by the
+ * <a href="java.se.ee-summary.html">{@code java.se.ee}</a> module.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Optional for Java SE Platform:</dt>
+ * <dl>
+ * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Optional for the Java SE Platform:</dt>
  * <dd>
  *   <a href="../specs/jni/index.html">Java Native Interface (JNI)</a><br>
  *   <a href="../specs/jvmti.html">Java Virtual Machine Tool Interface (JVM TI)</a><br>

@@ -27,16 +27,16 @@
  * Defines the {@linkplain javax.management.remote.rmi RMI connector}
  * for the Java Management Extensions (JMX) Remote API.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Providers:</dt>
- * <dd>This module provides
- * {@link javax.management.remote.JMXConnectorProvider} service
- * that creates the JMX connector clients using RMI protocol.
+ * <dl>
+ * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Providers:</dt>
+ * <dd>This module provides the
+ * {@link javax.management.remote.JMXConnectorProvider} service,
+ * which creates JMX connector clients using the RMI protocol.
  * Instances of {@code JMXConnector} can be obtained via the
  * {@link javax.management.remote.JMXConnectorFactory#newJMXConnector
  * JMXConnectorFactory.newJMXConnector} factory method.
- * It also provides {@link javax.management.remote.JMXConnectorServerProvider} service
- * that creates the JMX connector servers using RMI protocol.
+ * It also provides the {@link javax.management.remote.JMXConnectorServerProvider} service,
+ * which creates JMX connector servers using the RMI protocol.
  * Instances of {@code JMXConnectorServer} can be obtained via the
  * {@link javax.management.remote.JMXConnectorServerFactory#newJMXConnectorServer
  * JMXConnectorServerFactory.newJMXConnectorServer} factory method.

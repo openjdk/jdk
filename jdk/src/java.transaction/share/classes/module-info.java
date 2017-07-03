@@ -24,10 +24,10 @@
  */
 
 /**
- * Defines a subset of the Java Transaction API (JTA) to support CORBA interop.
+ * Defines a subset of the Java Transaction API (JTA) to support CORBA interoperation.
  * <P>
  * The subset consists of RMI exception types which are mapped to CORBA system
- * exceptions by the 'Java Language to IDL Mapping Specification'.
+ * exceptions by the <em>Java Language to IDL Mapping Specification</em>.
  *
  * @moduleGraph
  * @since 9
