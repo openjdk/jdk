@@ -1609,14 +1609,15 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 void CodeCache::print_codelist(outputStream* st) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  NMethodIterator iter;
-  while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+  CompiledMethodIterator iter;
+  while (iter.next_alive()) {
+    CompiledMethod* cm = iter.method();
     ResourceMark rm;
-    char *method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
-                 nm->compile_id(), nm->comp_level(), method_name, (intptr_t)nm->header_begin(),
-                 (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
+    char* method_name = cm->method()->name_and_sig_as_C_string();
+    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+                 cm->compile_id(), cm->comp_level(), cm->get_state(),
+                 method_name,
+                 (intptr_t)cm->header_begin(), (intptr_t)cm->code_begin(), (intptr_t)cm->code_end());
   }
 }
 
