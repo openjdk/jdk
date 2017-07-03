@@ -30,7 +30,7 @@
  * and define interfaces for tools such as compilers which can be invoked
  * from a program.
  * <p>
- * This module is upgradeble.
+ * This module is upgradeable.
  *
  * @moduleGraph
  * @since 9

@@ -26,7 +26,7 @@
 /**
  * Defines tools for analysing dependencies in Java libraries and programs,
  * including the <em>{@index jdeps jdeps tool}</em>,
- * <em>{@index javap javap tool}</em> and
+ * <em>{@index javap javap tool}</em>, and
  * <em>{@index jdeprscan jdeprscan tool}</em> tools.
  *
  * <p>
@@ -37,7 +37,7 @@
  *
  * <p> Instances of the tools can be obtained by calling
  * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- * or the {@link java.util.ServiceLoader service loader} with the name
+ * or the {@linkplain java.util.ServiceLoader service loader} with the name
  * {@code "javap"} or {@code "jdeps"} as appropriate.
  *
  * <p>
