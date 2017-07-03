@@ -26,7 +26,7 @@
 /**
  * Defines the Java binding of the OMG CORBA APIs, and the RMI-IIOP API.
  *
- * <p> This module is upgradeble.
+ * <p> This module is upgradeable.
  *
  * @moduleGraph
  * @since 9
