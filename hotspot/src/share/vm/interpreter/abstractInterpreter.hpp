@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,26 @@ class AbstractInterpreter: AllStatic {
 
   static void       print_method_kind(MethodKind kind)          PRODUCT_RETURN;
 
-  static bool       can_be_compiled(methodHandle m);
+  // These should never be compiled since the interpreter will prefer
+  // the compiled version to the intrinsic version.
+  static bool       can_be_compiled(const methodHandle& m) {
+    switch (m->intrinsic_id()) {
+      case vmIntrinsics::_dsin  : // fall thru
+      case vmIntrinsics::_dcos  : // fall thru
+      case vmIntrinsics::_dtan  : // fall thru
+      case vmIntrinsics::_dabs  : // fall thru
+      case vmIntrinsics::_dsqrt : // fall thru
+      case vmIntrinsics::_dlog  : // fall thru
+      case vmIntrinsics::_dlog10: // fall thru
+      case vmIntrinsics::_dpow  : // fall thru
+      case vmIntrinsics::_dexp  : // fall thru
+      case vmIntrinsics::_fmaD  : // fall thru
+      case vmIntrinsics::_fmaF  : // fall thru
+        return false;
+      default:
+        return true;
+    }
+  }
 
   // Runtime support
 

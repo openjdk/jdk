@@ -52,19 +52,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   return i;
 }
 
-// These should never be compiled since the interpreter will prefer the compiled
-// version to the intrinsic version.
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  switch (method_kind(m)) {
-    case Interpreter::java_lang_math_fmaD:
-    case Interpreter::java_lang_math_fmaF:
-      return false;
-    default:
-      break;
-  }
-  return true;
-}
-
 static int size_activation_helper(int callee_extra_locals, int max_stack, int monitor_size) {
 
   // Figure out the size of an interpreter frame (in words) given that we have a fully allocated
