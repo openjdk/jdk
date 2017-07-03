@@ -504,7 +504,6 @@ void G1HeapVerifier::prepare_for_verify() {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     _g1h->ensure_parsability(false);
   }
-  _g1h->g1_rem_set()->prepare_for_verify();
 }
 
 double G1HeapVerifier::verify(bool guard, const char* msg) {

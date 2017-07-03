@@ -805,29 +805,6 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-void G1RemSet::prepare_for_verify() {
-  if (G1HRRSFlushLogBuffersOnVerify &&
-      (VerifyBeforeGC || VerifyAfterGC)
-      &&  (!_g1->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC)) {
-    cleanupHRRS();
-    _g1->set_refine_cte_cl_concurrency(false);
-    if (SafepointSynchronize::is_at_safepoint()) {
-      DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-      dcqs.concatenate_logs();
-    }
-
-    bool use_hot_card_cache = _hot_card_cache->use_cache();
-    _hot_card_cache->set_use_cache(false);
-
-    DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
-    update_rem_set(&into_cset_dcq, NULL, 0);
-    _into_cset_dirty_card_queue_set.clear();
-
-    _hot_card_cache->set_use_cache(use_hot_card_cache);
-    assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
-  }
-}
-
 void G1RemSet::create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap) {
   _card_live_data.create(workers, mark_bitmap);
 }
