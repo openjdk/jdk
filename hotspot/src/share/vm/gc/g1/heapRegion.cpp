@@ -579,10 +579,9 @@ public:
 
         bool is_bad = !(from->is_young()
           || to->rem_set()->contains_reference(p)
-          || !G1HRRSFlushLogBuffersOnVerify && // buffers were not flushed
-          (_containing_obj->is_objArray() ?
-          cv_field == dirty
-          : cv_obj == dirty || cv_field == dirty));
+          || (_containing_obj->is_objArray() ?
+                cv_field == dirty :
+                cv_obj == dirty || cv_field == dirty));
         if (is_bad) {
           MutexLockerEx x(ParGCRareEvent_lock,
             Mutex::_no_safepoint_check_flag);
