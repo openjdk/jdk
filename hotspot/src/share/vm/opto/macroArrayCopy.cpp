@@ -892,16 +892,22 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
       Node* sptr = basic_plus_adr(src,  src_off);
       Node* dptr = basic_plus_adr(dest, dest_off);
-      uint alias_idx = C->get_alias_index(adr_type);
+      const TypePtr* s_adr_type = _igvn.type(sptr)->is_ptr();
+      assert(s_adr_type->isa_aryptr(), "impossible slice");
+      uint s_alias_idx = C->get_alias_index(s_adr_type);
+      uint d_alias_idx = C->get_alias_index(adr_type);
       bool is_mismatched = (basic_elem_type != T_INT);
       Node* sval = transform_later(
-          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(alias_idx), sptr, adr_type,
+          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
                          false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
-          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(alias_idx), dptr, adr_type,
+          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,
                           sval, T_INT, MemNode::unordered));
-      (*mem)->set_memory_at(alias_idx, st);
+      if (is_mismatched) {
+        st->as_Store()->set_mismatched_access();
+      }
+      (*mem)->set_memory_at(d_alias_idx, st);
       src_off += BytesPerInt;
       dest_off += BytesPerInt;
     } else {
@@ -1275,12 +1281,11 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // The generate_arraycopy subroutine checks this.
   }
   // This is where the memory effects are placed:
-  const TypePtr* adr_type = TypeAryPtr::get_array_body_type(dest_elem);
+  const TypePtr* adr_type = NULL;
   if (ac->_dest_type != TypeOopPtr::BOTTOM) {
     adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
-  }
-  if (ac->_src_type != ac->_dest_type) {
-    adr_type = TypeRawPtr::BOTTOM;
+  } else {
+    adr_type = TypeAryPtr::get_array_body_type(dest_elem);
   }
 
   generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
