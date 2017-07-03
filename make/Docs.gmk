@@ -158,7 +158,7 @@ JAVADOC_TOP := \
 
 JDK_SHORT_NAME := Java SE $(VERSION_SPECIFICATION) &amp; JDK $(VERSION_SPECIFICATION)
 JDK_LONG_NAME := Java<sup>&reg;</sup> Platform, Standard Edition \
-    <span style="white-space: nowrap;">&amp; Java Development Kit</span>
+    &amp;&nbsp;Java&nbsp;Development&nbsp;Kit
 
 ################################################################################
 # Java SE javadoc titles/text snippets
@@ -206,10 +206,10 @@ define create_overview_file
       #
     $1_OVERVIEW_TEXT += $$(foreach g, $$($1_GROUPS), \
         <dt style="margin-top: 8px;"><a href="\#$$g">$$($$g_GROUP_NAME)</a></dt> \
-        <dd style="margin-top: 8px;">$$($$g_GROUP_DESCRIPTION)</dt> \
+        <dd style="margin-top: 8px;">$$($$g_GROUP_DESCRIPTION)</dd> \
     )
     $1_OVERVIEW_TEXT += \
-        </dl><blockquote> \
+        </dl></blockquote> \
         #
   endif
   $1_OVERVIEW_TEXT += \
