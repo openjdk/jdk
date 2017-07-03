@@ -148,9 +148,6 @@ public:
   // Print accumulated summary info from the last time called.
   void print_periodic_summary_info(const char* header, uint period_count);
 
-  // Prepare remembered set for verification.
-  void prepare_for_verify();
-
   size_t conc_refine_cards() const { return _conc_refine_cards; }
 
   void create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
