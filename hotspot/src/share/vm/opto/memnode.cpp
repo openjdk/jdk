@@ -2429,6 +2429,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              Opcode() == Op_StoreVector ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
+             (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
              (is_mismatched_access() || st->as_Store()->is_mismatched_access()),
              "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
