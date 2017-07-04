@@ -76,7 +76,7 @@ private:
   void update_rem_set(DirtyCardQueue* into_cset_dcq, G1ParScanThreadState* pss, uint worker_i);
 
   G1CollectedHeap* _g1;
-  size_t _conc_refine_cards;
+  size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
 
   CardTableModRefBS*     _ct_bs;
   G1Policy*              _g1p;
@@ -145,7 +145,7 @@ public:
   // Print accumulated summary info from the last time called.
   void print_periodic_summary_info(const char* header, uint period_count);
 
-  size_t conc_refine_cards() const { return _conc_refine_cards; }
+  size_t num_conc_refined_cards() const { return _num_conc_refined_cards; }
 
   void create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
   void finalize_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
