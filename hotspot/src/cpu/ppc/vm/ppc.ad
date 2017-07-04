@@ -3079,6 +3079,17 @@ encode %{
     __ bind(done);
   %}
 
+  enc_class enc_cmove_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_cmove);
+
+    MacroAssembler _masm(&cbuf);
+    Label done;
+    __ bso($crx$$CondRegister, done);
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+    // TODO PPC port __ endgroup_if_needed(_size == 12);
+    __ bind(done);
+  %}
+
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_bc);
 
@@ -10126,9 +10137,36 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 //   float intBitsToFloat(int bits)
 //
 // Notes on the implementation on ppc64:
-// We only provide rules which move between a register and a stack-location,
-// because we always have to go through memory when moving between a float
-// register and an integer register.
+// For Power7 and earlier, the rules are limited to those which move between a
+// register and a stack-location, because we always have to go through memory
+// when moving between a float register and an integer register.
+// This restriction is removed in Power8 with the introduction of the mtfprd
+// and mffprd instructions.
+
+instruct moveL2D_reg(regD dst, iRegLsrc src) %{
+  match(Set dst (MoveL2D src));
+  predicate(VM_Version::has_mtfprd());
+
+  format %{ "MTFPRD  $dst, $src" %}
+  size(4);
+  ins_encode %{
+    __ mtfprd($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct moveI2D_reg(regD dst, iRegIsrc src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE src);
+  predicate(false);
+
+  format %{ "MTFPRWA $dst, $src" %}
+  size(4);
+  ins_encode %{
+    __ mtfprwa($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 //---------- Chain stack slots between similar types --------
 
@@ -10641,6 +10679,20 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "cmovI   $crx, $dst, $src" %}
+  // Worst case is branch + move + stop, no stop without scheduler.
+  size(false /* TODO: PPC PORT(InsertEndGroupPPC64 && Compile::current()->do_hb_scheduling())*/ ? 12 : 8);
+  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
 instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, stackSlotL mem) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE mem);
@@ -10695,9 +10747,64 @@ instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, stack
   %}
 %}
 
+instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CmovI   $dst, $crx, $src \t// postalloc expanded" %}
+  postalloc_expand %{
+    //
+    // replaces
+    //
+    //   region  dst  crx  src
+    //    \       |    |   /
+    //     dst=cmovI_bso_reg_conLvalue0
+    //
+    // with
+    //
+    //   region  dst
+    //    \       /
+    //     dst=loadConI16(0)
+    //      |
+    //      ^  region  dst  crx  src
+    //      |   \       |    |    /
+    //      dst=cmovI_bso_reg
+    //
+
+    // Create new nodes.
+    MachNode *m1 = new loadConI16Node();
+    MachNode *m2 = new cmovI_bso_regNode();
+
+    // inputs for new nodes
+    m1->add_req(n_region);
+    m2->add_req(n_region, n_crx, n_src);
+
+    // precedences for new nodes
+    m2->add_prec(m1);
+
+    // operands for new nodes
+    m1->_opnds[0] = op_dst;
+    m1->_opnds[1] = new immI16Oper(0);
+
+    m2->_opnds[0] = op_dst;
+    m2->_opnds[1] = op_crx;
+    m2->_opnds[2] = op_src;
+
+    // registers for new nodes
+    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
+    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
+
+    // Insert new nodes.
+    nodes->push(m1);
+    nodes->push(m2);
+  %}
+%}
+
 // Double to Int conversion, NaN is mapped to 0.
 instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
+  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10708,6 +10815,21 @@ instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
     convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
     moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
     cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
+  %}
+%}
+
+// Double to Int conversion, NaN is mapped to 0. Special version for Power8.
+instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
+  match(Set dst (ConvD2I src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    flagsReg crx;
+    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
+    convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
+    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
   %}
 %}
 
@@ -10728,6 +10850,7 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
 // Float to Int conversion, NaN is mapped to 0.
 instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
+  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10738,6 +10861,21 @@ instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
     convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
     moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
     cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
+  %}
+%}
+
+// Float to Int conversion, NaN is mapped to 0. Special version for Power8.
+instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
+  match(Set dst (ConvF2I src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regF tmpF;
+    flagsReg crx;
+    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
+    convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
+    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
   %}
 %}
 
@@ -10810,6 +10948,20 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "cmovL   $crx, $dst, $src" %}
+  // Worst case is branch + move + stop, no stop without scheduler.
+  size(false /* TODO: PPC PORT Compile::current()->do_hb_scheduling()*/ ? 12 : 8);
+  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
 instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, stackSlotL mem) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE mem);
@@ -10861,9 +11013,61 @@ instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, stack
   %}
 %}
 
+instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CmovL   $dst, $crx, $src \t// postalloc expanded" %}
+  postalloc_expand %{
+    //
+    // replaces
+    //
+    //   region  dst  crx  src
+    //    \       |    |   /
+    //     dst=cmovL_bso_reg_conLvalue0
+    //
+    // with
+    //
+    //   region  dst
+    //    \       /
+    //     dst=loadConL16(0)
+    //      |
+    //      ^  region  dst  crx  src
+    //      |   \       |    |    /
+    //      dst=cmovL_bso_reg
+    //
+
+    // Create new nodes.
+    MachNode *m1 = new loadConL16Node();
+    MachNode *m2 = new cmovL_bso_regNode();
+
+    // inputs for new nodes
+    m1->add_req(n_region);
+    m2->add_req(n_region, n_crx, n_src);
+    m2->add_prec(m1);
+
+    // operands for new nodes
+    m1->_opnds[0] = op_dst;
+    m1->_opnds[1] = new immL16Oper(0);
+    m2->_opnds[0] = op_dst;
+    m2->_opnds[1] = op_crx;
+    m2->_opnds[2] = op_src;
+
+    // registers for new nodes
+    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
+    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
+
+    // Insert new nodes.
+    nodes->push(m1);
+    nodes->push(m2);
+  %}
+%}
+
 // Float to Long conversion, NaN is mapped to 0.
 instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
+  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10874,6 +11078,21 @@ instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
     convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
     moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
     cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
+  %}
+%}
+
+// Float to Long conversion, NaN is mapped to 0. Special version for Power8.
+instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
+  match(Set dst (ConvF2L src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regF tmpF;
+    flagsReg crx;
+    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
+    convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
+    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
   %}
 %}
 
@@ -10894,6 +11113,7 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
 // Double to Long conversion, NaN is mapped to 0.
 instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
+  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10904,6 +11124,21 @@ instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
     convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
     moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
     cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
+  %}
+%}
+
+// Double to Long conversion, NaN is mapped to 0. Special version for Power8.
+instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
+  match(Set dst (ConvD2L src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    flagsReg crx;
+    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
+    convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
+    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
   %}
 %}
 
@@ -10972,7 +11207,7 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
 // Integer to Float conversion. Special version for Power7.
 instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
   match(Set dst (ConvI2F src));
-  predicate(VM_Version::has_fcfids());
+  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10986,10 +11221,23 @@ instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
   %}
 %}
 
+// Integer to Float conversion. Special version for Power8.
+instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
+  match(Set dst (ConvI2F src));
+  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    moveI2D_reg(tmpD, src);
+    convL2FRaw_regF(dst, tmpD);          // Convert to float.
+  %}
+%}
+
 // L2F to avoid runtime call.
 instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
-  predicate(VM_Version::has_fcfids());
+  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10997,6 +11245,19 @@ instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
     regD tmpD;
     regL_to_stkL(tmpS, src);             // Store long to stack.
     moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
+    convL2FRaw_regF(dst, tmpD);          // Convert to float.
+  %}
+%}
+
+// L2F to avoid runtime call.  Special version for Power8.
+instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
+  match(Set dst (ConvL2F src));
+  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    moveL2D_reg(tmpD, src);
     convL2FRaw_regF(dst, tmpD);          // Convert to float.
   %}
 %}
@@ -11009,6 +11270,7 @@ instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
 // Integer to Double conversion.
 instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
   match(Set dst (ConvI2D src));
+  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11022,6 +11284,19 @@ instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
   %}
 %}
 
+// Integer to Double conversion. Special version for Power8.
+instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
+  match(Set dst (ConvI2D src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    moveI2D_reg(tmpD, src);
+    convL2DRaw_regD(dst, tmpD);          // Convert to double.
+  %}
+%}
+
 // Long to Double conversion
 instruct convL2D_reg_Ex(regD dst, stackSlotL src) %{
   match(Set dst (ConvL2D src));
@@ -11031,6 +11306,19 @@ instruct convL2D_reg_Ex(regD dst, stackSlotL src) %{
     regD tmpD;
     moveL2D_stack_reg(tmpD, src);
     convL2DRaw_regD(dst, tmpD);
+  %}
+%}
+
+// Long to Double conversion. Special version for Power8.
+instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
+  match(Set dst (ConvL2D src));
+  predicate(VM_Version::has_mtfprd());
+  ins_cost(DEFAULT_COST);
+
+  expand %{
+    regD tmpD;
+    moveL2D_reg(tmpD, src);
+    convL2DRaw_regD(dst, tmpD);          // Convert to double.
   %}
 %}
 
