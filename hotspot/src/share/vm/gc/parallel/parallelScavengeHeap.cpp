@@ -582,6 +582,8 @@ void ParallelScavengeHeap::print_tracing_info() const {
     double time = UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds();
     tty->print_cr("[Accumulated GC generation 1 time %3.7f secs]", time);
   }
+
+  AdaptiveSizePolicyOutput::print();
 }
 
 

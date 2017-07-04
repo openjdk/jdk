@@ -505,33 +505,4 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   void print_tenuring_threshold(uint new_tenuring_threshold) const;
 };
 
-// Class that can be used to print information about the
-// adaptive size policy at intervals specified by
-// AdaptiveSizePolicyOutputInterval.  Only print information
-// if an adaptive size policy is in use.
-class AdaptiveSizePolicyOutput : StackObj {
-  static bool enabled() {
-    return UseParallelGC &&
-           UseAdaptiveSizePolicy &&
-           log_is_enabled(Debug, gc, ergo);
-  }
- public:
-  static void print() {
-    if (enabled()) {
-      Universe::heap()->size_policy()->print();
-    }
-  }
-
-  static void print(AdaptiveSizePolicy* size_policy, uint count) {
-    bool do_print =
-        enabled() &&
-        (AdaptiveSizePolicyOutputInterval > 0) &&
-        (count % AdaptiveSizePolicyOutputInterval) == 0;
-
-    if (do_print) {
-      size_policy->print();
-    }
-  }
-};
-
 #endif // SHARE_VM_GC_SHARED_ADAPTIVESIZEPOLICY_HPP

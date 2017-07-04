@@ -72,9 +72,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t _space_alignment;
   size_t _heap_alignment;
 
-  // The sizing of the heap is controlled by a sizing policy.
-  AdaptiveSizePolicy* _size_policy;
-
   // Set to true when policy wants soft refs cleared.
   // Reset to false by gc after it clears all soft refs.
   bool _should_clear_all_soft_refs;
@@ -105,7 +102,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
 
-  AdaptiveSizePolicy* size_policy() { return _size_policy; }
   bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
   void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
   // Returns the current value of _should_clear_all_soft_refs.
@@ -116,7 +112,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   // Called by the GC after Soft Refs have been cleared to indicate
   // that the request in _should_clear_all_soft_refs has been fulfilled.
-  void cleared_all_soft_refs();
+  virtual void cleared_all_soft_refs();
 
   // Identification methods.
   virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
@@ -160,7 +156,8 @@ class ClearedAllSoftRefs : public StackObj {
 class GenCollectorPolicy : public CollectorPolicy {
   friend class TestGenCollectorPolicy;
   friend class VMStructs;
- protected:
+
+protected:
   size_t _min_young_size;
   size_t _initial_young_size;
   size_t _max_young_size;
@@ -176,6 +173,9 @@ class GenCollectorPolicy : public CollectorPolicy {
   GenerationSpec* _old_gen_spec;
 
   GCPolicyCounters* _gc_policy_counters;
+
+  // The sizing of the heap is controlled by a sizing policy.
+  AdaptiveSizePolicy* _size_policy;
 
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -249,9 +249,14 @@ class GenCollectorPolicy : public CollectorPolicy {
   HeapWord *satisfy_failed_allocation(size_t size, bool is_tlab);
 
   // Adaptive size policy
+  AdaptiveSizePolicy* size_policy() { return _size_policy; }
+
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
+
+  virtual void cleared_all_soft_refs();
+
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {

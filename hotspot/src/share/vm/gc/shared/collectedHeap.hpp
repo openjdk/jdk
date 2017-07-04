@@ -478,9 +478,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   void increment_total_full_collections() { _total_full_collections++; }
 
-  // Return the AdaptiveSizePolicy for the heap.
-  virtual AdaptiveSizePolicy* size_policy() = 0;
-
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
 
