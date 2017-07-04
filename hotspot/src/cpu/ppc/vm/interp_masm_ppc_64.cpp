@@ -284,14 +284,22 @@ void InterpreterMacroAssembler::push_2ptrs(Register first, Register second) {
   addi(R15_esp, R15_esp, - 2 * Interpreter::stackElementSize );
 }
 
-void InterpreterMacroAssembler::push_l_pop_d(Register l, FloatRegister d) {
-  std(l, 0, R15_esp);
-  lfd(d, 0, R15_esp);
+void InterpreterMacroAssembler::move_l_to_d(Register l, FloatRegister d) {
+  if (VM_Version::has_mtfprd()) {
+    mtfprd(d, l);
+  } else {
+    std(l, 0, R15_esp);
+    lfd(d, 0, R15_esp);
+  }
 }
 
-void InterpreterMacroAssembler::push_d_pop_l(FloatRegister d, Register l) {
-  stfd(d, 0, R15_esp);
-  ld(l, 0, R15_esp);
+void InterpreterMacroAssembler::move_d_to_l(FloatRegister d, Register l) {
+  if (VM_Version::has_mtfprd()) {
+    mffprd(l, d);
+  } else {
+    stfd(d, 0, R15_esp);
+    ld(l, 0, R15_esp);
+  }
 }
 
 void InterpreterMacroAssembler::push(TosState state) {

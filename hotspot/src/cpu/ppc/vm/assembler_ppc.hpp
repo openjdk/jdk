@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -511,6 +511,7 @@ class Assembler : public AbstractAssembler {
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
+    MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
 
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
@@ -2137,6 +2138,11 @@ class Assembler : public AbstractAssembler {
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
+
+  // Vector-Scalar (VSX) instructions.
+  inline void mtfprd(   FloatRegister   d, Register a);
+  inline void mtfprwa(  FloatRegister   d, Register a);
+  inline void mffprd(   Register        a, FloatRegister d);
 
   // AES (introduced with Power 8)
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);

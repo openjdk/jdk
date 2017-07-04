@@ -1472,13 +1472,13 @@ void TemplateTable::convert() {
     case Bytecodes::_i2d:
       __ extsw(R17_tos, R17_tos);
     case Bytecodes::_l2d:
-      __ push_l_pop_d();
+      __ move_l_to_d();
       __ fcfid(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_i2f:
       __ extsw(R17_tos, R17_tos);
-      __ push_l_pop_d();
+      __ move_l_to_d();
       if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
         // Comment: alternatively, load with sign extend could be done by lfiwax.
         __ fcfids(F15_ftos, F15_ftos);
@@ -1490,7 +1490,7 @@ void TemplateTable::convert() {
 
     case Bytecodes::_l2f:
       if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        __ push_l_pop_d();
+        __ move_l_to_d();
         __ fcfids(F15_ftos, F15_ftos);
       } else {
         // Avoid rounding problem when result should be 0x3f800001: need fixup code before fcfid+frsp.
@@ -1514,7 +1514,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CCR0, done);
       __ fctiwz(F15_ftos, F15_ftos);
-      __ push_d_pop_l();
+      __ move_d_to_l();
       break;
 
     case Bytecodes::_d2l:
@@ -1523,7 +1523,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CCR0, done);
       __ fctidz(F15_ftos, F15_ftos);
-      __ push_d_pop_l();
+      __ move_d_to_l();
       break;
 
     default: ShouldNotReachHere();

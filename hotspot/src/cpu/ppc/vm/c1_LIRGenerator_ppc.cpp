@@ -871,81 +871,91 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
 void LIRGenerator::do_Convert(Convert* x) {
-  switch (x->op()) {
+  if (!VM_Version::has_mtfprd()) {
+    switch (x->op()) {
 
-    // int -> float: force spill
-    case Bytecodes::_l2f: {
-      if (!VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        // fcfid+frsp needs fixup code to avoid rounding incompatibility.
-        address entry = CAST_FROM_FN_PTR(address, SharedRuntime::l2f);
-        LIR_Opr result = call_runtime(x->value(), entry, x->type(), NULL);
-        set_result(x, result);
+      // int -> float: force spill
+      case Bytecodes::_l2f: {
+        if (!VM_Version::has_fcfids()) { // fcfids is >= Power7 only
+          // fcfid+frsp needs fixup code to avoid rounding incompatibility.
+          address entry = CAST_FROM_FN_PTR(address, SharedRuntime::l2f);
+          LIR_Opr result = call_runtime(x->value(), entry, x->type(), NULL);
+          set_result(x, result);
+          return;
+        } // else fallthru
+      }
+      case Bytecodes::_l2d: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.load_item();
+        LIR_Opr tmp = force_to_spill(value.result(), T_DOUBLE);
+        __ convert(x->op(), tmp, reg);
+        return;
+      }
+      case Bytecodes::_i2f:
+      case Bytecodes::_i2d: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.load_item();
+        // Convert i2l first.
+        LIR_Opr tmp1 = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, value.result(), tmp1);
+        LIR_Opr tmp2 = force_to_spill(tmp1, T_DOUBLE);
+        __ convert(x->op(), tmp2, reg);
+        return;
+      }
+
+      // float -> int: result will be stored
+      case Bytecodes::_f2l:
+      case Bytecodes::_d2l: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.set_destroys_register(); // USE_KILL
+        value.load_item();
+        set_vreg_flag(reg, must_start_in_memory);
+        __ convert(x->op(), value.result(), reg);
+        return;
+      }
+      case Bytecodes::_f2i:
+      case Bytecodes::_d2i: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.set_destroys_register(); // USE_KILL
+        value.load_item();
+        // Convert l2i afterwards.
+        LIR_Opr tmp1 = new_register(T_LONG);
+        set_vreg_flag(tmp1, must_start_in_memory);
+        __ convert(x->op(), value.result(), tmp1);
+        __ convert(Bytecodes::_l2i, tmp1, reg);
+        return;
+      }
+
+      // Within same category: just register conversions.
+      case Bytecodes::_i2b:
+      case Bytecodes::_i2c:
+      case Bytecodes::_i2s:
+      case Bytecodes::_i2l:
+      case Bytecodes::_l2i:
+      case Bytecodes::_f2d:
+      case Bytecodes::_d2f:
         break;
-      } // else fallthru
-    }
-    case Bytecodes::_l2d: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      LIR_Opr tmp = force_to_spill(value.result(), T_DOUBLE);
-      __ convert(x->op(), tmp, reg);
-      break;
-    }
-    case Bytecodes::_i2f:
-    case Bytecodes::_i2d: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      // Convert i2l first.
-      LIR_Opr tmp1 = new_register(T_LONG);
-      __ convert(Bytecodes::_i2l, value.result(), tmp1);
-      LIR_Opr tmp2 = force_to_spill(tmp1, T_DOUBLE);
-      __ convert(x->op(), tmp2, reg);
-      break;
-    }
 
-    // float -> int: result will be stored
-    case Bytecodes::_f2l:
-    case Bytecodes::_d2l: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.set_destroys_register(); // USE_KILL
-      value.load_item();
-      set_vreg_flag(reg, must_start_in_memory);
-      __ convert(x->op(), value.result(), reg);
-      break;
+      default: ShouldNotReachHere();
     }
-    case Bytecodes::_f2i:
-    case Bytecodes::_d2i: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.set_destroys_register(); // USE_KILL
-      value.load_item();
-      // Convert l2i afterwards.
-      LIR_Opr tmp1 = new_register(T_LONG);
-      set_vreg_flag(tmp1, must_start_in_memory);
-      __ convert(x->op(), value.result(), tmp1);
-      __ convert(Bytecodes::_l2i, tmp1, reg);
-      break;
-    }
-
-    // Within same category: just register conversions.
-    case Bytecodes::_i2b:
-    case Bytecodes::_i2c:
-    case Bytecodes::_i2s:
-    case Bytecodes::_i2l:
-    case Bytecodes::_l2i:
-    case Bytecodes::_f2d:
-    case Bytecodes::_d2f: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      __ convert(x->op(), value.result(), reg);
-      break;
-    }
-
-    default: ShouldNotReachHere();
   }
+
+  // Register conversion.
+  LIRItem value(x->value(), this);
+  LIR_Opr reg = rlock_result(x);
+  value.load_item();
+  switch (x->op()) {
+    case Bytecodes::_f2l:
+    case Bytecodes::_d2l:
+    case Bytecodes::_f2i:
+    case Bytecodes::_d2i: value.set_destroys_register(); break; // USE_KILL
+    default: break;
+  }
+  __ convert(x->op(), value.result(), reg);
 }
 
 
