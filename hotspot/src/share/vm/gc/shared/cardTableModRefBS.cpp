@@ -42,7 +42,7 @@ size_t CardTableModRefBS::compute_byte_map_size()
                                         "uninitialized, check declaration order");
   assert(_page_size != 0, "uninitialized, check declaration order");
   const size_t granularity = os::vm_allocation_granularity();
-  return align_size_up(_guard_index + 1, MAX2(_page_size, granularity));
+  return align_up(_guard_index + 1, MAX2(_page_size, granularity));
 }
 
 CardTableModRefBS::CardTableModRefBS(
@@ -110,7 +110,7 @@ void CardTableModRefBS::initialize() {
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
 
   jbyte* guard_card = &_byte_map[_guard_index];
-  uintptr_t guard_page = align_size_down((uintptr_t)guard_card, _page_size);
+  uintptr_t guard_page = align_down((uintptr_t)guard_card, _page_size);
   _guard_region = MemRegion((HeapWord*)guard_page, _page_size);
   os::commit_memory_or_exit((char*)guard_page, _page_size, _page_size,
                             !ExecMem, "card table last card");
@@ -152,7 +152,7 @@ int CardTableModRefBS::find_covering_region_by_base(HeapWord* base) {
   _covered[res].set_start(base);
   _covered[res].set_word_size(0);
   jbyte* ct_start = byte_for(base);
-  uintptr_t ct_start_aligned = align_size_down((uintptr_t)ct_start, _page_size);
+  uintptr_t ct_start_aligned = align_down((uintptr_t)ct_start, _page_size);
   _committed[res].set_start((HeapWord*)ct_start_aligned);
   _committed[res].set_word_size(0);
   return res;
@@ -212,7 +212,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     // Align the end up to a page size (starts are already aligned).
     jbyte* const new_end = byte_after(new_region.last());
-    HeapWord* new_end_aligned = (HeapWord*) align_ptr_up(new_end, _page_size);
+    HeapWord* new_end_aligned = (HeapWord*) align_up(new_end, _page_size);
     assert((void*)new_end_aligned >= (void*) new_end, "align up, but less");
     // Check the other regions (excludes "ind") to ensure that
     // the new_end_aligned does not intrude onto the committed
@@ -368,8 +368,8 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool relea
 
 
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
-  assert(align_ptr_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_ptr_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   jbyte* cur  = byte_for(mr.start());
   jbyte* last = byte_after(mr.last());
   while (cur < last) {
@@ -379,8 +379,8 @@ void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTableModRefBS::invalidate(MemRegion mr) {
-  assert(align_ptr_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_ptr_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);

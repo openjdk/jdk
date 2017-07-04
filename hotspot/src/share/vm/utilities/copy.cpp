@@ -71,7 +71,7 @@ public:
     assert(dst != NULL, "address must not be NULL");
     assert(elem_size == 2 || elem_size == 4 || elem_size == 8,
            "incorrect element size: " SIZE_FORMAT, elem_size);
-    assert(is_size_aligned(byte_count, elem_size),
+    assert(is_aligned(byte_count, elem_size),
            "byte_count " SIZE_FORMAT " must be multiple of element size " SIZE_FORMAT, byte_count, elem_size);
 
     address src_end = (address)src + byte_count;
@@ -189,14 +189,14 @@ private:
    */
   template <typename T, CopyDirection direction, bool swap>
   static void do_conjoint_swap(const void* src, void* dst, size_t byte_count) {
-    if (is_ptr_aligned(src, sizeof(T))) {
-      if (is_ptr_aligned(dst, sizeof(T))) {
+    if (is_aligned(src, sizeof(T))) {
+      if (is_aligned(dst, sizeof(T))) {
         do_conjoint_swap<T,direction,swap,true,true>(src, dst, byte_count);
       } else {
         do_conjoint_swap<T,direction,swap,true,false>(src, dst, byte_count);
       }
     } else {
-      if (is_ptr_aligned(dst, sizeof(T))) {
+      if (is_aligned(dst, sizeof(T))) {
         do_conjoint_swap<T,direction,swap,false,true>(src, dst, byte_count);
       } else {
         do_conjoint_swap<T,direction,swap,false,false>(src, dst, byte_count);

@@ -172,7 +172,7 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     void* real_malloc_addr = throw_excpt? AllocateHeap(aligned_size, flags, CURRENT_PC)
                                           : AllocateHeap(aligned_size, flags, CURRENT_PC,
                                                          AllocFailStrategy::RETURN_NULL);
-    void* aligned_addr     = align_ptr_up(real_malloc_addr, alignment);
+    void* aligned_addr     = align_up(real_malloc_addr, alignment);
     assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
            "JavaThread alignment code overflowed allocated storage");
@@ -286,7 +286,7 @@ Thread::Thread() {
   if (UseBiasedLocking) {
     assert((((uintptr_t) this) & (markOopDesc::biased_lock_alignment - 1)) == 0, "forced alignment of thread object failed");
     assert(this == _real_malloc_address ||
-           this == align_ptr_up(_real_malloc_address, (int)markOopDesc::biased_lock_alignment),
+           this == align_up(_real_malloc_address, (int)markOopDesc::biased_lock_alignment),
            "bug in forced alignment of thread objects");
   }
 #endif // ASSERT

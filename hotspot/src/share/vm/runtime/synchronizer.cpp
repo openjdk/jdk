@@ -1176,7 +1176,7 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
     // In the current implementation objectMonitors are TSM - immortal.
     // Ideally, we'd write "new ObjectMonitor[_BLOCKSIZE], but we want
     // each ObjectMonitor to start at the beginning of a cache line,
-    // so we use align_size_up().
+    // so we use align_up().
     // A better solution would be to use C++ placement-new.
     // BEWARE: As it stands currently, we don't run the ctors!
     assert(_BLOCKSIZE > 1, "invariant");
@@ -1186,8 +1186,7 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
     void* real_malloc_addr = (void *)NEW_C_HEAP_ARRAY(char, aligned_size,
                                                       mtInternal);
     temp = (PaddedEnd<ObjectMonitor> *)
-             align_ptr_up(real_malloc_addr,
-                           DEFAULT_CACHE_LINE_SIZE);
+             align_up(real_malloc_addr, DEFAULT_CACHE_LINE_SIZE);
 
     // NOTE: (almost) no way to recover if allocation failed.
     // We might be able to induce a STW safepoint and scavenge enough

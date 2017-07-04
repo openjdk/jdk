@@ -272,7 +272,7 @@ void Runtime1::initialize_pd() {
   // this should match assembler::total_frame_size_in_bytes, which
   // isn't callable from this context.  It's checked by an assert when
   // it's used though.
-  frame_size_in_bytes = align_size_up(sp_offset * wordSize, 8);
+  frame_size_in_bytes = align_up(sp_offset * wordSize, 8);
 }
 
 

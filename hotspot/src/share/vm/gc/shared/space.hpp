@@ -154,7 +154,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Test whether p is double-aligned
   static bool is_aligned(void* p) {
-    return is_ptr_aligned(p, sizeof(double));
+    return ::is_aligned(p, sizeof(double));
   }
 
   // Size computations.  Sizes are in bytes.

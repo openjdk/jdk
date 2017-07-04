@@ -62,7 +62,7 @@ private:
     if (HeapWordsPerOop > 0) {
       old_res = length * HeapWordsPerOop;
     } else {
-      old_res = align_size_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
+      old_res = align_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
     }
     assert(res == old_res, "Inconsistency between old and new.");
 #endif  // ASSERT

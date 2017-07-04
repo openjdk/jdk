@@ -337,10 +337,10 @@ void os::init_before_ergo() {
   // We need to adapt the configured number of stack protection pages given
   // in 4K pages to the actual os page size. We must do this before setting
   // up minimal stack sizes etc. in os::init_2().
-  JavaThread::set_stack_red_zone_size     (align_size_up(StackRedPages      * 4 * K, vm_page_size()));
-  JavaThread::set_stack_yellow_zone_size  (align_size_up(StackYellowPages   * 4 * K, vm_page_size()));
-  JavaThread::set_stack_reserved_zone_size(align_size_up(StackReservedPages * 4 * K, vm_page_size()));
-  JavaThread::set_stack_shadow_zone_size  (align_size_up(StackShadowPages   * 4 * K, vm_page_size()));
+  JavaThread::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
+  JavaThread::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
+  JavaThread::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
+  JavaThread::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
@@ -1344,7 +1344,7 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
     for (size_t i = 0; _page_sizes[i] != 0; ++i) {
       const size_t page_size = _page_sizes[i];
       if (page_size <= max_page_size) {
-        if (!must_be_aligned || is_size_aligned(region_size, page_size)) {
+        if (!must_be_aligned || is_aligned(region_size, page_size)) {
           return page_size;
         }
       }

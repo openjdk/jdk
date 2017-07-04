@@ -251,7 +251,7 @@ void Runtime1::initialize_pd() {
     fpu_reg_save_offsets[i] = sp_offset;
     sp_offset += BytesPerWord;
   }
-  frame_size_in_bytes = align_size_up(sp_offset, frame::alignment_in_bytes);
+  frame_size_in_bytes = align_up(sp_offset, frame::alignment_in_bytes);
 }
 
 
@@ -275,7 +275,7 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
 static OopMapSet* generate_exception_throw_with_stack_parms(StubAssembler* sasm, address target,
                                                             int stack_parms) {
   // Make a frame and preserve the caller's caller-save registers.
-  const int parm_size_in_bytes = align_size_up(stack_parms << LogBytesPerWord, frame::alignment_in_bytes);
+  const int parm_size_in_bytes = align_up(stack_parms << LogBytesPerWord, frame::alignment_in_bytes);
   const int padding = parm_size_in_bytes - (stack_parms << LogBytesPerWord);
   OopMap* oop_map = save_live_registers(sasm, true, noreg, parm_size_in_bytes);
 
@@ -325,7 +325,7 @@ OopMapSet* Runtime1::generate_stub_call(StubAssembler* sasm, Register result, ad
 static OopMapSet* stub_call_with_stack_parms(StubAssembler* sasm, Register result, address target,
                                              int stack_parms, bool do_return = true) {
   // Make a frame and preserve the caller's caller-save registers.
-  const int parm_size_in_bytes = align_size_up(stack_parms << LogBytesPerWord, frame::alignment_in_bytes);
+  const int parm_size_in_bytes = align_up(stack_parms << LogBytesPerWord, frame::alignment_in_bytes);
   const int padding = parm_size_in_bytes - (stack_parms << LogBytesPerWord);
   OopMap* oop_map = save_live_registers(sasm, true, noreg, parm_size_in_bytes);
 

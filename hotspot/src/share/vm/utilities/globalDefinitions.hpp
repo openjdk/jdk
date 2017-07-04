@@ -206,7 +206,7 @@ const int LogHeapWordsPerLong = LogBytesPerLong - LogHeapWordSize;
 // parts of the memory system may require additional alignment
 // and are responsible for those alignments.
 #ifdef _LP64
-#define ScaleForWordSize(x) align_size_down_((x) * 13 / 10, HeapWordSize)
+#define ScaleForWordSize(x) align_down_((x) * 13 / 10, HeapWordSize)
 #else
 #define ScaleForWordSize(x) (x)
 #endif
@@ -514,77 +514,77 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 #define widen_to_type_of(what, type_carrier) (true ? (what) : (type_carrier))
 #define align_mask_widened(alignment, type_carrier) widen_to_type_of(align_mask(alignment), (type_carrier))
 
-#define align_size_down_(size, alignment) ((size) & ~align_mask_widened((alignment), (size)))
+#define align_down_(size, alignment) ((size) & ~align_mask_widened((alignment), (size)))
 
-#define align_size_up_(size, alignment) (align_size_down_((size) + align_mask(alignment), (alignment)))
+#define align_up_(size, alignment) (align_down_((size) + align_mask(alignment), (alignment)))
 
-#define is_size_aligned_(size, alignment) ((size) == (align_size_up_(size, alignment)))
+#define is_aligned_(size, alignment) ((size) == (align_up_(size, alignment)))
 
 // Helpers to align sizes and check for alignment
 
 template <typename T, typename A>
-inline T align_size_up(T size, A alignment) {
-  return align_size_up_(size, alignment);
+inline T align_up(T size, A alignment) {
+  return align_up_(size, alignment);
 }
 
 template <typename T, typename A>
-inline T align_size_down(T size, A alignment) {
-  return align_size_down_(size, alignment);
+inline T align_down(T size, A alignment) {
+  return align_down_(size, alignment);
 }
 
 template <typename T, typename A>
-inline bool is_size_aligned(T size, A alignment) {
-  return is_size_aligned_(size, alignment);
+inline bool is_aligned(T size, A alignment) {
+  return is_aligned_(size, alignment);
 }
 
 // Align down with a lower bound. If the aligning results in 0, return 'alignment'.
 template <typename T, typename A>
-inline T align_size_down_bounded(T size, A alignment) {
-  A aligned_size = align_size_down(size, alignment);
+inline T align_down_bounded(T size, A alignment) {
+  A aligned_size = align_down(size, alignment);
   return aligned_size > 0 ? aligned_size : alignment;
 }
 
 // Helpers to align pointers and check for alignment.
 
 template <typename T, typename A>
-inline T* align_ptr_up(T* ptr, A alignment) {
-  return (T*)align_size_up((uintptr_t)ptr, alignment);
+inline T* align_up(T* ptr, A alignment) {
+  return (T*)align_up((uintptr_t)ptr, alignment);
 }
 
 template <typename T, typename A>
-inline T* align_ptr_down(T* ptr, A alignment) {
-  return (T*)align_size_down((uintptr_t)ptr, alignment);
+inline T* align_down(T* ptr, A alignment) {
+  return (T*)align_down((uintptr_t)ptr, alignment);
 }
 
 template <typename T, typename A>
-inline bool is_ptr_aligned(T* ptr, A alignment) {
-  return is_size_aligned((uintptr_t)ptr, alignment);
+inline bool is_aligned(T* ptr, A alignment) {
+  return is_aligned((uintptr_t)ptr, alignment);
 }
 
 // Align metaspace objects by rounding up to natural word boundary
 template <typename T>
 inline T align_metadata_size(T size) {
-  return align_size_up(size, 1);
+  return align_up(size, 1);
 }
 
 // Align objects in the Java Heap by rounding up their size, in HeapWord units.
 template <typename T>
 inline T align_object_size(T word_size) {
-  return align_size_up(word_size, MinObjAlignment);
+  return align_up(word_size, MinObjAlignment);
 }
 
 inline bool is_object_aligned(size_t word_size) {
-  return is_size_aligned(word_size, MinObjAlignment);
+  return is_aligned(word_size, MinObjAlignment);
 }
 
-inline bool is_ptr_object_aligned(const void* addr) {
-  return is_ptr_aligned(addr, MinObjAlignmentInBytes);
+inline bool is_object_aligned(const void* addr) {
+  return is_aligned(addr, MinObjAlignmentInBytes);
 }
 
 // Pad out certain offsets to jlong alignment, in HeapWord units.
 template <typename T>
 inline T align_object_offset(T offset) {
-  return align_size_up(offset, HeapWordsPerLong);
+  return align_up(offset, HeapWordsPerLong);
 }
 
 // Clamp an address to be within a specific page
@@ -593,15 +593,15 @@ inline T align_object_offset(T offset) {
 // 3. Otherwise, if addr is below the page_address the start of the page will be returned
 template <typename T>
 inline T* clamp_address_in_page(T* addr, T* page_address, size_t page_size) {
-  if (align_ptr_down(addr, page_size) == align_ptr_down(page_address, page_size)) {
+  if (align_down(addr, page_size) == align_down(page_address, page_size)) {
     // address is in the specified page, just return it as is
     return addr;
   } else if (addr > page_address) {
     // address is above specified page, return start of next page
-    return align_ptr_down(page_address, page_size) + page_size;
+    return align_down(page_address, page_size) + page_size;
   } else {
     // address is below specified page, return start of page
-    return align_ptr_down(page_address, page_size);
+    return align_down(page_address, page_size);
   }
 }
 

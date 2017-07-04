@@ -254,9 +254,9 @@ public:
 
   // The ro+rw+md+mc spaces size
   static size_t core_spaces_size() {
-    return align_size_up((SharedReadOnlySize + SharedReadWriteSize +
-                          SharedMiscDataSize + SharedMiscCodeSize),
-                          os::vm_allocation_granularity());
+    return align_up((SharedReadOnlySize + SharedReadWriteSize +
+                     SharedMiscDataSize + SharedMiscCodeSize),
+                     os::vm_allocation_granularity());
   }
 
   // The estimated optional space size.

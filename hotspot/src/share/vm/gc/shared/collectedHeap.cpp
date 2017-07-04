@@ -374,7 +374,7 @@ size_t CollectedHeap::max_tlab_size() const {
   size_t max_int_size = typeArrayOopDesc::header_size(T_INT) +
               sizeof(jint) *
               ((juint) max_jint / (size_t) HeapWordSize);
-  return align_size_down(max_int_size, MinObjAlignment);
+  return align_down(max_int_size, MinObjAlignment);
 }
 
 // Helper for ReduceInitialCardMarks. For performance,

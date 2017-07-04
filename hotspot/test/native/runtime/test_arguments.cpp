@@ -152,7 +152,7 @@ static intx calc_expected(julong small_xss_input) {
   assert(small_xss_input <= max_julong / 2, "Sanity");
 
   // Match code in arguments.cpp
-  julong julong_ret = align_size_up_(small_xss_input, K) / K;
+  julong julong_ret = align_up_(small_xss_input, K) / K;
   assert(julong_ret <= (julong)max_intx, "Overflow: " JULONG_FORMAT, julong_ret);
   return (intx)julong_ret;
 }
@@ -186,8 +186,8 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
 
   // Test value aligned both to K and vm_page_size.
   {
-    EXPECT_TRUE(is_size_aligned(32 * M, K));
-    EXPECT_TRUE(is_size_aligned(32 * M, (size_t)os::vm_page_size()));
+    EXPECT_TRUE(is_aligned(32 * M, K));
+    EXPECT_TRUE(is_aligned(32 * M, (size_t)os::vm_page_size()));
     EXPECT_EQ(parse_xss_inner(to_string(32 * M), JNI_OK), (intx)(32 * M / K));
   }
 

@@ -91,7 +91,7 @@ size_t ASPSOldGen::available_for_expansion() {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t result =  gen_size_limit() - virtual_space()->committed_size();
-  size_t result_aligned = align_size_down(result, heap->generation_alignment());
+  size_t result_aligned = align_down(result, heap->generation_alignment());
   return result_aligned;
 }
 
@@ -106,7 +106,7 @@ size_t ASPSOldGen::available_for_contraction() {
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   const size_t working_size =
     used_in_bytes() + (size_t) policy->avg_promoted()->padded_average();
-  const size_t working_aligned = align_size_up(working_size, gen_alignment);
+  const size_t working_aligned = align_up(working_size, gen_alignment);
   const size_t working_or_min = MAX2(working_aligned, min_gen_size());
   if (working_or_min > reserved().byte_size()) {
     // If the used or minimum gen size (aligned up) is greater
@@ -124,7 +124,7 @@ size_t ASPSOldGen::available_for_contraction() {
 
   size_t result = policy->promo_increment_aligned_down(max_contraction);
   // Also adjust for inter-generational alignment
-  size_t result_aligned = align_size_down(result, gen_alignment);
+  size_t result_aligned = align_down(result, gen_alignment);
 
   Log(gc, ergo) log;
   if (log.is_trace()) {

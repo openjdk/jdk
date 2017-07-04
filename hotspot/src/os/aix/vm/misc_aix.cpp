@@ -53,7 +53,7 @@ bool MiscUtils::is_readable_pointer(const void* p) {
   if (!CanUseSafeFetch32()) {
     return true;
   }
-  int* const aligned = (int*) align_ptr_down(p, 4);
+  int* const aligned = (int*) align_down(p, 4);
   int cafebabe = 0xcafebabe;
   int deadbeef = 0xdeadbeef;
   return (SafeFetch32(aligned, cafebabe) != cafebabe) ||

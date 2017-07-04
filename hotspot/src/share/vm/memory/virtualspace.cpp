@@ -47,7 +47,7 @@ ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) {
     alignment = MAX2(page_size, (size_t)os::vm_allocation_granularity());
     // ReservedSpace initialization requires size to be aligned to the given
     // alignment. Align the size up.
-    size = align_size_up(size, alignment);
+    size = align_up(size, alignment);
   } else {
     // Don't force the alignment to be large page aligned,
     // since that will waste memory.
@@ -172,7 +172,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       // Base not aligned, retry
       if (!os::release_memory(base, size)) fatal("os::release_memory failed");
       // Make sure that size is aligned
-      size = align_size_up(size, alignment);
+      size = align_up(size, alignment);
       base = os::reserve_memory_aligned(size, alignment);
 
       if (requested_address != 0 &&
@@ -227,22 +227,22 @@ ReservedSpace::last_part(size_t partition_size, size_t alignment) {
 
 
 size_t ReservedSpace::page_align_size_up(size_t size) {
-  return align_size_up(size, os::vm_page_size());
+  return align_up(size, os::vm_page_size());
 }
 
 
 size_t ReservedSpace::page_align_size_down(size_t size) {
-  return align_size_down(size, os::vm_page_size());
+  return align_down(size, os::vm_page_size());
 }
 
 
 size_t ReservedSpace::allocation_align_size_up(size_t size) {
-  return align_size_up(size, os::vm_allocation_granularity());
+  return align_up(size, os::vm_allocation_granularity());
 }
 
 
 size_t ReservedSpace::allocation_align_size_down(size_t size) {
-  return align_size_down(size, os::vm_allocation_granularity());
+  return align_down(size, os::vm_allocation_granularity());
 }
 
 
@@ -383,7 +383,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
   const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
 
   const size_t stepsize = (attach_range == 0) ? // Only one try.
-    (size_t) highest_start : align_size_up(attach_range / num_attempts_to_try, attach_point_alignment);
+    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
 
   // Try attach points from top to bottom.
   char* attach_point = highest_start;
@@ -463,7 +463,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     NOT_AIX(os::vm_allocation_granularity());
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
-  char *aligned_heap_base_min_address = (char *)align_ptr_up((void *)HeapBaseMinAddress, alignment);
+  char *aligned_heap_base_min_address = (char *)align_up((void *)HeapBaseMinAddress, alignment);
   size_t noaccess_prefix = ((aligned_heap_base_min_address + size) > (char*)OopEncodingHeapMax) ?
     noaccess_prefix_size(alignment) : 0;
 
@@ -492,8 +492,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     if (aligned_heap_base_min_address + size <= (char *)UnscaledOopHeapMax) {
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char* const highest_start = align_ptr_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
-      char* const lowest_start  = align_ptr_up(aligned_heap_base_min_address, attach_point_alignment);
+      char* const highest_start = align_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
+      char* const lowest_start  = align_up(aligned_heap_base_min_address, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, (char *)UnscaledOopHeapMax, size, alignment, large);
     }
@@ -502,7 +502,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // But leave room for the compressed class pointers, which is allocated above
     // the heap.
     char *zerobased_max = (char *)OopEncodingHeapMax;
-    const size_t class_space = align_size_up(CompressedClassSpaceSize, alignment);
+    const size_t class_space = align_up(CompressedClassSpaceSize, alignment);
     // For small heaps, save some space for compressed class pointer
     // space so it can be decoded with no base.
     if (UseCompressedClassPointers && !UseSharedSpaces &&
@@ -517,7 +517,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
          (_base + size > zerobased_max))) {        // Unscaled delivered an arbitrary address.
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char *const highest_start = align_ptr_down(zerobased_max - size, attach_point_alignment);
+      char *const highest_start = align_down(zerobased_max - size, attach_point_alignment);
       // Need to be careful about size being guaranteed to be less
       // than UnscaledOopHeapMax due to type constraints.
       char *lowest_start = aligned_heap_base_min_address;
@@ -525,7 +525,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
       if (unscaled_end < UnscaledOopHeapMax) { // unscaled_end wrapped if size is large
         lowest_start = MAX2(lowest_start, (char*)unscaled_end);
       }
-      lowest_start = align_ptr_up(lowest_start, attach_point_alignment);
+      lowest_start = align_up(lowest_start, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, zerobased_max, size, alignment, large);
     }
@@ -562,7 +562,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, bool large) 
   }
 
   // Heap size should be aligned to alignment, too.
-  guarantee(is_size_aligned(size, alignment), "set by caller");
+  guarantee(is_aligned(size, alignment), "set by caller");
 
   if (UseCompressedOops) {
     initialize_compressed_heap(size, alignment, large);
@@ -751,8 +751,8 @@ bool VirtualSpace::contains(const void* p) const {
 }
 
 static void pretouch_expanded_memory(void* start, void* end) {
-  assert(is_ptr_aligned(start, os::vm_page_size()), "Unexpected alignment");
-  assert(is_ptr_aligned(end,   os::vm_page_size()), "Unexpected alignment");
+  assert(is_aligned(start, os::vm_page_size()), "Unexpected alignment");
+  assert(is_aligned(end,   os::vm_page_size()), "Unexpected alignment");
 
   os::pretouch_memory(start, end);
 }
@@ -1037,7 +1037,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space1(size_t size, size_t alignment) {
     test_log("test_reserved_space1(%p)", (void*) (uintptr_t) size);
 
-    assert(is_size_aligned(size, alignment), "Incorrect input parameters");
+    assert(is_aligned(size, alignment), "Incorrect input parameters");
 
     ReservedSpace rs(size,          // size
                      alignment,     // alignment
@@ -1049,8 +1049,8 @@ class TestReservedSpace : AllStatic {
     assert(rs.base() != NULL, "Must be");
     assert(rs.size() == size, "Must be");
 
-    assert(is_ptr_aligned(rs.base(), alignment), "aligned sizes should always give aligned addresses");
-    assert(is_size_aligned(rs.size(), alignment), "aligned sizes should always give aligned addresses");
+    assert(is_aligned(rs.base(), alignment), "aligned sizes should always give aligned addresses");
+    assert(is_aligned(rs.size(), alignment), "aligned sizes should always give aligned addresses");
 
     if (rs.special()) {
       small_page_write(rs.base(), size);
@@ -1062,7 +1062,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space2(size_t size) {
     test_log("test_reserved_space2(%p)", (void*)(uintptr_t)size);
 
-    assert(is_size_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
+    assert(is_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
 
     ReservedSpace rs(size);
 
@@ -1088,8 +1088,8 @@ class TestReservedSpace : AllStatic {
       return;
     }
 
-    assert(is_size_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
-    assert(is_size_aligned(size, alignment), "Must be at least aligned against alignment");
+    assert(is_aligned(size, os::vm_allocation_granularity()), "Must be at least AG aligned");
+    assert(is_aligned(size, alignment), "Must be at least aligned against alignment");
 
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
 
@@ -1244,7 +1244,7 @@ class TestVirtualSpace : AllStatic {
   static void test_virtual_space_actual_committed_space(size_t reserve_size, size_t commit_size,
                                                         TestLargePages mode = Default) {
     size_t granularity = os::vm_allocation_granularity();
-    size_t reserve_size_aligned = align_size_up(reserve_size, granularity);
+    size_t reserve_size_aligned = align_up(reserve_size, granularity);
 
     ReservedSpace reserved = reserve_memory(reserve_size_aligned, mode);
 

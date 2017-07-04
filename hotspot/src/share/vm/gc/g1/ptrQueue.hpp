@@ -79,7 +79,7 @@ class PtrQueue VALUE_OBJ_CLASS_SPEC {
   }
 
   static size_t byte_index_to_index(size_t ind) {
-    assert(is_size_aligned(ind, _element_size), "precondition");
+    assert(is_aligned(ind, _element_size), "precondition");
     return ind / _element_size;
   }
 

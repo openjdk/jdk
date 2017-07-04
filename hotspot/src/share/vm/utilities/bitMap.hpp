@@ -189,10 +189,10 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // Align bit index up or down to the next bitmap word boundary, or check
   // alignment.
   static idx_t word_align_up(idx_t bit) {
-    return align_size_up(bit, BitsPerWord);
+    return align_up(bit, BitsPerWord);
   }
   static idx_t word_align_down(idx_t bit) {
-    return align_size_down(bit, BitsPerWord);
+    return align_down(bit, BitsPerWord);
   }
   static bool is_word_aligned(idx_t bit) {
     return word_align_up(bit) == bit;

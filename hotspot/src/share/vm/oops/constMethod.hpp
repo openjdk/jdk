@@ -360,7 +360,7 @@ public:
 
   // Sizing
   static int header_size() {
-    return align_size_up((int)sizeof(ConstMethod), wordSize) / wordSize;
+    return align_up((int)sizeof(ConstMethod), wordSize) / wordSize;
   }
 
   // Size needed

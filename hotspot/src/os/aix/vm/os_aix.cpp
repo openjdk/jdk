@@ -1936,7 +1936,7 @@ static char* reserve_shmated_memory (
   }
 
   // Align size of shm up to 64K to avoid errors if we later try to change the page size.
-  const size_t size = align_size_up(bytes, 64*K);
+  const size_t size = align_up(bytes, 64*K);
 
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -2077,7 +2077,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Size shall always be a multiple of os::vm_page_size (esp. in 64K mode).
-  const size_t size = align_size_up(bytes, os::vm_page_size());
+  const size_t size = align_up(bytes, os::vm_page_size());
 
   // alignment: Allocate memory large enough to include an aligned range of the right size and
   // cut off the leading and trailing waste pages.
@@ -2110,7 +2110,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Handle alignment.
-  char* const addr_aligned = align_ptr_up(addr, alignment_hint);
+  char* const addr_aligned = align_up(addr, alignment_hint);
   const size_t waste_pre = addr_aligned - addr;
   char* const addr_aligned_end = addr_aligned + size;
   const size_t waste_post = extra_size - waste_pre - size;
@@ -2336,9 +2336,9 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment
   assert0(requested_addr == NULL);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  bytes = align_size_up(bytes, os::vm_page_size());
+  bytes = align_up(bytes, os::vm_page_size());
   const size_t alignment_hint0 =
-    alignment_hint ? align_size_up(alignment_hint, os::vm_page_size()) : 0;
+    alignment_hint ? align_up(alignment_hint, os::vm_page_size()) : 0;
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
@@ -2360,8 +2360,8 @@ bool os::pd_release_memory(char* addr, size_t size) {
   guarantee0(vmi);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  size = align_size_up(size, os::vm_page_size());
-  addr = align_ptr_up(addr, os::vm_page_size());
+  size = align_up(size, os::vm_page_size());
+  addr = align_up(addr, os::vm_page_size());
 
   bool rc = false;
   bool remove_bookkeeping = false;
@@ -2527,7 +2527,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  bytes = align_size_up(bytes, os::vm_page_size());
+  bytes = align_up(bytes, os::vm_page_size());
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
@@ -4312,7 +4312,7 @@ size_t os::current_stack_size() {
   // We need to do this because caller code will assume stack low address is
   // page aligned and will place guard pages without checking.
   address low = bounds.base - bounds.size;
-  address low_aligned = (address)align_ptr_up(low, os::vm_page_size());
+  address low_aligned = (address)align_up(low, os::vm_page_size());
   size_t s = bounds.base - low_aligned;
   return s;
 }

@@ -257,10 +257,10 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
 
   if (eden_size < minimum_eden_size) {
     // May happen due to 64Kb rounding, if so adjust eden size back up
-    minimum_eden_size = align_size_up(minimum_eden_size, alignment);
+    minimum_eden_size = align_up(minimum_eden_size, alignment);
     uintx maximum_survivor_size = (size - minimum_eden_size) / 2;
     uintx unaligned_survivor_size =
-      align_size_down(maximum_survivor_size, alignment);
+      align_down(maximum_survivor_size, alignment);
     survivor_size = MAX2(unaligned_survivor_size, alignment);
     eden_size = size - (2*survivor_size);
     assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
@@ -386,10 +386,10 @@ size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
       if (new_size_candidate <= max_uintx - thread_increase_size) {
         new_size_candidate += thread_increase_size;
 
-        // 3. Check an overflow at 'align_size_up'.
+        // 3. Check an overflow at 'align_up'.
         size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
         if (new_size_candidate <= aligned_max) {
-          desired_new_size = align_size_up(new_size_candidate, alignment);
+          desired_new_size = align_up(new_size_candidate, alignment);
         }
       }
     }

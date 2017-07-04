@@ -2386,7 +2386,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       bool pc_is_near_addr =
         (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
       bool instr_spans_page_boundary =
-        (align_size_down((intptr_t) pc ^ (intptr_t) addr,
+        (align_down((intptr_t) pc ^ (intptr_t) addr,
                          (intptr_t) page_size) > 0);
 
       if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
@@ -2398,7 +2398,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
           // Set memory to RWX and retry
-          address page_start = align_ptr_down(addr, page_size);
+          address page_start = align_down(addr, page_size);
           bool res = os::protect_memory((char*) page_start, page_size,
                                         os::MEM_PROT_RWX);
 
@@ -2775,7 +2775,7 @@ static bool numa_interleaving_init() {
 
   // NUMAInterleaveGranularity cannot be less than vm_allocation_granularity (or _large_page_size if using large pages)
   size_t min_interleave_granularity = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
-  NUMAInterleaveGranularity = align_size_up(NUMAInterleaveGranularity, min_interleave_granularity);
+  NUMAInterleaveGranularity = align_up(NUMAInterleaveGranularity, min_interleave_granularity);
 
   if (numa_node_list_holder.build()) {
     if (log_is_enabled(Debug, os, cpu)) {
@@ -2832,12 +2832,12 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // we still need to round up to a page boundary (in case we are using large pages)
   // but not to a chunk boundary (in case InterleavingGranularity doesn't align with page size)
   // instead we handle this in the bytes_to_rq computation below
-  p_buf = align_ptr_up(p_buf, page_size);
+  p_buf = align_up(p_buf, page_size);
 
   // now go through and allocate one chunk at a time until all bytes are
   // allocated
   size_t  bytes_remaining = bytes;
-  // An overflow of align_size_up() would have been caught above
+  // An overflow of align_up() would have been caught above
   // in the calculation of size_of_reserve.
   char * next_alloc_addr = p_buf;
   HANDLE hProc = GetCurrentProcess();
@@ -2996,7 +2996,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
       return NULL;
     }
     // Do manual alignment
-    aligned_base = align_ptr_up(extra_base, alignment);
+    aligned_base = align_up(extra_base, alignment);
 
     os::release_memory(extra_base, extra_size);
 
@@ -3065,7 +3065,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr,
                                  bool exec) {
   assert(UseLargePages, "only for large pages");
 
-  if (!is_size_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
+  if (!is_aligned(bytes, os::large_page_size()) || alignment > os::large_page_size()) {
     return NULL; // Fallback to small pages.
   }
 
@@ -4066,7 +4066,7 @@ jint os::init_2(void) {
                      JavaThread::stack_shadow_zone_size() +
                      (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
 
-  min_stack_allowed = align_size_up(min_stack_allowed, os::vm_page_size());
+  min_stack_allowed = align_up(min_stack_allowed, os::vm_page_size());
 
   if (actual_reserve_size < min_stack_allowed) {
     tty->print_cr("\nThe Java thread stack size specified is too small. "

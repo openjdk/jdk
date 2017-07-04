@@ -2272,7 +2272,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_size_down((intptr_t)addr, os::Bsd::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::Bsd::page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -2281,7 +2281,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_size_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
   return ::mprotect(bottom, size, prot) == 0;
 }
 

@@ -64,7 +64,7 @@ TEST(Metachunk, basic) {
 
   // Allocate
   size_t alloc_size = 64; // Words
-  EXPECT_TRUE(is_size_aligned(alloc_size, Metachunk::object_alignment()));
+  EXPECT_TRUE(is_aligned(alloc_size, Metachunk::object_alignment()));
 
   MetaWord* mem = metachunk->allocate(alloc_size);
 

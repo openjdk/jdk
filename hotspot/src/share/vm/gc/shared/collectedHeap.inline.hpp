@@ -268,12 +268,12 @@ inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
     return addr;
   }
 
-  assert(is_ptr_aligned(addr, HeapWordSize),
+  assert(is_aligned(addr, HeapWordSize),
          "Address " PTR_FORMAT " is not properly aligned.", p2i(addr));
-  assert(is_size_aligned(alignment_in_bytes, HeapWordSize),
+  assert(is_aligned(alignment_in_bytes, HeapWordSize),
          "Alignment size %u is incorrect.", alignment_in_bytes);
 
-  HeapWord* new_addr = align_ptr_up(addr, alignment_in_bytes);
+  HeapWord* new_addr = align_up(addr, alignment_in_bytes);
   size_t padding = pointer_delta(new_addr, addr);
 
   if (padding == 0) {

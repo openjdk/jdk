@@ -612,16 +612,16 @@ ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set)
 }
 
 int ImmutableOopMapBuilder::size_for(const OopMap* map) const {
-  return align_size_up((int)sizeof(ImmutableOopMap) + map->data_size(), 8);
+  return align_up((int)sizeof(ImmutableOopMap) + map->data_size(), 8);
 }
 
 int ImmutableOopMapBuilder::heap_size() {
   int base = sizeof(ImmutableOopMapSet);
-  base = align_size_up(base, 8);
+  base = align_up(base, 8);
 
   // all of ours pc / offset pairs
   int pairs = _set->size() * sizeof(ImmutableOopMapPair);
-  pairs = align_size_up(pairs, 8);
+  pairs = align_up(pairs, 8);
 
   for (int i = 0; i < _set->size(); ++i) {
     int size = 0;

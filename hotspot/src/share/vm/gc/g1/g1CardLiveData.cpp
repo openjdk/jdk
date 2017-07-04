@@ -131,7 +131,7 @@ private:
 
   void clear_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_ptr_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
 
     _card_bm.clear_range(start_idx, end_idx);
   }
@@ -139,7 +139,7 @@ private:
   // Mark the card liveness bitmap for the object spanning from start to end.
   void mark_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_ptr_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
 
     assert((end_idx - start_idx) > 0, "Trying to mark zero sized range.");
 
@@ -423,7 +423,7 @@ public:
 void G1CardLiveData::clear(WorkGang* workers) {
   guarantee(Universe::is_fully_initialized(), "Should not call this during initialization.");
 
-  size_t const num_chunks = align_size_up(live_cards_bm().size_in_bytes(), G1ClearCardLiveDataTask::chunk_size()) / G1ClearCardLiveDataTask::chunk_size();
+  size_t const num_chunks = align_up(live_cards_bm().size_in_bytes(), G1ClearCardLiveDataTask::chunk_size()) / G1ClearCardLiveDataTask::chunk_size();
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
   G1ClearCardLiveDataTask cl(live_cards_bm(), num_chunks);

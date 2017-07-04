@@ -3889,7 +3889,7 @@ void Compile::ConstantTable::calculate_offsets_and_size() {
 
     // Align offset for type.
     int typesize = type_to_size_in_bytes(con->type());
-    offset = align_size_up(offset, typesize);
+    offset = align_up(offset, typesize);
     con->set_offset(offset);   // set constant's offset
 
     if (con->type() == T_VOID) {
@@ -3903,7 +3903,7 @@ void Compile::ConstantTable::calculate_offsets_and_size() {
   // Align size up to the next section start (which is insts; see
   // CodeBuffer::align_at_start).
   assert(_size == -1, "already set?");
-  _size = align_size_up(offset, (int)CodeEntryAlignment);
+  _size = align_up(offset, (int)CodeEntryAlignment);
 }
 
 void Compile::ConstantTable::emit(CodeBuffer& cb) {

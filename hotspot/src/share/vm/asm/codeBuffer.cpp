@@ -624,7 +624,7 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
 
 csize_t CodeBuffer::total_relocation_size() const {
   csize_t total = copy_relocations_to(NULL);  // dry run only
-  return (csize_t) align_size_up(total, HeapWordSize);
+  return (csize_t) align_up(total, HeapWordSize);
 }
 
 csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const {
@@ -769,7 +769,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
     CodeSection* dest_cs = dest->code_section(n);
     assert(cs->size() == dest_cs->size(), "sanity");
     csize_t usize = dest_cs->size();
-    csize_t wsize = align_size_up(usize, HeapWordSize);
+    csize_t wsize = align_up(usize, HeapWordSize);
     assert(dest_cs->start() + wsize <= dest_end, "no overflow");
     // Copy the code as aligned machine words.
     // This may also include an uninitialized partial word at the end.

@@ -64,7 +64,7 @@ void CompactibleFreeListSpace::set_cms_values() {
 
   // MinChunkSize should be a multiple of MinObjAlignment and be large enough
   // for chunks to contain a FreeChunk.
-  size_t min_chunk_size_in_bytes = align_size_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
+  size_t min_chunk_size_in_bytes = align_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
   MinChunkSize = min_chunk_size_in_bytes / BytesPerWord;
 
   assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
@@ -2873,8 +2873,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
     if (span.contains(low)) {
       // Align low down to  a card boundary so that
       // we can use block_offset_careful() on span boundaries.
-      HeapWord* aligned_low = (HeapWord*)align_size_down((uintptr_t)low,
-                                 CardTableModRefBS::card_size);
+      HeapWord* aligned_low = align_down(low, CardTableModRefBS::card_size);
       // Clip span prefix at aligned_low
       span = span.intersection(MemRegion(aligned_low, span.end()));
     } else if (low > span.end()) {

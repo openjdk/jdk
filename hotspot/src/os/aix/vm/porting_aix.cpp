@@ -149,7 +149,7 @@ bool AixSymbols::get_function_name (
   codeptr_t pc2 = (codeptr_t) pc;
 
   // Make sure the pointer is word aligned.
-  pc2 = (codeptr_t) align_ptr_up((char*)pc2, 4);
+  pc2 = (codeptr_t) align_up((char*)pc2, 4);
   CHECK_POINTER_READABLE(pc2)
 
   // Find start of traceback table.

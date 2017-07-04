@@ -281,8 +281,8 @@ void CodeCache::initialize_heaps() {
 
   // Align CodeHeaps
   size_t alignment = heap_alignment();
-  non_nmethod_size = align_size_up(non_nmethod_size, alignment);
-  profiled_size   = align_size_down(profiled_size, alignment);
+  non_nmethod_size = align_up(non_nmethod_size, alignment);
+  profiled_size   = align_down(profiled_size, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -322,7 +322,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
           os::vm_page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t r_align = MAX2(page_size, granularity);
-  const size_t r_size = align_size_up(size, r_align);
+  const size_t r_size = align_up(size, r_align);
   const size_t rs_align = page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_size, granularity);
 

@@ -718,7 +718,7 @@ JVM_handle_bsd_signal(int sig,
     bool pc_is_near_addr =
       (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
     bool instr_spans_page_boundary =
-      (align_size_down((intptr_t) pc ^ (intptr_t) addr,
+      (align_down((intptr_t) pc ^ (intptr_t) addr,
                        (intptr_t) page_size) > 0);
 
     if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
@@ -730,7 +730,7 @@ JVM_handle_bsd_signal(int sig,
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
         // Set memory to RWX and retry
-        address page_start = align_ptr_down(addr, page_size);
+        address page_start = align_down(addr, page_size);
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 

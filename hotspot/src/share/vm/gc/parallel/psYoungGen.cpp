@@ -116,7 +116,7 @@ void PSYoungGen::initialize_work() {
 
     // round the survivor space size down to the nearest alignment
     // and make sure its size is greater than 0.
-    max_survivor_size = align_size_down(max_survivor_size, alignment);
+    max_survivor_size = align_down(max_survivor_size, alignment);
     max_survivor_size = MAX2(max_survivor_size, alignment);
 
     // set the maximum size of eden to be the size of the young gen
@@ -128,7 +128,7 @@ void PSYoungGen::initialize_work() {
 
     // round the survivor space size down to the nearest alignment
     // and make sure its size is greater than 0.
-    max_survivor_size = align_size_down(max_survivor_size, alignment);
+    max_survivor_size = align_down(max_survivor_size, alignment);
     max_survivor_size = MAX2(max_survivor_size, alignment);
 
     // set the maximum size of eden to be the size of the young gen
@@ -162,7 +162,7 @@ void PSYoungGen::compute_initial_space_boundaries() {
   assert(size >= 3 * alignment, "Young space is not large enough for eden + 2 survivors");
 
   size_t survivor_size = size / InitialSurvivorRatio;
-  survivor_size = align_size_down(survivor_size, alignment);
+  survivor_size = align_down(survivor_size, alignment);
   // ... but never less than an alignment
   survivor_size = MAX2(survivor_size, alignment);
 
@@ -193,9 +193,9 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
   char *from_end   = from_start + survivor_size;
 
   assert(from_end == virtual_space()->high(), "just checking");
-  assert(is_ptr_object_aligned(eden_start), "checking alignment");
-  assert(is_ptr_object_aligned(to_start),   "checking alignment");
-  assert(is_ptr_object_aligned(from_start), "checking alignment");
+  assert(is_object_aligned(eden_start), "checking alignment");
+  assert(is_object_aligned(to_start),   "checking alignment");
+  assert(is_object_aligned(from_start), "checking alignment");
 
   MemRegion eden_mr((HeapWord*)eden_start, (HeapWord*)to_start);
   MemRegion to_mr  ((HeapWord*)to_start, (HeapWord*)from_start);
@@ -294,7 +294,7 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
 
   // Adjust new generation size
   const size_t eden_plus_survivors =
-          align_size_up(eden_size + 2 * survivor_size, alignment);
+          align_up(eden_size + 2 * survivor_size, alignment);
   size_t desired_size = MAX2(MIN2(eden_plus_survivors, max_size()),
                              min_gen_size());
   assert(desired_size <= max_size(), "just checking");
@@ -528,7 +528,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
       if (from_size == 0) {
         from_size = alignment;
       } else {
-        from_size = align_size_up(from_size, alignment);
+        from_size = align_up(from_size, alignment);
       }
 
       from_end = from_start + from_size;
@@ -611,9 +611,9 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
             "from start moved to the right");
   guarantee((HeapWord*)from_end >= from_space()->top(),
             "from end moved into live data");
-  assert(is_ptr_object_aligned(eden_start), "checking alignment");
-  assert(is_ptr_object_aligned(from_start), "checking alignment");
-  assert(is_ptr_object_aligned(to_start), "checking alignment");
+  assert(is_object_aligned(eden_start), "checking alignment");
+  assert(is_object_aligned(from_start), "checking alignment");
+  assert(is_object_aligned(to_start), "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
   MemRegion toMR  ((HeapWord*)to_start,   (HeapWord*)to_end);
@@ -815,7 +815,7 @@ size_t PSYoungGen::available_to_live() {
   }
 
   size_t delta_in_bytes = unused_committed + delta_in_survivor;
-  delta_in_bytes = align_size_down(delta_in_bytes, gen_alignment);
+  delta_in_bytes = align_down(delta_in_bytes, gen_alignment);
   return delta_in_bytes;
 }
 
@@ -828,7 +828,7 @@ size_t PSYoungGen::limit_gen_shrink(size_t bytes) {
   // Allow shrinkage into the current eden but keep eden large enough
   // to maintain the minimum young gen size
   bytes = MIN3(bytes, available_to_min_gen(), available_to_live());
-  return align_size_down(bytes, virtual_space()->alignment());
+  return align_down(bytes, virtual_space()->alignment());
 }
 
 void PSYoungGen::reset_after_change() {

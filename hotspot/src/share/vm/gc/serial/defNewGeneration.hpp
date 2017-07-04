@@ -143,7 +143,7 @@ protected:
   // gen_size.
   size_t compute_survivor_size(size_t gen_size, size_t alignment) const {
     size_t n = gen_size / (SurvivorRatio + 2);
-    return n > alignment ? align_size_down(n, alignment) : alignment;
+    return n > alignment ? align_down(n, alignment) : alignment;
   }
 
  public:  // was "protected" but caused compile error on win32

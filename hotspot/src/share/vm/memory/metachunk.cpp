@@ -42,7 +42,7 @@ size_t Metachunk::object_alignment() {
 }
 
 size_t Metachunk::overhead() {
-  return align_size_up(sizeof(Metachunk), object_alignment()) / BytesPerWord;
+  return align_up(sizeof(Metachunk), object_alignment()) / BytesPerWord;
 }
 
 // Metachunk methods

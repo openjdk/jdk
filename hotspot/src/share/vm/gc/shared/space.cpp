@@ -656,7 +656,7 @@ HeapWord* ContiguousSpace::allocate_aligned(size_t size) {
   if (pointer_delta(end_value, obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_ptr_aligned(obj, SurvivorAlignmentInBytes) && is_aligned(new_top),
+    assert(::is_aligned(obj, SurvivorAlignmentInBytes) && is_aligned(new_top),
       "checking alignment");
     return obj;
   } else {

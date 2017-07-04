@@ -43,7 +43,7 @@ class Bytes: AllStatic {
 
     T x;
 
-    if (is_ptr_aligned(p, sizeof(T))) {
+    if (is_aligned(p, sizeof(T))) {
       x = *(T*)p;
     } else {
       memcpy(&x, p, sizeof(T));
@@ -56,7 +56,7 @@ class Bytes: AllStatic {
   static inline void put_native(void* p, T x) {
     assert(p != NULL, "null pointer");
 
-    if (is_ptr_aligned(p, sizeof(T))) {
+    if (is_aligned(p, sizeof(T))) {
       *(T*)p = x;
     } else {
       memcpy(p, &x, sizeof(T));
