@@ -683,6 +683,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                    "RIGHT", "selectChild",
                 "KP_RIGHT", "selectChild",
                    "ENTER", "return",
+                   "ctrl ENTER", "return",
                    "SPACE", "return"
         });
         table.put("PopupMenu.selectedWindowInputMapBindings.RightToLeft",
