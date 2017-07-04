@@ -75,12 +75,9 @@ private:
   // into the collection set or update the remembered set.
   void update_rem_set(DirtyCardQueue* into_cset_dcq, G1ParScanThreadState* pss, uint worker_i);
 
-protected:
   G1CollectedHeap* _g1;
   size_t _conc_refine_cards;
-  uint n_workers();
 
-protected:
   CardTableModRefBS*     _ct_bs;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
