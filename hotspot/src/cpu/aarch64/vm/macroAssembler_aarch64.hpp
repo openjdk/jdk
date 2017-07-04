@@ -949,8 +949,8 @@ public:
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
     assert(offset > 0, "must bang with negative offset");
-    mov(rscratch2, -offset);
-    str(zr, Address(sp, rscratch2));
+    sub(rscratch2, sp, offset);
+    str(zr, Address(rscratch2));
   }
 
   // Writes to stack successive pages until offset reached to check for
