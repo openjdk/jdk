@@ -282,7 +282,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1,
                    G1HotCardCache* hot_card_cache) :
   _g1(g1),
   _scan_state(new G1RemSetScanState()),
-  _conc_refine_cards(0),
+  _num_conc_refined_cards(0),
   _ct_bs(ct_bs),
   _g1p(_g1->g1_policy()),
   _hot_card_cache(hot_card_cache),
@@ -724,7 +724,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
       sdcq->enqueue(card_ptr);
     }
   } else {
-    _conc_refine_cards++;
+    _num_conc_refined_cards++; // Unsynchronized update, only used for logging.
   }
 }
 
@@ -768,7 +768,6 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
 
   bool card_processed = r->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
-  _conc_refine_cards++;
 
   return update_rs_cl->has_refs_into_cset();
 }

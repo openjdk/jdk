@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ private:
     return _remset;
   }
 
-  size_t _num_refined_cards;
+  size_t _num_conc_refined_cards;
   size_t _num_processed_buf_mutator;
   size_t _num_processed_buf_rs_threads;
 
@@ -82,8 +82,8 @@ public:
     return _sampling_thread_vtime;
   }
 
-  size_t num_concurrent_refined_cards() const {
-    return _num_refined_cards;
+  size_t num_conc_refined_cards() const {
+    return _num_conc_refined_cards;
   }
 
   size_t num_processed_buf_mutator() const {

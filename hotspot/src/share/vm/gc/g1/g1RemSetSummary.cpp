@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public:
 };
 
 void G1RemSetSummary::update() {
-  _num_refined_cards = remset()->conc_refine_cards();
+  _num_conc_refined_cards = remset()->num_conc_refined_cards();
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   _num_processed_buf_mutator = dcqs.processed_buffers_mut();
   _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
@@ -93,7 +93,7 @@ void G1RemSetSummary::initialize(G1RemSet* remset) {
 
 G1RemSetSummary::G1RemSetSummary() :
   _remset(NULL),
-  _num_refined_cards(0),
+  _num_conc_refined_cards(0),
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
@@ -113,7 +113,7 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
   assert(remset() == other->remset(), "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _num_refined_cards = other->num_concurrent_refined_cards();
+  _num_conc_refined_cards = other->num_conc_refined_cards();
 
   _num_processed_buf_mutator = other->num_processed_buf_mutator();
   _num_processed_buf_rs_threads = other->num_processed_buf_rs_threads();
@@ -130,7 +130,7 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   assert(remset() == other->remset(), "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
-  _num_refined_cards = other->num_concurrent_refined_cards() - _num_refined_cards;
+  _num_conc_refined_cards = other->num_conc_refined_cards() - _num_conc_refined_cards;
 
   _num_processed_buf_mutator = other->num_processed_buf_mutator() - _num_processed_buf_mutator;
   _num_processed_buf_rs_threads = other->num_processed_buf_rs_threads() - _num_processed_buf_rs_threads;
@@ -352,8 +352,7 @@ public:
 
 void G1RemSetSummary::print_on(outputStream* out) {
   out->print_cr(" Recent concurrent refinement statistics");
-  out->print_cr("  Processed " SIZE_FORMAT " cards",
-                num_concurrent_refined_cards());
+  out->print_cr("  Processed " SIZE_FORMAT " cards concurrently", num_conc_refined_cards());
   out->print_cr("  Of " SIZE_FORMAT " completed buffers:", num_processed_buf_total());
   out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) by concurrent RS threads.",
                 num_processed_buf_total(),
