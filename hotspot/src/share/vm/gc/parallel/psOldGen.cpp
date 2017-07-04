@@ -229,8 +229,8 @@ void PSOldGen::expand(size_t bytes) {
   }
   MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_size_up(bytes, alignment);
-  size_t aligned_expand_bytes = align_size_up(MinHeapDeltaBytes, alignment);
+  size_t aligned_bytes  = align_up(bytes, alignment);
+  size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {
     // With NUMA we use round-robin page allocation for the old gen. Expand by at least
@@ -244,7 +244,7 @@ void PSOldGen::expand(size_t bytes) {
     // but not a guarantee.  Align down to give a best effort.  This is likely
     // the most that the generation can expand since it has some capacity to
     // start with.
-    aligned_bytes = align_size_down(bytes, alignment);
+    aligned_bytes = align_down(bytes, alignment);
   }
 
   bool success = false;
@@ -318,7 +318,7 @@ void PSOldGen::shrink(size_t bytes) {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
 
-  size_t size = align_size_down(bytes, virtual_space()->alignment());
+  size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
     assert_lock_strong(ExpandHeap_lock);
     virtual_space()->shrink_by(bytes);
@@ -343,7 +343,7 @@ void PSOldGen::resize(size_t desired_free_space) {
   new_size = MAX2(MIN2(new_size, gen_size_limit()), min_gen_size());
 
   assert(gen_size_limit() >= reserved().byte_size(), "max new size problem?");
-  new_size = align_size_up(new_size, alignment);
+  new_size = align_up(new_size, alignment);
 
   const size_t current_size = capacity_in_bytes();
 

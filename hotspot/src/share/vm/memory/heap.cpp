@@ -112,7 +112,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   }
 
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t c_size = align_size_up(committed_size, page_size);
+  const size_t c_size = align_up(committed_size, page_size);
 
   os::trace_page_sizes(_name, committed_size, rs.size(), page_size,
                        rs.base(), rs.size());
@@ -125,7 +125,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
   const size_t reserved_segments_alignment = MAX2((size_t)os::vm_page_size(), granularity);
-  const size_t reserved_segments_size = align_size_up(_number_of_reserved_segments, reserved_segments_alignment);
+  const size_t reserved_segments_size = align_up(_number_of_reserved_segments, reserved_segments_alignment);
   const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 
   // reserve space for _segmap

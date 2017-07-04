@@ -64,14 +64,14 @@ protected:
   // Can't distinguish between array of length 0 and length 1,
   // will always return 0 in those cases.
   static int bytes_to_length(size_t bytes)       {
-    assert(is_size_aligned(bytes, BytesPerWord), "Must be, for now");
+    assert(is_aligned(bytes, BytesPerWord), "Must be, for now");
 
     if (sizeof(Array<T>) >= bytes) {
       return 0;
     }
 
     size_t left = bytes - sizeof(Array<T>);
-    assert(is_size_aligned(left, sizeof(T)), "Must be");
+    assert(is_aligned(left, sizeof(T)), "Must be");
 
     size_t elements = left / sizeof(T);
     assert(elements <= (size_t)INT_MAX, "number of elements " SIZE_FORMAT "doesn't fit into an int.", elements);
@@ -122,7 +122,7 @@ protected:
   void release_at_put(int which, T contents) { OrderAccess::release_store(adr_at(which), contents); }
 
   static int size(int length) {
-    size_t bytes = align_size_up(byte_sizeof(length), BytesPerWord);
+    size_t bytes = align_up(byte_sizeof(length), BytesPerWord);
     size_t words = bytes / BytesPerWord;
 
     assert(words <= INT_MAX, "Overflow: " SIZE_FORMAT, words);

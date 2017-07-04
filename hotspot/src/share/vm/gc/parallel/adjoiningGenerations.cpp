@@ -161,7 +161,7 @@ void AdjoiningGenerations::request_old_gen_expansion(size_t expand_in_bytes) {
   const size_t alignment = virtual_spaces()->alignment();
   size_t change_in_bytes = MIN3(young_gen_available,
                                 old_gen_available,
-                                align_size_up_(expand_in_bytes, alignment));
+                                align_up_(expand_in_bytes, alignment));
 
   if (change_in_bytes == 0) {
     return;
@@ -203,7 +203,7 @@ bool AdjoiningGenerations::request_young_gen_expansion(size_t expand_in_bytes) {
   const size_t alignment = virtual_spaces()->alignment();
   size_t change_in_bytes = MIN3(young_gen_available,
                                 old_gen_available,
-                                align_size_up_(expand_in_bytes, alignment));
+                                align_up_(expand_in_bytes, alignment));
 
   if (change_in_bytes == 0) {
     return false;

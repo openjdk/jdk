@@ -563,7 +563,7 @@ void FileMapInfo::write_bytes(const void* buffer, int nbytes) {
 // Align file position to an allocation unit boundary.
 
 void FileMapInfo::align_file_position() {
-  size_t new_file_offset = align_size_up(_file_offset,
+  size_t new_file_offset = align_up(_file_offset,
                                          os::vm_allocation_granularity());
   if (new_file_offset != _file_offset) {
     _file_offset = new_file_offset;
@@ -613,7 +613,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     return true;
   }
   size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
+  size_t size = align_up(used, os::vm_allocation_granularity());
   if (!open_for_read()) {
     return false;
   }
@@ -664,7 +664,7 @@ char* FileMapInfo::map_region(int i) {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
   size_t alignment = os::vm_allocation_granularity();
-  size_t size = align_size_up(used, alignment);
+  size_t size = align_up(used, alignment);
   char *requested_addr = _header->region_addr(i);
 
   // If a tool agent is in use (debugging enabled), we must map the address space RW
@@ -831,7 +831,7 @@ void FileMapInfo::unmap_region(int i) {
   assert(!MetaspaceShared::is_string_region(i), "sanity");
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
+  size_t size = align_up(used, os::vm_allocation_granularity());
 
   if (used == 0) {
     return;

@@ -40,7 +40,7 @@ HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
   // The 'new_top>obj' check is needed to detect overflow of obj+size.
   if (new_top > obj && new_top <= end()) {
     set_top(new_top);
-    assert(is_ptr_aligned(obj, SurvivorAlignmentInBytes) && is_ptr_object_aligned(new_top),
+    assert(is_aligned(obj, SurvivorAlignmentInBytes) && is_object_aligned(new_top),
            "checking alignment");
     return obj;
   } else {

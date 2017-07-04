@@ -374,7 +374,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     // large filler object at the bottom).
     const size_t sz = gen_size / MinSurvivorRatio;
     const size_t alignment = _space_alignment;
-    return sz > alignment ? align_size_down(sz, alignment) : alignment;
+    return sz > alignment ? align_down(sz, alignment) : alignment;
   }
 
   size_t live_at_last_full_gc() {

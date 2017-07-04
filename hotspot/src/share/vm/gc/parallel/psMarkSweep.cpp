@@ -410,7 +410,7 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
   const size_t alignment = old_gen->virtual_space()->alignment();
   const size_t eden_used = eden_space->used_in_bytes();
   const size_t promoted = (size_t)size_policy->avg_promoted()->padded_average();
-  const size_t absorb_size = align_size_up(eden_used + promoted, alignment);
+  const size_t absorb_size = align_up(eden_used + promoted, alignment);
   const size_t eden_capacity = eden_space->capacity_in_bytes();
 
   if (absorb_size >= eden_capacity) {

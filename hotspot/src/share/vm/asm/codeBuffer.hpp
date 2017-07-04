@@ -227,7 +227,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  csize_t align_at_start(csize_t off) const { return (csize_t) align_size_up(off, alignment()); }
+  csize_t align_at_start(csize_t off) const { return (csize_t) align_up(off, alignment()); }
 
   // Mark a section frozen.  Assign its remaining space to
   // the following section.  It will never expand after this point.

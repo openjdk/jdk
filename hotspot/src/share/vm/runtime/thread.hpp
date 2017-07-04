@@ -1412,7 +1412,7 @@ class JavaThread: public Thread {
     return _stack_red_zone_size;
   }
   static void set_stack_red_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the red zone size is not page aligned.");
     assert(_stack_red_zone_size == 0, "This should be called only once.");
     _stack_red_zone_size = s;
@@ -1429,7 +1429,7 @@ class JavaThread: public Thread {
     return _stack_yellow_zone_size;
   }
   static void set_stack_yellow_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the yellow zone size is not page aligned.");
     assert(_stack_yellow_zone_size == 0, "This should be called only once.");
     _stack_yellow_zone_size = s;
@@ -1440,7 +1440,7 @@ class JavaThread: public Thread {
     return _stack_reserved_zone_size;
   }
   static void set_stack_reserved_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the reserved zone size is not page aligned.");
     assert(_stack_reserved_zone_size == 0, "This should be called only once.");
     _stack_reserved_zone_size = s;
@@ -1480,7 +1480,7 @@ class JavaThread: public Thread {
     // the page size is a multiple of 4K, banging in 4K steps
     // suffices to touch all pages. (Some pages are banged
     // several times, though.)
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "Stack bang assumes multiple of page size.");
     assert(_stack_shadow_zone_size == 0, "This should be called only once.");
     _stack_shadow_zone_size = s;

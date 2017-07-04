@@ -118,7 +118,7 @@ class MethodCounters : public Metadata {
   AOT_ONLY(Method* method() const { return _method; })
 
   static int size() {
-    return align_size_up((int)sizeof(MethodCounters), wordSize) / wordSize;
+    return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
   }
 
   void clear_counters();

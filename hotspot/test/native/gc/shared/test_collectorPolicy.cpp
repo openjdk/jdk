@@ -161,7 +161,7 @@ class TestGenCollectorPolicy {
     SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
     void execute() {
       size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
-      size_t new_size_value = align_size_up(MaxHeapSize, heap_alignment)
+      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
       FLAG_SET_CMDLINE(size_t, MaxNewSize, new_size_value);
     }
@@ -185,7 +185,7 @@ class TestGenCollectorPolicy {
       MarkSweepPolicy msp;
       msp.initialize_all();
 
-      size_t expected_old_initial = align_size_up(InitialHeapSize, heap_alignment)
+      size_t expected_old_initial = align_up(InitialHeapSize, heap_alignment)
               - MaxNewSize;
 
       ASSERT_EQ(expected_old_initial, msp.initial_old_size());
@@ -197,13 +197,13 @@ class TestGenCollectorPolicy {
     CheckOldInitialMaxNewSize(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
     void execute() {
       size_t heap_alignment = CollectorPolicy::compute_heap_alignment();
-      size_t new_size_value = align_size_up(MaxHeapSize, heap_alignment)
+      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
               - param1 + param2;
 
       MarkSweepPolicy msp;
       msp.initialize_all();
 
-      size_t expected_old_initial = align_size_up(MaxHeapSize, heap_alignment)
+      size_t expected_old_initial = align_up(MaxHeapSize, heap_alignment)
               - new_size_value;
 
       ASSERT_EQ(expected_old_initial, msp.initial_old_size());

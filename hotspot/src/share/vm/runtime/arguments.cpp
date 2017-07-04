@@ -1555,8 +1555,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 
   set_parnew_gc_flags();
 
-  size_t max_heap = align_size_down(MaxHeapSize,
-                                    CardTableRS::ct_max_alignment_constraint());
+  size_t max_heap = align_down(MaxHeapSize,
+                               CardTableRS::ct_max_alignment_constraint());
 
   // Now make adjustments for CMS
   intx   tenuring_default = (intx)6;
@@ -1567,7 +1567,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   const size_t preferred_max_new_size_unaligned =
     MIN2(max_heap/(NewRatio+1), ScaleForWordSize(young_gen_per_worker * ParallelGCThreads));
   size_t preferred_max_new_size =
-    align_size_up(preferred_max_new_size_unaligned, os::vm_page_size());
+    align_up(preferred_max_new_size_unaligned, os::vm_page_size());
 
   // Unless explicitly requested otherwise, size young gen
   // for "short" pauses ~ CMSYoungGenPerWorker*ParallelGCThreads
@@ -1681,8 +1681,8 @@ size_t Arguments::max_heap_for_compressed_oops() {
   // keeping alignment constraints of the heap. To guarantee the latter, as the
   // NULL page is located before the heap, we pad the NULL page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
-  size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
-                                                        _conservative_max_heap_alignment);
+  size_t displacement_due_to_null_page = align_up_(os::vm_page_size(),
+                                                   _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
@@ -2763,7 +2763,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   const julong min_size = min_ThreadStackSize * K;
   const julong max_size = max_ThreadStackSize * K;
 
-  assert(is_size_aligned_(max_size, (size_t)os::vm_page_size()), "Implementation assumption");
+  assert(is_aligned_(max_size, (size_t)os::vm_page_size()), "Implementation assumption");
 
   julong size = 0;
   ArgsRange errcode = parse_memory_size(tail, &size, min_size, max_size);
@@ -2778,7 +2778,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   }
 
   // Internally track ThreadStackSize in units of 1024 bytes.
-  const julong size_aligned = align_size_up_(size, K);
+  const julong size_aligned = align_up_(size, K);
   assert(size <= size_aligned,
          "Overflow: " JULONG_FORMAT " " JULONG_FORMAT,
          size, size_aligned);
@@ -2789,7 +2789,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
          size_in_K);
 
   // Check that code expanding ThreadStackSize to a page aligned number of bytes won't overflow.
-  const julong max_expanded = align_size_up_(size_in_K * K, (size_t)os::vm_page_size());
+  const julong max_expanded = align_up_(size_in_K * K, (size_t)os::vm_page_size());
   assert(max_expanded < max_uintx && max_expanded >= size_in_K,
          "Expansion overflowed: " JULONG_FORMAT " " JULONG_FORMAT,
          max_expanded, size_in_K);

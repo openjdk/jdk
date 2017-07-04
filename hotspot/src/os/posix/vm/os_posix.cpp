@@ -158,7 +158,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   }
 
   // Do manual alignment
-  char* aligned_base = align_ptr_up(extra_base, alignment);
+  char* aligned_base = align_up(extra_base, alignment);
 
   // [  |                                       |  ]
   // ^ extra_base
@@ -322,7 +322,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     julong lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
       julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
-      temp_limit = align_size_down_(temp_limit, min_allocation_size);
+      temp_limit = align_down_(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;
       } else {
@@ -1180,7 +1180,7 @@ jint os::Posix::set_minimum_stack_sizes() {
                                    JavaThread::stack_guard_zone_size() +
                                    JavaThread::stack_shadow_zone_size();
 
-  _java_thread_min_stack_allowed = align_size_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
   _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
 
   size_t stack_size_in_bytes = ThreadStackSize * K;
@@ -1204,7 +1204,7 @@ jint os::Posix::set_minimum_stack_sizes() {
                                        JavaThread::stack_guard_zone_size() +
                                        JavaThread::stack_shadow_zone_size();
 
-  _compiler_thread_min_stack_allowed = align_size_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
   _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = CompilerThreadStackSize * K;
@@ -1216,7 +1216,7 @@ jint os::Posix::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
 
-  _vm_internal_thread_min_stack_allowed = align_size_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = align_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
   _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = VMThreadStackSize * K;
@@ -1276,9 +1276,9 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
   // pthread_attr_setstacksize() may require that the size be rounded up to the OS page size.
   // Be careful not to round up to 0. Align down in that case.
   if (stack_size <= SIZE_MAX - vm_page_size()) {
-    stack_size = align_size_up(stack_size, vm_page_size());
+    stack_size = align_up(stack_size, vm_page_size());
   } else {
-    stack_size = align_size_down(stack_size, vm_page_size());
+    stack_size = align_down(stack_size, vm_page_size());
   }
 
   return stack_size;

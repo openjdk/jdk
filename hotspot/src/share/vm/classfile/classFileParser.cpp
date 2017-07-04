@@ -3714,7 +3714,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   if ( fac->count[STATIC_DOUBLE] &&
        (Universe::field_type_should_be_aligned(T_DOUBLE) ||
         Universe::field_type_should_be_aligned(T_LONG)) ) {
-    next_static_double_offset = align_size_up(next_static_double_offset, BytesPerLong);
+    next_static_double_offset = align_up(next_static_double_offset, BytesPerLong);
   }
 
   int next_static_word_offset   = next_static_double_offset +
@@ -3856,7 +3856,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   // long/double alignment.
   if (nonstatic_double_count > 0) {
     int offset = next_nonstatic_double_offset;
-    next_nonstatic_double_offset = align_size_up(offset, BytesPerLong);
+    next_nonstatic_double_offset = align_up(offset, BytesPerLong);
     if (compact_fields && offset != next_nonstatic_double_offset) {
       // Allocate available fields into the gap before double field.
       int length = next_nonstatic_double_offset - offset;
@@ -3906,7 +3906,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   if( allocation_style == 1 ) {
     next_nonstatic_oop_offset = next_nonstatic_padded_offset;
     if( nonstatic_oop_count > 0 ) {
-      next_nonstatic_oop_offset = align_size_up(next_nonstatic_oop_offset, heapOopSize);
+      next_nonstatic_oop_offset = align_up(next_nonstatic_oop_offset, heapOopSize);
     }
     next_nonstatic_padded_offset = next_nonstatic_oop_offset + (nonstatic_oop_count * heapOopSize);
   }
@@ -4061,31 +4061,31 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
 
         switch (atype) {
           case NONSTATIC_BYTE:
-            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, 1);
+            next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, 1);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += 1;
             break;
 
           case NONSTATIC_SHORT:
-            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerShort);
+            next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, BytesPerShort);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += BytesPerShort;
             break;
 
           case NONSTATIC_WORD:
-            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerInt);
+            next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, BytesPerInt);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += BytesPerInt;
             break;
 
           case NONSTATIC_DOUBLE:
-            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, BytesPerLong);
+            next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, BytesPerLong);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += BytesPerLong;
             break;
 
           case NONSTATIC_OOP:
-            next_nonstatic_padded_offset = align_size_up(next_nonstatic_padded_offset, heapOopSize);
+            next_nonstatic_padded_offset = align_up(next_nonstatic_padded_offset, heapOopSize);
             real_offset = next_nonstatic_padded_offset;
             next_nonstatic_padded_offset += heapOopSize;
 
@@ -4147,9 +4147,9 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
 
   int notaligned_nonstatic_fields_end = next_nonstatic_padded_offset;
 
-  int nonstatic_fields_end      = align_size_up(notaligned_nonstatic_fields_end, heapOopSize);
-  int instance_end              = align_size_up(notaligned_nonstatic_fields_end, wordSize);
-  int static_fields_end         = align_size_up(next_static_byte_offset, wordSize);
+  int nonstatic_fields_end      = align_up(notaligned_nonstatic_fields_end, heapOopSize);
+  int instance_end              = align_up(notaligned_nonstatic_fields_end, wordSize);
+  int static_fields_end         = align_up(next_static_byte_offset, wordSize);
 
   int static_field_size         = (static_fields_end -
                                    InstanceMirrorKlass::offset_of_static_fields()) / wordSize;
@@ -4158,7 +4158,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
 
   int instance_size             = align_object_size(instance_end / wordSize);
 
-  assert(instance_size == align_object_size(align_size_up(
+  assert(instance_size == align_object_size(align_up(
          (instanceOopDesc::base_offset_in_bytes() + nonstatic_field_size*heapOopSize),
           wordSize) / wordSize), "consistent layout helper value");
 

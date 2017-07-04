@@ -53,46 +53,46 @@ static void test_alignments() {
       log("--- Value: " UINT64_FORMAT "\n", values[i]);
 
       // Test align up
-      const uint64_t up = align_size_up_(values[i], (uint64_t)alignment);
+      const uint64_t up = align_up_(values[i], (uint64_t)alignment);
       if (0 < up && up <= (uint64_t)std::numeric_limits<T>::max()) {
         log("Testing align_up:   alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: 0x" UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], up);
 
         T value = T(values[i]);
 
         // Check against uint64_t version
-        ASSERT_EQ(align_size_up((uint64_t)value, alignment), up);
+        ASSERT_EQ(align_up((uint64_t)value, alignment), up);
         // Check inline function vs macro
-        ASSERT_EQ(align_size_up(value, alignment), align_size_up_(value, alignment));
+        ASSERT_EQ(align_up(value, alignment), align_up_(value, alignment));
         // Sanity check
-        ASSERT_GE(align_size_up(value, alignment), value);
+        ASSERT_GE(align_up(value, alignment), value);
       }
 
       // Test align down
-      const uint64_t down = align_size_down_(values[i], (uint64_t)alignment);
+      const uint64_t down = align_down_(values[i], (uint64_t)alignment);
       if (down <= (uint64_t)std::numeric_limits<T>::max()) {
-        log("Testing align_size_down: alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: 0x" UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], down);
+        log("Testing align_down: alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: 0x" UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], down);
 
         T value = T(values[i]);
 
         // Check against uint64_t version
-        ASSERT_EQ((uint64_t)align_size_down(value, alignment), down);
+        ASSERT_EQ((uint64_t)align_down(value, alignment), down);
         // Check inline function vs macro
-        ASSERT_EQ(align_size_down(value, alignment), align_size_down_(value, alignment));
+        ASSERT_EQ(align_down(value, alignment), align_down_(value, alignment));
         // Sanity check
-        ASSERT_LE(align_size_down(value, alignment), value);
+        ASSERT_LE(align_down(value, alignment), value);
       }
 
       // Test is aligned
-      const bool is = is_size_aligned_(values[i], (uint64_t)alignment);
+      const bool is = is_aligned_(values[i], (uint64_t)alignment);
       if (values[i] <= (uint64_t)std::numeric_limits<T>::max()) {
         log("Testing is_aligned: alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: %s\n", (uint64_t)alignment, values[i], is ? "true" : "false");
 
         T value = T(values[i]);
 
         // Check against uint64_t version
-        ASSERT_EQ(is_size_aligned(value, alignment), is);
+        ASSERT_EQ(is_aligned(value, alignment), is);
         // Check inline function vs macro
-        ASSERT_EQ(is_size_aligned(value, alignment), is_size_aligned_(value, alignment));
+        ASSERT_EQ(is_aligned(value, alignment), is_aligned_(value, alignment));
       }
     }
   }

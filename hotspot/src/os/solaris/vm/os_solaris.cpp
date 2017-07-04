@@ -235,7 +235,7 @@ size_t os::current_stack_size() {
   }
   // base may not be page aligned
   address base = current_stack_base();
-  address bottom = align_ptr_up(base - size, os::vm_page_size());;
+  address bottom = align_up(base - size, os::vm_page_size());;
   return (size_t)(base - bottom);
 }
 
@@ -1122,7 +1122,7 @@ void os::initialize_thread(Thread* thr) {
       if (current_size == 0) current_size = 2 * K * K;
       stack_size = current_size > (8 * K * K) ? (8 * K * K) : current_size;
     }
-    address bottom = align_ptr_up(base - stack_size, os::vm_page_size());;
+    address bottom = align_up(base - stack_size, os::vm_page_size());;
     stack_size = (size_t)(base - bottom);
 
     assert(stack_size > 0, "Stack size calculation problem");
@@ -2331,12 +2331,12 @@ void os::pd_commit_memory_or_exit(char* addr, size_t bytes, bool exec,
 }
 
 size_t os::Solaris::page_size_for_alignment(size_t alignment) {
-  assert(is_size_aligned(alignment, (size_t) vm_page_size()),
+  assert(is_aligned(alignment, (size_t) vm_page_size()),
          SIZE_FORMAT " is not aligned to " SIZE_FORMAT,
          alignment, (size_t) vm_page_size());
 
   for (int i = 0; _page_sizes[i] != 0; i++) {
-    if (is_size_aligned(alignment, _page_sizes[i])) {
+    if (is_aligned(alignment, _page_sizes[i])) {
       return _page_sizes[i];
     }
   }
@@ -2348,7 +2348,7 @@ int os::Solaris::commit_memory_impl(char* addr, size_t bytes,
                                     size_t alignment_hint, bool exec) {
   int err = Solaris::commit_memory_impl(addr, bytes, exec);
   if (err == 0 && UseLargePages && alignment_hint > 0) {
-    assert(is_size_aligned(bytes, alignment_hint),
+    assert(is_aligned(bytes, alignment_hint),
            SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, alignment_hint);
 
     // The syscall memcntl requires an exact page size (see man memcntl for details).
@@ -2765,7 +2765,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 static bool solaris_mprotect(char* addr, size_t bytes, int prot) {
-  assert(addr == (char*)align_size_down((uintptr_t)addr, os::vm_page_size()),
+  assert(addr == (char*)align_down((uintptr_t)addr, os::vm_page_size()),
          "addr must be page aligned");
   int retVal = mprotect(addr, bytes, prot);
   return retVal == 0;
@@ -2902,9 +2902,9 @@ bool os::Solaris::is_valid_page_size(size_t bytes) {
 
 bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
   assert(is_valid_page_size(align), SIZE_FORMAT " is not a valid page size", align);
-  assert(is_ptr_aligned((void*) start, align),
+  assert(is_aligned((void*) start, align),
          PTR_FORMAT " is not aligned to " SIZE_FORMAT, p2i((void*) start), align);
-  assert(is_size_aligned(bytes, align),
+  assert(is_aligned(bytes, align),
          SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, align);
 
   // Signal to OS that we want large pages for addresses

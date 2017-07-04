@@ -71,7 +71,7 @@ G1CMBitMapRO::G1CMBitMapRO(int shifter) :
 HeapWord* G1CMBitMapRO::getNextMarkedWordAddress(const HeapWord* addr,
                                                  const HeapWord* limit) const {
   // First we must round addr *up* to a possible object boundary.
-  addr = align_ptr_up(addr, HeapWordSize << _shifter);
+  addr = align_up(addr, HeapWordSize << _shifter);
   size_t addrOffset = heapWordToOffset(addr);
   assert(limit != NULL, "limit must not be NULL");
   size_t limitOffset = heapWordToOffset(limit);
@@ -170,8 +170,8 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
 
   size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
 
-  _max_chunk_capacity = align_size_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
-  size_t initial_chunk_capacity = align_size_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  _max_chunk_capacity = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t initial_chunk_capacity = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
   guarantee(initial_chunk_capacity <= _max_chunk_capacity,
             "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,
@@ -714,7 +714,7 @@ void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool 
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
   size_t const num_bytes_to_clear = (HeapRegion::GrainBytes * _g1h->num_regions()) / G1CMBitMap::heap_map_factor();
-  size_t const num_chunks = align_size_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
+  size_t const num_chunks = align_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 

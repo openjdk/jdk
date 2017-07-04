@@ -86,7 +86,7 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
   void* end = static_cast<char*>(to) + size;
   if (size >= (size_t)BytesPerWord) {
     // Fill any partial word prefix.
-    uintx* aligned_to = static_cast<uintx*>(align_ptr_up(to, BytesPerWord));
+    uintx* aligned_to = static_cast<uintx*>(align_up(to, BytesPerWord));
     fill_subword(to, aligned_to, value);
 
     // Compute fill word.
@@ -97,7 +97,7 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
     xvalue |= (xvalue << 16);
     xvalue |= (xvalue << 32);
 
-    uintx* aligned_end = static_cast<uintx*>(align_ptr_down(end, BytesPerWord));
+    uintx* aligned_end = static_cast<uintx*>(align_down(end, BytesPerWord));
     assert(aligned_to <= aligned_end, "invariant");
 
     // for ( ; aligned_to < aligned_end; ++aligned_to) {

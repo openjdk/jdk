@@ -100,7 +100,7 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
   // Is the given page index the first after last page?
   bool is_after_last_page(size_t index) const;
   // Is the last page only partially covered by this space?
-  bool is_last_page_partial() const { return !is_ptr_aligned(_high_boundary, _page_size); }
+  bool is_last_page_partial() const { return !is_aligned(_high_boundary, _page_size); }
   // Returns the end address of the given page bounded by the reserved space.
   char* bounded_end_addr(size_t end_page) const;
 

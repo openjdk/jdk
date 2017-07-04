@@ -41,8 +41,8 @@ private:
 public:
   GenerationSpec(Generation::Name name, size_t init_size, size_t max_size, size_t alignment) :
     _name(name),
-    _init_size(align_size_up(init_size, alignment)),
-    _max_size(align_size_up(max_size, alignment))
+    _init_size(align_up(init_size, alignment)),
+    _max_size(align_up(max_size, alignment))
   { }
 
   Generation* init(ReservedSpace rs, CardTableRS* remset);

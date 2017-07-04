@@ -626,7 +626,7 @@ class StubGenerator: public StubCodeGenerator {
           int spill_slots = 3;
           if (preserve1 != noreg) { spill_slots++; }
           if (preserve2 != noreg) { spill_slots++; }
-          const int frame_size = align_size_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
           Label filtered;
 
           // Is marking active?
@@ -687,7 +687,7 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           int spill_slots = (preserve != noreg) ? 1 : 0;
-          const int frame_size = align_size_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
           __ save_LR_CR(R0);
           __ push_frame(frame_size, R0);

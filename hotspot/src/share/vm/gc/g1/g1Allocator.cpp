@@ -425,7 +425,7 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
                                           size_t end_alignment_in_bytes) {
   assert((end_alignment_in_bytes >> LogHeapWordSize) < HeapRegion::min_region_size_in_words(),
          "alignment " SIZE_FORMAT " too large", end_alignment_in_bytes);
-  assert(is_size_aligned(end_alignment_in_bytes, HeapWordSize),
+  assert(is_aligned(end_alignment_in_bytes, HeapWordSize),
          "alignment " SIZE_FORMAT " is not HeapWord (%u) aligned", end_alignment_in_bytes, HeapWordSize);
 
   // If we've allocated nothing, simply return.
@@ -436,7 +436,7 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
   // If an end alignment was requested, insert filler objects.
   if (end_alignment_in_bytes != 0) {
     HeapWord* currtop = _allocation_region->top();
-    HeapWord* newtop = align_ptr_up(currtop, end_alignment_in_bytes);
+    HeapWord* newtop = align_up(currtop, end_alignment_in_bytes);
     size_t fill_size = pointer_delta(newtop, currtop);
     if (fill_size != 0) {
       if (fill_size < CollectedHeap::min_fill_size()) {
@@ -445,8 +445,8 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
         // region boundary because the max supported alignment is smaller than the min
         // region size, and because the allocation code never leaves space smaller than
         // the min_fill_size at the top of the current allocation region.
-        newtop = align_ptr_up(currtop + CollectedHeap::min_fill_size(),
-                              end_alignment_in_bytes);
+        newtop = align_up(currtop + CollectedHeap::min_fill_size(),
+                          end_alignment_in_bytes);
         fill_size = pointer_delta(newtop, currtop);
       }
       HeapWord* fill = archive_mem_allocate(fill_size);

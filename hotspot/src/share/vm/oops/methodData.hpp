@@ -2338,7 +2338,7 @@ public:
 
   // My size
   int size_in_bytes() const { return _size; }
-  int size() const    { return align_metadata_size(align_size_up(_size, BytesPerWord)/BytesPerWord); }
+  int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif

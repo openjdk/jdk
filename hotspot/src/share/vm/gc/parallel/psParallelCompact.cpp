@@ -432,7 +432,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
@@ -1984,7 +1984,7 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   const size_t alignment = old_gen->virtual_space()->alignment();
   const size_t eden_used = eden_space->used_in_bytes();
   const size_t promoted = (size_t)size_policy->avg_promoted()->padded_average();
-  const size_t absorb_size = align_size_up(eden_used + promoted, alignment);
+  const size_t absorb_size = align_up(eden_used + promoted, alignment);
   const size_t eden_capacity = eden_space->capacity_in_bytes();
 
   if (absorb_size >= eden_capacity) {

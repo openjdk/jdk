@@ -462,16 +462,10 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   void print_on(outputStream* st) const;
 };
 
-#define assert_is_ptr_aligned(ptr, alignment) \
-  assert(is_ptr_aligned(ptr, alignment),      \
-         PTR_FORMAT " is not aligned to "     \
-         SIZE_FORMAT, p2i(ptr), alignment)
-
-#define assert_is_size_aligned(size, alignment) \
-  assert(is_size_aligned(size, alignment),      \
-         SIZE_FORMAT " is not aligned to "      \
-         SIZE_FORMAT, size, alignment)
-
+#define assert_is_aligned(value, alignment)                  \
+  assert(is_aligned((value), (alignment)),                   \
+         SIZE_FORMAT_HEX " is not aligned to "               \
+         SIZE_FORMAT, (size_t)(uintptr_t)value, (alignment))
 
 // Decide if large pages should be committed when the memory is reserved.
 static bool should_commit_large_pages_when_reserving(size_t bytes) {
@@ -489,7 +483,7 @@ static bool should_commit_large_pages_when_reserving(size_t bytes) {
 
   // byte_size is the size of the associated virtualspace.
 VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
-  assert_is_size_aligned(bytes, Metaspace::reserve_alignment());
+  assert_is_aligned(bytes, Metaspace::reserve_alignment());
 
 #if INCLUDE_CDS
   // This allocates memory with mmap.  For DumpSharedspaces, try to reserve
@@ -497,7 +491,7 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
   // memory addresses don't conflict.
   if (DumpSharedSpaces) {
     bool large_pages = false; // No large pages when dumping the CDS archive.
-    char* shared_base = align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
+    char* shared_base = align_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
 
     _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base);
     if (_rs.is_reserved()) {
@@ -522,8 +516,8 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
   if (_rs.is_reserved()) {
     assert(_rs.base() != NULL, "Catch if we get a NULL address");
     assert(_rs.size() != 0, "Catch if we get a 0 size");
-    assert_is_ptr_aligned(_rs.base(), Metaspace::reserve_alignment());
-    assert_is_size_aligned(_rs.size(), Metaspace::reserve_alignment());
+    assert_is_aligned(_rs.base(), Metaspace::reserve_alignment());
+    assert_is_aligned(_rs.size(), Metaspace::reserve_alignment());
 
     MemTracker::record_virtual_memory_type((address)_rs.base(), mtClass);
   }
@@ -863,7 +857,7 @@ class SpaceManager : public CHeapObj<mtClass> {
     size_t byte_size = word_size * BytesPerWord;
 
     size_t raw_bytes_size = MAX2(byte_size, sizeof(Metablock));
-    raw_bytes_size = align_size_up(raw_bytes_size, Metachunk::object_alignment());
+    raw_bytes_size = align_up(raw_bytes_size, Metachunk::object_alignment());
 
     size_t raw_word_size = raw_bytes_size / BytesPerWord;
     assert(raw_word_size * BytesPerWord == raw_bytes_size, "Size problem");
@@ -1068,8 +1062,8 @@ bool VirtualSpaceNode::initialize() {
   // These are necessary restriction to make sure that the virtual space always
   // grows in steps of Metaspace::commit_alignment(). If both base and size are
   // aligned only the middle alignment of the VirtualSpace is used.
-  assert_is_ptr_aligned(_rs.base(), Metaspace::commit_alignment());
-  assert_is_size_aligned(_rs.size(), Metaspace::commit_alignment());
+  assert_is_aligned(_rs.base(), Metaspace::commit_alignment());
+  assert_is_aligned(_rs.size(), Metaspace::commit_alignment());
 
   // ReservedSpaces marked as special will have the entire memory
   // pre-committed. Setting a committed size will make sure that
@@ -1323,7 +1317,7 @@ bool VirtualSpaceList::create_new_virtual_space(size_t vs_word_size) {
 
   // Reserve the space
   size_t vs_byte_size = vs_word_size * BytesPerWord;
-  assert_is_size_aligned(vs_byte_size, Metaspace::reserve_alignment());
+  assert_is_aligned(vs_byte_size, Metaspace::reserve_alignment());
 
   // Allocate the meta virtual space and initialize it.
   VirtualSpaceNode* new_entry = new VirtualSpaceNode(vs_byte_size);
@@ -1378,8 +1372,8 @@ bool VirtualSpaceList::expand_node_by(VirtualSpaceNode* node,
 }
 
 bool VirtualSpaceList::expand_by(size_t min_words, size_t preferred_words) {
-  assert_is_size_aligned(min_words,       Metaspace::commit_alignment_words());
-  assert_is_size_aligned(preferred_words, Metaspace::commit_alignment_words());
+  assert_is_aligned(min_words,       Metaspace::commit_alignment_words());
+  assert_is_aligned(preferred_words, Metaspace::commit_alignment_words());
   assert(min_words <= preferred_words, "Invalid arguments");
 
   if (!MetaspaceGC::can_expand(min_words, this->is_class())) {
@@ -1404,7 +1398,7 @@ bool VirtualSpaceList::expand_by(size_t min_words, size_t preferred_words) {
 
   // Get another virtual space.
   size_t grow_vs_words = MAX2((size_t)VirtualSpaceSize, preferred_words);
-  grow_vs_words = align_size_up(grow_vs_words, Metaspace::reserve_alignment_words());
+  grow_vs_words = align_up(grow_vs_words, Metaspace::reserve_alignment_words());
 
   if (create_new_virtual_space(grow_vs_words)) {
     if (current_virtual_space()->is_pre_committed()) {
@@ -1435,8 +1429,8 @@ Metachunk* VirtualSpaceList::get_new_chunk(size_t chunk_word_size, size_t sugges
   // The expand amount is currently only determined by the requested sizes
   // and not how much committed memory is left in the current virtual space.
 
-  size_t min_word_size       = align_size_up(chunk_word_size,              Metaspace::commit_alignment_words());
-  size_t preferred_word_size = align_size_up(suggested_commit_granularity, Metaspace::commit_alignment_words());
+  size_t min_word_size       = align_up(chunk_word_size,              Metaspace::commit_alignment_words());
+  size_t preferred_word_size = align_up(suggested_commit_granularity, Metaspace::commit_alignment_words());
   if (min_word_size >= preferred_word_size) {
     // Can happen when humongous chunks are allocated.
     preferred_word_size = min_word_size;
@@ -1488,7 +1482,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
 size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
   size_t min_delta = MinMetaspaceExpansion;
   size_t max_delta = MaxMetaspaceExpansion;
-  size_t delta = align_size_up(bytes, Metaspace::commit_alignment());
+  size_t delta = align_up(bytes, Metaspace::commit_alignment());
 
   if (delta <= min_delta) {
     delta = min_delta;
@@ -1503,7 +1497,7 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
     delta = delta + min_delta;
   }
 
-  assert_is_size_aligned(delta, Metaspace::commit_alignment());
+  assert_is_aligned(delta, Metaspace::commit_alignment());
 
   return delta;
 }
@@ -1515,14 +1509,14 @@ size_t MetaspaceGC::capacity_until_GC() {
 }
 
 bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
-  assert_is_size_aligned(v, Metaspace::commit_alignment());
+  assert_is_aligned(v, Metaspace::commit_alignment());
 
   size_t capacity_until_GC = (size_t) _capacity_until_GC;
   size_t new_value = capacity_until_GC + v;
 
   if (new_value < capacity_until_GC) {
     // The addition wrapped around, set new_value to aligned max value.
-    new_value = align_size_down(max_uintx, Metaspace::commit_alignment());
+    new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
   intptr_t expected = (intptr_t) capacity_until_GC;
@@ -1542,7 +1536,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 }
 
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
-  assert_is_size_aligned(v, Metaspace::commit_alignment());
+  assert_is_aligned(v, Metaspace::commit_alignment());
 
   return (size_t)Atomic::add_ptr(-(intptr_t)v, &_capacity_until_GC);
 }
@@ -1628,7 +1622,7 @@ void MetaspaceGC::compute_new_size() {
     // If we have less capacity below the metaspace HWM, then
     // increment the HWM.
     size_t expand_bytes = minimum_desired_capacity - capacity_until_GC;
-    expand_bytes = align_size_up(expand_bytes, Metaspace::commit_alignment());
+    expand_bytes = align_up(expand_bytes, Metaspace::commit_alignment());
     // Don't expand unless it's significant
     if (expand_bytes >= MinMetaspaceExpansion) {
       size_t new_capacity_until_GC = 0;
@@ -1681,7 +1675,7 @@ void MetaspaceGC::compute_new_size() {
       // size without shrinking, it goes back to 0%.
       shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
 
-      shrink_bytes = align_size_down(shrink_bytes, Metaspace::commit_alignment());
+      shrink_bytes = align_down(shrink_bytes, Metaspace::commit_alignment());
 
       assert(shrink_bytes <= max_shrink_bytes,
              "invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
@@ -2240,7 +2234,7 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // humongous allocations sizes to be aligned up to
   // the smallest chunk size.
   size_t if_humongous_sized_chunk =
-    align_size_up(word_size + Metachunk::overhead(),
+    align_up(word_size + Metachunk::overhead(),
                   smallest_chunk_size());
   chunk_word_size =
     MAX2((size_t) chunk_word_size, if_humongous_sized_chunk);
@@ -3099,9 +3093,9 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   assert(compressed_class_space_size() < KlassEncodingMetaspaceMax,
          "Metaspace size is too big");
-  assert_is_ptr_aligned(requested_addr, _reserve_alignment);
-  assert_is_ptr_aligned(cds_base, _reserve_alignment);
-  assert_is_size_aligned(compressed_class_space_size(), _reserve_alignment);
+  assert_is_aligned(requested_addr, _reserve_alignment);
+  assert_is_aligned(cds_base, _reserve_alignment);
+  assert_is_aligned(compressed_class_space_size(), _reserve_alignment);
 
   // Don't use large pages for the class space.
   bool large_pages = false;
@@ -3130,7 +3124,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     // Aix: Search for a place where we can find memory. If we need to load
     // the base, 4G alignment is helpful, too.
     size_t increment = AARCH64_ONLY(4*)G;
-    for (char *a = align_ptr_up(requested_addr, increment);
+    for (char *a = align_up(requested_addr, increment);
          a < (char*)(1024*G);
          a += increment) {
       if (a == (char *)(32*G)) {
@@ -3165,7 +3159,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   if (!metaspace_rs.is_reserved()) {
 #if INCLUDE_CDS
     if (UseSharedSpaces) {
-      size_t increment = align_size_up(1*G, _reserve_alignment);
+      size_t increment = align_up(1*G, _reserve_alignment);
 
       // Keep trying to allocate the metaspace, increasing the requested_addr
       // by 1GB each time, until we reach an address that will no longer allow
@@ -3269,20 +3263,20 @@ void Metaspace::ergo_initialize() {
   // Ideally, we would be able to set the default value of MaxMetaspaceSize in
   // globals.hpp to the aligned value, but this is not possible, since the
   // alignment depends on other flags being parsed.
-  MaxMetaspaceSize = align_size_down_bounded(MaxMetaspaceSize, _reserve_alignment);
+  MaxMetaspaceSize = align_down_bounded(MaxMetaspaceSize, _reserve_alignment);
 
   if (MetaspaceSize > MaxMetaspaceSize) {
     MetaspaceSize = MaxMetaspaceSize;
   }
 
-  MetaspaceSize = align_size_down_bounded(MetaspaceSize, _commit_alignment);
+  MetaspaceSize = align_down_bounded(MetaspaceSize, _commit_alignment);
 
   assert(MetaspaceSize <= MaxMetaspaceSize, "MetaspaceSize should be limited by MaxMetaspaceSize");
 
-  MinMetaspaceExpansion = align_size_down_bounded(MinMetaspaceExpansion, _commit_alignment);
-  MaxMetaspaceExpansion = align_size_down_bounded(MaxMetaspaceExpansion, _commit_alignment);
+  MinMetaspaceExpansion = align_down_bounded(MinMetaspaceExpansion, _commit_alignment);
+  MaxMetaspaceExpansion = align_down_bounded(MaxMetaspaceExpansion, _commit_alignment);
 
-  CompressedClassSpaceSize = align_size_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
+  CompressedClassSpaceSize = align_down_bounded(CompressedClassSpaceSize, _reserve_alignment);
   set_compressed_class_space_size(CompressedClassSpaceSize);
 }
 
@@ -3299,16 +3293,16 @@ void Metaspace::global_initialize() {
 #if INCLUDE_CDS
     MetaspaceShared::estimate_regions_size();
 
-    SharedReadOnlySize  = align_size_up(SharedReadOnlySize,  max_alignment);
-    SharedReadWriteSize = align_size_up(SharedReadWriteSize, max_alignment);
-    SharedMiscDataSize  = align_size_up(SharedMiscDataSize,  max_alignment);
-    SharedMiscCodeSize  = align_size_up(SharedMiscCodeSize,  max_alignment);
+    SharedReadOnlySize  = align_up(SharedReadOnlySize,  max_alignment);
+    SharedReadWriteSize = align_up(SharedReadWriteSize, max_alignment);
+    SharedMiscDataSize  = align_up(SharedMiscDataSize,  max_alignment);
+    SharedMiscCodeSize  = align_up(SharedMiscCodeSize,  max_alignment);
 
     // Initialize with the sum of the shared space sizes.  The read-only
     // and read write metaspace chunks will be allocated out of this and the
     // remainder is the misc code and data chunks.
     cds_total = FileMapInfo::shared_spaces_size();
-    cds_total = align_size_up(cds_total, _reserve_alignment);
+    cds_total = align_up(cds_total, _reserve_alignment);
     _space_list = new VirtualSpaceList(cds_total/wordSize);
     _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
 
@@ -3355,7 +3349,7 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
         if (using_class_space()) {
           char* cds_end = (char*)(cds_address + cds_total);
-          cds_end = align_ptr_up(cds_end, _reserve_alignment);
+          cds_end = align_up(cds_end, _reserve_alignment);
           // If UseCompressedClassPointers is set then allocate the metaspace area
           // above the heap and above the CDS area (if it exists).
           allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
@@ -3373,7 +3367,7 @@ void Metaspace::global_initialize() {
 
 #ifdef _LP64
     if (!UseSharedSpaces && using_class_space()) {
-      char* base = (char*)align_ptr_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
+      char* base = (char*)align_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
       allocate_metaspace_compressed_klass_ptrs(base, 0);
     }
 #endif // _LP64
@@ -3390,7 +3384,7 @@ void Metaspace::global_initialize() {
     // Arbitrarily set the initial virtual space to a multiple
     // of the boot class loader size.
     size_t word_size = VIRTUALSPACEMULTIPLIER * _first_chunk_word_size;
-    word_size = align_size_up(word_size, Metaspace::reserve_alignment_words());
+    word_size = align_up(word_size, Metaspace::reserve_alignment_words());
 
     // Initialize the list of virtual spaces.
     _space_list = new VirtualSpaceList(word_size);
@@ -4147,7 +4141,7 @@ class ChunkManagerReturnTestImpl {
       return sizes[rand];
     } else {
       // Note: this affects the max. size of space (see _vsn initialization in ctor).
-      return align_size_up(MediumChunk + 1 + (os::random() % (MediumChunk * 4)), SpecializedChunk);
+      return align_up(MediumChunk + 1 + (os::random() % (MediumChunk * 4)), SpecializedChunk);
     }
   }
 
@@ -4294,7 +4288,7 @@ class ChunkManagerReturnTestImpl {
 public:
 
   ChunkManagerReturnTestImpl()
-    : _vsn(align_size_up(MediumChunk * num_chunks * 5 * sizeof(MetaWord), Metaspace::reserve_alignment()))
+    : _vsn(align_up(MediumChunk * num_chunks * 5 * sizeof(MetaWord), Metaspace::reserve_alignment()))
     , _cm(SpecializedChunk, SmallChunk, MediumChunk)
     , _chunks_in_chunkmanager(0)
     , _words_in_chunkmanager(0)

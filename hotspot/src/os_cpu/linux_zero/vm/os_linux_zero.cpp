@@ -350,7 +350,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   if (res != 0) {
     fatal("pthread_attr_getguardsize failed with errno = %d", res);
   }
-  int guard_pages = align_size_up(guard_bytes, page_bytes) / page_bytes;
+  int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
   assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
 
 #ifdef IA64
@@ -361,7 +361,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   // there's nothing to stop us allocating more to the normal stack
   // or more to the register stack if one or the other were found
   // to grow faster.
-  int total_pages = align_size_down(stack_bytes, page_bytes) / page_bytes;
+  int total_pages = align_down(stack_bytes, page_bytes) / page_bytes;
   stack_bottom += (total_pages - guard_pages) / 2 * page_bytes;
 #endif // IA64
 

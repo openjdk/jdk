@@ -372,7 +372,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
 
 size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
   assert(is_humongous(word_size), "Object of size " SIZE_FORMAT " must be humongous here", word_size);
-  return align_size_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
+  return align_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
 }
 
 // If could fit into free regions w/o expansion, try.
@@ -1606,7 +1606,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size, AllocationConte
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
-  aligned_expand_bytes = align_size_up(aligned_expand_bytes,
+  aligned_expand_bytes = align_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
 
   log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
@@ -1647,7 +1647,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, do
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   size_t aligned_shrink_bytes =
     ReservedSpace::page_align_size_down(shrink_bytes);
-  aligned_shrink_bytes = align_size_down(aligned_shrink_bytes,
+  aligned_shrink_bytes = align_down(aligned_shrink_bytes,
                                          HeapRegion::GrainBytes);
   uint num_regions_to_remove = (uint)(shrink_bytes / HeapRegion::GrainBytes);
 
@@ -2435,7 +2435,7 @@ size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
 // must be equal to the humongous object limit.
 size_t G1CollectedHeap::max_tlab_size() const {
-  return align_size_down(_humongous_object_threshold_in_words, MinObjAlignment);
+  return align_down(_humongous_object_threshold_in_words, MinObjAlignment);
 }
 
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {

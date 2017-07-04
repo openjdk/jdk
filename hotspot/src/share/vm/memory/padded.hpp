@@ -33,7 +33,7 @@
 // when the start address is not a multiple of alignment; the second maintains
 // alignment of starting addresses that happen to be a multiple.
 #define PADDING_SIZE(type, alignment)                           \
-  ((alignment) + align_size_up_(sizeof(type), alignment))
+  ((alignment) + align_up_(sizeof(type), (alignment)))
 
 // Templates to create a subclass padded to avoid cache line sharing.  These are
 // effective only when applied to derived-most (leaf) classes.
@@ -68,7 +68,7 @@ class PaddedEndImpl<T, /*pad_size*/ 0> : public T {
   // No padding.
 };
 
-#define PADDED_END_SIZE(type, alignment) (align_size_up_(sizeof(type), alignment) - sizeof(type))
+#define PADDED_END_SIZE(type, alignment) (align_up_(sizeof(type), (alignment)) - sizeof(type))
 
 // More memory conservative implementation of Padded. The subclass adds the
 // minimal amount of padding needed to make the size of the objects be aligned.

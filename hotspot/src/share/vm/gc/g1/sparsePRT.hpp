@@ -68,7 +68,7 @@ public:
   static size_t size() { return sizeof(SparsePRTEntry) + sizeof(card_elem_t) * (cards_num() - card_array_alignment); }
   // Returns the size of the card array.
   static int cards_num() {
-    return align_size_up(G1RSetSparseRegionEntries, card_array_alignment);
+    return align_up(G1RSetSparseRegionEntries, card_array_alignment);
   }
 
   // Set the region_ind to the given value, and delete all cards.

@@ -91,8 +91,8 @@ void PerfMemory::initialize() {
     // initialization already performed
     return;
 
-  size_t capacity = align_size_up(PerfDataMemorySize,
-                                  os::vm_allocation_granularity());
+  size_t capacity = align_up(PerfDataMemorySize,
+                             os::vm_allocation_granularity());
 
   log_debug(perf, memops)("PerfDataMemorySize = " SIZE_FORMAT ","
                           " os::vm_allocation_granularity = %d,"

@@ -75,7 +75,7 @@ size_t ASPSYoungGen::available_for_expansion() {
     "generation size limit is wrong");
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   size_t result =  gen_size_limit() - current_committed_size;
-  size_t result_aligned = align_size_down(result, heap->generation_alignment());
+  size_t result_aligned = align_down(result, heap->generation_alignment());
   return result_aligned;
 }
 
@@ -98,7 +98,7 @@ size_t ASPSYoungGen::available_for_contraction() {
     assert(eden_space()->capacity_in_bytes() >= eden_alignment,
       "Alignment is wrong");
     size_t eden_avail = eden_space()->capacity_in_bytes() - eden_alignment;
-    eden_avail = align_size_down(eden_avail, gen_alignment);
+    eden_avail = align_down(eden_avail, gen_alignment);
 
     assert(virtual_space()->committed_size() >= min_gen_size(),
       "minimum gen size is wrong");
@@ -110,7 +110,7 @@ size_t ASPSYoungGen::available_for_contraction() {
     // for reasons the "increment" fraction is used.
     PSAdaptiveSizePolicy* policy = heap->size_policy();
     size_t result = policy->eden_increment_aligned_down(max_contraction);
-    size_t result_aligned = align_size_down(result, gen_alignment);
+    size_t result_aligned = align_down(result, gen_alignment);
 
     log_trace(gc, ergo)("ASPSYoungGen::available_for_contraction: " SIZE_FORMAT " K", result_aligned/K);
     log_trace(gc, ergo)("  max_contraction " SIZE_FORMAT " K", max_contraction/K);
@@ -166,7 +166,7 @@ bool ASPSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
 
   // Adjust new generation size
   const size_t eden_plus_survivors =
-    align_size_up(eden_size + 2 * survivor_size, alignment);
+    align_up(eden_size + 2 * survivor_size, alignment);
   size_t desired_size = MAX2(MIN2(eden_plus_survivors, gen_size_limit()),
                              min_gen_size());
   assert(desired_size <= gen_size_limit(), "just checking");
@@ -332,7 +332,7 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
       if (from_size == 0) {
         from_size = alignment;
       } else {
-        from_size = align_size_up(from_size, alignment);
+        from_size = align_up(from_size, alignment);
       }
 
       from_end = from_start + from_size;
@@ -419,9 +419,9 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
             "from start moved to the right");
   guarantee((HeapWord*)from_end >= from_space()->top(),
             "from end moved into live data");
-  assert(is_ptr_object_aligned(eden_start), "checking alignment");
-  assert(is_ptr_object_aligned(from_start), "checking alignment");
-  assert(is_ptr_object_aligned(to_start), "checking alignment");
+  assert(is_object_aligned(eden_start), "checking alignment");
+  assert(is_object_aligned(from_start), "checking alignment");
+  assert(is_object_aligned(to_start), "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)eden_end);
   MemRegion toMR  ((HeapWord*)to_start,   (HeapWord*)to_end);

@@ -370,10 +370,10 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
   }
 
   // Align everything and make a final limit check
-  desired_eden_size  = align_size_up(desired_eden_size, _space_alignment);
+  desired_eden_size  = align_up(desired_eden_size, _space_alignment);
   desired_eden_size  = MAX2(desired_eden_size, _space_alignment);
 
-  eden_limit  = align_size_down(eden_limit, _space_alignment);
+  eden_limit  = align_down(eden_limit, _space_alignment);
 
   // And one last limit check, now that we've aligned things.
   if (desired_eden_size > eden_limit) {
@@ -547,10 +547,10 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
   }
 
   // Align everything and make a final limit check
-  desired_promo_size = align_size_up(desired_promo_size, _space_alignment);
+  desired_promo_size = align_up(desired_promo_size, _space_alignment);
   desired_promo_size = MAX2(desired_promo_size, _space_alignment);
 
-  promo_limit = align_size_down(promo_limit, _space_alignment);
+  promo_limit = align_down(promo_limit, _space_alignment);
 
   // And one last limit check, now that we've aligned things.
   desired_promo_size = MIN2(desired_promo_size, promo_limit);
@@ -925,24 +925,24 @@ size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden) {
 
 size_t PSAdaptiveSizePolicy::eden_increment_aligned_up(size_t cur_eden) {
   size_t result = eden_increment(cur_eden, YoungGenerationSizeIncrement);
-  return align_size_up(result, _space_alignment);
+  return align_up(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::eden_increment_aligned_down(size_t cur_eden) {
   size_t result = eden_increment(cur_eden);
-  return align_size_down(result, _space_alignment);
+  return align_down(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::eden_increment_with_supplement_aligned_up(
   size_t cur_eden) {
   size_t result = eden_increment(cur_eden,
     YoungGenerationSizeIncrement + _young_gen_size_increment_supplement);
-  return align_size_up(result, _space_alignment);
+  return align_up(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   size_t eden_heap_delta = eden_decrement(cur_eden);
-  return align_size_down(eden_heap_delta, _space_alignment);
+  return align_down(eden_heap_delta, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::eden_decrement(size_t cur_eden) {
@@ -964,24 +964,24 @@ size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo) {
 
 size_t PSAdaptiveSizePolicy::promo_increment_aligned_up(size_t cur_promo) {
   size_t result =  promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-  return align_size_up(result, _space_alignment);
+  return align_up(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::promo_increment_aligned_down(size_t cur_promo) {
   size_t result =  promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-  return align_size_down(result, _space_alignment);
+  return align_down(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
   size_t cur_promo) {
   size_t result =  promo_increment(cur_promo,
     TenuredGenerationSizeIncrement + _old_gen_size_increment_supplement);
-  return align_size_up(result, _space_alignment);
+  return align_up(result, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::promo_decrement_aligned_down(size_t cur_promo) {
   size_t promo_heap_delta = promo_decrement(cur_promo);
-  return align_size_down(promo_heap_delta, _space_alignment);
+  return align_down(promo_heap_delta, _space_alignment);
 }
 
 size_t PSAdaptiveSizePolicy::promo_decrement(size_t cur_promo) {
@@ -996,7 +996,7 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                                              size_t survivor_limit) {
   assert(survivor_limit >= _space_alignment,
          "survivor_limit too small");
-  assert(is_size_aligned(survivor_limit, _space_alignment),
+  assert(is_aligned(survivor_limit, _space_alignment),
          "survivor_limit not aligned");
 
   // This method is called even if the tenuring threshold and survivor
@@ -1059,7 +1059,7 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
   // we use this to see how good of an estimate we have of what survived.
   // We're trying to pad the survivor size as little as possible without
   // overflowing the survivor spaces.
-  size_t target_size = align_size_up((size_t)_avg_survived->padded_average(),
+  size_t target_size = align_up((size_t)_avg_survived->padded_average(),
                                      _space_alignment);
   target_size = MAX2(target_size, _space_alignment);
 

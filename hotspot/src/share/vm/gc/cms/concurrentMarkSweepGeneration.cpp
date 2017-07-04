@@ -3219,7 +3219,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
   if (sp->used_region().contains(_restart_addr)) {
     // Align down to a card boundary for the start of 0th task
     // for this space.
-    aligned_start = align_ptr_down(_restart_addr, CardTableModRefBS::card_size);
+    aligned_start = align_down(_restart_addr, CardTableModRefBS::card_size);
   }
 
   size_t chunk_size = sp->marking_task_size();

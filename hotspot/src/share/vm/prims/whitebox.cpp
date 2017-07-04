@@ -1543,7 +1543,7 @@ WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong in
   }
 
   size_t new_cap_until_GC = 0;
-  size_t aligned_inc = align_size_down((size_t) inc, Metaspace::commit_alignment());
+  size_t aligned_inc = align_down((size_t) inc, Metaspace::commit_alignment());
   bool success = MetaspaceGC::inc_capacity_until_GC(aligned_inc, &new_cap_until_GC);
   if (!success) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(),

@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_size_up_(sizeof(obj), sizeof(type))/sizeof(type))
+#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up_(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
 enum NMT_TrackingLevel {

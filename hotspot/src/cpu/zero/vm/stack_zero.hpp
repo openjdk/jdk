@@ -88,7 +88,7 @@ class ZeroStack {
   }
 
   void *alloc(size_t size) {
-    int count = align_size_up(size, wordSize) >> LogBytesPerWord;
+    int count = align_up(size, wordSize) >> LogBytesPerWord;
     assert(count <= available_words(), "stack overflow");
     return _sp -= count;
   }

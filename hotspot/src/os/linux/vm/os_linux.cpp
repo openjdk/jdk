@@ -578,7 +578,7 @@ static void NOINLINE _expand_stack_to(address bottom) {
 
   // Adjust bottom to point to the largest address within the same page, it
   // gives us a one-page buffer if alloca() allocates slightly more memory.
-  bottom = (address)align_size_down((uintptr_t)bottom, os::Linux::page_size());
+  bottom = (address)align_down((uintptr_t)bottom, os::Linux::page_size());
   bottom += os::Linux::page_size() - 1;
 
   // sp might be slightly above current stack pointer; if that's the case, we
@@ -715,7 +715,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (stack_size <= SIZE_MAX - guard_size) {
     stack_size += guard_size;
   }
-  assert(is_size_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
+  assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
   assert_status(status == 0, status, "pthread_attr_setstacksize");
@@ -1101,7 +1101,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   }
 
   // stack_top could be partially down the page so align it
-  stack_top = align_size_up(stack_top, page_size());
+  stack_top = align_up(stack_top, page_size());
 
   // Allowed stack value is minimum of max_size and what we derived from rlimit
   if (max_size > 0) {
@@ -1111,7 +1111,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // clamp it at 8MB as we do on Solaris
     _initial_thread_stack_size = MIN2(stack_size, 8*M);
   }
-  _initial_thread_stack_size = align_size_down(_initial_thread_stack_size, page_size());
+  _initial_thread_stack_size = align_down(_initial_thread_stack_size, page_size());
   _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
 
   assert(_initial_thread_stack_bottom < (address)stack_top, "overflow!");
@@ -3170,7 +3170,7 @@ static char* anon_mmap_aligned(size_t bytes, size_t alignment, char* req_addr) {
         start = NULL;
       }
     } else {
-      char* const start_aligned = align_ptr_up(start, alignment);
+      char* const start_aligned = align_up(start, alignment);
       char* const end_aligned = start_aligned + bytes;
       char* const end = start + extra_size;
       if (start_aligned > start) {
@@ -3200,7 +3200,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool linux_mprotect(char* addr, size_t size, int prot) {
   // Linux wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_size_down((intptr_t)addr, os::Linux::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::Linux::page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -3209,7 +3209,7 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_size_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
   return ::mprotect(bottom, size, prot) == 0;
 }
 
@@ -3244,7 +3244,7 @@ bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
                  MAP_ANONYMOUS|MAP_PRIVATE,
                  -1, 0);
   if (p != MAP_FAILED) {
-    void *aligned_p = align_ptr_up(p, page_size);
+    void *aligned_p = align_up(p, page_size);
 
     result = madvise(aligned_p, page_size, MADV_HUGEPAGE) == 0;
 
@@ -3487,9 +3487,9 @@ void os::large_page_init() {
   } while (0)
 
 static char* shmat_with_alignment(int shmid, size_t bytes, size_t alignment) {
-  assert(is_size_aligned(bytes, alignment), "Must be divisible by the alignment");
+  assert(is_aligned(bytes, alignment), "Must be divisible by the alignment");
 
-  if (!is_size_aligned(alignment, SHMLBA)) {
+  if (!is_aligned(alignment, SHMLBA)) {
     assert(false, "Code below assumes that alignment is at least SHMLBA aligned");
     return NULL;
   }
@@ -3525,7 +3525,7 @@ static char* shmat_with_alignment(int shmid, size_t bytes, size_t alignment) {
 }
 
 static char* shmat_at_address(int shmid, char* req_addr) {
-  if (!is_ptr_aligned(req_addr, SHMLBA)) {
+  if (!is_aligned(req_addr, SHMLBA)) {
     assert(false, "Requested address needs to be SHMLBA aligned");
     return NULL;
   }
@@ -3543,8 +3543,8 @@ static char* shmat_at_address(int shmid, char* req_addr) {
 static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* req_addr) {
   // If a req_addr has been provided, we assume that the caller has already aligned the address.
   if (req_addr != NULL) {
-    assert(is_ptr_aligned(req_addr, os::large_page_size()), "Must be divisible by the large page size");
-    assert(is_ptr_aligned(req_addr, alignment), "Must be divisible by given alignment");
+    assert(is_aligned(req_addr, os::large_page_size()), "Must be divisible by the large page size");
+    assert(is_aligned(req_addr, alignment), "Must be divisible by given alignment");
     return shmat_at_address(shmid, req_addr);
   }
 
@@ -3553,7 +3553,7 @@ static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* 
   // However, if the alignment is larger than the large page size, we have
   // to manually ensure that the memory returned is 'alignment' aligned.
   if (alignment > os::large_page_size()) {
-    assert(is_size_aligned(alignment, os::large_page_size()), "Must be divisible by the large page size");
+    assert(is_aligned(alignment, os::large_page_size()), "Must be divisible by the large page size");
     return shmat_with_alignment(shmid, bytes, alignment);
   } else {
     return shmat_at_address(shmid, NULL);
@@ -3565,10 +3565,10 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseSHM, "only for SHM large pages");
-  assert(is_ptr_aligned(req_addr, os::large_page_size()), "Unaligned address");
-  assert(is_ptr_aligned(req_addr, alignment), "Unaligned address");
+  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
+  assert(is_aligned(req_addr, alignment), "Unaligned address");
 
-  if (!is_size_aligned(bytes, os::large_page_size())) {
+  if (!is_aligned(bytes, os::large_page_size())) {
     return NULL; // Fallback to small pages.
   }
 
@@ -3627,8 +3627,8 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
                                                         char* req_addr,
                                                         bool exec) {
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
-  assert(is_size_aligned(bytes, os::large_page_size()), "Unaligned size");
-  assert(is_ptr_aligned(req_addr, os::large_page_size()), "Unaligned address");
+  assert(is_aligned(bytes, os::large_page_size()), "Unaligned size");
+  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   char* addr = (char*)::mmap(req_addr, bytes, prot,
@@ -3640,7 +3640,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
     return NULL;
   }
 
-  assert(is_ptr_aligned(addr, os::large_page_size()), "Must be");
+  assert(is_aligned(addr, os::large_page_size()), "Must be");
 
   return addr;
 }
@@ -3659,8 +3659,8 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   size_t large_page_size = os::large_page_size();
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
-  assert(is_ptr_aligned(req_addr, alignment), "Must be");
-  assert(is_size_aligned(bytes, alignment), "Must be");
+  assert(is_aligned(req_addr, alignment), "Must be");
+  assert(is_aligned(bytes, alignment), "Must be");
 
   // First reserve - but not commit - the address range in small pages.
   char* const start = anon_mmap_aligned(bytes, alignment, req_addr);
@@ -3669,17 +3669,17 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
     return NULL;
   }
 
-  assert(is_ptr_aligned(start, alignment), "Must be");
+  assert(is_aligned(start, alignment), "Must be");
 
   char* end = start + bytes;
 
   // Find the regions of the allocated chunk that can be promoted to large pages.
-  char* lp_start = align_ptr_up(start, large_page_size);
-  char* lp_end   = align_ptr_down(end, large_page_size);
+  char* lp_start = align_up(start, large_page_size);
+  char* lp_end   = align_down(end, large_page_size);
 
   size_t lp_bytes = lp_end - lp_start;
 
-  assert(is_size_aligned(lp_bytes, large_page_size), "Must be");
+  assert(is_aligned(lp_bytes, large_page_size), "Must be");
 
   if (lp_bytes == 0) {
     // The mapped region doesn't even span the start and the end of a large page.
@@ -3740,12 +3740,12 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    char* req_addr,
                                                    bool exec) {
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
-  assert(is_ptr_aligned(req_addr, alignment), "Must be");
-  assert(is_size_aligned(alignment, os::vm_allocation_granularity()), "Must be");
+  assert(is_aligned(req_addr, alignment), "Must be");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
   assert(is_power_of_2(os::large_page_size()), "Must be");
   assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
 
-  if (is_size_aligned(bytes, os::large_page_size()) && alignment <= os::large_page_size()) {
+  if (is_aligned(bytes, os::large_page_size()) && alignment <= os::large_page_size()) {
     return reserve_memory_special_huge_tlbfs_only(bytes, req_addr, exec);
   } else {
     return reserve_memory_special_huge_tlbfs_mixed(bytes, alignment, req_addr, exec);
@@ -5967,12 +5967,12 @@ class TestReserveMemorySpecial : AllStatic {
 
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
-      for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
+      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, NULL, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " ->  " PTR_FORMAT " %s",
                  size, alignment, p2i(p), (p != NULL ? "" : "(failed)"));
         if (p != NULL) {
-          assert(is_ptr_aligned(p, alignment), "must be");
+          assert(is_aligned(p, alignment), "must be");
           small_page_write(p, size);
           os::Linux::release_memory_special_huge_tlbfs(p, size);
         }
@@ -5985,8 +5985,8 @@ class TestReserveMemorySpecial : AllStatic {
 
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
-      for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = align_ptr_up(mapping1, alignment);
+      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
+        char* const req_addr = align_up(mapping1, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
                  size, alignment, p2i(req_addr), p2i(p),
@@ -6005,8 +6005,8 @@ class TestReserveMemorySpecial : AllStatic {
 
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
-      for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = align_ptr_up(mapping2, alignment);
+      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
+        char* const req_addr = align_up(mapping2, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
                  size, alignment, p2i(req_addr), p2i(p), ((p != NULL ? "" : "(failed)")));
@@ -6039,8 +6039,8 @@ class TestReserveMemorySpecial : AllStatic {
     char* addr = os::Linux::reserve_memory_special_shm(size, alignment, NULL, false);
 
     if (addr != NULL) {
-      assert(is_ptr_aligned(addr, alignment), "Check");
-      assert(is_ptr_aligned(addr, os::large_page_size()), "Check");
+      assert(is_aligned(addr, alignment), "Check");
+      assert(is_aligned(addr, os::large_page_size()), "Check");
 
       small_page_write(addr, size);
 
@@ -6053,7 +6053,7 @@ class TestReserveMemorySpecial : AllStatic {
     size_t ag = os::vm_allocation_granularity();
 
     for (size_t size = ag; size < lp * 3; size += ag) {
-      for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
+      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         test_reserve_memory_special_shm(size, alignment);
       }
     }

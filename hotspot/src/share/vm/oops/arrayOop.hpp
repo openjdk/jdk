@@ -50,7 +50,7 @@ class arrayOopDesc : public oopDesc {
   // Returns the aligned header_size_in_bytes.  This is not equivalent to
   // sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
-    size_t hs = align_size_up(length_offset_in_bytes() + sizeof(int),
+    size_t hs = align_up(length_offset_in_bytes() + sizeof(int),
                               HeapWordSize);
 #ifdef ASSERT
     // make sure it isn't called before UseCompressedOops is initialized.
@@ -112,7 +112,7 @@ class arrayOopDesc : public oopDesc {
     assert(type2aelembytes(type) != 0, "wrong type");
 
     const size_t max_element_words_per_size_t =
-      align_size_down((SIZE_MAX/HeapWordSize - header_size(type)), MinObjAlignment);
+      align_down((SIZE_MAX/HeapWordSize - header_size(type)), MinObjAlignment);
     const size_t max_elements_per_size_t =
       HeapWordSize * max_element_words_per_size_t / type2aelembytes(type);
     if ((size_t)max_jint < max_elements_per_size_t) {
@@ -120,7 +120,7 @@ class arrayOopDesc : public oopDesc {
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
       // passing around the size (in words) of an object. So, we need to avoid
       // overflowing an int when we add the header. See CRs 4718400 and 7110613.
-      return align_size_down(max_jint - header_size(type), MinObjAlignment);
+      return align_down(max_jint - header_size(type), MinObjAlignment);
     }
     return (int32_t)max_elements_per_size_t;
   }

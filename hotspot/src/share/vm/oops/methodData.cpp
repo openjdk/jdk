@@ -937,7 +937,7 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
 // profiling information about a given method.  Size is in words
 int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
   int byte_size = compute_allocation_size_in_bytes(method);
-  int word_size = align_size_up(byte_size, BytesPerWord) / BytesPerWord;
+  int word_size = align_up(byte_size, BytesPerWord) / BytesPerWord;
   return align_metadata_size(word_size);
 }
 

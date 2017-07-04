@@ -3815,7 +3815,7 @@ void JavaClasses::compute_hard_coded_offsets() {
 
   // java_lang_boxing_object
   java_lang_boxing_object::value_offset = java_lang_boxing_object::hc_value_offset + header;
-  java_lang_boxing_object::long_value_offset = align_size_up((java_lang_boxing_object::hc_value_offset + header), BytesPerLong);
+  java_lang_boxing_object::long_value_offset = align_up((java_lang_boxing_object::hc_value_offset + header), BytesPerLong);
 
   // java_lang_ref_Reference:
   java_lang_ref_Reference::referent_offset = java_lang_ref_Reference::hc_referent_offset * x + header;
@@ -3827,7 +3827,7 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_ref_Reference::number_of_fake_oop_fields = 1;
 
   // java_lang_ref_SoftReference Class
-  java_lang_ref_SoftReference::timestamp_offset = align_size_up((java_lang_ref_SoftReference::hc_timestamp_offset * x + header), BytesPerLong);
+  java_lang_ref_SoftReference::timestamp_offset = align_up((java_lang_ref_SoftReference::hc_timestamp_offset * x + header), BytesPerLong);
   // Don't multiply static fields because they are always in wordSize units
   java_lang_ref_SoftReference::static_clock_offset = java_lang_ref_SoftReference::hc_static_clock_offset * x;
 

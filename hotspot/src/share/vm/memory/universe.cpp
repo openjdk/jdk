@@ -552,7 +552,7 @@ void Universe::reinitialize_itables(TRAPS) {
 
 
 bool Universe::on_page_boundary(void* addr) {
-  return is_ptr_aligned(addr, os::vm_page_size());
+  return is_aligned(addr, os::vm_page_size());
 }
 
 
@@ -818,11 +818,11 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
          "actual alignment " SIZE_FORMAT " must be within maximum heap alignment " SIZE_FORMAT,
          alignment, Arguments::conservative_max_heap_alignment());
 
-  size_t total_reserved = align_size_up(heap_size, alignment);
+  size_t total_reserved = align_up(heap_size, alignment);
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  bool use_large_pages = UseLargePages && is_size_aligned(alignment, os::large_page_size());
+  bool use_large_pages = UseLargePages && is_aligned(alignment, os::large_page_size());
   assert(!UseLargePages
       || UseParallelGC
       || use_large_pages, "Wrong alignment to use large pages");
