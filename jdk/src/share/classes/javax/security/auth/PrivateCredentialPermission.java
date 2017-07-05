@@ -495,7 +495,7 @@ public final class PrivateCredentialPermission extends Permission {
 
         // perform new initialization from the permission name
 
-        if (getName().indexOf(" ") == -1 && getName().indexOf("\"") == -1) {
+        if (getName().indexOf(' ') == -1 && getName().indexOf('"') == -1) {
 
             // name only has a credential class specified
             credentialClass = getName();

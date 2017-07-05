@@ -400,7 +400,7 @@ public class LdapLoginModule implements LoginModule {
 
         // Add any JNDI properties to the environment
         for (String key : options.keySet()) {
-            if (key.indexOf(".") > -1) {
+            if (key.indexOf('.') > -1) {
                 ldapEnvironment.put(key, options.get(key));
             }
         }
