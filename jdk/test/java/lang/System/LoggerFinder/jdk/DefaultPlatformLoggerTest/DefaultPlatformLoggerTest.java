@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@ import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.lang.System.LoggerFinder;
+import java.util.logging.Logger;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.internal.LoggingProviderImpl;
-import java.lang.reflect.Module;
 
 /**
  * @test
@@ -248,10 +248,9 @@ public class DefaultPlatformLoggerTest {
                         DefaultPlatformLoggerTest.class.getModule());
         java.util.logging.Logger sysSink = LoggingProviderImpl.getLogManagerAccess()
                 .demandLoggerFor(LogManager.getLogManager(),"foo", Thread.class.getModule());
-        appSink.addHandler(new MyHandler());
-        sysSink.addHandler(new MyHandler());
-        appSink.setUseParentHandlers(VERBOSE);
-        sysSink.setUseParentHandlers(VERBOSE);
+        java.util.logging.Logger sink = Logger.getLogger("foo");
+        sink.addHandler(new MyHandler());
+        sink.setUseParentHandlers(VERBOSE);
 
         System.out.println("\n*** Without Security Manager\n");
         test(provider, true, appSink, sysSink);
@@ -274,7 +273,7 @@ public class DefaultPlatformLoggerTest {
     public static void test(LoggerFinder provider, boolean hasRequiredPermissions,
             java.util.logging.Logger appSink, java.util.logging.Logger sysSink) throws Exception {
 
-        // No way to giva a resource bundle to a platform logger.
+        // No way to give a resource bundle to a platform logger.
         // ResourceBundle loggerBundle = ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<PlatformLogger, String> loggerDescMap = new HashMap<>();
 
