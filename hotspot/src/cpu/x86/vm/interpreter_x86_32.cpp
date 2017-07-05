@@ -243,18 +243,6 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 }
 
 
-// Method handle invoker
-// Dispatch a method of the form java.lang.invoke.MethodHandles::invoke(...)
-address InterpreterGenerator::generate_method_handle_entry(void) {
-  if (!EnableInvokeDynamic) {
-    return generate_abstract_entry();
-  }
-
-  address entry_point = MethodHandles::generate_method_handle_interpreter_entry(_masm);
-
-  return entry_point;
-}
-
 void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
 
   // This code is sort of the equivalent of C2IAdapter::setup_stack_frame back in

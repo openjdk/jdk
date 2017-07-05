@@ -31,6 +31,7 @@
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "prims/methodHandles.hpp"
 
 //
 //

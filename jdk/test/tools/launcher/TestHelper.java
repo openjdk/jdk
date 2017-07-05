@@ -21,6 +21,12 @@
  * questions.
  */
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.util.Set;
@@ -63,6 +69,8 @@ public class TestHelper {
     static final String javawCmd;
     static final String java64Cmd;
     static final String javacCmd;
+    static final String jarCmd;
+
     static final JavaCompiler compiler;
 
     static final boolean debug = Boolean.getBoolean("TestHelper.Debug");
@@ -131,6 +139,15 @@ public class TestHelper {
                 : new File(binDir, "javac");
         javacCmd = javacCmdFile.getAbsolutePath();
 
+        File jarCmdFile = (isWindows)
+                ? new File(binDir, "jar.exe")
+                : new File(binDir, "jar");
+        jarCmd = jarCmdFile.getAbsolutePath();
+        if (!jarCmdFile.canExecute()) {
+            throw new RuntimeException("java <" + TestHelper.jarCmd +
+                    "> must exist and should be executable");
+        }
+
         if (isWindows) {
             File javawCmdFile = new File(binDir, "javaw.exe");
             javawCmd = javawCmdFile.getAbsolutePath();
@@ -156,6 +173,37 @@ public class TestHelper {
             }
         } else {
             java64Cmd = null;
+        }
+    }
+    void run(String[] args) throws Exception {
+        int passed = 0, failed = 0;
+        final Pattern p = (args != null && args.length > 0)
+                ? Pattern.compile(args[0])
+                : null;
+        for (Method m : this.getClass().getDeclaredMethods()) {
+            boolean selected = (p == null)
+                    ? m.isAnnotationPresent(Test.class)
+                    : p.matcher(m.getName()).matches();
+            if (selected) {
+                try {
+                    m.invoke(this, (Object[]) null);
+                    System.out.println(m.getName() + ": OK");
+                    passed++;
+                    System.out.printf("Passed: %d, Failed: %d, ExitValue: %d%n",
+                                      passed, failed, testExitValue);
+                } catch (Throwable ex) {
+                    System.out.printf("Test %s failed: %s %n", m, ex.getCause());
+                    failed++;
+                }
+            }
+        }
+        System.out.printf("Total: Passed: %d, Failed %d%n", passed, failed);
+        if (failed > 0) {
+            throw new RuntimeException("Tests failed: " + failed);
+        }
+        if (passed == 0 && failed == 0) {
+            throw new AssertionError("No test(s) selected: passed = " +
+                    passed + ", failed = " + failed + " ??????????");
         }
     }
 
@@ -395,6 +443,7 @@ public class TestHelper {
         List<String> testOutput;
         Map<String, String> env;
         Throwable t;
+        boolean testStatus;
 
         public TestResult(String str, int rv, List<String> oList,
                 Map<String, String> env, Throwable t) {
@@ -405,9 +454,12 @@ public class TestHelper {
             testOutput = oList;
             this.env = env;
             this.t = t;
+            testStatus = true;
         }
 
         void appendError(String x) {
+            testStatus = false;
+            testExitValue++;
             status.println(TEST_PREFIX + x);
         }
 
@@ -418,14 +470,12 @@ public class TestHelper {
         void checkNegative() {
             if (exitValue == 0) {
                 appendError("test must not return 0 exit value");
-                testExitValue++;
             }
         }
 
         void checkPositive() {
             if (exitValue != 0) {
                 appendError("test did not return 0 exit value");
-                testExitValue++;
             }
         }
 
@@ -436,7 +486,6 @@ public class TestHelper {
         boolean isZeroOutput() {
             if (!testOutput.isEmpty()) {
                 appendError("No message from cmd please");
-                testExitValue++;
                 return false;
             }
             return true;
@@ -445,7 +494,6 @@ public class TestHelper {
         boolean isNotZeroOutput() {
             if (testOutput.isEmpty()) {
                 appendError("Missing message");
-                testExitValue++;
                 return false;
             }
             return true;
@@ -454,6 +502,7 @@ public class TestHelper {
         @Override
         public String toString() {
             status.println("++++Begin Test Info++++");
+            status.println("Test Status: " + (testStatus ? "PASS" : "FAIL"));
             status.println("++++Test Environment++++");
             for (String x : env.keySet()) {
                 indentStatus(x + "=" + env.get(x));
@@ -481,7 +530,6 @@ public class TestHelper {
                 }
             }
             appendError("string <" + str + "> not found");
-            testExitValue++;
             return false;
         }
 
@@ -492,8 +540,13 @@ public class TestHelper {
                 }
             }
             appendError("string <" + stringToMatch + "> not found");
-            testExitValue++;
             return false;
         }
     }
+    /**
+    * Indicates that the annotated method is a test method.
+    */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Test {}
 }

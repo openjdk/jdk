@@ -83,6 +83,10 @@ bool ciSymbol::starts_with(const char* prefix, int len) const {
   GUARDED_VM_ENTRY(return get_symbol()->starts_with(prefix, len);)
 }
 
+bool ciSymbol::is_signature_polymorphic_name()  const {
+  GUARDED_VM_ENTRY(return MethodHandles::is_signature_polymorphic_name(get_symbol());)
+}
+
 // ------------------------------------------------------------------
 // ciSymbol::index_of
 //

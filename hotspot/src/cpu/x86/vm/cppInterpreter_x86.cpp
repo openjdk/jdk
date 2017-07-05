@@ -871,9 +871,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     // Need to differentiate between igetfield, agetfield, bgetfield etc.
     // because they are different sizes.
     // Use the type from the constant pool cache
-    __ shrl(rdx, ConstantPoolCacheEntry::tosBits);
-    // Make sure we don't need to mask rdx for tosBits after the above shift
-    ConstantPoolCacheEntry::verify_tosBits();
+    __ shrl(rdx, ConstantPoolCacheEntry::tos_state_shift);
+    // Make sure we don't need to mask rdx after the above shift
+    ConstantPoolCacheEntry::verify_tos_state_shift();
 #ifdef _LP64
     Label notObj;
     __ cmpl(rdx, atos);

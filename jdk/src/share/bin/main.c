@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,22 +87,41 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
     const jboolean const_javaw = JNI_TRUE;
 
     __initenv = _environ;
-    margc = __argc;
-    margv = __argv;
-
 
 #else /* JAVAW */
 int
-main(int argc, char ** argv)
+main(int argc, char **argv)
 {
     int margc;
     char** margv;
     const jboolean const_javaw = JNI_FALSE;
-
+#endif /* JAVAW */
+#ifdef _WIN32
+    {
+        int i = 0;
+        if (getenv(JLDEBUG_ENV_ENTRY) != NULL) {
+            printf("Windows original main args:\n");
+            for (i = 0 ; i < __argc ; i++) {
+                printf("wwwd_args[%d] = %s\n", i, __argv[i]);
+            }
+        }
+    }
+    JLI_CmdToArgs(GetCommandLine());
+    margc = JLI_GetStdArgc();
+    // add one more to mark the end
+    margv = (char **)JLI_MemAlloc((margc + 1) * (sizeof(char *)));
+    {
+        int i = 0;
+        StdArg *stdargs = JLI_GetStdArgs();
+        for (i = 0 ; i < margc ; i++) {
+            margv[i] = stdargs[i].arg;
+        }
+        margv[i] = NULL;
+    }
+#else /* *NIXES */
     margc = argc;
     margv = argv;
-#endif /* JAVAW */
-
+#endif /* WIN32 */
     return JLI_Launch(margc, margv,
                    sizeof(const_jargs) / sizeof(char *), const_jargs,
                    sizeof(const_appclasspath) / sizeof(char *), const_appclasspath,
