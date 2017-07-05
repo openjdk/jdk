@@ -1161,6 +1161,6 @@ class Field extends AccessibleObject implements Member {
                                                        this,
                                                        getDeclaringClass(),
                                                        getGenericType(),
-                                                       TypeAnnotation.TypeAnnotationTarget.FIELD_TYPE);
+                                                       TypeAnnotation.TypeAnnotationTarget.FIELD);
 }
 }

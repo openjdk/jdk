@@ -57,6 +57,7 @@ PROFILE_1_RTJAR_INCLUDE_PACKAGES := \
     java/time \
     java/util \
     javax/net \
+    javax/script \
     javax/security \
     jdk \
     sun/invoke \
@@ -111,7 +112,6 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
     com/sun/nio/sctp \
     com/sun/org/apache/xml/internal/security \
     com/sun/rowset \
-    com/sun/script \
     com/sun/security/auth \
     com/sun/security/jgss \
     com/sun/security/ntlm \
@@ -125,7 +125,6 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
     javax/lang/model \
     javax/management \
     javax/naming \
-    javax/script \
     javax/security/auth/kerberos \
     javax/security/sasl \
     javax/smartcardio \
@@ -140,7 +139,6 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
     sun/net/www/protocol/http/ntlm \
     sun/net/www/protocol/http/spnego \
     sun/nio/ch/sctp \
-    sun/org/mozilla \
     sun/security/acl \
     sun/security/jgss \
     sun/security/krb5 \
@@ -160,10 +158,6 @@ PROFILE_3_RTJAR_EXCLUDE_TYPES := \
     javax/management/remote/rmi/_RMIConnection_Stub.class \
     javax/management/remote/rmi/_RMIServerImpl_Tie.class \
     javax/management/remote/rmi/_RMIServer_Stub.class
-
-PROFILE_3_INCLUDE_METAINF_SERVICES := \
-    META-INF/services/javax.script.ScriptEngineFactory 
-
 
 FULL_JRE_RTJAR_INCLUDE_PACKAGES := \
     com/oracle \

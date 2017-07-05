@@ -32,7 +32,7 @@ import java.time.chrono.IsoChronology;
 import java.time.chrono.JapaneseChronology;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.ThaiBuddhistChronology;
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -129,7 +129,7 @@ public class TestNonIsoFormatter {
                                          ChronoLocalDate<?> date, String expected) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(chrono).withLocale(formatLocale)
-            .withSymbols(DateTimeFormatSymbols.of(numberingLocale));
+            .withDecimalStyle(DecimalStyle.of(numberingLocale));
         String text = dtf.format(date);
         assertEquals(text, expected);
     }
@@ -139,7 +139,7 @@ public class TestNonIsoFormatter {
                                         ChronoLocalDate<?> expected, String text) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(chrono).withLocale(formatLocale)
-            .withSymbols(DateTimeFormatSymbols.of(numberingLocale));
+            .withDecimalStyle(DecimalStyle.of(numberingLocale));
         TemporalAccessor temporal = dtf.parse(text);
         ChronoLocalDate<?> date = chrono.date(temporal);
         assertEquals(date, expected);

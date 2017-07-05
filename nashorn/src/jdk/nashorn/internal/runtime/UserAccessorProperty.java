@@ -67,7 +67,6 @@ public final class UserAccessorProperty extends Property {
 
     private UserAccessorProperty(final UserAccessorProperty property) {
         super(property);
-
         this.getterSlot = property.getterSlot;
         this.setterSlot = property.setterSlot;
     }
@@ -115,10 +114,10 @@ public final class UserAccessorProperty extends Property {
     public int getSpillCount() {
         // calculate how many spill array slots used by this propery.
         int count = 0;
-        if (getGetterSlot() >= ScriptObject.EMBED_SIZE) {
+        if (getGetterSlot() >= 0) {
             count++;
         }
-        if (getSetterSlot() >= ScriptObject.EMBED_SIZE) {
+        if (getSetterSlot() >= 0) {
             count++;
         }
         return count;
@@ -141,7 +140,7 @@ public final class UserAccessorProperty extends Property {
 
     @Override
     public ScriptFunction getGetterFunction(final ScriptObject obj) {
-        final Object value = obj.getEmbedOrSpill(getterSlot);
+        final Object value = obj.getSpill(getterSlot);
         return (value instanceof ScriptFunction) ? (ScriptFunction) value : null;
     }
 
@@ -152,7 +151,7 @@ public final class UserAccessorProperty extends Property {
 
     @Override
     public ScriptFunction getSetterFunction(final ScriptObject obj) {
-        final Object value = obj.getEmbedOrSpill(setterSlot);
+        final Object value = obj.getSpill(setterSlot);
         return (value instanceof ScriptFunction) ? (ScriptFunction) value : null;
     }
 

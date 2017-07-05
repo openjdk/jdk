@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #import "LWCToolkit.h"
 
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import <QuartzCore/CATransaction.h>
 
 @implementation AWTSurfaceLayers
 
@@ -74,14 +75,12 @@
 }
 
 - (void) setBounds:(CGRect)rect {
-    layer.anchorPoint = CGPointMake(0, 0);
-
     // translates values to the coordinate system of the "root" layer
-    CGFloat newY = windowLayer.bounds.size.height - rect.origin.y - rect.size.height;
-    CGRect newRect = CGRectMake(rect.origin.x, newY, rect.size.width, rect.size.height);
-
-    layer.frame = newRect;
-
+    rect.origin.y = windowLayer.bounds.size.height - rect.origin.y - rect.size.height;
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    layer.frame = rect;
+    [CATransaction commit];
     [AWTSurfaceLayers repaintLayersRecursively:layer];
 }
 

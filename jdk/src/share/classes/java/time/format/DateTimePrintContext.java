@@ -85,7 +85,7 @@ import java.util.Objects;
  * <p>
  * This class provides a single wrapper to items used in the format.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is a mutable context intended for use from a single thread.
  * Usage of the class is thread-safe within standard printing as the framework creates
  * a new instance of the class for each format and printing is single-threaded.
@@ -234,7 +234,7 @@ final class DateTimePrintContext {
      * Gets the locale.
      * <p>
      * This locale is used to control localization in the format output except
-     * where localization is controlled by the symbols.
+     * where localization is controlled by the DecimalStyle.
      *
      * @return the locale, not null
      */
@@ -243,14 +243,14 @@ final class DateTimePrintContext {
     }
 
     /**
-     * Gets the formatting symbols.
+     * Gets the DecimalStyle.
      * <p>
-     * The symbols control the localization of numeric output.
+     * The DecimalStyle controls the localization of numeric output.
      *
-     * @return the formatting symbols, not null
+     * @return the DecimalStyle, not null
      */
-    DateTimeFormatSymbols getSymbols() {
-        return formatter.getSymbols();
+    DecimalStyle getDecimalStyle() {
+        return formatter.getDecimalStyle();
     }
 
     //-----------------------------------------------------------------------

@@ -20,18 +20,6 @@
 
 package com.sun.org.apache.xerces.internal.dom;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Vector;
-
-import com.sun.org.apache.xerces.internal.util.PropertyState;
-import com.sun.org.apache.xerces.internal.util.Status;
-import org.w3c.dom.DOMConfiguration;
-import org.w3c.dom.DOMErrorHandler;
-import org.w3c.dom.DOMStringList;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -42,7 +30,10 @@ import com.sun.org.apache.xerces.internal.util.DOMEntityResolverWrapper;
 import com.sun.org.apache.xerces.internal.util.DOMErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.MessageFormatter;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
+import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -55,10 +46,17 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
-import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Vector;
+import javax.xml.XMLConstants;
+import org.w3c.dom.DOMConfiguration;
+import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
+import org.w3c.dom.DOMStringList;
 import org.w3c.dom.ls.LSResourceResolver;
-
 
 
 /**
@@ -157,6 +155,14 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
     /** Property identifier: Schema DV Factory */
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
+
+    /** Property identifier: access to external dtd */
+    protected static final String ACCESS_EXTERNAL_DTD =
+        XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema  */
+    protected static final String ACCESS_EXTERNAL_SCHEMA =
+        XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     //
     // Data
@@ -276,7 +282,9 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             JAXP_SCHEMA_SOURCE,
             JAXP_SCHEMA_LANGUAGE,
             DTD_VALIDATOR_FACTORY_PROPERTY,
-            SCHEMA_DV_FACTORY
+            SCHEMA_DV_FACTORY,
+            ACCESS_EXTERNAL_DTD,
+            ACCESS_EXTERNAL_SCHEMA
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -310,6 +318,14 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         fValidationManager = createValidationManager();
         setProperty(VALIDATION_MANAGER, fValidationManager);
 
+        //For DOM, the secure feature is set to true by default
+        String accessExternal =  SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
+        setProperty(ACCESS_EXTERNAL_DTD, accessExternal);
+
+        accessExternal =  SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
+        setProperty(ACCESS_EXTERNAL_SCHEMA, accessExternal);
 
         // add message formatters
         if (fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN) == null) {

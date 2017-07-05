@@ -1246,6 +1246,9 @@ public final class System {
             public StackTraceElement getStackTraceElement(Throwable t, int i) {
                 return t.getStackTraceElement(i);
             }
+            public String newStringUnsafe(char[] chars) {
+                return new String(chars, true);
+            }
         });
     }
 }

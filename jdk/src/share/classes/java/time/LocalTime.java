@@ -109,7 +109,7 @@ import java.util.Objects;
  * in most of the world. This API assumes that all calendar systems use the same
  * representation, this class, for time-of-day.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -974,9 +974,6 @@ public final class LocalTime
      *  Returns a {@code LocalTime} with the specified number of half-days added.
      *  This is equivalent to {@link #plusHours(long)} with the amount
      *  multiplied by 12.
-     * <li>{@code DAYS} -
-     *  Returns a {@code LocalTime} with the specified number of days added.
-     *  This returns {@code this} time.
      * </ul>
      * <p>
      * All other {@code ChronoUnit} instances will throw an {@code UnsupportedTemporalTypeException}.
@@ -1007,7 +1004,6 @@ public final class LocalTime
                 case MINUTES: return plusMinutes(amountToAdd);
                 case HOURS: return plusHours(amountToAdd);
                 case HALF_DAYS: return plusHours((amountToAdd % 2) * 12);
-                case DAYS: return this;
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
@@ -1291,19 +1287,19 @@ public final class LocalTime
     }
 
     /**
-     * Calculates the period between this time and another time in
-     * terms of the specified unit.
+     * Calculates the amount of time until another time in terms of the specified unit.
      * <p>
-     * This calculates the period between two times in terms of a single unit.
+     * This calculates the amount of time between two {@code LocalTime}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method must be a {@code LocalTime}.
-     * For example, the period in hours between two times can be calculated
+     * For example, the amount in hours between two times can be calculated
      * using {@code startTime.periodUntil(endTime, HOURS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two times.
-     * For example, the period in hours between 11:30 and 13:29 will only
+     * For example, the amount in hours between 11:30 and 13:29 will only
      * be one hour as it is one minute short of two hours.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1329,9 +1325,9 @@ public final class LocalTime
      * This instance is immutable and unaffected by this method call.
      *
      * @param endTime  the end time, which must be a {@code LocalTime}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this time and the end time
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this time and the end time
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -1339,7 +1335,7 @@ public final class LocalTime
     public long periodUntil(Temporal endTime, TemporalUnit unit) {
         if (endTime instanceof LocalTime == false) {
             Objects.requireNonNull(endTime, "endTime");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         LocalTime end = (LocalTime) endTime;
         if (unit instanceof ChronoUnit) {

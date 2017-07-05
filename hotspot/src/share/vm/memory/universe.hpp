@@ -90,8 +90,8 @@ class ActiveMethodOopsCache : public CommonMethodOopCache {
   ActiveMethodOopsCache()   { _prev_methods = NULL; }
   ~ActiveMethodOopsCache();
 
-  void add_previous_version(Method* const method);
-  bool is_same_method(Method* const method) const;
+  void add_previous_version(Method* method);
+  bool is_same_method(const Method* method) const;
 };
 
 

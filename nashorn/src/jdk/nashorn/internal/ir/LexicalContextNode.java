@@ -25,22 +25,21 @@
 package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * Superclass for nodes that can be part of the lexical context
  * @see LexicalContext
  */
-public abstract class LexicalContextNode extends Node {
+public abstract class LexicalContextNode extends Statement {
     /**
      * Constructor
      *
-     * @param source source
-     * @param token  token
-     * @param finish finish
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
      */
-    protected LexicalContextNode(final Source source, final long token, final int finish) {
-        super(source, token, finish);
+    protected LexicalContextNode(final int lineNumber, final long token, final int finish) {
+        super(lineNumber, token, finish);
     }
 
     /**
@@ -70,4 +69,16 @@ public abstract class LexicalContextNode extends Node {
         final LexicalContextNode newNode = (LexicalContextNode)accept(lc, visitor);
         return lc.pop(newNode);
     }
+
+    /**
+     * Set the symbol and replace in lexical context if applicable
+     * @param lc     lexical context
+     * @param symbol symbol
+     * @return new node if symbol changed
+     */
+    @Override
+    public Node setSymbol(final LexicalContext lc, final Symbol symbol) {
+        return Node.replaceInLexicalContext(lc, this, (LexicalContextNode)super.setSymbol(null, symbol));
+    }
+
 }

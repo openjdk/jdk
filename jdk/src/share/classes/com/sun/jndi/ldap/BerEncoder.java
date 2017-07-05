@@ -99,7 +99,7 @@ public final class BerEncoder extends Ber {
         if (curSeqIndex != 0) {
             throw new IllegalStateException("BER encode error: Unbalanced SEQUENCEs.");
         }
-        return buf;
+        return buf;     // shared buffer, be careful to use this method.
     }
 
     /**

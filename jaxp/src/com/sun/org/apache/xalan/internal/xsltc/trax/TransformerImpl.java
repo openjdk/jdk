@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -61,6 +62,7 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.XMLConstants;
 
 import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 
@@ -207,6 +209,14 @@ public final class TransformerImpl extends Transformer
      * Note the default value (false) is the safe option..
      */
     private boolean _useServicesMechanism;
+    /**
+     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
+     */
+    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+     /**
+     * protocols allowed for external DTD references in source file and/or stylesheet.
+     */
+    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
 
     /**
      * A hashtable to store parameters for the identity transform. These
@@ -260,7 +270,10 @@ public final class TransformerImpl extends Transformer
         _indentNumber = indentNumber;
         _tfactory = tfactory;
         _useServicesMechanism = _tfactory.useServicesMechnism();
+        _accessExternalStylesheet = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
+        _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
+        _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         //_isIncremental = tfactory._incremental;
     }
 

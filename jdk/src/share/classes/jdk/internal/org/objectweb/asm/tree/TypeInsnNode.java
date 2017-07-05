@@ -79,10 +79,12 @@ public class TypeInsnNode extends AbstractInsnNode {
     /**
      * Constructs a new {@link TypeInsnNode}.
      *
-     * @param opcode the opcode of the type instruction to be constructed. This
-     *        opcode must be NEW, ANEWARRAY, CHECKCAST or INSTANCEOF.
-     * @param desc the operand of the instruction to be constructed. This
-     *        operand is an internal name (see {@link jdk.internal.org.objectweb.asm.Type}).
+     * @param opcode
+     *            the opcode of the type instruction to be constructed. This
+     *            opcode must be NEW, ANEWARRAY, CHECKCAST or INSTANCEOF.
+     * @param desc
+     *            the operand of the instruction to be constructed. This operand
+     *            is an internal name (see {@link jdk.internal.org.objectweb.asm.Type}).
      */
     public TypeInsnNode(final int opcode, final String desc) {
         super(opcode);
@@ -92,8 +94,9 @@ public class TypeInsnNode extends AbstractInsnNode {
     /**
      * Sets the opcode of this instruction.
      *
-     * @param opcode the new instruction opcode. This opcode must be NEW,
-     *        ANEWARRAY, CHECKCAST or INSTANCEOF.
+     * @param opcode
+     *            the new instruction opcode. This opcode must be NEW,
+     *            ANEWARRAY, CHECKCAST or INSTANCEOF.
      */
     public void setOpcode(final int opcode) {
         this.opcode = opcode;
@@ -107,10 +110,11 @@ public class TypeInsnNode extends AbstractInsnNode {
     @Override
     public void accept(final MethodVisitor mv) {
         mv.visitTypeInsn(opcode, desc);
+        acceptAnnotations(mv);
     }
 
     @Override
     public AbstractInsnNode clone(final Map<LabelNode, LabelNode> labels) {
-        return new TypeInsnNode(opcode, desc);
+        return new TypeInsnNode(opcode, desc).cloneAnnotations(this);
     }
 }

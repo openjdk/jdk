@@ -69,5 +69,4 @@ final class CompiledFunctions extends TreeSet<CompiledFunction> {
         return best(type).moreGenericThan(type);
     }
 
-
 }

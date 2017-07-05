@@ -118,7 +118,7 @@ import java.util.regex.Pattern;
  * most applications.
  * See {@link Instant} for a discussion as to the meaning of the second and time-scales.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

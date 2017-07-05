@@ -348,13 +348,22 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
                     0, false);
                 cbh.handle(new Callback[] {ccb, ncb, pcb});
 
-                /* Acquire realm from RealmChoiceCallback*/
-                negotiatedRealm = realmTokens[ccb.getSelectedIndexes()[0]];
+                // Acquire realm from RealmChoiceCallback
+                int[] selected = ccb.getSelectedIndexes();
+                if (selected == null
+                        || selected[0] < 0
+                        || selected[0] >= realmTokens.length) {
+                    throw new SaslException("DIGEST-MD5: Invalid realm chosen");
+                }
+                negotiatedRealm = realmTokens[selected[0]];
             }
 
             passwd = pcb.getPassword();
             pcb.clearPassword();
             username = ncb.getName();
+
+        } catch (SaslException se) {
+            throw se;
 
         } catch (UnsupportedCallbackException e) {
             throw new SaslException("DIGEST-MD5: Cannot perform callback to " +

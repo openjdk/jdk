@@ -22,7 +22,7 @@
  * questions.
  */
 
-/*
+/**
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -73,10 +73,13 @@ public interface ASMifiable {
     /**
      * Prints the ASM code to create an attribute equal to this attribute.
      *
-     * @param buf a buffer used for printing Java code.
-     * @param varName name of the variable in a printed code used to store
-     *        attribute instance.
-     * @param labelNames map of label instances to their names.
+     * @param buf
+     *            a buffer used for printing Java code.
+     * @param varName
+     *            name of the variable in a printed code used to store attribute
+     *            instance.
+     * @param labelNames
+     *            map of label instances to their names.
      */
     void asmify(StringBuffer buf, String varName, Map<Label, String> labelNames);
 }

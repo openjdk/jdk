@@ -89,7 +89,7 @@ import java.util.Objects;
  * This calendar system is primarily used in the Republic of China, often known as Taiwan.
  * Dates are aligned such that {@code 0001-01-01 (Minguo)} is {@code 1912-01-01 (ISO)}.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

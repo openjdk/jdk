@@ -492,7 +492,9 @@ class CompileReplay : public StackObj {
       }
       Klass* k = parse_klass(CHECK);
       rec->oops_offsets[i] = offset;
-      rec->oops_handles[i] = (jobject)(new KlassHandle(THREAD, k));
+      KlassHandle *kh = NEW_C_HEAP_OBJ(KlassHandle, mtCompiler);
+      ::new ((void*)kh) KlassHandle(THREAD, k);
+      rec->oops_handles[i] = (jobject)kh;
     }
   }
 

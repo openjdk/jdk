@@ -65,6 +65,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 
 import sun.security.util.Debug;
 import sun.security.util.DerValue;
+import sun.security.util.ECUtil;
 
 import sun.security.ec.ECParameters;
 
@@ -1351,7 +1352,8 @@ final class P11KeyStore extends KeyStoreSpi {
             token.p11.C_GetAttributeValue(session.id(), oHandle, attrs);
             byte[] encodedParams = attrs[0].getByteArray();
             try {
-                ECParameterSpec params = ECParameters.decodeParameters(encodedParams);
+                ECParameterSpec params =
+                    ECUtil.getECParameterSpec(null, encodedParams);
                 keyLength = params.getCurve().getField().getFieldSize();
             } catch (IOException e) {
                 // we do not want to accept key with unsupported parameters
@@ -1726,7 +1728,8 @@ final class P11KeyStore extends KeyStoreSpi {
                 idAttrs[0] = new CK_ATTRIBUTE(CKA_ID, alias);
             }
 
-            byte[] encodedParams = ECParameters.encodeParameters(ecKey.getParams());
+            byte[] encodedParams =
+                ECUtil.encodeECParameterSpec(null, ecKey.getParams());
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
                 ATTR_CLASS_PKEY,
@@ -1901,7 +1904,7 @@ final class P11KeyStore extends KeyStoreSpi {
             ECPublicKey ecPub = (ECPublicKey)publicKey;
             ECPoint point = ecPub.getW();
             ECParameterSpec params = ecPub.getParams();
-            byte[] encodedPoint = ECParameters.encodePoint(point, params.getCurve());
+            byte[] encodedPoint = ECUtil.encodePoint(point, params.getCurve());
             if (id) {
                 attrs[0] = new CK_ATTRIBUTE(CKA_ID, sha1(encodedPoint));
             }

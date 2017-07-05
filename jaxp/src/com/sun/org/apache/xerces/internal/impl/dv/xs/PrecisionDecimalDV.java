@@ -32,7 +32,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
  */
 class PrecisionDecimalDV extends TypeValidator {
 
-    static class XPrecisionDecimal {
+    static final class XPrecisionDecimal {
 
         // sign: 0 for absent; 1 for positive values; -1 for negative values (except in case of INF, -INF)
         int sign = 1;
@@ -144,7 +144,71 @@ class PrecisionDecimalDV extends TypeValidator {
             totalDigits = intDigits + fracDigits;
         }
 
+        // Construct a canonical String representation of this number
+        // for the purpose of deriving a hashCode value compliant with
+        // equals.
+        // The toString representation will be:
+        // NaN for NaN, INF for +infinity, -INF for -infinity, 0 for zero,
+        // and [1-9].[0-9]*[1-9]?(E[1-9][0-9]*)? for other numbers.
+        private static String canonicalToStringForHashCode(String ivalue, String fvalue, int sign, int pvalue) {
+            if ("NaN".equals(ivalue)) {
+                return "NaN";
+            }
+            if ("INF".equals(ivalue)) {
+                return sign < 0 ? "-INF" : "INF";
+            }
+            final StringBuilder builder = new StringBuilder();
+            final int ilen = ivalue.length();
+            final int flen0 = fvalue.length();
+            int lastNonZero;
+            for (lastNonZero = flen0; lastNonZero > 0 ; lastNonZero--) {
+                if (fvalue.charAt(lastNonZero -1 ) != '0') break;
+            }
+            final int flen = lastNonZero;
+            int iStart;
+            int exponent = pvalue;
+            for (iStart = 0; iStart < ilen; iStart++) {
+                if (ivalue.charAt(iStart) != '0') break;
+            }
+            int fStart = 0;
+            if (iStart < ivalue.length()) {
+                builder.append(sign == -1 ? "-" : "");
+                builder.append(ivalue.charAt(iStart));
+                iStart++;
+            } else {
+                if (flen > 0) {
+                    for (fStart = 0; fStart < flen; fStart++) {
+                        if (fvalue.charAt(fStart) != '0') break;
+                    }
+                    if (fStart < flen) {
+                        builder.append(sign == -1 ? "-" : "");
+                        builder.append(fvalue.charAt(fStart));
+                        exponent -= ++fStart;
+                    } else {
+                        return "0";
+                    }
+                } else {
+                    return "0";
+                }
+            }
 
+            if (iStart < ilen || fStart < flen) {
+                builder.append('.');
+            }
+            while (iStart < ilen) {
+                builder.append(ivalue.charAt(iStart++));
+                exponent++;
+            }
+            while (fStart < flen) {
+                builder.append(fvalue.charAt(fStart++));
+            }
+            if (exponent != 0) {
+                builder.append("E").append(exponent);
+            }
+            return builder.toString();
+        }
+
+        @Override
         public boolean equals(Object val) {
             if (val == this)
                 return true;
@@ -154,6 +218,20 @@ class PrecisionDecimalDV extends TypeValidator {
             XPrecisionDecimal oval = (XPrecisionDecimal)val;
 
             return this.compareTo(oval) == EQUAL;
+        }
+
+        @Override
+        public int hashCode() {
+            // There's nothing else we can use easily, because equals could
+            // return true for widely different representation of the
+            // same number - and we don't have any canonical representation.
+            // The problem here is that we must ensure that if two numbers
+            // are equals then their hash code must also be equals.
+            // hashCode for 1.01E1 should be the same as hashCode for 0.101E2
+            // So we call cannonicalToStringForHashCode - which implements an
+            // algorithm that invents a normalized string representation
+            // for this number, and we return a hash for that.
+            return canonicalToStringForHashCode(ivalue, fvalue, sign, pvalue).hashCode();
         }
 
         /**
@@ -295,6 +373,7 @@ class PrecisionDecimalDV extends TypeValidator {
 
         private String canonical;
 
+        @Override
         public synchronized String toString() {
             if (canonical == null) {
                 makeCanonical();
@@ -325,6 +404,7 @@ class PrecisionDecimalDV extends TypeValidator {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.impl.dv.xs.TypeValidator#getAllowedFacets()
      */
+    @Override
     public short getAllowedFacets() {
         return ( XSSimpleTypeDecl.FACET_PATTERN | XSSimpleTypeDecl.FACET_WHITESPACE | XSSimpleTypeDecl.FACET_ENUMERATION |XSSimpleTypeDecl.FACET_MAXINCLUSIVE |XSSimpleTypeDecl.FACET_MININCLUSIVE | XSSimpleTypeDecl.FACET_MAXEXCLUSIVE  | XSSimpleTypeDecl.FACET_MINEXCLUSIVE | XSSimpleTypeDecl.FACET_TOTALDIGITS | XSSimpleTypeDecl.FACET_FRACTIONDIGITS);
     }
@@ -332,6 +412,7 @@ class PrecisionDecimalDV extends TypeValidator {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.impl.dv.xs.TypeValidator#getActualValue(java.lang.String, com.sun.org.apache.xerces.internal.impl.dv.ValidationContext)
      */
+    @Override
     public Object getActualValue(String content, ValidationContext context)
     throws InvalidDatatypeValueException {
         try {
@@ -341,18 +422,22 @@ class PrecisionDecimalDV extends TypeValidator {
         }
     }
 
+    @Override
     public int compare(Object value1, Object value2) {
         return ((XPrecisionDecimal)value1).compareTo((XPrecisionDecimal)value2);
     }
 
+    @Override
     public int getFractionDigits(Object value) {
         return ((XPrecisionDecimal)value).fracDigits;
     }
 
+    @Override
     public int getTotalDigits(Object value) {
         return ((XPrecisionDecimal)value).totalDigits;
     }
 
+    @Override
     public boolean isIdentical(Object value1, Object value2) {
         if(!(value2 instanceof XPrecisionDecimal) || !(value1 instanceof XPrecisionDecimal))
             return false;

@@ -243,7 +243,7 @@ public final class Options {
      */
     public String getString(final String key) {
         final Option<?> option = get(key);
-        if(option != null) {
+        if (option != null) {
             final String value = (String)option.getValue();
             if(value != null) {
                 return value.intern();
