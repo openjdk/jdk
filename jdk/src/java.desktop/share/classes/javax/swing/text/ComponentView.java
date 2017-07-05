@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ public class ComponentView extends View  {
      * This would result from a call to setParent or
      * as a result of being notified that attributes
      * have changed.
+     * @return the component that is associated with
+     * this view
      */
     protected Component createComponent() {
         AttributeSet attr = getElement().getAttributes();
@@ -94,6 +96,7 @@ public class ComponentView extends View  {
 
     /**
      * Fetch the component associated with the view.
+     * @return the component associated with the view
      */
     public final Component getComponent() {
         return createdC;

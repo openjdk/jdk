@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
 import java.awt.image.*;
-import java.text.BreakIterator;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.InvocationTargetException;
@@ -347,7 +345,6 @@ public class XTrayIconPeer implements TrayIconPeer,
     }
 
     // It's synchronized with disposal by EDT.
-    @SuppressWarnings("deprecation")
     public void showPopupMenu(int x, int y) {
         if (isDisposed())
             return;
@@ -366,7 +363,9 @@ public class XTrayIconPeer implements TrayIconPeer,
         }
 
         if (popup != null) {
-            Point loc = ((XBaseWindow)eframe.getPeer()).toLocal(new Point(x, y));
+            final XBaseWindow peer = AWTAccessor.getComponentAccessor()
+                                                .getPeer(eframe);
+            Point loc = peer.toLocal(new Point(x, y));
             popup.show(eframe, loc.x, loc.y);
         }
     }
@@ -416,9 +415,9 @@ public class XTrayIconPeer implements TrayIconPeer,
         canvas.addMouseMotionListener(eventProxy);
     }
 
-    @SuppressWarnings("deprecation")
     long getWindow() {
-        return ((XEmbeddedFramePeer)eframe.getPeer()).getWindow();
+        return AWTAccessor.getComponentAccessor()
+                          .<XEmbeddedFramePeer>getPeer(eframe).getWindow();
     }
 
     public boolean isDisposed() {

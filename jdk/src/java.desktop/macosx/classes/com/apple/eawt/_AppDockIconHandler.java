@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.apple.eawt;
 import java.awt.*;
 import java.lang.reflect.*;
 
+import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.*;
 import sun.lwawt.macosx.CImage.Creator;
 
@@ -41,7 +42,6 @@ class _AppDockIconHandler {
 
     _AppDockIconHandler() { }
 
-    @SuppressWarnings("deprecation")
     public void setDockMenu(final PopupMenu menu) {
         fDockMenu = menu;
 
@@ -61,8 +61,8 @@ class _AppDockIconHandler {
 
         // instantiate the menu peer and set the native fDockMenu ivar
         menu.addNotify();
-        final long nsMenuPtr = ((CMenu)fDockMenu.getPeer()).getNativeMenu();
-        nativeSetDockMenu(nsMenuPtr);
+        CMenu peer = AWTAccessor.getMenuComponentAccessor().getPeer(fDockMenu);
+        nativeSetDockMenu(peer.getNativeMenu());
     }
 
     public PopupMenu getDockMenu() {

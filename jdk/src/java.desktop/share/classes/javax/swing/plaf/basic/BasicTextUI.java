@@ -102,6 +102,7 @@ import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class BasicTextUI extends TextUI implements ViewFactory {
+    private static final int DEFAULT_CARET_MARGIN = 1;
 
     /**
      * Creates a new UI.
@@ -204,6 +205,12 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 evt.getPropertyName().equals("enabled")) {
 
             updateBackground((JTextComponent)evt.getSource());
+        } else if (evt.getPropertyName().equals("caretWidth")) {
+            Object value = evt.getNewValue();
+            if (value instanceof Number) {
+                int width = ((Number) value).intValue();
+                if (width >= 0) caretMargin = width;
+            }
         }
     }
 
@@ -794,6 +801,20 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             installDefaults();
             installDefaults2();
 
+            // margin required to show caret in the rightmost position
+            caretMargin = -1;
+            Object property = UIManager.get("Caret.width");
+            if (property instanceof Number) {
+                caretMargin = ((Number) property).intValue();
+            }
+            property = c.getClientProperty("caretWidth");
+            if (property instanceof Number) {
+                caretMargin = ((Number) property).intValue();
+            }
+            if (caretMargin < 0) {
+                caretMargin = DEFAULT_CARET_MARGIN;
+            }
+
             // attach to the model and editor
             editor.addPropertyChangeListener(updateHandler);
             Document doc = editor.getDocument();
@@ -924,7 +945,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
             }
             d.width = (int) Math.min((long) rootView.getPreferredSpan(View.X_AXIS) +
-                                     (long) i.left + (long) i.right, Integer.MAX_VALUE);
+                         (long) i.left + (long) i.right + caretMargin, Integer.MAX_VALUE);
             d.height = (int) Math.min((long) rootView.getPreferredSpan(View.Y_AXIS) +
                                       (long) i.top + (long) i.bottom, Integer.MAX_VALUE);
         } finally {
@@ -1323,6 +1344,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     private final DragListener dragListener = getDragListener();
     private static final Position.Bias[] discardBias = new Position.Bias[1];
     private DefaultCaret dropCaret;
+    private int caretMargin;
 
     /**
      * Root view that acts as a gateway between the component

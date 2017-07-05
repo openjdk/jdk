@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.testlibrary;
+
 import java.util.Random;
 import java.util.SplittableRandom;
 

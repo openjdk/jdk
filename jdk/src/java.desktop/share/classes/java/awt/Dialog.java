@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,9 @@ import javax.accessibility.*;
 import sun.awt.AppContext;
 import sun.awt.AWTPermissions;
 import sun.awt.SunToolkit;
-import sun.awt.PeerEvent;
 import sun.awt.util.IdentityArrayList;
 import sun.awt.util.IdentityLinkedList;
 import java.security.AccessControlException;
-import java.util.function.BooleanSupplier;
 
 /**
  * A Dialog is a top-level window with a title and a border
@@ -749,15 +747,14 @@ public class Dialog extends Window {
      * @see Component#isDisplayable
      * @see #removeNotify
      */
-    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
-            if (parent != null && parent.getPeer() == null) {
+            if (parent != null && parent.peer == null) {
                 parent.addNotify();
             }
 
             if (peer == null) {
-                peer = getToolkit().createDialog(this);
+                peer = getComponentFactory().createDialog(this);
             }
             super.addNotify();
         }

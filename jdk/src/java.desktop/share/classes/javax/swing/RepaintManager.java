@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,7 +401,6 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("deprecation")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -432,7 +431,7 @@ public class RepaintManager
         // it could lead to the possibility of getting locks out
         // of order and deadlocking.
         for (Container p = c; p != null; p = p.getParent()) {
-            if (!p.isVisible() || (p.getPeer() == null)) {
+            if (!p.isVisible() || !p.isDisplayable()) {
                 return;
             }
             if ((p instanceof Window) || (p instanceof Applet)) {

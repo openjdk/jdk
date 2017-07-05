@@ -28,6 +28,7 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.nio.ByteBuffer;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -226,10 +227,10 @@ public final class NativeArrayBuffer extends ScriptObject {
     }
 
     ByteBuffer getBuffer(final int offset) {
-        return nb.duplicate().position(offset);
+        return (ByteBuffer)nb.duplicate().position(offset);
     }
 
     ByteBuffer getBuffer(final int offset, final int length) {
-        return getBuffer(offset).limit(length);
+        return (ByteBuffer)getBuffer(offset).limit(length);
     }
 }

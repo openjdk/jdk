@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
+import sun.awt.ComponentFactory;
+
 import javax.accessibility.*;
 
 import java.security.AccessControlContext;
@@ -57,7 +59,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
     }
 
-    transient MenuComponentPeer peer;
+    transient volatile MenuComponentPeer peer;
     transient MenuContainer parent;
 
     /**
@@ -142,6 +144,11 @@ public abstract class MenuComponent implements java.io.Serializable {
                     menuComp.appContext = appContext;
                 }
                 @Override
+                @SuppressWarnings("unchecked")
+                public <T extends MenuComponentPeer> T getPeer(MenuComponent menuComp) {
+                    return (T) menuComp.peer;
+                }
+                @Override
                 public MenuContainer getParent(MenuComponent menuComp) {
                     return menuComp.parent;
                 }
@@ -177,6 +184,14 @@ public abstract class MenuComponent implements java.io.Serializable {
         return null; // For strict compliance with prior platform versions, a MenuComponent
                      // that doesn't set its name should return null from
                      // getName()
+    }
+
+    final ComponentFactory getComponentFactory() {
+        final Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (toolkit instanceof ComponentFactory) {
+            return (ComponentFactory) toolkit;
+        }
+        throw new AWTError("UI components are unsupported by: " + toolkit);
     }
 
     /**
@@ -223,16 +238,6 @@ public abstract class MenuComponent implements java.io.Serializable {
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     final MenuContainer getParent_NoClientCode() {
         return parent;
-    }
-
-    /**
-     * @deprecated As of JDK version 1.1,
-     * programs should not directly manipulate peers.
-     * @return the peer for this component
-     */
-    @Deprecated
-    public MenuComponentPeer getPeer() {
-        return peer;
     }
 
     /**

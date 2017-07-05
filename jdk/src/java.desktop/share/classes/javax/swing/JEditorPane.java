@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -726,6 +726,8 @@ public class JEditorPane extends JTextComponent {
      * URL's can be properly resolved.
      *
      * @param page  the URL of the page
+     * @return a stream for the URL which is about to be loaded
+     * @throws IOException if an I/O problem occurs
      */
     protected InputStream getStream(URL page) throws IOException {
         final URLConnection conn = page.openConnection();
@@ -1712,10 +1714,17 @@ public class JEditorPane extends JTextComponent {
 
         private AccessibleContext accessibleContext;
 
+        /**
+         * Returns the accessible text.
+         * @return the accessible text
+         */
         public AccessibleText getAccessibleText() {
             return new JEditorPaneAccessibleHypertextSupport();
         }
 
+        /**
+         * Constructs an {@code AccessibleJEditorPaneHTML}.
+         */
         protected AccessibleJEditorPaneHTML () {
             HTMLEditorKit kit = (HTMLEditorKit)JEditorPane.this.getEditorKit();
             accessibleContext = kit.getAccessibleContext();
@@ -1791,9 +1800,16 @@ public class JEditorPane extends JTextComponent {
     protected class JEditorPaneAccessibleHypertextSupport
     extends AccessibleJEditorPane implements AccessibleHypertext {
 
+        /**
+         * An HTML link.
+         */
         public class HTMLLink extends AccessibleHyperlink {
             Element element;
 
+            /**
+             * Constructs a {@code HTMLLink}.
+             * @param e the element
+             */
             public HTMLLink(Element e) {
                 element = e;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.awt;
 
 import java.awt.Component;
-import java.awt.KeyboardFocusManager;
 import java.awt.Window;
 import java.awt.Canvas;
 import java.awt.Scrollbar;
@@ -36,9 +35,7 @@ import java.awt.event.FocusEvent;
 import java.awt.peer.KeyboardFocusManagerPeer;
 import java.awt.peer.ComponentPeer;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 
 public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManagerPeer {
@@ -75,7 +72,6 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
      * 1) accepts focus on click (in general)
      * 2) may be a focus owner (in particular)
      */
-    @SuppressWarnings("deprecation")
     public static boolean shouldFocusOnClick(Component component) {
         boolean acceptFocusOnClick = false;
 
@@ -84,6 +80,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
 
         // CANVAS & SCROLLBAR accept focus on click
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (component instanceof Canvas ||
             component instanceof Scrollbar)
         {
@@ -96,11 +93,10 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
         // Other components
         } else {
-            ComponentPeer peer = (component != null ? component.getPeer() : null);
+            ComponentPeer peer = (component != null ? acc.getPeer(component) : null);
             acceptFocusOnClick = (peer != null ? peer.isFocusable() : false);
         }
-        return acceptFocusOnClick &&
-               AWTAccessor.getComponentAccessor().canBeFocusOwner(component);
+        return acceptFocusOnClick && acc.canBeFocusOwner(component);
     }
 
     /*
@@ -120,7 +116,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
         }
 
         Component currentOwner = currentFocusOwner;
-        if (currentOwner != null && currentOwner.getPeer() == null) {
+        if (currentOwner != null && !currentOwner.isDisplayable()) {
             currentOwner = null;
         }
         if (currentOwner != null) {

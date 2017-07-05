@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,9 +163,8 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         postPaintEvent();
     }
 
-    @SuppressWarnings("deprecation")
     public void addHelpMenu(Menu m) {
-        XMenuPeer mp = (XMenuPeer)m.getPeer();
+        XMenuPeer mp = AWTAccessor.getMenuComponentAccessor().getPeer(m);
         synchronized(getMenuTreeLock()) {
             helpMenu = mp;
         }
@@ -180,10 +179,9 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * called from XFramePeer.setMenuBar
      */
-    @SuppressWarnings("deprecation")
     public void init(Frame frame) {
         this.target = frame;
-        this.framePeer = (XFramePeer)frame.getPeer();
+        this.framePeer = AWTAccessor.getComponentAccessor().getPeer(frame);
         XCreateWindowParams params = getDelayedParams();
         params.remove(DELAYED);
         params.add(PARENT_WINDOW, framePeer.getShell());

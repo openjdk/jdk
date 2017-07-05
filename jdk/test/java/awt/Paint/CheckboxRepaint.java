@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.awt.*;
-import java.awt.peer.CheckboxPeer;
 
 /**
  * @test
@@ -63,31 +62,21 @@ public final class CheckboxRepaint extends Checkbox {
 
     void test() {
         setState(getState());
-        ((CheckboxPeer) getPeer()).setState(getState());
-
         setCheckboxGroup(getCheckboxGroup());
-        ((CheckboxPeer) getPeer()).setCheckboxGroup(getCheckboxGroup());
 
         setLabel("");
         setLabel(null);
         setLabel(getLabel());
-        ((CheckboxPeer) getPeer()).setLabel("");
-        ((CheckboxPeer) getPeer()).setLabel(null);
-        ((CheckboxPeer) getPeer()).setLabel(getLabel());
 
         setFont(null);
         setFont(getFont());
-        getPeer().setFont(getFont());
 
         setBackground(null);
         setBackground(getBackground());
-        getPeer().setBackground(getBackground());
 
         setForeground(null);
         setForeground(getForeground());
-        getPeer().setForeground(getForeground());
 
         setEnabled(isEnabled());
-        getPeer().setEnabled(isEnabled());
     }
 }

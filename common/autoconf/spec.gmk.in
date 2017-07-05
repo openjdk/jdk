@@ -321,6 +321,9 @@ CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
 DISABLE_WARNING_PREFIX := @DISABLE_WARNING_PREFIX@
 CFLAGS_WARNINGS_ARE_ERRORS:=@CFLAGS_WARNINGS_ARE_ERRORS@
 
+# A global flag (true or false) determining if native warnings are considered errors.
+WARNINGS_AS_ERRORS := @WARNINGS_AS_ERRORS@
+
 CFLAGS_CCACHE:=@CFLAGS_CCACHE@
 
 # Tools that potentially need to be cross compilation aware.
@@ -393,9 +396,6 @@ GNM:=@GNM@
 STRIP:=@STRIP@
 
 LIPO:=@LIPO@
-
-# Command to create a shared library
-SHARED_LIBRARY_FLAGS:=@SHARED_LIBRARY_FLAGS@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)

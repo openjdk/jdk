@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3742,12 +3742,14 @@ void AwtComponent::SetCompositionWindow(RECT& r)
 void AwtComponent::OpenCandidateWindow(int x, int y)
 {
     UINT bits = 1;
-    RECT rc;
-    GetWindowRect(GetHWnd(), &rc);
+    POINT p = {0, 0}; // upper left corner of the client area
+    HWND hWnd = GetHWnd();
+    HWND hTop = GetTopLevelParentForWindow(hWnd);
+    ::ClientToScreen(hTop, &p);
 
     for (int iCandType=0; iCandType<32; iCandType++, bits<<=1) {
         if ( m_bitsCandType & bits )
-            SetCandidateWindow(iCandType, x-rc.left, y-rc.top);
+            SetCandidateWindow(iCandType, x - p.x, y - p.y);
     }
     if (m_bitsCandType != 0) {
         // REMIND: is there any chance GetProxyFocusOwner() returns NULL here?
@@ -4322,7 +4324,8 @@ void AwtComponent::DrawListItem(JNIEnv *env, DRAWITEMSTRUCT &drawInfo)
     if ((drawInfo.itemState & ODS_FOCUS)  &&
         (drawInfo.itemAction & (ODA_FOCUS | ODA_DRAWENTIRE))) {
       if (!unfocusableChoice){
-          VERIFY(::DrawFocusRect(hDC, &rect));
+          if(::DrawFocusRect(hDC, &rect) == 0)
+              VERIFY(::GetLastError() == 0);
       }
     }
     env->DeleteLocalRef(target);

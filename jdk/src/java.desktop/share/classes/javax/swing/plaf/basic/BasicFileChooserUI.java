@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,23 +50,39 @@ import sun.swing.SwingUtilities2;
 public class BasicFileChooserUI extends FileChooserUI {
 
     /* FileView icons */
+    /** Directory icon */
     protected Icon directoryIcon = null;
+    /** File icon */
     protected Icon fileIcon = null;
+    /** Computer icon */
     protected Icon computerIcon = null;
+    /** Hard drive icon */
     protected Icon hardDriveIcon = null;
+    /** Floppy drive icon */
     protected Icon floppyDriveIcon = null;
 
+    /** New folder icon */
     protected Icon newFolderIcon = null;
+    /** Up folder icon */
     protected Icon upFolderIcon = null;
+    /** Home folder icon */
     protected Icon homeFolderIcon = null;
+    /** List view icon */
     protected Icon listViewIcon = null;
+    /** Details view icon */
     protected Icon detailsViewIcon = null;
+    /** View menu icon */
     protected Icon viewMenuIcon = null;
 
+    /** Save button mnemonic */
     protected int saveButtonMnemonic = 0;
+    /** Open button mnemonic */
     protected int openButtonMnemonic = 0;
+    /** Cancel button mnemonic */
     protected int cancelButtonMnemonic = 0;
+    /** Update button mnemonic */
     protected int updateButtonMnemonic = 0;
+    /** Help button mnemonic */
     protected int helpButtonMnemonic = 0;
 
     /**
@@ -77,10 +93,15 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     protected int directoryOpenButtonMnemonic = 0;
 
+    /** Save button text */
     protected String saveButtonText = null;
+    /** Open button text */
     protected String openButtonText = null;
+    /** Cancel button text */
     protected String cancelButtonText = null;
+    /** Update button text */
     protected String updateButtonText = null;
+    /** Help button text */
     protected String helpButtonText = null;
 
     /**
@@ -91,13 +112,20 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     protected String directoryOpenButtonText = null;
 
+    /** Open dialog title text */
     private String openDialogTitleText = null;
+    /** Save dialog title text */
     private String saveDialogTitleText = null;
 
+    /** Save button tool tip text */
     protected String saveButtonToolTipText = null;
+    /** Open button tool tip text */
     protected String openButtonToolTipText = null;
+    /** Cancel button tool tip text */
     protected String cancelButtonToolTipText = null;
+    /** Update button tool tip text */
     protected String updateButtonToolTipText = null;
+    /** Help button tool tip text */
     protected String helpButtonToolTipText = null;
 
     /**
@@ -158,9 +186,17 @@ public class BasicFileChooserUI extends FileChooserUI {
         return new BasicFileChooserUI((JFileChooser) c);
     }
 
+    /**
+     * Constructs a {@code BasicFileChooserUI}.
+     * @param b file chooser
+     */
     public BasicFileChooserUI(JFileChooser b) {
     }
 
+    /**
+     * Installs the UI.
+     * @param c the component
+     */
     public void installUI(JComponent c) {
         accessoryPanel = new JPanel(new BorderLayout());
         filechooser = (JFileChooser) c;
@@ -175,6 +211,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         filechooser.applyComponentOrientation(filechooser.getComponentOrientation());
     }
 
+    /**
+     * Uninstalls the UI.
+     * @param c the component
+     */
     public void uninstallUI(JComponent c) {
         uninstallListeners(filechooser);
         uninstallComponents(filechooser);
@@ -190,12 +230,24 @@ public class BasicFileChooserUI extends FileChooserUI {
         handler = null;
     }
 
+    /**
+     * Installs the components.
+     * @param fc the file chooser
+     */
     public void installComponents(JFileChooser fc) {
     }
 
+    /**
+     * Uninstalls the components.
+     * @param fc the file chooser
+     */
     public void uninstallComponents(JFileChooser fc) {
     }
 
+    /**
+     * Installs the listeners.
+     * @param fc the file chooser
+     */
     protected void installListeners(JFileChooser fc) {
         propertyChangeListener = createPropertyChangeListener(fc);
         if(propertyChangeListener != null) {
@@ -241,6 +293,10 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
 
+    /**
+     * Uninstalls the listeners.
+     * @param fc the file chooser
+     */
     protected void uninstallListeners(JFileChooser fc) {
         if(propertyChangeListener != null) {
             fc.removePropertyChangeListener(propertyChangeListener);
@@ -252,6 +308,10 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
 
+    /**
+     * Installs the defaults.
+     * @param fc the file chooser
+     */
     protected void installDefaults(JFileChooser fc) {
         installIcons(fc);
         installStrings(fc);
@@ -264,6 +324,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         LookAndFeel.installProperty(fc, "opaque", Boolean.FALSE);
     }
 
+    /**
+     * Installs the icons.
+     * @param fc the file chooser
+     */
     protected void installIcons(JFileChooser fc) {
         directoryIcon    = UIManager.getIcon("FileView.directoryIcon");
         fileIcon         = UIManager.getIcon("FileView.fileIcon");
@@ -279,6 +343,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         viewMenuIcon     = UIManager.getIcon("FileChooser.viewMenuIcon");
     }
 
+    /**
+     * Installs the strings.
+     * @param fc the file chooser
+     */
     protected void installStrings(JFileChooser fc) {
 
         Locale l = fc.getLocale();
@@ -315,6 +383,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         directoryOpenButtonToolTipText = UIManager.getString("FileChooser.directoryOpenButtonToolTipText",l);
     }
 
+    /**
+     * Uninstalls the defaults.
+     * @param fc the file chooser
+     */
     protected void uninstallDefaults(JFileChooser fc) {
         uninstallIcons(fc);
         uninstallStrings(fc);
@@ -323,6 +395,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
+    /**
+     * Uninstalls the icons.
+     * @param fc the file chooser
+     */
     protected void uninstallIcons(JFileChooser fc) {
         directoryIcon    = null;
         fileIcon         = null;
@@ -338,6 +414,10 @@ public class BasicFileChooserUI extends FileChooserUI {
         viewMenuIcon     = null;
     }
 
+    /**
+     * Uninstalls the strings.
+     * @param fc the file chooser
+     */
     protected void uninstallStrings(JFileChooser fc) {
         saveButtonText   = null;
         openButtonText   = null;
@@ -354,6 +434,9 @@ public class BasicFileChooserUI extends FileChooserUI {
         directoryOpenButtonToolTipText = null;
     }
 
+    /**
+     * Creates the model.
+     */
     protected void createModel() {
         if (model != null) {
             model.invalidateFileCache();
@@ -361,50 +444,102 @@ public class BasicFileChooserUI extends FileChooserUI {
         model = new BasicDirectoryModel(getFileChooser());
     }
 
+    /**
+     * Returns the model.
+     * @return the model
+     */
     public BasicDirectoryModel getModel() {
         return model;
     }
 
+    /**
+     * Creates the property change listener.
+     * @param fc the file chooser
+     * @return the property change listener
+     */
     public PropertyChangeListener createPropertyChangeListener(JFileChooser fc) {
         return null;
     }
 
+    /**
+     * Returns the file name.
+     * @return the file name
+     */
     public String getFileName() {
         return null;
     }
 
+    /**
+     * Returns the directory name.
+     * @return the directory name
+     */
     public String getDirectoryName() {
         return null;
     }
 
+    /**
+     * Sets the file name.
+     * @param filename the file name
+     */
     public void setFileName(String filename) {
     }
 
+    /**
+     * Sets the directory name.
+     * @param dirname the file name
+     */
     public void setDirectoryName(String dirname) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void rescanCurrentDirectory(JFileChooser fc) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void ensureFileIsVisible(JFileChooser fc, File f) {
     }
 
+    /**
+     * Returns the file chooser.
+     * @return the file chooser
+     */
     public JFileChooser getFileChooser() {
         return filechooser;
     }
 
+    /**
+     * Returns the accessory panel.
+     * @return the accessory panel
+     */
     public JPanel getAccessoryPanel() {
         return accessoryPanel;
     }
 
+    /**
+     * Returns the approve button.
+     * @param fc the file chooser
+     * @return the approve button
+     */
     protected JButton getApproveButton(JFileChooser fc) {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public JButton getDefaultButton(JFileChooser fc) {
         return getApproveButton(fc);
     }
 
+    /**
+     * Returns the approve button tool tip.
+     * @param fc the file chooser
+     * @return the approve button tool tip
+     */
     public String getApproveButtonToolTipText(JFileChooser fc) {
         String tooltipText = fc.getApproveButtonToolTipText();
         if(tooltipText != null) {
@@ -419,6 +554,9 @@ public class BasicFileChooserUI extends FileChooserUI {
         return null;
     }
 
+    /**
+     * Clears the icon cache.
+     */
     public void clearIconCache() {
         fileView.clearIconCache();
     }
@@ -435,11 +573,22 @@ public class BasicFileChooserUI extends FileChooserUI {
         return handler;
     }
 
+    /**
+     * Creates a double click listener.
+     * @param fc the file chooser
+     * @param list the list
+     * @return a double click listener
+     */
     protected MouseListener createDoubleClickListener(JFileChooser fc,
                                                       JList<?> list) {
         return new Handler(list);
     }
 
+    /**
+     * Creates a list selection listener.
+     * @param fc the file chooser
+     * @return a list selection listener
+     */
     public ListSelectionListener createListSelectionListener(JFileChooser fc) {
         return getHandler();
     }
@@ -566,12 +715,19 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
+    /**
+     * A double click listener.
+     */
     protected class DoubleClickListener extends MouseAdapter {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         Handler handler;
+        /**
+         * Constucts a {@code DoubleClickListener}.
+         * @param list the lsit
+         */
         public  DoubleClickListener(JList<?> list) {
             handler = new Handler(list);
         }
@@ -587,16 +743,21 @@ public class BasicFileChooserUI extends FileChooserUI {
             handler.mouseEntered(e);
         }
 
+        /** {@inheritDoc} */
         public void mouseClicked(MouseEvent e) {
             handler.mouseClicked(e);
         }
     }
 
+    /**
+     * A selection listener.
+     */
     protected class SelectionListener implements ListSelectionListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /** {@inheritDoc} */
         public void valueChanged(ListSelectionEvent e) {
             getHandler().valueChanged(e);
         }
@@ -672,6 +833,8 @@ public class BasicFileChooserUI extends FileChooserUI {
 
     /**
      * Returns the title of this dialog
+     * @param fc the file chooser
+     * @return the title of this dialog
      */
     public String getDialogTitle(JFileChooser fc) {
         String dialogTitle = fc.getDialogTitle();
@@ -686,7 +849,11 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
-
+    /**
+     * Returns the approve button mnemonic.
+     * @param fc the file chooser
+     * @return the approve button mnemonic
+     */
     public int getApproveButtonMnemonic(JFileChooser fc) {
         int mnemonic = fc.getApproveButtonMnemonic();
         if (mnemonic > 0) {
@@ -700,6 +867,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
+    /** {@inheritDoc} */
     public String getApproveButtonText(JFileChooser fc) {
         String buttonText = fc.getApproveButtonText();
         if (buttonText != null) {
@@ -718,6 +886,10 @@ public class BasicFileChooserUI extends FileChooserUI {
     // ***** Directory Actions *****
     // *****************************
 
+    /**
+     * Returns a new folder action.
+     * @return a new folder action
+     */
     public Action getNewFolderAction() {
         if (newFolderAction == null) {
             newFolderAction = new NewFolderAction();
@@ -730,22 +902,42 @@ public class BasicFileChooserUI extends FileChooserUI {
         return newFolderAction;
     }
 
+    /**
+     * Returns a go home action.
+     * @return a go home action
+     */
     public Action getGoHomeAction() {
         return goHomeAction;
     }
 
+    /**
+     * Returns a change to parent directory action.
+     * @return a change to parent directory action
+     */
     public Action getChangeToParentDirectoryAction() {
         return changeToParentDirectoryAction;
     }
 
+    /**
+     * Returns an approve selection action.
+     * @return an approve selection  action
+     */
     public Action getApproveSelectionAction() {
         return approveSelectionAction;
     }
 
+    /**
+     * Returns a cancel selection action.
+     * @return a cancel selection action
+     */
     public Action getCancelSelectionAction() {
         return cancelSelectionAction;
     }
 
+    /**
+     * Returns an update action.
+     * @return an update action
+     */
     public Action getUpdateAction() {
         return updateAction;
     }
@@ -756,9 +948,11 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class NewFolderAction extends AbstractAction {
+        /** Constructs a {@code NewFolderAction}. */
         protected NewFolderAction() {
             super(FilePane.ACTION_NEW_FOLDER);
         }
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             if (readOnly) {
                 return;
@@ -799,6 +993,7 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class GoHomeAction extends AbstractAction {
+        /** Constructs a {@code GoHomeAction}. */
         protected GoHomeAction() {
             super("Go Home");
         }
@@ -808,12 +1003,17 @@ public class BasicFileChooserUI extends FileChooserUI {
         }
     }
 
+    /**
+     * Change to parent directory action.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ChangeToParentDirectoryAction extends AbstractAction {
+        /** Constructs a {@code ChangeToParentDirectoryAction}. */
         protected ChangeToParentDirectoryAction() {
             super("Go Up");
             putValue(Action.ACTION_COMMAND_KEY, FilePane.ACTION_CHANGE_TO_PARENT_DIRECTORY);
         }
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             getFileChooser().changeToParentDirectory();
         }
@@ -824,9 +1024,11 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ApproveSelectionAction extends AbstractAction {
+        /** Constructs an {@code ApproveSelectionAction}. */
         protected ApproveSelectionAction() {
             super(FilePane.ACTION_APPROVE_SELECTION);
         }
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             if (isDirectorySelected()) {
                 File dir = getDirectory();
@@ -1133,6 +1335,7 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CancelSelectionAction extends AbstractAction {
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             getFileChooser().cancelSelection();
         }
@@ -1143,6 +1346,7 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class UpdateAction extends AbstractAction {
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             JFileChooser fc = getFileChooser();
             fc.setCurrentDirectory(fc.getFileSystemView().createFileObject(getDirectoryName()));
@@ -1188,15 +1392,27 @@ public class BasicFileChooserUI extends FileChooserUI {
     // *****************************************
     // ***** default AcceptAll file filter *****
     // *****************************************
+    /**
+     * Accept all file filter.
+     */
     protected class AcceptAllFileFilter extends FileFilter {
 
+        /** Constructs an {@code AcceptAllFileFilter}. */
         public AcceptAllFileFilter() {
         }
 
+        /**
+         * Returns true.
+         * @param f the file
+         * @return true
+         */
         public boolean accept(File f) {
             return true;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         public String getDescription() {
             return UIManager.getString("FileChooser.acceptAllFileFilterText");
         }
@@ -1206,18 +1422,26 @@ public class BasicFileChooserUI extends FileChooserUI {
     // ***********************
     // * FileView operations *
     // ***********************
+    /**
+     * A basic file view.
+     */
     protected class BasicFileView extends FileView {
         /* FileView type descriptions */
-        // PENDING(jeff) - pass in the icon cache size
+        /** The icon cache */
         protected Hashtable<File,Icon> iconCache = new Hashtable<File,Icon>();
 
+        /** Constructs a {@code BasicFileView}. */
         public BasicFileView() {
         }
 
+        /**
+         * Clears the icon cache.
+         */
         public void clearIconCache() {
             iconCache = new Hashtable<File,Icon>();
         }
 
+        /** {@inheritDoc} */
         public String getName(File f) {
             // Note: Returns display name rather than file name
             String fileName = null;
@@ -1227,11 +1451,12 @@ public class BasicFileChooserUI extends FileChooserUI {
             return fileName;
         }
 
-
+        /** {@inheritDoc} */
         public String getDescription(File f) {
             return f.getName();
         }
 
+        /** {@inheritDoc} */
         public String getTypeDescription(File f) {
             String type = getFileChooser().getFileSystemView().getSystemTypeDescription(f);
             if (type == null) {
@@ -1244,10 +1469,20 @@ public class BasicFileChooserUI extends FileChooserUI {
             return type;
         }
 
+        /**
+         * Returns the cached icon for the file.
+         * @param f the file
+         * @return the cached icon for the file
+         */
         public Icon getCachedIcon(File f) {
             return iconCache.get(f);
         }
 
+        /**
+         * Caches an icon for a file.
+         * @param f the file
+         * @param i the icon
+         */
         public void cacheIcon(File f, Icon i) {
             if(f == null || i == null) {
                 return;
@@ -1255,6 +1490,7 @@ public class BasicFileChooserUI extends FileChooserUI {
             iconCache.put(f, i);
         }
 
+        /** {@inheritDoc} */
         public Icon getIcon(File f) {
             Icon icon = getCachedIcon(f);
             if(icon != null) {
@@ -1278,6 +1514,11 @@ public class BasicFileChooserUI extends FileChooserUI {
             return icon;
         }
 
+        /**
+         * Returns whether or not a file is hidden.
+         * @param f the file
+         * @return whether or not a file is hidden
+         */
         public Boolean isHidden(File f) {
             String name = f.getName();
             if(name != null && name.charAt(0) == '.') {

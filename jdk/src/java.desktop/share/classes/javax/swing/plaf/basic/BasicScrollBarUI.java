@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,35 +60,59 @@ public class BasicScrollBarUI
 
     // NOTE: DO NOT use this field directly, SynthScrollBarUI assumes you'll
     // call getMinimumThumbSize to access it.
+    /** Minimum thumb size */
     protected Dimension minimumThumbSize;
+    /** Maximum thumb size */
     protected Dimension maximumThumbSize;
 
+    /** Thumb highlight color */
     protected Color thumbHighlightColor;
+    /** Thumb light shadow color */
     protected Color thumbLightShadowColor;
+    /** Thumb dark shadow color */
     protected Color thumbDarkShadowColor;
+    /** Thumb color */
     protected Color thumbColor;
+    /** Track color */
     protected Color trackColor;
+    /** Track highlight color */
     protected Color trackHighlightColor;
 
+    /** Scrollbar */
     protected JScrollBar scrollbar;
+    /** Increment button */
     protected JButton incrButton;
+    /** Decrement button */
     protected JButton decrButton;
+    /** Dragging */
     protected boolean isDragging;
+    /** Track listener */
     protected TrackListener trackListener;
+    /** Button listener */
     protected ArrowButtonListener buttonListener;
+    /** Model listener */
     protected ModelListener modelListener;
 
+    /** Thumb rectangle */
     protected Rectangle thumbRect;
+    /** Track rectangle */
     protected Rectangle trackRect;
 
+    /** Track highlight */
     protected int trackHighlight;
 
+    /** No highlight */
     protected static final int NO_HIGHLIGHT = 0;
+    /** Decrease highlight */
     protected static final int DECREASE_HIGHLIGHT = 1;
+    /** Increase highlight */
     protected static final int INCREASE_HIGHLIGHT = 2;
 
+    /** Scroll listener */
     protected ScrollListener scrollListener;
+    /** Property change listener */
     protected PropertyChangeListener propertyChangeListener;
+    /** Scroll timer */
     protected Timer scrollTimer;
 
     private final static int scrollSpeedThrottle = 60; // delay in milli seconds
@@ -148,12 +172,18 @@ public class BasicScrollBarUI
         map.put(new Actions(Actions.MAX_SCROLL));
     }
 
-
+    /**
+     * Creates the UI.
+     * @param c the component
+     * @return the UI
+     */
     public static ComponentUI createUI(JComponent c)    {
         return new BasicScrollBarUI();
     }
 
-
+    /**
+     * Configures the scroll bar colors.
+     */
     protected void configureScrollBarColors()
     {
         LookAndFeel.installColors(scrollbar, "ScrollBar.background",
@@ -166,7 +196,10 @@ public class BasicScrollBarUI
         trackHighlightColor = UIManager.getColor("ScrollBar.trackHighlight");
     }
 
-
+    /**
+     * Installs the UI.
+     * @param c the component
+     */
     public void installUI(JComponent c)   {
         scrollbar = (JScrollBar)c;
         thumbRect = new Rectangle(0, 0, 0, 0);
@@ -177,6 +210,10 @@ public class BasicScrollBarUI
         installKeyboardActions();
     }
 
+    /**
+     * Uninstalls the UI.
+     * @param c the component
+     */
     public void uninstallUI(JComponent c) {
         scrollbar = (JScrollBar)c;
         uninstallListeners();
@@ -189,7 +226,9 @@ public class BasicScrollBarUI
         decrButton = null;
     }
 
-
+    /**
+     * Installs the defaults.
+     */
     protected void installDefaults()
     {
         scrollBarWidth = UIManager.getInt("ScrollBar.width");
@@ -240,7 +279,9 @@ public class BasicScrollBarUI
         }
     }
 
-
+    /**
+     * Installs the components.
+     */
     protected void installComponents(){
         switch (scrollbar.getOrientation()) {
         case JScrollBar.VERTICAL:
@@ -264,12 +305,17 @@ public class BasicScrollBarUI
         scrollbar.setEnabled(scrollbar.isEnabled());
     }
 
+    /**
+     * Uninstalls the components.
+     */
     protected void uninstallComponents(){
         scrollbar.remove(incrButton);
         scrollbar.remove(decrButton);
     }
 
-
+    /**
+     * Installs the listeners.
+     */
     protected void installListeners(){
         trackListener = createTrackListener();
         buttonListener = createArrowButtonListener();
@@ -294,7 +340,9 @@ public class BasicScrollBarUI
         scrollTimer.setInitialDelay(300);  // default InitialDelay?
     }
 
-
+    /**
+     * Installs the keyboard actions.
+     */
     protected void installKeyboardActions(){
         LazyActionMap.installLazyActionMap(scrollbar, BasicScrollBarUI.class,
                                            "ScrollBar.actionMap");
@@ -307,6 +355,9 @@ public class BasicScrollBarUI
                    JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMap);
     }
 
+    /**
+     * Uninstalls the keyboard actions.
+     */
     protected void uninstallKeyboardActions(){
         SwingUtilities.replaceUIInputMap(scrollbar, JComponent.WHEN_FOCUSED,
                                          null);
@@ -343,7 +394,9 @@ public class BasicScrollBarUI
         return null;
     }
 
-
+    /**
+     * Uninstall the listeners.
+     */
     protected void uninstallListeners() {
         scrollTimer.stop();
         scrollTimer = null;
@@ -363,7 +416,9 @@ public class BasicScrollBarUI
         handler = null;
     }
 
-
+    /**
+     * Uninstalls the defaults.
+     */
     protected void uninstallDefaults(){
         LookAndFeel.uninstallBorder(scrollbar);
         if (scrollbar.getLayout() == this) {
@@ -379,22 +434,42 @@ public class BasicScrollBarUI
         return handler;
     }
 
+    /**
+     * Creates a track listener.
+     * @return a track listener
+     */
     protected TrackListener createTrackListener(){
         return new TrackListener();
     }
 
+    /**
+     * Creates an arrow button listener.
+     * @return an arrow button   listener
+     */
     protected ArrowButtonListener createArrowButtonListener(){
         return new ArrowButtonListener();
     }
 
+    /**
+     * Creates a model listener.
+     * @return a model listener
+     */
     protected ModelListener createModelListener(){
         return new ModelListener();
     }
 
+    /**
+     * Creates a scroll listener.
+     * @return a scroll listener
+     */
     protected ScrollListener createScrollListener(){
         return new ScrollListener();
     }
 
+    /**
+     * Creates a property change listener.
+     * @return a property change listener
+     */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
     }
@@ -470,6 +545,11 @@ public class BasicScrollBarUI
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
+    /**
+     * Creates a decrease button.
+     * @param orientation the orientation
+     * @return a decrease button
+     */
     protected JButton createDecreaseButton(int orientation)  {
         return new BasicArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -478,6 +558,11 @@ public class BasicScrollBarUI
                                     UIManager.getColor("ScrollBar.thumbHighlight"));
     }
 
+    /**
+     * Creates an increase button.
+     * @param orientation the orientation
+     * @return an increase button
+     */
     protected JButton createIncreaseButton(int orientation)  {
         return new BasicArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -487,6 +572,10 @@ public class BasicScrollBarUI
     }
 
 
+    /**
+     * Paints the decrease highlight.
+     * @param g the graphics
+     */
     protected void paintDecreaseHighlight(Graphics g)
     {
         Insets insets = scrollbar.getInsets();
@@ -519,6 +608,10 @@ public class BasicScrollBarUI
     }
 
 
+    /**
+     * Paints the increase highlight.
+     * @param g the graphics
+     */
     protected void paintIncreaseHighlight(Graphics g)
     {
         Insets insets = scrollbar.getInsets();
@@ -552,6 +645,12 @@ public class BasicScrollBarUI
     }
 
 
+    /**
+     * Paints the track.
+     * @param g the graphics
+     * @param c the component
+     * @param trackBounds the track bounds
+     */
     protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds)
     {
         g.setColor(trackColor);
@@ -565,7 +664,12 @@ public class BasicScrollBarUI
         }
     }
 
-
+    /**
+     * Paints the thumb.
+     * @param g the graphics
+     * @param c the component
+     * @param thumbBounds the thumb bounds
+     */
     protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds)
     {
         if(thumbBounds.isEmpty() || !scrollbar.isEnabled())     {
@@ -644,6 +748,10 @@ public class BasicScrollBarUI
         return (useCachedValue) ? scrollBarValue : sb.getValue();
     }
 
+    /**
+     * Laysouts a  vertical scroll bar.
+     * @param sb the scroll bar
+     */
     protected void layoutVScrollbar(JScrollBar sb)
     {
         Dimension sbSize = sb.getSize();
@@ -742,7 +850,10 @@ public class BasicScrollBarUI
         }
     }
 
-
+    /**
+     * Laysouts a  vertical scroll bar.
+     * @param sb the scroll bar
+     */
     protected void layoutHScrollbar(JScrollBar sb)
     {
         Dimension sbSize = sb.getSize();
@@ -966,6 +1077,10 @@ public class BasicScrollBarUI
             scrollbar.setValue(newValue);
     }
 
+    /**
+     * Scrolls by block.
+     * @param direction the direction to scroll
+     */
     protected void scrollByBlock(int direction)
     {
         scrollByBlock(scrollbar, direction);
@@ -1033,6 +1148,10 @@ public class BasicScrollBarUI
         }
     }
 
+    /**
+     * Scrolls by unit.
+     * @param direction the direction to scroll
+     */
     protected void scrollByUnit(int direction)  {
         scrollByUnits(scrollbar, direction, 1, false);
     }
@@ -1050,7 +1169,6 @@ public class BasicScrollBarUI
 
     /**
      * A listener to listen for model changes.
-     *
      */
     protected class ModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
@@ -1069,10 +1187,15 @@ public class BasicScrollBarUI
     protected class TrackListener
         extends MouseAdapter implements MouseMotionListener
     {
+        /** The offset */
         protected transient int offset;
-        protected transient int currentMouseX, currentMouseY;
+        /** Current mouse x position */
+        protected transient int currentMouseX;
+        /** Current mouse y position */
+        protected transient int currentMouseY;
         private transient int direction = +1;
 
+        /** {@inheritDoc} */
         public void mouseReleased(MouseEvent e)
         {
             if (isDragging) {
@@ -1339,6 +1462,7 @@ public class BasicScrollBarUI
             }
         }
 
+        /** {@inheritDoc} */
         public void mouseMoved(MouseEvent e) {
             if (!isDragging) {
                 updateThumbState(e.getX(), e.getY());
@@ -1406,19 +1530,34 @@ public class BasicScrollBarUI
         int direction = +1;
         boolean useBlockIncrement;
 
+        /** Constructs a {@code ScrollListener}. */
         public ScrollListener() {
             direction = +1;
             useBlockIncrement = false;
         }
 
+        /**
+         * Constructs a {@code ScrollListener}.
+         * @param dir direction
+         * @param block use block increment
+         */
         public ScrollListener(int dir, boolean block)   {
             direction = dir;
             useBlockIncrement = block;
         }
 
+        /**
+         * Sets the direction.
+         * @param direction the new direction
+         */
         public void setDirection(int direction) { this.direction = direction; }
+        /**
+         * Sets the scrolling by block
+         * @param block whether or not to scroll by block
+         */
         public void setScrollByBlock(boolean block) { this.useBlockIncrement = block; }
 
+        /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
             if(useBlockIncrement)       {
                 scrollByBlock(direction);
@@ -1497,13 +1636,14 @@ public class BasicScrollBarUI
         }
     }
 
+    /** Property change handler */
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
-
+        /** {@inheritDoc} */
         public void propertyChange(PropertyChangeEvent e) {
             getHandler().propertyChange(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ public abstract class FlowView extends BoxView {
      * rows are tiled (the axis of the default flow
      * rows themselves).  This is typically used
      * by the <code>FlowStrategy</code>.
+     * @return the axis along which views should be
+     * flowed
      */
     public int getFlowAxis() {
         if (getAxis() == Y_AXIS) {
@@ -89,6 +91,8 @@ public abstract class FlowView extends BoxView {
      *
      * @param index the index of the row being updated.
      *   This should be a value &gt;= 0 and &lt; getViewCount().
+     * @return the constraining span to flow against for
+     * the given child index
      * @see #getFlowStart
      */
     public int getFlowSpan(int index) {
@@ -104,6 +108,8 @@ public abstract class FlowView extends BoxView {
 
      * @param index the index of the row being updated.
      *   This should be a value &gt;= 0 and &lt; getViewCount().
+     * @return the location along the flow axis that the
+     * flow span will start at
      * @see #getFlowSpan
      */
     public int getFlowStart(int index) {
@@ -116,6 +122,8 @@ public abstract class FlowView extends BoxView {
      * called by the FlowStrategy when new children
      * are added or removed (i.e. rows are added or
      * removed) in the process of updating the flow.
+     * @return a View that should be used to hold a
+     * a rows worth of children in a flow
      */
     protected abstract View createRow();
 
@@ -359,6 +367,7 @@ public abstract class FlowView extends BoxView {
          * strategy should update the appropriate changed region (which
          * depends upon the strategy used for repair).
          *
+         * @param fv the flow view
          * @param e the change information from the associated document
          * @param alloc the current allocation of the view inside of the insets.
          *   This value will be null if the view has not yet been displayed.
@@ -385,6 +394,7 @@ public abstract class FlowView extends BoxView {
          * Gives notification that something was removed from the document
          * in a location that the given flow view is responsible for.
          *
+         * @param fv the flow view
          * @param e the change information from the associated document
          * @param alloc the current allocation of the view inside of the insets.
          * @see View#removeUpdate
@@ -426,6 +436,8 @@ public abstract class FlowView extends BoxView {
         /**
          * This method gives flow strategies access to the logical
          * view of the FlowView.
+         * @param fv the FlowView
+         * @return the logical view of the FlowView
          */
         protected View getLogicalView(FlowView fv) {
             return fv.layoutPool;
@@ -495,6 +507,7 @@ public abstract class FlowView extends BoxView {
          * the adjustRow method will be called to perform adjustments
          * to the row to try and make it fit into the given span.
          *
+         * @param fv the flow view
          * @param rowIndex the index of the row to fill in with views.  The
          *   row is assumed to be empty on entry.
          * @param pos  The current position in the children of
@@ -578,6 +591,7 @@ public abstract class FlowView extends BoxView {
          * the row.  If a forced break is encountered, the
          * break will be positioned there.
          *
+         * @param fv the flow view
          * @param rowIndex the row to adjust to the current layout
          *  span.
          * @param desiredSpan the current layout span &gt;= 0
@@ -654,6 +668,8 @@ public abstract class FlowView extends BoxView {
          * @param startOffset the start location for the view being created
          * @param spanLeft the about of span left to fill in the row
          * @param rowIndex the row the view will be placed into
+         * @return a view that can be used to represent the current piece
+         * of the flow
          */
         protected View createView(FlowView fv, int startOffset, int spanLeft, int rowIndex) {
             // Get the child view that contains the given starting position

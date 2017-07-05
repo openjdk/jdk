@@ -188,7 +188,7 @@
     <mkdir dir="${fxshell.classes.dir}"/>
     <javac srcdir="${fxshell.dir}"
            destdir="${fxshell.classes.dir}"
-           classpath="${dist.jar}:${javac.classpath}"
+           classpath="${dist.jar}${path.separator}${javac.classpath}"
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false">
