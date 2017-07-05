@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.Socket;
-import java.util.Vector;
-import java.util.Hashtable;
 
 import javax.naming.CommunicationException;
-import javax.naming.AuthenticationException;
-import javax.naming.AuthenticationNotSupportedException;
 import javax.naming.ServiceUnavailableException;
 import javax.naming.NamingException;
 import javax.naming.InterruptedNamingException;
@@ -47,6 +43,8 @@ import javax.naming.ldap.Control;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import sun.misc.IOUtils;
 //import javax.net.SocketFactory;
 
 /**
@@ -799,7 +797,6 @@ public final class Connection implements Runnable {
         byte inbuf[];   // Buffer for reading incoming bytes
         int inMsgId;    // Message id of incoming response
         int bytesread;  // Number of bytes in inbuf
-        int bytesleft;  // Number of bytes that need to read for completing resp
         int br;         // Temp; number of bytes read from stream
         int offset;     // Offset of where to store bytes in inbuf
         int seqlen;     // Length of ASN sequence
@@ -811,7 +808,7 @@ public final class Connection implements Runnable {
         try {
             while (true) {
                 try {
-                    inbuf = new byte[2048];
+                    inbuf = new byte[10];
 
                     offset = 0;
                     seqlen = 0;
@@ -871,19 +868,10 @@ public final class Connection implements Runnable {
                     }
 
                     // read in seqlen bytes
-                    bytesleft = seqlen;
-                    if ((offset + bytesleft) > inbuf.length) {
-                        byte nbuf[] = new byte[offset + bytesleft];
-                        System.arraycopy(inbuf, 0, nbuf, 0, offset);
-                        inbuf = nbuf;
-                    }
-                    while (bytesleft > 0) {
-                        bytesread = in.read(inbuf, offset, bytesleft);
-                        if (bytesread < 0)
-                            break; // EOF
-                        offset += bytesread;
-                        bytesleft -= bytesread;
-                    }
+                    byte[] left = IOUtils.readFully(in, seqlen, false);
+                    inbuf = Arrays.copyOf(inbuf, offset + left.length);
+                    System.arraycopy(left, 0, inbuf, offset, left.length);
+                    offset += left.length;
 /*
 if (dump > 0) {
 System.err.println("seqlen: " + seqlen);

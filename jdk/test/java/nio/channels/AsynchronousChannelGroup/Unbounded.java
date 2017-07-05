@@ -34,7 +34,7 @@ import java.io.IOException;
 
 public class Unbounded {
     // number of concurrent completion handlers
-    static final int CONCURRENCY_COUNT = 512;
+    static final int CONCURRENCY_COUNT = 256;
 
     public static void main(String[] args) throws Exception {
         // all accepted connections are added to a queue

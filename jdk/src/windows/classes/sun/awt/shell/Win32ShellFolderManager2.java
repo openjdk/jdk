@@ -79,9 +79,12 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             // Shouldn't happen but watch for it anyway
             throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
         }
-        Win32ShellFolder2 folder = createShellFolderFromRelativePIDL(parent, pIDL);
-        Win32ShellFolder2.releasePIDL(pIDL);
-        return folder;
+
+        try {
+            return createShellFolderFromRelativePIDL(parent, pIDL);
+        } finally {
+            Win32ShellFolder2.releasePIDL(pIDL);
+        }
     }
 
     static Win32ShellFolder2 createShellFolderFromRelativePIDL(Win32ShellFolder2 parent, long pIDL)
@@ -269,7 +272,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 Arrays.sort(secondLevelFolders);
                 for (File secondLevelFolder : secondLevelFolders) {
                     Win32ShellFolder2 folder = (Win32ShellFolder2) secondLevelFolder;
-                    if (!folder.isFileSystem() || folder.isDirectory()) {
+                    if (!folder.isFileSystem() || (folder.isDirectory() && !folder.isLink())) {
                         folders.add(folder);
                         // Add third level for "My Computer"
                         if (folder.equals(drives)) {

@@ -358,7 +358,9 @@ class ExecutableInputMethodManager extends InputMethodManager
         AppContext requesterAppContext = SunToolkit.targetToAppContext(requester);
         synchronized (lock) {
             SunToolkit.postEvent(requesterAppContext, event);
-            lock.wait();
+            while (!event.isDispatched()) {
+                lock.wait();
+            }
         }
 
         Throwable eventThrowable = event.getThrowable();

@@ -127,4 +127,5 @@ public class MemoryNotifInfoCompositeData extends LazyCompositeData {
         }
     }
 
+    private static final long serialVersionUID = -1805123446483771291L;
 }

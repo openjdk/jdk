@@ -32,10 +32,8 @@ import java.util.Map;
 
 import javax.management.Attribute;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.openmbean.MXBeanMappingFactory;
 
 /**
    <p>Helper class for an {@link InvocationHandler} that forwards methods from an
@@ -47,7 +45,7 @@ import javax.management.openmbean.MXBeanMappingFactory;
    @since 1.6
 */
 public class MXBeanProxy {
-    public MXBeanProxy(Class<?> mxbeanInterface, MXBeanMappingFactory factory) {
+    public MXBeanProxy(Class<?> mxbeanInterface) {
 
         if (mxbeanInterface == null)
             throw new IllegalArgumentException("Null parameter");
@@ -55,7 +53,7 @@ public class MXBeanProxy {
         final MBeanAnalyzer<ConvertingMethod> analyzer;
         try {
             analyzer =
-                MXBeanIntrospector.getInstance(factory).getAnalyzer(mxbeanInterface);
+                MXBeanIntrospector.getInstance().getAnalyzer(mxbeanInterface);
         } catch (NotCompliantMBeanException e) {
             throw new IllegalArgumentException(e);
         }
@@ -63,7 +61,7 @@ public class MXBeanProxy {
     }
 
     private class Visitor
-            implements MBeanAnalyzer.MBeanVisitor<ConvertingMethod, RuntimeException> {
+            implements MBeanAnalyzer.MBeanVisitor<ConvertingMethod> {
         public void visitAttribute(String attributeName,
                                    ConvertingMethod getter,
                                    ConvertingMethod setter) {
@@ -161,8 +159,7 @@ public class MXBeanProxy {
 
         Handler handler = handlerMap.get(method);
         ConvertingMethod cm = handler.getConvertingMethod();
-        String prefix = extractPrefix(name);
-        MXBeanLookup lookup = MXBeanLookup.lookupFor(mbsc, prefix);
+        MXBeanLookup lookup = MXBeanLookup.lookupFor(mbsc);
         MXBeanLookup oldLookup = MXBeanLookup.getLookup();
         try {
             MXBeanLookup.setLookup(lookup);
@@ -172,18 +169,6 @@ public class MXBeanProxy {
         } finally {
             MXBeanLookup.setLookup(oldLookup);
         }
-    }
-
-    private static String extractPrefix(ObjectName name)
-            throws MalformedObjectNameException {
-        String domain = name.getDomain();
-        int slashslash = domain.lastIndexOf("//");
-        if (slashslash > 0 && domain.charAt(slashslash - 1) == '/')
-            slashslash--;
-        if (slashslash >= 0)
-            return domain.substring(0, slashslash + 2);
-        else
-            return null;
     }
 
     private final Map<Method, Handler> handlerMap = newMap();

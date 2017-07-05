@@ -271,52 +271,6 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
     }
 
     /**
-     * Closes a client connection.
-     * @param connectionId the id of the client connection to be closed.
-     * @throws IllegalArgumentException if {@code connectionId} is null or is
-     * not the id of any open connection.
-     * @throws java.io.IOException if an I/O error appears when closing the
-     * connection.
-     *
-     * @since 1.7
-     */
-    public void closeConnection(String connectionId)
-            throws IOException {
-        final boolean debug = logger.debugOn();
-
-        if (debug) logger.trace("closeConnection","cconnectionId="+connectionId);
-
-        if (connectionId == null)
-            throw new IllegalArgumentException("Null connectionId.");
-
-        RMIConnection client = null;
-        synchronized (clientList) {
-            dropDeadReferences();
-            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
-                 it.hasNext(); ) {
-                client = it.next().get();
-                if (client != null && connectionId.equals(client.getConnectionId())) {
-                    it.remove();
-                    break;
-                }
-            }
-        }
-
-        if (client == null) {
-            throw new IllegalArgumentException("Unknown id: "+connectionId);
-        }
-
-        if (debug) logger.trace("closeConnection", "closing client connection.");
-        closeClient(client);
-
-        if (debug) logger.trace("closeConnection", "sending notif");
-        connServer.connectionClosed(connectionId,
-                                    "Client connection closed", null);
-
-        if (debug) logger.trace("closeConnection","done");
-    }
-
-    /**
      * <p>Creates a new client connection.  This method is called by
      * the public method {@link #newClient(Object)}.</p>
      *

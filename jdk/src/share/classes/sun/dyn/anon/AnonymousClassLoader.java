@@ -26,9 +26,9 @@
 package sun.dyn.anon;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import sun.misc.IOUtils;
 
 /**
  * Anonymous class loader.  Will load any valid classfile, producing
@@ -285,13 +285,6 @@ public class AnonymousClassLoader {
         if (contentLength < 0)
             throw new IOException("invalid content length "+contentLength);
 
-        byte[] classFile = new byte[contentLength];
-        InputStream tcs = connection.getInputStream();
-        for (int fill = 0, nr; fill < classFile.length; fill += nr) {
-            nr = tcs.read(classFile, fill, classFile.length - fill);
-            if (nr < 0)
-                throw new IOException("premature end of file");
-        }
-        return classFile;
+        return IOUtils.readFully(connection.getInputStream(), contentLength, true);
     }
 }

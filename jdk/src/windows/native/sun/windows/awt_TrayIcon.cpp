@@ -59,7 +59,7 @@ struct DisplayMessageStruct {
 };
 
 typedef struct tagBitmapheader  {
-    BITMAPINFOHEADER bmiHeader;
+    BITMAPV5HEADER bmiHeader;
     DWORD            dwMasks[256];
 } Bitmapheader, *LPBITMAPHEADER;
 
@@ -638,12 +638,12 @@ void AwtTrayIcon::UnlinkObjects()
 
 HBITMAP AwtTrayIcon::CreateBMP(HWND hW,int* imageData,int nSS, int nW, int nH)
 {
-    Bitmapheader    bmhHeader;
+    Bitmapheader    bmhHeader = {0};
     HDC             hDC;
     char            *ptrImageData;
     HBITMAP         hbmpBitmap;
     HBITMAP         hBitmap;
-    int             nNumChannels    = 3;
+    int             nNumChannels    = 4;
 
     if (!hW) {
         hW = ::GetDesktopWindow();
@@ -653,14 +653,20 @@ HBITMAP AwtTrayIcon::CreateBMP(HWND hW,int* imageData,int nSS, int nW, int nH)
         return NULL;
     }
 
-    memset(&bmhHeader, 0, sizeof(Bitmapheader));
-    bmhHeader.bmiHeader.biSize              = sizeof(BITMAPINFOHEADER);
-    bmhHeader.bmiHeader.biWidth             = nW;
-    bmhHeader.bmiHeader.biHeight            = -nH;
-    bmhHeader.bmiHeader.biPlanes            = 1;
+    bmhHeader.bmiHeader.bV5Size              = sizeof(BITMAPV5HEADER);
+    bmhHeader.bmiHeader.bV5Width             = nW;
+    bmhHeader.bmiHeader.bV5Height            = -nH;
+    bmhHeader.bmiHeader.bV5Planes            = 1;
 
-    bmhHeader.bmiHeader.biBitCount          = 24;
-    bmhHeader.bmiHeader.biCompression       = BI_RGB;
+    bmhHeader.bmiHeader.bV5BitCount          = 32;
+    bmhHeader.bmiHeader.bV5Compression       = BI_BITFIELDS;
+
+    // The following mask specification specifies a supported 32 BPP
+    // alpha format for Windows XP.
+    bmhHeader.bmiHeader.bV5RedMask   =  0x00FF0000;
+    bmhHeader.bmiHeader.bV5GreenMask =  0x0000FF00;
+    bmhHeader.bmiHeader.bV5BlueMask  =  0x000000FF;
+    bmhHeader.bmiHeader.bV5AlphaMask =  0xFF000000;
 
     hbmpBitmap = ::CreateDIBSection(hDC, (BITMAPINFO*)&(bmhHeader),
                                     DIB_RGB_COLORS,
@@ -674,6 +680,7 @@ HBITMAP AwtTrayIcon::CreateBMP(HWND hW,int* imageData,int nSS, int nW, int nH)
     }
     for (int nOutern = 0; nOutern < nH; nOutern++) {
         for (int nInner = 0; nInner < nSS; nInner++) {
+            dstPtr[3] = (*srcPtr >> 0x18) & 0xFF;
             dstPtr[2] = (*srcPtr >> 0x10) & 0xFF;
             dstPtr[1] = (*srcPtr >> 0x08) & 0xFF;
             dstPtr[0] = *srcPtr & 0xFF;

@@ -201,6 +201,8 @@ public abstract class ShellFolder extends File {
 
     private static ShellFolderManager shellFolderManager;
 
+    private static Invoker invoker;
+
     static {
         String managerClassName = (String)Toolkit.getDefaultToolkit().
                                       getDesktopProperty("Shell.shellFolderManager");
@@ -225,6 +227,8 @@ public abstract class ShellFolder extends File {
             throw new Error ("Could not access Shell Folder Manager: "
             + managerClass.getName());
         }
+
+        invoker = shellFolderManager.createInvoker();
     }
 
     /**
@@ -486,21 +490,6 @@ public abstract class ShellFolder extends File {
         return null;
     }
 
-    private static Invoker invoker;
-
-    /**
-     * Provides the single access point to the {@link Invoker}. It is guaranteed that the value
-     * returned by this method will be always the same.
-     *
-     * @return the singleton instance of {@link Invoker}
-     */
-    public static Invoker getInvoker() {
-        if (invoker == null) {
-            invoker = shellFolderManager.createInvoker();
-        }
-        return invoker;
-    }
-
     /**
      * Invokes the {@code task} which doesn't throw checked exceptions
      * from its {@code call} method. If invokation is interrupted then Thread.currentThread().isInterrupted() will
@@ -522,7 +511,7 @@ public abstract class ShellFolder extends File {
     public static <T, E extends Throwable> T invoke(Callable<T> task, Class<E> exceptionClass)
             throws InterruptedException, E {
         try {
-            return getInvoker().invoke(task);
+            return invoker.invoke(task);
         } catch (Exception e) {
             if (e instanceof RuntimeException) {
                 // Rethrow unchecked exceptions

@@ -31,10 +31,6 @@
  * @run main QueryExpStringTest
  */
 
-// This test is mostly obsolete, since we now have Query.fromString.
-// The test includes its own parser, from which Query.fromString was derived.
-// The parsers are not identical and the one here is no longer maintained.
-
 import java.util.*;
 import javax.management.*;
 

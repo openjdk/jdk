@@ -253,7 +253,5 @@ class BinaryOpValueExp extends QueryEval implements ValueExp {
     @Deprecated
     public void setMBeanServer(MBeanServer s) {
         super.setMBeanServer(s);
- }
-
-
+     }
  }

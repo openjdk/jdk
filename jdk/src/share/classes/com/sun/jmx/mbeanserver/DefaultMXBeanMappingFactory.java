@@ -28,8 +28,6 @@ package com.sun.jmx.mbeanserver;
 import static com.sun.jmx.mbeanserver.Util.*;
 import static com.sun.jmx.mbeanserver.MXBeanIntrospector.typeName;
 
-import javax.management.openmbean.MXBeanMappingClass;
-
 import static javax.management.openmbean.SimpleType.*;
 
 import com.sun.jmx.remote.util.EnvHelp;
@@ -69,8 +67,6 @@ import javax.management.openmbean.CompositeDataInvocationHandler;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeDataView;
 import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.MXBeanMapping;
-import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
@@ -165,32 +161,27 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     private static final class Mappings
         extends WeakHashMap<Type, WeakReference<MXBeanMapping>> {}
 
-    private static final Map<MXBeanMappingFactory, Mappings> factoryMappings =
-            new WeakHashMap<MXBeanMappingFactory, Mappings>();
+    private static final Mappings mappings = new Mappings();
 
-    private static final Map<Type, MXBeanMapping> permanentMappings = newMap();
+    /** Following List simply serves to keep a reference to predefined
+        MXBeanMappings so they don't get garbage collected. */
+    private static final List<MXBeanMapping> permanentMappings = newList();
 
-    private static synchronized MXBeanMapping getMapping(
-            Type type, MXBeanMappingFactory factory) {
-        Mappings mappings = factoryMappings.get(factory);
-        if (mappings == null) {
-            mappings = new Mappings();
-            factoryMappings.put(factory, mappings);
-        }
+    private static synchronized MXBeanMapping getMapping(Type type) {
         WeakReference<MXBeanMapping> wr = mappings.get(type);
         return (wr == null) ? null : wr.get();
     }
 
-    private static synchronized void putMapping(
-            Type type, MXBeanMapping mapping, MXBeanMappingFactory factory) {
-        Mappings mappings = factoryMappings.get(factory);
-        if (mappings == null) {
-            mappings = new Mappings();
-            factoryMappings.put(factory, mappings);
-        }
+    private static synchronized void putMapping(Type type, MXBeanMapping mapping) {
         WeakReference<MXBeanMapping> wr =
             new WeakReference<MXBeanMapping>(mapping);
         mappings.put(type, wr);
+    }
+
+    private static synchronized void putPermanentMapping(
+            Type type, MXBeanMapping mapping) {
+        putMapping(type, mapping);
+        permanentMappings.add(mapping);
     }
 
     static {
@@ -213,7 +204,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                 throw new Error(e);
             }
             final MXBeanMapping mapping = new IdentityMapping(c, t);
-            permanentMappings.put(c, mapping);
+            putPermanentMapping(c, mapping);
 
             if (c.getName().startsWith("java.lang.")) {
                 try {
@@ -221,7 +212,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     final Class<?> primitiveType = (Class<?>) typeField.get(null);
                     final MXBeanMapping primitiveMapping =
                         new IdentityMapping(primitiveType, t);
-                    permanentMappings.put(primitiveType, primitiveMapping);
+                    putPermanentMapping(primitiveType, primitiveMapping);
                     if (primitiveType != void.class) {
                         final Class<?> primitiveArrayType =
                             Array.newInstance(primitiveType, 0).getClass();
@@ -230,8 +221,8 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                         final MXBeanMapping primitiveArrayMapping =
                             new IdentityMapping(primitiveArrayType,
                                                 primitiveArrayOpenType);
-                        permanentMappings.put(primitiveArrayType,
-                                              primitiveArrayMapping);
+                        putPermanentMapping(primitiveArrayType,
+                                            primitiveArrayMapping);
                     }
                 } catch (NoSuchFieldException e) {
                     // OK: must not be a primitive wrapper
@@ -255,7 +246,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
 
         MXBeanMapping mapping;
 
-        mapping = getMapping(objType, null);
+        mapping = getMapping(objType);
         if (mapping != null)
             return mapping;
 
@@ -268,7 +259,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             inProgress.remove(objType);
         }
 
-        putMapping(objType, mapping, factory);
+        putMapping(objType, mapping);
         return mapping;
     }
 
@@ -278,14 +269,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         /* It's not yet worth formalizing these tests by having for example
            an array of factory classes, each of which says whether it
            recognizes the Type (Chain of Responsibility pattern).  */
-        MXBeanMapping mapping = permanentMappings.get(objType);
-        if (mapping != null)
-            return mapping;
-        Class<?> erasure = erasure(objType);
-        MXBeanMappingClass mappingClass =
-                erasure.getAnnotation(MXBeanMappingClass.class);
-        if (mappingClass != null)
-            return makeAnnotationMapping(mappingClass, objType, factory);
         if (objType instanceof GenericArrayType) {
             Type componentType =
                 ((GenericArrayType) objType).getGenericComponentType();
@@ -311,51 +294,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                                                 factory);
         } else
             throw new OpenDataException("Cannot map type: " + objType);
-    }
-
-    private static MXBeanMapping
-            makeAnnotationMapping(MXBeanMappingClass mappingClass,
-                                  Type objType,
-                                  MXBeanMappingFactory factory)
-    throws OpenDataException {
-        Class<? extends MXBeanMapping> c = mappingClass.value();
-        Constructor<? extends MXBeanMapping> cons;
-        try {
-            cons = c.getConstructor(Type.class);
-        } catch (NoSuchMethodException e) {
-            final String msg =
-                    "Annotation @" + MXBeanMappingClass.class.getName() +
-                    " must name a class with a public constructor that has a " +
-                    "single " + Type.class.getName() + " argument";
-            OpenDataException ode = new OpenDataException(msg);
-            ode.initCause(e);
-            throw ode;
-        }
-        try {
-            return cons.newInstance(objType);
-        } catch (Exception e) {
-            final String msg =
-                    "Could not construct a " + c.getName() + " for @" +
-                    MXBeanMappingClass.class.getName();
-            OpenDataException ode = new OpenDataException(msg);
-            ode.initCause(e);
-            throw ode;
-        }
-    }
-
-    private static Class<?> erasure(Type t) {
-        if (t instanceof Class<?>)
-            return (Class<?>) t;
-        if (t instanceof ParameterizedType)
-            return erasure(((ParameterizedType) t).getRawType());
-        /* Other cases: GenericArrayType, TypeVariable, WildcardType.
-         * Returning the erasure of GenericArrayType is not necessary because
-         * anyway we will be recursing on the element type, and we'll erase
-         * then.  Returning the erasure of the other two would mean returning
-         * the type bound (e.g. Foo in <T extends Foo> or <? extends Foo>)
-         * and since we don't treat this as Foo elsewhere we shouldn't here.
-         */
-        return Object.class;
     }
 
     private static <T extends Enum<T>> MXBeanMapping
