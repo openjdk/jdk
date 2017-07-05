@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,37 @@
 
 /*
  * @test
- * @bug 6775880
- * @summary EA +DeoptimizeALot: assert(mon_info->owner()->is_locked(),"object must be locked now")
- * @compile -source 1.4 -target 1.4 Test.java
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+DoEscapeAnalysis -XX:+DeoptimizeALot -XX:CompileCommand=exclude,java.lang.AbstractStringBuilder::append Test
+ * @bug 6795161
+ * @summary Escape analysis leads to data corruption
+ * @run main/othervm -server -Xcomp -XX:CompileOnly=Test -XX:+DoEscapeAnalysis Test
  */
 
-public class Test {
+class Test_Class_1 {
+    static String var_1;
 
-  int cnt;
-  int b[];
-  String s;
-
-  String test() {
-    String res="";
-    for (int i=0; i < cnt; i++) {
-      if (i != 0) {
-        res = res +".";
-      }
-      res = res + b[i];
+    static void badFunc(int size)
+    {
+        try {
+          for (int i = 0; i < 1; (new byte[size-i])[0] = 0, i++) {}
+        } catch (Exception e) {
+          // don't comment it out, it will lead to correct results ;)
+          //System.out.println("Got exception: " + e);
+        }
     }
-    return res;
-  }
-
-  public static void main(String[] args) {
-    Test t = new Test();
-    t.cnt = 3;
-    t.b = new int[3];
-    t.b[0] = 0;
-    t.b[1] = 1;
-    t.b[2] = 2;
-    int j=0;
-    t.s = "";
-    for (int i=0; i<10001; i++) {
-      t.s = "c";
-      t.s = t.test();
-    }
-    System.out.println("After s=" + t.s);
-  }
 }
 
+public class Test {
+    static String var_1_copy = Test_Class_1.var_1;
+
+    static byte var_check;
+
+    public static void main(String[] args)
+    {
+        var_check = 1;
+
+        Test_Class_1.badFunc(-1);
+
+        System.out.println("EATester.var_check = " + Test.var_check + " (expected 1)\n");
+    }
+}
 

@@ -346,9 +346,12 @@ int32 cmpstr(const void *k1, const void *k2) {
   return strcmp((const char *)k1,(const char *)k2);
 }
 
-// Slimey cheap key comparator.
+// Cheap key comparator.
 int32 cmpkey(const void *key1, const void *key2) {
-  return (int32)((intptr_t)key1 - (intptr_t)key2);
+  if (key1 == key2) return 0;
+  intptr_t delta = (intptr_t)key1 - (intptr_t)key2;
+  if (delta > 0) return 1;
+  return -1;
 }
 
 //=============================================================================

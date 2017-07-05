@@ -327,6 +327,14 @@ size_t os::current_stack_size() {
   return sz;
 }
 
+struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
+  const struct tm* time_struct_ptr = localtime(clock);
+  if (time_struct_ptr != NULL) {
+    *res = *time_struct_ptr;
+    return res;
+  }
+  return NULL;
+}
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 

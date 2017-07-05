@@ -65,9 +65,11 @@ protected:
   // We need access in order to union things into the base table.
   BitMap* bm() { return &_bm; }
 
+#if PRT_COUNT_OCCUPIED
   void recount_occupied() {
     _occupied = (jint) bm()->count_one_bits();
   }
+#endif
 
   PerRegionTable(HeapRegion* hr) :
     _hr(hr),
@@ -1144,7 +1146,9 @@ void HeapRegionRemSet::clear_outgoing_entries() {
   size_t i = _outgoing_region_map.get_next_one_offset(0);
   while (i < _outgoing_region_map.size()) {
     HeapRegion* to_region = g1h->region_at(i);
-    to_region->rem_set()->clear_incoming_entry(hr());
+    if (!to_region->in_collection_set()) {
+      to_region->rem_set()->clear_incoming_entry(hr());
+    }
     i = _outgoing_region_map.get_next_one_offset(i+1);
   }
 }

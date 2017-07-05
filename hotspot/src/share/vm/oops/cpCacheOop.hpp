@@ -291,6 +291,9 @@ class constantPoolCacheOopDesc: public oopDesc {
  private:
   int             _length;
   constantPoolOop _constant_pool;                // the corresponding constant pool
+  // If true, safe for concurrent GC processing,
+  // Set unconditionally in constantPoolCacheKlass::allocate()
+  volatile bool        _is_conc_safe;
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -315,6 +318,12 @@ class constantPoolCacheOopDesc: public oopDesc {
   void set_constant_pool(constantPoolOop pool)   { oop_store_without_check((oop*)&_constant_pool, (oop)pool); }
   constantPoolOop constant_pool() const          { return _constant_pool; }
   ConstantPoolCacheEntry* entry_at(int i) const  { assert(0 <= i && i < length(), "index out of bounds"); return base() + i; }
+
+  // GC support
+  // If the _length field has not been set, the size of the
+  // constantPoolCache cannot be correctly calculated.
+  bool is_conc_safe()                            { return _is_conc_safe; }
+  void set_is_conc_safe(bool v)                  { _is_conc_safe = v; }
 
   // Code generation
   static ByteSize base_offset()                  { return in_ByteSize(sizeof(constantPoolCacheOopDesc)); }

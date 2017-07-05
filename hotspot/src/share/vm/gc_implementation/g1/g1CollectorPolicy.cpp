@@ -196,8 +196,13 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _short_lived_surv_rate_group(new SurvRateGroup(this, "Short Lived",
                                                  G1YoungSurvRateNumRegionsSummary)),
   _survivor_surv_rate_group(new SurvRateGroup(this, "Survivor",
-                                              G1YoungSurvRateNumRegionsSummary))
+                                              G1YoungSurvRateNumRegionsSummary)),
   // add here any more surv rate groups
+  _recorded_survivor_regions(0),
+  _recorded_survivor_head(NULL),
+  _recorded_survivor_tail(NULL),
+  _survivors_age_table(true)
+
 {
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
@@ -272,6 +277,15 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
 
+  if (G1UseSurvivorSpace) {
+    // if G1FixedSurvivorSpaceSize is 0 which means the size is not
+    // fixed, then _max_survivor_regions will be calculated at
+    // calculate_young_list_target_config during initialization
+    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
+  } else {
+    _max_survivor_regions = 0;
+  }
+
   initialize_all();
 }
 
@@ -283,6 +297,9 @@ static void inc_mod(int& i, int len) {
 void G1CollectorPolicy::initialize_flags() {
   set_min_alignment(HeapRegion::GrainBytes);
   set_max_alignment(GenRemSet::max_alignment_constraint(rem_set_name()));
+  if (SurvivorRatio < 1) {
+    vm_exit_during_initialization("Invalid survivor ratio specified");
+  }
   CollectorPolicy::initialize_flags();
 }
 
@@ -300,6 +317,8 @@ void G1CollectorPolicy::init() {
     vm_exit_during_initialization("-XX:+UseG1GC is incompatible with "
                                   "-XX:+UseConcMarkSweepGC.");
   }
+
+  initialize_gc_policy_counters();
 
   if (G1Gen) {
     _in_young_gc_mode = true;
@@ -320,6 +339,12 @@ void G1CollectorPolicy::init() {
      _young_list_fixed_length = 0;
     _in_young_gc_mode = false;
   }
+}
+
+// Create the jstat counters for the policy.
+void G1CollectorPolicy::initialize_gc_policy_counters()
+{
+  _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 2 + G1Gen);
 }
 
 void G1CollectorPolicy::calculate_young_list_min_length() {
@@ -352,6 +377,7 @@ void G1CollectorPolicy::calculate_young_list_target_config() {
     guarantee( so_length < _young_list_target_length, "invariant" );
     _young_list_so_prefix_length = so_length;
   }
+  calculate_survivors_policy();
 }
 
 // This method calculate the optimal scan-only set for a fixed young
@@ -448,6 +474,9 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
   if (full_young_gcs() && _free_regions_at_end_of_collection > 0) {
     // we are in fully-young mode and there are free regions in the heap
 
+    double survivor_regions_evac_time =
+        predict_survivor_regions_evac_time();
+
     size_t min_so_length = 0;
     size_t max_so_length = 0;
 
@@ -497,9 +526,8 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
       scanned_cards = predict_non_young_card_num(adj_rs_lengths);
     // calculate this once, so that we don't have to recalculate it in
     // the innermost loop
-    double base_time_ms = predict_base_elapsed_time_ms(pending_cards,
-                                                       scanned_cards);
-
+    double base_time_ms = predict_base_elapsed_time_ms(pending_cards, scanned_cards)
+                          + survivor_regions_evac_time;
     // the result
     size_t final_young_length = 0;
     size_t final_so_length = 0;
@@ -548,14 +576,14 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
     bool done = false;
     // this is the outermost loop
     while (!done) {
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
       // leave this in for debugging, just in case
       gclog_or_tty->print_cr("searching between " SIZE_FORMAT " and " SIZE_FORMAT
                              ", incr " SIZE_FORMAT ", pass %s",
                              from_so_length, to_so_length, so_length_incr,
                              (pass == pass_type_coarse) ? "coarse" :
                              (pass == pass_type_fine) ? "fine" : "final");
-#endif // 0
+#endif // TRACE_CALC_YOUNG_CONFIG
 
       size_t so_length = from_so_length;
       size_t init_free_regions =
@@ -651,11 +679,11 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
           guarantee( so_length_incr == so_coarse_increments, "invariant" );
           guarantee( final_so_length >= min_so_length, "invariant" );
 
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
           // leave this in for debugging, just in case
           gclog_or_tty->print_cr("  coarse pass: SO length " SIZE_FORMAT,
                                  final_so_length);
-#endif // 0
+#endif // TRACE_CALC_YOUNG_CONFIG
 
           from_so_length =
             (final_so_length - min_so_length > so_coarse_increments) ?
@@ -687,12 +715,12 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
             // of the optimal
             size_t new_so_length = 950 * final_so_length / 1000;
 
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
             // leave this in for debugging, just in case
             gclog_or_tty->print_cr("  fine pass: SO length " SIZE_FORMAT
                                    ", setting it to " SIZE_FORMAT,
                                     final_so_length, new_so_length);
-#endif // 0
+#endif // TRACE_CALC_YOUNG_CONFIG
 
             from_so_length = new_so_length;
             to_so_length = new_so_length;
@@ -719,7 +747,8 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
     }
 
     // we should have at least one region in the target young length
-    _young_list_target_length = MAX2((size_t) 1, final_young_length);
+    _young_list_target_length =
+        MAX2((size_t) 1, final_young_length + _recorded_survivor_regions);
     if (final_so_length >= final_young_length)
       // and we need to ensure that the S-O length is not greater than
       // the target young length (this is being a bit careful)
@@ -734,7 +763,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
     double end_time_sec = os::elapsedTime();
     double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
     // leave this in for debugging, just in case
     gclog_or_tty->print_cr("target = %1.1lf ms, young = " SIZE_FORMAT
                            ", SO = " SIZE_FORMAT ", "
@@ -747,9 +776,9 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
                            calculations,
                            full_young_gcs() ? "full" : "partial",
                            should_initiate_conc_mark() ? " i-m" : "",
-                           in_marking_window(),
-                           in_marking_window_im());
-#endif // 0
+                           _in_marking_window,
+                           _in_marking_window_im);
+#endif // TRACE_CALC_YOUNG_CONFIG
 
     if (_young_list_target_length < _young_list_min_length) {
       // bummer; this means that, if we do a pause when the optimal
@@ -768,14 +797,14 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
         // S-O length
         so_length = calculate_optimal_so_length(_young_list_min_length);
 
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
       // leave this in for debugging, just in case
       gclog_or_tty->print_cr("adjusted target length from "
                              SIZE_FORMAT " to " SIZE_FORMAT
                              ", SO " SIZE_FORMAT,
                              _young_list_target_length, _young_list_min_length,
                              so_length);
-#endif // 0
+#endif // TRACE_CALC_YOUNG_CONFIG
 
       _young_list_target_length =
         MAX2(_young_list_min_length, (size_t)1);
@@ -785,12 +814,12 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
     // we are in a partially-young mode or we've run out of regions (due
     // to evacuation failure)
 
-#if 0
+#ifdef TRACE_CALC_YOUNG_CONFIG
     // leave this in for debugging, just in case
     gclog_or_tty->print_cr("(partial) setting target to " SIZE_FORMAT
                            ", SO " SIZE_FORMAT,
                            _young_list_min_length, 0);
-#endif // 0
+#endif // TRACE_CALC_YOUNG_CONFIG
 
     // we'll do the pause as soon as possible and with no S-O prefix
     // (see above for the reasons behind the latter)
@@ -882,6 +911,16 @@ G1CollectorPolicy::predict_gc_eff(size_t young_length,
   *ret_gc_eff = gc_eff;
 
   return true;
+}
+
+double G1CollectorPolicy::predict_survivor_regions_evac_time() {
+  double survivor_regions_evac_time = 0.0;
+  for (HeapRegion * r = _recorded_survivor_head;
+       r != NULL && r != _recorded_survivor_tail->get_next_young_region();
+       r = r->get_next_young_region()) {
+    survivor_regions_evac_time += predict_region_elapsed_time_ms(r, true);
+  }
+  return survivor_regions_evac_time;
 }
 
 void G1CollectorPolicy::check_prediction_validity() {
@@ -995,11 +1034,15 @@ void G1CollectorPolicy::record_full_collection_end() {
   _short_lived_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
 
+  record_survivor_regions(0, NULL, NULL);
+
   _prev_region_num_young   = _region_num_young;
   _prev_region_num_tenured = _region_num_tenured;
 
   _free_regions_at_end_of_collection = _g1->free_regions();
   _scan_only_regions_at_end_of_collection = 0;
+  // Reset survivors SurvRateGroup.
+  _survivor_surv_rate_group->reset();
   calculate_young_list_min_length();
   calculate_young_list_target_config();
  }
@@ -1103,6 +1146,10 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   size_t short_lived_so_length = _young_list_so_prefix_length;
   _short_lived_surv_rate_group->record_scan_only_prefix(short_lived_so_length);
   tag_scan_only(short_lived_so_length);
+
+  if (G1UseSurvivorSpace) {
+    _survivors_age_table.clear();
+  }
 
   assert( verify_young_ages(), "region age verification" );
 }
@@ -1965,9 +2012,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   // </NEW PREDICTION>
 
   _target_pause_time_ms = -1.0;
-
-  // TODO: calculate tenuring threshold
-  _tenuring_threshold = MaxTenuringThreshold;
 }
 
 // <NEW PREDICTION>
@@ -2058,7 +2102,7 @@ G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
     guarantee( hr->is_young() && hr->age_in_surv_rate_group() != -1,
                "invariant" );
     int age = hr->age_in_surv_rate_group();
-    double yg_surv_rate = predict_yg_surv_rate(age);
+    double yg_surv_rate = predict_yg_surv_rate(age, hr->surv_rate_group());
     bytes_to_copy = (size_t) ((double) hr->used() * yg_surv_rate);
   }
 
@@ -2091,7 +2135,7 @@ G1CollectorPolicy::record_cset_region(HeapRegion* hr, bool young) {
   }
 #if PREDICTIONS_VERBOSE
   if (young) {
-    _recorded_young_bytes += hr->asSpace()->used();
+    _recorded_young_bytes += hr->used();
   } else {
     _recorded_marked_bytes += hr->max_live_bytes();
   }
@@ -2118,11 +2162,6 @@ G1CollectorPolicy::end_recording_regions() {
     _predicted_cards_scanned +=
       predict_non_young_card_num(_predicted_rs_lengths);
   _recorded_region_num = _recorded_young_regions + _recorded_non_young_regions;
-
-  _predicted_young_survival_ratio = 0.0;
-  for (int i = 0; i < _recorded_young_regions; ++i)
-    _predicted_young_survival_ratio += predict_yg_surv_rate(i);
-  _predicted_young_survival_ratio /= (double) _recorded_young_regions;
 
   _predicted_scan_only_scan_time_ms =
     predict_scan_only_time_ms(_recorded_scan_only_regions);
@@ -2673,8 +2712,11 @@ G1CollectorPolicy::should_add_next_region_to_young_list() {
   assert(in_young_gc_mode(), "should be in young GC mode");
   bool ret;
   size_t young_list_length = _g1->young_list_length();
-
-  if (young_list_length < _young_list_target_length) {
+  size_t young_list_max_length = _young_list_target_length;
+  if (G1FixedEdenSize) {
+    young_list_max_length -= _max_survivor_regions;
+  }
+  if (young_list_length < young_list_max_length) {
     ret = true;
     ++_region_num_young;
   } else {
@@ -2710,16 +2752,38 @@ G1CollectorPolicy::checkpoint_conc_overhead() {
 }
 
 
-uint G1CollectorPolicy::max_regions(int purpose) {
+size_t G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {
     case GCAllocForSurvived:
-      return G1MaxSurvivorRegions;
+      return _max_survivor_regions;
     case GCAllocForTenured:
-      return UINT_MAX;
+      return REGIONS_UNLIMITED;
     default:
-      return UINT_MAX;
+      ShouldNotReachHere();
+      return REGIONS_UNLIMITED;
   };
 }
+
+// Calculates survivor space parameters.
+void G1CollectorPolicy::calculate_survivors_policy()
+{
+  if (!G1UseSurvivorSpace) {
+    return;
+  }
+  if (G1FixedSurvivorSpaceSize == 0) {
+    _max_survivor_regions = _young_list_target_length / SurvivorRatio;
+  } else {
+    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
+  }
+
+  if (G1FixedTenuringThreshold) {
+    _tenuring_threshold = MaxTenuringThreshold;
+  } else {
+    _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
+        HeapRegion::GrainWords * _max_survivor_regions);
+  }
+}
+
 
 void
 G1CollectorPolicy_BestRegionsFirst::
@@ -2743,7 +2807,11 @@ G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
   double max_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
 
   size_t young_list_length = _g1->young_list_length();
-  bool reached_target_length = young_list_length >= _young_list_target_length;
+  size_t young_list_max_length = _young_list_target_length;
+  if (G1FixedEdenSize) {
+    young_list_max_length -= _max_survivor_regions;
+  }
+  bool reached_target_length = young_list_length >= young_list_max_length;
 
   if (in_young_gc_mode()) {
     if (reached_target_length) {
