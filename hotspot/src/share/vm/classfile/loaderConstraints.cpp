@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
 
         // Purge entry
         *p = probe->next();
-        FREE_C_HEAP_ARRAY(oop, probe->loaders(), mtClass);
+        FREE_C_HEAP_ARRAY(oop, probe->loaders());
         free_entry(probe);
       } else {
 #ifdef ASSERT
@@ -340,7 +340,7 @@ void LoaderConstraintTable::ensure_loader_constraint_capacity(
         ClassLoaderData** new_loaders = NEW_C_HEAP_ARRAY(ClassLoaderData*, n, mtClass);
         memcpy(new_loaders, p->loaders(), sizeof(ClassLoaderData*) * p->num_loaders());
         p->set_max_loaders(n);
-        FREE_C_HEAP_ARRAY(ClassLoaderData*, p->loaders(), mtClass);
+        FREE_C_HEAP_ARRAY(ClassLoaderData*, p->loaders());
         p->set_loaders(new_loaders);
     }
 }
@@ -422,7 +422,7 @@ void LoaderConstraintTable::merge_loader_constraints(
   }
 
   *pp2 = p2->next();
-  FREE_C_HEAP_ARRAY(oop, p2->loaders(), mtClass);
+  FREE_C_HEAP_ARRAY(oop, p2->loaders());
   free_entry(p2);
   return;
 }

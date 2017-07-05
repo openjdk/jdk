@@ -498,37 +498,37 @@ void test_loggc_filename() {
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test.log", tms);
   o_result = make_log_name_internal("test.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 
   // test-%t-%p.log
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test-%s-pid%u.log", tms, pid);
   o_result = make_log_name_internal("test-%t-%p.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t-%%p.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 
   // test-%t%p.log
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "test-%spid%u.log", tms, pid);
   o_result = make_log_name_internal("test-%t%p.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t%%p.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 
   // %p%t.log
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "pid%u%s.log", pid, tms);
   o_result = make_log_name_internal("%p%t.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p%%t.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 
   // %p-test.log
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "pid%u-test.log", pid);
   o_result = make_log_name_internal("%p-test.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p-test.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 
   // %t.log
   jio_snprintf(i_result, sizeof(char)*FILENAMEBUFLEN, "%s.log", tms);
   o_result = make_log_name_internal("%t.log", NULL, pid, tms);
   assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%t.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result, mtInternal);
+  FREE_C_HEAP_ARRAY(char, o_result);
 }
 #endif // PRODUCT
 
@@ -627,7 +627,7 @@ gcLogFileStream::~gcLogFileStream() {
     _file = NULL;
   }
   if (_file_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _file_name, mtInternal);
+    FREE_C_HEAP_ARRAY(char, _file_name);
     _file_name = NULL;
   }
 }
@@ -829,7 +829,7 @@ void defaultStream::init_log() {
                  "Warning:  Cannot open log file: %s\n", try_name);
     // Note:  This feature is for maintainer use only.  No need for L10N.
     jio_print(warnbuf);
-    FREE_C_HEAP_ARRAY(char, try_name, mtInternal);
+    FREE_C_HEAP_ARRAY(char, try_name);
     try_name = make_log_name(log_name, os::get_temp_directory());
     jio_snprintf(warnbuf, sizeof(warnbuf),
                  "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
@@ -837,7 +837,7 @@ void defaultStream::init_log() {
     delete file;
     file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
   }
-  FREE_C_HEAP_ARRAY(char, try_name, mtInternal);
+  FREE_C_HEAP_ARRAY(char, try_name);
 
   if (file->is_open()) {
     _log_file = file;
@@ -1121,7 +1121,7 @@ void ostream_init_log() {
     const char* list_name = make_log_name(DumpLoadedClassList, NULL);
     classlist_file = new(ResourceObj::C_HEAP, mtInternal)
                          fileStream(list_name);
-    FREE_C_HEAP_ARRAY(char, list_name, mtInternal);
+    FREE_C_HEAP_ARRAY(char, list_name);
   }
 #endif
 
@@ -1274,7 +1274,7 @@ char* bufferedStream::as_string() {
 
 bufferedStream::~bufferedStream() {
   if (!buffer_fixed) {
-    FREE_C_HEAP_ARRAY(char, buffer, mtInternal);
+    FREE_C_HEAP_ARRAY(char, buffer);
   }
 }
 

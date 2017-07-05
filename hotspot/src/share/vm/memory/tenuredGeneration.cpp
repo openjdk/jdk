@@ -24,13 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
-#include "memory/generation.inline.hpp"
 #include "memory/generationSpec.hpp"
+#include "memory/genMarkSweep.hpp"
+#include "memory/genOopClosures.inline.hpp"
 #include "memory/space.hpp"
-#include "memory/tenuredGeneration.hpp"
+#include "memory/tenuredGeneration.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
@@ -38,8 +40,7 @@
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size, int level,
                                      GenRemSet* remset) :
-  OneContigSpaceCardGeneration(rs, initial_byte_size,
-                               level, remset, NULL)
+  CardGeneration(rs, initial_byte_size, level, remset)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
@@ -64,45 +65,12 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _space_counters = new CSpaceCounters(gen_name, 0,
                                        _virtual_space.reserved_size(),
                                        _the_space, _gen_counters);
-#if INCLUDE_ALL_GCS
-  if (UseParNewGC) {
-    typedef ParGCAllocBufferWithBOT* ParGCAllocBufferWithBOTPtr;
-    _alloc_buffers = NEW_C_HEAP_ARRAY(ParGCAllocBufferWithBOTPtr,
-                                      ParallelGCThreads, mtGC);
-    if (_alloc_buffers == NULL)
-      vm_exit_during_initialization("Could not allocate alloc_buffers");
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _alloc_buffers[i] =
-        new ParGCAllocBufferWithBOT(OldPLABSize, _bts);
-      if (_alloc_buffers[i] == NULL)
-        vm_exit_during_initialization("Could not allocate alloc_buffers");
-    }
-  } else {
-    _alloc_buffers = NULL;
-  }
-#endif // INCLUDE_ALL_GCS
-}
-
-
-const char* TenuredGeneration::name() const {
-  return "tenured generation";
 }
 
 void TenuredGeneration::gc_prologue(bool full) {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
-  if (VerifyBeforeGC) {
-    verify_alloc_buffers_clean();
-  }
 }
-
-void TenuredGeneration::gc_epilogue(bool full) {
-  if (VerifyAfterGC) {
-    verify_alloc_buffers_clean();
-  }
-  OneContigSpaceCardGeneration::gc_epilogue(full);
-}
-
 
 bool TenuredGeneration::should_collect(bool  full,
                                        size_t size,
@@ -149,15 +117,6 @@ bool TenuredGeneration::should_collect(bool  full,
   return result;
 }
 
-void TenuredGeneration::collect(bool   full,
-                                bool   clear_all_soft_refs,
-                                size_t size,
-                                bool   is_tlab) {
-  retire_alloc_buffers_before_full_gc();
-  OneContigSpaceCardGeneration::collect(full, clear_all_soft_refs,
-                                        size, is_tlab);
-}
-
 void TenuredGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
 
@@ -171,6 +130,7 @@ void TenuredGeneration::compute_new_size() {
          err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
          " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
 }
+
 void TenuredGeneration::update_gc_stats(int current_level,
                                         bool full) {
   // If the next lower level(s) has been collected, gather any statistics
@@ -198,96 +158,6 @@ void TenuredGeneration::update_counters() {
   }
 }
 
-
-#if INCLUDE_ALL_GCS
-oop TenuredGeneration::par_promote(int thread_num,
-                                   oop old, markOop m, size_t word_sz) {
-
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  HeapWord* obj_ptr = buf->allocate(word_sz);
-  bool is_lab = true;
-  if (obj_ptr == NULL) {
-#ifndef PRODUCT
-    if (Universe::heap()->promotion_should_fail()) {
-      return NULL;
-    }
-#endif  // #ifndef PRODUCT
-
-    // Slow path:
-    if (word_sz * 100 < ParallelGCBufferWastePct * buf->word_sz()) {
-      // Is small enough; abandon this buffer and start a new one.
-      size_t buf_size = buf->word_sz();
-      HeapWord* buf_space =
-        TenuredGeneration::par_allocate(buf_size, false);
-      if (buf_space == NULL) {
-        buf_space = expand_and_allocate(buf_size, false, true /* parallel*/);
-      }
-      if (buf_space != NULL) {
-        buf->retire(false, false);
-        buf->set_buf(buf_space);
-        obj_ptr = buf->allocate(word_sz);
-        assert(obj_ptr != NULL, "Buffer was definitely big enough...");
-      }
-    };
-    // Otherwise, buffer allocation failed; try allocating object
-    // individually.
-    if (obj_ptr == NULL) {
-      obj_ptr = TenuredGeneration::par_allocate(word_sz, false);
-      if (obj_ptr == NULL) {
-        obj_ptr = expand_and_allocate(word_sz, false, true /* parallel */);
-      }
-    }
-    if (obj_ptr == NULL) return NULL;
-  }
-  assert(obj_ptr != NULL, "program logic");
-  Copy::aligned_disjoint_words((HeapWord*)old, obj_ptr, word_sz);
-  oop obj = oop(obj_ptr);
-  // Restore the mark word copied above.
-  obj->set_mark(m);
-  return obj;
-}
-
-void TenuredGeneration::par_promote_alloc_undo(int thread_num,
-                                               HeapWord* obj,
-                                               size_t word_sz) {
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  if (buf->contains(obj)) {
-    guarantee(buf->contains(obj + word_sz - 1),
-              "should contain whole object");
-    buf->undo_allocation(obj, word_sz);
-  } else {
-    CollectedHeap::fill_with_object(obj, word_sz);
-  }
-}
-
-void TenuredGeneration::par_promote_alloc_done(int thread_num) {
-  ParGCAllocBufferWithBOT* buf = _alloc_buffers[thread_num];
-  buf->retire(true, ParallelGCRetainPLAB);
-}
-
-void TenuredGeneration::retire_alloc_buffers_before_full_gc() {
-  if (UseParNewGC) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _alloc_buffers[i]->retire(true /*end_of_gc*/, false /*retain*/);
-    }
-  }
-}
-
-// Verify that any retained parallel allocation buffers do not
-// intersect with dirty cards.
-void TenuredGeneration::verify_alloc_buffers_clean() {
-  if (UseParNewGC) {
-    for (uint i = 0; i < ParallelGCThreads; i++) {
-      _rs->verify_aligned_region_empty(_alloc_buffers[i]->range());
-    }
-  }
-}
-
-#else  // INCLUDE_ALL_GCS
-void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
-void TenuredGeneration::verify_alloc_buffers_clean() {}
-#endif // INCLUDE_ALL_GCS
-
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();
   size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
@@ -300,4 +170,245 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
       av_promo, max_promotion_in_bytes);
   }
   return res;
+}
+
+void TenuredGeneration::collect(bool   full,
+                                bool   clear_all_soft_refs,
+                                size_t size,
+                                bool   is_tlab) {
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+
+  SpecializationStats::clear();
+  // Temporarily expand the span of our ref processor, so
+  // refs discovery is over the entire heap, not just this generation
+  ReferenceProcessorSpanMutator
+    x(ref_processor(), gch->reserved_region());
+
+  STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
+  gc_timer->register_gc_start();
+
+  SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
+  gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
+
+  GenMarkSweep::invoke_at_safepoint(_level, ref_processor(), clear_all_soft_refs);
+
+  gc_timer->register_gc_end();
+
+  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
+
+  SpecializationStats::print();
+}
+
+HeapWord*
+TenuredGeneration::expand_and_allocate(size_t word_size,
+                                       bool is_tlab,
+                                       bool parallel) {
+  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
+  if (parallel) {
+    MutexLocker x(ParGCRareEvent_lock);
+    HeapWord* result = NULL;
+    size_t byte_size = word_size * HeapWordSize;
+    while (true) {
+      expand(byte_size, _min_heap_delta_bytes);
+      if (GCExpandToAllocateDelayMillis > 0) {
+        os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
+      }
+      result = _the_space->par_allocate(word_size);
+      if ( result != NULL) {
+        return result;
+      } else {
+        // If there's not enough expansion space available, give up.
+        if (_virtual_space.uncommitted_size() < byte_size) {
+          return NULL;
+        }
+        // else try again
+      }
+    }
+  } else {
+    expand(word_size*HeapWordSize, _min_heap_delta_bytes);
+    return _the_space->allocate(word_size);
+  }
+}
+
+bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
+  GCMutexLocker x(ExpandHeap_lock);
+  return CardGeneration::expand(bytes, expand_bytes);
+}
+
+
+void TenuredGeneration::shrink(size_t bytes) {
+  assert_locked_or_safepoint(ExpandHeap_lock);
+  size_t size = ReservedSpace::page_align_size_down(bytes);
+  if (size > 0) {
+    shrink_by(size);
+  }
+}
+
+
+size_t TenuredGeneration::capacity() const {
+  return _the_space->capacity();
+}
+
+
+size_t TenuredGeneration::used() const {
+  return _the_space->used();
+}
+
+
+size_t TenuredGeneration::free() const {
+  return _the_space->free();
+}
+
+MemRegion TenuredGeneration::used_region() const {
+  return the_space()->used_region();
+}
+
+size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
+  return _the_space->free();
+}
+
+size_t TenuredGeneration::contiguous_available() const {
+  return _the_space->free() + _virtual_space.uncommitted_size();
+}
+
+bool TenuredGeneration::grow_by(size_t bytes) {
+  assert_locked_or_safepoint(ExpandHeap_lock);
+  bool result = _virtual_space.expand_by(bytes);
+  if (result) {
+    size_t new_word_size =
+       heap_word_size(_virtual_space.committed_size());
+    MemRegion mr(_the_space->bottom(), new_word_size);
+    // Expand card table
+    Universe::heap()->barrier_set()->resize_covered_region(mr);
+    // Expand shared block offset array
+    _bts->resize(new_word_size);
+
+    // Fix for bug #4668531
+    if (ZapUnusedHeapArea) {
+      MemRegion mangle_region(_the_space->end(),
+      (HeapWord*)_virtual_space.high());
+      SpaceMangler::mangle_region(mangle_region);
+    }
+
+    // Expand space -- also expands space's BOT
+    // (which uses (part of) shared array above)
+    _the_space->set_end((HeapWord*)_virtual_space.high());
+
+    // update the space and generation capacity counters
+    update_counters();
+
+    if (Verbose && PrintGC) {
+      size_t new_mem_size = _virtual_space.committed_size();
+      size_t old_mem_size = new_mem_size - bytes;
+      gclog_or_tty->print_cr("Expanding %s from " SIZE_FORMAT "K by "
+                      SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                      name(), old_mem_size/K, bytes/K, new_mem_size/K);
+    }
+  }
+  return result;
+}
+
+
+bool TenuredGeneration::grow_to_reserved() {
+  assert_locked_or_safepoint(ExpandHeap_lock);
+  bool success = true;
+  const size_t remaining_bytes = _virtual_space.uncommitted_size();
+  if (remaining_bytes > 0) {
+    success = grow_by(remaining_bytes);
+    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
+  }
+  return success;
+}
+
+void TenuredGeneration::shrink_by(size_t bytes) {
+  assert_locked_or_safepoint(ExpandHeap_lock);
+  // Shrink committed space
+  _virtual_space.shrink_by(bytes);
+  // Shrink space; this also shrinks the space's BOT
+  _the_space->set_end((HeapWord*) _virtual_space.high());
+  size_t new_word_size = heap_word_size(_the_space->capacity());
+  // Shrink the shared block offset array
+  _bts->resize(new_word_size);
+  MemRegion mr(_the_space->bottom(), new_word_size);
+  // Shrink the card table
+  Universe::heap()->barrier_set()->resize_covered_region(mr);
+
+  if (Verbose && PrintGC) {
+    size_t new_mem_size = _virtual_space.committed_size();
+    size_t old_mem_size = new_mem_size + bytes;
+    gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                  name(), old_mem_size/K, new_mem_size/K);
+  }
+}
+
+// Currently nothing to do.
+void TenuredGeneration::prepare_for_verify() {}
+
+void TenuredGeneration::object_iterate(ObjectClosure* blk) {
+  _the_space->object_iterate(blk);
+}
+
+void TenuredGeneration::space_iterate(SpaceClosure* blk,
+                                                 bool usedOnly) {
+  blk->do_space(_the_space);
+}
+
+void TenuredGeneration::younger_refs_iterate(OopsInGenClosure* blk) {
+  blk->set_generation(this);
+  younger_refs_in_space_iterate(_the_space, blk);
+  blk->reset_generation();
+}
+
+void TenuredGeneration::save_marks() {
+  _the_space->set_saved_mark();
+}
+
+
+void TenuredGeneration::reset_saved_marks() {
+  _the_space->reset_saved_mark();
+}
+
+
+bool TenuredGeneration::no_allocs_since_save_marks() {
+  return _the_space->saved_mark_at_top();
+}
+
+#define TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN(OopClosureType, nv_suffix)     \
+                                                                                \
+void TenuredGeneration::                                                        \
+oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {                  \
+  blk->set_generation(this);                                                    \
+  _the_space->oop_since_save_marks_iterate##nv_suffix(blk);                     \
+  blk->reset_generation();                                                      \
+  save_marks();                                                                 \
+}
+
+ALL_SINCE_SAVE_MARKS_CLOSURES(TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN)
+
+#undef TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN
+
+
+void TenuredGeneration::gc_epilogue(bool full) {
+  _last_gc = WaterMark(the_space(), the_space()->top());
+
+  // update the generation and space performance counters
+  update_counters();
+  if (ZapUnusedHeapArea) {
+    the_space()->check_mangled_unused_area_complete();
+  }
+}
+
+void TenuredGeneration::record_spaces_top() {
+  assert(ZapUnusedHeapArea, "Not mangling unused space");
+  the_space()->set_top_for_allocations();
+}
+
+void TenuredGeneration::verify() {
+  the_space()->verify();
+}
+
+void TenuredGeneration::print_on(outputStream* st)  const {
+  Generation::print_on(st);
+  st->print("   the");
+  the_space()->print_on(st);
 }

@@ -441,12 +441,12 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
       s = (int)((size_t)round_to(size_in_bytes, MinObjAlignmentInBytes) /
         HeapWordSize);
 
-      // UseParNewGC, UseParallelGC and UseG1GC can change the length field
+      // ParNew (used by CMS), UseParallelGC and UseG1GC can change the length field
       // of an "old copy" of an object array in the young gen so it indicates
       // the grey portion of an already copied array. This will cause the first
       // disjunct below to fail if the two comparands are computed across such
       // a concurrent change.
-      // UseParNewGC also runs with promotion labs (which look like int
+      // ParNew also runs with promotion labs (which look like int
       // filler arrays) which are subject to changing their declared size
       // when finally retiring a PLAB; this also can cause the first disjunct
       // to fail for another worker thread that is concurrently walking the block
@@ -458,8 +458,8 @@ inline int oopDesc::size_given_klass(Klass* klass)  {
       // technique, we will need to suitably modify the assertion.
       assert((s == klass->oop_size(this)) ||
              (Universe::heap()->is_gc_active() &&
-              ((is_typeArray() && UseParNewGC) ||
-               (is_objArray()  && is_forwarded() && (UseParNewGC || UseParallelGC || UseG1GC)))),
+              ((is_typeArray() && UseConcMarkSweepGC) ||
+               (is_objArray()  && is_forwarded() && (UseConcMarkSweepGC || UseParallelGC || UseG1GC)))),
              "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.

@@ -4697,10 +4697,6 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
 
-  // Check for allocation before we add nodes that would confuse
-  // tightly_coupled_allocation()
-  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
-
   // The following tests must be performed
   // (1) src and dest are arrays.
   // (2) src and dest arrays must have elements of the same BasicType
@@ -4716,6 +4712,36 @@ bool LibraryCallKit::inline_arraycopy() {
   // always do this here because we need the JVM state for uncommon traps
   src  = null_check(src,  T_ARRAY);
   dest = null_check(dest, T_ARRAY);
+
+  // Check for allocation before we add nodes that would confuse
+  // tightly_coupled_allocation()
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+
+  SafePointNode* sfpt = NULL;
+  if (alloc != NULL) {
+    // The JVM state for uncommon traps between the allocation and
+    // arraycopy is set to the state before the allocation: if the
+    // initialization is performed by the array copy, we don't want to
+    // go back to the interpreter with an unitialized array.
+    JVMState* old_jvms = alloc->jvms();
+    JVMState* jvms = old_jvms->clone_shallow(C);
+    uint size = alloc->req();
+    sfpt = new SafePointNode(size, jvms);
+    jvms->set_map(sfpt);
+    for (uint i = 0; i < size; i++) {
+      sfpt->init_req(i, alloc->in(i));
+    }
+    // re-push array length for deoptimization
+    sfpt->ins_req(jvms->stkoff() + jvms->sp(), alloc->in(AllocateNode::ALength));
+    jvms->set_sp(jvms->sp()+1);
+    jvms->set_monoff(jvms->monoff()+1);
+    jvms->set_scloff(jvms->scloff()+1);
+    jvms->set_endoff(jvms->endoff()+1);
+    jvms->set_should_reexecute(true);
+
+    sfpt->set_i_o(map()->i_o());
+    sfpt->set_memory(map()->memory());
+  }
 
   bool notest = false;
 
@@ -4762,14 +4788,14 @@ bool LibraryCallKit::inline_arraycopy() {
     if (could_have_src && could_have_dest) {
       // This is going to pay off so emit the required guards
       if (!has_src) {
-        src = maybe_cast_profiled_obj(src, src_k);
+        src = maybe_cast_profiled_obj(src, src_k, true, sfpt);
         src_type  = _gvn.type(src);
         top_src  = src_type->isa_aryptr();
         has_src = (top_src != NULL && top_src->klass() != NULL);
         src_spec = true;
       }
       if (!has_dest) {
-        dest = maybe_cast_profiled_obj(dest, dest_k);
+        dest = maybe_cast_profiled_obj(dest, dest_k, true);
         dest_type  = _gvn.type(dest);
         top_dest  = dest_type->isa_aryptr();
         has_dest = (top_dest != NULL && top_dest->klass() != NULL);
@@ -4810,10 +4836,10 @@ bool LibraryCallKit::inline_arraycopy() {
       if (could_have_src && could_have_dest) {
         // If we can have both exact types, emit the missing guards
         if (could_have_src && !src_spec) {
-          src = maybe_cast_profiled_obj(src, src_k);
+          src = maybe_cast_profiled_obj(src, src_k, true, sfpt);
         }
         if (could_have_dest && !dest_spec) {
-          dest = maybe_cast_profiled_obj(dest, dest_k);
+          dest = maybe_cast_profiled_obj(dest, dest_k, true);
         }
       }
     }
@@ -4855,13 +4881,28 @@ bool LibraryCallKit::inline_arraycopy() {
     Node* not_subtype_ctrl = gen_subtype_check(src_klass, dest_klass);
 
     if (not_subtype_ctrl != top()) {
-      PreserveJVMState pjvms(this);
-      set_control(not_subtype_ctrl);
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_make_not_entrant);
-      assert(stopped(), "Should be stopped");
+      if (sfpt != NULL) {
+        GraphKit kit(sfpt->jvms());
+        PreserveJVMState pjvms(&kit);
+        kit.set_control(not_subtype_ctrl);
+        kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                          Deoptimization::Action_make_not_entrant);
+        assert(kit.stopped(), "Should be stopped");
+      } else {
+        PreserveJVMState pjvms(this);
+        set_control(not_subtype_ctrl);
+        uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_make_not_entrant);
+        assert(stopped(), "Should be stopped");
+      }
     }
-    {
+    if (sfpt != NULL) {
+      GraphKit kit(sfpt->jvms());
+      kit.set_control(_gvn.transform(slow_region));
+      kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_make_not_entrant);
+      assert(kit.stopped(), "Should be stopped");
+    } else {
       PreserveJVMState pjvms(this);
       set_control(_gvn.transform(slow_region));
       uncommon_trap(Deoptimization::Reason_intrinsic,
