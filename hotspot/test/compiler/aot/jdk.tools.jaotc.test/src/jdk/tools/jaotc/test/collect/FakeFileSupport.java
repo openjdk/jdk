@@ -27,6 +27,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
+import jdk.tools.jaotc.collect.FileSupport;
+
 public class FakeFileSupport extends FileSupport {
     private final Set<String> exists = new HashSet<>();
     private final Set<String> directories = new HashSet<>();

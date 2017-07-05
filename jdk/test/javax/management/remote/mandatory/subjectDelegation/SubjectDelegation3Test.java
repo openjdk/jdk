@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,17 +65,6 @@ import javax.security.auth.Subject;
 public class SubjectDelegation3Test {
 
     public static void main(String[] args) throws Exception {
-        // Check for supported operating systems: Solaris
-        //
-        // This test runs only on Solaris due to CR 6285916
-        //
-        String osName = System.getProperty("os.name");
-        System.out.println("os.name = " + osName);
-        if (!osName.equals("SunOS")) {
-            System.out.println("This test runs on Solaris only.");
-            System.out.println("Bye! Bye!");
-            return;
-        }
         String policyFile = args[0];
         String testResult = args[1];
         System.out.println("Policy file = " + policyFile);
@@ -139,8 +128,7 @@ public class SubjectDelegation3Test {
             //
             System.out.println("Create an RMI connector server");
             JMXServiceURL url =
-                new JMXServiceURL("rmi", null, 0,
-                                  "/jndi/rmi://:" + port + "/server" + port);
+                new JMXServiceURL("rmi", null, 0);
             jmxcs =
                 JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
             jmxcs.start();
@@ -152,7 +140,7 @@ public class SubjectDelegation3Test {
             //
             String[] credentials = new String[] { "monitorRole" , "QED" };
             cli_env.put("jmx.remote.credentials", credentials);
-            jmxc = JMXConnectorFactory.connect(url, cli_env);
+            jmxc = JMXConnectorFactory.connect(jmxcs.getAddress(), cli_env);
             Subject delegationSubject =
                 new Subject(true,
                             Collections.singleton(new JMXPrincipal("delegate")),

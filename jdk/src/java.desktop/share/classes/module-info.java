@@ -26,6 +26,9 @@
 /**
  * Defines the AWT and Swing user interface toolkits, plus APIs for
  * accessibility, audio, imaging, printing, and JavaBeans.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.desktop {
     requires transitive java.datatransfer;
@@ -87,9 +90,6 @@ module java.desktop {
     // see make/GensrcModuleInfo.gmk
     exports sun.awt to
         jdk.accessibility;
-
-    exports com.sun.awt to
-        jdk.desktop;
 
     opens javax.swing.plaf.basic to
         jdk.jconsole;

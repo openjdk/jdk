@@ -27,7 +27,7 @@ public class SearchFor {
     private final String type;
 
     public SearchFor(String name) {
-        this(name, "unknown");
+        this(name, "");
     }
 
     public SearchFor(String name, String type) {
@@ -36,7 +36,7 @@ public class SearchFor {
     }
 
     public boolean isUnknown() {
-        return "unknown".equals(type);
+        return "".equals(type);
     }
 
     public String getType() {
@@ -49,6 +49,6 @@ public class SearchFor {
 
     @Override
     public String toString() {
-        return type + ":" + name;
+        return type + ": " + name;
     }
 }

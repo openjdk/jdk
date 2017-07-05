@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _keep_alive((is_anonymous || h_class_loader.is_null()) ? 1 : 0),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
   _modules(NULL), _packages(NULL),
-  _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
+  _claimed(0), _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
@@ -111,6 +111,76 @@ void ClassLoaderData::Dependencies::init(TRAPS) {
   // an oop so that it can track additions via card marks.  We think.
   _list_head = oopFactory::new_objectArray(2, CHECK);
 }
+
+ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
+  Chunk* c = _head;
+  while (c != NULL) {
+    Chunk* next = c->_next;
+    delete c;
+    c = next;
+  }
+}
+
+oop* ClassLoaderData::ChunkedHandleList::add(oop o) {
+  if (_head == NULL || _head->_size == Chunk::CAPACITY) {
+    Chunk* next = new Chunk(_head);
+    OrderAccess::release_store_ptr(&_head, next);
+  }
+  oop* handle = &_head->_data[_head->_size];
+  *handle = o;
+  OrderAccess::release_store(&_head->_size, _head->_size + 1);
+  return handle;
+}
+
+inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chunk* c, const juint size) {
+  for (juint i = 0; i < size; i++) {
+    if (c->_data[i] != NULL) {
+      f->do_oop(&c->_data[i]);
+    }
+  }
+}
+
+void ClassLoaderData::ChunkedHandleList::oops_do(OopClosure* f) {
+  Chunk* head = (Chunk*) OrderAccess::load_ptr_acquire(&_head);
+  if (head != NULL) {
+    // Must be careful when reading size of head
+    oops_do_chunk(f, head, OrderAccess::load_acquire(&head->_size));
+    for (Chunk* c = head->_next; c != NULL; c = c->_next) {
+      oops_do_chunk(f, c, c->_size);
+    }
+  }
+}
+
+#ifdef ASSERT
+class VerifyContainsOopClosure : public OopClosure {
+  oop* _target;
+  bool _found;
+
+ public:
+  VerifyContainsOopClosure(oop* target) : _target(target), _found(false) {}
+
+  void do_oop(oop* p) {
+    if (p == _target) {
+      _found = true;
+    }
+  }
+
+  void do_oop(narrowOop* p) {
+    // The ChunkedHandleList should not contain any narrowOop
+    ShouldNotReachHere();
+  }
+
+  bool found() const {
+    return _found;
+  }
+};
+
+bool ClassLoaderData::ChunkedHandleList::contains(oop* p) {
+  VerifyContainsOopClosure cl(p);
+  oops_do(&cl);
+  return cl.found();
+}
+#endif
 
 bool ClassLoaderData::claim() {
   if (_claimed == 1) {
@@ -146,9 +216,9 @@ void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool m
 
   f->do_oop(&_class_loader);
   _dependencies.oops_do(f);
-  if (_handles != NULL) {
-    _handles->oops_do(f);
-  }
+
+  _handles.oops_do(f);
+
   if (klass_closure != NULL) {
     classes_do(klass_closure);
   }
@@ -484,12 +554,6 @@ ClassLoaderData::~ClassLoaderData() {
     _metaspace = NULL;
     delete m;
   }
-  // release the handles
-  if (_handles != NULL) {
-    JNIHandleBlock::release_block(_handles);
-    _handles = NULL;
-  }
-
   // Clear all the JNI handles for methods
   // These aren't deallocated and are going to look like a leak, but that's
   // needed because we can't really get rid of jmethodIDs because we don't
@@ -563,19 +627,14 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
   return metaspace;
 }
 
-JNIHandleBlock* ClassLoaderData::handles() const           { return _handles; }
-void ClassLoaderData::set_handles(JNIHandleBlock* handles) { _handles = handles; }
-
 jobject ClassLoaderData::add_handle(Handle h) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  if (handles() == NULL) {
-    set_handles(JNIHandleBlock::allocate_block());
-  }
-  return handles()->allocate_handle(h());
+  return (jobject) _handles.add(h());
 }
 
-void ClassLoaderData::remove_handle(jobject h) {
-  _handles->release_handle(h);
+void ClassLoaderData::remove_handle_unsafe(jobject h) {
+  assert(_handles.contains((oop*) h), "Got unexpected handle " PTR_FORMAT, p2i((oop*) h));
+  *((oop*) h) = NULL;
 }
 
 // Add this metadata pointer to be freed when it's safe.  This is only during
@@ -645,7 +704,6 @@ void ClassLoaderData::dump(outputStream * const out) {
       p2i(class_loader() != NULL ? class_loader()->klass() : NULL), loader_name());
   if (claimed()) out->print(" claimed ");
   if (is_unloading()) out->print(" unloading ");
-  out->print(" handles " INTPTR_FORMAT, p2i(handles()));
   out->cr();
   if (metaspace_or_null() != NULL) {
     out->print_cr("metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
