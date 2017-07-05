@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8156002
  * @summary Unit test for socket-channel adaptors
  * @library ..
  */
@@ -29,6 +30,7 @@
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
+import java.util.Arrays;
 
 
 public class AdaptSocket {
@@ -100,10 +102,15 @@ public class AdaptSocket {
         try {
             byte[] b = new byte[100];
             int n = is.read(b);
-            if (n != 5)
+            if (shouldTimeout) {
+                throw new Exception("Should time out, but not, data: " + Arrays.toString(b));
+            }
+            if (n != 5) {
                 throw new Exception("Incorrect number of bytes read: " + n);
-            if (!dataString.equals(new String(b, 0, n, "US-ASCII")))
+            }
+            if (!dataString.equals(new String(b, 0, n, "US-ASCII"))) {
                 throw new Exception("Incorrect data read: " + n);
+            }
         } catch (SocketTimeoutException x) {
             if (shouldTimeout) {
                 out.println("Read timed out, as expected");
@@ -135,6 +142,7 @@ public class AdaptSocket {
 
         testRead(so, shouldTimeout);
         for (int i = 0; i < 4; i++) {
+            out.println("loop: " + i);
             testRead(so, shouldTimeout);
         }
 
@@ -163,9 +171,9 @@ public class AdaptSocket {
             testRead(echoServer, 8000, false);
         }
 
-        try (TestServers.EchoServer lingerEchoServer
-                = TestServers.EchoServer.startNewServer(100)) {
-            testRead(lingerEchoServer, 10, true);
+        try (TestServers.NoResponseServer noResponseServer
+                = TestServers.NoResponseServer.startNewServer()) {
+            testRead(noResponseServer, 10, true);
         }
     }
 }

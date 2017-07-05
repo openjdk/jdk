@@ -246,7 +246,7 @@ public class InetSocketAddress
      *                  the range of valid port values, or if the hostname
      *                  parameter is {@code null}.
      * @see     #isUnresolved()
-     * @return  a {@code InetSocketAddress} representing the unresolved
+     * @return  an {@code InetSocketAddress} representing the unresolved
      *          socket address
      * @since 1.5
      */

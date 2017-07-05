@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1346,6 +1346,15 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
     }
 
     /**
+     * Writes character reference in hex format.
+     */
+    private void writeCharRef(int codePoint) throws IOException {
+        fWriter.write( "&#x" );
+        fWriter.write( Integer.toHexString(codePoint) );
+        fWriter.write( ';' );
+    }
+
+    /**
      * Writes XML content to underlying writer. Escapes characters unless
      * escaping character feature is turned off.
      */
@@ -1368,10 +1377,14 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
             if (fEncoder != null && !fEncoder.canEncode(ch)){
                 fWriter.write(content, startWritePos, index - startWritePos );
 
-                // Escape this char as underlying encoder cannot handle it
-                fWriter.write( "&#x" );
-                fWriter.write(Integer.toHexString(ch));
-                fWriter.write( ';' );
+                // Check if current and next characters forms a surrogate pair
+                // and escape it to avoid generation of invalid xml content
+                if ( index != end - 1 && Character.isSurrogatePair(ch, content[index+1])) {
+                    writeCharRef(Character.toCodePoint(ch, content[index+1]));
+                    index++;
+                } else {
+                    writeCharRef(ch);
+                }
                 startWritePos = index + 1;
                 continue;
             }
@@ -1439,10 +1452,15 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
             if (fEncoder != null && !fEncoder.canEncode(ch)){
                 fWriter.write(content, startWritePos, index - startWritePos );
 
-                // Escape this char as underlying encoder cannot handle it
-                fWriter.write( "&#x" );
-                fWriter.write(Integer.toHexString(ch));
-                fWriter.write( ';' );
+                // Check if current and next characters forms a surrogate pair
+                // and escape it to avoid generation of invalid xml content
+                if ( index != end - 1 && Character.isSurrogatePair(ch, content.charAt(index+1))) {
+                    writeCharRef(Character.toCodePoint(ch, content.charAt(index+1)));
+                    index++;
+                } else {
+                    writeCharRef(ch);
+                }
+
                 startWritePos = index + 1;
                 continue;
             }

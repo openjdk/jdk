@@ -39,8 +39,6 @@ public abstract class AbstractHashDrbg extends AbstractDrbg {
 
     private static int alg2strength(String algorithm) {
         switch (algorithm.toUpperCase(Locale.ROOT)) {
-            case "SHA-1":
-                return 128;
             case "SHA-224":
             case "SHA-512/224":
                 return 192;
@@ -82,10 +80,6 @@ public abstract class AbstractHashDrbg extends AbstractDrbg {
             this.securityStrength = tryStrength;
         }
         switch (algorithm.toUpperCase(Locale.ROOT)) {
-            case "SHA-1":
-                this.seedLen = 440 / 8;
-                this.outLen = 160 / 8;
-                break;
             case "SHA-224":
             case "SHA-512/224":
                 this.seedLen = 440 / 8;

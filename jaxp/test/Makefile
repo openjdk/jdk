@@ -76,14 +76,20 @@ endif
 TEST_ROOT := $(shell $(PWD))
 
 # Root of all test results
-ifdef ALT_OUTPUTDIR
-  ABS_OUTPUTDIR = $(shell $(CD) $(ALT_OUTPUTDIR) && $(PWD))
+ifdef TEST_OUTPUT_DIR
+  $(shell $(MKDIR) -p $(TEST_OUTPUT_DIR)/jtreg)
+  ABS_TEST_OUTPUT_DIR := \
+    $(shell $(CD) $(TEST_OUTPUT_DIR)/jtreg && $(PWD))
 else
-  ABS_OUTPUTDIR = $(shell $(CD) $(TEST_ROOT)/.. && $(PWD))
-endif
+  ifdef ALT_OUTPUTDIR
+    ABS_OUTPUTDIR = $(shell $(CD) $(ALT_OUTPUTDIR) && $(PWD))
+  else
+    ABS_OUTPUTDIR = $(shell $(CD) $(TEST_ROOT)/.. && $(PWD))
+  endif
 
-ABS_PLATFORM_BUILD_ROOT = $(ABS_OUTPUTDIR)
-ABS_TEST_OUTPUT_DIR := $(ABS_PLATFORM_BUILD_ROOT)/testoutput/$(UNIQUE_DIR)
+  ABS_PLATFORM_BUILD_ROOT = $(ABS_OUTPUTDIR)
+  ABS_TEST_OUTPUT_DIR := $(ABS_PLATFORM_BUILD_ROOT)/testoutput/$(UNIQUE_DIR)
+endif
 
 # Expect JPRT to set PRODUCT_HOME (the product or jdk in this case to test)
 ifndef PRODUCT_HOME

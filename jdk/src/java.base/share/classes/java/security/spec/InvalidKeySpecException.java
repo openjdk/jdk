@@ -63,7 +63,7 @@ public class InvalidKeySpecException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a {@code InvalidKeySpecException} with the specified
+     * Creates an {@code InvalidKeySpecException} with the specified
      * detail message and cause.
      *
      * @param message the detail message (which is saved for later retrieval
@@ -78,7 +78,7 @@ public class InvalidKeySpecException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a {@code InvalidKeySpecException} with the specified cause
+     * Creates an {@code InvalidKeySpecException} with the specified cause
      * and a detail message of {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of
      * {@code cause}).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
  *          This test performs similar testing as
  *          java/util/logging/LoggingMXBeanTest.
  *
- * @modules java.management
- *          jdk.management
+ * @modules jdk.management
  * @build PlatformLoggingMXBeanTest
  * @run main PlatformLoggingMXBeanTest
  */

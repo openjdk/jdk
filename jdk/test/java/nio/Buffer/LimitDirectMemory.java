@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 
 public class LimitDirectMemory {
-    private static int K = 1024;
+    private static final int K = 1024;
 
     public static void main(String [] args) throws Exception {
         if (args.length < 2)
@@ -83,7 +83,7 @@ public class LimitDirectMemory {
 
         int idx = 0, len = size.length();
 
-        int result = 1;
+
         for (int i = 0; i < len; i++) {
             if (Character.isDigit(size.charAt(i))) idx++;
             else break;
@@ -92,7 +92,7 @@ public class LimitDirectMemory {
         if (idx == 0)
             throw new RuntimeException("No digits detected: " + size);
 
-        result = Integer.parseInt(size.substring(0, idx));
+        int result = Integer.parseInt(size.substring(0, idx));
 
         if (idx < len) {
             for (int i = idx; i < len; i++) {

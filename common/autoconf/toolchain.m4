@@ -59,23 +59,25 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
 # Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
+# $1 - optional variable prefix for compiler and version variables (BUILD_)
+# $2 - optional variable prefix for comparable variable (OPENJDK_BUILD_)
 AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
 [
-  if test "x$CC_VERSION_NUMBER" != "x$CXX_VERSION_NUMBER"; then
-    AC_MSG_WARN([C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER.])
+  if test "x[$]$1CC_VERSION_NUMBER" != "x[$]$1CXX_VERSION_NUMBER"; then
+    AC_MSG_WARN([C and C++ compiler have different version numbers, [$]$1CC_VERSION_NUMBER vs [$]$1CXX_VERSION_NUMBER.])
     AC_MSG_WARN([This typically indicates a broken setup, and is not supported])
   fi
 
   # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
-  if [ [[ "$CC_VERSION_NUMBER" =~ (.*\.){3} ]] ]; then
-    AC_MSG_WARN([C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong.])
+  if [ [[ "[$]$1CC_VERSION_NUMBER" =~ (.*\.){3} ]] ]; then
+    AC_MSG_WARN([C compiler version number has more than three parts (X.Y.Z): [$]$1CC_VERSION_NUMBER. Comparisons might be wrong.])
   fi
 
-  if [ [[  "$CC_VERSION_NUMBER" =~ [0-9]{6} ]] ]; then
-    AC_MSG_WARN([C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong.])
+  if [ [[  "[$]$1CC_VERSION_NUMBER" =~ [0-9]{6} ]] ]; then
+    AC_MSG_WARN([C compiler version number has a part larger than 99999: [$]$1CC_VERSION_NUMBER. Comparisons might be wrong.])
   fi
 
-  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "$CC_VERSION_NUMBER"`
+  $2COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "[$]$1CC_VERSION_NUMBER"`
 ])
 
 # Check if the configured compiler (C and C++) is of a specific version or
@@ -85,8 +87,9 @@ AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
 #   VERSION:   The version string to check against the found version
 #   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
 #   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+#   PREFIX:   Optional variable prefix for compiler to compare version for (OPENJDK_BUILD_)
 BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
-    [*VERSION IF_AT_LEAST IF_OLDER_THAN], [$@],
+    [*VERSION PREFIX IF_AT_LEAST IF_OLDER_THAN], [$@],
 [
   # Need to assign to a variable since m4 is blocked from modifying parts in [].
   REFERENCE_VERSION=ARG_VERSION
@@ -102,7 +105,7 @@ BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
   COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "$REFERENCE_VERSION"`
 
-  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+  if test [$]ARG_PREFIX[COMPARABLE_ACTUAL_VERSION] -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
     ARG_IF_AT_LEAST
   else
@@ -808,6 +811,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_LDCXX="$BUILD_CXX"
 
     PATH="$OLDPATH"
+
+    TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
+    TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
+    TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
