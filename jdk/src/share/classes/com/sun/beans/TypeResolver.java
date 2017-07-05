@@ -175,8 +175,8 @@ public final class TypeResolver {
     /**
      * Converts the given {@code type} to the corresponding class.
      * This method implements the concept of type erasure,
-     * that is described in <a href="http://jscstage.sfbay.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.6">section 4.6</a>
-     * of Java Language Specification.
+     * that is described in section 4.6 of
+     * <cite>The Java&trade; Language Specification</cite>.
      *
      * @param type  the array of types to convert
      * @return a corresponding class

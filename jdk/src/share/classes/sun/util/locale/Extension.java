@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,34 @@
 package sun.util.locale;
 
 
-public class Extension {
-    private char _key;
-    protected String _value;
+class Extension {
+    private final char key;
+    private String value, id;
 
     protected Extension(char key) {
-        _key = key;
+        this.key = key;
     }
 
     Extension(char key, String value) {
-        _key = key;
-        _value = value;
+        this.key = key;
+        setValue(value);
+    }
+
+    protected void setValue(String value) {
+        this.value = value;
+        this.id = key + LanguageTag.SEP + value;
     }
 
     public char getKey() {
-        return _key;
+        return key;
     }
 
     public String getValue() {
-        return _value;
+        return value;
     }
 
     public String getID() {
-        return _key + LanguageTag.SEP + _value;
+        return id;
     }
 
     public String toString() {

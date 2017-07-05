@@ -903,7 +903,7 @@ public class Dialog extends Window {
             if (peer == null) {
                 addNotify();
             }
-            validate();
+            validateUnconditionally();
             if (visible) {
                 toFront();
                 retval = false;

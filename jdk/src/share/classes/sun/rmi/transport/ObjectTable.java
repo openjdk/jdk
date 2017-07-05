@@ -175,25 +175,26 @@ public final class ObjectTable {
             DGCImpl.dgcLog.log(Log.VERBOSE, "add object " + oe);
         }
 
-        Remote impl = target.getImpl();
-        if (impl == null) {
-            throw new ExportException(
-                "internal error: attempt to export collected object");
-        }
-
         synchronized (tableLock) {
-            if (objTable.containsKey(oe)) {
-                throw new ExportException(
-                    "internal error: ObjID already in use");
-            } else if (implTable.containsKey(weakImpl)) {
-                throw new ExportException("object already exported");
-            }
+            /**
+             * Do nothing if impl has already been collected (see 6597112). Check while
+             * holding tableLock to ensure that Reaper cannot process weakImpl in between
+             * null check and put/increment effects.
+             */
+            if (target.getImpl() != null) {
+                if (objTable.containsKey(oe)) {
+                    throw new ExportException(
+                        "internal error: ObjID already in use");
+                } else if (implTable.containsKey(weakImpl)) {
+                    throw new ExportException("object already exported");
+                }
 
-            objTable.put(oe, target);
-            implTable.put(weakImpl, target);
+                objTable.put(oe, target);
+                implTable.put(weakImpl, target);
 
-            if (!target.isPermanent()) {
-                incrementKeepAliveCount();
+                if (!target.isPermanent()) {
+                    incrementKeepAliveCount();
+                }
             }
         }
     }

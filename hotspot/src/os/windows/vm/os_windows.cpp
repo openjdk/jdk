@@ -921,6 +921,8 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
+  MINIDUMP_EXCEPTION_INFORMATION* pmei;
+
   HANDLE hProcess = GetCurrentProcess();
   DWORD processId = GetCurrentProcessId();
   HANDLE dumpFile;
@@ -971,17 +973,22 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     VMError::report_coredump_status("Failed to create file for dumping", false);
     return;
   }
+  if (exceptionRecord != NULL && contextRecord != NULL) {
+    ep.ContextRecord = (PCONTEXT) contextRecord;
+    ep.ExceptionRecord = (PEXCEPTION_RECORD) exceptionRecord;
 
-  ep.ContextRecord = (PCONTEXT) contextRecord;
-  ep.ExceptionRecord = (PEXCEPTION_RECORD) exceptionRecord;
+    mei.ThreadId = GetCurrentThreadId();
+    mei.ExceptionPointers = &ep;
+    pmei = &mei;
+  } else {
+    pmei = NULL;
+  }
 
-  mei.ThreadId = GetCurrentThreadId();
-  mei.ExceptionPointers = &ep;
 
   // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
-  if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, &mei, NULL, NULL) == false &&
-      _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, &mei, NULL, NULL) == false) {
+  if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
+      _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
     VMError::report_coredump_status("Call to MiniDumpWriteDump() failed", false);
   } else {
     VMError::report_coredump_status(buffer, true);
