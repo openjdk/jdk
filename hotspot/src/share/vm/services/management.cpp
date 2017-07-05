@@ -876,8 +876,6 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
       total_used += u.used();
       total_committed += u.committed();
 
-      // if any one of the memory pool has undefined init_size or max_size,
-      // set it to -1
       if (u.init_size() == (size_t)-1) {
         has_undefined_init_size = true;
       }
@@ -892,6 +890,15 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
         total_max += u.max_size();
       }
     }
+  }
+
+  // if any one of the memory pool has undefined init_size or max_size,
+  // set it to -1
+  if (has_undefined_init_size) {
+    total_init = (size_t)-1;
+  }
+  if (has_undefined_max_size) {
+    total_max = (size_t)-1;
   }
 
   MemoryUsage usage((heap ? InitialHeapSize : total_init),
