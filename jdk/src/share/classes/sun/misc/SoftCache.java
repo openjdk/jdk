@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,10 +99,12 @@ import java.util.NoSuchElementException;
  * @since       1.2
  * @see         java.util.HashMap
  * @see         java.lang.ref.SoftReference
+ * @deprecated No direct replacement; {@link java.util.WeakHashMap}
+ * addresses a related by different use-case.
  */
 
-
-public class SoftCache extends AbstractMap implements Map {
+@Deprecated
+public class SoftCache extends AbstractMap<Object, Object> implements Map<Object, Object> {
 
     /* The basic idea of this implementation is to maintain an internal HashMap
        that maps keys to soft references whose referents are the keys' values;
@@ -115,18 +117,18 @@ public class SoftCache extends AbstractMap implements Map {
      */
 
 
-    static private class ValueCell extends SoftReference {
+    static private class ValueCell extends SoftReference<Object> {
         static private Object INVALID_KEY = new Object();
         static private int dropped = 0;
         private Object key;
 
-        private ValueCell(Object key, Object value, ReferenceQueue queue) {
+        private ValueCell(Object key, Object value, ReferenceQueue<Object> queue) {
             super(value, queue);
             this.key = key;
         }
 
         private static ValueCell create(Object key, Object value,
-                                        ReferenceQueue queue)
+                                        ReferenceQueue<Object> queue)
         {
             if (value == null) return null;
             return new ValueCell(key, value, queue);
@@ -154,10 +156,10 @@ public class SoftCache extends AbstractMap implements Map {
 
 
     /* Hash table mapping keys to ValueCells */
-    private Map hash;
+    private Map<Object, Object> hash;
 
     /* Reference queue for cleared ValueCells */
-    private ReferenceQueue queue = new ReferenceQueue();
+    private ReferenceQueue<Object> queue = new ReferenceQueue<>();
 
 
     /* Process any ValueCells that have been cleared and enqueued by the
@@ -189,7 +191,7 @@ public class SoftCache extends AbstractMap implements Map {
      *                                   factor is less than zero
      */
     public SoftCache(int initialCapacity, float loadFactor) {
-        hash = new HashMap(initialCapacity, loadFactor);
+        hash = new HashMap<>(initialCapacity, loadFactor);
     }
 
     /**
@@ -202,7 +204,7 @@ public class SoftCache extends AbstractMap implements Map {
      *                                   or equal to zero
      */
     public SoftCache(int initialCapacity) {
-        hash = new HashMap(initialCapacity);
+        hash = new HashMap<>(initialCapacity);
     }
 
     /**
@@ -210,7 +212,7 @@ public class SoftCache extends AbstractMap implements Map {
      * capacity and the default load factor.
      */
     public SoftCache() {
-        hash = new HashMap();
+        hash = new HashMap<>();
     }
 
 
@@ -348,13 +350,13 @@ public class SoftCache extends AbstractMap implements Map {
     /* Internal class for entries.
        Because it uses SoftCache.this.queue, this class cannot be static.
      */
-    private class Entry implements Map.Entry {
-        private Map.Entry ent;
+    private class Entry implements Map.Entry<Object, Object> {
+        private Map.Entry<Object, Object> ent;
         private Object value;   /* Strong reference to value, to prevent the GC
                                    from flushing the value while this Entry
                                    exists */
 
-        Entry(Map.Entry ent, Object value) {
+        Entry(Map.Entry<Object, Object> ent, Object value) {
             this.ent = ent;
             this.value = value;
         }
@@ -371,9 +373,10 @@ public class SoftCache extends AbstractMap implements Map {
             return ent.setValue(ValueCell.create(ent.getKey(), value, queue));
         }
 
+        @SuppressWarnings("unchecked")
         public boolean equals(Object o) {
             if (! (o instanceof Map.Entry)) return false;
-            Map.Entry e = (Map.Entry)o;
+            Map.Entry<Object, Object> e = (Map.Entry<Object, Object>)o;
             return (valEquals(ent.getKey(), e.getKey())
                     && valEquals(value, e.getValue()));
         }
@@ -388,18 +391,18 @@ public class SoftCache extends AbstractMap implements Map {
 
 
     /* Internal class for entry sets */
-    private class EntrySet extends AbstractSet {
-        Set hashEntries = hash.entrySet();
+    private class EntrySet extends AbstractSet<Map.Entry<Object, Object>> {
+        Set<Map.Entry<Object, Object>> hashEntries = hash.entrySet();
 
-        public Iterator iterator() {
+        public Iterator<Map.Entry<Object, Object>> iterator() {
 
-            return new Iterator() {
-                Iterator hashIterator = hashEntries.iterator();
+            return new Iterator<Map.Entry<Object, Object>>() {
+                Iterator<Map.Entry<Object, Object>> hashIterator = hashEntries.iterator();
                 Entry next = null;
 
                 public boolean hasNext() {
                     while (hashIterator.hasNext()) {
-                        Map.Entry ent = (Map.Entry)hashIterator.next();
+                        Map.Entry<Object, Object> ent = hashIterator.next();
                         ValueCell vc = (ValueCell)ent.getValue();
                         Object v = null;
                         if ((vc != null) && ((v = vc.get()) == null)) {
@@ -412,7 +415,7 @@ public class SoftCache extends AbstractMap implements Map {
                     return false;
                 }
 
-                public Object next() {
+                public Map.Entry<Object, Object> next() {
                     if ((next == null) && !hasNext())
                         throw new NoSuchElementException();
                     Entry e = next;
@@ -433,7 +436,7 @@ public class SoftCache extends AbstractMap implements Map {
 
         public int size() {
             int j = 0;
-            for (Iterator i = iterator(); i.hasNext(); i.next()) j++;
+            for (Iterator<Map.Entry<Object, Object>> i = iterator(); i.hasNext(); i.next()) j++;
             return j;
         }
 
@@ -446,12 +449,12 @@ public class SoftCache extends AbstractMap implements Map {
     }
 
 
-    private Set entrySet = null;
+    private Set<Map.Entry<Object, Object>> entrySet = null;
 
     /**
      * Return a <code>Set</code> view of the mappings in this cache.
      */
-    public Set entrySet() {
+    public Set<Map.Entry<Object, Object>> entrySet() {
         if (entrySet == null) entrySet = new EntrySet();
         return entrySet;
     }

@@ -110,4 +110,9 @@ public class TCKDurationSerialization extends AbstractTCKTest {
         assertSerializableSame(Duration.ZERO);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(Duration.class);
+    }
+
 }

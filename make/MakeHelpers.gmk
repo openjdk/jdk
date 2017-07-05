@@ -50,7 +50,7 @@ BUILDTIMESDIR=$(OUTPUT_ROOT)/tmp/buildtimes
 
 # Global targets are possible to run either with or without a SPEC. The prototypical
 # global target is "help".
-global_targets=help jprt% bridgeBuild bridge2configure
+global_targets=help
 
 ##############################
 # Functions

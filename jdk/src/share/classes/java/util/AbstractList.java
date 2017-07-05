@@ -87,7 +87,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * classes should clearly specify in their documentation any restrictions
      * on what elements may be added.
      *
-     * <p>This implementation calls {@code add(size(), e)}.
+     * @implSpec
+     * This implementation calls {@code add(size(), e)}.
      *
      * <p>Note that this implementation throws an
      * {@code UnsupportedOperationException} unless
@@ -119,7 +120,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation always throws an
+     * @implSpec
+     * This implementation always throws an
      * {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -135,7 +137,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation always throws an
+     * @implSpec
+     * This implementation always throws an
      * {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -151,7 +154,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation always throws an
+     * @implSpec
+     * This implementation always throws an
      * {@code UnsupportedOperationException}.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
@@ -167,7 +171,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation first gets a list iterator (with
+     * @implSpec
+     * This implementation first gets a list iterator (with
      * {@code listIterator()}).  Then, it iterates over the list until the
      * specified element is found or the end of the list is reached.
      *
@@ -191,7 +196,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation first gets a list iterator that points to the end
+     * @implSpec
+     * This implementation first gets a list iterator that points to the end
      * of the list (with {@code listIterator(size())}).  Then, it iterates
      * backwards over the list until the specified element is found, or the
      * beginning of the list is reached.
@@ -220,7 +226,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * Removes all of the elements from this list (optional operation).
      * The list will be empty after this call returns.
      *
-     * <p>This implementation calls {@code removeRange(0, size())}.
+     * @implSpec
+     * This implementation calls {@code removeRange(0, size())}.
      *
      * <p>Note that this implementation throws an
      * {@code UnsupportedOperationException} unless {@code remove(int
@@ -237,7 +244,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation gets an iterator over the specified collection
+     * @implSpec
+     * This implementation gets an iterator over the specified collection
      * and iterates over it, inserting the elements obtained from the
      * iterator into this list at the appropriate position, one at a time,
      * using {@code add(int, E)}.
@@ -269,7 +277,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * Returns an iterator over the elements in this list in proper sequence.
      *
-     * <p>This implementation returns a straightforward implementation of the
+     * @implSpec
+     * This implementation returns a straightforward implementation of the
      * iterator interface, relying on the backing list's {@code size()},
      * {@code get(int)}, and {@code remove(int)} methods.
      *
@@ -291,7 +300,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns {@code listIterator(0)}.
+     * @implSpec
+     * This implementation returns {@code listIterator(0)}.
      *
      * @see #listIterator(int)
      */
@@ -302,7 +312,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns a straightforward implementation of the
+     * @implSpec
+     * This implementation returns a straightforward implementation of the
      * {@code ListIterator} interface that extends the implementation of the
      * {@code Iterator} interface returned by the {@code iterator()} method.
      * The {@code ListIterator} implementation relies on the backing list's
@@ -448,7 +459,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
-     * <p>This implementation returns a list that subclasses
+     * @implSpec
+     * This implementation returns a list that subclasses
      * {@code AbstractList}.  The subclass stores, in private fields, the
      * offset of the subList within the backing list, the size of the subList
      * (which can change over its lifetime), and the expected
@@ -495,8 +507,9 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * the two lists are <i>equal</i>.  (Two elements {@code e1} and
      * {@code e2} are <i>equal</i> if {@code (e1==null ? e2==null :
      * e1.equals(e2))}.)  In other words, two lists are defined to be
-     * equal if they contain the same elements in the same order.<p>
+     * equal if they contain the same elements in the same order.
      *
+     * @implSpec
      * This implementation first checks if the specified object is this
      * list. If so, it returns {@code true}; if not, it checks if the
      * specified object is a list. If not, it returns {@code false}; if so,
@@ -529,7 +542,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * Returns the hash code value for this list.
      *
-     * <p>This implementation uses exactly the code that is used to define the
+     * @implSpec
+     * This implementation uses exactly the code that is used to define the
      * list hash function in the documentation for the {@link List#hashCode}
      * method.
      *
@@ -555,7 +569,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * improve the performance of the {@code clear} operation on this list
      * and its subLists.
      *
-     * <p>This implementation gets a list iterator positioned before
+     * @implSpec
+     * This implementation gets a list iterator positioned before
      * {@code fromIndex}, and repeatedly calls {@code ListIterator.next}
      * followed by {@code ListIterator.remove} until the entire range has
      * been removed.  <b>Note: if {@code ListIterator.remove} requires linear

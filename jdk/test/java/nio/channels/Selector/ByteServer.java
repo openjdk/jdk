@@ -22,52 +22,54 @@
  */
 
 /**
- *
- * Utility class for tests. A simple server, which waits for a connection,
- * writes out n bytes and waits.
+ * Utility class for tests. A simple "in-thread" server to accept connections
+ * and write bytes.
  * @author kladko
  */
 
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
+import java.net.InetSocketAddress;
+import java.io.IOException;
+import java.io.Closeable;
 
-public class ByteServer {
+public class ByteServer implements Closeable {
 
-    public static final String LOCALHOST = "localhost";
-    private int bytecount;
-    private Socket  socket;
-    private ServerSocket  serversocket;
-    private Thread serverthread;
-    volatile Exception savedException;
+    private final ServerSocket ss;
+    private Socket s;
 
-    public ByteServer(int bytecount) throws Exception{
-        this.bytecount = bytecount;
-        serversocket = new ServerSocket(0);
+    ByteServer() throws IOException {
+        this.ss = new ServerSocket(0);
     }
 
-    public int port() {
-        return serversocket.getLocalPort();
+    SocketAddress address() {
+        return new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort());
     }
 
-    public void start() {
-        serverthread = new Thread() {
-            public void run() {
-                try {
-                    socket = serversocket.accept();
-                    socket.getOutputStream().write(new byte[bytecount]);
-                    socket.getOutputStream().flush();
-                } catch (Exception e) {
-                    System.err.println("Exception in ByteServer: " + e);
-                    System.exit(1);
-                }
-            }
-        };
-        serverthread.start();
+    void acceptConnection() throws IOException {
+        if (s != null)
+            throw new IllegalStateException("already connected");
+        this.s = ss.accept();
     }
 
-    public void exit() throws Exception {
-        serverthread.join();
-        socket.close();
-        serversocket.close();
+    void closeConnection() throws IOException {
+        Socket s = this.s;
+        if (s != null) {
+            this.s = null;
+            s.close();
+        }
+    }
+
+    void write(int count) throws IOException {
+        if (s == null)
+            throw new IllegalStateException("no connection");
+        s.getOutputStream().write(new byte[count]);
+    }
+
+    public void close() throws IOException {
+        if (s != null)
+            s.close();
+        ss.close();
     }
 }

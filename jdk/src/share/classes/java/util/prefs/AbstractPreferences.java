@@ -334,9 +334,8 @@ public abstract class AbstractPreferences extends Preferences {
      */
     public void clear() throws BackingStoreException {
         synchronized(lock) {
-            String[] keys = keys();
-            for (int i=0; i<keys.length; i++)
-                remove(keys[i]);
+            for (String key : keys())
+                remove(key);
         }
     }
 
@@ -959,9 +958,9 @@ public abstract class AbstractPreferences extends Preferences {
 
             // Ensure that all children are cached
             String[] kidNames = childrenNamesSpi();
-            for (int i=0; i<kidNames.length; i++)
-                if (!kidCache.containsKey(kidNames[i]))
-                    kidCache.put(kidNames[i], childSpi(kidNames[i]));
+            for (String kidName : kidNames)
+                if (!kidCache.containsKey(kidName))
+                    kidCache.put(kidName, childSpi(kidName));
 
             // Recursively remove all cached children
             for (Iterator<AbstractPreferences> i = kidCache.values().iterator();
@@ -1257,9 +1256,9 @@ public abstract class AbstractPreferences extends Preferences {
         synchronized(lock) {
             // assert kidCache.get(nodeName)==null;
             String[] kidNames = childrenNames();
-            for (int i=0; i<kidNames.length; i++)
-                if (kidNames[i].equals(nodeName))
-                    return childSpi(kidNames[i]);
+            for (String kidName : kidNames)
+                if (kidName.equals(nodeName))
+                    return childSpi(kidName);
         }
         return null;
     }
@@ -1339,8 +1338,8 @@ public abstract class AbstractPreferences extends Preferences {
             cachedKids = cachedChildren();
         }
 
-        for (int i=0; i<cachedKids.length; i++)
-            cachedKids[i].sync2();
+        for (AbstractPreferences cachedKid : cachedKids)
+            cachedKid.sync2();
     }
 
     /**
@@ -1399,8 +1398,8 @@ public abstract class AbstractPreferences extends Preferences {
             cachedKids = cachedChildren();
         }
 
-        for (int i = 0; i < cachedKids.length; i++)
-            cachedKids[i].flush2();
+        for (AbstractPreferences cachedKid : cachedKids)
+            cachedKid.flush2();
     }
 
     /**
@@ -1492,18 +1491,18 @@ public abstract class AbstractPreferences extends Preferences {
                 if (event instanceof PreferenceChangeEvent) {
                     PreferenceChangeEvent pce = (PreferenceChangeEvent)event;
                     PreferenceChangeListener[] listeners = src.prefListeners();
-                    for (int i=0; i<listeners.length; i++)
-                        listeners[i].preferenceChange(pce);
+                    for (PreferenceChangeListener listener : listeners)
+                        listener.preferenceChange(pce);
                 } else {
                     NodeChangeEvent nce = (NodeChangeEvent)event;
                     NodeChangeListener[] listeners = src.nodeListeners();
                     if (nce instanceof NodeAddedEvent) {
-                        for (int i=0; i<listeners.length; i++)
-                            listeners[i].childAdded(nce);
+                        for (NodeChangeListener listener : listeners)
+                            listener.childAdded(nce);
                     } else {
                         // assert nce instanceof NodeRemovedEvent;
-                        for (int i=0; i<listeners.length; i++)
-                            listeners[i].childRemoved(nce);
+                        for (NodeChangeListener listener : listeners)
+                            listener.childRemoved(nce);
                     }
                 }
             }

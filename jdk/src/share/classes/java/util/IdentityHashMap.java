@@ -1426,8 +1426,8 @@ public class IdentityHashMap<K,V>
         public KeySpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = ((lo + hi) >>> 1) & ~1;
             return (lo >= mid) ? null :
-                new KeySpliterator<K,V>(map, lo, index = mid, est >>>= 1,
-                                        expectedModCount);
+                new KeySpliterator<>(map, lo, index = mid, est >>>= 1,
+                                     expectedModCount);
         }
 
         @SuppressWarnings("unchecked")
@@ -1483,8 +1483,8 @@ public class IdentityHashMap<K,V>
         public ValueSpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = ((lo + hi) >>> 1) & ~1;
             return (lo >= mid) ? null :
-                new ValueSpliterator<K,V>(map, lo, index = mid, est >>>= 1,
-                                          expectedModCount);
+                new ValueSpliterator<>(map, lo, index = mid, est >>>= 1,
+                                       expectedModCount);
         }
 
         public void forEachRemaining(Consumer<? super V> action) {
@@ -1542,8 +1542,8 @@ public class IdentityHashMap<K,V>
         public EntrySpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = ((lo + hi) >>> 1) & ~1;
             return (lo >= mid) ? null :
-                new EntrySpliterator<K,V>(map, lo, index = mid, est >>>= 1,
-                                          expectedModCount);
+                new EntrySpliterator<>(map, lo, index = mid, est >>>= 1,
+                                       expectedModCount);
         }
 
         public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
@@ -1560,7 +1560,7 @@ public class IdentityHashMap<K,V>
                             (K)unmaskNull(key);
                         @SuppressWarnings("unchecked") V v = (V)a[i+1];
                         action.accept
-                            (new AbstractMap.SimpleImmutableEntry<K,V>(k, v));
+                            (new AbstractMap.SimpleImmutableEntry<>(k, v));
 
                     }
                 }
@@ -1583,7 +1583,7 @@ public class IdentityHashMap<K,V>
                     @SuppressWarnings("unchecked") K k =
                         (K)unmaskNull(key);
                     action.accept
-                        (new AbstractMap.SimpleImmutableEntry<K,V>(k, v));
+                        (new AbstractMap.SimpleImmutableEntry<>(k, v));
                     if (map.modCount != expectedModCount)
                         throw new ConcurrentModificationException();
                     return true;

@@ -30,6 +30,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.PublicKey;
 import java.security.cert.*;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.PKIXReason;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +50,7 @@ import sun.security.util.Debug;
  * This class is able to build certification paths in either the forward
  * or reverse directions.
  *
- * <p> If successful, it returns a certification path which has succesfully
+ * <p> If successful, it returns a certification path which has successfully
  * satisfied all the constraints and requirements specified in the
  * PKIXBuilderParameters object and has been validated according to the PKIX
  * path validation algorithm defined in RFC 3280.
@@ -510,6 +511,12 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                                     debug.println
                                     ("SunCertPathBuilder.depthFirstSearchForward(): " +
                                     "final verification failed: " + cpve);
+                                // If the target cert itself is revoked, we
+                                // cannot trust it. We can bail out here.
+                                if (buildParams.targetCertConstraints().match(currCert)
+                                        && cpve.getReason() == BasicReason.REVOKED) {
+                                    throw cpve;
+                                }
                                 vertex.setThrowable(cpve);
                                 continue vertices;
                             }
