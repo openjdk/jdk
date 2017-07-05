@@ -32,12 +32,15 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
   size_t _noaccess_prefix;
   size_t _alignment;
   bool   _special;
+  bool   _executable;
 
   // ReservedSpace
-  ReservedSpace(char* base, size_t size, size_t alignment, bool special);
+  ReservedSpace(char* base, size_t size, size_t alignment, bool special,
+                bool executable);
   void initialize(size_t size, size_t alignment, bool large,
                   char* requested_address,
-                  const size_t noaccess_prefix);
+                  const size_t noaccess_prefix,
+                  bool executable);
 
   // Release parts of an already-reserved memory region [addr, addr + len) to
   // get a new region that has "compound alignment."  Return the start of the
@@ -73,17 +76,18 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
                 const size_t noaccess_prefix = 0);
   ReservedSpace(const size_t prefix_size, const size_t prefix_align,
                 const size_t suffix_size, const size_t suffix_align,
-                const size_t noaccess_prefix);
+                char* requested_address,
+                const size_t noaccess_prefix = 0);
+  ReservedSpace(size_t size, size_t alignment, bool large, bool executable);
 
   // Accessors
-  char*  base()      const { return _base;      }
-  size_t size()      const { return _size;      }
-  size_t alignment() const { return _alignment; }
-  bool   special()   const { return _special;   }
-
-  size_t noaccess_prefix()   const { return _noaccess_prefix;   }
-
-  bool is_reserved() const { return _base != NULL; }
+  char*  base()            const { return _base;      }
+  size_t size()            const { return _size;      }
+  size_t alignment()       const { return _alignment; }
+  bool   special()         const { return _special;   }
+  bool   executable()      const { return _executable;   }
+  size_t noaccess_prefix() const { return _noaccess_prefix;   }
+  bool is_reserved()       const { return _base != NULL; }
   void release();
 
   // Splitting
@@ -121,7 +125,15 @@ public:
   ReservedHeapSpace(size_t size, size_t forced_base_alignment,
                     bool large, char* requested_address);
   ReservedHeapSpace(const size_t prefix_size, const size_t prefix_align,
-                    const size_t suffix_size, const size_t suffix_align);
+                    const size_t suffix_size, const size_t suffix_align,
+                    char* requested_address);
+};
+
+// Class encapsulating behavior specific memory space for Code
+class ReservedCodeSpace : public ReservedSpace {
+ public:
+  // Constructor
+  ReservedCodeSpace(size_t r_size, size_t rs_align, bool large);
 };
 
 // VirtualSpace is data structure for committing a previously reserved address range in smaller chunks.
@@ -140,6 +152,9 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   // The entire space has been committed and pinned in memory, no
   // os::commit_memory() or os::uncommit_memory().
   bool _special;
+
+  // Need to know if commit should be executable.
+  bool   _executable;
 
   // MPSS Support
   // Each virtualspace region has a lower, middle, and upper region.

@@ -107,7 +107,7 @@ void CMBitMapRO::mostly_disjoint_range_union(BitMap*   from_bitmap,
 #ifndef PRODUCT
 bool CMBitMapRO::covers(ReservedSpace rs) const {
   // assert(_bm.map() == _virtual_space.low(), "map inconsistency");
-  assert(((size_t)_bm.size() * (1 << _shifter)) == _bmWordSize,
+  assert(((size_t)_bm.size() * (size_t)(1 << _shifter)) == _bmWordSize,
          "size inconsistency");
   return _bmStartWord == (HeapWord*)(rs.base()) &&
          _bmWordSize  == rs.size()>>LogHeapWordSize;
@@ -1232,7 +1232,16 @@ public:
     if (!_final && _regions_done == 0)
       _start_vtime_sec = os::elapsedVTime();
 
-    if (hr->continuesHumongous()) return false;
+    if (hr->continuesHumongous()) {
+      HeapRegion* hum_start = hr->humongous_start_region();
+      // If the head region of the humongous region has been determined
+      // to be alive, then all the tail regions should be marked
+      // such as well.
+      if (_region_bm->at(hum_start->hrs_index())) {
+        _region_bm->par_at_put(hr->hrs_index(), 1);
+      }
+      return false;
+    }
 
     HeapWord* nextTop = hr->next_top_at_mark_start();
     HeapWord* start   = hr->top_at_conc_mark_count();
