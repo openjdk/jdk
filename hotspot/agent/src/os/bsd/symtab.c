@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,31 +28,181 @@
 #include <string.h>
 #include <db.h>
 #include <fcntl.h>
+
+#include "libproc_impl.h"
 #include "symtab.h"
+#ifndef __APPLE__
 #include "salibelf.h"
+#endif // __APPLE__
 
 
 // ----------------------------------------------------
 // functions for symbol lookups
 // ----------------------------------------------------
 
+typedef struct symtab_symbol {
+  char *name;                // name like __ZThread_...
+  uintptr_t offset;          // to loaded address
+  uintptr_t size;            // size strlen
+} symtab_symbol;
+
+typedef struct symtab {
+  char *strs;                // all symbols "__symbol1__'\0'__symbol2__...."
+  size_t num_symbols;
+  DB* hash_table;
+  symtab_symbol* symbols;
+} symtab_t;
+
+#ifdef __APPLE__
+
+void build_search_table(symtab_t *symtab) {
+  int i;
+  for (i = 0; i < symtab->num_symbols; i++) {
+    DBT key, value;
+    key.data = symtab->symbols[i].name;
+    key.size = strlen(key.data) + 1;
+    value.data = &(symtab->symbols[i]);
+    value.size = sizeof(symtab_symbol);
+    (*symtab->hash_table->put)(symtab->hash_table, &key, &value, 0);
+
+    // check result
+    if (is_debug()) {
+      DBT rkey, rvalue;
+      char* tmp = (char *)malloc(strlen(symtab->symbols[i].name) + 1);
+      strcpy(tmp, symtab->symbols[i].name);
+      rkey.data = tmp;
+      rkey.size = strlen(tmp) + 1;
+      (*symtab->hash_table->get)(symtab->hash_table, &rkey, &rvalue, 0);
+      // we may get a copy back so compare contents
+      symtab_symbol *res = (symtab_symbol *)rvalue.data;
+      if (strcmp(res->name, symtab->symbols[i].name)  ||
+          res->offset != symtab->symbols[i].offset    ||
+          res->size != symtab->symbols[i].size) {
+        print_debug("error to get hash_table value!\n");
+      }
+      free(tmp);
+    }
+  }
+}
+
+// read symbol table from given fd.
+struct symtab* build_symtab(int fd) {
+  symtab_t* symtab = NULL;
+  int i;
+  mach_header_64 header;
+  off_t image_start;
+
+  if (!get_arch_off(fd, CPU_TYPE_X86_64, &image_start)) {
+    print_debug("failed in get fat header\n");
+    return NULL;
+  }
+  lseek(fd, image_start, SEEK_SET);
+  if (read(fd, (void *)&header, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
+    print_debug("reading header failed!\n");
+    return NULL;
+  }
+  // header
+  if (header.magic != MH_MAGIC_64) {
+    print_debug("not a valid .dylib file\n");
+    return NULL;
+  }
+
+  load_command lcmd;
+  symtab_command symtabcmd;
+  nlist_64 lentry;
+
+  bool lcsymtab_exist = false;
+
+  long filepos = ltell(fd);
+  for (i = 0; i < header.ncmds; i++) {
+    lseek(fd, filepos, SEEK_SET);
+    if (read(fd, (void *)&lcmd, sizeof(load_command)) != sizeof(load_command)) {
+      print_debug("read load_command failed for file\n");
+      return NULL;
+    }
+    filepos += lcmd.cmdsize;  // next command position
+    if (lcmd.cmd == LC_SYMTAB) {
+      lseek(fd, -sizeof(load_command), SEEK_CUR);
+      lcsymtab_exist = true;
+      break;
+    }
+  }
+  if (!lcsymtab_exist) {
+    print_debug("No symtab command found!\n");
+    return NULL;
+  }
+  if (read(fd, (void *)&symtabcmd, sizeof(symtab_command)) != sizeof(symtab_command)) {
+    print_debug("read symtab_command failed for file");
+    return NULL;
+  }
+  symtab = (symtab_t *)malloc(sizeof(symtab_t));
+  if (symtab == NULL) {
+    print_debug("out of memory: allocating symtab\n");
+    return NULL;
+  }
+
+  // create hash table, we use berkeley db to
+  // manipulate the hash table.
+  symtab->hash_table = dbopen(NULL, O_CREAT | O_RDWR, 0600, DB_HASH, NULL);
+  if (symtab->hash_table == NULL)
+    goto quit;
+
+  symtab->num_symbols = symtabcmd.nsyms;
+  symtab->symbols = (symtab_symbol *)malloc(sizeof(symtab_symbol) * symtab->num_symbols);
+  symtab->strs    = (char *)malloc(sizeof(char) * symtabcmd.strsize);
+  if (symtab->symbols == NULL || symtab->strs == NULL) {
+     print_debug("out of memory: allocating symtab.symbol or symtab.strs\n");
+     goto quit;
+  }
+  lseek(fd, image_start + symtabcmd.symoff, SEEK_SET);
+  for (i = 0; i < symtab->num_symbols; i++) {
+    if (read(fd, (void *)&lentry, sizeof(nlist_64)) != sizeof(nlist_64)) {
+      print_debug("read nlist_64 failed at %i\n", i);
+      goto quit;
+    }
+    symtab->symbols[i].offset = lentry.n_value;
+    symtab->symbols[i].size  = lentry.n_un.n_strx;        // index
+  }
+
+  // string table
+  lseek(fd, image_start + symtabcmd.stroff, SEEK_SET);
+  int size = read(fd, (void *)(symtab->strs), symtabcmd.strsize * sizeof(char));
+  if (size != symtabcmd.strsize * sizeof(char)) {
+     print_debug("reading string table failed\n");
+     goto quit;
+  }
+
+  for (i = 0; i < symtab->num_symbols; i++) {
+    symtab->symbols[i].name = symtab->strs + symtab->symbols[i].size;
+    if (i > 0) {
+      // fix size
+      symtab->symbols[i - 1].size = symtab->symbols[i].size - symtab->symbols[i - 1].size;
+      print_debug("%s size = %d\n", symtab->symbols[i - 1].name, symtab->symbols[i - 1].size);
+
+    }
+
+    if (i == symtab->num_symbols - 1) {
+      // last index
+      symtab->symbols[i].size =
+            symtabcmd.strsize - symtab->symbols[i].size;
+      print_debug("%s size = %d\n", symtab->symbols[i].name, symtab->symbols[i].size);
+    }
+  }
+
+  // build a hashtable for fast query
+  build_search_table(symtab);
+  return symtab;
+quit:
+  if (symtab) destroy_symtab(symtab);
+  return NULL;
+}
+
+#else // __APPLE__
+
 struct elf_section {
   ELF_SHDR   *c_shdr;
   void       *c_data;
 };
-
-struct elf_symbol {
-  char *name;
-  uintptr_t offset;
-  uintptr_t size;
-};
-
-typedef struct symtab {
-  char *strs;
-  size_t num_symbols;
-  struct elf_symbol *symbols;
-  DB* hash_table;
-} symtab_t;
 
 // read symbol table from given fd.
 struct symtab* build_symtab(int fd) {
@@ -176,7 +326,7 @@ struct symtab* build_symtab(int fd) {
         key.data = sym_name;
         key.size = strlen(sym_name) + 1;
         value.data = &(symtab->symbols[j]);
-        value.size = sizeof(void *);
+        value.size = sizeof(symtab_symbol);
         (*symtab->hash_table->put)(symtab->hash_table, &key, &value, 0);
       }
     }
@@ -201,30 +351,29 @@ quit:
   return symtab;
 }
 
-void destroy_symtab(struct symtab* symtab) {
+#endif // __APPLE__
+
+void destroy_symtab(symtab_t* symtab) {
   if (!symtab) return;
-  if (symtab->strs) free(symtab->strs);
-  if (symtab->symbols) free(symtab->symbols);
-  if (symtab->hash_table) {
-    (*symtab->hash_table->close)(symtab->hash_table);
-  }
+  free(symtab->strs);
+  free(symtab->symbols);
   free(symtab);
 }
 
-uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
-                      const char *sym_name, int *sym_size) {
+uintptr_t search_symbol(struct symtab* symtab, uintptr_t base, const char *sym_name, int *sym_size) {
   DBT key, value;
   int ret;
 
   // library does not have symbol table
-  if (!symtab || !symtab->hash_table)
+  if (!symtab || !symtab->hash_table) {
      return 0;
+  }
 
   key.data = (char*)(uintptr_t)sym_name;
   key.size = strlen(sym_name) + 1;
   ret = (*symtab->hash_table->get)(symtab->hash_table, &key, &value, 0);
   if (ret == 0) {
-    struct elf_symbol *sym = value.data;
+    symtab_symbol *sym = value.data;
     uintptr_t rslt = (uintptr_t) ((char*)base + sym->offset);
     if (sym_size) *sym_size = sym->size;
     return rslt;
@@ -238,7 +387,7 @@ const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
   int n = 0;
   if (!symtab) return NULL;
   for (; n < symtab->num_symbols; n++) {
-    struct elf_symbol* sym = &(symtab->symbols[n]);
+    symtab_symbol* sym = &(symtab->symbols[n]);
     if (sym->name != NULL &&
       offset >= sym->offset && offset < sym->offset + sym->size) {
       if (poffset) *poffset = (offset - sym->offset);
