@@ -36,7 +36,7 @@ import javax.accessibility.*;
  *
  * @author      Sami Shaio
  * @see     java.awt.FlowLayout
- * @since   JDK1.0
+ * @since   1.0
  */
 public class Panel extends Container implements Accessible {
     private static final String base = "panel";
@@ -59,7 +59,7 @@ public class Panel extends Container implements Accessible {
     /**
      * Creates a new panel with the specified layout manager.
      * @param layout the layout manager for this panel.
-     * @since JDK1.1
+     * @since 1.1
      */
     public Panel(LayoutManager layout) {
         setLayout(layout);

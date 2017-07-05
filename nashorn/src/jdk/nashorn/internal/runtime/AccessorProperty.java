@@ -550,8 +550,13 @@ public class AccessorProperty extends Property {
                 "invalid getter type " + type + " for " + getKey();
 
         //all this does is add a return value filter for object fields only
-        if (GETTER_CACHE[i] == null) {
-            GETTER_CACHE[i] = debug(
+        final MethodHandle[] getterCache = GETTER_CACHE;
+        final MethodHandle cachedGetter = getterCache[i];
+        final MethodHandle getter;
+        if (cachedGetter != null) {
+            getter = cachedGetter;
+        } else {
+            getter = debug(
                 createGetter(
                     getCurrentType(),
                     type,
@@ -561,9 +566,10 @@ public class AccessorProperty extends Property {
                 getCurrentType(),
                 type,
                 "get");
+            getterCache[i] = getter;
        }
-       assert GETTER_CACHE[i].type().returnType() == type && GETTER_CACHE[i].type().parameterType(0) == Object.class;
-       return GETTER_CACHE[i];
+       assert getter.type().returnType() == type && getter.type().parameterType(0) == Object.class;
+       return getter;
     }
 
     @Override

@@ -119,7 +119,7 @@ import java.util.Hashtable;
  * @author      Arthur van Hoff
  * @see         java.awt.Container#add(String, Component)
  * @see         java.awt.ComponentOrientation
- * @since       JDK1.0
+ * @since       1.0
  */
 public class BorderLayout implements LayoutManager2,
                                      java.io.Serializable {
@@ -367,7 +367,7 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Returns the horizontal gap between components.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public int getHgap() {
         return hgap;
@@ -376,7 +376,7 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Sets the horizontal gap between components.
      * @param hgap the horizontal gap between components
-     * @since   JDK1.1
+     * @since   1.1
      */
     public void setHgap(int hgap) {
         this.hgap = hgap;
@@ -384,7 +384,7 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Returns the vertical gap between components.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public int getVgap() {
         return vgap;
@@ -393,7 +393,7 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Sets the vertical gap between components.
      * @param vgap the vertical gap between components
-     * @since   JDK1.1
+     * @since   1.1
      */
     public void setVgap(int vgap) {
         this.vgap = vgap;
@@ -415,7 +415,7 @@ public class BorderLayout implements LayoutManager2,
      * @see     java.awt.Container#add(java.awt.Component, java.lang.Object)
      * @exception   IllegalArgumentException  if the constraint object is not
      *              a string, or if it not one of the five specified constants.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public void addLayoutComponent(Component comp, Object constraints) {
       synchronized (comp.getTreeLock()) {

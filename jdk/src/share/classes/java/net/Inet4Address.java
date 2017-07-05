@@ -155,7 +155,7 @@ class Inet4Address extends InetAddress {
      * address i.e first four bits of the address are 1110.
      * @return a {@code boolean} indicating if the InetAddress is
      * an IP multicast address
-     * @since   JDK1.1
+     * @since   1.1
      */
     public boolean isMulticastAddress() {
         return ((holder().getAddress() & 0xf0000000) == 0xe0000000);
@@ -320,7 +320,7 @@ class Inet4Address extends InetAddress {
      * Returns the IP address string in textual presentation form.
      *
      * @return  the raw IP address in a string format.
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public String getHostAddress() {
         return numericToTextFormat(getAddress());

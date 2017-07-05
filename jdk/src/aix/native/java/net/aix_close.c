@@ -370,7 +370,57 @@ int NET_Accept(int s, struct sockaddr *addr, int *addrlen) {
 }
 
 int NET_Connect(int s, struct sockaddr *addr, int addrlen) {
-    BLOCKING_IO_RETURN_INT( s, connect(s, addr, addrlen) );
+    int crc = -1, prc = -1;
+    threadEntry_t self;
+    fdEntry_t* fdEntry = getFdEntry(s);
+
+    if (fdEntry == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    /* On AIX, when the system call connect() is interrupted, the connection
+     * is not aborted and it will be established asynchronously by the kernel.
+     * Hence, no need to restart connect() when EINTR is received
+     */
+    startOp(fdEntry, &self);
+    crc = connect(s, addr, addrlen);
+    endOp(fdEntry, &self);
+
+    if (crc == -1 && errno == EINTR) {
+        struct pollfd s_pollfd;
+        int sockopt_arg = 0;
+        socklen_t len;
+
+        s_pollfd.fd = s;
+        s_pollfd.events = POLLOUT | POLLERR;
+
+        /* poll the file descriptor */
+        do {
+            startOp(fdEntry, &self);
+            prc = poll(&s_pollfd, 1, -1);
+            endOp(fdEntry, &self);
+        } while (prc == -1  && errno == EINTR);
+
+        if (prc < 0)
+            return prc;
+
+        len = sizeof(sockopt_arg);
+
+        /* Check whether the connection has been established */
+        if (getsockopt(s, SOL_SOCKET, SO_ERROR, &sockopt_arg, &len) == -1)
+            return -1;
+
+        if (sockopt_arg != 0 ) {
+            errno = sockopt_arg;
+            return -1;
+        }
+    } else {
+        return crc;
+    }
+
+    /* At this point, fd is connected. Set successful return code */
+    return 0;
 }
 
 int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {

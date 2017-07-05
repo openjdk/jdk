@@ -92,7 +92,7 @@ import java.security.AccessControlException;
  *
  * @author      Sami Shaio
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Dialog extends Window {
 

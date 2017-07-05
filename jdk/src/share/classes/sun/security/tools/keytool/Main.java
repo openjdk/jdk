@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.security.Signature;
 import java.security.Timestamp;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.Provider;
 import java.security.cert.Certificate;
@@ -64,6 +63,7 @@ import java.security.cert.X509CRLEntry;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
+
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -242,15 +242,43 @@ public final class Main {
 
         final String description;
         final Option[] options;
+        final String name;
+
+        String altName;     // "genkey" is altName for "genkeypair"
+
         Command(String d, Option... o) {
             description = d;
             options = o;
+            name = "-" + name().toLowerCase(Locale.ENGLISH);
         }
         @Override
         public String toString() {
-            return "-" + name().toLowerCase(Locale.ENGLISH);
+            return name;
+        }
+        public String getAltName() {
+            return altName;
+        }
+        public void setAltName(String altName) {
+            this.altName = altName;
+        }
+        public static Command getCommand(String cmd) {
+            for (Command c: Command.values()) {
+                if (collator.compare(cmd, c.name) == 0
+                        || (c.altName != null
+                            && collator.compare(cmd, c.altName) == 0)) {
+                    return c;
+                }
+            }
+            return null;
         }
     };
+
+    static {
+        Command.GENKEYPAIR.setAltName("-genkey");
+        Command.IMPORTCERT.setAltName("-import");
+        Command.EXPORTCERT.setAltName("-export");
+        Command.IMPORTPASS.setAltName("-importpassword");
+    }
 
     enum Option {
         ALIAS("alias", "<alias>", "alias.name.of.the.entry.to.process"),
@@ -335,7 +363,7 @@ public final class Main {
 
     private void run(String[] args, PrintStream out) throws Exception {
         try {
-            parseArgs(args);
+            args = parseArgs(args);
             if (command != null) {
                 doCommands(out);
             }
@@ -366,10 +394,42 @@ public final class Main {
     /**
      * Parse command line arguments.
      */
-    void parseArgs(String[] args) {
+    String[] parseArgs(String[] args) throws Exception {
 
         int i=0;
         boolean help = args.length == 0;
+
+        String confFile = null;
+
+        for (i=0; i < args.length; i++) {
+            String flags = args[i];
+            if (flags.startsWith("-")) {
+                if (collator.compare(flags, "-conf") == 0) {
+                    if (i == args.length - 1) {
+                        errorNeedArgument(flags);
+                    }
+                    confFile = args[++i];
+                } else {
+                    Command c = Command.getCommand(flags);
+                    if (c != null) command = c;
+                }
+            }
+        }
+
+        if (confFile != null && command != null) {
+            args = KeyStoreUtil.expandArgs("keytool", confFile,
+                    command.toString(),
+                    command.getAltName(), args);
+        }
+
+        debug = Arrays.stream(args).anyMatch(
+                x -> collator.compare(x, "-debug") == 0);
+
+        if (debug) {
+            // No need to localize debug output
+            System.out.println("Command line args: " +
+                    Arrays.toString(args));
+        }
 
         for (i=0; (i < args.length) && args[i].startsWith("-"); i++) {
 
@@ -395,34 +455,18 @@ public final class Main {
                 modifier = flags.substring(pos+1);
                 flags = flags.substring(0, pos);
             }
+
             /*
              * command modes
              */
-            boolean isCommand = false;
-            for (Command c: Command.values()) {
-                if (collator.compare(flags, c.toString()) == 0) {
-                    command = c;
-                    isCommand = true;
-                    break;
-                }
-            }
+            Command c = Command.getCommand(flags);
 
-            if (isCommand) {
-                // already recognized as a command
-            } else if (collator.compare(flags, "-export") == 0) {
-                command = EXPORTCERT;
-            } else if (collator.compare(flags, "-genkey") == 0) {
-                command = GENKEYPAIR;
-            } else if (collator.compare(flags, "-import") == 0) {
-                command = IMPORTCERT;
-            } else if (collator.compare(flags, "-importpassword") == 0) {
-                command = IMPORTPASS;
-            }
-            /*
-             * Help
-             */
-            else if (collator.compare(flags, "-help") == 0) {
+            if (c != null) {
+                command = c;
+            } else if (collator.compare(flags, "-help") == 0) {
                 help = true;
+            } else if (collator.compare(flags, "-conf") == 0) {
+                i++;
             }
 
             /*
@@ -522,7 +566,7 @@ public final class Main {
             else if (collator.compare(flags, "-v") == 0) {
                 verbose = true;
             } else if (collator.compare(flags, "-debug") == 0) {
-                debug = true;
+                // Already processed
             } else if (collator.compare(flags, "-rfc") == 0) {
                 rfc = true;
             } else if (collator.compare(flags, "-noprompt") == 0) {
@@ -556,6 +600,8 @@ public final class Main {
             usage();
             command = null;
         }
+
+        return args;
     }
 
     boolean isKeyStoreRelated(Command cmd) {

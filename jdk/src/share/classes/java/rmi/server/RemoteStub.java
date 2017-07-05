@@ -33,7 +33,7 @@ package java.rmi.server;
  * implementation of the remote object.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  *
  * @deprecated Statically generated stubs are deprecated, since
  * stubs are generated dynamically. See {@link UnicastRemoteObject}
@@ -57,7 +57,7 @@ abstract public class RemoteStub extends RemoteObject {
      * reference.
      *
      * @param ref the remote reference
-     * @since JDK1.1
+     * @since 1.1
      */
     protected RemoteStub(RemoteRef ref) {
         super(ref);
@@ -69,7 +69,7 @@ abstract public class RemoteStub extends RemoteObject {
      * @param stub the remote stub
      * @param ref the remote reference
      * @throws UnsupportedOperationException always
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated No replacement.  The {@code setRef} method
      * was intended for setting the remote reference of a remote
      * stub. This is unnecessary, since {@code RemoteStub}s can be created

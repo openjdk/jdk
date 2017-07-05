@@ -194,7 +194,7 @@ public class JMap {
         }
 
         // invoke the main method with the arguments
-        Class[] argTypes = { String[].class } ;
+        Class<?>[] argTypes = { String[].class } ;
         Method m = c.getDeclaredMethod("main", argTypes);
 
         Object[] invokeArgs = { args };

@@ -150,14 +150,13 @@ abstract class SeedGenerator {
      * Retrieve some system information, hashed.
      */
     static byte[] getSystemEntropy() {
-        byte[] ba;
         final MessageDigest md;
 
         try {
             md = MessageDigest.getInstance("SHA");
         } catch (NoSuchAlgorithmException nsae) {
-            throw new InternalError("internal error: SHA-1 not available."
-                    , nsae);
+            throw new InternalError("internal error: SHA-1 not available.",
+                    nsae);
         }
 
         // The current time in millis
@@ -170,11 +169,8 @@ abstract class SeedGenerator {
                 public Void run() {
                     try {
                         // System properties can change from machine to machine
-                        String s;
                         Properties p = System.getProperties();
-                        Enumeration<?> e = p.propertyNames();
-                        while (e.hasMoreElements()) {
-                            s =(String)e.nextElement();
+                        for (String s: p.stringPropertyNames()) {
                             md.update(s.getBytes());
                             md.update(p.getProperty(s).getBytes());
                         }

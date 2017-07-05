@@ -53,7 +53,7 @@ import java.io.IOException;
  *
  * @author      Arthur van Hoff
  * @see         java.awt.Container
- * @since       JDK1.0
+ * @since       1.0
  */
 
 public class CardLayout implements LayoutManager2,
@@ -148,7 +148,7 @@ public class CardLayout implements LayoutManager2,
      * @return    the horizontal gap between components.
      * @see       java.awt.CardLayout#setHgap(int)
      * @see       java.awt.CardLayout#getVgap()
-     * @since     JDK1.1
+     * @since     1.1
      */
     public int getHgap() {
         return hgap;
@@ -159,7 +159,7 @@ public class CardLayout implements LayoutManager2,
      * @param hgap the horizontal gap between components.
      * @see       java.awt.CardLayout#getHgap()
      * @see       java.awt.CardLayout#setVgap(int)
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setHgap(int hgap) {
         this.hgap = hgap;
@@ -180,7 +180,7 @@ public class CardLayout implements LayoutManager2,
      * @param     vgap the vertical gap between components.
      * @see       java.awt.CardLayout#getVgap()
      * @see       java.awt.CardLayout#setHgap(int)
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setVgap(int vgap) {
         this.vgap = vgap;

@@ -41,7 +41,7 @@ package java.io;
  * @see     java.io.FilterOutputStream
  * @see     java.io.InputStream
  * @see     java.io.OutputStream#write(int)
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class OutputStream implements Closeable, Flushable {
     /**

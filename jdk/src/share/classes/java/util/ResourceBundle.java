@@ -282,7 +282,7 @@ import sun.util.locale.LocaleObjectCache;
  * @see ListResourceBundle
  * @see PropertyResourceBundle
  * @see MissingResourceException
- * @since JDK1.1
+ * @since 1.1
  */
 public abstract class ResourceBundle {
 

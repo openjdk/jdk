@@ -42,7 +42,7 @@ import java.util.Collections;
  * described, without attempting to go through a firewall or proxy.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class SocketImpl implements SocketOptions {
     /**

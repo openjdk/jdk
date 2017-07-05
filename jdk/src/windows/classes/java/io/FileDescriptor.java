@@ -38,7 +38,7 @@ import java.util.List;
  * <p>Applications should not create their own file descriptors.
  *
  * @author  Pavani Diwanji
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class FileDescriptor {
 
@@ -149,7 +149,7 @@ public final class FileDescriptor {
      *        Thrown when the buffers cannot be flushed,
      *        or because the system cannot guarantee that all the
      *        buffers have been synchronized with physical media.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public native void sync() throws SyncFailedException;
 
