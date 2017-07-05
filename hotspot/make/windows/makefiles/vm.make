@@ -66,10 +66,6 @@ CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
 CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
 CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
 
-!ifndef JAVASE_EMBEDDED
-CXX_FLAGS=$(CXX_FLAGS) /D "INCLUDE_TRACE"
-!endif
-
 CXX_FLAGS=$(CXX_FLAGS) $(CXX_INCLUDE_DIRS)
 
 # Define that so jni.h is on correct side
@@ -144,6 +140,7 @@ CXX_USE_PCH=$(CXX_DONT_USE_PCH)
 VM_PATH=../generated
 VM_PATH=$(VM_PATH);../generated/adfiles
 VM_PATH=$(VM_PATH);../generated/jvmtifiles
+VM_PATH=$(VM_PATH);../generated/tracefiles
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/c1
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/compiler
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/code
@@ -172,10 +169,8 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/cpu/$(Platform_arch)/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/opto
 
 !if exists($(ALTSRC)\share\vm\jfr)
-VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/agent
-VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/agent/isolated_deps/util
-VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/jvm
 VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr
+VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/buffers
 !endif
 
 VM_PATH={$(VM_PATH)}
@@ -384,16 +379,13 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {..\generated\jvmtifiles}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
+{..\generated\tracefiles}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
 {$(ALTSRC)\share\vm\jfr}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(ALTSRC)\share\vm\jfr\agent}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\jfr\agent\isolated_deps\util}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\jfr\jvm}.cpp.obj::
+{$(ALTSRC)\share\vm\jfr\buffers}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 default::

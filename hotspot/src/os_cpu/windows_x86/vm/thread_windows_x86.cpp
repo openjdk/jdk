@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,15 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   void* ucontext, bool isInJava) {
 
   assert(Thread::current() == this, "caller must be current thread");
+  return pd_get_top_frame(fr_addr, ucontext, isInJava);
+}
+
+bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
+  return pd_get_top_frame(fr_addr, ucontext, isInJava);
+}
+
+bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava) {
+
   assert(this->is_Java_thread(), "must be JavaThread");
 
   JavaThread* jt = (JavaThread *)this;
@@ -87,4 +96,3 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
 }
 
 void JavaThread::cache_global_variables() { }
-

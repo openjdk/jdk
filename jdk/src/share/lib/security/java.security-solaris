@@ -204,6 +204,7 @@ package.access=sun.,\
                com.sun.org.glassfish.,\
                com.oracle.xmlns.internal.,\
                com.oracle.webservices.internal.,\
+	       oracle.jrockit.jfr.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.
@@ -244,6 +245,7 @@ package.definition=sun.,\
                    com.sun.org.glassfish.,\
                    com.oracle.xmlns.internal.,\
                    com.oracle.webservices.internal.,\
+		   oracle.jrockit.jfr.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.

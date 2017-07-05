@@ -72,6 +72,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _cms_final_remark:
       return "CMS Final Remark";
 
+    case _cms_concurrent_mark:
+      return "CMS Concurrent Mark";
+
     case _old_generation_expanded_on_last_scavenge:
       return "Old Generation Expanded On Last Scavenge";
 
