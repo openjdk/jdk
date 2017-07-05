@@ -26,22 +26,20 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib/
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
- * @run main ClassFileInstaller
- *     jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm
- *     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions
- *     -XX:+DebugNonSafepoints
- *     -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=true
- *     compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
- * @run main/othervm
- *     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions
- *     -XX:-DebugNonSafepoints
- *     -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=false
- *     compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+DebugNonSafepoints
+ *                   -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=true
+ *                   compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-DebugNonSafepoints
+ *                   -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=false
+ *                   compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
  */
 
 package compiler.jvmci.compilerToVM;

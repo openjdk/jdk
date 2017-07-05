@@ -697,8 +697,8 @@ public final class StringConcatFactory {
             case BC_SB_SIZED:
             case BC_SB_SIZED_EXACT: {
                 if (CACHE_ENABLE) {
-                    Package pkg = hostClass.getPackage();
-                    return (pkg != null ? pkg.getName().replace('.', '/') + "/" : "") + "Stubs$$StringConcat";
+                    String pkgName = hostClass.getPackageName();
+                    return (pkgName != null && !pkgName.isEmpty() ? pkgName.replace('.', '/') + "/" : "") + "Stubs$$StringConcat";
                 } else {
                     return hostClass.getName().replace('.', '/') + "$$StringConcat";
                 }

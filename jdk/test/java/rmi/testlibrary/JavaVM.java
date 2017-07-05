@@ -78,7 +78,7 @@ public class JavaVM {
     }
 
     // Prepends passed opts array to current options
-    public void addOptions(String[] opts) {
+    public void addOptions(String... opts) {
         String newOpts = "";
         for (int i = 0 ; i < opts.length ; i ++) {
             newOpts += " " + opts[i];
@@ -88,7 +88,7 @@ public class JavaVM {
     }
 
     // Prepends passed arguments array to current args
-    public void addArguments(String[] arguments) {
+    public void addArguments(String... arguments) {
         String newArgs = "";
         for (int i = 0 ; i < arguments.length ; i ++) {
             newArgs += " " + arguments[i];

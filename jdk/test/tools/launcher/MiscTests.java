@@ -31,29 +31,71 @@
 
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MiscTests extends TestHelper {
 
-    // 6856415: Checks to ensure that proper exceptions are thrown by java
-    static void test6856415() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("public static void main(String... args) {\n");
-        sb.append("java.security.Provider p = new sun.security.pkcs11.SunPKCS11();\n");
-        sb.append("java.security.Security.insertProviderAt(p, 1);\n");
-        sb.append("}");
+    /**
+     * Test with class path set on the command line via -Djava.class.path
+     */
+    static void testWithClassPathSetViaProperty() throws IOException {
+        final String mainClass = "Foo";
+
+        File source = new File(mainClass + ".java");
+
+        List<String> scratch = new ArrayList<>();
+        scratch.add("public class Foo {");
+        scratch.add("public static void main(String... args) {");
+        scratch.add("}");
+        scratch.add("}");
+        createFile(source, scratch);
+
+        compile(mainClass + ".java");
+
+        String dir = new File(mainClass + ".class").getAbsoluteFile().getParent();
+        TestResult tr = doExec(javaCmd, "-Djava.class.path=" + dir, mainClass);
+        for (String s : tr.testOutput) {
+            System.out.println(s);
+        }
+    }
+
+    /**
+     * 6856415: Checks to ensure that proper exceptions are thrown by java
+     */
+    static void test6856415() throws IOException {
+
+        final String mainClass = "Foo6856415";
+        final String exportOpts
+            = "-XaddExports:jdk.crypto.pkcs11/sun.security.pkcs11=ALL-UNNAMED";
+
+        List<String> scratch = new ArrayList<>();
+        scratch.add("public class Foo6856415 {");
+        scratch.add("public static void main(String... args) {");
+        scratch.add("java.security.Provider p = new sun.security.pkcs11.SunPKCS11();");
+        scratch.add("java.security.Security.insertProviderAt(p, 1);");
+        scratch.add("}");
+        scratch.add("}");
+        createFile(new File(mainClass + ".java"), scratch);
+
+        compile(mainClass + ".java", exportOpts);
+
         File testJar = new File("Foo.jar");
         testJar.delete();
-        try {
-            createJar(testJar, sb.toString());
-        } catch (FileNotFoundException fnfe) {
-            throw new RuntimeException(fnfe);
-        }
+        String jarArgs[] = {
+            (debug) ? "cvfe" : "cfe",
+            testJar.getAbsolutePath(),
+            mainClass,
+            mainClass + ".class"
+        };
+        createJar(jarArgs);
+
         TestResult tr = doExec(javaCmd,
                 "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
         for (String s : tr.testOutput) {
             System.out.println(s);
-    }
+        }
         if (!tr.contains("java.security.AccessControlException:" +
                 " access denied (\"java.lang.RuntimePermission\"" +
                 " \"accessClassInPackage.sun.security.pkcs11\")")) {
@@ -61,7 +103,8 @@ public class MiscTests extends TestHelper {
         }
     }
 
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
+        testWithClassPathSetViaProperty();
         test6856415();
         if (testExitValue != 0) {
             throw new Error(testExitValue + " tests failed");

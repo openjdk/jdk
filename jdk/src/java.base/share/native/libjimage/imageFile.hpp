@@ -303,101 +303,17 @@ public:
 };
 
 //
-// NOTE: needs revision.
-// Each loader requires set of module meta data to identify which modules and
-// packages are managed by that loader.  Currently, there is one image file per
-// builtin loader, so only one  module meta data resource per file.
-//
-// Each element in the module meta data is a native endian 4 byte integer.  Note
-// that entries with zero offsets for string table entries should be ignored (
-// padding for hash table lookup.)
-//
-// Format:
-//      Count of package to module entries
-//      Count of module to package entries
-//      Perfect Hash redirect table[Count of package to module entries]
-//      Package to module entries[Count of package to module entries]
-//          Offset to package name in string table
-//          Offset to module name in string table
-//      Perfect Hash redirect table[Count of module to package entries]
-//      Module to package entries[Count of module to package entries]
-//          Offset to module name in string table
-//          Count of packages in module
-//          Offset to first package in packages table
-//      Packages[]
-//          Offset to package name in string table
-//
 // Manage the image module meta data.
 class ImageModuleData {
-    class Header {
-    private:
-        u4 _ptm_count;          // Count of package to module entries
-        u4 _mtp_count;          // Count of module to package entries
-    public:
-        inline u4 ptm_count(Endian* endian) const { return endian->get(_ptm_count); }
-        inline u4 mtp_count(Endian* endian) const { return endian->get(_mtp_count); }
-    };
-
-    // Hashtable entry
-    class HashData {
-    private:
-        u4 _name_offset;        // Name offset in string table
-    public:
-        inline s4 name_offset(Endian* endian) const { return endian->get(_name_offset); }
-    };
-
-    // Package to module hashtable entry
-    class PTMData : public HashData {
-    private:
-        u4 _module_name_offset; // Module name offset in string table
-    public:
-        inline s4 module_name_offset(Endian* endian) const { return endian->get(_module_name_offset); }
-    };
-
-    // Module to package hashtable entry
-    class MTPData : public HashData {
-    private:
-        u4 _package_count;       // Number of packages in module
-        u4 _package_offset;      // Offset in package list
-    public:
-        inline u4 package_count(Endian* endian)  const { return endian->get(_package_count); }
-        inline u4 package_offset(Endian* endian) const { return endian->get(_package_offset); }
-    };
-
     const ImageFileReader* _image_file; // Source image file
-    Endian* _endian;       // Endian handler
-    ImageStrings _strings; // Image file strings
-    u1* _data;             // Module data resource data
-    u8 _data_size;         // Size of resource data
-    Header* _header;       // Module data header
-    s4* _ptm_redirect;     // Package to module hashtable redirect
-    PTMData* _ptm_data;    // Package to module data
-    s4* _mtp_redirect;     // Module to packages hashtable redirect
-    MTPData* _mtp_data;    // Module to packages data
-    s4* _mtp_packages;     // Package data (name offsets)
-
-    // Return a string from the string table.
-    inline const char* get_string(u4 offset) {
-        return _strings.get(offset);
-    }
-
-    inline u4 mtp_package(u4 index) {
-        return _endian->get(_mtp_packages[index]);
-    }
+    Endian* _endian;                    // Endian handler
 
 public:
-    ImageModuleData(const ImageFileReader* image_file, const char* module_data_name);
+    ImageModuleData(const ImageFileReader* image_file);
     ~ImageModuleData();
-
-    // Return the name of the module data resource.
-    static void module_data_name(char* buffer, const char* image_file_name);
 
     // Return the module in which a package resides.    Returns NULL if not found.
     const char* package_to_module(const char* package_name);
-
-    // Returns all the package names in a module in a NULL terminated array.
-    // Returns NULL if module not found.
-    const char** module_to_packages(const char* module_name);
 };
 
 // Image file header, starting at offset 0.
@@ -491,6 +407,9 @@ private:
     // multiple uses (ex. loader.)
     static ImageFileReaderTable _reader_table;
 
+    // true if image should be fully memory mapped.
+    static bool memory_map_image;
+
     char* _name;         // Name of image
     s4 _use;             // Use count
     int _fd;             // File descriptor
@@ -526,6 +445,9 @@ public:
         MINOR_VERSION = 0
     };
 
+    // Locate an image if file already open.
+    static ImageFileReader* find_image(const char* name);
+
     // Open an image file, reuse structure if file already open.
     static ImageFileReader* open(const char* name, bool big_endian = Endian::is_big_endian());
 
@@ -533,13 +455,13 @@ public:
     static void close(ImageFileReader *reader);
 
     // Return an id for the specifed ImageFileReader.
-    static u8 readerToID(ImageFileReader *reader);
+    static u8 reader_to_ID(ImageFileReader *reader);
 
     // Validate the image id.
-    static bool idCheck(u8 id);
+    static bool id_check(u8 id);
 
     // Return an id for the specifed ImageFileReader.
-    static ImageFileReader* idToReader(u8 id);
+    static ImageFileReader* id_to_reader(u8 id);
 
     // Open image file for read access.
     bool open();
@@ -560,6 +482,11 @@ public:
     // Retrieve size of image file.
     inline u8 file_size() const {
         return _file_size;
+    }
+
+    // Retrieve the size of the mapped image.
+    inline u8 map_size() const {
+        return (u8)(memory_map_image ? _file_size : _index_size);
     }
 
     // Return first address of index data.

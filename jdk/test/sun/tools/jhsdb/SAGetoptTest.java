@@ -25,6 +25,7 @@
  /*
  * @test
  * @summary unit test for SAGetopt function
+ * @modules jdk.hotspot.agent/sun.jvm.hotspot
  * @compile -XDignore.symbol.file SAGetoptTest.java
  * @run main SAGetoptTest
  */

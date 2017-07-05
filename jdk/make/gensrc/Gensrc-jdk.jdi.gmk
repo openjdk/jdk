@@ -61,30 +61,6 @@ GENSRC_JDK_JDI += $(GENSRC_JDWP)
 
 ################################################################################
 
-define process-provider
-	$(call MakeDir, $(@D))
-	$(CAT) $^ | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $@
-endef
-
-# Filter com.sun.jdi.connect.Connector
-$(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
-    $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector \
-    $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/META-INF/services/com.sun.jdi.connect.Connector
-	$(process-provider)
-
-# Copy the same service file into jdk.hotspot.agent so that they are kept the same.
-$(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector: \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector
-	$(install-file)
-
-# Some platforms don't have the serviceability agent
-ifeq ($(INCLUDE_SA), true)
-  GENSRC_JDK_JDI += $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector
-endif
-
-################################################################################
-
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \

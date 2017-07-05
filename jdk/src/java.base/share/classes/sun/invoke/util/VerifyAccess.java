@@ -27,6 +27,7 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
+import java.lang.reflect.Module;
 import sun.reflect.Reflection;
 
 /**
@@ -37,6 +38,7 @@ public class VerifyAccess {
 
     private VerifyAccess() { }  // cannot instantiate
 
+    private static final int MODULE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.MODULE;
     private static final int PACKAGE_ONLY = 0;
     private static final int PACKAGE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.PACKAGE;
     private static final int PROTECTED_OR_PACKAGE_ALLOWED = (PACKAGE_ALLOWED|PROTECTED);
@@ -89,7 +91,7 @@ public class VerifyAccess {
                                              int      allowedModes) {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
-               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED)) == 0);
         // The symbolic reference class (refc) must always be fully verified.
         if (!isClassAccessible(refc, lookupClass, allowedModes)) {
             return false;
@@ -157,8 +159,10 @@ public class VerifyAccess {
      * Evaluate the JVM linkage rules for access to the given class on behalf of caller.
      * <h3>JVM Specification, 5.4.4 "Access Control"</h3>
      * A class or interface C is accessible to a class or interface D
-     * if and only if either of the following conditions are true:<ul>
-     * <li>C is public.
+     * if and only if any of the following conditions are true:<ul>
+     * <li>C is public and in the same module as D.
+     * <li>D is in a module that reads the module containing C, C is public and in a
+     * package that is exported to the module that contains D.
      * <li>C and D are members of the same runtime package.
      * </ul>
      * @param refc the symbolic reference class to which access is being checked (C)
@@ -168,10 +172,52 @@ public class VerifyAccess {
                                             int allowedModes) {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
-               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED)) == 0);
         int mods = getClassModifiers(refc);
-        if (isPublic(mods))
-            return true;
+        if (isPublic(mods)) {
+
+            Module lookupModule = lookupClass.getModule();
+            Module refModule = refc.getModule();
+
+            // early VM startup case, java.base not defined
+            if (lookupModule == null) {
+                assert refModule == null;
+                return true;
+            }
+
+            // trivially allow
+            if ((allowedModes & MODULE_ALLOWED) != 0 &&
+                (lookupModule == refModule))
+                return true;
+
+            // check readability
+            if (lookupModule.canRead(refModule)) {
+
+                // check that refc is in an exported package
+                Class<?> c = refc;
+                while (c.isArray()) {
+                    c = c.getComponentType();
+                }
+                if (c.isPrimitive())
+                    return true;
+                if ((allowedModes & MODULE_ALLOWED) != 0) {
+                    if (refModule.isExported(c.getPackageName(), lookupModule))
+                        return true;
+                } else {
+                    // exported unconditionally
+                    if (refModule.isExported(c.getPackageName()))
+                        return true;
+                }
+
+                // not exported but allow access during VM initialization
+                // because java.base does not have its exports setup
+                if (!jdk.internal.misc.VM.isModuleSystemInited())
+                    return true;
+            }
+
+            // public class not accessible to lookupClass
+            return false;
+        }
         if ((allowedModes & PACKAGE_ALLOWED) != 0 &&
             isSamePackage(lookupClass, refc))
             return true;
@@ -219,6 +265,16 @@ public class VerifyAccess {
     }
 
     /**
+     * Tests if two classes are in the same module.
+     * @param class1 a class
+     * @param class2 another class
+     * @return whether they are in the same module
+     */
+    public static boolean isSameModule(Class<?> class1, Class<?> class2) {
+        return class1.getModule() == class2.getModule();
+    }
+
+    /**
      * Test if two classes have the same class loader and package qualifier.
      * @param class1 a class
      * @param class2 another class
@@ -244,10 +300,10 @@ public class VerifyAccess {
     /** Return the package name for this class.
      */
     public static String getPackageName(Class<?> cls) {
-        assert(!cls.isArray());
+        assert (!cls.isArray());
         String name = cls.getName();
         int dot = name.lastIndexOf('.');
-        if (dot < 0)  return "";
+        if (dot < 0) return "";
         return name.substring(0, dot);
     }
 

@@ -73,6 +73,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     NOF_PUBLICITY_LEVELS
   };
 
+  enum { LegalClass, LegalField, LegalMethod, LegalModule }; // used to verify unqualified names
+
  private:
   const ClassFileStream* _stream; // Actual input stream
   const Symbol* _requested_name;
@@ -155,7 +157,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                   ConstantPool* cp,
                                   TRAPS);
 
-  void fill_instance_klass(InstanceKlass* ik, TRAPS);
+  void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH, TRAPS);
   void set_klass(InstanceKlass* instance);
 
   void set_class_synthetic_flag(bool x)        { _synthetic_flag = x; }
@@ -482,7 +484,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   ~ClassFileParser();
 
-  InstanceKlass* create_instance_klass(TRAPS);
+  InstanceKlass* create_instance_klass(bool cf_changed_in_CFLH, TRAPS);
 
   const ClassFileStream* clone_stream() const;
 
@@ -512,6 +514,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   bool is_internal() const { return INTERNAL == _pub_level; }
 
+  static bool verify_unqualified_name(const char* name, unsigned int length, int type);
 };
 
 #endif // SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP

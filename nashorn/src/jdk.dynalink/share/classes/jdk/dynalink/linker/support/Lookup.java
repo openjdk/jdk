@@ -87,8 +87,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Module;
 import java.lang.reflect.Method;
+import jdk.internal.module.Modules;
 
 /**
  * A wrapper around {@link java.lang.invoke.MethodHandles.Lookup} that masks
@@ -125,6 +128,42 @@ public final class Lookup {
      */
     public MethodHandle unreflect(final Method m) {
         return unreflect(lookup, m);
+    }
+
+    private static boolean addModuleRead(final MethodHandles.Lookup lookup, final Executable e) {
+        // may be module read missing from a script class!
+        final Class<?> declClass = e.getDeclaringClass();
+        final Module from = lookup.lookupClass().getModule();
+        final Module to = declClass.getModule();
+        if (from != null && to != null) {
+            Modules.addReads(from, to);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)}, of a caller sensitive method
+     * converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param lookup the lookup used to unreflect
+     * @param m the method to unreflect
+     * @return the unreflected method handle.
+     */
+    public static MethodHandle unreflectCallerSensitive(final MethodHandles.Lookup lookup, final Method m) {
+        try {
+            return unreflect(lookup, m);
+        } catch (final IllegalAccessError iae) {
+            if (addModuleRead(lookup, m)) {
+                try {
+                    return unreflect(lookup, m);
+                } catch (final IllegalAccessError e2) {
+                    // fall through and throw original error as cause
+                }
+            }
+            throw iae;
+        }
     }
 
     /**
@@ -225,6 +264,29 @@ public final class Lookup {
      */
     public MethodHandle unreflectConstructor(final Constructor<?> c) {
         return unreflectConstructor(lookup, c);
+    }
+
+    /**
+     * Performs a caller sensitive {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)}, converting any
+     * encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     *
+     * @param lookup the lookup used to unreflect
+     * @param c the constructor to unreflect
+     * @return the unreflected constructor handle.
+     */
+    public static MethodHandle unreflectConstructorCallerSensitive(final MethodHandles.Lookup lookup, final Constructor<?> c) {
+        try {
+            return unreflectConstructor(lookup, c);
+        } catch (final IllegalAccessError iae) {
+            if (addModuleRead(lookup, c)) {
+                try {
+                    return unreflectConstructor(lookup, c);
+                } catch (final IllegalAccessError e2) {
+                    // fall through and throw original error as cause
+                }
+            }
+            throw iae;
+        }
     }
 
     /**

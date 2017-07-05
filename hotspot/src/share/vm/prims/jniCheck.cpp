@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1989,7 +1989,48 @@ JNI_ENTRY_CHECKED(jint,
     return result;
 JNI_END
 
+JNI_ENTRY_CHECKED(jobject,
+  checked_jni_GetModule(JNIEnv *env,
+                        jclass clazz))
+    functionEnter(thr);
+    IN_VM(
+      jniCheck::validate_class(thr, clazz, false);
+    )
+    jobject result = UNCHECKED()->GetModule(env,clazz);
+    functionExit(thr);
+    return result;
+JNI_END
 
+JNI_ENTRY_CHECKED(void,
+  checked_jni_AddModuleReads(JNIEnv *env,
+                             jobject fromModule,
+                             jobject sourceModule))
+    functionEnter(thr);
+    IN_VM(
+      jniCheck::validate_object(thr, fromModule);
+      if (sourceModule != NULL) {
+        jniCheck::validate_object(thr, sourceModule);
+      }
+    )
+    UNCHECKED()->AddModuleReads(env,fromModule,sourceModule);
+    functionExit(thr);
+JNI_END
+
+JNI_ENTRY_CHECKED(jboolean,
+  checked_jni_CanReadModule(JNIEnv *env,
+                            jobject askingModule,
+                            jobject sourceModule))
+    functionEnter(thr);
+    IN_VM(
+      jniCheck::validate_object(thr, askingModule);
+      if (sourceModule != NULL) {
+        jniCheck::validate_object(thr, sourceModule);
+      }
+    )
+    jboolean result = UNCHECKED()->CanReadModule(env,askingModule,sourceModule);
+    functionExit(thr);
+    return result;
+JNI_END
 
 /*
  * Structure containing all checked jni functions
@@ -2272,7 +2313,13 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // New 1.6 Features
 
-    checked_jni_GetObjectRefType
+    checked_jni_GetObjectRefType,
+
+    // Module Features
+
+    checked_jni_GetModule,
+    checked_jni_AddModuleReads,
+    checked_jni_CanReadModule
 };
 
 

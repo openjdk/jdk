@@ -25,13 +25,32 @@
  * JDK-8044851: nashorn properties leak memory
  *
  * @test
- * @run
  * @option -Dnashorn.debug=true
  * @fork
  */
 
+var Property = Java.type("jdk.nashorn.internal.runtime.Property");
+var PropertyMap = Java.type("jdk.nashorn.internal.runtime.PropertyMap");
+
+// Class objects
+var objectCls = Java.type("java.lang.Object").class;
+var propertyCls = Property.class;
+var propertyMapCls = PropertyMap.class;
+
+// Method objects
+var findPropertyMethod = propertyMapCls.getMethod("findProperty", objectCls);
+var getKeyMethod = propertyCls.getMethod("getKey");
+var isSpillMethod = propertyCls.getMethod("isSpill");
+var getSlotMethod = propertyCls.getMethod("getSlot");
+
 function printProperty(value, property) {
-    print(value, property.getKey(), property.isSpill() ? "spill" : "field", property.getSlot());
+    print(value, getKeyMethod.invoke(property), 
+        isSpillMethod.invoke(property) ? "spill" : "field", getSlotMethod.invoke(property));
+}
+
+function findProperty(obj, name) {
+    var map = Debug.map(obj);
+    return findPropertyMethod.invoke(map, name);
 }
 
 var obj = {}, i, name;
@@ -39,7 +58,7 @@ var obj = {}, i, name;
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     obj[name] = 'a' + i;
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }
 print();
 
@@ -51,14 +70,14 @@ for (i = 0; i < 8; ++i) {
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     obj[name] = 'b' + i;
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }
 print();
 
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     Object.defineProperty(obj, name, {get: function() {return i;}, set: function(v) {}, configurable: true});
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }
 print();
 
@@ -70,7 +89,7 @@ for (i = 0; i < 8; ++i) {
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     obj[name] = 'c' + i;
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }
 print();
 
@@ -82,12 +101,12 @@ for (i = 7; i > -1; --i) {
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     obj[name] = 'd' + i;
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }
 print();
 
 for (i = 0; i < 8; ++i) {
     name = 'property' + i;
     Object.defineProperty(obj, name, {get: function() {return i;}, set: function(v) {}});
-    printProperty(obj[name], Debug.map(obj).findProperty(name));
+    printProperty(obj[name], findProperty(obj, name));
 }

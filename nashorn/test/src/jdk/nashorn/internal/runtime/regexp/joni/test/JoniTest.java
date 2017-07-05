@@ -32,6 +32,7 @@ import org.testng.annotations.Test;
  * Joni coverage tests
  *
  * @test
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime.regexp.joni
  * @run testng jdk.nashorn.internal.runtime.regexp.joni.test.JoniTest
  */
 @SuppressWarnings("javadoc")

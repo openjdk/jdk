@@ -384,7 +384,6 @@ public final class DynamicLinkerFactory {
         addClasses(knownLinkerClasses, fallbackLinkers);
 
         final List<GuardingDynamicLinker> discovered = discoverAutoLoadLinkers();
-
         // Now, concatenate ...
         final List<GuardingDynamicLinker> linkers =
                 new ArrayList<>(prioritizedLinkers.size() + discovered.size()

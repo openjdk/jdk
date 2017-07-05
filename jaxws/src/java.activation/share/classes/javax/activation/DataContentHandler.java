@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,23 @@ import java.io.OutputStream;
 import javax.activation.DataSource;
 
 /**
- * The DataContentHandler interface is implemented by objects that can
+ * <p>The DataContentHandler interface is implemented by objects that can
  * be used to extend the capabilities of the DataHandler's implementation
  * of the Transferable interface. Through <code>DataContentHandlers</code>
  * the framework can be extended to convert streams in to objects, and
- * to write objects to streams. <p>
+ * to write objects to streams.</p>
  *
- * Applications don't generally call the methods in DataContentHandlers
+ * <p>An implementation of DataContentHandler should be a public class
+ * with a public no-arg constructor. If the implementation class is in
+ * a named module then it should be in an API package that is exported
+ * to the module {@code java.activation}.</p>
+ *
+ * <p>Applications don't generally call the methods in DataContentHandlers
  * directly. Instead, an application calls the equivalent methods in
  * DataHandler. The DataHandler will attempt to find an appropriate
  * DataContentHandler that corresponds to its MIME type using the
  * current DataContentHandlerFactory. The DataHandler then calls
- * through to the methods in the DataContentHandler.
+ * through to the methods in the DataContentHandler.</p>
  *
  * @since 1.6
  */

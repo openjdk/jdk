@@ -50,7 +50,6 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
-import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
 
 /**

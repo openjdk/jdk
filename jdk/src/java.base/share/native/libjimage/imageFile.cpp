@@ -41,7 +41,7 @@
 #include "osSupport.hpp"
 
 // Map the full jimage, only with 64 bit addressing.
-bool MemoryMapImage = sizeof(void *) == 8;
+bool ImageFileReader::memory_map_image = sizeof(void *) == 8;
 
 #ifdef WIN32
 const char FileSeparator = '\\';
@@ -144,142 +144,69 @@ void ImageLocation::clear_data() {
 }
 
 // ImageModuleData constructor maps out sub-tables for faster access.
-ImageModuleData::ImageModuleData(const ImageFileReader* image_file,
-                const char* module_data_name) :
+ImageModuleData::ImageModuleData(const ImageFileReader* image_file) :
         _image_file(image_file),
-        _endian(image_file->endian()),
-        _strings(image_file->get_strings()) {
-    // Retrieve the resource containing the module data for the image file.
-    ImageLocation location;
-    bool found = image_file->find_location(module_data_name, location);
-    if (found) {
-        u8 data_size = location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
-        _data = new u1[(size_t)data_size];
-        assert(_data != NULL && "allocation failed");
-        _image_file->get_resource(location, _data);
-        // Map out the header.
-        _header = (Header*)_data;
-        // Get the package to module entry count.
-        u4 ptm_count = _header->ptm_count(_endian);
-        // Get the module to package entry count.
-        u4 mtp_count = _header->mtp_count(_endian);
-        // Compute the offset of the package to module perfect hash redirect.
-        u4 ptm_redirect_offset = sizeof(Header);
-        // Compute the offset of the package to module data.
-        u4 ptm_data_offset = ptm_redirect_offset + ptm_count * sizeof(s4);
-        // Compute the offset of the module to package perfect hash redirect.
-        u4 mtp_redirect_offset = ptm_data_offset + ptm_count * sizeof(PTMData);
-        // Compute the offset of the module to package data.
-        u4 mtp_data_offset = mtp_redirect_offset + mtp_count * sizeof(s4);
-        // Compute the offset of the module to package tables.
-        u4 mtp_packages_offset = mtp_data_offset + mtp_count * sizeof(MTPData);
-        // Compute the address of the package to module perfect hash redirect.
-        _ptm_redirect = (s4*)(_data + ptm_redirect_offset);
-        // Compute the address of the package to module data.
-        _ptm_data = (PTMData*)(_data + ptm_data_offset);
-        // Compute the address of the module to package perfect hash redirect.
-        _mtp_redirect = (s4*)(_data + mtp_redirect_offset);
-        // Compute the address of the module to package data.
-        _mtp_data = (MTPData*)(_data + mtp_data_offset);
-        // Compute the address of the module to package tables.
-        _mtp_packages = (s4*)(_data + mtp_packages_offset);
-    } else {
-        // No module data present.
-        _data = NULL;
-        _header = NULL;
-        _ptm_redirect = NULL;
-        _ptm_data = NULL;
-        _mtp_redirect = NULL;
-        _mtp_data = NULL;
-        _mtp_packages = NULL;
-    }
+        _endian(image_file->endian()) {
 }
 
 // Release module data resource.
 ImageModuleData::~ImageModuleData() {
-    if (_data) {
-        delete[] _data;
-    }
 }
 
-// Return the name of the module data resource.  Ex. "./lib/modules/file.jimage"
-// yields "file.jdata"
-void ImageModuleData::module_data_name(char* buffer, const char* image_file_name) {
-    // Locate the last slash in the file name path.
-    const char* slash = strrchr(image_file_name, FileSeparator);
-    // Trim the path to name and extension.
-    const char* name = slash ? slash + 1 : (char *)image_file_name;
-    // Locate the extension period.
-    const char* dot = strrchr(name, '.');
-    assert(dot && "missing extension on jimage name");
-    // Trim to only base name.
-    int length = (int)(dot - name);
-    strncpy(buffer, name, length);
-    buffer[length] = '\0';
-    // Append extension.
-    strcat(buffer, ".jdata");
-}
 
 // Return the module in which a package resides.    Returns NULL if not found.
 const char* ImageModuleData::package_to_module(const char* package_name) {
-    // Test files may contain no module data.
-    if (_data != NULL) {
-        // Search the package to module table.
-        s4 index = ImageStrings::find(_endian, package_name, _ptm_redirect,
-                                      _header->ptm_count(_endian));
-        // If entry is found.
-        if (index != ImageStrings::NOT_FOUND) {
-            // Retrieve the package to module entry.
-            PTMData* data = _ptm_data + index;
-            // Verify that it is the correct data.
-            if (strcmp(package_name, get_string(data->name_offset(_endian))) != 0) {
-                return NULL;
-            }
-            // Return the module name.
-            return get_string(data->module_name_offset(_endian));
-        }
+    // replace all '/' by '.'
+    char* replaced = new char[(int) strlen(package_name) + 1];
+    assert(replaced != NULL && "allocation failed");
+    int i;
+    for (i = 0; package_name[i] != '\0'; i++) {
+      replaced[i] = package_name[i] == '/' ? '.' : package_name[i];
     }
-    return NULL;
-}
+    replaced[i] = '\0';
 
-// Returns all the package names in a module in a NULL terminated array.
-// Returns NULL if module not found.
-const char** ImageModuleData::module_to_packages(const char* module_name) {
-    // Test files may contain no module data.
-    if (_data != NULL) {
-        // Search the module to package table.
-        s4 index = ImageStrings::find(_endian, module_name, _mtp_redirect,
-                                      _header->mtp_count(_endian));
-        // If entry is found.
-        if (index != ImageStrings::NOT_FOUND) {
-            // Retrieve the module to package entry.
-            MTPData* data = _mtp_data + index;
-            // Verify that it is the correct data.
-            if (strcmp(module_name, get_string(data->name_offset(_endian))) != 0) {
-                return NULL;
-            }
-            // Construct an array of all the package entries.
-            u4 count = data->package_count(_endian);
-            const char** packages = new const char*[count + 1];
-            assert(packages != NULL && "allocation failed");
-            s4 package_offset = data->package_offset(_endian);
-            for (u4 i = 0; i < count; i++) {
-                u4 package_name_offset = mtp_package(package_offset + i);
-                const char* package_name = get_string(package_name_offset);
-                packages[i] = package_name;
-            }
-            packages[count] = NULL;
-            return packages;
-        }
+    // build path /packages/<package_name>
+    const char* radical = "/packages/";
+    char* path = new char[(int) strlen(radical) + (int) strlen(package_name) + 1];
+    assert(path != NULL && "allocation failed");
+    strcpy(path, radical);
+    strcat(path, replaced);
+    delete[] replaced;
+
+    // retrieve package location
+    ImageLocation location;
+    bool found = _image_file->find_location(path, location);
+    if (!found) {
+        delete[] path;
+        return NULL;
     }
-    return NULL;
+
+    // retrieve offsets to module name
+    int size = (int)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
+    u1* content = new u1[size];
+    assert(content != NULL && "allocation failed");
+    _image_file->get_resource(location, content);
+    u1* ptr = content;
+    // sequence of sizeof(8) isEmpty|offset. Use the first module that is not empty.
+    u4 offset = 0;
+    for (i = 0; i < size; i+=8) {
+        u4 isEmpty = _endian->get(*((u4*)ptr));
+        ptr += 4;
+        if (!isEmpty) {
+            offset = _endian->get(*((u4*)ptr));
+            break;
+        }
+        ptr += 4;
+    }
+    delete[] content;
+    return _image_file->get_strings().get(offset);
 }
 
 // Manage a table of open image files.  This table allows multiple access points
 // to share an open image.
 ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
     _table = new ImageFileReader*[_max];
-    assert( _table != NULL && "allocation failed");
+    assert(_table != NULL && "allocation failed");
 }
 
 ImageFileReaderTable::~ImageFileReaderTable() {
@@ -326,26 +253,34 @@ ImageFileReaderTable ImageFileReader::_reader_table;
 
 SimpleCriticalSection _reader_table_lock;
 
+// Locate an image if file already open.
+ImageFileReader* ImageFileReader::find_image(const char* name) {
+    // Lock out _reader_table.
+    SimpleCriticalSectionLock cs(&_reader_table_lock);
+    // Search for an exist image file.
+    for (u4 i = 0; i < _reader_table.count(); i++) {
+        // Retrieve table entry.
+        ImageFileReader* reader = _reader_table.get(i);
+        // If name matches, then reuse (bump up use count.)
+        assert(reader->name() != NULL && "reader->name must not be null");
+        if (strcmp(reader->name(), name) == 0) {
+            reader->inc_use();
+            return reader;
+        }
+    }
+
+    return NULL;
+}
+
 // Open an image file, reuse structure if file already open.
 ImageFileReader* ImageFileReader::open(const char* name, bool big_endian) {
-    {
-        // Lock out _reader_table.
-        SimpleCriticalSectionLock cs(&_reader_table_lock);
-        // Search for an exist image file.
-        for (u4 i = 0; i < _reader_table.count(); i++) {
-            // Retrieve table entry.
-            ImageFileReader* reader = _reader_table.get(i);
-            // If name matches, then reuse (bump up use count.)
-            assert(reader->name() != NULL && "reader->name must not be null");
-            if (strcmp(reader->name(), name) == 0) {
-                reader->inc_use();
-                return reader;
-            }
-        }
-    } // Unlock the mutex
+    ImageFileReader* reader = find_image(name);
+    if (reader != NULL) {
+        return reader;
+    }
 
     // Need a new image reader.
-    ImageFileReader* reader = new ImageFileReader(name, big_endian);
+    reader = new ImageFileReader(name, big_endian);
     if (reader == NULL || !reader->open()) {
         // Failed to open.
         delete reader;
@@ -385,21 +320,21 @@ void ImageFileReader::close(ImageFileReader *reader) {
 }
 
 // Return an id for the specifed ImageFileReader.
-u8 ImageFileReader::readerToID(ImageFileReader *reader) {
+u8 ImageFileReader::reader_to_ID(ImageFileReader *reader) {
     // ID is just the cloaked reader address.
     return (u8)reader;
 }
 
 // Validate the image id.
-bool ImageFileReader::idCheck(u8 id) {
+bool ImageFileReader::id_check(u8 id) {
     // Make sure the ID is a managed (_reader_table) reader.
     SimpleCriticalSectionLock cs(&_reader_table_lock);
     return _reader_table.contains((ImageFileReader*)id);
 }
 
 // Return an id for the specifed ImageFileReader.
-ImageFileReader* ImageFileReader::idToReader(u8 id) {
-    assert(idCheck(id) && "invalid image id");
+ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
+    assert(id_check(id) && "invalid image id");
     return (ImageFileReader*)id;
 }
 
@@ -429,8 +364,6 @@ ImageFileReader::~ImageFileReader() {
 
 // Open image file for read access.
 bool ImageFileReader::open() {
-    char buffer[IMAGE_MAX_PATH];
-
     // If file exists open for reading.
     _fd = osSupport::openReadOnly(_name);
     if (_fd == -1) {
@@ -454,19 +387,17 @@ bool ImageFileReader::open() {
     if (_file_size < _index_size) {
         return false;
     }
-    // Determine how much of the image is memory mapped.
-    size_t map_size = (size_t)(MemoryMapImage ? _file_size : _index_size);
     // Memory map image (minimally the index.)
-    _index_data = (u1*)osSupport::map_memory(_fd, _name, 0, map_size);
+    _index_data = (u1*)osSupport::map_memory(_fd, _name, 0, (size_t)map_size());
     assert(_index_data && "image file not memory mapped");
     // Retrieve length of index perfect hash table.
     u4 length = table_length();
     // Compute offset of the perfect hash table redirect table.
     u4 redirect_table_offset = (u4)header_size;
     // Compute offset of index attribute offsets.
-    u4 offsets_table_offset = redirect_table_offset + length * sizeof(s4);
+    u4 offsets_table_offset = redirect_table_offset + length * (u4)sizeof(s4);
     // Compute offset of index location attribute data.
-    u4 location_bytes_offset = offsets_table_offset + length * sizeof(u4);
+    u4 location_bytes_offset = offsets_table_offset + length * (u4)sizeof(u4);
     // Compute offset of index string table.
     u4 string_bytes_offset = location_bytes_offset + locations_size();
     // Compute address of the perfect hash table redirect table.
@@ -479,8 +410,7 @@ bool ImageFileReader::open() {
     _string_bytes = _index_data + string_bytes_offset;
 
     // Initialize the module data
-    ImageModuleData::module_data_name(buffer, _name);
-    module_data = new ImageModuleData(this, buffer);
+    module_data = new ImageModuleData(this);
     // Successful open (if memory allocation succeeded).
     return module_data != NULL;
 }
@@ -660,10 +590,10 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
     if (compressed_size != 0) {
         u1* compressed_data;
         // If not memory mapped read in bytes.
-        if (!MemoryMapImage) {
+        if (!memory_map_image) {
             // Allocate buffer for compression.
-            compressed_data = new u1[(u4)compressed_size];
-            assert (compressed_data != NULL && "allocation failed");
+            compressed_data = new u1[(size_t)compressed_size];
+            assert(compressed_data != NULL && "allocation failed");
             // Read bytes from offset beyond the image index.
             bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
             assert(is_read && "error reading from image or short read");
@@ -673,10 +603,10 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
         // Get image string table.
         const ImageStrings strings = get_strings();
         // Decompress resource.
-        ImageDecompressor::decompress_resource(compressed_data, uncompressed_data, (u4)uncompressed_size,
-                        &strings);
+        ImageDecompressor::decompress_resource(compressed_data, uncompressed_data, uncompressed_size,
+                        &strings, _endian);
         // If not memory mapped then release temporary buffer.
-        if (!MemoryMapImage) {
+        if (!memory_map_image) {
                 delete[] compressed_data;
         }
     } else {

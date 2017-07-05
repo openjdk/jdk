@@ -31,7 +31,6 @@ import java.sql.SQLException;
 import java.util.PropertyPermission;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import javax.sql.rowset.spi.SyncFactoryException;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -132,9 +131,15 @@ public class RowSetProvider {
             factoryClassName = getSystemProperty(ROWSET_FACTORY_NAME);
             if (factoryClassName != null) {
                 trace("Found system property, value=" + factoryClassName);
-                factory = (RowSetFactory) ReflectUtil.newInstance(getFactoryClass(factoryClassName, null, true));
+                if (factoryClassName.equals(ROWSET_FACTORY_IMPL)) {
+                    return defaultRowSetFactory();
+                }
+                // getFactoryClass takes care of adding the read edge if
+                // necessary
+                Class<?> c = getFactoryClass(factoryClassName, null, false);
+                factory = (RowSetFactory) c.newInstance();
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             throw new SQLException( "RowSetFactory: " + factoryClassName +
                     " could not be instantiated: ", e);
         }
@@ -145,10 +150,12 @@ public class RowSetProvider {
             // look it up via the ServiceLoader API and if not found, use the
             // Java SE default.
             factory = loadViaServiceLoader();
-            factory =
-                    factory == null ? newFactory(ROWSET_FACTORY_IMPL, null) : factory;
         }
-        return (factory);
+        return  factory == null ? defaultRowSetFactory() : factory;
+    }
+
+    private static RowSetFactory defaultRowSetFactory() {
+        return new com.sun.rowset.RowSetFactoryImpl();
     }
 
     /**
@@ -192,6 +199,8 @@ public class RowSetProvider {
         }
 
         try {
+            // getFactoryClass takes care of adding the read edge if
+            // necessary
             Class<?> providerClass = getFactoryClass(factoryClassName, cl, false);
             RowSetFactory instance = (RowSetFactory) providerClass.newInstance();
             if (debug) {
@@ -242,25 +251,30 @@ public class RowSetProvider {
      */
     static private Class<?> getFactoryClass(String factoryClassName, ClassLoader cl,
             boolean doFallback) throws ClassNotFoundException {
+        Class<?> factoryClass = null;
+
         try {
             if (cl == null) {
                 cl = getContextClassLoader();
                 if (cl == null) {
                     throw new ClassNotFoundException();
                 } else {
-                    return cl.loadClass(factoryClassName);
+                    factoryClass = cl.loadClass(factoryClassName);
                 }
             } else {
-                return cl.loadClass(factoryClassName);
+                factoryClass = cl.loadClass(factoryClassName);
             }
         } catch (ClassNotFoundException e) {
             if (doFallback) {
                 // Use current class loader
-                return Class.forName(factoryClassName, true, RowSetFactory.class.getClassLoader());
+                factoryClass = Class.forName(factoryClassName, true, RowSetFactory.class.getClassLoader());
             } else {
                 throw e;
             }
         }
+
+        ReflectUtil.checkPackageAccess(factoryClass);
+        return factoryClass;
     }
 
     /**

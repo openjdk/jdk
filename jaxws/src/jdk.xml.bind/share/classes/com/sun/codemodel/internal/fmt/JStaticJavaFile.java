@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.text.ParseException;
 import java.util.Iterator;
 import java.util.List;
@@ -69,22 +68,17 @@ public final class JStaticJavaFile extends JResourceFile {
 
     private final JPackage pkg;
     private final String className;
-    private final URL source;
+    private final ResourceLoader source;
     private final JStaticClass clazz;
     private final LineFilter filter;
 
-    public JStaticJavaFile(JPackage _pkg, String className, String _resourceName) {
-        this( _pkg, className,
-            SecureLoader.getClassClassLoader(JStaticJavaFile.class).getResource(_resourceName), null );
-    }
-
-    public JStaticJavaFile(JPackage _pkg, String _className, URL _source, LineFilter _filter ) {
-        super(_className+".java");
-        if(_source==null)   throw new NullPointerException();
+    public JStaticJavaFile(JPackage _pkg, String _className, Class<?> loadingClass, LineFilter _filter) {
+        super(_className + ".java");
+        if (loadingClass == null) throw new NullPointerException();
         this.pkg = _pkg;
         this.clazz = new JStaticClass();
         this.className = _className;
-        this.source = _source;
+        this.source = new ResourceLoader(_className, loadingClass);
         this.filter = _filter;
     }
 
@@ -100,14 +94,13 @@ public final class JStaticJavaFile extends JResourceFile {
     }
 
     protected  void build(OutputStream os) throws IOException {
-        InputStream is = source.openStream();
-
-        BufferedReader r = new BufferedReader(new InputStreamReader(is));
-        PrintWriter w = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
-        LineFilter filter = createLineFilter();
         int lineNumber=1;
-
-        try {
+        try (
+                InputStream is = source.getResourceAsStream();
+                BufferedReader r = new BufferedReader(new InputStreamReader(is));
+                PrintWriter w = new PrintWriter(new BufferedWriter(new OutputStreamWriter(os)));
+        ) {
+            LineFilter filter = createLineFilter();
             String line;
             while((line=r.readLine())!=null) {
                 line = filter.process(line);
@@ -118,9 +111,6 @@ public final class JStaticJavaFile extends JResourceFile {
         } catch( ParseException e ) {
             throw new IOException("unable to process "+source+" line:"+lineNumber+"\n"+e.getMessage());
         }
-
-        w.close();
-        r.close();
     }
 
     /**
@@ -235,5 +225,32 @@ public final class JStaticJavaFile extends JResourceFile {
         protected JClass substituteParams(JTypeVar[] variables, List<JClass> bindings) {
             return this;
         }
-    };
+    }
+
+    static class ResourceLoader {
+        Class<?> loadingClass;
+        String shortName;
+
+        ResourceLoader(String shortName, Class<?> loadingClass) {
+            this.loadingClass = loadingClass;
+            this.shortName = shortName;
+        }
+
+        InputStream getResourceAsStream() {
+            // some people didn't like our jars to contain files with .java extension,
+            // so when we build jars, we'' use ".java_". But when we run from the workspace,
+            // we want the original source code to be used, so we check both here.
+            // see bug 6211503.
+            InputStream stream = loadingClass.getResourceAsStream(shortName + ".java");
+            if (stream == null) {
+                stream = loadingClass.getResourceAsStream(shortName + ".java_");
+            }
+            if (stream == null) {
+                throw new InternalError("Unable to load source code of " + loadingClass.getName() + " as a resource");
+            }
+            return stream;
+        }
+
+    }
+
 }

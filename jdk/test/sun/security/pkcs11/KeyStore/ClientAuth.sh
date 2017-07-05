@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 
 # compile test
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
+	-classpath ${TESTSRC} \
 	-d ${TESTCLASSES} \
 	${TESTSRC}${FS}ClientAuth.java \
 	${TESTSRC}${FS}..${FS}PKCS11Test.java
@@ -134,7 +134,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
 # run test
 echo "Run ClientAuth ..."
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
+	-classpath ${TESTCLASSES} \
 	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \
 	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
@@ -155,7 +155,7 @@ fi
 # run test with specified TLS protocol and cipher suite
 echo "Run ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
+	-classpath ${TESTCLASSES} \
 	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \
 	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \

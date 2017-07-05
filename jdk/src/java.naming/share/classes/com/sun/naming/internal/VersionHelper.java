@@ -149,12 +149,39 @@ public final class VersionHelper {
         return jProps;
     }
 
+    private static String resolveName(Class<?> c, String name) {
+        if (name == null) {
+            return name;
+        }
+        if (!name.startsWith("/")) {
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            String baseName = c.getName();
+            int index = baseName.lastIndexOf('.');
+            if (index != -1) {
+                name = baseName.substring(0, index).replace('.', '/')
+                    +"/"+name;
+            }
+        } else {
+            name = name.substring(1);
+        }
+        return name;
+    }
+
     /*
      * Returns the resource of a given name associated with a particular
      * class (never null), or null if none can be found.
      */
     InputStream getResourceAsStream(Class<?> c, String name) {
-        PrivilegedAction<InputStream> act = () -> c.getResourceAsStream(name);
+        PrivilegedAction<InputStream> act = () -> {
+            try {
+                java.lang.reflect.Module m = c.getModule();
+                return c.getModule().getResourceAsStream(resolveName(c,name));
+             } catch (IOException x) {
+                 return null;
+             }
+        };
         return AccessController.doPrivileged(act);
     }
 

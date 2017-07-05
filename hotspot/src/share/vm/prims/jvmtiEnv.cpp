@@ -187,6 +187,20 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
 } /* end GetThreadLocalStorage */
 
   //
+  // Module functions
+  //
+
+// module_count_ptr - pre-checked for NULL
+// modules_ptr - pre-checked for NULL
+jvmtiError
+JvmtiEnv::GetAllModules(jint* module_count_ptr, jobject** modules_ptr) {
+    JvmtiModuleClosure jmc;
+
+    return jmc.get_all_modules(this, module_count_ptr, modules_ptr);
+} /* end GetAllModules */
+
+
+  //
   // Class functions
   //
 
@@ -563,7 +577,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
 // phase_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::GetPhase(jvmtiPhase* phase_ptr) {
-  *phase_ptr = get_phase();
+  *phase_ptr = phase();
   return JVMTI_ERROR_NONE;
 } /* end GetPhase */
 
@@ -3489,7 +3503,7 @@ JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
 
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
-      if (p->set_value(value_ptr)) {
+      if (p->set_writeable_value(value_ptr)) {
         err =  JVMTI_ERROR_NONE;
       }
     }

@@ -20,9 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package compiler.jsr292.NonInlinedCall;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Arrays;
+
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputAnalyzer;
 
 public class Agent {
     public static void main(String[] args) throws Exception {
@@ -30,18 +36,23 @@ public class Agent {
         String className = args[1];
         String manifestName = "manifest.mf";
 
-        System.out.println("Creating "+manifestName);
+        System.out.println("Creating " + manifestName);
         try (PrintStream out = new PrintStream(new File(manifestName))) {
             out.println("Premain-Class: " + className);
             out.println("Can-Redefine-Classes: true");
         }
-        System.out.println("Building "+jarName);
-        String[] jarArgs = new String[] {"-cfm", jarName, manifestName };
 
-        System.out.println("Running jar " + Arrays.toString(jarArgs));
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(jarArgs)) {
-            throw new Error("jar failed: args=" + Arrays.toString(args));
-        }
+        System.out.println("Building " + jarName);
+        JDKToolLauncher jar = JDKToolLauncher
+                .create("jar")
+                .addToolArg("-cfm")
+                .addToolArg(jarName)
+                .addToolArg(manifestName);
+
+        System.out.println("Running jar " + Arrays.toString(jar.getCommand()));
+
+        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
     }
 }

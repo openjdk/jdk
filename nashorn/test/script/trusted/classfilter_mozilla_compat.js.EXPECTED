@@ -1,7 +1,7 @@
-class javax.script.ScriptContext$$NashornJavaAdapter
+class jdk.nashorn.javaadapters.javax_script_ScriptContext
 TypeError: Java.extend needs at least one type argument. in nashorn:mozilla_compat.js at line number 39
-class jdk.nashorn.javaadapters.java.util.ArrayList
-class jdk.nashorn.javaadapters.java.util.ArrayList
+class jdk.nashorn.javaadapters.java_util_ArrayList
+class jdk.nashorn.javaadapters.java_util_ArrayList
 [JavaClass java.lang.Integer]
 TypeError: [object JavaPackage] is not a Java class in nashorn:mozilla_compat.js at line number 373 at column number 16
 [JavaClass java.util.HashSet]
