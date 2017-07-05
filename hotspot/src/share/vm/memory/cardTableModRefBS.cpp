@@ -253,8 +253,16 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
 #endif
     // The guard page is always committed and should not be committed over.
-    HeapWord* const new_end_for_commit = MIN2(new_end_aligned,
-                                              _guard_region.start());
+    // "guarded" is used for assertion checking below and recalls the fact
+    // that the would-be end of the new committed region would have
+    // penetrated the guard page.
+    HeapWord* new_end_for_commit = new_end_aligned;
+
+    DEBUG_ONLY(bool guarded = false;)
+    if (new_end_for_commit > _guard_region.start()) {
+      new_end_for_commit = _guard_region.start();
+      DEBUG_ONLY(guarded = true;)
+    }
 
     if (new_end_for_commit > cur_committed.end()) {
       // Must commit new pages.
@@ -302,7 +310,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // not the aligned up expanded region.
     // jbyte* const end = byte_after(new_region.last());
     jbyte* const end = (jbyte*) new_end_for_commit;
-    assert((end >= byte_after(new_region.last())) || collided,
+    assert((end >= byte_after(new_region.last())) || collided || guarded,
       "Expect to be beyond new region unless impacting another region");
     // do nothing if we resized downward.
 #ifdef ASSERT

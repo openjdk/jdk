@@ -39,6 +39,7 @@ objArrayOop objArrayKlass::allocate(int length, TRAPS) {
       assert(a->is_parsable(), "Can't publish unless parsable");
       return a;
     } else {
+      report_java_out_of_memory("Requested array size exceeds VM limit");
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {

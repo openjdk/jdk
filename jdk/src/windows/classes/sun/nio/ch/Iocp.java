@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 import sun.misc.Unsafe;
 
 /**
@@ -44,6 +46,7 @@ import sun.misc.Unsafe;
 class Iocp extends AsynchronousChannelGroupImpl {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final long INVALID_HANDLE_VALUE  = -1L;
+    private static final boolean supportsThreadAgnosticIo;
 
     // maps completion key to channel
     private final ReadWriteLock keyToChannelLock = new ReentrantReadWriteLock();
@@ -85,6 +88,13 @@ class Iocp extends AsynchronousChannelGroupImpl {
          * Returns a reference to the pending I/O result.
          */
         <V,A> PendingFuture<V,A> getByOverlapped(long overlapped);
+    }
+
+    /**
+     * Indicates if this operating system supports thread agnostic I/O.
+     */
+    static boolean supportsThreadAgnosticIo() {
+        return supportsThreadAgnosticIo;
     }
 
     // release all resources
@@ -216,8 +226,9 @@ class Iocp extends AsynchronousChannelGroupImpl {
             } while ((key == 0) || keyToChannel.containsKey(key));
 
             // associate with I/O completion port
-            if (handle != 0L)
+            if (handle != 0L) {
                 createIoCompletionPort(handle, port, key, 0);
+            }
 
             // setup mapping
             keyToChannel.put(key, ch);
@@ -282,7 +293,7 @@ class Iocp extends AsynchronousChannelGroupImpl {
         /**
          * Invoked if the I/O operation completes successfully.
          */
-        public void completed(int bytesTransferred);
+        public void completed(int bytesTransferred, boolean canInvokeDirect);
 
         /**
          * Invoked if the I/O operation fails.
@@ -305,6 +316,7 @@ class Iocp extends AsynchronousChannelGroupImpl {
         public void run() {
             Invoker.GroupAndInvokeCount myGroupAndInvokeCount =
                 Invoker.getGroupAndInvokeCount();
+            boolean canInvokeDirect = (myGroupAndInvokeCount != null);
             CompletionStatus ioResult = new CompletionStatus();
             boolean replaceMe = false;
 
@@ -382,7 +394,7 @@ class Iocp extends AsynchronousChannelGroupImpl {
                     ResultHandler rh = (ResultHandler)result.getContext();
                     replaceMe = true; // (if error/exception then replace thread)
                     if (error == 0) {
-                        rh.completed(ioResult.bytesTransferred());
+                        rh.completed(ioResult.bytesTransferred(), canInvokeDirect);
                     } else {
                         rh.failed(error, translateErrorToIOException(error));
                     }
@@ -433,5 +445,11 @@ class Iocp extends AsynchronousChannelGroupImpl {
     static {
         Util.load();
         initIDs();
+
+        // thread agnostic I/O on Vista/2008 or newer
+        String osversion = AccessController.doPrivileged(
+            new GetPropertyAction("os.version"));
+        String vers[] = osversion.split("\\.");
+        supportsThreadAgnosticIo = Integer.parseInt(vers[0]) >= 6;
     }
 }

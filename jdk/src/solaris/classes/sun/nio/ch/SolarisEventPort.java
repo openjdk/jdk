@@ -151,12 +151,13 @@ class SolarisEventPort
         public void run() {
             Invoker.GroupAndInvokeCount myGroupAndInvokeCount =
                 Invoker.getGroupAndInvokeCount();
+            final boolean isPooledThread = (myGroupAndInvokeCount != null);
             boolean replaceMe = false;
             long address = unsafe.allocateMemory(SIZEOF_PORT_EVENT);
             try {
                 for (;;) {
                     // reset invoke count
-                    if (myGroupAndInvokeCount != null)
+                    if (isPooledThread)
                         myGroupAndInvokeCount.resetInvokeCount();
 
                     // wait for I/O completion event
@@ -205,7 +206,7 @@ class SolarisEventPort
                     if (ch != null) {
                         replaceMe = true;
                         // no need to translate events
-                        ch.onEvent(events);
+                        ch.onEvent(events, isPooledThread);
                     }
                 }
             } finally {

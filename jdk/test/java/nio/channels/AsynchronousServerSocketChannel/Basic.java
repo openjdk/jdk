@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousServerSocketChannel
  * @run main/timeout=180 Basic
  */
@@ -103,8 +103,6 @@ public class Basic {
             }
             public void failed(Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
 

@@ -140,6 +140,7 @@ objArrayOop arrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
     THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
   }
   if (length > arrayOopDesc::max_array_length(T_ARRAY)) {
+    report_java_out_of_memory("Requested array size exceeds VM limit");
     THROW_OOP_0(Universe::out_of_memory_error_array_size());
   }
   int size = objArrayOopDesc::object_size(length);

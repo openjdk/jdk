@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  */
 
@@ -49,8 +49,6 @@ public class GroupOfOne {
                 listener.accept((Void)null, this);
             }
             public void failed(Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
 
@@ -97,9 +95,6 @@ public class GroupOfOne {
                         System.out.println("Read failed (expected)");
                         latch.countDown();
                     }
-                    public void cancelled(Void att) {
-                        throw new RuntimeException();
-                    }
                 });
 
                 // close channel or shutdown group
@@ -121,9 +116,6 @@ public class GroupOfOne {
             }
             public void failed(Throwable exc, Void att) {
                 throw new RuntimeException(exc);
-            }
-            public void cancelled(Void att) {
-                throw new RuntimeException();
             }
         });
 

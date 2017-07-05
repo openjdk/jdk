@@ -97,6 +97,15 @@
       popl     %ebx
       .end
 
+  // Support for void Atomic::load(volatile jlong* src, volatile jlong* dest).
+      .inline _Atomic_load_long,2
+      movl     0(%esp), %eax   // src
+      fildll    (%eax)
+      movl     4(%esp), %eax   // dest
+      fistpll   (%eax)
+      .end
+
+
   // Support for OrderAccess::acquire()
       .inline _OrderAccess_acquire,0
       movl     0(%esp), %eax

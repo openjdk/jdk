@@ -30,7 +30,7 @@ import java.io.*;
 
 class AltNode extends AbstractGroupNode implements TypeNode {
 
-    SelectNode select;
+    SelectNode select = null;
 
     void constrain(Context ctx) {
         super.constrain(ctx);

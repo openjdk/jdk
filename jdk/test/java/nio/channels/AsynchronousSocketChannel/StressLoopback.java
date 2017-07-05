@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6834246
+ * @bug 6834246 6842687
  * @summary Stress test connections through the loopback interface
  */
 
@@ -114,8 +114,6 @@ public class StressLoopback {
                     exc.printStackTrace();
                     closeUnchecked(channel);
                 }
-                public void cancelled(Void att) {
-                }
             });
         }
 
@@ -155,8 +153,6 @@ public class StressLoopback {
                 public void failed(Throwable exc, Void att) {
                     exc.printStackTrace();
                     closeUnchecked(channel);
-                }
-                public void cancelled(Void att) {
                 }
             });
         }

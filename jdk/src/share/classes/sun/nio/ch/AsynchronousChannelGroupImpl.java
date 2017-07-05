@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import java.util.Queue;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
 import java.security.AccessControlContext;
@@ -65,11 +65,8 @@ abstract class AsynchronousChannelGroupImpl
     private final Queue<Runnable> taskQueue;
 
     // group shutdown
-    // shutdownLock is RW lock so as to allow for concurrent queuing of tasks
-    // when using a fixed thread pool.
-    private final ReadWriteLock shutdownLock = new ReentrantReadWriteLock();
+    private final AtomicBoolean shutdown = new AtomicBoolean();
     private final Object shutdownNowLock = new Object();
-    private volatile boolean shutdown;
     private volatile boolean terminateInitiated;
 
     AsynchronousChannelGroupImpl(AsynchronousChannelProvider provider,
@@ -214,7 +211,7 @@ abstract class AsynchronousChannelGroupImpl
 
     @Override
     public final boolean isShutdown() {
-        return shutdown;
+        return shutdown.get();
     }
 
     @Override
@@ -260,17 +257,10 @@ abstract class AsynchronousChannelGroupImpl
 
     @Override
     public final void shutdown() {
-        shutdownLock.writeLock().lock();
-        try {
-            if (shutdown) {
-                // already shutdown
-                return;
-            }
-            shutdown = true;
-        } finally {
-            shutdownLock.writeLock().unlock();
+        if (shutdown.getAndSet(true)) {
+            // already shutdown
+            return;
         }
-
         // if there are channels in the group then shutdown will continue
         // when the last channel is closed
         if (!isEmpty()) {
@@ -289,12 +279,7 @@ abstract class AsynchronousChannelGroupImpl
 
     @Override
     public final void shutdownNow() throws IOException {
-        shutdownLock.writeLock().lock();
-        try {
-            shutdown = true;
-        } finally {
-            shutdownLock.writeLock().unlock();
-        }
+        shutdown.set(true);
         synchronized (shutdownNowLock) {
             if (!terminateInitiated) {
                 terminateInitiated = true;
@@ -303,6 +288,18 @@ abstract class AsynchronousChannelGroupImpl
                 shutdownExecutors();
             }
         }
+    }
+
+    /**
+     * For use by AsynchronousFileChannel to release resources without shutting
+     * down the thread pool.
+     */
+    final void detachFromThreadPool() {
+        if (shutdown.getAndSet(true))
+            throw new AssertionError("Already shutdown");
+        if (!isEmpty())
+            throw new AssertionError("Group not empty");
+        shutdownHandlerTasks();
     }
 
     @Override
