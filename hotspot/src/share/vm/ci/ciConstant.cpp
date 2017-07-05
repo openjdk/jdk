@@ -36,7 +36,7 @@ void ciConstant::print() {
              basictype_to_str(basic_type()));
   switch (basic_type()) {
   case T_BOOLEAN:
-    tty->print("%s", bool_to_str(_value._int == 0));
+    tty->print("%s", bool_to_str(_value._int != 0));
     break;
   case T_CHAR:
   case T_BYTE:

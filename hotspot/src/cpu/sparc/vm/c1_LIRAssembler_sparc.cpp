@@ -1728,9 +1728,13 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
       ShouldNotReachHere();
     }
   } else if (code == lir_cmp_l2i) {
+#ifdef _LP64
+    __ lcmp(left->as_register_lo(), right->as_register_lo(), dst->as_register());
+#else
     __ lcmp(left->as_register_hi(),  left->as_register_lo(),
             right->as_register_hi(), right->as_register_lo(),
             dst->as_register());
+#endif
   } else {
     ShouldNotReachHere();
   }
@@ -2849,7 +2853,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 
 void LIR_Assembler::align_backward_branch_target() {
-  __ align(16);
+  __ align(OptoLoopAlignment);
 }
 
 
