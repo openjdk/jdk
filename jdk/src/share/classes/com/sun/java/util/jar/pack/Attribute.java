@@ -99,6 +99,7 @@ class Attribute implements Comparable<Attribute> {
         return this == def.canon;
     }
 
+    @Override
     public int compareTo(Attribute that) {
         return this.def.compareTo(that.def);
     }
@@ -212,20 +213,20 @@ class Attribute implements Comparable<Attribute> {
     // Metadata.
     //
     // We define metadata using similar layouts
-    // for all five kinds of metadata attributes.
+    // for all five kinds of metadata attributes and 2 type metadata attributes
     //
     // Regular annotations are a counted list of [RSHNH[RUH(1)]][...]
     //   pack.method.attribute.RuntimeVisibleAnnotations=[NH[(1)]][RSHNH[RUH(1)]][TB...]
     //
     // Parameter annotations are a counted list of regular annotations.
-    //   pack.method.attribute.RuntimeVisibleParameterAnnotations=[NH[(1)]][NH[(1)]][RSHNH[RUH(1)]][TB...]
+    //   pack.method.attribute.RuntimeVisibleParameterAnnotations=[NB[(1)]][NH[(1)]][RSHNH[RUH(1)]][TB...]
     //
     // RuntimeInvisible annotations are defined similarly...
     // Non-method annotations are defined similarly...
     //
     // Annotation are a simple tagged value [TB...]
     //   pack.attribute.method.AnnotationDefault=[TB...]
-    //
+
     static {
         String mdLayouts[] = {
             Attribute.normalizeLayoutString
@@ -238,6 +239,9 @@ class Attribute implements Comparable<Attribute> {
              +"\n  # annotations :="
              +"\n  [ NH[(1)] ]     # forward call to annotation"
              +"\n  "
+            ),
+            Attribute.normalizeLayoutString
+             (""
              +"\n  # annotation :="
              +"\n  [RSH"
              +"\n    NH[RUH (1)]   # forward call to value"
@@ -259,24 +263,67 @@ class Attribute implements Comparable<Attribute> {
              +"\n    ()[] ]"
              )
         };
+        /*
+         * RuntimeVisibleTypeAnnotation and RuntimeInvisibleTypeAnnotatation are
+         * similar to RuntimeVisibleAnnotation and RuntimeInvisibleAnnotation,
+         * a type-annotation union  and a type-path structure precedes the
+         * annotation structure
+         */
+        String typeLayouts[] = {
+            Attribute.normalizeLayoutString
+            (""
+             +"\n # type-annotations :="
+             +"\n  [ NH[(1)(2)(3)] ]     # forward call to type-annotations"
+            ),
+            Attribute.normalizeLayoutString
+            ( ""
+             +"\n  # type-annotation :="
+             +"\n  [TB"
+             +"\n    (0-1) [B] # {CLASS, METHOD}_TYPE_PARAMETER"
+             +"\n    (16) [FH] # CLASS_EXTENDS"
+             +"\n    (17-18) [BB] # {CLASS, METHOD}_TYPE_PARAMETER_BOUND"
+             +"\n    (19-21) [] # FIELD, METHOD_RETURN, METHOD_RECEIVER"
+             +"\n    (22) [B] # METHOD_FORMAL_PARAMETER"
+             +"\n    (23) [H] # THROWS"
+             +"\n    (64-65) [NH[PHOHH]] # LOCAL_VARIABLE, RESOURCE_VARIABLE"
+             +"\n    (66) [H] # EXCEPTION_PARAMETER"
+             +"\n    (67-70) [PH] # INSTANCEOF, NEW, {CONSTRUCTOR, METHOD}_REFERENCE_RECEIVER"
+             +"\n    (71-75) [PHB] # CAST, {CONSTRUCTOR,METHOD}_INVOCATION_TYPE_ARGUMENT, {CONSTRUCTOR, METHOD}_REFERENCE_TYPE_ARGUMENT"
+             +"\n    ()[] ]"
+            ),
+            Attribute.normalizeLayoutString
+            (""
+             +"\n # type-path"
+             +"\n [ NB[BB] ]"
+            )
+        };
         Map<Layout, Attribute> sd = standardDefs;
-        String defaultLayout     = mdLayouts[2];
-        String annotationsLayout = mdLayouts[1] + mdLayouts[2];
+        String defaultLayout     = mdLayouts[3];
+        String annotationsLayout = mdLayouts[1] + mdLayouts[2] + mdLayouts[3];
         String paramsLayout      = mdLayouts[0] + annotationsLayout;
+        String typesLayout       = typeLayouts[0] + typeLayouts[1] +
+                                   typeLayouts[2] + mdLayouts[2] + mdLayouts[3];
+
         for (int ctype = 0; ctype < ATTR_CONTEXT_LIMIT; ctype++) {
-            if (ctype == ATTR_CONTEXT_CODE)  continue;
-            define(sd, ctype,
-                   "RuntimeVisibleAnnotations",   annotationsLayout);
-            define(sd, ctype,
-                   "RuntimeInvisibleAnnotations", annotationsLayout);
-            if (ctype == ATTR_CONTEXT_METHOD) {
+            if (ctype != ATTR_CONTEXT_CODE) {
                 define(sd, ctype,
-                       "RuntimeVisibleParameterAnnotations",   paramsLayout);
+                       "RuntimeVisibleAnnotations",   annotationsLayout);
                 define(sd, ctype,
-                       "RuntimeInvisibleParameterAnnotations", paramsLayout);
-                define(sd, ctype,
-                       "AnnotationDefault", defaultLayout);
+                       "RuntimeInvisibleAnnotations",  annotationsLayout);
+
+                if (ctype == ATTR_CONTEXT_METHOD) {
+                    define(sd, ctype,
+                           "RuntimeVisibleParameterAnnotations",   paramsLayout);
+                    define(sd, ctype,
+                           "RuntimeInvisibleParameterAnnotations", paramsLayout);
+                    define(sd, ctype,
+                           "AnnotationDefault", defaultLayout);
+                }
             }
+            define(sd, ctype,
+                   "RuntimeVisibleTypeAnnotations", typesLayout);
+            define(sd, ctype,
+                   "RuntimeInvisibleTypeAnnotations", typesLayout);
         }
     }
 
@@ -529,6 +576,7 @@ class Attribute implements Comparable<Attribute> {
             return canon.addContent(bytes, null);
         }
 
+        @Override
         public boolean equals(Object x) {
             return ( x != null) && ( x.getClass() == Layout.class ) &&
                     equals((Layout)x);
@@ -538,11 +586,13 @@ class Attribute implements Comparable<Attribute> {
                 && this.layout.equals(that.layout)
                 && this.ctype == that.ctype;
         }
+        @Override
         public int hashCode() {
             return (((17 + name.hashCode())
                     * 37 + layout.hashCode())
                     * 37 + ctype);
         }
+        @Override
         public int compareTo(Layout that) {
             int r;
             r = this.name.compareTo(that.name);
@@ -551,6 +601,7 @@ class Attribute implements Comparable<Attribute> {
             if (r != 0)  return r;
             return this.ctype - that.ctype;
         }
+        @Override
         public String toString() {
             String str = contextName(ctype)+"."+name+"["+layout+"]";
             // If -ea, print out more informative strings!
@@ -698,11 +749,14 @@ class Attribute implements Comparable<Attribute> {
         // References (to a local cpMap) are embedded in the bytes.
         def.parse(holder, bytes, 0, bytes.length,
             new ValueStream() {
+                @Override
                 public void putInt(int bandIndex, int value) {
                 }
+                @Override
                 public void putRef(int bandIndex, Entry ref) {
                     refs.add(ref);
                 }
+                @Override
                 public int encodeBCI(int bci) {
                     return bci;
                 }
@@ -716,6 +770,7 @@ class Attribute implements Comparable<Attribute> {
         return def.unparse(in, out);
     }
 
+    @Override
     public String toString() {
         return def
             +"{"+(bytes == null ? -1 : size())+"}"
@@ -1309,7 +1364,7 @@ class Attribute implements Comparable<Attribute> {
                 }
                 out.putRef(bandIndex, globalRef);
                 break;
-            default: assert(false); continue;
+            default: assert(false);
             }
         }
         return pos;
@@ -1416,8 +1471,7 @@ class Attribute implements Comparable<Attribute> {
                 int localRef;
                 if (globalRef != null) {
                     // It's a one-element array, really an lvalue.
-                    fixups[0] = Fixups.add(fixups[0], null, out.size(),
-                                           Fixups.U2_FORMAT, globalRef);
+                    fixups[0] = Fixups.addRefWithLoc(fixups[0], out.size(), globalRef);
                     localRef = 0; // placeholder for fixups
                 } else {
                     localRef = 0; // fixed null value

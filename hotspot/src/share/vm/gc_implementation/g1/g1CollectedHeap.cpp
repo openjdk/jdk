@@ -1549,7 +1549,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     }
 
     if (G1Log::finer()) {
-      g1_policy()->print_detailed_heap_transition();
+      g1_policy()->print_detailed_heap_transition(true /* full */);
     }
 
     print_heap_after_gc();

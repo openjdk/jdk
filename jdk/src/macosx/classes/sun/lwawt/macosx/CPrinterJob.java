@@ -35,6 +35,7 @@ import java.security.PrivilegedAction;
 
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.HashPrintRequestAttributeSet;
 
 import sun.java2d.*;
 import sun.print.*;
@@ -96,6 +97,14 @@ public class CPrinterJob extends RasterPrinterJob {
             return false;
         }
 
+        if (attributes == null) {
+            attributes = new HashPrintRequestAttributeSet();
+        }
+
+        if (getPrintService() instanceof StreamPrintService) {
+            return super.printDialog(attributes);
+        }
+
         return jobSetup(getPageable(), checkAllowedToPrintToFile());
     }
 
@@ -128,6 +137,10 @@ public class CPrinterJob extends RasterPrinterJob {
 
         if (noDefaultPrinter) {
             return page;
+        }
+
+        if (getPrintService() instanceof StreamPrintService) {
+            return super.pageDialog(page);
         }
 
         PageFormat pageClone = (PageFormat) page.clone();

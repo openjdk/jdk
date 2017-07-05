@@ -26,6 +26,7 @@ import java.math.BigInteger;
 import com.sun.org.apache.xerces.internal.impl.dv.InvalidDatatypeValueException;
 import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
 import com.sun.org.apache.xerces.internal.xs.datatypes.XSDecimal;
+import java.util.Objects;
 
 /**
  * Represent the schema type "decimal"
@@ -38,10 +39,12 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.XSDecimal;
  */
 public class DecimalDV extends TypeValidator {
 
+    @Override
     public final short getAllowedFacets(){
         return ( XSSimpleTypeDecl.FACET_PATTERN | XSSimpleTypeDecl.FACET_WHITESPACE | XSSimpleTypeDecl.FACET_ENUMERATION |XSSimpleTypeDecl.FACET_MAXINCLUSIVE |XSSimpleTypeDecl.FACET_MININCLUSIVE | XSSimpleTypeDecl.FACET_MAXEXCLUSIVE  | XSSimpleTypeDecl.FACET_MINEXCLUSIVE | XSSimpleTypeDecl.FACET_TOTALDIGITS | XSSimpleTypeDecl.FACET_FRACTIONDIGITS);
     }
 
+    @Override
     public Object getActualValue(String content, ValidationContext context) throws InvalidDatatypeValueException {
         try {
             return new XDecimal(content);
@@ -50,20 +53,23 @@ public class DecimalDV extends TypeValidator {
         }
     }
 
+    @Override
     public final int compare(Object value1, Object value2){
         return ((XDecimal)value1).compareTo((XDecimal)value2);
     }
 
+    @Override
     public final int getTotalDigits(Object value){
         return ((XDecimal)value).totalDigits;
     }
 
+    @Override
     public final int getFractionDigits(Object value){
         return ((XDecimal)value).fracDigits;
     }
 
     // Avoid using the heavy-weight java.math.BigDecimal
-    static class XDecimal implements XSDecimal {
+    static final class XDecimal implements XSDecimal {
         // sign: 0 for vlaue 0; 1 for positive values; -1 for negative values
         int sign = 1;
         // total digits. >= 1
@@ -216,6 +222,8 @@ public class DecimalDV extends TypeValidator {
 
             integer = true;
         }
+
+        @Override
         public boolean equals(Object val) {
             if (val == this)
                 return true;
@@ -232,6 +240,19 @@ public class DecimalDV extends TypeValidator {
             return intDigits == oval.intDigits && fracDigits == oval.fracDigits &&
                    ivalue.equals(oval.ivalue) && fvalue.equals(oval.fvalue);
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 17 * hash + this.sign;
+            if (this.sign == 0) return hash;
+            hash = 17 * hash + this.intDigits;
+            hash = 17 * hash + this.fracDigits;
+            hash = 17 * hash + Objects.hashCode(this.ivalue);
+            hash = 17 * hash + Objects.hashCode(this.fvalue);
+            return hash;
+        }
+
         public int compareTo(XDecimal val) {
             if (sign != val.sign)
                 return sign > val.sign ? 1 : -1;
@@ -248,7 +269,9 @@ public class DecimalDV extends TypeValidator {
             ret = fvalue.compareTo(val.fvalue);
             return ret == 0 ? 0 : (ret > 0 ? 1 : -1);
         }
+
         private String canonical;
+        @Override
         public synchronized String toString() {
             if (canonical == null) {
                 makeCanonical();
@@ -269,7 +292,7 @@ public class DecimalDV extends TypeValidator {
                 return;
             }
             // for -0.1, total digits is 1, so we need 3 extra spots
-            StringBuffer buffer = new StringBuffer(totalDigits+3);
+            final StringBuilder buffer = new StringBuilder(totalDigits+3);
             if (sign == -1)
                 buffer.append('-');
             if (intDigits != 0)
@@ -288,6 +311,7 @@ public class DecimalDV extends TypeValidator {
             canonical = buffer.toString();
         }
 
+        @Override
         public BigDecimal getBigDecimal() {
             if (sign == 0) {
                 return new BigDecimal(BigInteger.ZERO);
@@ -295,6 +319,7 @@ public class DecimalDV extends TypeValidator {
             return new BigDecimal(toString());
         }
 
+        @Override
         public BigInteger getBigInteger() throws NumberFormatException {
             if (fracDigits != 0) {
                 throw new NumberFormatException();
@@ -308,6 +333,7 @@ public class DecimalDV extends TypeValidator {
             return new BigInteger("-" + ivalue);
         }
 
+        @Override
         public long getLong() throws NumberFormatException {
             if (fracDigits != 0) {
                 throw new NumberFormatException();
@@ -321,6 +347,7 @@ public class DecimalDV extends TypeValidator {
             return Long.parseLong("-" + ivalue);
         }
 
+        @Override
         public int getInt() throws NumberFormatException {
             if (fracDigits != 0) {
                 throw new NumberFormatException();
@@ -334,6 +361,7 @@ public class DecimalDV extends TypeValidator {
             return Integer.parseInt("-" + ivalue);
         }
 
+        @Override
         public short getShort() throws NumberFormatException {
             if (fracDigits != 0) {
                 throw new NumberFormatException();
@@ -347,6 +375,7 @@ public class DecimalDV extends TypeValidator {
             return Short.parseShort("-" + ivalue);
         }
 
+        @Override
         public byte getByte() throws NumberFormatException {
             if (fracDigits != 0) {
                 throw new NumberFormatException();

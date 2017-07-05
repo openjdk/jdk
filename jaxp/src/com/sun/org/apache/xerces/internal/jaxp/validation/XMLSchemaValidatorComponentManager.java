@@ -123,6 +123,12 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
 
+    /** property identifier: access external dtd. */
+    private static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema  */
+    private static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+
     //
     // Data
     //
@@ -243,6 +249,9 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         }
         fComponents.put(SECURITY_MANAGER, fInitSecurityManager);
 
+        //pass on properties set on SchemaFactory
+        setProperty(ACCESS_EXTERNAL_DTD, grammarContainer.getProperty(ACCESS_EXTERNAL_DTD));
+        setProperty(ACCESS_EXTERNAL_SCHEMA, grammarContainer.getProperty(ACCESS_EXTERNAL_SCHEMA));
     }
 
     /**

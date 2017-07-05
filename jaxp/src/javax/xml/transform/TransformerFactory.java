@@ -325,6 +325,46 @@ public abstract class TransformerFactory {
      * be an option that the implementation provides.
      * An <code>IllegalArgumentException</code> is thrown if the underlying
      * implementation doesn't recognize the attribute.
+     * <p>
+     * All implementations that implement JAXP 1.5 or newer are required to
+     * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD}  and
+     * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_STYLESHEET} properties.
+     * </p>
+     * <ul>
+     *   <li>
+     *      <p>
+     *      Access to external DTDs in the source file is restricted to the protocols
+     *      specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
+     *      If access is denied during transformation due to the restriction of this property,
+     *      {@link javax.xml.transform.TransformerException} will be thrown by
+     *      {@link javax.xml.transform.Transformer#transform(Source, Result)}.
+     *      </p>
+     *      <p>
+     *      Access to external DTDs in the stylesheet is restricted to the protocols
+     *      specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
+     *      If access is denied during the creation of a new transformer due to the
+     *      restriction of this property,
+     *      {@link javax.xml.transform.TransformerConfigurationException} will be thrown
+     *      by the {@link #newTransformer(Source)} method.
+     *      </p>
+     *      <p>
+     *      Access to external reference set by the stylesheet processing instruction,
+     *      Import and Include element is restricted to the protocols specified by the
+     *      {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_STYLESHEET} property.
+     *      If access is denied during the creation of a new transformer due to the
+     *      restriction of this property,
+     *      {@link javax.xml.transform.TransformerConfigurationException} will be thrown
+     *      by the {@link #newTransformer(Source)} method.
+     *      </p>
+     *      <p>
+     *      Access to external document through XSLT document function is restricted
+     *      to the protocols specified by the property. If access is denied during
+     *      the transformation due to the restriction of this property,
+     *      {@link javax.xml.transform.TransformerException} will be thrown by the
+     *      {@link javax.xml.transform.Transformer#transform(Source, Result)} method.
+     *      </p>
+     *   </li>
+     * </ul>
      *
      * @param name The name of the attribute.
      * @param value The value of the attribute.

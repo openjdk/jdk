@@ -27,9 +27,9 @@
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
-# From Paul Eggert (2006-03-22):
+# From Paul Eggert (2013-02-21):
 #
 # A good source for time zone historical data outside the U.S. is
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -47,6 +47,10 @@
 # Another source occasionally used is Edward W. Whitman, World Time Differences,
 # Whitman Publishing Co, 2 Niagara Av, Ealing, London (undated), which
 # I found in the UCLA library.
+#
+# For data circa 1899, a common source is:
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+# <http://www.jstor.org/stable/1774359>.
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
@@ -302,9 +306,12 @@ Zone	Asia/Brunei	7:39:40 -	LMT	1926 Mar   # Bandar Seri Begawan
 			8:00	-	BNT
 
 # Burma / Myanmar
+
+# Milne says 6:24:40 was the meridian of the time ball observatory at Rangoon.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Rangoon	6:24:40 -	LMT	1880		# or Yangon
-			6:24:36	-	RMT	1920	   # Rangoon Mean Time?
+			6:24:40	-	RMT	1920	   # Rangoon Mean Time?
 			6:30	-	BURT	1942 May   # Burma Time
 			9:00	-	JST	1945 May 3
 			6:30	-	MMT		   # Myanmar Time
@@ -407,7 +414,8 @@ Zone	Asia/Harbin	8:26:44	-	LMT	1928 # or Haerbin
 			8:00	PRC	C%sT
 # Zhongyuan Time ("Central plain Time")
 # most of China
-Zone	Asia/Shanghai	8:05:52	-	LMT	1928
+# Milne gives 8:05:56.7; round to nearest.
+Zone	Asia/Shanghai	8:05:57	-	LMT	1928
 			8:00	Shang	C%sT	1949
 			8:00	PRC	C%sT
 # Long-shu Time (probably due to Long and Shu being two names of that area)
@@ -504,6 +512,10 @@ Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 			8:00	PRC	C%sT
 
 
+# Hong Kong (Xianggang)
+
+# Milne gives 7:36:41.7; round this.
+
 # From Lee Yiu Chung (2009-10-24):
 # I found there are some mistakes for the...DST rule for Hong
 # Kong. [According] to the DST record from Hong Kong Observatory (actually,
@@ -570,7 +582,6 @@ Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 # The Japanese surrender of Hong Kong was signed 1945-09-15.
 # For lack of anything better, use start of those days as the transition times.
 
-# Hong Kong (Xianggang)
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	HK	1941	only	-	Apr	1	3:30	1:00	S
 Rule	HK	1941	only	-	Sep	30	3:30	0	-
@@ -592,7 +603,7 @@ Rule	HK	1973	only	-	Dec	30	3:30	1:00	S
 Rule	HK	1979	only	-	May	Sun>=8	3:30	1:00	S
 Rule	HK	1979	only	-	Oct	Sun>=16	3:30	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Hong_Kong	7:36:36 -	LMT	1904 Oct 30
+Zone	Asia/Hong_Kong	7:36:42 -	LMT	1904 Oct 30
 			8:00	HK	HK%sT	1941 Dec 25
 			9:00	-	JST	1945 Sep 15
 			8:00	HK	HK%sT
@@ -669,6 +680,9 @@ Zone	Asia/Macau	7:34:20 -	LMT	1912
 ###############################################################################
 
 # Cyprus
+#
+# Milne says the Eastern Telegraph Company used 2:14:00.  Stick with LMT.
+#
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cyprus	1975	only	-	Apr	13	0:00	1:00	S
 Rule	Cyprus	1975	only	-	Oct	12	0:00	0	-
@@ -1222,7 +1236,6 @@ Rule	Zion	2012	only	-	Mar	Fri>=26	2:00	1:00	D
 Rule	Zion	2012	only	-	Sep	23	2:00	0	S
 
 # From Ephraim Silverberg (2012-10-18):
-
 # Yesterday, the Interior Ministry Committee, after more than a year
 # past, approved sending the proposed June 2011 changes to the Time
 # Decree Law back to the Knesset for second and third (final) votes
@@ -1234,6 +1247,10 @@ Rule	Zion	2012	only	-	Sep	23	2:00	0	S
 # second day of the Jewish Rosh Hashana holiday, in which case DST ends a day
 # later (i.e. at 02:00 the first Monday after October 2).
 # [Rosh Hashana holidays are factored in until 2100.]
+
+# From Ephraim Silverberg (2012-11-05):
+# The Knesset passed today (in second and final readings) the amendment to the
+# Time Decree Law making the changes ... law.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2013	max	-	Mar	Fri>=23	2:00	1:00	D
@@ -1824,8 +1841,11 @@ Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 			5:45	-	NPT	# Nepal Time
 
 # Oman
+
+# Milne says 3:54:24 was the meridian of the Muscat Tidal Observatory.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Muscat	3:54:20 -	LMT	1920
+Zone	Asia/Muscat	3:54:24 -	LMT	1920
 			4:00	-	GST
 
 # Pakistan
@@ -2072,8 +2092,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # occurred before our cutoff date of 1970.
 # However, as we get more information, we may need to add entries
 # for parts of the West Bank as they transitioned from Israel's rules
-# to Palestine's rules.  If you have more info about this, please
-# send it to tz@elsie.nci.nih.gov for incorporation into future editions.
+# to Palestine's rules.
 
 # From IINS News Service - Israel - 1998-03-23 10:38:07 Israel time,
 # forwarded by Ephraim Silverberg:
@@ -2295,11 +2314,20 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.timeanddate.com/news/time/gaza-west-bank-dst-2012.html
 # </a>
 
-# From Arthur David Olson (2012-03-27):
-# The timeanddate article for 2012 says that "the end date has not yet been
-# announced" and that "Last year, both...paused daylight saving time during...
-# Ramadan. It is not yet known [for] 2012."
-# For now, assume both switch back on the last Friday in September. XXX
+# From Steffen Thorsen (2013-03-26):
+# The following news sources tells that Palestine will "start daylight saving
+# time from midnight on Friday, March 29, 2013" (translated).
+# [These are in Arabic and are for Gaza and for Ramallah, respectively.]
+# http://www.samanews.com/index.php?act=Show&id=154120
+# http://safa.ps/details/news/99844/%D8%B1%D8%A7%D9%85-%D8%A7%D9%84%D9%84%D9%87-%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-29-%D8%A7%D9%84%D8%AC%D8%A7%D8%B1%D9%8A.html
+
+# From Paul Eggert (2013-04-15):
+# For future dates, guess the last Thursday in March at 24:00 through
+# the first Friday on or after September 21 at 01:00.  This is consistent with
+# the predictions in today's editions of the following URLs,
+# which are for Gaza and Hebron respectively:
+# http://www.timeanddate.com/worldclock/timezone.html?n=702
+# http://www.timeanddate.com/worldclock/timezone.html?n=2364
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2313,19 +2341,20 @@ Rule Palestine	1999	2005	-	Apr	Fri>=15	0:00	1:00	S
 Rule Palestine	1999	2003	-	Oct	Fri>=15	0:00	0	-
 Rule Palestine	2004	only	-	Oct	 1	1:00	0	-
 Rule Palestine	2005	only	-	Oct	 4	2:00	0	-
-Rule Palestine	2006	2008	-	Apr	 1	0:00	1:00	S
+Rule Palestine	2006	2007	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
 Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
-Rule Palestine	2008	only	-	Aug	lastFri	0:00	0	-
-Rule Palestine	2009	only	-	Mar	lastFri	0:00	1:00	S
-Rule Palestine	2009	only	-	Sep	Fri>=1	2:00	0	-
-Rule Palestine	2010	only	-	Mar	lastSat	0:01	1:00	S
+Rule Palestine	2008	2009	-	Mar	lastFri	0:00	1:00	S
+Rule Palestine	2008	only	-	Sep	 1	0:00	0	-
+Rule Palestine	2009	only	-	Sep	Fri>=1	1:00	0	-
+Rule Palestine	2010	only	-	Mar	26	0:00	1:00	S
 Rule Palestine	2010	only	-	Aug	11	0:00	0	-
-
-# From Arthur David Olson (2011-09-20):
-# 2011 transitions per http://www.timeanddate.com as of 2011-09-20.
-# From Paul Eggert (2012-10-12):
-# 2012 transitions per http://www.timeanddate.com as of 2012-10-12.
+Rule Palestine	2011	only	-	Apr	 1	0:01	1:00	S
+Rule Palestine	2011	only	-	Aug	 1	0:00	0	-
+Rule Palestine	2011	only	-	Aug	30	0:00	1:00	S
+Rule Palestine	2011	only	-	Sep	30	0:00	0	-
+Rule Palestine	2012	max	-	Mar	lastThu	24:00	1:00	S
+Rule Palestine	2012	max	-	Sep	Fri>=21	1:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -2333,26 +2362,20 @@ Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
 			2:00 EgyptAsia	EE%sT	1967 Jun  5
 			2:00	Zion	I%sT	1996
 			2:00	Jordan	EE%sT	1999
-			2:00 Palestine	EE%sT	2011 Apr  2 12:01
-			2:00	1:00	EEST	2011 Aug  1
-			2:00	-	EET	2012 Mar 30
-			2:00	1:00	EEST	2012 Sep 21 1:00
-			2:00	-	EET
+			2:00 Palestine	EE%sT	2008 Aug 29 0:00
+			2:00	-	EET	2008 Sep
+			2:00 Palestine	EE%sT	2010
+			2:00	-	EET	2010 Mar 27 0:01
+			2:00 Palestine	EE%sT	2011 Aug  1
+			2:00	-	EET	2012
+			2:00 Palestine	EE%sT
 
 Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 			2:00	Zion	EET	1948 May 15
 			2:00 EgyptAsia	EE%sT	1967 Jun  5
 			2:00	Zion	I%sT	1996
 			2:00	Jordan	EE%sT	1999
-			2:00 Palestine	EE%sT	2008 Aug
-			2:00 	1:00	EEST	2008 Sep
-			2:00 Palestine	EE%sT	2011 Apr  1 12:01
-			2:00	1:00	EEST	2011 Aug  1
-			2:00	-	EET	2011 Aug 30
-			2:00	1:00	EEST	2011 Sep 30 3:00
-			2:00	-	EET	2012 Mar 30
-			2:00	1:00	EEST	2012 Sep 21 1:00
-			2:00	-	EET
+			2:00 Palestine	EE%sT
 
 # Paracel Is
 # no information
@@ -2421,6 +2444,13 @@ Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 # no information
 
 # Sri Lanka
+
+# From Paul Eggert (2013-02-21):
+# Milne says "Madras mean time use from May 1, 1898.  Prior to this Colombo
+# mean time, 5h. 4m. 21.9s. F., was used."  But 5:04:21.9 differs considerably
+# from Colombo's meridian 5:19:24, so for now ignore Milne and stick with
+# Shanks and Pottenger.
+
 # From Paul Eggert (1996-09-03):
 # "Sri Lanka advances clock by an hour to avoid blackout"
 # (www.virtual-pc.com/lankaweb/news/items/240596-2.html, 1996-05-24,
@@ -2720,6 +2750,12 @@ Zone	Asia/Tashkent	4:37:12 -	LMT	1924 May  2
 
 # Vietnam
 
+# From Paul Eggert (2013-02-21):
+# Milne gives 7:16:56 for the meridian of Saigon in 1899, as being
+# used in Lower Laos, Cambodia, and Annam.  But this is quite a ways
+# from Saigon's location.  For now, ignore this and stick with Shanks
+# and Pottenger.
+
 # From Arthur David Olson (2008-03-18):
 # The English-language name of Vietnam's most populous city is "Ho Chi Min City";
 # we use Ho_Chi_Minh below to avoid a name of more than 14 characters.
@@ -2733,6 +2769,10 @@ Zone	Asia/Ho_Chi_Minh	7:06:40 -	LMT	1906 Jun  9
 			7:00	-	ICT
 
 # Yemen
+
+# Milne says 2:59:54 was the meridian of the saluting battery at Aden,
+# and that Yemen was at 1:55:56, the meridian of the Hagia Sophia.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Aden	3:00:48	-	LMT	1950
+Zone	Asia/Aden	2:59:54	-	LMT	1950
 			3:00	-	AST

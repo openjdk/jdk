@@ -134,7 +134,9 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
      * @see #negotiate
      */
     public void setEnabledCipherSuites(String[] suites) {
-        this.suites = suites;
+        // The impl does accept null suites, although the spec requires
+        // a non-null list.
+        this.suites = suites == null ? null : suites.clone();
     }
 
     /**

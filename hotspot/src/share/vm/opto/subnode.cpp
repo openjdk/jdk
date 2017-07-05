@@ -863,10 +863,11 @@ const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
   const TypePtr *r1 = t2->make_ptr();
 
   // Undefined inputs makes for an undefined result
-  if( TypePtr::above_centerline(r0->_ptr) ||
-      TypePtr::above_centerline(r1->_ptr) )
+  if ((r0 == NULL) || (r1 == NULL) ||
+      TypePtr::above_centerline(r0->_ptr) ||
+      TypePtr::above_centerline(r1->_ptr)) {
     return Type::TOP;
-
+  }
   if (r0 == r1 && r0->singleton()) {
     // Equal pointer constants (klasses, nulls, etc.)
     return TypeInt::CC_EQ;

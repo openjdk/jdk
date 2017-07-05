@@ -181,6 +181,7 @@ enum UnicodeProp {
         //  \p{gc=Mark}
         //  \p{digit}
         //  \p{gc=Connector_Punctuation}
+        //  \p{Join_Control}    200C..200D
 
         public boolean is(int ch) {
             return ALPHABETIC.is(ch) ||
@@ -189,7 +190,15 @@ enum UnicodeProp {
                       (1 << Character.COMBINING_SPACING_MARK) |
                       (1 << Character.DECIMAL_DIGIT_NUMBER) |
                       (1 << Character.CONNECTOR_PUNCTUATION)) >> Character.getType(ch)) & 1)
-                   != 0;
+                   != 0 ||
+                   JOIN_CONTROL.is(ch);
+        }
+    },
+
+    JOIN_CONTROL {
+        //  200C..200D    PropList.txt:Join_Control
+        public boolean is(int ch) {
+           return (ch == 0x200C || ch == 0x200D);
         }
     };
 
@@ -212,6 +221,7 @@ enum UnicodeProp {
         aliases.put("WHITESPACE", "WHITE_SPACE");
         aliases.put("HEXDIGIT","HEX_DIGIT");
         aliases.put("NONCHARACTERCODEPOINT", "NONCHARACTER_CODE_POINT");
+        aliases.put("JOINCONTROL", "JOIN_CONTROL");
     }
 
     public static UnicodeProp forName(String propName) {

@@ -41,7 +41,6 @@ import jdk.nashorn.internal.codegen.types.Type;
  *
  * @see PropertyMap
  * @see AccessorProperty
- * @see SpillProperty
  * @see UserAccessorProperty
  */
 public abstract class Property {
@@ -64,7 +63,7 @@ public abstract class Property {
 
     private static final int MODIFY_MASK     = 0b0000_0000_1111;
 
-    /** Is this a spill property? See {@link SpillProperty} */
+    /** Is this a spill property? See {@link AccessorProperty} */
     public static final int IS_SPILL         = 0b0000_0001_0000;
 
     /** Is this a function parameter? */
@@ -88,7 +87,7 @@ public abstract class Property {
     /** Property flags. */
     protected int flags;
 
-    /** Property field number or spill slot */
+    /** Property field number or spill slot. */
     private final int slot;
 
     /**
@@ -248,7 +247,7 @@ public abstract class Property {
      * Does this property use any slots in the spill array described in
      * {@link Property#isSpill}? In that case how many. Currently a property
      * only uses max one spill slot, but this may change in future representations
-     * Only {@link SpillProperty} instances use spill slots
+     * Only {@link AccessorProperty} instances use spill slots
      *
      * @return number of spill slots a property is using
      */
@@ -345,6 +344,14 @@ public abstract class Property {
     }
 
     /**
+     * Get the field number or spill slot
+     * @return number/slot, -1 if none exists
+     */
+    public int getSlot() {
+        return slot;
+    }
+
+    /**
      * Abstract method for retrieving the setter for the property. We do not know
      * anything about the internal representation when we request the setter, we only
      * know that the setter will take the property as a parameter of the given type.
@@ -386,14 +393,6 @@ public abstract class Property {
      */
     public ScriptFunction getSetterFunction(final ScriptObject obj) {
         return null;
-    }
-
-    /**
-     * Get the field number or spill slot
-     * @return number/slot, -1 if none exists
-     */
-    public int getSlot() {
-        return slot;
     }
 
     @Override

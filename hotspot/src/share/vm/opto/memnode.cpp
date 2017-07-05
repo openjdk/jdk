@@ -103,11 +103,15 @@ extern void print_alias_types();
 
 #endif
 
-Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
-  const TypeOopPtr *tinst = t_adr->isa_oopptr();
-  if (tinst == NULL || !tinst->is_known_instance_field())
+Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase) {
+  assert((t_oop != NULL), "sanity");
+  bool is_instance = t_oop->is_known_instance_field();
+  bool is_boxed_value_load = t_oop->is_ptr_to_boxed_value() &&
+                             (load != NULL) && load->is_Load() &&
+                             (phase->is_IterGVN() != NULL);
+  if (!(is_instance || is_boxed_value_load))
     return mchain;  // don't try to optimize non-instance types
-  uint instance_id = tinst->instance_id();
+  uint instance_id = t_oop->instance_id();
   Node *start_mem = phase->C->start()->proj_out(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = mchain;
@@ -122,15 +126,24 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
         break;  // hit one of our sentinels
       } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
-        if (!call->may_modify(t_adr, phase)) {
+        if (!call->may_modify(t_oop, phase)) { // returns false for instances
           result = call->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_Initialize()) {
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         // Stop if this is the initialization for the object instance which
         // which contains this memory slice, otherwise skip over it.
-        if (alloc != NULL && alloc->_idx != instance_id) {
+        if ((alloc == NULL) || (alloc->_idx == instance_id)) {
+          break;
+        }
+        if (is_instance) {
           result = proj_in->in(TypeFunc::Memory);
+        } else if (is_boxed_value_load) {
+          Node* klass = alloc->in(AllocateNode::KlassNode);
+          const TypeKlassPtr* tklass = phase->type(klass)->is_klassptr();
+          if (tklass->klass_is_exact() && !tklass->klass()->equals(t_oop->klass())) {
+            result = proj_in->in(TypeFunc::Memory); // not related allocation
+          }
         }
       } else if (proj_in->is_MemBar()) {
         result = proj_in->in(TypeFunc::Memory);
@@ -138,25 +151,26 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
         assert(false, "unexpected projection");
       }
     } else if (result->is_ClearArray()) {
-      if (!ClearArrayNode::step_through(&result, instance_id, phase)) {
+      if (!is_instance || !ClearArrayNode::step_through(&result, instance_id, phase)) {
         // Can not bypass initialization of the instance
         // we are looking for.
         break;
       }
       // Otherwise skip it (the call updated 'result' value).
     } else if (result->is_MergeMem()) {
-      result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
+      result = step_through_mergemem(phase, result->as_MergeMem(), t_oop, NULL, tty);
     }
   }
   return result;
 }
 
-Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
-  const TypeOopPtr *t_oop = t_adr->isa_oopptr();
-  bool is_instance = (t_oop != NULL) && t_oop->is_known_instance_field();
+Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase) {
+  const TypeOopPtr* t_oop = t_adr->isa_oopptr();
+  if (t_oop == NULL)
+    return mchain;  // don't try to optimize non-oop types
+  Node* result = optimize_simple_memory_chain(mchain, t_oop, load, phase);
+  bool is_instance = t_oop->is_known_instance_field();
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  Node *result = mchain;
-  result = optimize_simple_memory_chain(result, t_adr, phase);
   if (is_instance && igvn != NULL  && result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
@@ -383,7 +397,7 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   // Or Region for the check in LoadNode::Ideal();
   // 'sub' should have sub->in(0) != NULL.
   assert(sub->is_Allocate() || sub->is_Initialize() || sub->is_Start() ||
-         sub->is_Region(), "expecting only these nodes");
+         sub->is_Region() || sub->is_Call(), "expecting only these nodes");
 
   // Get control edge of 'sub'.
   Node* orig_sub = sub;
@@ -957,11 +971,14 @@ uint LoadNode::hash() const {
 // of aliasing.
 Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   Node* ld_adr = in(MemNode::Address);
-
+  intptr_t ld_off = 0;
+  AllocateNode* ld_alloc = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
-  Compile::AliasType* atp = tp != NULL ? phase->C->alias_type(tp) : NULL;
-  if (EliminateAutoBox && atp != NULL && atp->index() >= Compile::AliasIdxRaw &&
-      atp->field() != NULL && !atp->field()->is_volatile()) {
+  Compile::AliasType* atp = (tp != NULL) ? phase->C->alias_type(tp) : NULL;
+  // This is more general than load from boxing objects.
+  if (phase->C->eliminate_boxing() && (atp != NULL) &&
+      (atp->index() >= Compile::AliasIdxRaw) &&
+      (atp->field() != NULL) && !atp->field()->is_volatile()) {
     uint alias_idx = atp->index();
     bool final = atp->field()->is_final();
     Node* result = NULL;
@@ -983,7 +1000,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
           Node* new_st = merge->memory_at(alias_idx);
           if (new_st == merge->base_memory()) {
             // Keep searching
-            current = merge->base_memory();
+            current = new_st;
             continue;
           }
           // Save the new memory state for the slice and fall through
@@ -1010,9 +1027,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         intptr_t st_off = 0;
         AllocateNode* alloc = AllocateNode::Ideal_allocation(st_adr, phase, st_off);
         if (alloc == NULL)       return NULL;
-        intptr_t ld_off = 0;
-        AllocateNode* allo2 = AllocateNode::Ideal_allocation(ld_adr, phase, ld_off);
-        if (alloc != allo2)      return NULL;
+        if (alloc != ld_alloc)   return NULL;
         if (ld_off != st_off)    return NULL;
         // At this point we have proven something like this setup:
         //  A = Allocate(...)
@@ -1029,14 +1044,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
       return st->in(MemNode::ValueIn);
     }
 
-    intptr_t offset = 0;  // scratch
-
     // A load from a freshly-created object always returns zero.
     // (This can happen after LoadNode::Ideal resets the load's memory input
     // to find_captured_store, which returned InitializeNode::zero_memory.)
     if (st->is_Proj() && st->in(0)->is_Allocate() &&
-        st->in(0) == AllocateNode::Ideal_allocation(ld_adr, phase, offset) &&
-        offset >= st->in(0)->as_Allocate()->minimum_header_size()) {
+        (st->in(0) == ld_alloc) &&
+        (ld_off >= st->in(0)->as_Allocate()->minimum_header_size())) {
       // return a zero value for the load's basic type
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
@@ -1048,12 +1061,24 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     if (st->is_Proj() && st->in(0)->is_Initialize()) {
       InitializeNode* init = st->in(0)->as_Initialize();
       AllocateNode* alloc = init->allocation();
-      if (alloc != NULL &&
-          alloc == AllocateNode::Ideal_allocation(ld_adr, phase, offset)) {
+      if ((alloc != NULL) && (alloc == ld_alloc)) {
         // examine a captured store value
-        st = init->find_captured_store(offset, memory_size(), phase);
+        st = init->find_captured_store(ld_off, memory_size(), phase);
         if (st != NULL)
           continue;             // take one more trip around
+      }
+    }
+
+    // Load boxed value from result of valueOf() call is input parameter.
+    if (this->is_Load() && ld_adr->is_AddP() &&
+        (tp != NULL) && tp->is_ptr_to_boxed_value()) {
+      intptr_t ignore = 0;
+      Node* base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ignore);
+      if (base != NULL && base->is_Proj() &&
+          base->as_Proj()->_con == TypeFunc::Parms &&
+          base->in(0)->is_CallStaticJava() &&
+          base->in(0)->as_CallStaticJava()->is_boxing_method()) {
+        return base->in(0)->in(TypeFunc::Parms);
       }
     }
 
@@ -1065,11 +1090,13 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
 
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
-  if( in(MemNode::Memory)->is_Phi() && in(MemNode::Memory)->in(0) == ctrl &&
-      in(MemNode::Address)->is_AddP() ) {
-    const TypeOopPtr* t_oop = in(MemNode::Address)->bottom_type()->isa_oopptr();
-    // Only instances.
-    if( t_oop != NULL && t_oop->is_known_instance_field() &&
+  if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
+      in(Address)->is_AddP() ) {
+    const TypeOopPtr* t_oop = in(Address)->bottom_type()->isa_oopptr();
+    // Only instances and boxed values.
+    if( t_oop != NULL &&
+        (t_oop->is_ptr_to_boxed_value() ||
+         t_oop->is_known_instance_field()) &&
         t_oop->offset() != Type::OffsetBot &&
         t_oop->offset() != Type::OffsetTop) {
       return true;
@@ -1083,7 +1110,7 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
 Node *LoadNode::Identity( PhaseTransform *phase ) {
   // If the previous store-maker is the right kind of Store, and the store is
   // to the same address, then we are equal to the value stored.
-  Node* mem = in(MemNode::Memory);
+  Node* mem = in(Memory);
   Node* value = can_see_stored_value(mem, phase);
   if( value ) {
     // byte, short & char stores truncate naturally.
@@ -1105,15 +1132,22 @@ Node *LoadNode::Identity( PhaseTransform *phase ) {
   // instance's field to avoid infinite generation of phis in a loop.
   Node *region = mem->in(0);
   if (is_instance_field_load_with_local_phi(region)) {
-    const TypePtr *addr_t = in(MemNode::Address)->bottom_type()->isa_ptr();
+    const TypeOopPtr *addr_t = in(Address)->bottom_type()->isa_oopptr();
     int this_index  = phase->C->get_alias_index(addr_t);
     int this_offset = addr_t->offset();
-    int this_id    = addr_t->is_oopptr()->instance_id();
+    int this_iid    = addr_t->instance_id();
+    if (!addr_t->is_known_instance() &&
+         addr_t->is_ptr_to_boxed_value()) {
+      // Use _idx of address base (could be Phi node) for boxed values.
+      intptr_t   ignore = 0;
+      Node*      base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+      this_iid = base->_idx;
+    }
     const Type* this_type = bottom_type();
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
       Node* phi = region->fast_out(i);
       if (phi->is_Phi() && phi != mem &&
-          phi->as_Phi()->is_same_inst_field(this_type, this_id, this_index, this_offset)) {
+          phi->as_Phi()->is_same_inst_field(this_type, this_iid, this_index, this_offset)) {
         return phi;
       }
     }
@@ -1122,170 +1156,106 @@ Node *LoadNode::Identity( PhaseTransform *phase ) {
   return this;
 }
 
-
-// Returns true if the AliasType refers to the field that holds the
-// cached box array.  Currently only handles the IntegerCache case.
-static bool is_autobox_cache(Compile::AliasType* atp) {
-  if (atp != NULL && atp->field() != NULL) {
-    ciField* field = atp->field();
-    ciSymbol* klass = field->holder()->name();
-    if (field->name() == ciSymbol::cache_field_name() &&
-        field->holder()->uses_default_loader() &&
-        klass == ciSymbol::java_lang_Integer_IntegerCache()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Fetch the base value in the autobox array
-static bool fetch_autobox_base(Compile::AliasType* atp, int& cache_offset) {
-  if (atp != NULL && atp->field() != NULL) {
-    ciField* field = atp->field();
-    ciSymbol* klass = field->holder()->name();
-    if (field->name() == ciSymbol::cache_field_name() &&
-        field->holder()->uses_default_loader() &&
-        klass == ciSymbol::java_lang_Integer_IntegerCache()) {
-      assert(field->is_constant(), "what?");
-      ciObjArray* array = field->constant_value().as_object()->as_obj_array();
-      // Fetch the box object at the base of the array and get its value
-      ciInstance* box = array->obj_at(0)->as_instance();
-      ciInstanceKlass* ik = box->klass()->as_instance_klass();
-      if (ik->nof_nonstatic_fields() == 1) {
-        // This should be true nonstatic_field_at requires calling
-        // nof_nonstatic_fields so check it anyway
-        ciConstant c = box->field_value(ik->nonstatic_field_at(0));
-        cache_offset = c.as_int();
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
-// Returns true if the AliasType refers to the value field of an
-// autobox object.  Currently only handles Integer.
-static bool is_autobox_object(Compile::AliasType* atp) {
-  if (atp != NULL && atp->field() != NULL) {
-    ciField* field = atp->field();
-    ciSymbol* klass = field->holder()->name();
-    if (field->name() == ciSymbol::value_name() &&
-        field->holder()->uses_default_loader() &&
-        klass == ciSymbol::java_lang_Integer()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
 // We're loading from an object which has autobox behaviour.
 // If this object is result of a valueOf call we'll have a phi
 // merging a newly allocated object and a load from the cache.
 // We want to replace this load with the original incoming
 // argument to the valueOf call.
 Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
-  Node* base = in(Address)->in(AddPNode::Base);
-  if (base->is_Phi() && base->req() == 3) {
-    AllocateNode* allocation = NULL;
-    int allocation_index = -1;
-    int load_index = -1;
-    for (uint i = 1; i < base->req(); i++) {
-      allocation = AllocateNode::Ideal_allocation(base->in(i), phase);
-      if (allocation != NULL) {
-        allocation_index = i;
-        load_index = 3 - allocation_index;
-        break;
-      }
-    }
-    bool has_load = ( allocation != NULL &&
-                      (base->in(load_index)->is_Load() ||
-                       base->in(load_index)->is_DecodeN() &&
-                       base->in(load_index)->in(1)->is_Load()) );
-    if (has_load && in(Memory)->is_Phi() && in(Memory)->in(0) == base->in(0)) {
-      // Push the loads from the phi that comes from valueOf up
-      // through it to allow elimination of the loads and the recovery
-      // of the original value.
-      Node* mem_phi = in(Memory);
-      Node* offset = in(Address)->in(AddPNode::Offset);
-      Node* region = base->in(0);
-
-      Node* in1 = clone();
-      Node* in1_addr = in1->in(Address)->clone();
-      in1_addr->set_req(AddPNode::Base, base->in(allocation_index));
-      in1_addr->set_req(AddPNode::Address, base->in(allocation_index));
-      in1_addr->set_req(AddPNode::Offset, offset);
-      in1->set_req(0, region->in(allocation_index));
-      in1->set_req(Address, in1_addr);
-      in1->set_req(Memory, mem_phi->in(allocation_index));
-
-      Node* in2 = clone();
-      Node* in2_addr = in2->in(Address)->clone();
-      in2_addr->set_req(AddPNode::Base, base->in(load_index));
-      in2_addr->set_req(AddPNode::Address, base->in(load_index));
-      in2_addr->set_req(AddPNode::Offset, offset);
-      in2->set_req(0, region->in(load_index));
-      in2->set_req(Address, in2_addr);
-      in2->set_req(Memory, mem_phi->in(load_index));
-
-      in1_addr = phase->transform(in1_addr);
-      in1 =      phase->transform(in1);
-      in2_addr = phase->transform(in2_addr);
-      in2 =      phase->transform(in2);
-
-      PhiNode* result = PhiNode::make_blank(region, this);
-      result->set_req(allocation_index, in1);
-      result->set_req(load_index, in2);
-      return result;
-    }
+  assert(phase->C->eliminate_boxing(), "sanity");
+  intptr_t ignore = 0;
+  Node* base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+  if ((base == NULL) || base->is_Phi()) {
+    // Push the loads from the phi that comes from valueOf up
+    // through it to allow elimination of the loads and the recovery
+    // of the original value. It is done in split_through_phi().
+    return NULL;
   } else if (base->is_Load() ||
              base->is_DecodeN() && base->in(1)->is_Load()) {
-    if (base->is_DecodeN()) {
-      // Get LoadN node which loads cached Integer object
-      base = base->in(1);
-    }
-    // Eliminate the load of Integer.value for integers from the cache
+    // Eliminate the load of boxed value for integer types from the cache
     // array by deriving the value from the index into the array.
     // Capture the offset of the load and then reverse the computation.
-    Node* load_base = base->in(Address)->in(AddPNode::Base);
-    if (load_base->is_DecodeN()) {
-      // Get LoadN node which loads IntegerCache.cache field
-      load_base = load_base->in(1);
+
+    // Get LoadN node which loads a boxing object from 'cache' array.
+    if (base->is_DecodeN()) {
+      base = base->in(1);
     }
-    if (load_base != NULL) {
-      Compile::AliasType* atp = phase->C->alias_type(load_base->adr_type());
-      intptr_t cache_offset;
-      int shift = -1;
-      Node* cache = NULL;
-      if (is_autobox_cache(atp)) {
-        shift  = exact_log2(type2aelembytes(T_OBJECT));
-        cache = AddPNode::Ideal_base_and_offset(load_base->in(Address), phase, cache_offset);
-      }
-      if (cache != NULL && base->in(Address)->is_AddP()) {
+    if (!base->in(Address)->is_AddP()) {
+      return NULL; // Complex address
+    }
+    AddPNode* address = base->in(Address)->as_AddP();
+    Node* cache_base = address->in(AddPNode::Base);
+    if ((cache_base != NULL) && cache_base->is_DecodeN()) {
+      // Get ConP node which is static 'cache' field.
+      cache_base = cache_base->in(1);
+    }
+    if ((cache_base != NULL) && cache_base->is_Con()) {
+      const TypeAryPtr* base_type = cache_base->bottom_type()->isa_aryptr();
+      if ((base_type != NULL) && base_type->is_autobox_cache()) {
         Node* elements[4];
-        int count = base->in(Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
-        int cache_low;
-        if (count > 0 && fetch_autobox_base(atp, cache_low)) {
-          int offset = arrayOopDesc::base_offset_in_bytes(memory_type()) - (cache_low << shift);
-          // Add up all the offsets making of the address of the load
-          Node* result = elements[0];
-          for (int i = 1; i < count; i++) {
-            result = phase->transform(new (phase->C) AddXNode(result, elements[i]));
-          }
-          // Remove the constant offset from the address and then
-          // remove the scaling of the offset to recover the original index.
-          result = phase->transform(new (phase->C) AddXNode(result, phase->MakeConX(-offset)));
-          if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
-            // Peel the shift off directly but wrap it in a dummy node
-            // since Ideal can't return existing nodes
-            result = new (phase->C) RShiftXNode(result->in(1), phase->intcon(0));
-          } else {
-            result = new (phase->C) RShiftXNode(result, phase->intcon(shift));
-          }
+        int shift = exact_log2(type2aelembytes(T_OBJECT));
+        int count = address->unpack_offsets(elements, ARRAY_SIZE(elements));
+        if ((count >  0) && elements[0]->is_Con() &&
+            ((count == 1) ||
+             (count == 2) && elements[1]->Opcode() == Op_LShiftX &&
+                             elements[1]->in(2) == phase->intcon(shift))) {
+          ciObjArray* array = base_type->const_oop()->as_obj_array();
+          // Fetch the box object cache[0] at the base of the array and get its value
+          ciInstance* box = array->obj_at(0)->as_instance();
+          ciInstanceKlass* ik = box->klass()->as_instance_klass();
+          assert(ik->is_box_klass(), "sanity");
+          assert(ik->nof_nonstatic_fields() == 1, "change following code");
+          if (ik->nof_nonstatic_fields() == 1) {
+            // This should be true nonstatic_field_at requires calling
+            // nof_nonstatic_fields so check it anyway
+            ciConstant c = box->field_value(ik->nonstatic_field_at(0));
+            BasicType bt = c.basic_type();
+            // Only integer types have boxing cache.
+            assert(bt == T_BOOLEAN || bt == T_CHAR  ||
+                   bt == T_BYTE    || bt == T_SHORT ||
+                   bt == T_INT     || bt == T_LONG, err_msg_res("wrong type = %s", type2name(bt)));
+            jlong cache_low = (bt == T_LONG) ? c.as_long() : c.as_int();
+            if (cache_low != (int)cache_low) {
+              return NULL; // should not happen since cache is array indexed by value
+            }
+            jlong offset = arrayOopDesc::base_offset_in_bytes(T_OBJECT) - (cache_low << shift);
+            if (offset != (int)offset) {
+              return NULL; // should not happen since cache is array indexed by value
+            }
+           // Add up all the offsets making of the address of the load
+            Node* result = elements[0];
+            for (int i = 1; i < count; i++) {
+              result = phase->transform(new (phase->C) AddXNode(result, elements[i]));
+            }
+            // Remove the constant offset from the address and then
+            result = phase->transform(new (phase->C) AddXNode(result, phase->MakeConX(-(int)offset)));
+            // remove the scaling of the offset to recover the original index.
+            if (result->Opcode() == Op_LShiftX && result->in(2) == phase->intcon(shift)) {
+              // Peel the shift off directly but wrap it in a dummy node
+              // since Ideal can't return existing nodes
+              result = new (phase->C) RShiftXNode(result->in(1), phase->intcon(0));
+            } else if (result->is_Add() && result->in(2)->is_Con() &&
+                       result->in(1)->Opcode() == Op_LShiftX &&
+                       result->in(1)->in(2) == phase->intcon(shift)) {
+              // We can't do general optimization: ((X<<Z) + Y) >> Z ==> X + (Y>>Z)
+              // but for boxing cache access we know that X<<Z will not overflow
+              // (there is range check) so we do this optimizatrion by hand here.
+              Node* add_con = new (phase->C) RShiftXNode(result->in(2), phase->intcon(shift));
+              result = new (phase->C) AddXNode(result->in(1)->in(1), phase->transform(add_con));
+            } else {
+              result = new (phase->C) RShiftXNode(result, phase->intcon(shift));
+            }
 #ifdef _LP64
-          result = new (phase->C) ConvL2INode(phase->transform(result));
+            if (bt != T_LONG) {
+              result = new (phase->C) ConvL2INode(phase->transform(result));
+            }
+#else
+            if (bt == T_LONG) {
+              result = new (phase->C) ConvI2LNode(phase->transform(result));
+            }
 #endif
-          return result;
+            return result;
+          }
         }
       }
     }
@@ -1293,65 +1263,131 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
   return NULL;
 }
 
-//------------------------------split_through_phi------------------------------
-// Split instance field load through Phi.
-Node *LoadNode::split_through_phi(PhaseGVN *phase) {
-  Node* mem     = in(MemNode::Memory);
-  Node* address = in(MemNode::Address);
-  const TypePtr *addr_t = phase->type(address)->isa_ptr();
-  const TypeOopPtr *t_oop = addr_t->isa_oopptr();
-
-  assert(mem->is_Phi() && (t_oop != NULL) &&
-         t_oop->is_known_instance_field(), "invalide conditions");
-
-  Node *region = mem->in(0);
+static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
+  Node* region = phi->in(0);
   if (region == NULL) {
-    return NULL; // Wait stable graph
+    return false; // Wait stable graph
   }
-  uint cnt = mem->req();
+  uint cnt = phi->req();
   for (uint i = 1; i < cnt; i++) {
     Node* rc = region->in(i);
     if (rc == NULL || phase->type(rc) == Type::TOP)
-      return NULL; // Wait stable graph
-    Node *in = mem->in(i);
-    if (in == NULL) {
+      return false; // Wait stable graph
+    Node* in = phi->in(i);
+    if (in == NULL || phase->type(in) == Type::TOP)
+      return false; // Wait stable graph
+  }
+  return true;
+}
+//------------------------------split_through_phi------------------------------
+// Split instance or boxed field load through Phi.
+Node *LoadNode::split_through_phi(PhaseGVN *phase) {
+  Node* mem     = in(Memory);
+  Node* address = in(Address);
+  const TypeOopPtr *t_oop = phase->type(address)->isa_oopptr();
+
+  assert((t_oop != NULL) &&
+         (t_oop->is_known_instance_field() ||
+          t_oop->is_ptr_to_boxed_value()), "invalide conditions");
+
+  Compile* C = phase->C;
+  intptr_t ignore = 0;
+  Node*    base = AddPNode::Ideal_base_and_offset(address, phase, ignore);
+  bool base_is_phi = (base != NULL) && base->is_Phi();
+  bool load_boxed_values = t_oop->is_ptr_to_boxed_value() && C->aggressive_unboxing() &&
+                           (base != NULL) && (base == address->in(AddPNode::Base)) &&
+                           phase->type(base)->higher_equal(TypePtr::NOTNULL);
+
+  if (!((mem->is_Phi() || base_is_phi) &&
+        (load_boxed_values || t_oop->is_known_instance_field()))) {
+    return NULL; // memory is not Phi
+  }
+
+  if (mem->is_Phi()) {
+    if (!stable_phi(mem->as_Phi(), phase)) {
       return NULL; // Wait stable graph
     }
-  }
-  // Check for loop invariant.
-  if (cnt == 3) {
-    for (uint i = 1; i < cnt; i++) {
-      Node *in = mem->in(i);
-      Node* m = MemNode::optimize_memory_chain(in, addr_t, phase);
-      if (m == mem) {
-        set_req(MemNode::Memory, mem->in(cnt - i)); // Skip this phi.
-        return this;
+    uint cnt = mem->req();
+    // Check for loop invariant memory.
+    if (cnt == 3) {
+      for (uint i = 1; i < cnt; i++) {
+        Node* in = mem->in(i);
+        Node*  m = optimize_memory_chain(in, t_oop, this, phase);
+        if (m == mem) {
+          set_req(Memory, mem->in(cnt - i));
+          return this; // made change
+        }
       }
     }
   }
+  if (base_is_phi) {
+    if (!stable_phi(base->as_Phi(), phase)) {
+      return NULL; // Wait stable graph
+    }
+    uint cnt = base->req();
+    // Check for loop invariant memory.
+    if (cnt == 3) {
+      for (uint i = 1; i < cnt; i++) {
+        if (base->in(i) == base) {
+          return NULL; // Wait stable graph
+        }
+      }
+    }
+  }
+
+  bool load_boxed_phi = load_boxed_values && base_is_phi && (base->in(0) == mem->in(0));
+
   // Split through Phi (see original code in loopopts.cpp).
-  assert(phase->C->have_alias_type(addr_t), "instance should have alias type");
+  assert(C->have_alias_type(t_oop), "instance should have alias type");
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
   if (!phase->eqv(this, this->Identity(phase)))
     return NULL;
 
-  // Skip the split if the region dominates some control edge of the address.
-  if (!MemNode::all_controls_dominate(address, region))
-    return NULL;
+  // Select Region to split through.
+  Node* region;
+  if (!base_is_phi) {
+    assert(mem->is_Phi(), "sanity");
+    region = mem->in(0);
+    // Skip if the region dominates some control edge of the address.
+    if (!MemNode::all_controls_dominate(address, region))
+      return NULL;
+  } else if (!mem->is_Phi()) {
+    assert(base_is_phi, "sanity");
+    region = base->in(0);
+    // Skip if the region dominates some control edge of the memory.
+    if (!MemNode::all_controls_dominate(mem, region))
+      return NULL;
+  } else if (base->in(0) != mem->in(0)) {
+    assert(base_is_phi && mem->is_Phi(), "sanity");
+    if (MemNode::all_controls_dominate(mem, base->in(0))) {
+      region = base->in(0);
+    } else if (MemNode::all_controls_dominate(address, mem->in(0))) {
+      region = mem->in(0);
+    } else {
+      return NULL; // complex graph
+    }
+  } else {
+    assert(base->in(0) == mem->in(0), "sanity");
+    region = mem->in(0);
+  }
 
   const Type* this_type = this->bottom_type();
-  int this_index  = phase->C->get_alias_index(addr_t);
-  int this_offset = addr_t->offset();
-  int this_iid    = addr_t->is_oopptr()->instance_id();
-  PhaseIterGVN *igvn = phase->is_IterGVN();
-  Node *phi = new (igvn->C) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
+  int this_index  = C->get_alias_index(t_oop);
+  int this_offset = t_oop->offset();
+  int this_iid    = t_oop->instance_id();
+  if (!t_oop->is_known_instance() && load_boxed_values) {
+    // Use _idx of address base for boxed values.
+    this_iid = base->_idx;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* phi = new (C) PhiNode(region, this_type, NULL, this_iid, this_index, this_offset);
   for (uint i = 1; i < region->req(); i++) {
-    Node *x;
+    Node* x;
     Node* the_clone = NULL;
-    if (region->in(i) == phase->C->top()) {
-      x = phase->C->top();      // Dead path?  Use a dead data op
+    if (region->in(i) == C->top()) {
+      x = C->top();      // Dead path?  Use a dead data op
     } else {
       x = this->clone();        // Else clone up the data op
       the_clone = x;            // Remember for possible deletion.
@@ -1361,10 +1397,16 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       } else {
         x->set_req(0, NULL);
       }
-      for (uint j = 1; j < this->req(); j++) {
-        Node *in = this->in(j);
-        if (in->is_Phi() && in->in(0) == region)
-          x->set_req(j, in->in(i)); // Use pre-Phi input for the clone
+      if (mem->is_Phi() && (mem->in(0) == region)) {
+        x->set_req(Memory, mem->in(i)); // Use pre-Phi input for the clone.
+      }
+      if (address->is_Phi() && address->in(0) == region) {
+        x->set_req(Address, address->in(i)); // Use pre-Phi input for the clone
+      }
+      if (base_is_phi && (base->in(0) == region)) {
+        Node* base_x = base->in(i); // Clone address for loads from boxed objects.
+        Node* adr_x = phase->transform(new (C) AddPNode(base_x,base_x,address->in(AddPNode::Offset)));
+        x->set_req(Address, adr_x);
       }
     }
     // Check for a 'win' on some paths
@@ -1394,7 +1436,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
       if (y != x) {
         x = y;
       } else {
-        y = igvn->hash_find(x);
+        y = igvn->hash_find_insert(x);
         if (y) {
           x = y;
         } else {
@@ -1405,8 +1447,9 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
         }
       }
     }
-    if (x != the_clone && the_clone != NULL)
+    if (x != the_clone && the_clone != NULL) {
       igvn->remove_dead_node(the_clone);
+    }
     phi->set_req(i, x);
   }
   // Record Phi
@@ -1445,31 +1488,23 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
     }
-
-    if (EliminateAutoBox && can_reshape) {
-      assert(!phase->type(base)->higher_equal(TypePtr::NULL_PTR), "the autobox pointer should be non-null");
-      Compile::AliasType* atp = phase->C->alias_type(adr_type());
-      if (is_autobox_object(atp)) {
-        Node* result = eliminate_autobox(phase);
-        if (result != NULL) return result;
-      }
-    }
   }
 
   Node* mem = in(MemNode::Memory);
   const TypePtr *addr_t = phase->type(address)->isa_ptr();
 
-  if (addr_t != NULL) {
+  if (can_reshape && (addr_t != NULL)) {
     // try to optimize our memory input
-    Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, phase);
+    Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req(MemNode::Memory, opt_mem);
       if (phase->type( opt_mem ) == Type::TOP) return NULL;
       return this;
     }
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
-    if (can_reshape && opt_mem->is_Phi() &&
-        (t_oop != NULL) && t_oop->is_known_instance_field()) {
+    if ((t_oop != NULL) &&
+        (t_oop->is_known_instance_field() ||
+         t_oop->is_ptr_to_boxed_value())) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
       if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
         // Delay this transformation until memory Phi is processed.
@@ -1479,6 +1514,11 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Split instance field load through Phi.
       Node* result = split_through_phi(phase);
       if (result != NULL) return result;
+
+      if (t_oop->is_ptr_to_boxed_value()) {
+        Node* result = eliminate_autobox(phase);
+        if (result != NULL) return result;
+      }
     }
   }
 
@@ -1587,18 +1627,23 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
           // This can happen if a interface-typed array narrows to a class type.
           jt = _type;
         }
-
-        if (EliminateAutoBox && adr->is_AddP()) {
+#ifdef ASSERT
+        if (phase->C->eliminate_boxing() && adr->is_AddP()) {
           // The pointers in the autobox arrays are always non-null
           Node* base = adr->in(AddPNode::Base);
-          if (base != NULL &&
-              !phase->type(base)->higher_equal(TypePtr::NULL_PTR)) {
-            Compile::AliasType* atp = C->alias_type(base->adr_type());
-            if (is_autobox_cache(atp)) {
-              return jt->join(TypePtr::NOTNULL)->is_ptr();
+          if ((base != NULL) && base->is_DecodeN()) {
+            // Get LoadN node which loads IntegerCache.cache field
+            base = base->in(1);
+          }
+          if ((base != NULL) && base->is_Con()) {
+            const TypeAryPtr* base_type = base->bottom_type()->isa_aryptr();
+            if ((base_type != NULL) && base_type->is_autobox_cache()) {
+              // It could be narrow oop
+              assert(jt->make_ptr()->ptr() == TypePtr::NotNull,"sanity");
             }
           }
         }
+#endif
         return jt;
       }
     }
@@ -1638,6 +1683,10 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // Optimizations for constant objects
     ciObject* const_oop = tinst->const_oop();
     if (const_oop != NULL) {
+      // For constant Boxed value treat the target field as a compile time constant.
+      if (tinst->is_ptr_to_boxed_value()) {
+        return tinst->get_const_boxed_value();
+      } else
       // For constant CallSites treat the target field as a compile time constant.
       if (const_oop->is_call_site()) {
         ciCallSite* call_site = const_oop->as_call_site();
@@ -1759,7 +1808,8 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   // (Also allow a variable load from a fresh array to produce zero.)
   const TypeOopPtr *tinst = tp->isa_oopptr();
   bool is_instance = (tinst != NULL) && tinst->is_known_instance_field();
-  if (ReduceFieldZeroing || is_instance) {
+  bool is_boxed_value = (tinst != NULL) && tinst->is_ptr_to_boxed_value();
+  if (ReduceFieldZeroing || is_instance || is_boxed_value) {
     Node* value = can_see_stored_value(mem,phase);
     if (value != NULL && value->is_Con()) {
       assert(value->bottom_type()->higher_equal(_type),"sanity");
@@ -2883,24 +2933,38 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && in(0)->is_top())  return NULL;
 
   // Eliminate volatile MemBars for scalar replaced objects.
-  if (can_reshape && req() == (Precedent+1) &&
-      (Opcode() == Op_MemBarAcquire || Opcode() == Op_MemBarVolatile)) {
-    // Volatile field loads and stores.
-    Node* my_mem = in(MemBarNode::Precedent);
-    if (my_mem != NULL && my_mem->is_Mem()) {
-      const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
-      // Check for scalar replaced object reference.
-      if( t_oop != NULL && t_oop->is_known_instance_field() &&
-          t_oop->offset() != Type::OffsetBot &&
-          t_oop->offset() != Type::OffsetTop) {
-        // Replace MemBar projections by its inputs.
-        PhaseIterGVN* igvn = phase->is_IterGVN();
-        igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
-        igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
-        // Must return either the original node (now dead) or a new node
-        // (Do not return a top here, since that would break the uniqueness of top.)
-        return new (phase->C) ConINode(TypeInt::ZERO);
+  if (can_reshape && req() == (Precedent+1)) {
+    bool eliminate = false;
+    int opc = Opcode();
+    if ((opc == Op_MemBarAcquire || opc == Op_MemBarVolatile)) {
+      // Volatile field loads and stores.
+      Node* my_mem = in(MemBarNode::Precedent);
+      if (my_mem != NULL && my_mem->is_Mem()) {
+        const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
+        // Check for scalar replaced object reference.
+        if( t_oop != NULL && t_oop->is_known_instance_field() &&
+            t_oop->offset() != Type::OffsetBot &&
+            t_oop->offset() != Type::OffsetTop) {
+          eliminate = true;
+        }
       }
+    } else if (opc == Op_MemBarRelease) {
+      // Final field stores.
+      Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent), phase);
+      if ((alloc != NULL) && alloc->is_Allocate() &&
+          alloc->as_Allocate()->_is_non_escaping) {
+        // The allocated object does not escape.
+        eliminate = true;
+      }
+    }
+    if (eliminate) {
+      // Replace MemBar projections by its inputs.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+      igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+      // Must return either the original node (now dead) or a new node
+      // (Do not return a top here, since that would break the uniqueness of top.)
+      return new (phase->C) ConINode(TypeInt::ZERO);
     }
   }
   return NULL;
@@ -3113,9 +3177,7 @@ intptr_t InitializeNode::get_store_offset(Node* st, PhaseTransform* phase) {
 // within the initialization without creating a vicious cycle, such as:
 //     { Foo p = new Foo(); p.next = p; }
 // True for constants and parameters and small combinations thereof.
-bool InitializeNode::detect_init_independence(Node* n,
-                                              bool st_is_pinned,
-                                              int& count) {
+bool InitializeNode::detect_init_independence(Node* n, int& count) {
   if (n == NULL)      return true;   // (can this really happen?)
   if (n->is_Proj())   n = n->in(0);
   if (n == this)      return false;  // found a cycle
@@ -3135,7 +3197,6 @@ bool InitializeNode::detect_init_independence(Node* n,
     // a store is never pinned *before* the availability of its inputs.
     if (!MemNode::all_controls_dominate(n, this))
       return false;                  // failed to prove a good control
-
   }
 
   // Check data edges for possible dependencies on 'this'.
@@ -3145,7 +3206,7 @@ bool InitializeNode::detect_init_independence(Node* n,
     if (m == NULL || m == n || m->is_top())  continue;
     uint first_i = n->find_edge(m);
     if (i != first_i)  continue;  // process duplicate edge just once
-    if (!detect_init_independence(m, st_is_pinned, count)) {
+    if (!detect_init_independence(m, count)) {
       return false;
     }
   }
@@ -3176,7 +3237,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseTransform* phase,
     return FAIL;                // wrong allocation!  (store needs to float up)
   Node* val = st->in(MemNode::ValueIn);
   int complexity_count = 0;
-  if (!detect_init_independence(val, true, complexity_count))
+  if (!detect_init_independence(val, complexity_count))
     return FAIL;                // stored value must be 'simple enough'
 
   // The Store can be captured only if nothing after the allocation

@@ -93,7 +93,7 @@ import sun.util.locale.provider.LocaleResources;
  * just with slightly different rules.
  * The documentation of each field explains how it operates.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This is a final, immutable and thread-safe enum.
  *
  * @since 1.8
@@ -115,6 +115,10 @@ public enum ChronoField implements TemporalField {
      * object stores, using integer division to remove excess precision.
      * For example, if the {@code TemporalAccessor} stores time to millisecond precision,
      * then the nano-of-second must be divided by 1,000,000 before replacing the milli-of-second.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The field is resolved in combination with {@code MILLI_OF_SECOND} and {@code MICRO_OF_SECOND}.
      */
     NANO_OF_SECOND("NanoOfSecond", NANOS, SECONDS, ValueRange.of(0, 999_999_999)),
     /**
@@ -126,6 +130,11 @@ public enum ChronoField implements TemporalField {
      * This field is used to represent the nano-of-day handling any fraction of the second.
      * Implementations of {@code TemporalAccessor} should provide a value for this field if
      * they can return a value for {@link #SECOND_OF_DAY} filling unknown precision with zero.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The value is split to form {@code NANO_OF_SECOND}, {@code SECOND_OF_MINUTE},
+     * {@code MINUTE_OF_HOUR} and {@code HOUR_OF_DAY} fields.
      */
     NANO_OF_DAY("NanoOfDay", NANOS, DAYS, ValueRange.of(0, 86400L * 1000_000_000L - 1)),
     /**
@@ -141,6 +150,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * When this field is used for setting a value, it should behave in the same way as
      * setting {@link #NANO_OF_SECOND} with the value multiplied by 1,000.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The field is resolved in combination with {@code MILLI_OF_SECOND} to produce
+     * {@code NANO_OF_SECOND}.
      */
     MICRO_OF_SECOND("MicroOfSecond", MICROS, SECONDS, ValueRange.of(0, 999_999)),
     /**
@@ -155,6 +169,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * When this field is used for setting a value, it should behave in the same way as
      * setting {@link #NANO_OF_DAY} with the value multiplied by 1,000.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The value is split to form {@code MICRO_OF_SECOND}, {@code SECOND_OF_MINUTE},
+     * {@code MINUTE_OF_HOUR} and {@code HOUR_OF_DAY} fields.
      */
     MICRO_OF_DAY("MicroOfDay", MICROS, DAYS, ValueRange.of(0, 86400L * 1000_000L - 1)),
     /**
@@ -170,6 +189,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * When this field is used for setting a value, it should behave in the same way as
      * setting {@link #NANO_OF_SECOND} with the value multiplied by 1,000,000.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The field is resolved in combination with {@code MICRO_OF_SECOND} to produce
+     * {@code NANO_OF_SECOND}.
      */
     MILLI_OF_SECOND("MilliOfSecond", MILLIS, SECONDS, ValueRange.of(0, 999)),
     /**
@@ -184,6 +208,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * When this field is used for setting a value, it should behave in the same way as
      * setting {@link #NANO_OF_DAY} with the value multiplied by 1,000,000.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The value is split to form {@code MILLI_OF_SECOND}, {@code SECOND_OF_MINUTE},
+     * {@code MINUTE_OF_HOUR} and {@code HOUR_OF_DAY} fields.
      */
     MILLI_OF_DAY("MilliOfDay", MILLIS, DAYS, ValueRange.of(0, 86400L * 1000L - 1)),
     /**
@@ -191,6 +220,9 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This counts the second within the minute, from 0 to 59.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
      */
     SECOND_OF_MINUTE("SecondOfMinute", SECONDS, MINUTES, ValueRange.of(0, 59), "second"),
     /**
@@ -198,6 +230,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This counts the second within the day, from 0 to (24 * 60 * 60) - 1.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The value is split to form {@code SECOND_OF_MINUTE}, {@code MINUTE_OF_HOUR}
+     * and {@code HOUR_OF_DAY} fields.
      */
     SECOND_OF_DAY("SecondOfDay", SECONDS, DAYS, ValueRange.of(0, 86400L - 1)),
     /**
@@ -205,6 +242,9 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This counts the minute within the hour, from 0 to 59.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
      */
     MINUTE_OF_HOUR("MinuteOfHour", MINUTES, HOURS, ValueRange.of(0, 59), "minute"),
     /**
@@ -212,6 +252,10 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This counts the minute within the day, from 0 to (24 * 60) - 1.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The value is split to form {@code MINUTE_OF_HOUR} and {@code HOUR_OF_DAY} fields.
      */
     MINUTE_OF_DAY("MinuteOfDay", MINUTES, DAYS, ValueRange.of(0, (24 * 60) - 1)),
     /**
@@ -220,6 +264,12 @@ public enum ChronoField implements TemporalField {
      * This counts the hour within the AM/PM, from 0 to 11.
      * This is the hour that would be observed on a standard 12-hour digital clock.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated from 0 to 11 in strict and smart mode.
+     * In lenient mode the value is not validated. It is combined with
+     * {@code AMPM_OF_DAY} to form {@code HOUR_OF_DAY} by multiplying
+     * the {AMPM_OF_DAY} value by 12.
      */
     HOUR_OF_AMPM("HourOfAmPm", HOURS, HALF_DAYS, ValueRange.of(0, 11)),
     /**
@@ -228,6 +278,12 @@ public enum ChronoField implements TemporalField {
      * This counts the hour within the AM/PM, from 1 to 12.
      * This is the hour that would be observed on a standard 12-hour analog wall clock.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated from 1 to 12 in strict mode and from
+     * 0 to 12 in smart mode. In lenient mode the value is not validated.
+     * The field is converted to an {@code HOUR_OF_AMPM} with the same value,
+     * unless the value is 12, in which case it is converted to 0.
      */
     CLOCK_HOUR_OF_AMPM("ClockHourOfAmPm", HOURS, HALF_DAYS, ValueRange.of(1, 12)),
     /**
@@ -236,6 +292,13 @@ public enum ChronoField implements TemporalField {
      * This counts the hour within the day, from 0 to 23.
      * This is the hour that would be observed on a standard 24-hour digital clock.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated in strict and smart mode but not in lenient mode.
+     * The field is combined with {@code MINUTE_OF_HOUR}, {@code SECOND_OF_MINUTE} and
+     * {@code NANO_OF_SECOND} to produce a {@code LocalTime}.
+     * In lenient mode, any excess days are added to the parsed date, or
+     * made available via {@link java.time.format.DateTimeFormatter#parsedExcessDays()}.
      */
     HOUR_OF_DAY("HourOfDay", HOURS, DAYS, ValueRange.of(0, 23), "hour"),
     /**
@@ -244,6 +307,12 @@ public enum ChronoField implements TemporalField {
      * This counts the hour within the AM/PM, from 1 to 24.
      * This is the hour that would be observed on a 24-hour analog wall clock.
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated from 1 to 24 in strict mode and from
+     * 0 to 24 in smart mode. In lenient mode the value is not validated.
+     * The field is converted to an {@code HOUR_OF_DAY} with the same value,
+     * unless the value is 24, in which case it is converted to 0.
      */
     CLOCK_HOUR_OF_DAY("ClockHourOfDay", HOURS, DAYS, ValueRange.of(1, 24)),
     /**
@@ -251,6 +320,12 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This counts the AM/PM within the day, from 0 (AM) to 1 (PM).
      * This field has the same meaning for all calendar systems.
+     * <p>
+     * When parsing this field it behaves equivalent to the following:
+     * The value is validated from 0 to 1 in strict and smart mode.
+     * In lenient mode the value is not validated. It is combined with
+     * {@code HOUR_OF_AMPM} to form {@code HOUR_OF_DAY} by multiplying
+     * the {AMPM_OF_DAY} value by 12.
      */
     AMPM_OF_DAY("AmPmOfDay", HALF_DAYS, DAYS, ValueRange.of(0, 1), "dayperiod"),
     /**

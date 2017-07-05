@@ -63,14 +63,18 @@ bool ConnectionGraph::has_candidates(Compile *C) {
   // EA brings benefits only when the code has allocations and/or locks which
   // are represented by ideal Macro nodes.
   int cnt = C->macro_count();
-  for( int i=0; i < cnt; i++ ) {
+  for (int i = 0; i < cnt; i++) {
     Node *n = C->macro_node(i);
-    if ( n->is_Allocate() )
+    if (n->is_Allocate())
       return true;
-    if( n->is_Lock() ) {
+    if (n->is_Lock()) {
       Node* obj = n->as_Lock()->obj_node()->uncast();
-      if( !(obj->is_Parm() || obj->is_Con()) )
+      if (!(obj->is_Parm() || obj->is_Con()))
         return true;
+    }
+    if (n->is_CallStaticJava() &&
+        n->as_CallStaticJava()->is_boxing_method()) {
+      return true;
     }
   }
   return false;
@@ -115,7 +119,7 @@ bool ConnectionGraph::compute_escape() {
   { Compile::TracePhase t3("connectionGraph", &Phase::_t_connectionGraph, true);
 
   // 1. Populate Connection Graph (CG) with PointsTo nodes.
-  ideal_nodes.map(C->unique(), NULL);  // preallocate space
+  ideal_nodes.map(C->live_nodes(), NULL);  // preallocate space
   // Initialize worklist
   if (C->root() != NULL) {
     ideal_nodes.push(C->root());
@@ -152,8 +156,11 @@ bool ConnectionGraph::compute_escape() {
       // escape status of the associated Allocate node some of them
       // may be eliminated.
       storestore_worklist.append(n);
+    } else if (n->is_MemBar() && (n->Opcode() == Op_MemBarRelease) &&
+               (n->req() > MemBarNode::Precedent)) {
+      record_for_optimizer(n);
 #ifdef ASSERT
-    } else if(n->is_AddP()) {
+    } else if (n->is_AddP()) {
       // Collect address nodes for graph verification.
       addp_worklist.append(n);
 #endif
@@ -206,8 +213,15 @@ bool ConnectionGraph::compute_escape() {
   int non_escaped_length = non_escaped_worklist.length();
   for (int next = 0; next < non_escaped_length; next++) {
     JavaObjectNode* ptn = non_escaped_worklist.at(next);
-    if (ptn->escape_state() == PointsToNode::NoEscape &&
-        ptn->scalar_replaceable()) {
+    bool noescape = (ptn->escape_state() == PointsToNode::NoEscape);
+    Node* n = ptn->ideal_node();
+    if (n->is_Allocate()) {
+      n->as_Allocate()->_is_non_escaping = noescape;
+    }
+    if (n->is_CallStaticJava()) {
+      n->as_CallStaticJava()->_is_non_escaping = noescape;
+    }
+    if (noescape && ptn->scalar_replaceable()) {
       adjust_scalar_replaceable_state(ptn);
       if (ptn->scalar_replaceable()) {
         alloc_worklist.append(ptn->ideal_node());
@@ -330,8 +344,10 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       // Don't mark as processed since call's arguments have to be processed.
       delayed_worklist->push(n);
       // Check if a call returns an object.
-      if (n->as_Call()->returns_pointer() &&
-          n->as_Call()->proj_out(TypeFunc::Parms) != NULL) {
+      if ((n->as_Call()->returns_pointer() &&
+           n->as_Call()->proj_out(TypeFunc::Parms) != NULL) ||
+          (n->is_CallStaticJava() &&
+           n->as_CallStaticJava()->is_boxing_method())) {
         add_call_node(n->as_Call());
       }
     }
@@ -387,8 +403,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_ConNKlass: {
       // assume all oop constants globally escape except for null
       PointsToNode::EscapeState es;
-      if (igvn->type(n) == TypePtr::NULL_PTR ||
-          igvn->type(n) == TypeNarrowOop::NULL_PTR) {
+      const Type* t = igvn->type(n);
+      if (t == TypePtr::NULL_PTR || t == TypeNarrowOop::NULL_PTR) {
         es = PointsToNode::NoEscape;
       } else {
         es = PointsToNode::GlobalEscape;
@@ -468,6 +484,9 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       Node* adr = n->in(MemNode::Address);
       const Type *adr_type = igvn->type(adr);
       adr_type = adr_type->make_ptr();
+      if (adr_type == NULL) {
+        break; // skip dead nodes
+      }
       if (adr_type->isa_oopptr() ||
           (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
@@ -660,14 +679,18 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_GetAndSetP:
     case Op_GetAndSetN: {
       Node* adr = n->in(MemNode::Address);
-      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
-        const Type* t = _igvn->type(n);
-        if (t->make_ptr() != NULL) {
-          add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
-        }
-      }
       const Type *adr_type = _igvn->type(adr);
       adr_type = adr_type->make_ptr();
+#ifdef ASSERT
+      if (adr_type == NULL) {
+        n->dump(1);
+        assert(adr_type != NULL, "dead node should not be on list");
+        break;
+      }
+#endif
+      if (opcode == Op_GetAndSetP || opcode == Op_GetAndSetN) {
+        add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
+      }
       if (adr_type->isa_oopptr() ||
           (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
@@ -797,6 +820,18 @@ void ConnectionGraph::add_call_node(CallNode* call) {
       // Returns a newly allocated unescaped object.
       add_java_object(call, PointsToNode::NoEscape);
       ptnode_adr(call_idx)->set_scalar_replaceable(false);
+    } else if (meth->is_boxing_method()) {
+      // Returns boxing object
+      PointsToNode::EscapeState es;
+      vmIntrinsics::ID intr = meth->intrinsic_id();
+      if (intr == vmIntrinsics::_floatValue || intr == vmIntrinsics::_doubleValue) {
+        // It does not escape if object is always allocated.
+        es = PointsToNode::NoEscape;
+      } else {
+        // It escapes globally if object could be loaded from cache.
+        es = PointsToNode::GlobalEscape;
+      }
+      add_java_object(call, es);
     } else {
       BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
       call_analyzer->copy_dependencies(_compile->dependencies());
@@ -943,6 +978,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
       assert((name == NULL || strcmp(name, "uncommon_trap") != 0), "normal calls only");
 #endif
       ciMethod* meth = call->as_CallJava()->method();
+      if ((meth != NULL) && meth->is_boxing_method()) {
+        break; // Boxing methods do not modify any oops.
+      }
       BCEscapeAnalyzer* call_analyzer = (meth !=NULL) ? meth->get_bcea() : NULL;
       // fall-through if not a Java method or no analyzer information
       if (call_analyzer != NULL) {
@@ -1791,9 +1829,8 @@ Node* ConnectionGraph::optimize_ptr_compare(Node* n) {
       jobj2->ideal_node()->is_Con()) {
     // Klass or String constants compare. Need to be careful with
     // compressed pointers - compare types of ConN and ConP instead of nodes.
-    const Type* t1 = jobj1->ideal_node()->bottom_type()->make_ptr();
-    const Type* t2 = jobj2->ideal_node()->bottom_type()->make_ptr();
-    assert(t1 != NULL && t2 != NULL, "sanity");
+    const Type* t1 = jobj1->ideal_node()->get_ptr_type();
+    const Type* t2 = jobj2->ideal_node()->get_ptr_type();
     if (t1->make_ptr() == t2->make_ptr()) {
       return _pcmp_eq;
     } else {
@@ -2744,6 +2781,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           // so it could be eliminated if it has no uses.
           alloc->as_Allocate()->_is_scalar_replaceable = true;
         }
+        if (alloc->is_CallStaticJava()) {
+          // Set the scalar_replaceable flag for boxing method
+          // so it could be eliminated if it has no uses.
+          alloc->as_CallStaticJava()->_is_scalar_replaceable = true;
+        }
         continue;
       }
       if (!n->is_CheckCastPP()) { // not unique CheckCastPP.
@@ -2781,6 +2823,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         // Set the scalar_replaceable flag for allocation
         // so it could be eliminated.
         alloc->as_Allocate()->_is_scalar_replaceable = true;
+      }
+      if (alloc->is_CallStaticJava()) {
+        // Set the scalar_replaceable flag for boxing method
+        // so it could be eliminated.
+        alloc->as_CallStaticJava()->_is_scalar_replaceable = true;
       }
       set_escape_state(ptnode_adr(n->_idx), es); // CheckCastPP escape state
       // in order for an object to be scalar-replaceable, it must be:
@@ -2911,7 +2958,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         // Load/store to instance's field
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar()) {
-        memnode_worklist.append_if_missing(use);
+        if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
+          memnode_worklist.append_if_missing(use);
+        }
       } else if (use->is_AddP() && use->outcnt() > 0) { // No dead nodes
         Node* addp2 = find_second_addp(use, n);
         if (addp2 != NULL) {
@@ -3028,7 +3077,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           continue;
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar()) {
-        memnode_worklist.append_if_missing(use);
+        if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
+          memnode_worklist.append_if_missing(use);
+        }
 #ifdef ASSERT
       } else if(use->is_Mem()) {
         assert(use->in(MemNode::Memory) != n, "EA: missing memory path");
@@ -3264,7 +3315,12 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
     if (ptn == NULL || !ptn->is_JavaObject())
       continue;
     PointsToNode::EscapeState es = ptn->escape_state();
-    if (ptn->ideal_node()->is_Allocate() && (es == PointsToNode::NoEscape || Verbose)) {
+    if ((es != PointsToNode::NoEscape) && !Verbose) {
+      continue;
+    }
+    Node* n = ptn->ideal_node();
+    if (n->is_Allocate() || (n->is_CallStaticJava() &&
+                             n->as_CallStaticJava()->is_boxing_method())) {
       if (first) {
         tty->cr();
         tty->print("======== Connection graph for ");

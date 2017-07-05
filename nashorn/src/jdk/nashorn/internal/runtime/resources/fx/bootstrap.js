@@ -35,8 +35,6 @@ com.sun.javafx.application.LauncherImpl.launchApplication((Java.extend(javafx.ap
     init: function() {
         // Java FX packages and classes must be defined here because
         // they may not be viable until launch time due to clinit ordering.
-
-        load("fx:base.js");
     },
 
     // Overridden javafx.application.Application.start(Stage stage);

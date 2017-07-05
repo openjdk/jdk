@@ -142,7 +142,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
      * This class simply provides a context for a single launch and
      * accept. It provides instance fields that can be used by
      * all threads involved. This stuff can't be in the Connector proper
-     * because the connector is is a singleton and not specific to any
+     * because the connector is a singleton and is not specific to any
      * one launch.
      */
     private class Helper {

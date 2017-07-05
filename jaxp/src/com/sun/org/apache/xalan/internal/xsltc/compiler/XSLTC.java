@@ -39,8 +39,10 @@ import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import javax.xml.XMLConstants;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
@@ -136,6 +138,16 @@ public final class XSLTC {
     private boolean _useServicesMechanism = true;
 
     /**
+     * protocols allowed for external references set by the stylesheet processing instruction, Import and Include element.
+     */
+    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+     /**
+     * protocols allowed for external DTD references in source file and/or stylesheet.
+     */
+    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+
+
+    /**
      * XSLTC compiler constructor
      */
     public XSLTC(boolean useServicesMechanism) {
@@ -167,6 +179,31 @@ public final class XSLTC {
      */
     public void setServicesMechnism(boolean flag) {
         _useServicesMechanism = flag;
+    }
+
+    /**
+     * Return allowed protocols for accessing external stylesheet.
+     */
+    public String getProperty(String name) {
+        if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
+            return _accessExternalStylesheet;
+        }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
+            return _accessExternalDTD;
+        }
+        return null;
+    }
+
+    /**
+     * Set allowed protocols for accessing external stylesheet.
+     */
+    public void setProperty(String name, String value) {
+        if (name.equals(XMLConstants.ACCESS_EXTERNAL_STYLESHEET)) {
+            _accessExternalStylesheet = (String)value;
+        }
+        else if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
+            _accessExternalDTD = (String)value;
+        }
     }
 
     /**

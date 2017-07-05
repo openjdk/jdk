@@ -62,16 +62,20 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahDate;
+import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoDate;
@@ -119,8 +123,11 @@ public class TCKHijrahChronology {
             //{HijrahChronology.INSTANCE.date(1324, 7, 3), LocalDate.of(1906, 8, 23)},
             //{HijrahChronology.INSTANCE.date(1324, 7, 4), LocalDate.of(1906, 8, 24)},
             //{HijrahChronology.INSTANCE.date(1325, 1, 1), LocalDate.of(1907, 2, 13)},
-            {HijrahChronology.INSTANCE.date(1434, 7, 1), LocalDate.of(2013, 5, 11)},
 
+            {HijrahChronology.INSTANCE.date(1434, 7, 1), LocalDate.of(2013, 5, 11)},
+            {HijrahChronology.INSTANCE.date(HijrahEra.AH, 1434, 7, 1), LocalDate.of(2013, 5, 11)},
+            {HijrahChronology.INSTANCE.dateYearDay(HijrahEra.AH, 1434, 178), LocalDate.of(2013, 5, 11)},
+            {HijrahChronology.INSTANCE.dateYearDay(1434, 178), LocalDate.of(2013, 5, 11)},
             //{HijrahChronology.INSTANCE.date(1500, 3, 3), LocalDate.of(2079, 1, 5)},
             //{HijrahChronology.INSTANCE.date(1500, 10, 28), LocalDate.of(2079, 8, 25)},
             //{HijrahChronology.INSTANCE.date(1500, 10, 29), LocalDate.of(2079, 8, 26)},
@@ -140,6 +147,26 @@ public class TCKHijrahChronology {
     @Test(dataProvider="samples")
     public void test_dayOfWeekEqualIsoDayOfWeek(ChronoLocalDate<?> hijrahDate, LocalDate iso) {
         assertEquals(hijrahDate.get(DAY_OF_WEEK), iso.get(DAY_OF_WEEK), "Hijrah day of week should be same as ISO day of week");
+    }
+
+    @Test
+    public void test_dateNow(){
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now()) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(ZoneId.systemDefault())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(Clock.systemDefaultZone())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahDate.now(Clock.systemDefaultZone().getZone())) ;
+
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(ZoneId.systemDefault())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(), HijrahChronology.INSTANCE.dateNow(Clock.systemDefaultZone().getZone())) ;
+
+        ZoneId zoneId = ZoneId.of("Europe/Paris");
+        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId))) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahChronology.INSTANCE.dateNow(Clock.system(zoneId).getZone())) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahDate.now(Clock.system(zoneId))) ;
+        assertEquals(HijrahChronology.INSTANCE.dateNow(zoneId), HijrahDate.now(Clock.system(zoneId).getZone())) ;
+
+        assertEquals(HijrahChronology.INSTANCE.dateNow(ZoneId.of(ZoneOffset.UTC.getId())), HijrahChronology.INSTANCE.dateNow(Clock.systemUTC())) ;
     }
 
     @DataProvider(name="badDates")

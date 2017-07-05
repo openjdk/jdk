@@ -67,10 +67,9 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup
 
 import java.io.PrintStream;
 import java.lang.reflect.Array;
-import java.util.ArrayDeque;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -114,7 +113,7 @@ public class MethodEmitter implements Emitter {
     private final MethodVisitor method;
 
     /** Current type stack for current evaluation */
-    private ArrayDeque<Type> stack;
+    private Label.Stack stack;
 
     /** Parent classEmitter representing the class of this method */
     private final ClassEmitter classEmitter;
@@ -189,7 +188,7 @@ public class MethodEmitter implements Emitter {
     @Override
     public void begin() {
         classEmitter.beginMethod(this);
-        stack = new ArrayDeque<>();
+        newStack();
         method.visitCode();
     }
 
@@ -203,6 +202,10 @@ public class MethodEmitter implements Emitter {
         method.visitEnd();
 
         classEmitter.endMethod(this);
+    }
+
+    private void newStack() {
+        stack = new Label.Stack();
     }
 
     @Override
@@ -288,11 +291,7 @@ public class MethodEmitter implements Emitter {
      * @return the type at position "pos" on the stack
      */
     final Type peekType(final int pos) {
-        final Iterator<Type> iter = stack.iterator();
-        for (int i = 0; i < pos; i++) {
-            iter.next();
-        }
-        return iter.next();
+        return stack.peek(pos);
     }
 
     /**
@@ -484,7 +483,7 @@ public class MethodEmitter implements Emitter {
             name = THIS_DEBUGGER.symbolName();
         }
 
-        method.visitLocalVariable(name, symbol.getSymbolType().getDescriptor(), null, start, end, symbol.getSlot());
+        method.visitLocalVariable(name, symbol.getSymbolType().getDescriptor(), null, start.getLabel(), end.getLabel(), symbol.getSlot());
     }
 
     /**
@@ -506,17 +505,6 @@ public class MethodEmitter implements Emitter {
     MethodEmitter stringBuilderAppend() {
         convert(Type.STRING);
         return invoke(virtualCallNoLookup(StringBuilder.class, "append", StringBuilder.class, String.class));
-    }
-
-    /**
-     * Associate a variable with a given range
-     *
-     * @param name  name of the variable
-     * @param start start
-     * @param end   end
-     */
-    void markerVariable(final String name, final Label start, final Label end) {
-        method.visitLocalVariable(name, Type.OBJECT.getDescriptor(), null, start, end, 0);
     }
 
     /**
@@ -626,7 +614,7 @@ public class MethodEmitter implements Emitter {
      * @param typeDescriptor type descriptor for exception
      */
     void _try(final Label entry, final Label exit, final Label recovery, final String typeDescriptor) {
-        method.visitTryCatchBlock(entry, exit, recovery, typeDescriptor);
+        method.visitTryCatchBlock(entry.getLabel(), exit.getLabel(), recovery.getLabel(), typeDescriptor);
     }
 
     /**
@@ -638,7 +626,7 @@ public class MethodEmitter implements Emitter {
      * @param clazz    exception class
      */
     void _try(final Label entry, final Label exit, final Label recovery, final Class<?> clazz) {
-        method.visitTryCatchBlock(entry, exit, recovery, CompilerConstants.className(clazz));
+        method.visitTryCatchBlock(entry.getLabel(), exit.getLabel(), recovery.getLabel(), CompilerConstants.className(clazz));
     }
 
     /**
@@ -871,7 +859,7 @@ public class MethodEmitter implements Emitter {
     }
 
     private boolean isThisSlot(final int slot) {
-        if(functionNode == null) {
+        if (functionNode == null) {
             return slot == CompilerConstants.JAVA_THIS.slot();
         }
         final int thisSlot = compilerConstant(THIS).getSlot();
@@ -915,7 +903,6 @@ public class MethodEmitter implements Emitter {
             dup();
             return this;
         }
-        debug("load compiler constant ", symbol);
         return load(symbol);
     }
 
@@ -1228,6 +1215,14 @@ public class MethodEmitter implements Emitter {
         return invoke(INVOKEINTERFACE, className, methodName, methodDescriptor, true);
     }
 
+    static jdk.internal.org.objectweb.asm.Label[] getLabels(final Label... table) {
+        final jdk.internal.org.objectweb.asm.Label[] internalLabels = new jdk.internal.org.objectweb.asm.Label[table.length];
+        for (int i = 0; i < table.length; i++) {
+            internalLabels[i] = table[i].getLabel();
+        }
+        return internalLabels;
+    }
+
     /**
      * Generate a lookup switch, popping the switch value from the stack
      *
@@ -1235,10 +1230,10 @@ public class MethodEmitter implements Emitter {
      * @param values       case values for the table
      * @param table        default label
      */
-    void lookupswitch(final Label defaultLabel, final int[] values, final Label[] table) {
+    void lookupswitch(final Label defaultLabel, final int[] values, final Label... table) {//Collection<Label> table) {
         debug("lookupswitch", peekType());
         popType(Type.INT);
-        method.visitLookupSwitchInsn(defaultLabel, values, table);
+        method.visitLookupSwitchInsn(defaultLabel.getLabel(), values, getLabels(table));
     }
 
     /**
@@ -1248,10 +1243,10 @@ public class MethodEmitter implements Emitter {
      * @param defaultLabel  default label
      * @param table         label table
      */
-    void tableswitch(final int lo, final int hi, final Label defaultLabel, final Label[] table) {
+    void tableswitch(final int lo, final int hi, final Label defaultLabel, final Label... table) {
         debug("tableswitch", peekType());
         popType(Type.INT);
-        method.visitTableSwitchInsn(lo, hi, defaultLabel, table);
+        method.visitTableSwitchInsn(lo, hi, defaultLabel.getLabel(), getLabels(table));
     }
 
     /**
@@ -1358,7 +1353,7 @@ public class MethodEmitter implements Emitter {
             popType();
         }
         mergeStackTo(label);
-        method.visitJumpInsn(opcode, label);
+        method.visitJumpInsn(opcode, label.getLabel());
     }
 
     /**
@@ -1487,9 +1482,9 @@ public class MethodEmitter implements Emitter {
      * @param label destination label
      */
     void _goto(final Label label) {
-        debug("goto", label);
+        //debug("goto", label);
         jump(GOTO, label, 0);
-        stack = null;
+        stack = null; //whoever reaches the point after us provides the stack, because we don't
     }
 
     /**
@@ -1500,38 +1495,31 @@ public class MethodEmitter implements Emitter {
      *
      * @return true if stacks are equivalent, false otherwise
      */
-    private boolean stacksEquivalent(final ArrayDeque<Type> s0, final ArrayDeque<Type> s1) {
-        if (s0.size() != s1.size()) {
-            debug("different stack sizes", s0, s1);
-            return false;
-        }
-
-        final Type[] s0a = s0.toArray(new Type[s0.size()]);
-        final Type[] s1a = s1.toArray(new Type[s1.size()]);
-        for (int i = 0; i < s0.size(); i++) {
-            if (!s0a[i].isEquivalentTo(s1a[i])) {
-                debug("different stack element", s0a[i], s1a[i]);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * A join in control flow - helper function that makes sure all entry stacks
      * discovered for the join point so far are equivalent
-     * @param label
+     *
+     * MergeStack: we are about to enter a label. If its stack, label.getStack() is null
+     * we have never been here before. Then we are expected to carry a stack with us.
+     *
+     * @param label label
      */
     private void mergeStackTo(final Label label) {
-        final ArrayDeque<Type> labelStack = label.getStack();
-        //debug(labelStack == null ? " >> Control flow - first visit ", label : " >> Control flow - JOIN with ", labelStack, " at ", label);
+        //sometimes we can do a merge stack without having a stack - i.e. when jumping ahead to dead code
+        //see NASHORN-73. So far we had been saved by the line number nodes. This should have been fixed
+        //by Lower removing everything after an unconditionally executed terminating statement OR a break
+        //or continue in a block. Previously code left over after breaks and continues was still there
+        //and caused bytecode to be generated - which crashed on stack not being there, as the merge
+        //was not in fact preceeded by a visit. Furthermore, this led to ASM putting out its NOP NOP NOP
+        //ATHROW sequences instead of no code being generated at all. This should now be fixed.
+        assert stack != null : label + " entered with no stack. deadcode that remains?";
+
+        final Label.Stack labelStack = label.getStack();
         if (labelStack == null) {
-            assert stack != null;
-            label.setStack(stack.clone());
+            label.setStack(stack.copy());
             return;
         }
-        assert stacksEquivalent(stack, labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point";
+        assert stack.isEquivalentTo(labelStack) : "stacks " + stack + " is not equivalent with " + labelStack + " at join point";
     }
 
     /**
@@ -1548,14 +1536,14 @@ public class MethodEmitter implements Emitter {
         if (stack == null) {
             stack = label.getStack();
             if (stack == null) {
-                stack = new ArrayDeque<>(); //we don't have a stack at this point.
+                newStack();
             }
         }
         debug_label(label);
 
         mergeStackTo(label); //we have to merge our stack to whatever is in the label
 
-        method.visitLabel(label);
+        method.visitLabel(label.getLabel());
     }
 
     /**
@@ -1675,11 +1663,10 @@ public class MethodEmitter implements Emitter {
      * @return array of Types
      */
     protected Type[] getTypesFromStack(final int count) {
-        final Iterator<Type> iter  = stack.iterator();
-        final Type[]         types = new Type[count];
-
+        final Type[] types = new Type[count];
+        int pos = 0;
         for (int i = count - 1; i >= 0; i--) {
-            types[i] = iter.next();
+            types[i] = stack.peek(pos++);
         }
 
         return types;
@@ -1695,11 +1682,11 @@ public class MethodEmitter implements Emitter {
      * @return function signature for stack contents
      */
     private String getDynamicSignature(final Type returnType, final int argCount) {
-        final Iterator<Type> iter       = stack.iterator();
         final Type[]         paramTypes = new Type[argCount];
 
+        int pos = 0;
         for (int i = argCount - 1; i >= 0; i--) {
-            paramTypes[i] = iter.next();
+            paramTypes[i] = stack.peek(pos++);
         }
         final String descriptor = Type.getMethodDescriptor(returnType, paramTypes);
         for (int i = 0; i < argCount; i++) {
@@ -2018,8 +2005,13 @@ public class MethodEmitter implements Emitter {
      * @param line  line number
      * @param label label
      */
-    void lineNumber(final int line, final Label label) {
-        method.visitLineNumber(line, label);
+    void lineNumber(final int line) {
+        if (env._debug_lines) {
+            debug_label("[LINE]", line);
+            final jdk.internal.org.objectweb.asm.Label l = new jdk.internal.org.objectweb.asm.Label();
+            method.visitLabel(l);
+            method.visitLineNumber(line, l);
+        }
     }
 
     /*
@@ -2116,12 +2108,12 @@ public class MethodEmitter implements Emitter {
                 pad--;
             }
 
-            if (!stack.isEmpty()) {
+            if (stack != null && !stack.isEmpty()) {
                 sb.append("{");
                 sb.append(stack.size());
                 sb.append(":");
-                for (final Iterator<Type> iter = stack.iterator(); iter.hasNext();) {
-                    final Type t = iter.next();
+                for (int pos = 0; pos < stack.size(); pos++) {
+                    final Type t = stack.peek(pos);
 
                     if (t == Type.SCOPE) {
                         sb.append("scope");
@@ -2147,7 +2139,7 @@ public class MethodEmitter implements Emitter {
                         sb.append(t.getDescriptor());
                     }
 
-                    if (iter.hasNext()) {
+                    if (pos + 1 < stack.size()) {
                         sb.append(' ');
                     }
                 }

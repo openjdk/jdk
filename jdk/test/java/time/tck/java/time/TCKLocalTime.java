@@ -142,7 +142,7 @@ public class TCKLocalTime extends AbstractDateTimeTest {
 
     private static final TemporalUnit[] INVALID_UNITS;
     static {
-        EnumSet<ChronoUnit> set = EnumSet.range(WEEKS, FOREVER);
+        EnumSet<ChronoUnit> set = EnumSet.range(DAYS, FOREVER);
         INVALID_UNITS = (TemporalUnit[]) set.toArray(new TemporalUnit[set.size()]);
     }
 
@@ -1122,14 +1122,6 @@ public class TCKLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test
-    public void test_plus_longTemporalUnit_multiples() {
-        assertEquals(TEST_12_30_40_987654321.plus(0, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.plus(1, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.plus(2, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.plus(-3, DAYS), TEST_12_30_40_987654321);
-    }
-
     @Test(expectedExceptions=NullPointerException.class)
     public void test_plus_longTemporalUnit_null() {
         TEST_12_30_40_987654321.plus(1, (TemporalUnit) null);
@@ -1554,14 +1546,6 @@ public class TCKLocalTime extends AbstractDateTimeTest {
                 // expected
             }
         }
-    }
-
-    @Test
-    public void test_minus_longTemporalUnit_long_multiples() {
-        assertEquals(TEST_12_30_40_987654321.minus(0, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.minus(1, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.minus(2, DAYS), TEST_12_30_40_987654321);
-        assertEquals(TEST_12_30_40_987654321.minus(-3, DAYS), TEST_12_30_40_987654321);
     }
 
     @Test(expectedExceptions=NullPointerException.class)

@@ -249,11 +249,14 @@ class JapaneseImperialCalendar extends Calendar {
             CalendarDate transitionDate = eras[i].getSinceDate();
             date.setDate(transitionDate.getYear(), BaseCalendar.JANUARY, 1);
             long fdd = gcal.getFixedDate(date);
-            dayOfYear = Math.min((int)(fdd - fd), dayOfYear);
+            if (fd != fdd) {
+                dayOfYear = Math.min((int)(fd - fdd) + 1, dayOfYear);
+            }
             date.setDate(transitionDate.getYear(), BaseCalendar.DECEMBER, 31);
-            fdd = gcal.getFixedDate(date) + 1;
-            dayOfYear = Math.min((int)(fd - fdd), dayOfYear);
-
+            fdd = gcal.getFixedDate(date);
+            if (fd != fdd) {
+                dayOfYear = Math.min((int)(fdd - fd) + 1, dayOfYear);
+            }
             LocalGregorianCalendar.Date lgd = getCalendarDate(fd - 1);
             int y = lgd.getYear();
             // Unless the first year starts from January 1, the actual

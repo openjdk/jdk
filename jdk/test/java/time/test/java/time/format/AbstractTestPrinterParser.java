@@ -63,7 +63,7 @@ import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
@@ -85,7 +85,7 @@ public class AbstractTestPrinterParser {
     protected DateTimeFormatterBuilder builder;
     protected TemporalAccessor dta;
     protected Locale locale;
-    protected DateTimeFormatSymbols symbols;
+    protected DecimalStyle decimalStyle;
 
 
     @BeforeMethod
@@ -94,7 +94,7 @@ public class AbstractTestPrinterParser {
         builder = new DateTimeFormatterBuilder();
         dta = ZonedDateTime.of(LocalDateTime.of(2011, 6, 30, 12, 30, 40, 0), ZoneId.of("Europe/Paris"));
         locale = Locale.ENGLISH;
-        symbols = DateTimeFormatSymbols.STANDARD;
+        decimalStyle = DecimalStyle.STANDARD;
     }
 
     protected void setCaseSensitive(boolean caseSensitive) {
@@ -114,35 +114,35 @@ public class AbstractTestPrinterParser {
     }
 
     protected DateTimeFormatter getFormatter() {
-        return builder.toFormatter(locale).withSymbols(symbols);
+        return builder.toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(char c) {
-        return builder.appendLiteral(c).toFormatter(locale).withSymbols(symbols);
+        return builder.appendLiteral(c).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(String s) {
-        return builder.appendLiteral(s).toFormatter(locale).withSymbols(symbols);
+        return builder.appendLiteral(s).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(TemporalField field) {
-        return builder.appendText(field).toFormatter(locale).withSymbols(symbols);
+        return builder.appendText(field).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(TemporalField field, TextStyle style) {
-        return builder.appendText(field, style).toFormatter(locale).withSymbols(symbols);
+        return builder.appendText(field, style).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle) {
-        return builder.appendValue(field, minWidth, maxWidth, signStyle).toFormatter(locale).withSymbols(symbols);
+        return builder.appendValue(field, minWidth, maxWidth, signStyle).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getFormatter(String pattern, String noOffsetText) {
-        return builder.appendOffset(pattern, noOffsetText).toFormatter(locale).withSymbols(symbols);
+        return builder.appendOffset(pattern, noOffsetText).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected DateTimeFormatter getPatternFormatter(String pattern) {
-        return builder.appendPattern(pattern).toFormatter(locale).withSymbols(symbols);
+        return builder.appendPattern(pattern).toFormatter(locale).withDecimalStyle(decimalStyle);
     }
 
     protected static final TemporalAccessor EMPTY_DTA = new TemporalAccessor() {

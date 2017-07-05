@@ -62,7 +62,7 @@ package test.java.time.format;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static org.testng.Assert.assertSame;
 
-import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DecimalStyle;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
@@ -82,7 +82,7 @@ public class TestDateTimeFormatter {
             new DateTimeFormatterBuilder().appendLiteral("ONE")
                                           .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
                                           .toFormatter(Locale.ENGLISH)
-                                          .withSymbols(DateTimeFormatSymbols.STANDARD);
+                                          .withDecimalStyle(DecimalStyle.STANDARD);
         DateTimeFormatter test = base.withLocale(Locale.ENGLISH);
         assertSame(test, base);
     }

@@ -24,6 +24,7 @@
 #
 # @test
 # @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8010666
+#      8013086 8013233
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -69,7 +70,7 @@ case "$OS" in
     ;;
 esac
 
-# create an SPI implementation
+# create SPI implementations
 mk() {
   d=`dirname $1`
   if [ ! -d $d ]; then mkdir -p $d; fi
@@ -88,16 +89,38 @@ public class tznp extends TimeZoneNameProvider {
     }
 
     public Locale[] getAvailableLocales() {
-        Locale[] locales = {Locale.GERMAN, Locale.US, Locale.JAPANESE, Locale.CHINESE};
+        Locale[] locales = {Locale.US};
+        return locales;
+    }
+}
+EOF
+mk ${SPIDIR}${FS}src${FS}tznp8013086.java << EOF
+import java.util.spi.TimeZoneNameProvider;
+import java.util.Locale;
+import java.util.TimeZone;
+
+public class tznp8013086 extends TimeZoneNameProvider {
+    public String getDisplayName(String ID, boolean daylight, int style, Locale locale) {
+        if (!daylight && style==TimeZone.LONG) {
+            return "tznp8013086";
+        } else {
+            return null;
+        }
+    }
+
+    public Locale[] getAvailableLocales() {
+        Locale[] locales = {Locale.JAPAN};
         return locales;
     }
 }
 EOF
 mk ${SPIDIR}${FS}dest${FS}META-INF${FS}services${FS}java.util.spi.TimeZoneNameProvider << EOF
 tznp
+tznp8013086
 EOF
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${SPIDIR}${FS}dest \
-    ${SPIDIR}${FS}src${FS}tznp.java
+    ${SPIDIR}${FS}src${FS}tznp.java \
+    ${SPIDIR}${FS}src${FS}tznp8013086.java
 ${COMPILEJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} cvf ${SPIDIR}${FS}tznp.jar -C ${SPIDIR}${FS}dest .
 
 # get the platform default locales
@@ -268,5 +291,13 @@ then
   PARAM3=
   runTest
 fi
+
+# testing 8013086 fix.
+METHODNAME=bug8013086Test
+PREFLIST="JRE,SPI -Djava.ext.dirs=${SPIDIR}"
+PARAM1=ja
+PARAM2=JP
+PARAM3=
+runTest
 
 exit $result

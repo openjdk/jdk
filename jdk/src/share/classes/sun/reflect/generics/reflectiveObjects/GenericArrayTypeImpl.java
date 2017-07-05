@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.reflect.generics.reflectiveObjects;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
-
+import java.util.Objects;
 
 /**
  * Implementation of GenericArrayType interface for core reflection.
@@ -81,18 +81,13 @@ public class GenericArrayTypeImpl
         if (o instanceof GenericArrayType) {
             GenericArrayType that = (GenericArrayType) o;
 
-            Type thatComponentType = that.getGenericComponentType();
-            return genericComponentType == null ?
-                thatComponentType == null :
-                genericComponentType.equals(thatComponentType);
+            return Objects.equals(genericComponentType, that.getGenericComponentType());
         } else
             return false;
     }
 
     @Override
     public int hashCode() {
-        return (genericComponentType == null) ?
-            0:
-            genericComponentType.hashCode();
+        return Objects.hashCode(genericComponentType);
     }
 }

@@ -23,7 +23,7 @@
 package com.sun.org.apache.xml.internal.serializer.utils;
 
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Objects;
 
 
 /**
@@ -863,7 +863,7 @@ final class URI
   public String getSchemeSpecificPart()
   {
 
-    StringBuffer schemespec = new StringBuffer();
+    final StringBuilder schemespec = new StringBuilder();
 
     if (m_userinfo != null || m_host != null || m_port != -1)
     {
@@ -955,7 +955,7 @@ final class URI
                         boolean p_includeFragment)
   {
 
-    StringBuffer pathString = new StringBuffer(m_path);
+    final StringBuilder pathString = new StringBuilder(m_path);
 
     if (p_includeQueryString && m_queryString != null)
     {
@@ -1321,6 +1321,7 @@ final class URI
    * @return true if p_test is a URI with all values equal to this
    *         URI, false otherwise
    */
+  @Override
   public boolean equals(Object p_test)
   {
 
@@ -1343,15 +1344,29 @@ final class URI
     return false;
   }
 
+  @Override
+  public int hashCode() {
+    int hash = 5;
+    hash = 41 * hash + Objects.hashCode(this.m_scheme);
+    hash = 41 * hash + Objects.hashCode(this.m_userinfo);
+    hash = 41 * hash + Objects.hashCode(this.m_host);
+    hash = 41 * hash + this.m_port;
+    hash = 41 * hash + Objects.hashCode(this.m_path);
+    hash = 41 * hash + Objects.hashCode(this.m_queryString);
+    hash = 41 * hash + Objects.hashCode(this.m_fragment);
+    return hash;
+  }
+
   /**
    * Get the URI as a string specification. See RFC 2396 Section 5.2.
    *
    * @return the URI string specification
    */
+  @Override
   public String toString()
   {
 
-    StringBuffer uriSpecString = new StringBuffer();
+    final StringBuilder uriSpecString = new StringBuilder();
 
     if (m_scheme != null)
     {
@@ -1543,7 +1558,7 @@ final class URI
    *
    *
    * @param p_char the character to check
-   * @return true if the char is betweeen '0' and '9', 'a' and 'f'
+   * @return true if the char is between '0' and '9', 'a' and 'f'
    *         or 'A' and 'F', false otherwise
    */
   private static boolean isHex(char p_char)

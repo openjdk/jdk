@@ -25,12 +25,13 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
-
-import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 
 /**
  *  This class manages different properties related to Stax specification and its implementation.
@@ -50,6 +51,12 @@ public class PropertyManager {
 
     private static final String STRING_INTERNING = "http://xml.org/sax/features/string-interning";
 
+
+    /** Property identifier: access to external dtd */
+    protected static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema  */
+    protected static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     HashMap supportedProps = new HashMap();
 
@@ -117,6 +124,15 @@ public class PropertyManager {
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ATTDEF_FEATURE, new Boolean(false));
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ENTITYDEF_FEATURE, new Boolean(false));
         supportedProps.put(Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_UNDECLARED_ELEMDEF_FEATURE, new Boolean(false));
+
+        //For DOM/SAX, the secure feature is set to true by default
+        String accessExternal =  SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
+        supportedProps.put(ACCESS_EXTERNAL_DTD, accessExternal);
+
+        accessExternal =  SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
+        supportedProps.put(ACCESS_EXTERNAL_SCHEMA, accessExternal);
     }
 
     private void initWriterProps(){

@@ -69,6 +69,16 @@ public final class ObjectClassGenerator {
     static final String SCOPE_MARKER = "P";
 
     /**
+     * Minimum number of extra fields in an object.
+     */
+    static final int FIELD_PADDING  = 4;
+
+    /**
+     * Rounding when calculating the number of fields.
+     */
+    static final int FIELD_ROUNDING = 4;
+
+    /**
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */

@@ -77,6 +77,7 @@ import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -105,6 +106,7 @@ import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTerm;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
+import javax.xml.XMLConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -221,6 +223,12 @@ public class XSDHandler {
     protected static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
 
+    /** property identifier: access external dtd. */
+    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema */
+    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+
     protected static final boolean DEBUG_NODE_POOL = false;
 
     // Data
@@ -250,6 +258,8 @@ public class XSDHandler {
      * <p>Protected to allow access by any traverser.</p>
      */
     protected SecurityManager fSecureProcessing = null;
+
+    private String fAccessExternalSchema;
 
     // These tables correspond to the symbol spaces defined in the
     // spec.
@@ -2150,6 +2160,15 @@ public class XSDHandler {
                         fLastSchemaWasDuplicate = true;
                         return schemaElement;
                     }
+                    if (referType == XSDDescription.CONTEXT_IMPORT || referType == XSDDescription.CONTEXT_INCLUDE
+                            || referType == XSDDescription.CONTEXT_REDEFINE) {
+                        String accessError = SecuritySupport.checkAccess(schemaId, fAccessExternalSchema, Constants.ACCESS_EXTERNAL_ALL);
+                        if (accessError != null) {
+                            reportSchemaFatalError("schema_reference.access",
+                                    new Object[] { SecuritySupport.sanitizePath(schemaId), accessError },
+                                    referElement);
+                        }
+                    }
                 }
 
                 fSchemaParser.parse(schemaSource);
@@ -3561,6 +3580,11 @@ public class XSDHandler {
         } catch (XMLConfigurationException e) {
         }
 
+        //For Schema validation, the secure feature is set to true by default
+        fSchemaParser.setProperty(ACCESS_EXTERNAL_DTD,
+                componentManager.getProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT));
+        fAccessExternalSchema = (String) componentManager.getProperty(
+                ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
     } // reset(XMLComponentManager)
 
 
