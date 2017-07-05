@@ -78,6 +78,31 @@ public class ConstantPoolCache extends Oop {
     return new ConstantPoolCacheEntry(this, i);
   }
 
+  public static boolean isSecondaryIndex(int i)     { return (i < 0); }
+  public static int     decodeSecondaryIndex(int i) { return  isSecondaryIndex(i) ? ~i : i; }
+  public static int     encodeSecondaryIndex(int i) { return !isSecondaryIndex(i) ? ~i : i; }
+
+  // secondary entries hold invokedynamic call site bindings
+  public ConstantPoolCacheEntry getSecondaryEntryAt(int i) {
+    ConstantPoolCacheEntry e = new ConstantPoolCacheEntry(this, decodeSecondaryIndex(i));
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(e.isSecondaryEntry(), "must be a secondary entry");
+    }
+    return e;
+  }
+
+  public ConstantPoolCacheEntry getMainEntryAt(int i) {
+    if (isSecondaryIndex(i)) {
+      // run through an extra level of indirection:
+      i = getSecondaryEntryAt(i).getMainEntryIndex();
+    }
+    ConstantPoolCacheEntry e = new ConstantPoolCacheEntry(this, i);
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(!e.isSecondaryEntry(), "must not be a secondary entry");
+    }
+    return e;
+  }
+
   public int getIntAt(int entry, int fld) {
     //alignObjectSize ?
     long offset = baseOffset + /*alignObjectSize*/entry * elementSize + fld* getHeap().getIntSize();

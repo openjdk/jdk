@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ class ParCompactionManager : public CHeapObj {
 
  private:
   // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
-  #define OBJARRAY_QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
-  typedef GenericTaskQueue<ObjArrayTask, OBJARRAY_QUEUE_SIZE> ObjArrayTaskQueue;
-  typedef GenericTaskQueueSet<ObjArrayTaskQueue> ObjArrayTaskQueueSet;
-  #undef OBJARRAY_QUEUE_SIZE
+  #define QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
+  typedef OverflowTaskQueue<ObjArrayTask, QUEUE_SIZE> ObjArrayTaskQueue;
+  typedef GenericTaskQueueSet<ObjArrayTaskQueue>      ObjArrayTaskQueueSet;
+  #undef QUEUE_SIZE
 
   static ParCompactionManager** _manager_array;
   static OopTaskQueueSet*       _stack_array;
@@ -72,23 +72,13 @@ class ParCompactionManager : public CHeapObj {
   static PSOldGen*              _old_gen;
 
 private:
-  OopTaskQueue                  _marking_stack;
-  GrowableArray<oop>*           _overflow_stack;
-
-  typedef GrowableArray<ObjArrayTask> ObjArrayOverflowStack;
-  ObjArrayTaskQueue             _objarray_queue;
-  ObjArrayOverflowStack*        _objarray_overflow_stack;
+  OverflowTaskQueue<oop>        _marking_stack;
+  ObjArrayTaskQueue             _objarray_stack;
 
   // Is there a way to reuse the _marking_stack for the
   // saving empty regions?  For now just create a different
   // type of TaskQueue.
-
-#ifdef USE_RegionTaskQueueWithOverflow
-  RegionTaskQueueWithOverflow   _region_stack;
-#else
   RegionTaskQueue               _region_stack;
-  GrowableArray<size_t>*        _region_overflow_stack;
-#endif
 
 #if 1  // does this happen enough to need a per thread stack?
   GrowableArray<Klass*>*        _revisit_klass_stack;
@@ -107,16 +97,8 @@ private:
  protected:
   // Array of tasks.  Needed by the ParallelTaskTerminator.
   static RegionTaskQueueSet* region_array()      { return _region_array; }
-  OopTaskQueue*  marking_stack()                 { return &_marking_stack; }
-  GrowableArray<oop>* overflow_stack()           { return _overflow_stack; }
-#ifdef USE_RegionTaskQueueWithOverflow
-  RegionTaskQueueWithOverflow* region_stack()    { return &_region_stack; }
-#else
-  RegionTaskQueue*  region_stack()               { return &_region_stack; }
-  GrowableArray<size_t>* region_overflow_stack() {
-    return _region_overflow_stack;
-  }
-#endif
+  OverflowTaskQueue<oop>*  marking_stack()       { return &_marking_stack; }
+  RegionTaskQueue* region_stack()                { return &_region_stack; }
 
   // Pushes onto the marking stack.  If the marking stack is full,
   // pushes onto the overflow stack.
@@ -124,11 +106,7 @@ private:
   // Do not implement an equivalent stack_pop.  Deal with the
   // marking stack and overflow stack directly.
 
-  // Pushes onto the region stack.  If the region stack is full,
-  // pushes onto the region overflow stack.
-  void region_stack_push(size_t region_index);
-
-public:
+ public:
   Action action() { return _action; }
   void set_action(Action v) { _action = v; }
 
@@ -157,22 +135,15 @@ public:
   GrowableArray<DataLayout*>* revisit_mdo_stack() { return _revisit_mdo_stack; }
 #endif
 
-  // Save oop for later processing.  Must not fail.
-  void save_for_scanning(oop m);
-  // Get a oop for scanning.  If returns null, no oop were found.
-  oop retrieve_for_scanning();
-
-  inline void push_objarray(oop obj, size_t index);
-
-  // Save region for later processing.  Must not fail.
-  void save_for_processing(size_t region_index);
-  // Get a region for processing.  If returns null, no region were found.
-  bool retrieve_for_processing(size_t& region_index);
+  // Save for later processing.  Must not fail.
+  inline void push(oop obj) { _marking_stack.push(obj); }
+  inline void push_objarray(oop objarray, size_t index);
+  inline void push_region(size_t index);
 
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(int index);
 
-  static bool steal(int queue_num, int* seed, Task& t) {
+  static bool steal(int queue_num, int* seed, oop& t) {
     return stack_array()->steal(queue_num, seed, t);
   }
 
@@ -180,8 +151,8 @@ public:
     return _objarray_queues->steal(queue_num, seed, t);
   }
 
-  static bool steal(int queue_num, int* seed, RegionTask& t) {
-    return region_array()->steal(queue_num, seed, t);
+  static bool steal(int queue_num, int* seed, size_t& region) {
+    return region_array()->steal(queue_num, seed, region);
   }
 
   // Process tasks remaining on any marking stack
@@ -190,9 +161,6 @@ public:
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
-
-  // Process tasks remaining on any stack
-  void drain_region_overflow_stack();
 
   // Debugging support
 #ifdef ASSERT
@@ -208,6 +176,5 @@ inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
 }
 
 bool ParCompactionManager::marking_stacks_empty() const {
-  return _marking_stack.size() == 0 && _overflow_stack->is_empty() &&
-    _objarray_queue.size() == 0 && _objarray_overflow_stack->is_empty();
+  return _marking_stack.is_empty() && _objarray_stack.is_empty();
 }

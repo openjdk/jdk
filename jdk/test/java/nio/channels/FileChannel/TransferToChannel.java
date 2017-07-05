@@ -51,6 +51,8 @@ public class TransferToChannel {
         test1();
         test2();
         in.close();
+        file.delete();
+        outFile.delete();
     }
 
     static void test1() throws Exception {

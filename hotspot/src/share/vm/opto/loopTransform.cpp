@@ -194,8 +194,7 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, PhaseIdealLoop *phase) {
     addx = new (phase->C, 3) AddINode(x, inv);
   }
   phase->register_new_node(addx, phase->get_ctrl(x));
-  phase->_igvn.hash_delete(n1);
-  phase->_igvn.subsume_node(n1, addx);
+  phase->_igvn.replace_node(n1, addx);
   return addx;
 }
 
@@ -1586,8 +1585,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   Node *phi = cl->phi();
   Node *final = new (phase->C, 3) SubINode( cl->limit(), cl->stride() );
   phase->register_new_node(final,cl->in(LoopNode::EntryControl));
-  phase->_igvn.hash_delete(phi);
-  phase->_igvn.subsume_node(phi,final);
+  phase->_igvn.replace_node(phi,final);
   phase->C->set_major_progress();
   return true;
 }

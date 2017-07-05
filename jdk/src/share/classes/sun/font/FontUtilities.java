@@ -60,6 +60,10 @@ public final class FontUtilities {
 
     static final String LUCIDA_FILE_NAME = "LucidaSansRegular.ttf";
 
+    private static boolean debugFonts = false;
+    private static PlatformLogger logger = null;
+    private static boolean logging;
+
     // This static initializer block figures out the OS constants.
     static {
 
@@ -115,6 +119,25 @@ public final class FontUtilities {
                 File lucidaFile = new File(jreFontDirName + File.separator
                                            + LUCIDA_FILE_NAME);
                 isOpenJDK = !lucidaFile.exists();
+
+                String debugLevel =
+                    System.getProperty("sun.java2d.debugfonts");
+
+                if (debugLevel != null && !debugLevel.equals("false")) {
+                    debugFonts = true;
+                    logger = PlatformLogger.getLogger("sun.java2d");
+                    if (debugLevel.equals("warning")) {
+                        logger.setLevel(PlatformLogger.WARNING);
+                    } else if (debugLevel.equals("severe")) {
+                        logger.setLevel(PlatformLogger.SEVERE);
+                    }
+                }
+
+                if (debugFonts) {
+                    logger = PlatformLogger.getLogger("sun.java2d");
+                    logging = logger.isEnabled();
+                }
+
                 return null;
             }
         });
@@ -139,32 +162,6 @@ public final class FontUtilities {
      * one 'char' (ie the java type char) does not map to one glyph
      */
     public static final int MAX_LAYOUT_CHARCODE = 0x206F;
-
-    private static boolean debugFonts = false;
-    private static PlatformLogger logger = null;
-    private static boolean logging;
-
-    static {
-
-        String debugLevel =
-            System.getProperty("sun.java2d.debugfonts");
-
-        if (debugLevel != null && !debugLevel.equals("false")) {
-            debugFonts = true;
-            logger = PlatformLogger.getLogger("sun.java2d");
-            if (debugLevel.equals("warning")) {
-                logger.setLevel(PlatformLogger.WARNING);
-            } else if (debugLevel.equals("severe")) {
-                logger.setLevel(PlatformLogger.SEVERE);
-            }
-        }
-
-        if (debugFonts) {
-            logger = PlatformLogger.getLogger("sun.java2d");
-            logging = logger.isEnabled();
-        }
-
-    }
 
     /**
      * Calls the private getFont2D() method in java.awt.Font objects.

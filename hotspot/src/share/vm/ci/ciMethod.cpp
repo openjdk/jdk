@@ -54,10 +54,10 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _code               = NULL;
   _exception_handlers = NULL;
   _liveness           = NULL;
-  _bcea = NULL;
   _method_blocks = NULL;
 #ifdef COMPILER2
   _flow               = NULL;
+  _bcea               = NULL;
 #endif // COMPILER2
 
   ciEnv *env = CURRENT_ENV;
@@ -121,11 +121,11 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _intrinsic_id = vmIntrinsics::_none;
   _liveness = NULL;
   _can_be_statically_bound = false;
-  _bcea = NULL;
   _method_blocks = NULL;
   _method_data = NULL;
 #ifdef COMPILER2
   _flow = NULL;
+  _bcea = NULL;
 #endif // COMPILER2
 }
 
@@ -1033,10 +1033,15 @@ bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor)
 bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
 
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
+#ifdef COMPILER2
   if (_bcea == NULL) {
     _bcea = new (CURRENT_ENV->arena()) BCEscapeAnalyzer(this, NULL);
   }
   return _bcea;
+#else // COMPILER2
+  ShouldNotReachHere();
+  return NULL;
+#endif // COMPILER2
 }
 
 ciMethodBlocks  *ciMethod::get_method_blocks() {

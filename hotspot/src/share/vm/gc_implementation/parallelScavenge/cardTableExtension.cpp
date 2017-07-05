@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,13 +566,13 @@ void CardTableExtension::resize_covered_region_by_end(int changed_region,
 #endif
 
   // Commit new or uncommit old pages, if necessary.
-  resize_commit_uncommit(changed_region, new_region);
+  if (resize_commit_uncommit(changed_region, new_region)) {
+    // Set the new start of the committed region
+    resize_update_committed_table(changed_region, new_region);
+  }
 
   // Update card table entries
   resize_update_card_table_entries(changed_region, new_region);
-
-  // Set the new start of the committed region
-  resize_update_committed_table(changed_region, new_region);
 
   // Update the covered region
   resize_update_covered_table(changed_region, new_region);
@@ -604,8 +604,9 @@ void CardTableExtension::resize_covered_region_by_end(int changed_region,
   debug_only(verify_guard();)
 }
 
-void CardTableExtension::resize_commit_uncommit(int changed_region,
+bool CardTableExtension::resize_commit_uncommit(int changed_region,
                                                 MemRegion new_region) {
+  bool result = false;
   // Commit new or uncommit old pages, if necessary.
   MemRegion cur_committed = _committed[changed_region];
   assert(_covered[changed_region].end() == new_region.end(),
@@ -675,20 +676,31 @@ void CardTableExtension::resize_commit_uncommit(int changed_region,
                               "card table expansion");
       }
     }
+    result = true;
   } else if (new_start_aligned > cur_committed.start()) {
     // Shrink the committed region
+#if 0 // uncommitting space is currently unsafe because of the interactions
+      // of growing and shrinking regions.  One region A can uncommit space
+      // that it owns but which is being used by another region B (maybe).
+      // Region B has not committed the space because it was already
+      // committed by region A.
     MemRegion uncommit_region = committed_unique_to_self(changed_region,
       MemRegion(cur_committed.start(), new_start_aligned));
     if (!uncommit_region.is_empty()) {
       if (!os::uncommit_memory((char*)uncommit_region.start(),
                                uncommit_region.byte_size())) {
-        vm_exit_out_of_memory(uncommit_region.byte_size(),
-          "card table contraction");
+        // If the uncommit fails, ignore it.  Let the
+        // committed table resizing go even though the committed
+        // table will over state the committed space.
       }
     }
+#else
+    assert(!result, "Should be false with current workaround");
+#endif
   }
   assert(_committed[changed_region].end() == cur_committed.end(),
     "end should not change");
+  return result;
 }
 
 void CardTableExtension::resize_update_committed_table(int changed_region,

@@ -45,16 +45,18 @@ public class Basic {
         File blah = File.createTempFile("blah", null);
         blah.deleteOnExit();
 
-        final AsynchronousFileChannel ch = AsynchronousFileChannel
+        AsynchronousFileChannel ch = AsynchronousFileChannel
             .open(blah.toPath(), READ, WRITE);
+        try {
+            // run tests
+            testUsingCompletionHandlers(ch);
+            testUsingWaitOnResult(ch);
+            testInterruptHandlerThread(ch);
+        } finally {
+            ch.close();
+        }
 
-        // run tests
-        testUsingCompletionHandlers(ch);
-        testUsingWaitOnResult(ch);
-        testInterruptHandlerThread(ch);
-
-        // close channel and invoke test that expects channel to be closed
-        ch.close();
+        // run test that expects channel to be closed
         testClosedChannel(ch);
 
         // these tests open the file themselves
@@ -63,6 +65,9 @@ public class Basic {
         testAsynchronousClose(blah.toPath());
         testCancel(blah.toPath());
         testTruncate(blah.toPath());
+
+        // eagerly clean-up
+        blah.delete();
     }
 
     /*

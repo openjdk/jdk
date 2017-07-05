@@ -31,13 +31,20 @@ import java.nio.channels.*;
 
 public class Bind {
     public static void main(String[] args) throws Exception {
+        SocketChannel sc1 = SocketChannel.open();
         try {
-            SocketChannel channel1 = SocketChannel.open();
-            channel1.socket().bind(new InetSocketAddress(5555));
-            SocketChannel channel2 = SocketChannel.open();
-            channel2.socket().bind(new InetSocketAddress(5555));
+            sc1.bind(new InetSocketAddress(0));
+            int port = sc1.socket().getLocalPort();
+            SocketChannel sc2 = SocketChannel.open();
+            try {
+                sc2.bind(new InetSocketAddress(port));
+            } finally {
+               sc2.close();
+            }
         } catch (BindException be) {
             // Correct result
+        } finally {
+            sc1.close();
         }
     }
 }

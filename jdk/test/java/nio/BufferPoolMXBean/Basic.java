@@ -24,6 +24,7 @@
 /* @test
  * @bug 6606598
  * @summary Unit test for java.nio.BufferPoolMXBean
+ * @run main/othervm Basic
  */
 
 import java.nio.ByteBuffer;

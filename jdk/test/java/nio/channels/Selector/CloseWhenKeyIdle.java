@@ -111,10 +111,14 @@ public class CloseWhenKeyIdle {
         // select should block
 
         int spinCount = 0;
+        boolean failed = false;
         for (;;) {
             int n = sel.select();
-            if (n > 0)
-                throw new RuntimeException("channel should not be selected");
+            if (n > 0) {
+                System.err.println("Channel should not be selected!!!");
+                failed = true;
+                break;
+            }
 
             // wakeup
             if (wakeupDone)
@@ -123,9 +127,18 @@ public class CloseWhenKeyIdle {
             // wakeup for no reason - if it happens a few times then we have a
             // problem
             spinCount++;
-            if (spinCount >= 3)
-                throw new RuntimeException("Selector appears to be spinning");
+            if (spinCount >= 3) {
+                System.err.println("Selector appears to be spinning");
+                failed = true;
+                break;
+            }
         }
+
+        sc1.close();
+        sel.close();
+
+        if (failed)
+            throw new RuntimeException("Test failed");
 
         System.out.println("PASS");
     }

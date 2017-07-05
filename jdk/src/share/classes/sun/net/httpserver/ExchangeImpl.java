@@ -52,14 +52,16 @@ class ExchangeImpl {
     boolean http10 = false;
 
     /* for formatting the Date: header */
-    static TimeZone tz;
-    static DateFormat df;
-    static {
-        String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
-        tz = TimeZone.getTimeZone ("GMT");
-        df = new SimpleDateFormat (pattern, Locale.US);
-        df.setTimeZone (tz);
-    }
+    private static final String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
+    private static final TimeZone gmtTZ = TimeZone.getTimeZone("GMT");
+    private static final ThreadLocal<DateFormat> dateFormat =
+         new ThreadLocal<DateFormat>() {
+             @Override protected DateFormat initialValue() {
+                 DateFormat df = new SimpleDateFormat(pattern, Locale.US);
+                 df.setTimeZone(gmtTZ);
+                 return df;
+         }
+     };
 
     private static final String HEAD = "HEAD";
 
@@ -206,7 +208,7 @@ class ExchangeImpl {
         PlaceholderOutputStream o = getPlaceholderResponseBody();
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
-        rspHdrs.set ("Date", df.format (new Date()));
+        rspHdrs.set ("Date", dateFormat.get().format (new Date()));
 
         /* check for response type that is not allowed to send a body */
 

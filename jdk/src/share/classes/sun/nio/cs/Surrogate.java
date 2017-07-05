@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import java.nio.charset.UnmappableCharacterException;
  * Utility class for dealing with surrogates.
  *
  * @author Mark Reinhold
+ * @author Martin Buchholz
+ * @author Ulf Zibis
  */
-
 public class Surrogate {
 
     private Surrogate() { }
@@ -75,16 +76,9 @@ public class Surrogate {
     }
 
     /**
-     * Tells whether or not the given UCS-4 character is in the Basic
-     * Multilingual Plane, and can be represented using a single char.
-     */
-    public static boolean isBMPCodePoint(int uc) {
-        return uc >> 16 == 0;
-    }
-
-    /**
      * Tells whether or not the given UCS-4 character must be represented as a
      * surrogate pair in UTF-16.
+     * Use of {@link Character#isSupplementaryCodePoint} is generally preferred.
      */
     public static boolean neededFor(int uc) {
         return Character.isSupplementaryCodePoint(uc);
@@ -92,24 +86,25 @@ public class Surrogate {
 
     /**
      * Returns the high UTF-16 surrogate for the given supplementary UCS-4 character.
+     * Use of {@link Character#highSurrogate} is generally preferred.
      */
     public static char high(int uc) {
         assert Character.isSupplementaryCodePoint(uc);
-        return (char)((uc >> 10)
-                      + (Character.MIN_HIGH_SURROGATE
-                         - (Character.MIN_SUPPLEMENTARY_CODE_POINT >> 10)));
+        return Character.highSurrogate(uc);
     }
 
     /**
      * Returns the low UTF-16 surrogate for the given supplementary UCS-4 character.
+     * Use of {@link Character#lowSurrogate} is generally preferred.
      */
     public static char low(int uc) {
         assert Character.isSupplementaryCodePoint(uc);
-        return (char)((uc & 0x3ff) + Character.MIN_LOW_SURROGATE);
+        return Character.lowSurrogate(uc);
     }
 
     /**
      * Converts the given surrogate pair into a 32-bit UCS-4 character.
+     * Use of {@link Character#toCodePoint} is generally preferred.
      */
     public static int toUCS4(char c, char d) {
         assert Character.isHighSurrogate(c) && Character.isLowSurrogate(d);
@@ -290,8 +285,9 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, CharBuffer dst) {
-            if (Surrogate.isBMPCodePoint(uc)) {
-                if (Surrogate.is(uc)) {
+            if (Character.isBmpCodePoint(uc)) {
+                char c = (char) uc;
+                if (Character.isSurrogate(c)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;
                 }
@@ -299,16 +295,16 @@ public class Surrogate {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                dst.put((char)uc);
+                dst.put(c);
                 error = null;
                 return 1;
-            } else if (Character.isSupplementaryCodePoint(uc)) {
+            } else if (Character.isValidCodePoint(uc)) {
                 if (dst.remaining() < 2) {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                dst.put(Surrogate.high(uc));
-                dst.put(Surrogate.low(uc));
+                dst.put(Character.highSurrogate(uc));
+                dst.put(Character.lowSurrogate(uc));
                 error = null;
                 return 2;
             } else {
@@ -334,8 +330,9 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, char[] da, int dp, int dl) {
-            if (Surrogate.isBMPCodePoint(uc)) {
-                if (Surrogate.is(uc)) {
+            if (Character.isBmpCodePoint(uc)) {
+                char c = (char) uc;
+                if (Character.isSurrogate(c)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;
                 }
@@ -343,16 +340,16 @@ public class Surrogate {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                da[dp] = (char)uc;
+                da[dp] = c;
                 error = null;
                 return 1;
-            } else if (Character.isSupplementaryCodePoint(uc)) {
+            } else if (Character.isValidCodePoint(uc)) {
                 if (dl - dp < 2) {
                     error = CoderResult.OVERFLOW;
                     return -1;
                 }
-                da[dp] = Surrogate.high(uc);
-                da[dp + 1] = Surrogate.low(uc);
+                da[dp] = Character.highSurrogate(uc);
+                da[dp + 1] = Character.lowSurrogate(uc);
                 error = null;
                 return 2;
             } else {

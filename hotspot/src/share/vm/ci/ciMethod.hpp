@@ -48,7 +48,6 @@ class ciMethod : public ciObject {
   ciInstanceKlass* _holder;
   ciSignature*     _signature;
   ciMethodData*    _method_data;
-  BCEscapeAnalyzer* _bcea;
   ciMethodBlocks*   _method_blocks;
 
   // Code attributes.
@@ -72,7 +71,8 @@ class ciMethod : public ciObject {
   // Optional liveness analyzer.
   MethodLiveness* _liveness;
 #ifdef COMPILER2
-  ciTypeFlow*     _flow;
+  ciTypeFlow*         _flow;
+  BCEscapeAnalyzer*   _bcea;
 #endif
 
   ciMethod(methodHandle h_m);

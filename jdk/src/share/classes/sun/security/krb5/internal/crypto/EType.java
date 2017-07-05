@@ -185,20 +185,20 @@ public abstract class EType {
     // is set to false.
 
     private static final int[] BUILTIN_ETYPES = new int[] {
-        EncryptedData.ETYPE_DES_CBC_MD5,
-        EncryptedData.ETYPE_DES_CBC_CRC,
-        EncryptedData.ETYPE_ARCFOUR_HMAC,
-        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
-        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
         EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
+        EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
+        EncryptedData.ETYPE_ARCFOUR_HMAC,
+        EncryptedData.ETYPE_DES_CBC_CRC,
+        EncryptedData.ETYPE_DES_CBC_MD5,
     };
 
     private static final int[] BUILTIN_ETYPES_NOAES256 = new int[] {
-        EncryptedData.ETYPE_DES_CBC_MD5,
-        EncryptedData.ETYPE_DES_CBC_CRC,
-        EncryptedData.ETYPE_ARCFOUR_HMAC,
-        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
+        EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD,
+        EncryptedData.ETYPE_ARCFOUR_HMAC,
+        EncryptedData.ETYPE_DES_CBC_CRC,
+        EncryptedData.ETYPE_DES_CBC_MD5,
     };
 
 
@@ -217,8 +217,8 @@ public abstract class EType {
             result = BUILTIN_ETYPES;
         }
         if (!ALLOW_WEAK_CRYPTO) {
-            // The first 2 etypes are now weak ones
-            return Arrays.copyOfRange(result, 2, result.length);
+            // The last 2 etypes are now weak ones
+            return Arrays.copyOfRange(result, 0, result.length - 2);
         }
         return result;
     }

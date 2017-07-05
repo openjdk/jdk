@@ -49,14 +49,18 @@ public class KeysReady {
 
         // Prepare a selector
         Selector selector = SelectorProvider.provider().openSelector();
-        SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
-        int keysAdded = selector.select();
-        if (keysAdded > 0) {
-            keysAdded = selector.select(1000);
-            if (keysAdded > 0)
-                throw new Exception("Same key reported added twice");
+        try {
+            SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT);
+            int keysAdded = selector.select();
+            if (keysAdded > 0) {
+                keysAdded = selector.select(1000);
+                if (keysAdded > 0)
+                    throw new Exception("Same key reported added twice");
+            }
+        } finally {
+            selector.close();
+            sc.close();
         }
-        sc.close();
     }
 
     public static void main(String[] args) throws Exception {

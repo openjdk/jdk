@@ -24,6 +24,7 @@
 /* @test
  * @bug 4462336
  * @summary Simple MappedByteBuffer tests
+ * @run main/othervm Basic
  */
 
 import java.io.*;
