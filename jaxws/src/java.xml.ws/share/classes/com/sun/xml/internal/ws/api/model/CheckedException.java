@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
 package com.sun.xml.internal.ws.api.model;
 
 import com.sun.xml.internal.bind.api.Bridge;
+import com.sun.xml.internal.ws.spi.db.TypeInfo;
 
 import javax.xml.ws.WebFault;
-import javax.xml.namespace.QName;
-import java.rmi.RemoteException;
 
 /**
  * This class provides abstractio to the  the exception class
@@ -98,4 +97,9 @@ public interface CheckedException {
      * referenced by wsdl:fault
      */
     String getMessageName();
+
+    /**
+     * Gives the {@link com.sun.xml.internal.ws.spi.db.TypeInfo} of the detail
+     */
+    TypeInfo getDetailType();
 }

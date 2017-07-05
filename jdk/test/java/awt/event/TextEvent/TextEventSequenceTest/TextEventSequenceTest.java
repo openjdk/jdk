@@ -30,7 +30,6 @@
  */
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 
 public class TextEventSequenceTest {
 
@@ -48,43 +47,50 @@ public class TextEventSequenceTest {
     }
 
     private static void test(String test) {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+
+        Robot robot;
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         createAndShowGUI(test);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         initCounts();
         t.setText("Hello ");
-        toolkit.realSync();
+        robot.waitForIdle();
         t.append("World! !");
-        toolkit.realSync();
+        robot.waitForIdle();
         t.insert("from Roger Pham", 13);
-        toolkit.realSync();
+        robot.waitForIdle();
         t.replaceRange("Java Duke", 18, 28);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCounts(0, 4);
 
         initCounts();
         t.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         t.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         t.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCounts(1, 0);
 
         initCounts();
         tf.setText("Hello There!");
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCounts(0, 1);
 
         initCounts();
         tf.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         tf.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         tf.setText("");
-        toolkit.realSync();
+        robot.waitForIdle();
         checkCounts(1, 0);
 
         f.dispose();

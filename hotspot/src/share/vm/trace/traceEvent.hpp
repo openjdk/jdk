@@ -33,7 +33,6 @@ enum EventStartTime {
 };
 
 #if INCLUDE_TRACE
-
 #include "trace/traceBackend.hpp"
 #include "trace/tracing.hpp"
 #include "tracefiles/traceEventIds.hpp"
@@ -154,6 +153,5 @@ class TraceEvent : public StackObj {
   }
 };
 
-#endif /* INCLUDE_TRACE */
-
-#endif /* SHARE_VM_TRACE_TRACEEVENT_HPP */
+#endif // INCLUDE_TRACE
+#endif // SHARE_VM_TRACE_TRACEEVENT_HPP

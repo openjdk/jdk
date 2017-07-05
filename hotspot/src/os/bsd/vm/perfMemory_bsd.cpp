@@ -422,7 +422,7 @@ static char* get_user_name_slow(int vmid, TRAPS) {
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
 static char* get_user_name(int vmid, TRAPS) {
-  return get_user_name_slow(vmid, CHECK_NULL);
+  return get_user_name_slow(vmid, THREAD);
 }
 
 // return the file name of the backing store file for the named

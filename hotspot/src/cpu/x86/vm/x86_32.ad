@@ -1210,6 +1210,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
 
   Unimplemented();
+  return 0; // Mute compiler
 }
 
 #ifndef PRODUCT

@@ -31,7 +31,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import sun.awt.*;
 
 public class IconifyTest {
     private static volatile boolean windowIconifiedIsCalled = false;
@@ -40,7 +39,7 @@ public class IconifyTest {
     static JButton button;
 
     public static void main(String[] args) throws Throwable {
-        SunToolkit toolkit = (SunToolkit) SunToolkit.getDefaultToolkit();
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 frame = new JFrame();
@@ -61,14 +60,14 @@ public class IconifyTest {
                 frame.setVisible(true);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 frame.setExtendedState(Frame.ICONIFIED);
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!windowIconifiedIsCalled) {
             throw new Exception("Test failed: window was not iconified.");

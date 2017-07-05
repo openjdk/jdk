@@ -84,14 +84,17 @@ public abstract class Property implements Serializable {
     public static final int IS_NASGEN_PRIMITIVE     = 1 << 6;
 
     /** Is this a builtin property, e.g. Function.prototype.apply */
-    public static final int IS_BUILTIN = 1 << 7;
+    public static final int IS_BUILTIN              = 1 << 7;
 
     /** Is this property bound to a receiver? This means get/set operations will be delegated to
      *  a statically defined object instead of the object passed as callsite parameter. */
-    public static final int IS_BOUND                = 1 << 7;
+    public static final int IS_BOUND                = 1 << 8;
 
     /** Is this a lexically scoped LET or CONST variable that is dead until it is declared. */
-    public static final int NEEDS_DECLARATION       = 1 << 8;
+    public static final int NEEDS_DECLARATION       = 1 << 9;
+
+    /** Is this property an ES6 lexical binding? */
+    public static final int IS_LEXICAL_BINDING      = 1 << 10;
 
     /** Property key. */
     private final String key;
@@ -713,5 +716,13 @@ public abstract class Property implements Serializable {
      */
     public boolean isFunctionDeclaration() {
         return (flags & IS_FUNCTION_DECLARATION) == IS_FUNCTION_DECLARATION;
+    }
+
+    /**
+     * Is this a property defined by ES6 let or const?
+     * @return true if this property represents a lexical binding.
+     */
+    public boolean isLexicalBinding() {
+        return (flags & IS_LEXICAL_BINDING) == IS_LEXICAL_BINDING;
     }
 }

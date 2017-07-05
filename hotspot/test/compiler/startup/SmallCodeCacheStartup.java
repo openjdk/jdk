@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,13 @@ import com.oracle.java.testlibrary.*;
 
 public class SmallCodeCacheStartup {
   public static void main(String[] args) throws Exception {
-    try {
       ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
                                                                 "-XX:CICompilerCount=64",
                                                                 "-Xcomp",
-                                                                "SmallCodeCacheStartup");
-      pb.start();
-    } catch (VirtualMachineError e) {}
+                                                                "-version");
+      OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+      analyzer.shouldHaveExitValue(0);
 
-    System.out.println("TEST PASSED");
+      System.out.println("TEST PASSED");
   }
 }

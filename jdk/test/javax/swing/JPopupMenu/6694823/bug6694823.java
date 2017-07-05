@@ -32,25 +32,25 @@
 
 import javax.swing.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 import java.security.Permission;
-import sun.awt.AWTPermissions;
 
 public class bug6694823 {
     private static JFrame frame;
     private static JPopupMenu popup;
-    private static SunToolkit toolkit;
+    private static Toolkit toolkit;
     private static Insets screenInsets;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        robot = new Robot();
+        toolkit = Toolkit.getDefaultToolkit();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 createGui();
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Get screen insets
         screenInsets = toolkit.getScreenInsets(frame.getGraphicsConfiguration());
@@ -61,12 +61,9 @@ public class bug6694823 {
 
         System.setSecurityManager(new SecurityManager(){
 
-            private String allowsAlwaysOnTopPermission =
-                AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION.getName();
-
             @Override
             public void checkPermission(Permission perm) {
-                if (allowsAlwaysOnTopPermission.equals(perm.getName())) {
+                if (perm.getName().equals("setWindowAlwaysOnTop") ) {
                     throw new SecurityException();
                 }
             }
@@ -107,7 +104,7 @@ public class bug6694823 {
         });
 
         // Ensure frame is visible
-        toolkit.realSync();
+        robot.waitForIdle();
 
         final Point point = new Point();
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -120,7 +117,7 @@ public class bug6694823 {
         });
 
         // Ensure popup is visible
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 

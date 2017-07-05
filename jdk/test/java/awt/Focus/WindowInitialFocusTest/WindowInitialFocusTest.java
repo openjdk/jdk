@@ -33,7 +33,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class WindowInitialFocusTest extends Applet {
@@ -41,7 +40,7 @@ public class WindowInitialFocusTest extends Applet {
     Window window = new Window(frame);
     Button button = new Button("button");
     AtomicBoolean focused = new AtomicBoolean(false);
-    SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
+    Robot robot;
 
     public static void main(String[] args) {
         WindowInitialFocusTest app = new WindowInitialFocusTest();
@@ -75,12 +74,18 @@ public class WindowInitialFocusTest extends Applet {
                 }});
 
         frame.setVisible(true);
-        toolkit.realSync();
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
+        robot.waitForIdle();
 
         // Test 1. Show the window, check that it become focused.
 
         window.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!Util.waitForCondition(focused, 2000L)) {
             throw new TestFailedException("the window didn't get focused on its showing!");
@@ -89,13 +94,13 @@ public class WindowInitialFocusTest extends Applet {
         // Test 2. Show unfocusable window, check that it doesn't become focused.
 
         window.setVisible(false);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         window.setFocusableWindowState(false);
         focused.set(false);
 
         window.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (Util.waitForCondition(focused, 2000L)) {
             throw new TestFailedException("the unfocusable window got focused on its showing!");

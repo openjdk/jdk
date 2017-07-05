@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,8 +305,7 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>content</code> contains any entries
      *    that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract KeyInfo newKeyInfo(List content);
+    public abstract KeyInfo newKeyInfo(List<? extends XMLStructure> content);
 
     /**
      * Creates a <code>KeyInfo</code> containing the specified list of key
@@ -325,8 +324,8 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>content</code> contains any entries
      *    that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract KeyInfo newKeyInfo(List content, String id);
+    public abstract KeyInfo newKeyInfo(List<? extends XMLStructure> content,
+        String id);
 
     /**
      * Creates a <code>KeyName</code> from the specified name.
@@ -387,9 +386,8 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>other</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
     public abstract PGPData newPGPData(byte[] keyId, byte[] keyPacket,
-        List other);
+        List<? extends XMLStructure> other);
 
     /**
      * Creates a <code>PGPData</code> from the specified PGP key material
@@ -411,8 +409,8 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>other</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract PGPData newPGPData(byte[] keyPacket, List other);
+    public abstract PGPData newPGPData(byte[] keyPacket,
+        List<? extends XMLStructure> other);
 
     /**
      * Creates a <code>RetrievalMethod</code> from the specified URI.
@@ -443,9 +441,8 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>transforms</code> contains any
      *    entries that are not of type {@link Transform}
      */
-    @SuppressWarnings("rawtypes")
     public abstract RetrievalMethod newRetrievalMethod(String uri, String type,
-        List transforms);
+        List<? extends Transform> transforms);
 
     /**
      * Creates a <code>X509Data</code> containing the specified list of
@@ -469,8 +466,7 @@ public abstract class KeyInfoFactory {
      * @throws ClassCastException if <code>content</code> contains any entries
      *    that are not of one of the valid types mentioned above
      */
-    @SuppressWarnings("rawtypes")
-    public abstract X509Data newX509Data(List content);
+    public abstract X509Data newX509Data(List<?> content);
 
     /**
      * Creates an <code>X509IssuerSerial</code> from the specified X.500 issuer

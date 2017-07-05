@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_SWEEPER_HPP
 #define SHARE_VM_RUNTIME_SWEEPER_HPP
 
+class WhiteBox;
+
 #include "utilities/ticks.hpp"
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
@@ -52,6 +54,8 @@
 //     nmethod's space is freed.
 
 class NMethodSweeper : public AllStatic {
+  friend class WhiteBox;
+ private:
   static long      _traversals;                   // Stack scan count, also sweep ID.
   static long      _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
   static long      _time_counter;                 // Virtual time used to periodically invoke sweeper
@@ -88,7 +92,6 @@ class NMethodSweeper : public AllStatic {
   static void handle_safepoint_request();
   static void do_stack_scanning();
   static void possibly_sweep();
-
  public:
   static long traversal_count()              { return _traversals; }
   static int  total_nof_methods_reclaimed()  { return _total_nof_methods_reclaimed; }

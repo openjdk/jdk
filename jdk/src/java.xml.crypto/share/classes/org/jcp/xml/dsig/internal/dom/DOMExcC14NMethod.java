@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMExcC14NMethod.java 1197150 2011-11-03 14:34:57Z coheigea $
@@ -119,7 +119,6 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
 
         ExcC14NParameterSpec params = (ExcC14NParameterSpec)spec;
         StringBuilder prefixListAttr = new StringBuilder("");
-        @SuppressWarnings("unchecked")
         List<String> prefixList = params.getPrefixList();
         for (int i = 0, size = prefixList.size(); i < size; i++) {
             prefixListAttr.append(prefixList.get(i));

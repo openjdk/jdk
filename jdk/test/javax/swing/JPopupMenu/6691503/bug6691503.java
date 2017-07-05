@@ -31,8 +31,6 @@
  * @run main bug6691503
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -93,7 +91,13 @@ public class bug6691503 {
     }
 
     private void checkResult() {
-        ((SunToolkit)(Toolkit.getDefaultToolkit())).realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
         if (!isAlwaysOnTop1 || isAlwaysOnTop2) {
             throw new RuntimeException("Malicious applet can show always-on-top " +
                     "popup menu which has whole screen size");

@@ -26,12 +26,13 @@
   @bug 8007220
   @summary Reference to the popup leaks after the TrayIcon is removed
   @author Petr Pchelko
+  @library ../../../../lib/testlibrary/
+  @build ExtendedRobot
   @run main/othervm -Xmx50m PopupMenuLeakTest
  */
 
 import java.awt.*;
 import javax.swing.SwingUtilities;
-import sun.awt.SunToolkit;
 
 import java.awt.image.BufferedImage;
 import java.lang.ref.WeakReference;
@@ -42,8 +43,10 @@ public class PopupMenuLeakTest {
 
     static final AtomicReference<WeakReference<TrayIcon>> iconWeakReference = new AtomicReference<>();
     static final AtomicReference<WeakReference<PopupMenu>> popupWeakReference = new AtomicReference<>();
+    static ExtendedRobot robot;
 
     public static void main(String[] args) throws Exception {
+        robot = new ExtendedRobot();
         SwingUtilities.invokeAndWait(PopupMenuLeakTest::createSystemTrayIcon);
         sleep();
         // To make the test automatic we explicitly call addNotify on a popup to create the peer
@@ -141,9 +144,6 @@ public class PopupMenuLeakTest {
     }
 
     private static void sleep() {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException ignored) { }
+        robot.waitForIdle(100);
     }
 }

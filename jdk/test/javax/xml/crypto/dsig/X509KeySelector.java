@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,9 +139,7 @@ class X509KeySelector extends KeySelector {
             }
 
             // Iterate through KeyInfo types
-            Iterator i = keyInfo.getContent().iterator();
-            while (i.hasNext()) {
-                XMLStructure kiType = (XMLStructure) i.next();
+            for (XMLStructure kiType : keyInfo.getContent()) {
                 // check X509Data
                 if (kiType instanceof X509Data) {
                     X509Data xd = (X509Data) kiType;
@@ -303,9 +301,7 @@ class X509KeySelector extends KeySelector {
         }
         Collection<X509Certificate> certs = new ArrayList<>();
 
-        Iterator xi = xd.getContent().iterator();
-        while (xi.hasNext()) {
-            Object o = xi.next();
+        for (Object o : xd.getContent()) {
             // check X509IssuerSerial
             if (o instanceof X509IssuerSerial) {
                 X509IssuerSerial xis = (X509IssuerSerial) o;

@@ -1,0 +1,15 @@
+0
+abc
+true
+TypeError: undefined is not an Object
+TypeError: null is not an Object
+[object Number]
+[object String]
+[object Boolean]
+[object Undefined]
+[object Null]
+0
+abc
+true
+TypeError: undefined is not an Object
+TypeError: null is not an Object

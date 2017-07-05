@@ -1,0 +1,12 @@
+1
+2
+0
+1
+2
+0
+SyntaxError: test/script/basic/es6/let-const-switch.js#34:8<eval>:1:25 Unsupported let declaration in unprotected switch statement
+switch (x) { case 0: let x = 1; }
+                         ^
+SyntaxError: test/script/basic/es6/let-const-switch.js#34:8<eval>:1:27 Unsupported const declaration in unprotected switch statement
+switch (x) { case 0: const x = 1; }
+                           ^

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ public abstract class BaseDistributedPropertySet extends BasePropertySet impleme
             if (viewthis.containsKey(key))
                 return true;
             for (PropertySet child : satellites.values()) {
-                if (child.containsKey(key))
+                if (child.asMap().containsKey(key))
                     return true;
             }
             return false;

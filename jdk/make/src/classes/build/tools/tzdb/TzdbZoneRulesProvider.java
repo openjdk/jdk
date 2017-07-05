@@ -95,7 +95,17 @@ class TzdbZoneRulesProvider {
                 obj = zones.get(zoneId);
             }
             if (obj == null) {
-                throw new ZoneRulesException("Unknown time-zone ID: " + zoneId0);
+                // Timezone link can be located in 'backward' file and it
+                // can refer to another link, so we need to check for
+                // link one more time, before throwing an exception
+                String zoneIdBack = zoneId;
+                if (links.containsKey(zoneId)) {
+                    zoneId = links.get(zoneId);
+                    obj = zones.get(zoneId);
+                }
+                if (obj == null) {
+                    throw new ZoneRulesException("Unknown time-zone ID: " + zoneIdBack);
+                }
             }
         }
         if (obj instanceof ZoneRules) {

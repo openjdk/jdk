@@ -46,6 +46,7 @@ package sun.net.idn;
  * @stable ICU 2.1
  */
 
+@SuppressWarnings("deprecation")
 final class UCharacterDirection implements UCharacterEnums.ECharacterDirection {
 
     // private constructor =========================================

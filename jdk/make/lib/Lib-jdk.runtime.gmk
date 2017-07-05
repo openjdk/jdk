@@ -45,7 +45,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug \
         jvm.lib $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_posix := -ljvm $(LIBCXX) -ljava -lc, \
+    LDFLAGS_SUFFIX_unix := -ljvm $(LIBCXX) -ljava -lc, \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libunpack, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
@@ -61,7 +61,7 @@ TARGETS += $(BUILD_LIBUNPACK)
 ################################################################################
 
 LIBJSDT_SRC := $(JDK_TOPDIR)/src/jdk.runtime/share/native/libjsdt \
-    $(JDK_TOPDIR)/src/jdk.runtime/$(OPENJDK_TARGET_OS_API_DIR)/native/libjsdt
+    $(JDK_TOPDIR)/src/jdk.runtime/$(OPENJDK_TARGET_OS_TYPE)/native/libjsdt
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJSDT, \
     LIBRARY := jsdt, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,11 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
 
     public <V> V accept(CPropertyVisitor<V> visitor) {
         return visitor.onReference(this);
+    }
+
+    @Override
+    public <R, P> R accept(CPropertyVisitor2<R, P> visitor, P p) {
+        return visitor.visit(this, p);
     }
 
     public CAdapter getAdapter() {
