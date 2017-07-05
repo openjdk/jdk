@@ -426,6 +426,9 @@
   product(bool, EliminateLocks, true,                                       \
           "Coarsen locks when possible")                                    \
                                                                             \
+  product(bool, EliminateNestedLocks, true,                                 \
+          "Eliminate nested locks of the same object when possible")        \
+                                                                            \
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \

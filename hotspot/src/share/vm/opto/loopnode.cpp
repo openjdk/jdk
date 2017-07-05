@@ -3278,16 +3278,7 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 #ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
       // Bad graph. Print idom path and fail.
-      tty->print_cr( "Bad graph detected in build_loop_late");
-      tty->print("n: ");n->dump(); tty->cr();
-      tty->print("early: ");early->dump(); tty->cr();
-      int ct = 0;
-      Node *dbg_legal = LCA;
-      while(!dbg_legal->is_Start() && ct < 100) {
-        tty->print("idom[%d] ",ct); dbg_legal->dump(); tty->cr();
-        ct++;
-        dbg_legal = idom(dbg_legal);
-      }
+      dump_bad_graph(n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
     }
 #endif
@@ -3336,6 +3327,88 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
   if( !chosen_loop->_child )   // Inner loop?
     chosen_loop->_body.push(n);// Collect inner loops
 }
+
+#ifdef ASSERT
+void PhaseIdealLoop::dump_bad_graph(Node* n, Node* early, Node* LCA) {
+  tty->print_cr( "Bad graph detected in build_loop_late");
+  tty->print("n: "); n->dump();
+  tty->print("early(n): "); early->dump();
+  if (n->in(0) != NULL  && !n->in(0)->is_top() &&
+      n->in(0) != early && !n->in(0)->is_Root()) {
+    tty->print("n->in(0): "); n->in(0)->dump();
+  }
+  for (uint i = 1; i < n->req(); i++) {
+    Node* in1 = n->in(i);
+    if (in1 != NULL && in1 != n && !in1->is_top()) {
+      tty->print("n->in(%d): ", i); in1->dump();
+      Node* in1_early = get_ctrl(in1);
+      tty->print("early(n->in(%d)): ", i); in1_early->dump();
+      if (in1->in(0) != NULL     && !in1->in(0)->is_top() &&
+          in1->in(0) != in1_early && !in1->in(0)->is_Root()) {
+        tty->print("n->in(%d)->in(0): ", i); in1->in(0)->dump();
+      }
+      for (uint j = 1; j < in1->req(); j++) {
+        Node* in2 = in1->in(j);
+        if (in2 != NULL && in2 != n && in2 != in1 && !in2->is_top()) {
+          tty->print("n->in(%d)->in(%d): ", i, j); in2->dump();
+          Node* in2_early = get_ctrl(in2);
+          tty->print("early(n->in(%d)->in(%d)): ", i, j); in2_early->dump();
+          if (in2->in(0) != NULL     && !in2->in(0)->is_top() &&
+              in2->in(0) != in2_early && !in2->in(0)->is_Root()) {
+            tty->print("n->in(%d)->in(%d)->in(0): ", i, j); in2->in(0)->dump();
+          }
+        }
+      }
+    }
+  }
+  tty->cr();
+  tty->print("LCA(n): "); LCA->dump();
+  for (uint i = 0; i < n->outcnt(); i++) {
+    Node* u1 = n->raw_out(i);
+    if (u1 == n)
+      continue;
+    tty->print("n->out(%d): ", i); u1->dump();
+    if (u1->is_CFG()) {
+      for (uint j = 0; j < u1->outcnt(); j++) {
+        Node* u2 = u1->raw_out(j);
+        if (u2 != u1 && u2 != n && u2->is_CFG()) {
+          tty->print("n->out(%d)->out(%d): ", i, j); u2->dump();
+        }
+      }
+    } else {
+      Node* u1_later = get_ctrl(u1);
+      tty->print("later(n->out(%d)): ", i); u1_later->dump();
+      if (u1->in(0) != NULL     && !u1->in(0)->is_top() &&
+          u1->in(0) != u1_later && !u1->in(0)->is_Root()) {
+        tty->print("n->out(%d)->in(0): ", i); u1->in(0)->dump();
+      }
+      for (uint j = 0; j < u1->outcnt(); j++) {
+        Node* u2 = u1->raw_out(j);
+        if (u2 == n || u2 == u1)
+          continue;
+        tty->print("n->out(%d)->out(%d): ", i, j); u2->dump();
+        if (!u2->is_CFG()) {
+          Node* u2_later = get_ctrl(u2);
+          tty->print("later(n->out(%d)->out(%d)): ", i, j); u2_later->dump();
+          if (u2->in(0) != NULL     && !u2->in(0)->is_top() &&
+              u2->in(0) != u2_later && !u2->in(0)->is_Root()) {
+            tty->print("n->out(%d)->in(0): ", i); u2->in(0)->dump();
+          }
+        }
+      }
+    }
+  }
+  tty->cr();
+  int ct = 0;
+  Node *dbg_legal = LCA;
+  while(!dbg_legal->is_Start() && ct < 100) {
+    tty->print("idom[%d] ",ct); dbg_legal->dump();
+    ct++;
+    dbg_legal = idom(dbg_legal);
+  }
+  tty->cr();
+}
+#endif
 
 #ifndef PRODUCT
 //------------------------------dump-------------------------------------------
