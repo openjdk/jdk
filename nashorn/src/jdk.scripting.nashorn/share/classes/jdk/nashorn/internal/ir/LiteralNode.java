@@ -452,7 +452,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      *
      * @param token   token
      * @param finish  finish
-     * @param value   undefined value, passed only for polymorphisism discrimination
+     * @param value   undefined value, passed only for polymorphism discrimination
      *
      * @return the new literal node
      */

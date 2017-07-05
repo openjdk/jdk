@@ -37,6 +37,8 @@ import java.lang.reflect.Proxy;
  * @bug 8013468
  * @summary Cursor does not update properly when in fullscreen mode on Mac
  *    The core reason of the issue was the lack of a mouse entered event in fullscreen
+ * @requires (os.family == "mac")
+ * @modules java.desktop/com.apple.eawt
  * @library ../../regtesthelpers
  * @build Util
  * @modules java.desktop/com.apple.eawt
