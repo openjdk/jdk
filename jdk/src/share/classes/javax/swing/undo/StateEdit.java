@@ -170,8 +170,8 @@ public class StateEdit
      * Remove redundant key/values in state hashtables.
      */
     protected void removeRedundantState() {
-        Vector<Object> uselessKeys = new Vector<Object>();
-        Enumeration myKeys = preState.keys();
+        Vector<Object> uselessKeys = new Vector<>();
+        Enumeration<Object> myKeys = preState.keys();
 
         // Locate redundant state
         while (myKeys.hasMoreElements()) {

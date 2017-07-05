@@ -63,9 +63,9 @@ public class RMIGenerator implements RMIConstants, Generator {
 
     private static final Hashtable<String, Integer> versionOptions = new Hashtable<>();
     static {
-        versionOptions.put("-v1.1", new Integer(STUB_VERSION_1_1));
-        versionOptions.put("-vcompat", new Integer(STUB_VERSION_FAT));
-        versionOptions.put("-v1.2", new Integer(STUB_VERSION_1_2));
+        versionOptions.put("-v1.1", STUB_VERSION_1_1);
+        versionOptions.put("-vcompat", STUB_VERSION_FAT);
+        versionOptions.put("-v1.2", STUB_VERSION_1_2);
     }
 
     /**

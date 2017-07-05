@@ -33,7 +33,9 @@ class SATBMarkQueueSet;
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class ObjPtrQueue: public PtrQueue {
+  friend class Threads;
   friend class SATBMarkQueueSet;
+  friend class G1RemarkThreadsClosure;
 
 private:
   // Filter out unwanted entries from the buffer.
@@ -118,13 +120,6 @@ public:
   // Set the parallel closures: pointer is an array of pointers to
   // closures, one for each parallel GC thread.
   void set_par_closure(int i, ObjectClosure* closure);
-
-  // Apply the registered closure to all entries on each
-  // currently-active buffer and then empty the buffer. It should only
-  // be called serially and at a safepoint.
-  void iterate_closure_all_threads();
-  // Parallel version of the above.
-  void par_iterate_closure_all_threads(uint worker);
 
   // If there exists some completed buffer, pop it, then apply the
   // registered closure to all its elements, and return true.  If no

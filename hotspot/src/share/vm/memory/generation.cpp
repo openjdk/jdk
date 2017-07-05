@@ -154,8 +154,7 @@ bool Generation::is_in(const void* p) const {
 
 DefNewGeneration* Generation::as_DefNewGeneration() {
   assert((kind() == Generation::DefNew) ||
-         (kind() == Generation::ParNew) ||
-         (kind() == Generation::ASParNew),
+         (kind() == Generation::ParNew),
     "Wrong youngest generation type");
   return (DefNewGeneration*) this;
 }

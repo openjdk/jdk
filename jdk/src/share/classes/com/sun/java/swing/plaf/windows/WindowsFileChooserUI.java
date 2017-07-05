@@ -191,7 +191,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
             return WindowsFileChooserUI.this.getNewFolderAction();
         }
 
-        public MouseListener createDoubleClickListener(JList list) {
+        public MouseListener createDoubleClickListener(JList<?> list) {
             return WindowsFileChooserUI.this.createDoubleClickListener(getFileChooser(),
                                                                        list);
         }
@@ -994,7 +994,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
         IndentIcon ii = new IndentIcon();
-        public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList<?> list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
 
@@ -1184,7 +1184,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
-        public Component getListCellRendererComponent(JList list,
+        public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
             boolean cellHasFocus) {
 

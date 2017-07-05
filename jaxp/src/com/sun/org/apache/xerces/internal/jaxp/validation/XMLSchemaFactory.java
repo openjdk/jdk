@@ -452,7 +452,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
     }
 
     private void propagateFeatures(AbstractXMLSchema schema) {
-        schema.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, fSecurityManager != null);
+        schema.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                (fSecurityManager != null && fSecurityManager.isSecureProcessing()));
         schema.setFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM, fUseServicesMechanism);
         String[] features = fXMLSchemaLoader.getRecognizedFeatures();
         for (int i = 0; i < features.length; ++i) {

@@ -994,7 +994,7 @@ SetXStartOnFirstThreadArg()
 
     sameThread = JNI_TRUE;
     // Set a variable that tells us we started on the main thread.
-    // This is used by the AWT during startup. (See awt.m)
+    // This is used by the AWT during startup. (See LWCToolkit.m)
     char envVar[80];
     snprintf(envVar, sizeof(envVar), "JAVA_STARTED_ON_FIRST_THREAD_%d", getpid());
     setenv(envVar, "1", 1);

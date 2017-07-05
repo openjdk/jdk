@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
 
 class XMap {
 
-    private static HashMap xMappers = new HashMap();
+    private static HashMap<String, XMap> xMappers = new HashMap<>();
 
     /* ConvertedGlyphs has unicode code points as indexes and values
      * are platform-encoded multi-bytes chars packed into java chars.
@@ -49,7 +49,7 @@ class XMap {
     char[] convertedGlyphs;
 
     static synchronized XMap getXMapper(String encoding) {
-        XMap mapper = (XMap)xMappers.get(encoding);
+        XMap mapper = xMappers.get(encoding);
         if (mapper == null) {
             mapper = getXMapperInternal(encoding);
             xMappers.put(encoding, mapper);

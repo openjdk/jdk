@@ -220,3 +220,18 @@ JNIEXPORT jboolean JNICALL Java_java_awt_SplashScreen__1setImageData
     (*env)->ReleaseByteArrayElements(env, data, pBytes, JNI_ABORT);
     return rc ? JNI_TRUE : JNI_FALSE;
 }
+
+/*
+ * Class:     java_awt_SplashScreen
+ * Method:    _getScaleFactor
+ * Signature: (J)F
+ */
+JNIEXPORT jfloat JNICALL Java_java_awt_SplashScreen__1getScaleFactor
+(JNIEnv *env, jclass thisClass, jlong jsplash)
+{
+    Splash *splash = (Splash *) jlong_to_ptr(jsplash);
+    if (!splash) {
+        return 1;
+    }
+    return splash->scaleFactor;
+}

@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_ARGUMENTS_HPP
 
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/top.hpp"

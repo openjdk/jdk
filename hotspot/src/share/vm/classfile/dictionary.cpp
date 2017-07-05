@@ -199,6 +199,26 @@ bool Dictionary::do_unloading() {
   return class_was_unloaded;
 }
 
+void Dictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
+  // Skip the strong roots probe marking if the closures are the same.
+  if (strong == weak) {
+    oops_do(strong);
+    return;
+  }
+
+  for (int index = 0; index < table_size(); index++) {
+    for (DictionaryEntry *probe = bucket(index);
+                          probe != NULL;
+                          probe = probe->next()) {
+      Klass* e = probe->klass();
+      ClassLoaderData* loader_data = probe->loader_data();
+      if (is_strongly_reachable(loader_data, e)) {
+        probe->set_strongly_reachable();
+      }
+    }
+  }
+  _pd_cache_table->roots_oops_do(strong, weak);
+}
 
 void Dictionary::always_strong_oops_do(OopClosure* blk) {
   // Follow all system classes and temporary placeholders in dictionary; only
@@ -486,6 +506,23 @@ void ProtectionDomainCacheTable::oops_do(OopClosure* f) {
                                      probe != NULL;
                                      probe = probe->next()) {
       probe->oops_do(f);
+    }
+  }
+}
+
+void ProtectionDomainCacheTable::roots_oops_do(OopClosure* strong, OopClosure* weak) {
+  for (int index = 0; index < table_size(); index++) {
+    for (ProtectionDomainCacheEntry* probe = bucket(index);
+                                     probe != NULL;
+                                     probe = probe->next()) {
+      if (probe->is_strongly_reachable()) {
+        probe->reset_strongly_reachable();
+        probe->oops_do(strong);
+      } else {
+        if (weak != NULL) {
+          probe->oops_do(weak);
+        }
+      }
     }
   }
 }

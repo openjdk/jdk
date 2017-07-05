@@ -26,7 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "memory/space.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start(const void* addr) {
@@ -112,7 +113,7 @@ forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
     q = n;
     oop obj = oop(q);
     if (obj->klass_or_null() == NULL) return q;
-    n += obj->size();
+    n += block_size(q);
   }
   assert(q <= n, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");

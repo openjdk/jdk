@@ -24,23 +24,26 @@
 
 package sun.jvm.hotspot.gc_implementation.g1;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-
 import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.memory.ContiguousSpace;
+import sun.jvm.hotspot.memory.CompactibleSpace;
+import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
 // Mirror class for HeapRegion. Currently we don't actually include
-// any of its fields but only iterate over it (which we get "for free"
-// as HeapRegion ultimately inherits from ContiguousSpace).
+// any of its fields but only iterate over it.
 
-public class HeapRegion extends ContiguousSpace {
+public class HeapRegion extends CompactibleSpace {
     // static int GrainBytes;
     static private CIntegerField grainBytesField;
+    static private AddressField topField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -54,6 +57,8 @@ public class HeapRegion extends ContiguousSpace {
         Type type = db.lookupType("HeapRegion");
 
         grainBytesField = type.getCIntegerField("GrainBytes");
+        topField = type.getAddressField("_top");
+
     }
 
     static public long grainBytes() {
@@ -62,5 +67,26 @@ public class HeapRegion extends ContiguousSpace {
 
     public HeapRegion(Address addr) {
         super(addr);
+    }
+
+    public Address top() {
+        return topField.getValue(addr);
+    }
+
+    @Override
+    public List getLiveRegions() {
+        List res = new ArrayList();
+        res.add(new MemRegion(bottom(), top()));
+        return res;
+    }
+
+    @Override
+    public long used() {
+        return top().minus(bottom());
+    }
+
+    @Override
+    public long free() {
+        return end().minus(top());
     }
 }

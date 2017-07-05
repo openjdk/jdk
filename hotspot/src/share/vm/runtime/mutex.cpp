@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -488,7 +487,6 @@ void Monitor::ILock (Thread * Self) {
   for (;;) {
     assert(_OnDeck == ESelf, "invariant");
     if (TrySpin(Self)) break;
-    // CONSIDER: if ESelf->TryPark() && TryLock() break ...
     // It's probably wise to spin only if we *actually* blocked
     // CONSIDER: check the lockbyte, if it remains set then
     // preemptively drain the cxq into the EntryList.

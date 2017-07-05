@@ -71,7 +71,7 @@ public class JvmRTInputArgsEntryImpl implements JvmRTInputArgsEntryMBean,
      * Getter for the "JvmRTInputArgsIndex" variable.
      */
     public Integer getJvmRTInputArgsIndex() throws SnmpStatusException {
-        return new Integer(index);
+        return index;
     }
 
 }

@@ -89,6 +89,7 @@ public:
   // GC support
   void oops_do(OopClosure* f);
   void always_strong_oops_do(OopClosure* blk);
+  void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   void always_strong_classes_do(KlassClosure* closure);
 
@@ -218,6 +219,7 @@ public:
   // GC support
   void oops_do(OopClosure* f);
   void always_strong_oops_do(OopClosure* f);
+  void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   static uint bucket_size();
 

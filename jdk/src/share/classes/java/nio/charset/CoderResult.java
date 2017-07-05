@@ -200,7 +200,7 @@ public class CoderResult {
         private synchronized CoderResult get(int len) {
             if (len <= 0)
                 throw new IllegalArgumentException("Non-positive length");
-            Integer k = new Integer(len);
+            Integer k = len;
             WeakReference<CoderResult> w;
             CoderResult e = null;
             if (cache == null) {

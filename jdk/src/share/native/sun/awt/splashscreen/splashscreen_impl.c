@@ -59,6 +59,7 @@ SplashInit()
 
     memset(splash, 0, sizeof(Splash));
     splash->currentFrame = -1;
+    splash->scaleFactor = 1;
     initFormat(&splash->imageFormat, QUAD_RED_MASK, QUAD_GREEN_MASK,
         QUAD_BLUE_MASK, QUAD_ALPHA_MASK);
     SplashInitPlatform(splash);
@@ -99,6 +100,13 @@ SplashCleanup(Splash * splash)
         splash->overlayData = NULL;
     }
     SplashSetFileJarName(NULL, NULL);
+}
+
+SPLASHEXPORT void
+SplashSetScaleFactor(float scaleFactor)
+{
+    Splash *splash = SplashGetInstance();
+    splash->scaleFactor = scaleFactor;
 }
 
 void

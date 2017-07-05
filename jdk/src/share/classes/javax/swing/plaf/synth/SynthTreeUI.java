@@ -312,7 +312,7 @@ public class SynthTreeUI extends BasicTreeUI
         Insets insets = tree.getInsets();
         TreePath initialPath = getClosestPathForLocation(tree, 0,
                                                          paintBounds.y);
-        Enumeration paintingEnumerator = treeState.getVisiblePathsFrom
+        Enumeration<?> paintingEnumerator = treeState.getVisiblePathsFrom
                                               (initialPath);
         int row = treeState.getRowForPath(initialPath);
         int endY = paintBounds.y + paintBounds.height;

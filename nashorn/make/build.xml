@@ -392,6 +392,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
+      <sysproperty key="nashorn.jar" value="${dist.dir}/nashorn.jar"/>
       <propertyset>
         <propertyref prefix="nashorn."/>
       </propertyset>

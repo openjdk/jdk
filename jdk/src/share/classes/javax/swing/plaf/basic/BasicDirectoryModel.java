@@ -98,7 +98,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             if (directories != null) {
                 return directories;
             }
-            Vector fls = getFiles();
+            Vector<File> fls = getFiles();
             return directories;
         }
     }
@@ -317,7 +317,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                             if (isInterrupted()) {
                                 return null;
                             }
-                            return new DoChangeContents(null, 0, new Vector(fileCache.subList(start, end)), start, fid);
+                            return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                         }
                     }
                     if (!fileCache.equals(newFileCache)) {

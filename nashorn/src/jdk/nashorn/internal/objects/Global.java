@@ -1763,6 +1763,8 @@ public final class Global extends ScriptObject implements Scope {
             final int NOT_ENUMERABLE_NOT_CONFIG = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE;
             scontextProperty = addOwnProperty("context", NOT_ENUMERABLE_NOT_CONFIG, null);
             addOwnProperty("engine", NOT_ENUMERABLE_NOT_CONFIG, engine);
+            // default file name
+            addOwnProperty(ScriptEngine.FILENAME, Attribute.NOT_ENUMERABLE, null);
             // __noSuchProperty__ hook for ScriptContext search of missing variables
             final ScriptFunction noSuchProp = ScriptFunctionImpl.makeStrictFunction(NO_SUCH_PROPERTY_NAME, NO_SUCH_PROPERTY);
             addOwnProperty(NO_SUCH_PROPERTY_NAME, Attribute.NOT_ENUMERABLE, noSuchProp);

@@ -739,7 +739,8 @@ class WindowsFileSystemView extends FileSystemView {
      * @return the Desktop folder.
      */
     public File getHomeDirectory() {
-        return getRoots()[0];
+        File[] roots = getRoots();
+        return (roots.length == 0) ? null : roots[0];
     }
 
     /**

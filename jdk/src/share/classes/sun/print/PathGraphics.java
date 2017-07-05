@@ -43,6 +43,7 @@ import java.awt.Paint;
 import java.awt.Polygon;
 import java.awt.Shape;
 
+import java.awt.geom.Path2D;
 import java.text.AttributedCharacterIterator;
 
 import java.awt.font.FontRenderContext;
@@ -457,23 +458,18 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      */
     public void drawPolyline(int xPoints[], int yPoints[],
                              int nPoints) {
-        float fromX;
-        float fromY;
-        float toX;
-        float toY;
 
-        if (nPoints > 0) {
-            fromX = xPoints[0];
-            fromY = yPoints[0];
+        if (nPoints == 2) {
+            draw(new Line2D.Float(xPoints[0], yPoints[0],
+                                  xPoints[1], yPoints[1]));
+        } else if (nPoints > 2) {
+            Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD, nPoints);
+            path.moveTo(xPoints[0], yPoints[0]);
             for(int i = 1; i < nPoints; i++) {
-                toX = xPoints[i];
-                toY = yPoints[i];
-                draw(new Line2D.Float(fromX, fromY, toX, toY));
-                fromX = toX;
-                fromY = toY;
+                path.lineTo(xPoints[i], yPoints[i]);
             }
+            draw(path);
         }
-
     }
 
 
