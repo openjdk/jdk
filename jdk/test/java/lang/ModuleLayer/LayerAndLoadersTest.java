@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build LayerAndLoadersTest CompilerUtils ModuleUtils
+ * @build LayerAndLoadersTest jdk.test.lib.compiler.CompilerUtils ModuleUtils
  * @run testng LayerAndLoadersTest
  * @summary Tests for java.lang.ModuleLayer@defineModulesWithXXX methods
  */
@@ -48,6 +48,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

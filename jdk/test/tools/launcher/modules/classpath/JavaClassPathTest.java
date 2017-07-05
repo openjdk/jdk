@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.spi.ToolProvider;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.OutputAnalyzer;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -42,10 +43,10 @@ import static jdk.testlibrary.ProcessTools.*;
  * @test
  * @bug 8168205
  * @summary Test the default class path if -Djava.class.path is set
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
- * @build CompilerUtils jdk.testlibrary.*
+ * @build jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng JavaClassPathTest
  */
 
