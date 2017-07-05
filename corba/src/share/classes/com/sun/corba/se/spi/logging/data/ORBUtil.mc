@@ -1,6 +1,6 @@
 ;
 
-; Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+; Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 ; DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ;
 ; This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@
 	    (IS_LOCAL_REQUIRES_STUB 43 WARNING "Call to StubAdapter.isLocal did not pass a stub")
 	    (REQUEST_REQUIRES_STUB 44 WARNING "Call to StubAdapter.request did not pass a stub")
 	    (BAD_ACTIVATE_TIE_CALL 45 WARNING "Call to StubAdapter.activateTie did not pass a valid Tie")
+            (IO_EXCEPTION_ON_CLOSE 46 FINE "Useless exception on call to Closeable.close()")
 	    )
 	(BAD_PARAM
 	    (NULL_PARAM 1 WARNING "Null parameter")
@@ -291,7 +292,31 @@
 	    (JAVA_STREAM_INIT_FAILED 95 WARNING "Java stream initialization failed")
 	    (DUPLICATE_ORB_VERSION_SERVICE_CONTEXT 96 WARNING "An ORBVersionServiceContext was already in the service context list")
 	    (DUPLICATE_SENDING_CONTEXT_SERVICE_CONTEXT 97 WARNING "A SendingContextServiceContext was already in the service context list")
+            (WORK_QUEUE_THREAD_INTERRUPTED 98 FINE "Worker Thread from thread pool {0} was interrupted: closeCalled is {1}.")
+            (WORKER_THREAD_CREATED
+             104 FINE "Worker thread {0} has been created with ClassLoader {1}")
+            (WORKER_THREAD_THROWABLE_FROM_REQUEST_WORK
+             109 FINE "Worker thread {0} caught throwable {1} when requesting work from work queue {2}.")
+            (WORKER_THREAD_NOT_NEEDED
+             110 FINE "Worker thread {0} will exit; current thread count, {1}, greater than minunum worker threads needed, {2}.")
+            (WORKER_THREAD_DO_WORK_THROWABLE
+             111 FINE "Worker thread {0} caught throwable {1} while executing work.")
+            (WORKER_THREAD_CAUGHT_UNEXPECTED_THROWABLE
+             112 WARNING "Worker thread {0} caught unexpected throwable {1}.")
+            (WORKER_THREAD_CREATION_FAILURE
+             113 SEVERE "Worker thread creation failure; cause {0}.")
+            (WORKER_THREAD_SET_NAME_FAILURE
+             114 WARNING "Unable to set worker thread {0} name to {1}; cause {2}.")
+            (WORK_QUEUE_REQUEST_WORK_NO_WORK_FOUND
+             116 WARNING "Ignoring unexpected {0} when retrieving of work from work queue, {1}.")
+            (THREAD_POOL_CLOSE_ERROR 126 WARNING "Error in closing ThreadPool")
+            (THREAD_GROUP_IS_DESTROYED 127 WARNING "ThreadGroup {0} is already destroyed: can't destroy it")
+            (THREAD_GROUP_HAS_ACTIVE_THREADS_IN_CLOSE 128 WARNING "ThreadGroup {0} has {1} active threads: destroy may cause exception")
+            (THREAD_GROUP_HAS_SUB_GROUPS_IN_CLOSE 129 WARNING "ThreadGroup {0} has {1} sub-thread groups: destroy may cause exception")
+            (THREAD_GROUP_DESTROY_FAILED 130 WARNING "ThreadGroup {0} could not be destroyed")
+            (INTERRUPTED_JOIN_CALL_WHILE_CLOSING_THREAD_POOL 131 WARNING "Join was interrupted on thread {0} while closing ThreadPool {1}")
 	    )
+
 	(MARSHAL 
 	    (CHUNK_OVERFLOW 1 WARNING "Data read past end of chunk without closing the chunk")
 	    (UNEXPECTED_EOF 2 WARNING "Grow buffer strategy called underflow handler")

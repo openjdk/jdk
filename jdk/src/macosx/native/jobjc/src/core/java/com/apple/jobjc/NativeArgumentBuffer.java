@@ -28,6 +28,10 @@ import java.nio.ByteOrder;
 
 import com.apple.jobjc.Coder.PrimitivePointerCoder;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class NativeArgumentBuffer{
     private static final ThreadLocal<NativeArgumentBuffer> threadLocal = new ThreadLocal<NativeArgumentBuffer>();
 

@@ -1240,7 +1240,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                                             FC_CHARSET, 0, &charset);
             if (result != FcResultMatch) {
                 free(family);
-                free(family);
+                free(fullname);
                 free(styleStr);
                 free(file);
                 (*FcPatternDestroy)(pattern);

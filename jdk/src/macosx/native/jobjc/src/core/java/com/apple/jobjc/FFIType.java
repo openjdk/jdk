@@ -26,6 +26,10 @@ package com.apple.jobjc;
 
 import com.apple.jobjc.Coder.PrimitivePointerCoder;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 class FFIType{
     private static native void makeFFIType(long ffi_type_buf, long elements_buf);
     private static native int  getFFITypeSizeof();

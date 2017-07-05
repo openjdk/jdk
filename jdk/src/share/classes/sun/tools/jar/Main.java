@@ -137,7 +137,7 @@ class Main {
         File dir = file.getParentFile();
         if (dir == null)
             dir = new File(".");
-        return Files.createTempFile(dir.toPath(), "jartmp", null).toFile();
+        return File.createTempFile("jartmp", null, dir);
     }
 
     private boolean ok;

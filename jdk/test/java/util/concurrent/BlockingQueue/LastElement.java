@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6215625
+ * @bug 6215625 7161229
  * @summary Check correct behavior when last element is removed.
  * @author Martin Buchholz
  */
@@ -38,9 +38,7 @@ public class LastElement {
         testQueue(new ArrayBlockingQueue<Integer>(10, true));
         testQueue(new ArrayBlockingQueue<Integer>(10, false));
         testQueue(new LinkedTransferQueue<Integer>());
-
-        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new Exception("Some tests failed");
+        testQueue(new PriorityBlockingQueue<Integer>());
     }
 
     void testQueue(BlockingQueue<Integer> q) throws Throwable {
@@ -59,6 +57,7 @@ public class LastElement {
         try {check(q.take() == three);}
         catch (Throwable t) {unexpected(t);}
         check(q.isEmpty() && q.size() == 0);
+        check(noRetention(q));
 
         // iterator().remove()
         q.clear();
@@ -75,6 +74,26 @@ public class LastElement {
         try {check(q.take() == three);}
         catch (Throwable t) {unexpected(t);}
         check(q.isEmpty() && q.size() == 0);
+    }
+
+    boolean noRetention(BlockingQueue<?> q) {
+        if (q instanceof PriorityBlockingQueue) {
+            PriorityBlockingQueue<?> pbq = (PriorityBlockingQueue) q;
+            try {
+                java.lang.reflect.Field queue =
+                    PriorityBlockingQueue.class.getDeclaredField("queue");
+                queue.setAccessible(true);
+                Object[] a = (Object[]) queue.get(pbq);
+                return a[0] == null;
+            }
+            catch (NoSuchFieldException e) {
+                unexpected(e);
+            }
+            catch (IllegalAccessException e) {
+                // ignore - security manager must be installed
+            }
+        }
+        return true;
     }
 
     //--------------------- Infrastructure ---------------------------
