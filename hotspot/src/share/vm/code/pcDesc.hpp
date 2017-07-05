@@ -39,6 +39,7 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
     struct {
       unsigned int reexecute: 1;
     } bits;
+    bool operator ==(const PcDescFlags& other) { return word == other.word; }
   } _flags;
 
  public:
@@ -63,6 +64,13 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   // Flags
   bool     should_reexecute()              const { return _flags.bits.reexecute; }
   void set_should_reexecute(bool z)              { _flags.bits.reexecute = z;    }
+
+  // Does pd refer to the same information as pd?
+  bool is_same_info(const PcDesc* pd) {
+    return _scope_decode_offset == pd->_scope_decode_offset &&
+      _obj_decode_offset == pd->_obj_decode_offset &&
+      _flags == pd->_flags;
+  }
 
   // Returns the real pc
   address real_pc(const nmethod* code) const;
