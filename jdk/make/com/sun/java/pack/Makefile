@@ -152,7 +152,7 @@ $(UNPACK_EXE): $(UNPACK_EXE_FILES_o) updatefiles winres
 	$(prep-target)
 	$(LINKER)  $(LDDFLAGS) $(UNPACK_EXE_FILES_o) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
 ifdef MT
-	$(MT) /manifest $(TEMPDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
+	$(MT) /manifest $(OBJDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
 endif
 	$(CP) $(TEMPDIR)/unpack200$(EXE_SUFFIX) $(UNPACK_EXE)
 	$(install-module-file)
