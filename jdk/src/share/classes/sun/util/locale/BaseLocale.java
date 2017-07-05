@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,38 +38,46 @@ public final class BaseLocale {
     public static final String SEP = "_";
 
     private static final Cache CACHE = new Cache();
-    public static final BaseLocale ROOT = BaseLocale.getInstance("", "", "", "");
 
-    private String _language = "";
-    private String _script = "";
-    private String _region = "";
-    private String _variant = "";
+    private final String language;
+    private final String script;
+    private final String region;
+    private final String variant;
 
-    private transient volatile int _hash = 0;
+    private volatile int hash = 0;
 
-    private BaseLocale(String language, String script, String region, String variant) {
-        if (language != null) {
-            _language = AsciiUtil.toLowerString(language).intern();
-        }
-        if (script != null) {
-            _script = AsciiUtil.toTitleString(script).intern();
-        }
-        if (region != null) {
-            _region = AsciiUtil.toUpperString(region).intern();
-        }
-        if (variant != null) {
-            _variant = variant.intern();
-        }
+    // This method must be called only when creating the Locale.* constants.
+    private BaseLocale(String language, String region) {
+        this.language = language;
+        this.script = "";
+        this.region = region;
+        this.variant = "";
     }
 
-    public static BaseLocale getInstance(String language, String script, String region, String variant) {
+    private BaseLocale(String language, String script, String region, String variant) {
+        this.language = (language != null) ? LocaleUtils.toLowerString(language).intern() : "";
+        this.script = (script != null) ? LocaleUtils.toTitleString(script).intern() : "";
+        this.region = (region != null) ? LocaleUtils.toUpperString(region).intern() : "";
+        this.variant = (variant != null) ? variant.intern() : "";
+    }
+
+    // Called for creating the Locale.* constants. No argument
+    // validation is performed.
+    public static BaseLocale createInstance(String language, String region) {
+        BaseLocale base = new BaseLocale(language, region);
+        CACHE.put(new Key(language, region), base);
+        return base;
+    }
+
+    public static BaseLocale getInstance(String language, String script,
+                                         String region, String variant) {
         // JDK uses deprecated ISO639.1 language codes for he, yi and id
         if (language != null) {
-            if (AsciiUtil.caseIgnoreMatch(language, "he")) {
+            if (LocaleUtils.caseIgnoreMatch(language, "he")) {
                 language = "iw";
-            } else if (AsciiUtil.caseIgnoreMatch(language, "yi")) {
+            } else if (LocaleUtils.caseIgnoreMatch(language, "yi")) {
                 language = "ji";
-            } else if (AsciiUtil.caseIgnoreMatch(language, "id")) {
+            } else if (LocaleUtils.caseIgnoreMatch(language, "id")) {
                 language = "in";
             }
         }
@@ -80,21 +88,22 @@ public final class BaseLocale {
     }
 
     public String getLanguage() {
-        return _language;
+        return language;
     }
 
     public String getScript() {
-        return _script;
+        return script;
     }
 
     public String getRegion() {
-        return _region;
+        return region;
     }
 
     public String getVariant() {
-        return _variant;
+        return variant;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -103,138 +112,178 @@ public final class BaseLocale {
             return false;
         }
         BaseLocale other = (BaseLocale)obj;
-        return hashCode() == other.hashCode()
-                && _language.equals(other._language)
-                && _script.equals(other._script)
-                && _region.equals(other._region)
-                && _variant.equals(other._variant);
+        return language == other.language
+               && script == other.script
+               && region == other.region
+               && variant == other.variant;
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        if (_language.length() > 0) {
+        if (language.length() > 0) {
             buf.append("language=");
-            buf.append(_language);
+            buf.append(language);
         }
-        if (_script.length() > 0) {
+        if (script.length() > 0) {
             if (buf.length() > 0) {
                 buf.append(", ");
             }
             buf.append("script=");
-            buf.append(_script);
+            buf.append(script);
         }
-        if (_region.length() > 0) {
+        if (region.length() > 0) {
             if (buf.length() > 0) {
                 buf.append(", ");
             }
             buf.append("region=");
-            buf.append(_region);
+            buf.append(region);
         }
-        if (_variant.length() > 0) {
+        if (variant.length() > 0) {
             if (buf.length() > 0) {
                 buf.append(", ");
             }
             buf.append("variant=");
-            buf.append(_variant);
+            buf.append(variant);
         }
         return buf.toString();
     }
 
+    @Override
     public int hashCode() {
-        int h = _hash;
+        int h = hash;
         if (h == 0) {
             // Generating a hash value from language, script, region and variant
-            for (int i = 0; i < _language.length(); i++) {
-                h = 31*h + _language.charAt(i);
-            }
-            for (int i = 0; i < _script.length(); i++) {
-                h = 31*h + _script.charAt(i);
-            }
-            for (int i = 0; i < _region.length(); i++) {
-                h = 31*h + _region.charAt(i);
-            }
-            for (int i = 0; i < _variant.length(); i++) {
-                h = 31*h + _variant.charAt(i);
-            }
-            _hash = h;
+            h = language.hashCode();
+            h = 31 * h + script.hashCode();
+            h = 31 * h + region.hashCode();
+            h = 31 * h + variant.hashCode();
+            hash = h;
         }
         return h;
     }
 
-    private static class Key implements Comparable<Key> {
-        private String _lang = "";
-        private String _scrt = "";
-        private String _regn = "";
-        private String _vart = "";
+    private static final class Key implements Comparable<Key> {
+        private final String lang;
+        private final String scrt;
+        private final String regn;
+        private final String vart;
+        private final boolean normalized;
+        private final int hash;
 
-        private volatile int _hash; // Default to 0
+        /**
+         * Creates a Key. language and region must be normalized
+         * (intern'ed in the proper case).
+         */
+        private Key(String language, String region) {
+            assert language.intern() == language
+                   && region.intern() == region;
 
-        public Key(String language, String script, String region, String variant) {
-            if (language != null) {
-                _lang = language;
+            lang = language;
+            scrt = "";
+            regn = region;
+            vart = "";
+            this.normalized = true;
+
+            int h = language.hashCode();
+            if (region != "") {
+                int len = region.length();
+                for (int i = 0; i < len; i++) {
+                    h = 31 * h + LocaleUtils.toLower(region.charAt(i));
+                }
             }
-            if (script != null) {
-                _scrt = script;
-            }
-            if (region != null) {
-                _regn = region;
-            }
-            if (variant != null) {
-                _vart = variant;
-            }
+            hash = h;
         }
 
+        public Key(String language, String script, String region, String variant) {
+            this(language, script, region, variant, false);
+        }
+
+        private Key(String language, String script, String region,
+                    String variant, boolean normalized) {
+            int h = 0;
+            if (language != null) {
+                lang = language;
+                int len = language.length();
+                for (int i = 0; i < len; i++) {
+                    h = 31*h + LocaleUtils.toLower(language.charAt(i));
+                }
+            } else {
+                lang = "";
+            }
+            if (script != null) {
+                scrt = script;
+                int len = script.length();
+                for (int i = 0; i < len; i++) {
+                    h = 31*h + LocaleUtils.toLower(script.charAt(i));
+                }
+            } else {
+                scrt = "";
+            }
+            if (region != null) {
+                regn = region;
+                int len = region.length();
+                for (int i = 0; i < len; i++) {
+                    h = 31*h + LocaleUtils.toLower(region.charAt(i));
+                }
+            } else {
+                regn = "";
+            }
+            if (variant != null) {
+                vart = variant;
+                int len = variant.length();
+                for (int i = 0; i < len; i++) {
+                    h = 31*h + variant.charAt(i);
+                }
+            } else {
+                vart = "";
+            }
+            hash = h;
+            this.normalized = normalized;
+        }
+
+        @Override
         public boolean equals(Object obj) {
             return (this == obj) ||
                     (obj instanceof Key)
-                    && AsciiUtil.caseIgnoreMatch(((Key)obj)._lang, this._lang)
-                    && AsciiUtil.caseIgnoreMatch(((Key)obj)._scrt, this._scrt)
-                    && AsciiUtil.caseIgnoreMatch(((Key)obj)._regn, this._regn)
-                    && ((Key)obj)._vart.equals(_vart); // variant is case sensitive in JDK!
+                    && this.hash == ((Key)obj).hash
+                    && LocaleUtils.caseIgnoreMatch(((Key)obj).lang, this.lang)
+                    && LocaleUtils.caseIgnoreMatch(((Key)obj).scrt, this.scrt)
+                    && LocaleUtils.caseIgnoreMatch(((Key)obj).regn, this.regn)
+                    && ((Key)obj).vart.equals(vart); // variant is case sensitive in JDK!
         }
 
+        @Override
         public int compareTo(Key other) {
-            int res = AsciiUtil.caseIgnoreCompare(this._lang, other._lang);
+            int res = LocaleUtils.caseIgnoreCompare(this.lang, other.lang);
             if (res == 0) {
-                res = AsciiUtil.caseIgnoreCompare(this._scrt, other._scrt);
+                res = LocaleUtils.caseIgnoreCompare(this.scrt, other.scrt);
                 if (res == 0) {
-                    res = AsciiUtil.caseIgnoreCompare(this._regn, other._regn);
+                    res = LocaleUtils.caseIgnoreCompare(this.regn, other.regn);
                     if (res == 0) {
-                        res = this._vart.compareTo(other._vart);
+                        res = this.vart.compareTo(other.vart);
                     }
                 }
             }
             return res;
         }
 
+        @Override
         public int hashCode() {
-            int h = _hash;
-            if (h == 0) {
-                // Generating a hash value from language, script, region and variant
-                for (int i = 0; i < _lang.length(); i++) {
-                    h = 31*h + AsciiUtil.toLower(_lang.charAt(i));
-                }
-                for (int i = 0; i < _scrt.length(); i++) {
-                    h = 31*h + AsciiUtil.toLower(_scrt.charAt(i));
-                }
-                for (int i = 0; i < _regn.length(); i++) {
-                    h = 31*h + AsciiUtil.toLower(_regn.charAt(i));
-                }
-                for (int i = 0; i < _vart.length(); i++) {
-                    h = 31*h + _vart.charAt(i);
-                }
-                _hash = h;
-            }
-            return h;
+            return hash;
         }
 
         public static Key normalize(Key key) {
-            String lang = AsciiUtil.toLowerString(key._lang).intern();
-            String scrt = AsciiUtil.toTitleString(key._scrt).intern();
-            String regn = AsciiUtil.toUpperString(key._regn).intern();
-            String vart = key._vart.intern(); // preserve upper/lower cases
+            if (key.normalized) {
+                return key;
+            }
 
-            return new Key(lang, scrt, regn, vart);
+            String lang = LocaleUtils.toLowerString(key.lang).intern();
+            String scrt = LocaleUtils.toTitleString(key.scrt).intern();
+            String regn = LocaleUtils.toUpperString(key.regn).intern();
+            String vart = key.vart.intern(); // preserve upper/lower cases
+
+            return new Key(lang, scrt, regn, vart, true);
         }
     }
 
@@ -243,13 +292,14 @@ public final class BaseLocale {
         public Cache() {
         }
 
+        @Override
         protected Key normalizeKey(Key key) {
             return Key.normalize(key);
         }
 
+        @Override
         protected BaseLocale createObject(Key key) {
-            return new BaseLocale(key._lang, key._scrt, key._regn, key._vart);
+            return new BaseLocale(key.lang, key.scrt, key.regn, key.vart);
         }
-
     }
 }

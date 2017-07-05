@@ -282,7 +282,7 @@ public class Bug4168625Test extends RBTestFmwk {
         thread1.start();            //start thread 1
         loader.waitForNotify(1);    //wait for thread1 to do getBundle & block in loader
         thread2.start();            //start second thread
-        thread2.join(1000);         //wait until thread2 blocks somewhere in getBundle
+        thread2.join();             //wait until thread2 terminates.
 
             //Thread1 should be blocked inside getBundle at the class loader
             //Thread2 should have completed its getBundle call and terminated
@@ -292,7 +292,6 @@ public class Bug4168625Test extends RBTestFmwk {
 
         thread1.ping();             //continue thread1
         thread1.join();
-        thread2.join();
     }
 
     /**
@@ -318,8 +317,7 @@ public class Bug4168625Test extends RBTestFmwk {
         loader.waitForNotify(3);    //wait for thread1 to do getBundle(en) & block in loader
         causeResourceBundleCacheFlush();    //cause a cache flush
         thread1.ping();             //kick thread 1
-        thread1.ping();             //kick thread 1
-        thread1.join(1000);         //wait until thread2 blocks somewhere in getBundle
+        thread1.join();             //wait until thread1 terminates
 
         ResourceBundle bundle = (ResourceBundle)thread1.bundle;
         String s1 = bundle.getString("Bug4168625Resource3_en_US");

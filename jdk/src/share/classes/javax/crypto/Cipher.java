@@ -88,8 +88,35 @@ import sun.security.jca.GetInstance.Instance;
  * example, the SunJCE provider uses a default of 64 bits for DES.)
  * Thus, block ciphers can be turned into byte-oriented stream ciphers by
  * using an 8 bit mode such as CFB8 or OFB8.
+ * <p>
+ * Modes such as Authenticated Encryption with Associated Data (AEAD)
+ * provide authenticity assurances for both confidential data and
+ * Additional Associated Data (AAD) that is not encrypted.  (Please see
+ * <a href="http://www.ietf.org/rfc/rfc5116.txt"> RFC 5116 </a> for more
+ * information on AEAD and AEAD algorithms such as GCM/CCM.) Both
+ * confidential and AAD data can be used when calculating the
+ * authentication tag (similar to a {@link Mac}).  This tag is appended
+ * to the ciphertext during encryption, and is verified on decryption.
+ * <p>
+ * AEAD modes such as GCM/CCM perform all AAD authenticity calculations
+ * before starting the ciphertext authenticity calculations.  To avoid
+ * implementations having to internally buffer ciphertext, all AAD data
+ * must be supplied to GCM/CCM implementations (via the {@code
+ * updateAAD} methods) <b>before</b> the ciphertext is processed (via
+ * the {@code update} and {@code doFinal} methods).
  *
- * <p> Every implementation of the Java platform is required to support
+ * <pre>
+ *     GCMParameterSpec s = new GCMParameterSpec(...);
+ *     cipher.init(..., s);
+ *
+ *     // If the GCMParameterSpec is needed again
+ *     cipher.getParameters().getParameterSpec(GCMParameterSpec.class));
+ *
+ *     cipher.updateAAD(...);  // AAD
+ *     cipher.update(...);     // Multi-part update
+ *     cipher.doFinal(...);    // conclusion of operation
+ * </pre>
+ * Every implementation of the Java platform is required to support
  * the following standard <code>Cipher</code> transformations with the keysizes
  * in parentheses:
  * <ul>
@@ -894,7 +921,7 @@ public class Cipher {
      * <code>inputLen</code> (in bytes).
      *
      * <p>This call takes into account any unprocessed (buffered) data from a
-     * previous <code>update</code> call, and padding.
+     * previous <code>update</code> call, padding, and AEAD tagging.
      *
      * <p>The actual output length of the next <code>update</code> or
      * <code>doFinal</code> call may be smaller than the length returned by
@@ -1090,6 +1117,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them using the {@link SecureRandom <code>SecureRandom</code>}
@@ -1110,8 +1142,8 @@ public class Cipher {
      * @param key the key
      *
      * @exception InvalidKeyException if the given key is inappropriate for
-     * initializing this cipher, or if this cipher is being initialized for
-     * decryption and requires algorithm parameters that cannot be
+     * initializing this cipher, or requires
+     * algorithm parameters that cannot be
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
@@ -1138,6 +1170,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -1155,8 +1192,8 @@ public class Cipher {
      * @param random the source of randomness
      *
      * @exception InvalidKeyException if the given key is inappropriate for
-     * initializing this cipher, or if this cipher is being initialized for
-     * decryption and requires algorithm parameters that cannot be
+     * initializing this cipher, or requires
+     * algorithm parameters that cannot be
      * determined from the given key, or if the given key has a keysize that
      * exceeds the maximum allowable keysize (as determined from the
      * configured jurisdiction policy files).
@@ -1202,6 +1239,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them using the {@link SecureRandom <code>SecureRandom</code>}
@@ -1227,7 +1269,7 @@ public class Cipher {
      * keysize (as determined from the configured jurisdiction policy files).
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or this cipher is being initialized for decryption and requires
+     * or this cipher requires
      * algorithm parameters and <code>params</code> is null, or the given
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
@@ -1258,6 +1300,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -1280,7 +1327,7 @@ public class Cipher {
      * keysize (as determined from the configured jurisdiction policy files).
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or this cipher is being initialized for decryption and requires
+     * or this cipher requires
      * algorithm parameters and <code>params</code> is null, or the given
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
@@ -1323,6 +1370,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them using the {@link SecureRandom <code>SecureRandom</code>}
@@ -1348,7 +1400,7 @@ public class Cipher {
      * keysize (as determined from the configured jurisdiction policy files).
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or this cipher is being initialized for decryption and requires
+     * or this cipher requires
      * algorithm parameters and <code>params</code> is null, or the given
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
@@ -1379,6 +1431,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -1401,7 +1458,7 @@ public class Cipher {
      * keysize (as determined from the configured jurisdiction policy files).
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher,
-     * or this cipher is being initialized for decryption and requires
+     * or this cipher requires
      * algorithm parameters and <code>params</code> is null, or the given
      * algorithm parameters imply a cryptographic strength that would exceed
      * the legal limits (as determined from the configured jurisdiction
@@ -1444,13 +1501,18 @@ public class Cipher {
      * derived from the public key in the given certificate, the underlying
      * cipher
      * implementation is supposed to generate the required parameters itself
-     * (using provider-specific default or ramdom values) if it is being
+     * (using provider-specific default or random values) if it is being
      * initialized for encryption or key wrapping, and raise an <code>
      * InvalidKeyException</code> if it is being initialized for decryption or
      * key unwrapping.
      * The generated parameters can be retrieved using
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
+     *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
      *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
@@ -1474,8 +1536,7 @@ public class Cipher {
      *
      * @exception InvalidKeyException if the public key in the given
      * certificate is inappropriate for initializing this cipher, or this
-     * cipher is being initialized for decryption or unwrapping keys and
-     * requires algorithm parameters that cannot be determined from the
+     * cipher requires algorithm parameters that cannot be determined from the
      * public key in the given certificate, or the keysize of the public key
      * in the given certificate has a keysize that exceeds the maximum
      * allowable keysize (as determined by the configured jurisdiction policy
@@ -1518,6 +1579,11 @@ public class Cipher {
      * {@link #getParameters() getParameters} or
      * {@link #getIV() getIV} (if the parameter is an IV).
      *
+     * <p>If this cipher requires algorithm parameters that cannot be
+     * derived from the input parameters, and there are no reasonable
+     * provider-specific default values, initialization will
+     * necessarily fail.
+     *
      * <p>If this cipher (including its underlying feedback or padding scheme)
      * requires any random bytes (e.g., for parameter generation), it will get
      * them from <code>random</code>.
@@ -1536,7 +1602,7 @@ public class Cipher {
      *
      * @exception InvalidKeyException if the public key in the given
      * certificate is inappropriate for initializing this cipher, or this
-     * cipher is being initialized for decryption or unwrapping keys and
+     * cipher
      * requires algorithm parameters that cannot be determined from the
      * public key in the given certificate, or the keysize of the public key
      * in the given certificate has a keysize that exceeds the maximum
@@ -1865,6 +1931,9 @@ public class Cipher {
      * <p>Input data that may have been buffered during a previous
      * <code>update</code> operation is processed, with padding (if requested)
      * being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in a new buffer.
      *
      * <p>Upon finishing, this method resets this cipher object to the state
@@ -1888,6 +1957,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final byte[] doFinal()
             throws IllegalBlockSizeException, BadPaddingException {
@@ -1904,6 +1976,9 @@ public class Cipher {
      * <p>Input data that may have been buffered during a previous
      * <code>update</code> operation is processed, with padding (if requested)
      * being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in the <code>output</code> buffer, starting at
      * <code>outputOffset</code> inclusive.
      *
@@ -1940,6 +2015,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final int doFinal(byte[] output, int outputOffset)
             throws IllegalBlockSizeException, ShortBufferException,
@@ -1963,6 +2041,9 @@ public class Cipher {
      * <p>The bytes in the <code>input</code> buffer, and any input bytes that
      * may have been buffered during a previous <code>update</code> operation,
      * are processed, with padding (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in a new buffer.
      *
      * <p>Upon finishing, this method resets this cipher object to the state
@@ -1988,6 +2069,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final byte[] doFinal(byte[] input)
             throws IllegalBlockSizeException, BadPaddingException {
@@ -2011,6 +2095,9 @@ public class Cipher {
      * buffer, starting at <code>inputOffset</code> inclusive, and any input
      * bytes that may have been buffered during a previous <code>update</code>
      * operation, are processed, with padding (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in a new buffer.
      *
      * <p>Upon finishing, this method resets this cipher object to the state
@@ -2039,6 +2126,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final byte[] doFinal(byte[] input, int inputOffset, int inputLen)
             throws IllegalBlockSizeException, BadPaddingException {
@@ -2063,6 +2153,9 @@ public class Cipher {
      * buffer, starting at <code>inputOffset</code> inclusive, and any input
      * bytes that may have been buffered during a previous <code>update</code>
      * operation, are processed, with padding (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in the <code>output</code> buffer.
      *
      * <p>If the <code>output</code> buffer is too small to hold the result,
@@ -2105,6 +2198,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final int doFinal(byte[] input, int inputOffset, int inputLen,
                              byte[] output)
@@ -2133,6 +2229,9 @@ public class Cipher {
      * bytes that may have been buffered during a previous
      * <code>update</code> operation, are processed, with padding
      * (if requested) being applied.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
      * The result is stored in the <code>output</code> buffer, starting at
      * <code>outputOffset</code> inclusive.
      *
@@ -2178,6 +2277,9 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
      */
     public final int doFinal(byte[] input, int inputOffset, int inputLen,
                              byte[] output, int outputOffset)
@@ -2203,8 +2305,11 @@ public class Cipher {
      * depending on how this cipher was initialized.
      *
      * <p>All <code>input.remaining()</code> bytes starting at
-     * <code>input.position()</code> are processed. The result is stored
-     * in the output buffer.
+     * <code>input.position()</code> are processed.
+     * If an AEAD mode such as GCM/CCM is being used, the authentication
+     * tag is appended in the case of encryption, or verified in the
+     * case of decryption.
+     * The result is stored in the output buffer.
      * Upon return, the input buffer's position will be equal
      * to its limit; its limit will not have changed. The output buffer's
      * position will have advanced by n, where n is the value returned
@@ -2250,6 +2355,10 @@ public class Cipher {
      * @exception BadPaddingException if this cipher is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
+     * @exception AEADBadTagException if this cipher is decrypting in an
+     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * does not match the calculated value
+     *
      * @since 1.5
      */
     public final int doFinal(ByteBuffer input, ByteBuffer output)
@@ -2440,5 +2549,129 @@ public class Cipher {
             String transformation) throws NoSuchAlgorithmException {
         CryptoPermission cp = getConfiguredPermission(transformation);
         return cp.getAlgorithmParameterSpec();
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD).
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     *
+     * @param src the buffer containing the Additional Authentication Data
+     *
+     * @throws IllegalArgumentException if the {@code src}
+     * byte array is null
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if the corresponding method
+     * in the {@code CipherSpi} has not been overridden by an
+     * implementation
+     *
+     * @since 1.7
+     */
+    public final void updateAAD(byte[] src) {
+        if (src == null) {
+            throw new IllegalArgumentException("src buffer is null");
+        }
+
+        updateAAD(src, 0, src.length);
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD), using a subset of the provided buffer.
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     *
+     * @param src the buffer containing the AAD
+     * @param offset the offset in {@code src} where the AAD input starts
+     * @param len the number of AAD bytes
+     *
+     * @throws IllegalArgumentException if the {@code src}
+     * byte array is null, or the {@code offset} or {@code length}
+     * is less than 0, or the sum of the {@code offset} and
+     * {@code len} is greater than the length of the
+     * {@code src} byte array
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if the corresponding method
+     * in the {@code CipherSpi} has not been overridden by an
+     * implementation
+     *
+     * @since 1.7
+     */
+    public final void updateAAD(byte[] src, int offset, int len) {
+        checkCipherState();
+
+        // Input sanity check
+        if ((src == null) || (offset < 0) || (len < 0)
+                || ((len + offset) > src.length)) {
+            throw new IllegalArgumentException("Bad arguments");
+        }
+
+        chooseFirstProvider();
+        if (len == 0) {
+            return;
+        }
+        spi.engineUpdateAAD(src, offset, len);
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD).
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     * <p>
+     * All {@code src.remaining()} bytes starting at
+     * {@code src.position()} are processed.
+     * Upon return, the input buffer's position will be equal
+     * to its limit; its limit will not have changed.
+     *
+     * @param src the buffer containing the AAD
+     *
+     * @throws IllegalArgumentException if the {@code src ByteBuffer}
+     * is null
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if the corresponding method
+     * in the {@code CipherSpi} has not been overridden by an
+     * implementation
+     *
+     * @since 1.7
+     */
+    public final void updateAAD(ByteBuffer src) {
+        checkCipherState();
+
+        // Input sanity check
+        if (src == null) {
+            throw new IllegalArgumentException("src ByteBuffer is null");
+        }
+
+        chooseFirstProvider();
+        if (src.remaining() == 0) {
+            return;
+        }
+        spi.engineUpdateAAD(src);
     }
 }

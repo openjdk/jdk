@@ -453,6 +453,14 @@ void Klass::remove_unshareable_info() {
       ik->unlink_class();
     }
   }
+  // Clear the Java vtable if the oop has one.
+  // The vtable isn't shareable because it's in the wrong order wrt the methods
+  // once the method names get moved and resorted.
+  klassVtable* vt = vtable();
+  if (vt != NULL) {
+    assert(oop_is_instance() || oop_is_array(), "nothing else has vtable");
+    vt->clear_vtable();
+  }
   set_subklass(NULL);
   set_next_sibling(NULL);
 }
