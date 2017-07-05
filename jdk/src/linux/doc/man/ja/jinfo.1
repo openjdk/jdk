@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jinfo
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: トラブルシューティング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jinfo" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" Title: jinfo
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: �ȥ�֥륷�塼�ƥ��󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jinfo" "1" "2013ǯ11��21��" "JDK 8" "�ȥ�֥륷�塼�ƥ��󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jinfo \- 構成情報を生成します。このコマンドは試験的なもので、サポートされていません。
-.SH "概要"
+.SH "̾��"
+jinfo \- ����������������ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjinfo\fR [ \fIoption\fR ] \fIpid\fR
+\fBjinfo\fR [ \fIoption\fR ] \fIpid\fR
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ jinfo \- 構成情報を生成します。このコマンドは試験的なも�
 .RS 4
 .\}
 .nf
-\fIjinfo\fR [ \fIoption \fR] \fIexecutable core\fR
+\fBjinfo\fR [ \fIoption \fR] \fIexecutable core\fR
 .fi
 .if n \{\
 .RE
@@ -76,89 +78,89 @@ jinfo \- 構成情報を生成します。このコマンドは試験的なも�
 .RS 4
 .\}
 .nf
-\fIjinfo\fR [ \fIoption \fR] \fI[ servier\-id ] remote\-hostname\-or\-IP\fR
+\fBjinfo\fR [ \fIoption \fR] \fI[ servier\-id ] remote\-hostname\-or\-IP\fR
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIオプション\fR
+\fI���ץ����\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIpid\fR
 .RS 4
-構成情報が出力されるプロセスID。プロセスはJavaプロセスである必要があります。マシン上で実行しているJavaプロセスの一覧を取得するには、jps(1)コマンドを使用します。
+�������󤬽��Ϥ����ץ�����ID���ץ�������Java�ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ���Java�ץ������ΰ������������ˤϡ�jps(1)���ޥ�ɤ���Ѥ��ޤ���
 .RE
 .PP
-\fI実行可能ファイル\fR
+\fI�¹Բ�ǽ�ե�����\fR
 .RS 4
-コア・ダンプの作成元のJava実行可能ファイル。
+����������פκ�������Java�¹Բ�ǽ�ե����롣
 .RE
 .PP
-\fIコア\fR
+\fI����\fR
 .RS 4
-構成情報が出力されるコア・ファイル。
+�������󤬽��Ϥ���륳�����ե����롣
 .RE
 .PP
 \fIremote\-hostname\-or\-IP\fR
 .RS 4
-リモート・デバッグ・サーバーの\fIホスト名\fRまたは\fIIP\fRアドレス。jsadebugd(1)を参照してください。
+��⡼�ȡ��ǥХå��������С���\fB�ۥ���̾\fR�ޤ���\fBIP\fR���ɥ쥹��jsadebugd(1)�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIserver\-id\fR
 .RS 4
-複数のデバッグ・サーバーが同一のリモート・ホストで実行している場合の、オプション固有のID。
+ʣ���ΥǥХå��������С���Ʊ��Υ�⡼�ȡ��ۥ��ȤǼ¹Ԥ��Ƥ�����Ρ����ץ�����ͭ��ID��
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjinfo\fRコマンドは、指定されたJavaプロセスやコア・ファイルまたはリモート・デバッグ・サーバーのJava構成情報を出力します。構成情報には、Javaシステム・プロパティとJava仮想マシン(JVM)のコマンドライン・フラグが含まれています。指定されたプロセスが64ビットJVM上で実行されている場合、\fI\-J\-d64\fRオプションを指定する必要がある場合があります。次に例を示します。\fIjinfo\fR
-\fI\-J\-d64 \-sysprops pid\fR。
+\fBjinfo\fR���ޥ�ɤϡ����ꤵ�줿Java�ץ������䥳�����ե�����ޤ��ϥ�⡼�ȡ��ǥХå��������С���Java�����������Ϥ��ޤ�����������ˤϡ�Java�����ƥࡦ�ץ��ѥƥ���Java���ۥޥ���(JVM)�Υ��ޥ�ɹԥե饰���ޤޤ�Ƥ��ޤ������ꤵ�줿�ץ�������64�ӥå�JVM��Ǽ¹Ԥ���Ƥ����硢\fB\-J\-d64\fR���ץ�������ꤹ��ɬ�פ������礬����ޤ���������򼨤��ޤ���\fBjinfo\fR
+\fB\-J\-d64 \-sysprops pid\fR��
 .PP
-このユーティリティはサポート対象外であり、将来のJDKのリリースでは利用できなくなる可能性があります。\fIdbgeng\&.dll\fRが存在していないWindowsシステムでは、Debugging Tools For Windowsをインストールしないとこれらのツールが正常に動作しません。\fIPATH\fR環境変数には、ターゲット・プロセスによって使用されるjvm\&.dllの場所、またはクラッシュ・ダンプ・ファイルが生成された場所が含まれるようにしてください。たとえば、\fIset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fRです。
-.SH "オプション"
+���Υ桼�ƥ���ƥ��ϥ��ݡ����оݳ��Ǥ��ꡢ�����JDK�Υ�꡼���Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���\fBdbgeng\&.dll\fR��¸�ߤ��Ƥ��ʤ�Windows�����ƥ�Ǥϡ�Debugging Tools For Windows�򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ���\fBPATH\fR�Ķ��ѿ��ˤϡ��������åȡ��ץ������ˤ�äƻ��Ѥ����jvm\&.dll�ξ�ꡢ�ޤ��ϥ���å��塦����ס��ե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ������������Ȥ��С�\fBset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR�Ǥ���
+.SH "���ץ����"
 .PP
 no\-option
 .RS 4
-コマンドライン・フラグを、システム・プロパティ名と値のペアとともに出力します。
+���ޥ�ɹԥե饰�򡢥����ƥࡦ�ץ��ѥƥ�̾���ͤΥڥ��ȤȤ�˽��Ϥ��ޤ���
 .RE
 .PP
 \-flag \fIname\fR
 .RS 4
-指定されたコマンドライン・フラグの名前と値を出力します。
+���ꤵ�줿���ޥ�ɹԥե饰��̾�����ͤ���Ϥ��ޤ���
 .RE
 .PP
 \-flag \fI[+|\-]name\fR
 .RS 4
-指定されたブール型のコマンドライン・フラグを有効または無効にします。
+���ꤵ�줿�֡��뷿�Υ��ޥ�ɹԥե饰��ͭ���ޤ���̵���ˤ��ޤ���
 .RE
 .PP
 \-flag \fIname=value\fR
 .RS 4
-指定されたコマンドライン・フラグを指定された値に設定します。
+���ꤵ�줿���ޥ�ɹԥե饰����ꤵ�줿�ͤ����ꤷ�ޤ���
 .RE
 .PP
 \-flags
 .RS 4
-JVMに渡されるコマンドライン・フラグを出力します。
+JVM���Ϥ���륳�ޥ�ɹԥե饰����Ϥ��ޤ���
 .RE
 .PP
 \-sysprops
 .RS 4
-Javaシステム・プロパティを名前と値のペアとして出力します。
+Java�����ƥࡦ�ץ��ѥƥ���̾�����ͤΥڥ��Ȥ��ƽ��Ϥ��ޤ���
 .RE
 .PP
 \-h
 .RS 4
-ヘルプ・メッセージが出力されます。
+�إ�ס���å����������Ϥ���ޤ���
 .RE
 .PP
 \-help
 .RS 4
-ヘルプ・メッセージが出力されます。
+�إ�ס���å����������Ϥ���ޤ���
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

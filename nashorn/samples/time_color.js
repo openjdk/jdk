@@ -62,7 +62,7 @@ var flip = arguments.length > 0? "true".equals(arguments[0]) : false;
 
 // JavaFX start method
 function start(stage) {
-    start.title = "Time Color";
+    stage.title = "Time Color";
     var root = new Group();
     var label = new Label("time");
     label.textFill = Color.WHITE;

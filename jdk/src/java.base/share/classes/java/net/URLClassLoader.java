@@ -774,10 +774,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                 public URLClassPath getURLClassPath (URLClassLoader u) {
                     return u.ucp;
                 }
-
-                public String getOriginalHostName(InetAddress ia) {
-                    return ia.holder.getOriginalHostName();
-                }
             }
         );
         ClassLoader.registerAsParallelCapable();

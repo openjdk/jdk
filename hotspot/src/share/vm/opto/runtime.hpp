@@ -146,6 +146,8 @@ class OptoRuntime : public AllStatic {
   static address _vtable_must_compile_Java;
   static address _complete_monitor_locking_Java;
   static address _rethrow_Java;
+  static address _monitor_notify_Java;
+  static address _monitor_notifyAll_Java;
 
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
@@ -185,6 +187,9 @@ public:
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
+
+  static void monitor_notify_C(oopDesc* obj, JavaThread* thread);
+  static void monitor_notifyAll_C(oopDesc* obj, JavaThread* thread);
 
 private:
 
@@ -244,7 +249,9 @@ private:
   static address g1_wb_pre_Java()                        { return _g1_wb_pre_Java; }
   static address g1_wb_post_Java()                       { return _g1_wb_post_Java; }
   static address vtable_must_compile_stub()              { return _vtable_must_compile_Java; }
-  static address complete_monitor_locking_Java()         { return _complete_monitor_locking_Java;   }
+  static address complete_monitor_locking_Java()         { return _complete_monitor_locking_Java; }
+  static address monitor_notify_Java()                   { return _monitor_notify_Java; }
+  static address monitor_notifyAll_Java()                { return _monitor_notifyAll_Java; }
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
@@ -285,6 +292,7 @@ private:
   static const TypeFunc* g1_wb_post_Type();
   static const TypeFunc* complete_monitor_enter_Type();
   static const TypeFunc* complete_monitor_exit_Type();
+  static const TypeFunc* monitor_notify_Type();
   static const TypeFunc* uncommon_trap_Type();
   static const TypeFunc* athrow_Type();
   static const TypeFunc* rethrow_Type();

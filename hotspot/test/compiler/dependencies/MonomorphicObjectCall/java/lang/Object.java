@@ -58,8 +58,10 @@ public class Object {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }
 
+    @HotSpotIntrinsicCandidate
     public final native void notify();
 
+    @HotSpotIntrinsicCandidate
     public final native void notifyAll();
 
     public final native void wait(long timeout) throws InterruptedException;
