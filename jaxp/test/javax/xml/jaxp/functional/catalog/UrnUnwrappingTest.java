@@ -67,4 +67,3 @@ public class UrnUnwrappingTest {
         return catalogResolver("urnUnwrapping.xml");
     }
 }
-

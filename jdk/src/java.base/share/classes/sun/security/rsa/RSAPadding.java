@@ -253,7 +253,8 @@ public final class RSAPadding {
     public byte[] pad(byte[] data) throws BadPaddingException {
         if (data.length > maxDataSize) {
             throw new BadPaddingException("Data must be shorter than "
-                + (maxDataSize + 1) + " bytes");
+                + (maxDataSize + 1) + " bytes but received "
+                + data.length + " bytes.");
         }
         switch (type) {
         case PAD_NONE:
@@ -281,7 +282,9 @@ public final class RSAPadding {
      */
     public byte[] unpad(byte[] padded) throws BadPaddingException {
         if (padded.length != paddedSize) {
-            throw new BadPaddingException("Decryption error");
+            throw new BadPaddingException("Decryption error." +
+                "The padded array length (" + padded.length +
+                ") is not the specified padded size (" + paddedSize + ")");
         }
         switch (type) {
         case PAD_NONE:

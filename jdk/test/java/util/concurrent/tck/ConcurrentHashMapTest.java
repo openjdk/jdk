@@ -360,6 +360,21 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
     }
 
     /**
+     * Test keySet().removeAll on empty map
+     */
+    public void testKeySet_empty_removeAll() {
+        ConcurrentHashMap<Integer, String> map = new ConcurrentHashMap<>();
+        Set<Integer> set = map.keySet();
+        set.removeAll(Collections.emptyList());
+        assertTrue(map.isEmpty());
+        assertTrue(set.isEmpty());
+        // following is test for JDK-8163353
+        set.removeAll(Collections.emptySet());
+        assertTrue(map.isEmpty());
+        assertTrue(set.isEmpty());
+    }
+
+    /**
      * keySet.toArray returns contains all keys
      */
     public void testKeySetToArray() {

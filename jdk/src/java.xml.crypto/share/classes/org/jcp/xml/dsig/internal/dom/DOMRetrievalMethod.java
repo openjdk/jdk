@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -149,9 +149,10 @@ public final class DOMRetrievalMethod extends DOMStructure
                 }
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
-                if (secVal && (transforms.size() > DOMReference.MAXIMUM_TRANSFORM_COUNT)) {
-                    String error = "A maxiumum of " + DOMReference.MAXIMUM_TRANSFORM_COUNT + " "
-                        + "transforms per Reference are allowed with secure validation";
+                if (secVal && Policy.restrictNumTransforms(transforms.size())) {
+                    String error = "A maximum of " + Policy.maxTransforms()
+                        + " transforms per Reference are allowed when"
+                        + " secure validation is enabled";
                     throw new MarshalException(error);
                 }
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
@@ -238,7 +239,8 @@ public final class DOMRetrievalMethod extends DOMStructure
         }
 
         // guard against RetrievalMethod loops
-        if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
+        if ((data instanceof NodeSetData) && Utils.secureValidation(context)
+            && Policy.restrictRetrievalMethodLoops()) {
             NodeSetData<?> nsd = (NodeSetData<?>)data;
             Iterator<?> i = nsd.iterator();
             if (i.hasNext()) {

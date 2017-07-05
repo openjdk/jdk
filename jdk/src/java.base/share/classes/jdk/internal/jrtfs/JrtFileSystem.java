@@ -119,9 +119,7 @@ class JrtFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        ArrayList<Path> dirs = new ArrayList<>();
-        dirs.add(getRootPath());
-        return dirs;
+        return Collections.singleton(getRootPath());
     }
 
     @Override
@@ -159,9 +157,7 @@ class JrtFileSystem extends FileSystem {
 
     @Override
     public final Iterable<FileStore> getFileStores() {
-        ArrayList<FileStore> list = new ArrayList<>(1);
-        list.add(getFileStore(getRootPath()));
-        return list;
+        return Collections.singleton(getFileStore(getRootPath()));
     }
 
     private static final Set<String> supportedFileAttributeViews

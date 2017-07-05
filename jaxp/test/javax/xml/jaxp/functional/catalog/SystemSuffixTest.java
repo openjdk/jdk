@@ -95,4 +95,3 @@ public class SystemSuffixTest {
         return catalogResolver("systemSuffix.xml");
     }
 }
-

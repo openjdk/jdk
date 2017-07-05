@@ -27,8 +27,8 @@ import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkUriResolution;
 import static catalog.ResolutionChecker.expectExceptionOnUri;
 
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -95,8 +95,7 @@ public class DelegateUriTest {
                         CatalogException.class } };
     }
 
-    private CatalogUriResolver createResolver() {
+    private CatalogResolver createResolver() {
         return catalogUriResolver("delegateUri.xml");
     }
 }
-
