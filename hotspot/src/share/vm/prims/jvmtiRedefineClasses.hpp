@@ -331,6 +331,11 @@
 //   coordinate a cleanup of these constants with Runtime.
 //
 
+struct JvmtiCachedClassFileData {
+  jint length;
+  unsigned char data[1];
+};
+
 class VM_RedefineClasses: public VM_Operation {
  private:
   // These static fields are needed by ClassLoaderDataGraph::classes_do()
@@ -509,5 +514,12 @@ class VM_RedefineClasses: public VM_Operation {
   // Modifiable test must be shared between IsModifiableClass query
   // and redefine implementation
   static bool is_modifiable_class(oop klass_mirror);
+
+  static jint get_cached_class_file_len(JvmtiCachedClassFileData *cache) {
+    return cache == NULL ? 0 : cache->length;
+  }
+  static unsigned char * get_cached_class_file_bytes(JvmtiCachedClassFileData *cache) {
+    return cache == NULL ? NULL : cache->data;
+  }
 };
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSES_HPP

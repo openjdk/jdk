@@ -1370,6 +1370,10 @@ void Monitor::check_prelock_state(Thread *thread) {
     debug_only(if (rank() != Mutex::special) \
       thread->check_for_valid_safepoint_state(false);)
   }
+  if (thread->is_Watcher_thread()) {
+    assert(!WatcherThread::watcher_thread()->has_crash_protection(),
+        "locking not allowed when crash protection is set");
+  }
 }
 
 void Monitor::check_block_state(Thread *thread) {
