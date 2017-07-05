@@ -31,7 +31,6 @@
 #include "jni_util.h"
 
 #include "sun_java2d_pipe_SpanClipRenderer.h"
-#include "sun_java2d_pipe_RegionIterator.h"
 
 jfieldID pBandsArrayID;
 jfieldID pEndIndexID;

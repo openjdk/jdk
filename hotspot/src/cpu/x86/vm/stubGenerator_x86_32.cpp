@@ -2136,11 +2136,23 @@ class StubGenerator: public StubCodeGenerator {
       __ trigfunc('t');
       __ ret(0);
     }
+    {
+      StubCodeMark mark(this, "StubRoutines", "exp");
+      StubRoutines::_intrinsic_exp = (double (*)(double)) __ pc();
 
-    // The intrinsic version of these seem to return the same value as
-    // the strict version.
-    StubRoutines::_intrinsic_exp = SharedRuntime::dexp;
-    StubRoutines::_intrinsic_pow = SharedRuntime::dpow;
+      __ fld_d(Address(rsp, 4));
+      __ exp_with_fallback(0);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "pow");
+      StubRoutines::_intrinsic_pow = (double (*)(double,double)) __ pc();
+
+      __ fld_d(Address(rsp, 12));
+      __ fld_d(Address(rsp, 4));
+      __ pow_with_fallback(0);
+      __ ret(0);
+    }
   }
 
  public:

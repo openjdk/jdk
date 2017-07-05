@@ -271,6 +271,14 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
       case Interpreter::java_lang_math_log10:
           __ flog10();
           break;
+      case Interpreter::java_lang_math_pow:
+          __ fld_d(Address(rsp, 3*wordSize)); // second argument (one
+                                              // empty stack slot)
+          __ pow_with_fallback(0);
+          break;
+      case Interpreter::java_lang_math_exp:
+          __ exp_with_fallback(0);
+           break;
       default                              :
           ShouldNotReachHere();
     }
