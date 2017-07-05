@@ -115,7 +115,7 @@ public final class XContentWindow extends XWindow {
             if (in != null) {
                 newBounds.setLocation(-in.left, -in.top);
             }
-            if (insLog.isLoggable(PlatformLogger.FINE)) {
+            if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
                 insLog.fine("Setting content bounds {0}, old bounds {1}",
                             newBounds, getBounds());
             }

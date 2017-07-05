@@ -329,6 +329,8 @@ Java_sun_security_jgss_wrapper_GSSLibStub_importName(JNIEnv *env,
   initGSSBuffer(env, jnameVal, &nameVal);
   nameType = newGSSOID(env, jnameType);
   if ((*env)->ExceptionCheck(env)) {
+    deleteGSSOID(nameType);
+    resetGSSBuffer(env, jnameVal, &nameVal);
     return jlong_zero;
   }
 
@@ -823,6 +825,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_initContext(JNIEnv *env,
                                         FID_NativeGSSContext_lifetime));
   cb = getGSSCB(env, jcb);
   if ((*env)->ExceptionCheck(env)) {
+    free(cb);
     return NULL;
   }
 
@@ -927,6 +930,8 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
   initGSSBuffer(env, jinToken, &inToken);
   cb = getGSSCB(env, jcb);
   if ((*env)->ExceptionCheck(env)) {
+    free(cb);
+    resetGSSBuffer(env, jinToken, &inToken);
     return NULL;
   }
   srcName = GSS_C_NO_NAME;
@@ -979,6 +984,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
 
       /* return immediately if an exception has occurred */
       if ((*env)->ExceptionCheck(env)) {
+        resetGSSBuffer(env, jinToken, &inToken);
         return NULL;
       }
       sprintf(debugBuf, "[GSSLibStub_acceptContext] set targetName=%ld",
@@ -993,6 +999,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
                                    ptr_to_jlong(srcName), jobj);
       /* return immediately if an exception has occurred */
       if ((*env)->ExceptionCheck(env)) {
+        resetGSSBuffer(env, jinToken, &inToken);
         return NULL;
       }
       sprintf(debugBuf, "[GSSLibStub_acceptContext] set srcName=%ld",
@@ -1019,6 +1026,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_acceptContext(JNIEnv *env,
                                      ptr_to_jlong(delCred), jsrcName, jMech);
         /* return immediately if an exception has occurred */
         if ((*env)->ExceptionCheck(env)) {
+          resetGSSBuffer(env, jinToken, &inToken);
           return NULL;
         }
         (*env)->SetObjectField(env, jcontextSpi,

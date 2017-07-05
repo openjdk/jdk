@@ -75,7 +75,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         winAttr.isResizable = true; // target.isResizable();
         winAttr.title = target.getTitle();
         winAttr.initialResizability = target.isResizable();
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Frame''s initial attributes: decor {0}, resizable {1}, undecorated {2}, initial state {3}",
                      Integer.valueOf(winAttr.decorations), Boolean.valueOf(winAttr.initialResizability),
                      Boolean.valueOf(!winAttr.nativeDecor), Integer.valueOf(winAttr.initialState));
@@ -209,7 +209,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
     }
 
     public void setMaximizedBounds(Rectangle b) {
-        if (insLog.isLoggable(PlatformLogger.FINE)) {
+        if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
             insLog.fine("Setting maximized bounds to " + b);
         }
         if (b == null) return;
@@ -228,7 +228,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             } else {
                 hints.set_max_height((int)XlibWrapper.DisplayHeight(XToolkit.getDisplay(), XlibWrapper.DefaultScreen(XToolkit.getDisplay())));
             }
-            if (insLog.isLoggable(PlatformLogger.FINER)) {
+            if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
                 insLog.finer("Setting hints, flags " + XlibWrapper.hintsToString(hints.get_flags()));
             }
             XlibWrapper.XSetWMNormalHints(XToolkit.getDisplay(), window, hints.pData);
@@ -258,18 +258,18 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         int changed = state ^ newState;
         int changeIconic = changed & Frame.ICONIFIED;
         boolean iconic = (newState & Frame.ICONIFIED) != 0;
-        if (stateLog.isLoggable(PlatformLogger.FINER)) {
+        if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
             stateLog.finer("Changing state, old state {0}, new state {1}(iconic {2})",
                        Integer.valueOf(state), Integer.valueOf(newState), Boolean.valueOf(iconic));
         }
         if (changeIconic != 0 && iconic) {
-            if (stateLog.isLoggable(PlatformLogger.FINER)) {
+            if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
                 stateLog.finer("Iconifying shell " + getShell() + ", this " + this + ", screen " + getScreenNumber());
             }
             XToolkit.awtLock();
             try {
                 int res = XlibWrapper.XIconifyWindow(XToolkit.getDisplay(), getShell(), getScreenNumber());
-                if (stateLog.isLoggable(PlatformLogger.FINER)) {
+                if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
                     stateLog.finer("XIconifyWindow returned " + res);
                 }
             }
@@ -281,7 +281,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             setExtendedState(newState);
         }
         if (changeIconic != 0 && !iconic) {
-            if (stateLog.isLoggable(PlatformLogger.FINER)) {
+            if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
                 stateLog.finer("DeIconifying " + this);
             }
             xSetVisible(true);
@@ -296,7 +296,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         super.handlePropertyNotify(xev);
         XPropertyEvent ev = xev.get_xproperty();
 
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Property change {0}", ev);
         }
         /*
@@ -311,7 +311,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         final int newState = XWM.getWM().getState(this);
         int changed = state ^ newState;
         if (changed == 0) {
-            if (stateLog.isLoggable(PlatformLogger.FINER)) {
+            if (stateLog.isLoggable(PlatformLogger.Level.FINER)) {
                 stateLog.finer("State is the same: " + state);
             }
             return;
@@ -365,7 +365,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             XWMHints hints = getWMHints();
             hints.set_flags((int)XUtilConstants.StateHint | hints.get_flags());
             hints.set_initial_state(wm_state);
-            if (stateLog.isLoggable(PlatformLogger.FINE)) {
+            if (stateLog.isLoggable(PlatformLogger.Level.FINE)) {
                 stateLog.fine("Setting initial WM state on " + this + " to " + wm_state);
             }
             XlibWrapper.XSetWMHints(XToolkit.getDisplay(), getWindow(), hints.pData);

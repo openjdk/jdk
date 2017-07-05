@@ -350,7 +350,7 @@ final class HttpsClient extends HttpClient
                         if (httpuc != null && ret.needsTunneling())
                             httpuc.setTunnelState(TUNNELING);
                         PlatformLogger logger = HttpURLConnection.getHttpLogger();
-                        if (logger.isLoggable(PlatformLogger.FINEST)) {
+                        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
                             logger.finest("KeepAlive stream retrieved from the cache, " + ret);
                         }
                     }

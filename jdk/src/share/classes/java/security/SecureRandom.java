@@ -466,7 +466,7 @@ public class SecureRandom extends java.util.Random {
      * <code>nextLong</code>, and <code>nextFloat</code>).
      *
      * @param numBits number of pseudo-random bits to be generated, where
-     * 0 <= <code>numBits</code> <= 32.
+     * {@code 0 <= numBits <= 32}.
      *
      * @return an <code>int</code> containing the user-specified number
      * of pseudo-random bits (right justified, with leading zeros).

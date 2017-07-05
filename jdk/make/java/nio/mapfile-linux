@@ -117,6 +117,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_Net_getInterface6;
 		Java_sun_nio_ch_Net_shutdown;
 		Java_sun_nio_ch_Net_poll;
+                Java_sun_nio_ch_Net_isExclusiveBindAvailable;
                 Java_sun_nio_ch_PollArrayWrapper_interrupt;
                 Java_sun_nio_ch_PollArrayWrapper_poll0;
                 Java_sun_nio_ch_ServerSocketChannelImpl_accept0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.sound.sampled.AudioSystem;
  *
  * @author Karl Helgason
  */
-public class SoftMixingMainMixer {
+public final class SoftMixingMainMixer {
 
     public final static int CHANNEL_LEFT = 0;
 
@@ -63,23 +63,23 @@ public class SoftMixingMainMixer {
 
     public final static int CHANNEL_CHANNELMIXER_RIGHT = 15;
 
-    private SoftMixingMixer mixer;
+    private final SoftMixingMixer mixer;
 
-    private AudioInputStream ais;
+    private final AudioInputStream ais;
 
-    private SoftAudioBuffer[] buffers;
+    private final SoftAudioBuffer[] buffers;
 
-    private SoftAudioProcessor reverb;
+    private final SoftAudioProcessor reverb;
 
-    private SoftAudioProcessor chorus;
+    private final SoftAudioProcessor chorus;
 
-    private SoftAudioProcessor agc;
+    private final SoftAudioProcessor agc;
 
-    private int nrofchannels;
+    private final int nrofchannels;
 
-    private Object control_mutex;
+    private final Object control_mutex;
 
-    private List<SoftMixingDataLine> openLinesList = new ArrayList<SoftMixingDataLine>();
+    private final List<SoftMixingDataLine> openLinesList = new ArrayList<SoftMixingDataLine>();
 
     private SoftMixingDataLine[] openLines = new SoftMixingDataLine[0];
 
@@ -87,7 +87,7 @@ public class SoftMixingMainMixer {
         return ais;
     }
 
-    protected void processAudioBuffers() {
+    void processAudioBuffers() {
         for (int i = 0; i < buffers.length; i++) {
             buffers[i].clear();
         }
@@ -162,20 +162,20 @@ public class SoftMixingMainMixer {
 
         InputStream in = new InputStream() {
 
-            private SoftAudioBuffer[] buffers = SoftMixingMainMixer.this.buffers;
+            private final SoftAudioBuffer[] buffers = SoftMixingMainMixer.this.buffers;
 
-            private int nrofchannels = SoftMixingMainMixer.this.mixer
+            private final int nrofchannels = SoftMixingMainMixer.this.mixer
                     .getFormat().getChannels();
 
-            private int buffersize = buffers[0].getSize();
+            private final int buffersize = buffers[0].getSize();
 
-            private byte[] bbuffer = new byte[buffersize
+            private final byte[] bbuffer = new byte[buffersize
                     * (SoftMixingMainMixer.this.mixer.getFormat()
                             .getSampleSizeInBits() / 8) * nrofchannels];
 
             private int bbuffer_pos = 0;
 
-            private byte[] single = new byte[1];
+            private final byte[] single = new byte[1];
 
             public void fillBuffer() {
                 processAudioBuffers();

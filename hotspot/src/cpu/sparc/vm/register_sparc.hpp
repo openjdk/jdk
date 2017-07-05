@@ -249,12 +249,10 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
 
       case D:
         assert(c < 64  &&  (c & 1) == 0, "bad double float register");
-        assert(c < 32 || VM_Version::v9_instructions_work(), "V9 float work only on V9 platform");
         return (c & 0x1e) | ((c & 0x20) >> 5);
 
       case Q:
         assert(c < 64  &&  (c & 3) == 0, "bad quad float register");
-        assert(c < 32 || VM_Version::v9_instructions_work(), "V9 float work only on V9 platform");
         return (c & 0x1c) | ((c & 0x20) >> 5);
     }
     ShouldNotReachHere();

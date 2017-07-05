@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,21 @@ import java.util.List;
  *
  * @author Karl Helgason
  */
-public class DLSRegion {
+public final class DLSRegion {
 
     public final static int OPTION_SELFNONEXCLUSIVE = 0x0001;
-    protected List<DLSModulator> modulators = new ArrayList<DLSModulator>();
-    protected int keyfrom;
-    protected int keyto;
-    protected int velfrom;
-    protected int velto;
-    protected int options;
-    protected int exclusiveClass;
-    protected int fusoptions;
-    protected int phasegroup;
-    protected long channel;
-    protected DLSSample sample = null;
-    protected DLSSampleOptions sampleoptions;
+    List<DLSModulator> modulators = new ArrayList<DLSModulator>();
+    int keyfrom;
+    int keyto;
+    int velfrom;
+    int velto;
+    int options;
+    int exclusiveClass;
+    int fusoptions;
+    int phasegroup;
+    long channel;
+    DLSSample sample = null;
+    DLSSampleOptions sampleoptions;
 
     public List<DLSModulator> getModulators() {
         return modulators;

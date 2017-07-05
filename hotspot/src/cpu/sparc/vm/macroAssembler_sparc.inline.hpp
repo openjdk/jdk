@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,10 +229,7 @@ inline void MacroAssembler::sll_ptr( Register s1, RegisterOrConstant s2, Registe
 // Use the right branch for the platform
 
 inline void MacroAssembler::br( Condition c, bool a, Predict p, address d, relocInfo::relocType rt ) {
-  if (VM_Version::v9_instructions_work())
-    Assembler::bp(c, a, icc, p, d, rt);
-  else
-    Assembler::br(c, a, d, rt);
+  Assembler::bp(c, a, icc, p, d, rt);
 }
 
 inline void MacroAssembler::br( Condition c, bool a, Predict p, Label& L ) {
@@ -268,10 +265,7 @@ inline void MacroAssembler::bp( Condition c, bool a, CC cc, Predict p, Label& L 
 }
 
 inline void MacroAssembler::fb( Condition c, bool a, Predict p, address d, relocInfo::relocType rt ) {
-  if (VM_Version::v9_instructions_work())
-    fbp(c, a, fcc0, p, d, rt);
-  else
-    Assembler::fb(c, a, d, rt);
+  fbp(c, a, fcc0, p, d, rt);
 }
 
 inline void MacroAssembler::fb( Condition c, bool a, Predict p, Label& L ) {
@@ -334,7 +328,7 @@ inline void MacroAssembler::callr( Register s1, int simm13a, RelocationHolder co
 
 // prefetch instruction
 inline void MacroAssembler::iprefetch( address d, relocInfo::relocType rt ) {
-  if (VM_Version::v9_instructions_work())
+  Assembler::bp( never, true, xcc, pt, d, rt );
     Assembler::bp( never, true, xcc, pt, d, rt );
 }
 inline void MacroAssembler::iprefetch( Label& L) { iprefetch( target(L) ); }
@@ -344,15 +338,7 @@ inline void MacroAssembler::iprefetch( Label& L) { iprefetch( target(L) ); }
 // returns delta from gotten pc to addr after
 inline int MacroAssembler::get_pc( Register d ) {
   int x = offset();
-  if (VM_Version::v9_instructions_work())
-    rdpc(d);
-  else {
-    Label lbl;
-    Assembler::call(lbl, relocInfo::none);  // No relocation as this is call to pc+0x8
-    if (d == O7)  delayed()->nop();
-    else          delayed()->mov(O7, d);
-    bind(lbl);
-  }
+  rdpc(d);
   return offset() - x;
 }
 
@@ -646,41 +632,26 @@ inline void MacroAssembler::ldf(FloatRegisterImpl::Width w, const Address& a, Fl
 // returns if membar generates anything, obviously this code should mirror
 // membar below.
 inline bool MacroAssembler::membar_has_effect( Membar_mask_bits const7a ) {
-  if( !os::is_MP() ) return false;  // Not needed on single CPU
-  if( VM_Version::v9_instructions_work() ) {
-    const Membar_mask_bits effective_mask =
-        Membar_mask_bits(const7a & ~(LoadLoad | LoadStore | StoreStore));
-    return (effective_mask != 0);
-  } else {
-    return true;
-  }
+  if (!os::is_MP())
+    return false;  // Not needed on single CPU
+  const Membar_mask_bits effective_mask =
+      Membar_mask_bits(const7a & ~(LoadLoad | LoadStore | StoreStore));
+  return (effective_mask != 0);
 }
 
 inline void MacroAssembler::membar( Membar_mask_bits const7a ) {
   // Uniprocessors do not need memory barriers
-  if (!os::is_MP()) return;
+  if (!os::is_MP())
+    return;
   // Weakened for current Sparcs and TSO.  See the v9 manual, sections 8.4.3,
   // 8.4.4.3, a.31 and a.50.
-  if( VM_Version::v9_instructions_work() ) {
-    // Under TSO, setting bit 3, 2, or 0 is redundant, so the only value
-    // of the mmask subfield of const7a that does anything that isn't done
-    // implicitly is StoreLoad.
-    const Membar_mask_bits effective_mask =
-        Membar_mask_bits(const7a & ~(LoadLoad | LoadStore | StoreStore));
-    if ( effective_mask != 0 ) {
-      Assembler::membar( effective_mask );
-    }
-  } else {
-    // stbar is the closest there is on v8.  Equivalent to membar(StoreStore).  We
-    // do not issue the stbar because to my knowledge all v8 machines implement TSO,
-    // which guarantees that all stores behave as if an stbar were issued just after
-    // each one of them.  On these machines, stbar ought to be a nop.  There doesn't
-    // appear to be an equivalent of membar(StoreLoad) on v8: TSO doesn't require it,
-    // it can't be specified by stbar, nor have I come up with a way to simulate it.
-    //
-    // Addendum.  Dave says that ldstub guarantees a write buffer flush to coherent
-    // space.  Put one here to be on the safe side.
-    Assembler::ldstub(SP, 0, G0);
+  // Under TSO, setting bit 3, 2, or 0 is redundant, so the only value
+  // of the mmask subfield of const7a that does anything that isn't done
+  // implicitly is StoreLoad.
+  const Membar_mask_bits effective_mask =
+      Membar_mask_bits(const7a & ~(LoadLoad | LoadStore | StoreStore));
+  if (effective_mask != 0) {
+    Assembler::membar(effective_mask);
   }
 }
 
@@ -748,7 +719,7 @@ inline void MacroAssembler::sub(Register s1, RegisterOrConstant s2, Register d, 
   if (offset != 0)       sub(d,  offset,                    d);
 }
 
-inline void MacroAssembler::swap(Address& a, Register d, int offset) {
+inline void MacroAssembler::swap(const Address& a, Register d, int offset) {
   relocate(a.rspec(offset));
   if (a.has_index()) { assert(offset == 0, ""); swap(a.base(), a.index(), d        ); }
   else               {                          swap(a.base(), a.disp() + offset, d); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 7146431
- * @summary Test that internal JAXP packages cannot be accessed
+ * @bug 7146431 8000450
+ * @summary Test that internal packages cannot be accessed
  */
 
 public class CheckPackageAccess {
@@ -32,6 +32,7 @@ public class CheckPackageAccess {
     public static void main(String[] args) throws Exception {
 
         String[] pkgs = new String[] {
+            "com.sun.corba.se.impl.",
             "com.sun.org.apache.xerces.internal.utils.",
             "com.sun.org.apache.xalan.internal.utils." };
         SecurityManager sm = new SecurityManager();
@@ -40,7 +41,11 @@ public class CheckPackageAccess {
             System.out.println("Checking package access for " + pkg);
             try {
                 sm.checkPackageAccess(pkg);
-                throw new Exception("Expected SecurityException not thrown");
+                throw new Exception("Expected PackageAccess SecurityException not thrown");
+            } catch (SecurityException se) { }
+            try {
+                sm.checkPackageDefinition(pkg);
+                throw new Exception("Expected PackageDefinition SecurityException not thrown");
             } catch (SecurityException se) { }
         }
     }

@@ -15,10 +15,15 @@ If at any time an exception is thrown, or if any message
 is incomprehensible, then the test failed.  Otherwise,
 the test passed.
 <p>
+<b>Preparation</b>: Find (or create) a temporary directory that you have write
+access to (Example: 'C:\tmp' on Windows or '/tmp' on other systems) and copy
+the files "ks", "good", "bad" from the scratch sub-directory of this test's
+working directory (the -w argument of jtreg) into the temporary directory.
+If 'policy1' or 'policy2' already exists in this directory, remove it.
+<p>
 Press "Pass" if ... press "Fail" otherwise.
 <p>
-<ol start="0">
-<li> If testing on Windows, create a temporary directory. (Example: C:\foo\tmp)
+<ol>
 <li> Pull down the 'File' and 'KeyStore' menus and check values
 <li> Pull down 'File' menu and select 'View Warning Log'.  Confirm FileNotFound.
 <li> Pull down 'File' menu and select 'New'.
@@ -46,65 +51,65 @@ Press "Pass" if ... press "Fail" otherwise.
 <li> Select "play" from Target menu.
 <li> Click OK, confirm changed permission.
 <li> Type "hello" for 'CodeBase', click on 'Done', and check error message
+<li> Clean up the 'CodeBase' textbox
 <li> Type "hello" for 'SignedBy', click on 'Done', and check warning message
-<li> Click, on 'Edit Policy Entry' and 'Remove Policy Entry'
+<li> Click on 'Edit Policy Entry' and 'Remove Policy Entry'
 	and check error messages
-<li> Select policy entry, click on 'Edit Policy Entry', and check pop-up window
+<li> Select policy entry, click on 'Edit Policy Entry', check pop-up window and close it
 <li> Select policy entry, click on 'Remove Policy Entry',
 	and check pop-up window
 <li> Do not remove the entry, click 'Cancel'.
 <li> Pull down 'File' menu and select 'Exit'.  Confirm Save option.
 	Click 'Cancel'.
-<li> Select 'File' menu value 'Save' and enter "/tmp/policy1" as the filename.<br>
-     If testing on Windows, use the temporary directory created in Step 0.
-        (Example: Save as "C:\foo\tmp\policy1")<br>
-     Check status message.
+<li> Select 'File' menu value 'Save' and save into file "policy1" in the
+    temporary directory. Check status message.<br>
 <li> Select 'File' menu value 'New'
 <li> Click 'Add Policy Entry', type in "hello" for 'SignedBy' field,
 	click 'Done'.  Confirm warning.
 <li> Select 'File' menu value 'Open' and confirm save option
-	(do not save changes)
-<li> Type "/tmp/policy1" (if Windows, "C:\foo\tmp\policy1") for the filename
-        and confirm warning message<br>
+	(Click 'Cancel', do not save changes)
 <li> Pull down 'File' menu, select 'View Warning Log'
 	and confirm KeyStore alias warning
 <li> Pull down 'KeyStore' menu and select 'Edit'
-<li> Enter 'foo' as KeyStore URL and check error
-<li> Using keytool create JKS keystore
-<li> Enter KeyStore URL but leave other fields empty.  Should succeed.
+<li> Enter 'foo' as KeyStore URL, click 'OK', and check error
+<li> Enter KeyStore URL "file:/tmp/ks" (Or use the temporary directory mentioned
+    in the preparation if it's not '/tmp'. For example, "file:/C:/tmp/ks" on Windows)
+    but leave other fields empty. Click 'OK'. Should succeed.
 <li> Pull down 'KeyStore' menu and select 'Edit'
-<li> Confirm URL and Type values.
-<li> Enter 'foo' as the provider and check error message.
-<li> Enter 'SUN' as the provider.  Should succeed.
+<li> Confirm URL and Type values. The Type should be "jks"
+<li> Enter 'foo' as the provider, click 'OK' and check error message.
+<li> Enter 'SUN' as the provider, click 'OK'.  Should succeed.
 <li> Pull down 'KeyStore' menu and select 'Edit'
 <li> Confirm URL, Type, and Provider values.
-<li> Enter 'foo' as the password URL and check error message.
-<li> Enter URL with bad password and check error message.
-<li> Enter URL with good password.  Should succeed.
+<li> Enter 'foo' as the password URL, click 'OK' and check error message.
+<li> Enter URL "file:/tmp/bad" (Or use the temporary directory mentioned in
+    the preparation if it's not '/tmp'. For example, "file:/C:/tmp/bad" on Windows),
+    click 'OK' and check error message.
+<li> Enter URL "file:/tmp/good" (Or use the temporary directory mentioned in
+    the preparation if it's not '/tmp'. For example, "file:/C:/tmp/good" on Windows)
+    and click 'OK'.  Should succeed.
 <li> Pull down 'KeyStore' menu and select 'Edit'
 <li> Confirm URL, Type, Provider, and Password URL values.
 <li> Click OK
-<li> Pull down 'File' menu and select 'Save As'.  Enter "/tmp/policy2"
-        (if Windows, "C:\foo\tmp\policy2").
-	Confirm status message.<br>
+<li> Pull down 'File' menu and select 'Save As' and save into file "policy2"
+    in the temporary directory. Confirm status message.<br>
 <li> Pull down 'File' menu and select 'New'.
-<li> Pull down 'File' menu and select 'Open'.  Enter "/tmp/policy2"
-        (if Windows, "C:\foo\tmp\policy2").
-	Confirm warning message.<br>
+<li> Pull down 'File' menu and select 'Open' and open "policy2" in the
+    temporary directory.<br>
 <li> Click on 'Add Policy Entry', enter Codebase 'http://foo',
 	SignedBy 'bar'.  Click on 'Done' and confirm alias warning.
 <li> Double-Click on just created policy entry, confirm edit window appears.
-<li> Change SignedBy to an alias in previously created keystore.
+<li> Change SignedBy to an 'hello'.
 <li> Click on Done and confirm it worked with no warning.
 <li> Double-Click on "SignedBy hello" policy entry and
 	confirm edit window appears.
 <li> Click on Edit/Remove Principal, confirm errors.
 <li> Click on 'Add Principal' and check new window.
 <li> Click on 'OK' and confirm error message (no principal name)
-<li> Enter valid KeyStore alias as principal name, click OK and
+<li> Enter 'hello' as principal name, click OK and
 	confirm status message.
 <li> Confirm new principal in Principals list.
-<li> Click on 'Done' (creating policy entry), confirm alias warning.
+<li> Click on 'Done' (creating policy entry).
 <li> View warning log and confirm X500Principal/KeyStore alias message.
 <li> Confirm principal added to policy entry in main window listing.
 <li> Double click on that entry.
@@ -116,14 +121,14 @@ Press "Pass" if ... press "Fail" otherwise.
 	Confirm name cleared.  Type 'foo' as name.  Click OK.  Confirm error.
 	type 'cn=foo' as name.  Click OK.  should succeed.
 <li> Confirm changed principal in list.
-<li> Click on 'Add Permission', and add any FilePermission.
-<li> Click on 'Done' in Policy Entry window.  Confirm alias warning.
+<li> Click on 'Add Permission', and add a FilePermission, choose a target and
+    an action. Click OK.
+<li> Click on 'Done' in Policy Entry window.
 <li> Confirm entries in main window listing.
 <li> Select 'File' menu value 'Exit'
 <li> Save Changes, confirm status message.
-<li> If testing on Windows, delete the temporary directory and its contents
-        created during this test.
-</ol>
+<li> Delete all files created during this test. If the temporary directory
+ is also newly created, empty and delete it.</ol>
 <p>
 
 </body>

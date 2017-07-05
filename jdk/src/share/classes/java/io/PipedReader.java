@@ -91,7 +91,7 @@ public class PipedReader extends Reader {
      * @param      src       the stream to connect to.
      * @param      pipeSize  the size of the pipe's buffer.
      * @exception  IOException  if an I/O error occurs.
-     * @exception  IllegalArgumentException if <code>pipeSize <= 0</code>.
+     * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
     public PipedReader(PipedWriter src, int pipeSize) throws IOException {
@@ -120,7 +120,7 @@ public class PipedReader extends Reader {
      * before being used.
      *
      * @param   pipeSize the size of the pipe's buffer.
-     * @exception  IllegalArgumentException if <code>pipeSize <= 0</code>.
+     * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
     public PipedReader(int pipeSize) {

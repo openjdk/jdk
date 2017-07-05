@@ -642,11 +642,21 @@ int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
 // CellType handling methods
 //
 
+// Allocate memory and throw LinkageError if failure.
+#define ALLOC_RESOURCE_ARRAY(var, type, count) \
+  var = NEW_RESOURCE_ARRAY_RETURN_NULL(type, count);              \
+  if (var == NULL) {                                              \
+    report_error("Cannot reserve enough memory to analyze this method"); \
+    return;                                                       \
+  }
+
+
 void GenerateOopMap::init_state() {
   _state_len     = _max_locals + _max_stack + _max_monitors;
-  _state         = NEW_RESOURCE_ARRAY(CellTypeState, _state_len);
+  ALLOC_RESOURCE_ARRAY(_state, CellTypeState, _state_len);
   memset(_state, 0, _state_len * sizeof(CellTypeState));
-  _state_vec_buf = NEW_RESOURCE_ARRAY(char, MAX3(_max_locals, _max_stack, _max_monitors) + 1/*for null terminator char */);
+  int count = MAX3(_max_locals, _max_stack, _max_monitors) + 1/*for null terminator char */;
+  ALLOC_RESOURCE_ARRAY(_state_vec_buf, char, count);
 }
 
 void GenerateOopMap::make_context_uninitialized() {
@@ -905,7 +915,7 @@ void GenerateOopMap::init_basic_blocks() {
   // But cumbersome since we don't know the stack heights yet.  (Nor the
   // monitor stack heights...)
 
-  _basic_blocks = NEW_RESOURCE_ARRAY(BasicBlock, _bb_count);
+  ALLOC_RESOURCE_ARRAY(_basic_blocks, BasicBlock, _bb_count);
 
   // Make a pass through the bytecodes.  Count the number of monitorenters.
   // This can be used an upper bound on the monitor stack depth in programs
@@ -976,8 +986,8 @@ void GenerateOopMap::init_basic_blocks() {
     return;
   }
 
-  CellTypeState *basicBlockState =
-      NEW_RESOURCE_ARRAY(CellTypeState, bbNo * _state_len);
+  CellTypeState *basicBlockState;
+  ALLOC_RESOURCE_ARRAY(basicBlockState, CellTypeState, bbNo * _state_len);
   memset(basicBlockState, 0, bbNo * _state_len * sizeof(CellTypeState));
 
   // Make a pass over the basicblocks and assign their state vectors.

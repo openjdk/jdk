@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,22 +50,22 @@ public abstract class SoftMixingDataLine implements DataLine {
             "Chorus Send") {
     };
 
-    protected static class AudioFloatInputStreamResampler extends
+    protected static final class AudioFloatInputStreamResampler extends
             AudioFloatInputStream {
 
-        private AudioFloatInputStream ais;
+        private final AudioFloatInputStream ais;
 
-        private AudioFormat targetFormat;
+        private final AudioFormat targetFormat;
 
         private float[] skipbuffer;
 
         private SoftAbstractResampler resampler;
 
-        private float[] pitch = new float[1];
+        private final float[] pitch = new float[1];
 
-        private float[] ibuffer2;
+        private final float[] ibuffer2;
 
-        private float[][] ibuffer;
+        private final float[][] ibuffer;
 
         private float ibuffer_index = 0;
 
@@ -75,15 +75,15 @@ public abstract class SoftMixingDataLine implements DataLine {
 
         private float[][] cbuffer;
 
-        private int buffer_len = 512;
+        private final int buffer_len = 512;
 
-        private int pad;
+        private final int pad;
 
-        private int pad2;
+        private final int pad2;
 
-        private float[] ix = new float[1];
+        private final float[] ix = new float[1];
 
-        private int[] ox = new int[1];
+        private final int[] ox = new int[1];
 
         private float[][] mark_ibuffer = null;
 
@@ -294,7 +294,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private class Gain extends FloatControl {
+    private final class Gain extends FloatControl {
 
         private Gain() {
 
@@ -308,7 +308,7 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
     }
 
-    private class Mute extends BooleanControl {
+    private final class Mute extends BooleanControl {
 
         private Mute() {
             super(BooleanControl.Type.MUTE, false, "True", "False");
@@ -320,7 +320,7 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
     }
 
-    private class ApplyReverb extends BooleanControl {
+    private final class ApplyReverb extends BooleanControl {
 
         private ApplyReverb() {
             super(BooleanControl.Type.APPLY_REVERB, false, "True", "False");
@@ -333,7 +333,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private class Balance extends FloatControl {
+    private final class Balance extends FloatControl {
 
         private Balance() {
             super(FloatControl.Type.BALANCE, -1.0f, 1.0f, (1.0f / 128.0f), -1,
@@ -347,7 +347,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private class Pan extends FloatControl {
+    private final class Pan extends FloatControl {
 
         private Pan() {
             super(FloatControl.Type.PAN, -1.0f, 1.0f, (1.0f / 128.0f), -1,
@@ -365,7 +365,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private class ReverbSend extends FloatControl {
+    private final class ReverbSend extends FloatControl {
 
         private ReverbSend() {
             super(FloatControl.Type.REVERB_SEND, -80f, 6.0206f, 80f / 128.0f,
@@ -379,7 +379,7 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private class ChorusSend extends FloatControl {
+    private final class ChorusSend extends FloatControl {
 
         private ChorusSend() {
             super(CHORUS_SEND, -80f, 6.0206f, 80f / 128.0f, -1, -80f, "dB",
@@ -393,43 +393,43 @@ public abstract class SoftMixingDataLine implements DataLine {
 
     }
 
-    private Gain gain_control = new Gain();
+    private final Gain gain_control = new Gain();
 
-    private Mute mute_control = new Mute();
+    private final Mute mute_control = new Mute();
 
-    private Balance balance_control = new Balance();
+    private final Balance balance_control = new Balance();
 
-    private Pan pan_control = new Pan();
+    private final Pan pan_control = new Pan();
 
-    private ReverbSend reverbsend_control = new ReverbSend();
+    private final ReverbSend reverbsend_control = new ReverbSend();
 
-    private ChorusSend chorussend_control = new ChorusSend();
+    private final ChorusSend chorussend_control = new ChorusSend();
 
-    private ApplyReverb apply_reverb = new ApplyReverb();
+    private final ApplyReverb apply_reverb = new ApplyReverb();
 
-    private Control[] controls;
+    private final Control[] controls;
 
-    protected float leftgain = 1;
+    float leftgain = 1;
 
-    protected float rightgain = 1;
+    float rightgain = 1;
 
-    protected float eff1gain = 0;
+    float eff1gain = 0;
 
-    protected float eff2gain = 0;
+    float eff2gain = 0;
 
-    protected List<LineListener> listeners = new ArrayList<LineListener>();
+    List<LineListener> listeners = new ArrayList<LineListener>();
 
-    protected Object control_mutex;
+    final Object control_mutex;
 
-    protected SoftMixingMixer mixer;
+    SoftMixingMixer mixer;
 
-    protected DataLine.Info info;
+    DataLine.Info info;
 
     protected abstract void processControlLogic();
 
     protected abstract void processAudioLogic(SoftAudioBuffer[] buffers);
 
-    protected SoftMixingDataLine(SoftMixingMixer mixer, DataLine.Info info) {
+    SoftMixingDataLine(SoftMixingMixer mixer, DataLine.Info info) {
         this.mixer = mixer;
         this.info = info;
         this.control_mutex = mixer.control_mutex;
@@ -440,7 +440,7 @@ public abstract class SoftMixingDataLine implements DataLine {
         calcVolume();
     }
 
-    protected void calcVolume() {
+    final void calcVolume() {
         synchronized (control_mutex) {
             double gain = Math.pow(10.0, gain_control.getValue() / 20.0);
             if (mute_control.getValue())
@@ -466,7 +466,7 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
     }
 
-    protected void sendEvent(LineEvent event) {
+    final void sendEvent(LineEvent event) {
         if (listeners.size() == 0)
             return;
         LineListener[] listener_array = listeners
@@ -476,23 +476,23 @@ public abstract class SoftMixingDataLine implements DataLine {
         }
     }
 
-    public void addLineListener(LineListener listener) {
+    public final void addLineListener(LineListener listener) {
         synchronized (control_mutex) {
             listeners.add(listener);
         }
     }
 
-    public void removeLineListener(LineListener listener) {
+    public final void removeLineListener(LineListener listener) {
         synchronized (control_mutex) {
             listeners.add(listener);
         }
     }
 
-    public javax.sound.sampled.Line.Info getLineInfo() {
+    public final javax.sound.sampled.Line.Info getLineInfo() {
         return info;
     }
 
-    public Control getControl(Type control) {
+    public final Control getControl(Type control) {
         if (control != null) {
             for (int i = 0; i < controls.length; i++) {
                 if (controls[i].getType() == control) {
@@ -504,11 +504,11 @@ public abstract class SoftMixingDataLine implements DataLine {
                 + control);
     }
 
-    public Control[] getControls() {
+    public final Control[] getControls() {
         return Arrays.copyOf(controls, controls.length);
     }
 
-    public boolean isControlSupported(Type control) {
+    public final boolean isControlSupported(Type control) {
         if (control != null) {
             for (int i = 0; i < controls.length; i++) {
                 if (controls[i].getType() == control) {

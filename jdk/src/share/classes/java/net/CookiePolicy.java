@@ -30,7 +30,7 @@ package java.net;
  * and which should be rejected. Three pre-defined policy implementations
  * are provided, namely ACCEPT_ALL, ACCEPT_NONE and ACCEPT_ORIGINAL_SERVER.
  *
- * <p>See RFC 2965 sec. 3.3 & 7 for more detail.
+ * <p>See RFC 2965 sec. 3.3 and 7 for more detail.
  *
  * @author Edward Wang
  * @since 1.6
@@ -59,6 +59,8 @@ public interface CookiePolicy {
      */
     public static final CookiePolicy ACCEPT_ORIGINAL_SERVER  = new CookiePolicy(){
         public boolean shouldAccept(URI uri, HttpCookie cookie) {
+            if (uri == null || cookie == null)
+                return false;
             return HttpCookie.domainMatches(cookie.getDomain(), uri.getHost());
         }
     };

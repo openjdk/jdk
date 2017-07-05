@@ -71,7 +71,7 @@ class GZIPInputStream extends InflaterInputStream {
      * @exception ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
      * @exception IOException if an I/O error has occurred
-     * @exception IllegalArgumentException if size is <= 0
+     * @exception IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
         super(in, new Inflater(true), size);

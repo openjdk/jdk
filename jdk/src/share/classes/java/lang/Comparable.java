@@ -56,7 +56,7 @@ import java.util.*;
  * method.<p>
  *
  * For example, if one adds two keys <tt>a</tt> and <tt>b</tt> such that
- * <tt>(!a.equals(b) && a.compareTo(b) == 0)</tt> to a sorted
+ * {@code (!a.equals(b) && a.compareTo(b) == 0)} to a sorted
  * set that does not use an explicit comparator, the second <tt>add</tt>
  * operation returns false (and the size of the sorted set does not increase)
  * because <tt>a</tt> and <tt>b</tt> are equivalent from the sorted set's

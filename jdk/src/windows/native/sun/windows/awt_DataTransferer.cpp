@@ -281,13 +281,13 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
         }
 
         UINT bufsize = 512; // in characters, not in bytes
-        buffer = (LPTSTR)safe_Malloc(bufsize*sizeof(TCHAR));
+        buffer = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, bufsize, sizeof(TCHAR));
 
         for (UINT i = 0; i < nFilenames; i++) {
             UINT size = ::DragQueryFile(hdrop, i, NULL, 0);
             if (size > bufsize) {
                 bufsize = size;
-                buffer = (LPTSTR)safe_Realloc(buffer, bufsize*sizeof(TCHAR));
+                buffer = (LPTSTR)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, buffer, bufsize, sizeof(TCHAR));
             }
             ::DragQueryFile(hdrop, i, buffer, bufsize);
 
@@ -359,7 +359,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
         return NULL;
     }
 
-    jbyte* bBytes = (jbyte*)safe_Malloc(size * sizeof(jbyte));
+    jbyte* bBytes = (jbyte*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, size, sizeof(jbyte));
 
     try {
 
@@ -771,9 +771,9 @@ Java_sun_awt_windows_WDataTransferer_imageDataToPlatformImageBytes(JNIEnv *env,
                         } else {
                             LPBYTE lpbMfBuffer = NULL;
                             try {
-                                UINT uMfSizeWithHead = uMfSize + sizeof(METAFILEPICT);
-
-                                lpbMfBuffer = (LPBYTE)safe_Malloc(uMfSizeWithHead);
+                                lpbMfBuffer = (LPBYTE)SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
+                                        sizeof(METAFILEPICT), uMfSize, 1);
+                                const UINT uMfSizeWithHead = uMfSize + sizeof(METAFILEPICT);
                                 VERIFY(::GetMetaFileBitsEx(hmf, uMfSize,
                                                             lpbMfBuffer + sizeof(METAFILEPICT)) == uMfSize);
                                 bytes = env->NewByteArray(uMfSizeWithHead);
