@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -107,7 +108,7 @@ public class ContextTest {
     }
 
     private Object eval(final Context cx, final String name, final String code) {
-        final Source source = new Source(name, code);
+        final Source source = sourceFor(name, code);
         final ScriptObject global = Context.getGlobal();
         final ScriptFunction func = cx.compileScript(source, global);
         return func != null ? ScriptRuntime.apply(func, global) : null;

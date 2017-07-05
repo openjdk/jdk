@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1112,6 +1112,7 @@ final class XWM
      * Therefore, a compound state is just ICONIFIED | anything else.
      *
      */
+    @SuppressWarnings("fallthrough")
     boolean supportsExtendedState(int state) {
         switch (state) {
           case Frame.MAXIMIZED_VERT:
@@ -1131,6 +1132,7 @@ final class XWM
                       return true;
                   }
               }
+              /* FALLTROUGH */
           default:
               return false;
         }

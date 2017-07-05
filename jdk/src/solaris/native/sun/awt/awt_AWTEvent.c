@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,22 +49,22 @@ struct KeyEventIDs keyEventIDs;
 JNIEXPORT void JNICALL
 Java_java_awt_AWTEvent_initIDs(JNIEnv *env, jclass cls)
 {
-    awtEventIDs.bdata = (*env)->GetFieldID(env, cls, "bdata", "[B");
-    awtEventIDs.consumed = (*env)->GetFieldID(env, cls, "consumed", "Z");
-    awtEventIDs.id = (*env)->GetFieldID(env, cls, "id", "I");
+    CHECK_NULL(awtEventIDs.bdata = (*env)->GetFieldID(env, cls, "bdata", "[B"));
+    CHECK_NULL(awtEventIDs.consumed = (*env)->GetFieldID(env, cls, "consumed", "Z"));
+    CHECK_NULL(awtEventIDs.id = (*env)->GetFieldID(env, cls, "id", "I"));
 }
 
 JNIEXPORT void JNICALL
 Java_java_awt_event_InputEvent_initIDs(JNIEnv *env, jclass cls)
 {
-    inputEventIDs.modifiers = (*env)->GetFieldID(env, cls, "modifiers", "I");
+    CHECK_NULL(inputEventIDs.modifiers = (*env)->GetFieldID(env, cls, "modifiers", "I"));
 }
 
 JNIEXPORT void JNICALL
 Java_java_awt_event_KeyEvent_initIDs(JNIEnv *env, jclass cls)
 {
-    keyEventIDs.keyCode = (*env)->GetFieldID(env, cls, "keyCode", "I");
-    keyEventIDs.keyChar = (*env)->GetFieldID(env, cls, "keyChar", "C");
+    CHECK_NULL(keyEventIDs.keyCode = (*env)->GetFieldID(env, cls, "keyCode", "I"));
+    CHECK_NULL(keyEventIDs.keyChar = (*env)->GetFieldID(env, cls, "keyChar", "C"));
 }
 
 JNIEXPORT void JNICALL

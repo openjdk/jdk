@@ -66,7 +66,7 @@ class WindowsLinkSupport {
      * Returns the final path (all symbolic links resolved) or null if this
      * operation is not supported.
      */
-    private static String getFinalPath(WindowsPath input) throws IOException {
+    static String getFinalPath(WindowsPath input) throws IOException {
         long h = 0;
         try {
             h = input.openForReadAttributeAccess(true);

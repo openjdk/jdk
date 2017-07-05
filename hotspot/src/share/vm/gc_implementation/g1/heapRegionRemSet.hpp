@@ -206,9 +206,6 @@ public:
   // Specifically clear the from_card_cache.
   void clear_fcc();
 
-  // "from_hr" is being cleared; remove any entries from it.
-  void clear_incoming_entry(HeapRegion* from_hr);
-
   void do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task);
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
@@ -338,20 +335,20 @@ public:
     return _other_regions.mem_size()
       // This correction is necessary because the above includes the second
       // part.
-      + (sizeof(this) - sizeof(OtherRegionsTable))
+      + (sizeof(HeapRegionRemSet) - sizeof(OtherRegionsTable))
       + strong_code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::static_mem_size();
+    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::free_chunks_static_mem_size();
   }
 
   // Returns the memory occupancy of all free_list data structures associated
   // with remembered sets.
   static size_t fl_mem_size() {
-    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::fl_mem_size();
+    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::free_chunks_mem_size();
   }
 
   bool contains_reference(OopOrNarrowOopStar from) const {
@@ -396,7 +393,6 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    G1CodeRootSet::initialize();
     OtherRegionsTable::init_from_card_cache(max_regions);
   }
 
@@ -429,26 +425,24 @@ public:
 };
 
 class HeapRegionRemSetIterator : public StackObj {
-
-  // The region RSet over which we're iterating.
+ private:
+  // The region RSet over which we are iterating.
   HeapRegionRemSet* _hrrs;
 
   // Local caching of HRRS fields.
   const BitMap*             _coarse_map;
-  PerRegionTable**          _fine_grain_regions;
 
   G1BlockOffsetSharedArray* _bosa;
   G1CollectedHeap*          _g1h;
 
-  // The number yielded since initialization.
+  // The number of cards yielded since initialization.
   size_t _n_yielded_fine;
   size_t _n_yielded_coarse;
   size_t _n_yielded_sparse;
 
-  // Indicates what granularity of table that we're currently iterating over.
+  // Indicates what granularity of table that we are currently iterating over.
   // We start iterating over the sparse table, progress to the fine grain
   // table, and then finish with the coarse table.
-  // See HeapRegionRemSetIterator::has_next().
   enum IterState {
     Sparse,
     Fine,
@@ -456,38 +450,30 @@ class HeapRegionRemSetIterator : public StackObj {
   };
   IterState _is;
 
-  // In both kinds of iteration, heap offset of first card of current
-  // region.
+  // For both Coarse and Fine remembered set iteration this contains the
+  // first card number of the heap region we currently iterate over.
   size_t _cur_region_card_offset;
-  // Card offset within cur region.
-  size_t _cur_region_cur_card;
 
-  // Coarse table iteration fields:
-
-  // Current region index;
+  // Current region index for the Coarse remembered set iteration.
   int    _coarse_cur_region_index;
   size_t _coarse_cur_region_cur_card;
 
   bool coarse_has_next(size_t& card_index);
 
-  // Fine table iteration fields:
-
-  // Index of bucket-list we're working on.
-  int _fine_array_index;
-
-  // Per Region Table we're doing within current bucket list.
+  // The PRT we are currently iterating over.
   PerRegionTable* _fine_cur_prt;
+  // Card offset within the current PRT.
+  size_t _cur_card_in_prt;
 
-  /* SparsePRT::*/ SparsePRTIter _sparse_iter;
-
-  void fine_find_next_non_null_prt();
-
+  // Update internal variables when switching to the given PRT.
+  void switch_to_prt(PerRegionTable* prt);
   bool fine_has_next();
   bool fine_has_next(size_t& card_index);
 
-public:
-  // We require an iterator to be initialized before use, so the
-  // constructor does little.
+  // The Sparse remembered set iterator.
+  SparsePRTIter _sparse_iter;
+
+ public:
   HeapRegionRemSetIterator(HeapRegionRemSet* hrrs);
 
   // If there remains one or more cards to be yielded, returns true and

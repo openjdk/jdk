@@ -24,6 +24,7 @@
  */
 package sun.awt.image;
 
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Graphics;
 import java.awt.geom.Dimension2D;
@@ -41,6 +42,13 @@ public class MultiResolutionBufferedImage extends BufferedImage
     private final BiFunction<Integer, Integer, Image> mapper;
     private final Dimension2D[] sizes;
     private int availableInfo;
+
+    public MultiResolutionBufferedImage(Image baseImage,
+            BiFunction<Integer, Integer, Image> mapper) {
+        this(baseImage, new Dimension[]{new Dimension(
+            baseImage.getWidth(null), baseImage.getHeight(null))
+        }, mapper);
+    }
 
     public MultiResolutionBufferedImage(Image baseImage,
             Dimension2D[] sizes, BiFunction<Integer, Integer, Image> mapper) {
@@ -115,7 +123,7 @@ public class MultiResolutionBufferedImage extends BufferedImage
     }
 
     private static void preload(Image image, int availableInfo) {
-        if (image instanceof ToolkitImage) {
+        if (availableInfo != 0 && image instanceof ToolkitImage) {
             ((ToolkitImage) image).preload(new ImageObserver() {
                 int flags = availableInfo;
 

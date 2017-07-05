@@ -60,6 +60,7 @@ public:
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
   ParGCAllocBuffer(size_t word_sz);
+  virtual ~ParGCAllocBuffer() {}
 
   static const size_t min_size() {
     return ThreadLocalAllocBuffer::min_size();
@@ -113,7 +114,7 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  void set_buf(HeapWord* buf) {
+  virtual void set_buf(HeapWord* buf) {
     _bottom   = buf;
     _top      = _bottom;
     _hard_end = _bottom + word_sz();
@@ -158,7 +159,7 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object.
   // If "end_of_gc" is TRUE, is after the last use in the GC.  IF "retain"
   // is true, attempt to re-use the unused portion in the next GC.
-  void retire(bool end_of_gc, bool retain);
+  virtual void retire(bool end_of_gc, bool retain);
 
   void print() PRODUCT_RETURN;
 };
@@ -238,14 +239,14 @@ public:
 
   void undo_allocation(HeapWord* obj, size_t word_sz);
 
-  void set_buf(HeapWord* buf_start) {
+  virtual void set_buf(HeapWord* buf_start) {
     ParGCAllocBuffer::set_buf(buf_start);
     _true_end = _hard_end;
     _bt.set_region(MemRegion(buf_start, word_sz()));
     _bt.initialize_threshold();
   }
 
-  void retire(bool end_of_gc, bool retain);
+  virtual void retire(bool end_of_gc, bool retain);
 
   MemRegion range() {
     return MemRegion(_top, _true_end);

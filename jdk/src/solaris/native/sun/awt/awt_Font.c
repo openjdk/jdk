@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,14 +86,13 @@ Java_java_awt_Font_initIDs
 #ifndef HEADLESS
     /** We call "NoClientCode" methods because they won't invoke client
         code on the privileged toolkit thread **/
-    fontIDs.pData = (*env)->GetFieldID(env, cls, "pData", "J");
-    fontIDs.style = (*env)->GetFieldID(env, cls, "style", "I");
-    fontIDs.size = (*env)->GetFieldID(env, cls, "size", "I");
-    fontIDs.getPeer = (*env)->GetMethodID(env, cls, "getPeer_NoClientCode",
-                                           "()Ljava/awt/peer/FontPeer;");
-    fontIDs.getFamily =
-      (*env)->GetMethodID(env, cls, "getFamily_NoClientCode",
-                                            "()Ljava/lang/String;");
+    CHECK_NULL(fontIDs.pData = (*env)->GetFieldID(env, cls, "pData", "J"));
+    CHECK_NULL(fontIDs.style = (*env)->GetFieldID(env, cls, "style", "I"));
+    CHECK_NULL(fontIDs.size = (*env)->GetFieldID(env, cls, "size", "I"));
+    CHECK_NULL(fontIDs.getPeer = (*env)->GetMethodID(env, cls, "getPeer_NoClientCode",
+                                                     "()Ljava/awt/peer/FontPeer;"));
+    CHECK_NULL(fontIDs.getFamily = (*env)->GetMethodID(env, cls, "getFamily_NoClientCode",
+                                                       "()Ljava/lang/String;"));
 #endif /* !HEADLESS */
 }
 
@@ -120,12 +119,10 @@ Java_sun_awt_FontDescriptor_initIDs
   (JNIEnv *env, jclass cls)
 {
 #ifndef HEADLESS
-    fontDescriptorIDs.nativeName =
-      (*env)->GetFieldID(env, cls, "nativeName",
-                         "Ljava/lang/String;");
-    fontDescriptorIDs.charsetName =
-      (*env)->GetFieldID(env, cls, "charsetName",
-                         "Ljava/lang/String;");
+    CHECK_NULL(fontDescriptorIDs.nativeName =
+               (*env)->GetFieldID(env, cls, "nativeName", "Ljava/lang/String;"));
+    CHECK_NULL(fontDescriptorIDs.charsetName =
+               (*env)->GetFieldID(env, cls, "charsetName", "Ljava/lang/String;"));
 #endif /* !HEADLESS */
 }
 
@@ -144,20 +141,18 @@ Java_sun_awt_PlatformFont_initIDs
   (JNIEnv *env, jclass cls)
 {
 #ifndef HEADLESS
-    platformFontIDs.componentFonts =
-      (*env)->GetFieldID(env, cls, "componentFonts",
-                         "[Lsun/awt/FontDescriptor;");
-    platformFontIDs.fontConfig =
-      (*env)->GetFieldID(env,cls, "fontConfig",
-                         "Lsun/awt/FontConfiguration;");
-
-    platformFontIDs.makeConvertedMultiFontString =
-      (*env)->GetMethodID(env, cls, "makeConvertedMultiFontString",
-                          "(Ljava/lang/String;)[Ljava/lang/Object;");
-
-    platformFontIDs.makeConvertedMultiFontChars =
-      (*env)->GetMethodID(env, cls, "makeConvertedMultiFontChars",
-                          "([CII)[Ljava/lang/Object;");
+    CHECK_NULL(platformFontIDs.componentFonts =
+               (*env)->GetFieldID(env, cls, "componentFonts",
+                                  "[Lsun/awt/FontDescriptor;"));
+    CHECK_NULL(platformFontIDs.fontConfig =
+               (*env)->GetFieldID(env,cls, "fontConfig",
+                                  "Lsun/awt/FontConfiguration;"));
+    CHECK_NULL(platformFontIDs.makeConvertedMultiFontString =
+               (*env)->GetMethodID(env, cls, "makeConvertedMultiFontString",
+                                   "(Ljava/lang/String;)[Ljava/lang/Object;"));
+    CHECK_NULL(platformFontIDs.makeConvertedMultiFontChars =
+               (*env)->GetMethodID(env, cls, "makeConvertedMultiFontChars",
+                                   "([CII)[Ljava/lang/Object;"));
 #endif /* !HEADLESS */
 }
 
@@ -385,6 +380,11 @@ awtJNI_FontName(JNIEnv * env, jstring name, char **foundry, char **facename, cha
         return 0;
     }
     cname = (char *) JNU_GetStringPlatformChars(env, name, NULL);
+    if (cname == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not create font name");
+        return 0;
+    }
 
     /* additional default font names */
     if (strcmp(cname, "serif") == 0) {
@@ -448,6 +448,8 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
     }
 
     if (!JNU_IsNull(env, font) && awtJNI_IsMultiFont(env, font)) {
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
+
         struct FontData *fdata = NULL;
         int32_t i, size;
         char *fontsetname = NULL;
@@ -492,7 +494,12 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
 
             if (!JNU_IsNull(env, fontDescriptorName)) {
                 nativename = (char *) JNU_GetStringPlatformChars(env, fontDescriptorName, NULL);
-                doFree = TRUE;
+                if (nativename == NULL) {
+                    nativename = "";
+                    doFree = FALSE;
+                } else {
+                    doFree = TRUE;
+                }
             } else {
                 nativename = "";
                 doFree = FALSE;
@@ -516,6 +523,11 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
 
             fdata->flist[i].charset_name = (char *)
                 JNU_GetStringPlatformChars(env, charsetName, NULL);
+            if (fdata->flist[i].charset_name == NULL) {
+                (*env)->ExceptionClear(env);
+                JNU_ThrowOutOfMemoryError(env, "Could not create charset name");
+                return NULL;
+            }
 
             /* We are done with the objects. */
             (*env)->DeleteLocalRef(env, fontDescriptor);
@@ -543,6 +555,19 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
                     fdata->xfont = fdata->flist[i].xfont;
                     fdata->flist[i].index_length = 1;
                 } else {
+                    /* Free any already allocated storage and fonts */
+                    int j = i;
+                    for (j = 0; j <= i; j++) {
+                        free((void *)fdata->flist[j].xlfd);
+                        JNU_ReleaseStringPlatformChars(env, NULL,
+                            fdata->flist[j].charset_name);
+                        if (fdata->flist[j].load) {
+                            XFreeFont(awt_display, fdata->flist[j].xfont);
+                        }
+                    }
+                    free((void *)fdata->flist);
+                    free((void *)fdata);
+
                     if (errmsg != NULL) {
                         *errmsg = "java/lang" "NullPointerException";
                     }

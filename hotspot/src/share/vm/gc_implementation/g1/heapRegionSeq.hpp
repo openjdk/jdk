@@ -110,10 +110,6 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   // HeapRegion, otherwise return NULL.
   inline HeapRegion* addr_to_region(HeapWord* addr) const;
 
-  // Return the HeapRegion that corresponds to the given
-  // address. Assume the address is valid.
-  inline HeapRegion* addr_to_region_unsafe(HeapWord* addr) const;
-
   // Return the number of regions that have been committed in the heap.
   uint length() const { return _committed_length; }
 

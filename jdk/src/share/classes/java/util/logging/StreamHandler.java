@@ -71,7 +71,7 @@ import java.util.Objects;
  * <li>   com.foo.MyHandler.level=INFO </li>
  * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
  * </ul>
- * <p>
+ *
  * @since 1.4
  */
 
@@ -91,7 +91,7 @@ public class StreamHandler extends Handler {
     /**
      * Create a <tt>StreamHandler</tt> with a given <tt>Formatter</tt>
      * and output stream.
-     * <p>
+     *
      * @param out         the target output stream
      * @param formatter   Formatter to be used to format output
      */
@@ -224,7 +224,7 @@ public class StreamHandler extends Handler {
      * This method checks if the <tt>LogRecord</tt> has an appropriate level and
      * whether it satisfies any <tt>Filter</tt>.  It will also return false if
      * no output stream has been assigned yet or the LogRecord is null.
-     * <p>
+     *
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.
      *

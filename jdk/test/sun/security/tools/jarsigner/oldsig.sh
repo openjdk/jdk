@@ -70,10 +70,10 @@ esac
 ${CP} ${TESTSRC}${FS}oldsig${FS}A.jar B.jar
 ${CP} ${TESTSRC}${FS}oldsig${FS}A.class B.class
 
-${TESTJAVA}${FS}bin${FS}jar uvf B.jar B.class
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} uvf B.jar B.class
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg SHA1 \
     B.jar c
-${TESTJAVA}${FS}bin${FS}jarsigner -verify B.jar
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -verify B.jar

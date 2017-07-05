@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ import javax.sql.rowset.serial.*;
  *  <li>Fields for storing stream instances
  *  <li>Constants for indicating the type of a stream
  *  </ul>
- *  <p>
  * </UL>
  *
  * <h3>2.0 Setting Properties</h3>
@@ -981,7 +980,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * the specified concurrency. The default concurrency for any <code>RowSet</code>
      * object (connected or disconnected) is <code>ResultSet.CONCUR_UPDATABLE</code>,
      * but this method may be called at any time to change the concurrency.
-     * <P>
+     *
      * @param concurrency one of the following constants:
      *                    <code>ResultSet.CONCUR_READ_ONLY</code> or
      *                    <code>ResultSet.CONCUR_UPDATABLE</code>
@@ -1419,7 +1418,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * form a subset of the actual rows returned by the original query. This is
      * an implementation variance determined by the specific <code>SyncProvider</code>
      * object employed by the disconnected <code>RowSet</code> object.
-     * <P>
      *
      * @param rows the number of rows to fetch; <code>0</code> to let the
      *        driver decide what the best fetch size is; must not be less
@@ -1466,7 +1464,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <P>
      * An application can call the method <code>setConcurrency</code> at any time
      * to change a <code>RowSet</code> object's concurrency.
-     * <p>
+     *
      * @return the concurrency type for this <code>RowSet</code>
      *     object, which must be one of the following:
      *     <code>ResultSet.CONCUR_READ_ONLY</code> or
@@ -1737,7 +1735,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <p>
      * NOTE: <code>JdbcRowSet</code> does not require the <code>populate</code> method
      * as it is undefined in this class.
-     * <p>
+     *
      * @param parameterIndex the ordinal number of the placeholder parameter
      *        in this <code>RowSet</code> object's command that is to be set.
      *        The first parameter is 1, the second is 2, and so on; must be
@@ -1867,7 +1865,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <P>
      * NOTE: <code>JdbcRowSet</code> does not require the <code>populate</code> method
      * as it is undefined in this class.
-     * S
+     *
      * @param parameterIndex the ordinal number of the placeholder parameter
      *        in this <code>RowSet</code> object's command that is to be set.
      *        The first parameter is 1, the second is 2, and so on; must be
@@ -1933,7 +1931,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <p>
      * NOTE: <code>JdbcRowSet</code> does not require the <code>populate</code> method
      * as it is undefined in this class.
-     * <p>
+     *
      * @param parameterIndex the ordinal number of the placeholder parameter
      *        in this <code>RowSet</code> object's command that is to be set.
      *        The first parameter is 1, the second is 2, and so on; must be
@@ -3579,7 +3577,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
    * @exception SQLException if a database access error occurs or
    * this method is called on a closed <code>CallableStatement</code>
    * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
-     * @since 1.6
+   * @since 1.6
   */
   public void setAsciiStream(String parameterName, java.io.InputStream x)
           throws SQLException{
@@ -3651,7 +3649,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
   * <code>Reader</code> reads the data till end-of-file is reached. The
   * driver does the necessary conversion from Java character format to
   * the national character set in the database.
-
+  *
   * <P><B>Note:</B> This stream object can either be a standard
   * Java stream object or your own subclass that implements the
   * standard interface.
