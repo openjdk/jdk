@@ -637,18 +637,6 @@ protected:
   // The number of collection pauses at the end of the last mark.
   size_t _n_pauses_at_mark_end;
 
-  // ==== This section is for stats related to starting Conc Refinement on time.
-  size_t _conc_refine_enabled;
-  size_t _conc_refine_zero_traversals;
-  size_t _conc_refine_max_traversals;
-  // In # of heap regions.
-  size_t _conc_refine_current_delta;
-
-  // At the beginning of a collection pause, update the variables above,
-  // especially the "delta".
-  void update_conc_refine_data();
-  // ====
-
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1;
 

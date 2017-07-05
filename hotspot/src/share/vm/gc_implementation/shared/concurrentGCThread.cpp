@@ -27,13 +27,12 @@
 # include "incls/_precompiled.incl"
 # include "incls/_concurrentGCThread.cpp.incl"
 
-bool ConcurrentGCThread::_should_terminate    = false;
-bool ConcurrentGCThread::_has_terminated      = false;
 int  ConcurrentGCThread::_CGC_flag            = CGC_nil;
 
 SuspendibleThreadSet ConcurrentGCThread::_sts;
 
-ConcurrentGCThread::ConcurrentGCThread() {
+ConcurrentGCThread::ConcurrentGCThread() :
+  _should_terminate(false), _has_terminated(false) {
   _sts.initialize();
 };
 

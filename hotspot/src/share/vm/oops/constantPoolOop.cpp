@@ -1181,7 +1181,28 @@ int constantPoolOopDesc::copy_cpool_bytes(int cpool_size,
         unsigned int hash;
         char *str = string_at_noresolve(idx);
         symbolOop sym = SymbolTable::lookup_only(str, (int) strlen(str), hash);
-        idx1 = tbl->symbol_to_value(sym);
+        if (sym == NULL) {
+          // sym can be NULL if string refers to incorrectly encoded JVM_CONSTANT_Utf8
+          // this can happen with JVM TI; see CR 6839599 for more details
+          oop string = *(obj_at_addr(idx));
+          assert(java_lang_String::is_instance(string),"Not a String");
+          DBG(printf("Error #%03hd tag=%03hd\n", idx, tag));
+          idx1 = 0;
+          for (int j = 0; j < tbl->table_size() && idx1 == 0; j++) {
+            for (SymbolHashMapEntry* cur = tbl->bucket(j); cur != NULL; cur = cur->next()) {
+              int length;
+              sym = cur->symbol();
+              jchar* chars = sym->as_unicode(length);
+              if (java_lang_String::equals(string, chars, length)) {
+                idx1 = cur->value();
+                DBG(printf("Index found: %d\n",idx1));
+                break;
+              }
+            }
+          }
+        } else {
+          idx1 = tbl->symbol_to_value(sym);
+        }
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_String: idx=#%03hd, %s", idx1, str));

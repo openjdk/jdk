@@ -286,7 +286,7 @@ void C1_MacroAssembler::initialize_object(
     initialize_body(base, index);
   }
 
-  if (DTraceAllocProbes) {
+  if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == O0, "must be");
     call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
          relocInfo::runtime_call_type);
@@ -355,7 +355,7 @@ void C1_MacroAssembler::allocate_array(
   sub(arr_size, hdr_size * wordSize, index);         // compute index = number of words to clear
   initialize_body(base, index);
 
-  if (DTraceAllocProbes) {
+  if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == O0, "must be");
     call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
          relocInfo::runtime_call_type);

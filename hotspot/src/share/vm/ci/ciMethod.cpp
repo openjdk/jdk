@@ -60,7 +60,8 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _flow               = NULL;
 #endif // COMPILER2
 
-  if (JvmtiExport::can_hotswap_or_post_breakpoint() && _is_compilable) {
+  ciEnv *env = CURRENT_ENV;
+  if (env->jvmti_can_hotswap_or_post_breakpoint() && _is_compilable) {
     // 6328518 check hotswap conditions under the right lock.
     MutexLocker locker(Compile_lock);
     if (Dependencies::check_evol_method(h_m()) != NULL) {
@@ -84,7 +85,6 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   if (_can_be_statically_bound && h_m()->is_abstract())
     _can_be_statically_bound = false;
 
-  ciEnv *env = CURRENT_ENV;
   // generating _signature may allow GC and therefore move m.
   // These fields are always filled in.
   _name = env->get_object(h_m()->name())->as_symbol();
@@ -337,7 +337,7 @@ MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
     _liveness->compute_liveness();
   }
   MethodLivenessResult result = _liveness->get_liveness_at(bci);
-  if (JvmtiExport::can_access_local_variables() || DeoptimizeALot || CompileTheWorld) {
+  if (CURRENT_ENV->jvmti_can_access_local_variables() || DeoptimizeALot || CompileTheWorld) {
     // Keep all locals live for the user's edification and amusement.
     result.at_put_range(0, result.size(), true);
   }
