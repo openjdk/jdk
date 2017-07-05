@@ -35,6 +35,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 
 BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :

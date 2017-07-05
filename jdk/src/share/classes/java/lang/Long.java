@@ -827,6 +827,8 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @param   nm   property name.
      * @return  the {@code Long} value of the property.
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -870,6 +872,8 @@ public final class Long extends Number implements Comparable<Long> {
      * @param   nm    property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -917,6 +921,8 @@ public final class Long extends Number implements Comparable<Long> {
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
      * @see     System#getProperty(java.lang.String)
      * @see     System#getProperty(java.lang.String, java.lang.String)
      */

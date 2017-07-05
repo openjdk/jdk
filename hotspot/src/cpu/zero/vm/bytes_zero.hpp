@@ -168,6 +168,9 @@ class Bytes: AllStatic {
 #ifdef TARGET_OS_ARCH_linux_zero
 # include "bytes_linux_zero.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "bytes_bsd_zero.inline.hpp"
+#endif
 
 #endif // VM_LITTLE_ENDIAN
 

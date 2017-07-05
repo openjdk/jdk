@@ -792,7 +792,7 @@ public class SwingUtilities implements SwingConstants
      * @return true if the left mouse button was active
      */
     public static boolean isLeftMouseButton(MouseEvent anEvent) {
-         return ((anEvent.getModifiers() & InputEvent.BUTTON1_MASK) != 0);
+         return (anEvent.getButton() == MouseEvent.BUTTON1);
     }
 
     /**
@@ -802,7 +802,7 @@ public class SwingUtilities implements SwingConstants
      * @return true if the middle mouse button was active
      */
     public static boolean isMiddleMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiers() & InputEvent.BUTTON2_MASK) == InputEvent.BUTTON2_MASK);
+        return (anEvent.getButton() == MouseEvent.BUTTON2);
     }
 
     /**
@@ -812,7 +812,7 @@ public class SwingUtilities implements SwingConstants
      * @return true if the right mouse button was active
      */
     public static boolean isRightMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK);
+        return (anEvent.getButton() == MouseEvent.BUTTON3);
     }
 
     /**

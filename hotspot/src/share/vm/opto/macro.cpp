@@ -1685,9 +1685,21 @@ void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
+  InitializeNode* init = alloc->initialization();
+  Node* klass_node = alloc->in(AllocateNode::KlassNode);
+  ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
+  address slow_call_address;  // Address of slow call
+  if (init != NULL && init->is_complete_with_arraycopy() &&
+      k->is_type_array_klass()) {
+    // Don't zero type array during slow allocation in VM since
+    // it will be initialized later by arraycopy in compiled code.
+    slow_call_address = OptoRuntime::new_array_nozero_Java();
+  } else {
+    slow_call_address = OptoRuntime::new_array_Java();
+  }
   expand_allocate_common(alloc, length,
                          OptoRuntime::new_array_Type(),
-                         OptoRuntime::new_array_Java());
+                         slow_call_address);
 }
 
 //-----------------------mark_eliminated_locking_nodes-----------------------

@@ -37,6 +37,14 @@ public class PlatformInfo {
       return "solaris";
     } else if (os.equals("Linux")) {
       return "linux";
+    } else if (os.equals("FreeBSD")) {
+      return "bsd";
+    } else if (os.equals("NetBSD")) {
+      return "bsd";
+    } else if (os.equals("OpenBSD")) {
+      return "bsd";
+    } else if (os.equals("Darwin")) {
+      return "bsd";
     } else if (os.startsWith("Windows")) {
       return "win32";
     } else {

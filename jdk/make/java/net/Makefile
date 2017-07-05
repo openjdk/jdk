@@ -27,6 +27,9 @@ BUILDDIR = ../..
 PACKAGE = java.net
 LIBRARY = net
 PRODUCT = sun
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
+JAVAC_LINT_OPTIONS = -Xlint:all,-deprecation
 include $(BUILDDIR)/common/Defs.gmk
 
 #

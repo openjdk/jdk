@@ -92,7 +92,7 @@ class BytecodePrinter: public BytecodeClosure {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[%d] ", (int) Thread::current()->osthread()->thread_id());
+      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
       method->print_name(st);
       st->cr();
       _current_method = method();
@@ -106,7 +106,7 @@ class BytecodePrinter: public BytecodeClosure {
     }
     _code = code;
      int bci = bcp - method->code_base();
-    st->print("[%d] ", (int) Thread::current()->osthread()->thread_id());
+    st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
            BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));

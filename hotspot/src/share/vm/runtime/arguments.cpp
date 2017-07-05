@@ -46,6 +46,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #endif
@@ -1423,6 +1426,9 @@ void Arguments::set_parallel_gc_flags() {
     if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
       FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
     }
+    // For those collectors or operating systems (eg, Windows) that do
+    // not support full UseNUMA, we will map to UseNUMAInterleaving for now
+    UseNUMAInterleaving = true;
   }
 }
 
@@ -3018,9 +3024,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
 #ifdef JAVASE_EMBEDDED
-  #ifdef PPC
-    UNSUPPORTED_OPTION(EnableInvokeDynamic, "Invoke dynamic");
-  #endif
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
 #endif
 

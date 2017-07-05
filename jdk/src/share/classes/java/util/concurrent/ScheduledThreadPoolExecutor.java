@@ -330,7 +330,7 @@ public class ScheduledThreadPoolExecutor
                 remove(task))
                 task.cancel(false);
             else
-                prestartCoreThread();
+                ensurePrestart();
         }
     }
 
@@ -346,7 +346,7 @@ public class ScheduledThreadPoolExecutor
             if (!canRunInCurrentRunState(true) && remove(task))
                 task.cancel(false);
             else
-                prestartCoreThread();
+                ensurePrestart();
         }
     }
 

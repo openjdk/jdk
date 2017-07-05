@@ -35,15 +35,15 @@ import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
 public class Synch {
+    static volatile boolean finished = false;
     public static void main(String[] args) {
         Subject subject = new Subject();
         final Set principals = subject.getPrincipals();
         principals.add(new X500Principal("CN=Alice"));
         new Thread() {
-            { setDaemon(true); }
             public void run() {
                 Principal last = new X500Principal("CN=Bob");
-                for (int i = 0; true; i++) {
+                for (int i = 0; !finished; i++) {
                     Principal next = new X500Principal("CN=Bob" + i);
                     principals.add(next);
                     principals.remove(last);
@@ -70,5 +70,6 @@ public class Synch {
                     }
                 });
         }
+        finished = true;
     }
 }

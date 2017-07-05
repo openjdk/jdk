@@ -37,6 +37,8 @@ class nmethodLocker;
 // An entry in the compile queue.  It represents a pending or current
 // compilation.
 class CompileTask : public CHeapObj {
+  friend class VMStructs;
+
  private:
   Monitor*     _lock;
   uint         _compile_id;

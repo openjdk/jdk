@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.net;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.Enumeration;
 
 /**
@@ -500,9 +499,9 @@ class MulticastSocket extends DatagramSocket {
              */
             try {
                 NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
-                Enumeration addrs = ni.getInetAddresses();
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
-                    InetAddress addr = (InetAddress)(addrs.nextElement());
+                    InetAddress addr = addrs.nextElement();
                     if (addr.equals(infAddress)) {
                         return infAddress;
                     }

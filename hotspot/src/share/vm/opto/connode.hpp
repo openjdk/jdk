@@ -496,14 +496,6 @@ public:
   virtual bool depends_only_on_test() const { return false; }
 };
 
-//------------------------------MemMoveNode------------------------------------
-// Memory to memory move.  Inserted very late, after allocation.
-class MemMoveNode : public Node {
-public:
-  MemMoveNode( Node *dst, Node *src ) : Node(0,dst,src) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------ThreadLocalNode--------------------------------
 // Ideal Node which returns the base of ThreadLocalStorage.
 class ThreadLocalNode : public Node {

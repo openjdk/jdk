@@ -29,7 +29,7 @@
 Decoder::decoder_status  Decoder::_decoder_status = Decoder::no_error;
 bool                     Decoder::_initialized = false;
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
 // Implementation of common functionalities among Solaris and Linux
 #include "utilities/elfFile.hpp"
@@ -101,4 +101,3 @@ ElfFile* Decoder::get_elf_file(const char* filepath) {
 }
 
 #endif
-

@@ -70,6 +70,14 @@ fi
 
 SA_CLASSPATH=$STARTDIR/../build/classes:$STARTDIR/../src/share/lib/js.jar:$STARTDIR/sa.jar:$STARTDIR/lib/js.jar
 
+if [ ! -z "$SA_TYPEDB" ]; then
+  if [ ! -f $SA_TYPEDB ]; then
+    echo "$SA_TYPEDB is unreadable"
+    exit 1
+  fi
+  OPTIONS="-Dsun.jvm.hotspot.typedb=$SA_TYPEDB ${OPTIONS}"
+fi
+
 OPTIONS="-Djava.system.class.loader=sun.jvm.hotspot.SALauncherLoader ${OPTIONS}"
 
 SA_JAVA_CMD="$SA_PREFIX_CMD $SA_JAVA -showversion ${OPTIONS} -cp $SA_CLASSPATH $SA_OPTIONS"
