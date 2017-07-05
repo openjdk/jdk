@@ -67,7 +67,7 @@ public final class EnumEditor implements PropertyEditor {
     }
 
     public void setValue( Object value ) {
-        if ( ( value != null ) && ( this.type != value.getClass() ) ) {
+        if ( ( value != null ) && !this.type.isInstance( value ) ) {
             throw new IllegalArgumentException( "Unsupported value: " + value );
         }
         Object oldValue;

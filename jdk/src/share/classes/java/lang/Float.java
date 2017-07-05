@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,8 +365,19 @@ public final class Float extends Number implements Comparable<Float> {
      * binary value that is then rounded to type {@code float}
      * by the usual round-to-nearest rule of IEEE 754 floating-point
      * arithmetic, which includes preserving the sign of a zero
-     * value. Finally, a {@code Float} object representing this
-     * {@code float} value is returned.
+     * value.
+     *
+     * Note that the round-to-nearest rule also implies overflow and
+     * underflow behaviour; if the exact value of {@code s} is large
+     * enough in magnitude (greater than or equal to ({@link
+     * #MAX_VALUE} + {@link Math#ulp(float) ulp(MAX_VALUE)}/2),
+     * rounding to {@code float} will result in an infinity and if the
+     * exact value of {@code s} is small enough in magnitude (less
+     * than or equal to {@link #MIN_VALUE}/2), rounding to float will
+     * result in a zero.
+     *
+     * Finally, after rounding a {@code Float} object representing
+     * this {@code float} value is returned.
      *
      * <p>To interpret localized string representations of a
      * floating-point value, use subclasses of {@link

@@ -912,14 +912,6 @@ initial-image-jdk:: initial-image-jdk-setup \
 	done
   ifeq ($(PLATFORM), windows)
 	@#
-	@# Audio soundbank - Bug# 4236400
-	@# Windows only: adding audio files to JDK's jre/lib directory.
-	@#
-	($(CD) $(LIBDIR) && $(TAR) cf - \
-	    `$(FIND) audio -depth -print`) | \
-	    ($(CD) $(JDK_IMAGE_DIR)/jre/lib && $(TAR) xf -)
-	@#
-	@#
 	@# lib/
 	@#
 	$(CP) $(LIBDIR)/$(LIB_PREFIX)jvm.$(LIB_SUFFIX) $(JDK_IMAGE_DIR)/lib

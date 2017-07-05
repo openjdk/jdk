@@ -41,7 +41,7 @@ AUTO_FILES_JAVA_DIRS = sun/rmi/registry
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-RESOURCE_BUNDLES_PROPERTIES = $(PKGDIR)/resources/rmiregistry.properties
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/resources/rmiregistry.properties
 
 #
 # Rules
