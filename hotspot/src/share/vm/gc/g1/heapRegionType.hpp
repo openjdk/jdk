@@ -44,15 +44,18 @@ private:
   //
   // 0000 0 [ 0] Free
   //
-  // 0001 0      Young Mask
+  // 0001 0 [ 2] Young Mask
   // 0001 0 [ 2] Eden
   // 0001 1 [ 3] Survivor
   //
-  // 0010 0      Humongous Mask
-  // 0010 0 [ 4] Starts Humongous
-  // 0010 1 [ 5] Continues Humongous
+  // 0010 0 [ 4] Humongous Mask
+  // 0100 0 [ 8] Pinned Mask
+  // 0110 0 [12] Starts Humongous
+  // 0110 1 [13] Continues Humongous
   //
-  // 01000 [ 8] Old
+  // 1000 0 [16] Old Mask
+  //
+  // 1100 0 [24] Archive
   typedef enum {
     FreeTag               = 0,
 
@@ -61,10 +64,14 @@ private:
     SurvTag               = YoungMask + 1,
 
     HumongousMask         = 4,
-    StartsHumongousTag    = HumongousMask,
-    ContinuesHumongousTag = HumongousMask + 1,
+    PinnedMask            = 8,
+    StartsHumongousTag    = HumongousMask | PinnedMask,
+    ContinuesHumongousTag = HumongousMask | PinnedMask + 1,
 
-    OldTag                = 8
+    OldMask               = 16,
+    OldTag                = OldMask,
+
+    ArchiveTag            = PinnedMask | OldMask
   } Tag;
 
   volatile Tag _tag;
@@ -108,7 +115,13 @@ public:
   bool is_starts_humongous()    const { return get() == StartsHumongousTag;    }
   bool is_continues_humongous() const { return get() == ContinuesHumongousTag; }
 
-  bool is_old() const { return get() == OldTag; }
+  bool is_archive() const { return get() == ArchiveTag; }
+
+  // is_old regions may or may not also be pinned
+  bool is_old() const { return (get() & OldMask) != 0; }
+
+  // is_pinned regions may be archive or humongous
+  bool is_pinned() const { return (get() & PinnedMask) != 0; }
 
   // Setters
 
@@ -122,6 +135,8 @@ public:
   void set_continues_humongous() { set_from(ContinuesHumongousTag, FreeTag); }
 
   void set_old() { set(OldTag); }
+
+  void set_archive() { set_from(ArchiveTag, FreeTag); }
 
   // Misc
 

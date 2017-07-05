@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 4856008 7025987
  * @summary Tests border insets
  * @author Sergey Malenkov
+ * @modules java.desktop/com.sun.java.swing.plaf.motif
+ *          java.desktop/com.sun.java.swing.plaf.windows
+ *          java.desktop/sun.swing.plaf.synth
  */
 
 import com.sun.java.swing.plaf.motif.MotifBorders;

@@ -63,7 +63,7 @@ define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // Default max size of CM
 define_pd_global(uintx, TypeProfileLevel, 111);
 
 // Platform dependent flag handling: flags only defined on this platform.
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
+#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint)  \
                                                                             \
   /* Load poll address from thread. This is used to implement per-thread */ \
   /* safepoints on platforms != IA64. */                                    \

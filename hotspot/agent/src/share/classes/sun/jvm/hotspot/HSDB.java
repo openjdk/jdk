@@ -983,19 +983,15 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                                                      curFrame.getFP(),
                                                      anno));
             } else {
-              if (VM.getVM().getCPU().equals("x86") || VM.getVM().getCPU().equals("amd64")) {
-                // For C2, which has null frame pointers on x86/amd64
-                CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
-                Address sp = curFrame.getSP();
-                if (Assert.ASSERTS_ENABLED) {
-                  Assert.that(cb.getFrameSize() > 0, "CodeBlob must have non-zero frame size");
-                }
-                annoPanel.addAnnotation(new Annotation(sp,
-                                                       sp.addOffsetTo(cb.getFrameSize()),
-                                                       anno));
-              } else {
-                Assert.that(VM.getVM().getCPU().equals("ia64"), "only ia64 should reach here");
+              // For C2, which has null frame pointers on x86/amd64/aarch64
+              CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
+              Address sp = curFrame.getSP();
+              if (Assert.ASSERTS_ENABLED) {
+                Assert.that(cb.getFrameSize() > 0, "CodeBlob must have non-zero frame size");
               }
+              annoPanel.addAnnotation(new Annotation(sp,
+                                                     sp.addOffsetTo(cb.getFrameSize()),
+                                                     anno));
             }
 
             // Add interpreter frame annotations

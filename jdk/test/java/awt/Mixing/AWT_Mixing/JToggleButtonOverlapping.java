@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.swing.*;
 @summary Simple Overlapping test for javax.swing.JToggleButton
 @author sergey.grinev@oracle.com: area=awt.mixing
 @library ../../regtesthelpers
+@modules java.desktop/sun.awt
 @build Util
 @run main JToggleButtonOverlapping
  */

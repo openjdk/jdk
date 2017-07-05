@@ -1280,7 +1280,7 @@ public final class Main {
         Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
         while (attrs.hasNext()) {
             PKCS10Attribute attr = attrs.next();
-            if (attr.getAttributeId().equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
         }
@@ -2338,7 +2338,7 @@ public final class Main {
                 req.getSubjectName(), pkey.getFormat(), pkey.getAlgorithm());
         for (PKCS10Attribute attr: req.getAttributes().getAttributes()) {
             ObjectIdentifier oid = attr.getAttributeId();
-            if (oid.equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 CertificateExtensions exts = (CertificateExtensions)attr.getAttributeValue();
                 if (exts != null) {
                     printExtensions(rb.getString("Extension.Request."), exts, out);

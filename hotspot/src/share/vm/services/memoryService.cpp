@@ -127,7 +127,6 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
 
   assert(policy->is_generation_policy(), "Only support two generations");
   GenCollectorPolicy* gen_policy = policy->as_generation_policy();
-  guarantee(gen_policy->number_of_generations() == 2, "Only support two-generation heap");
   if (gen_policy != NULL) {
     Generation::Name kind = gen_policy->young_gen_spec()->name();
     switch (kind) {
@@ -518,8 +517,8 @@ void MemoryService::oops_do(OopClosure* f) {
 bool MemoryService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
   // verbose will be set to the previous value
-  bool succeed = CommandLineFlags::boolAtPut((char*)"PrintGC", &verbose, Flag::MANAGEMENT);
-  assert(succeed, "Setting PrintGC flag fails");
+  Flag::Error error = CommandLineFlags::boolAtPut("PrintGC", &verbose, Flag::MANAGEMENT);
+  assert(error==Flag::SUCCESS, err_msg("Setting PrintGC flag failed with error %s", Flag::flag_error_str(error)));
   ClassLoadingService::reset_trace_class_unloading();
 
   return verbose;

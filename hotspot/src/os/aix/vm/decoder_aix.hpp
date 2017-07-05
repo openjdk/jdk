@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,8 +38,8 @@ class AIXDecoder: public AbstractDecoder {
 
   virtual bool demangle(const char* symbol, char* buf, int buflen) { return false; } // demangled by getFuncName
 
-  virtual bool decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {
-    return (::getFuncName((codeptr_t)addr, buf, buflen, offset, 0, 0, 0) == 0);
+  virtual bool decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
+    return (::getFuncName((codeptr_t)addr, buf, buflen, offset, 0, 0, 0, demangle) == 0);
   }
   virtual bool decode(address addr, char *buf, int buflen, int* offset, const void *base) {
     ShouldNotReachHere();

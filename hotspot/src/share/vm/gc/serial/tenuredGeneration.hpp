@@ -55,8 +55,9 @@ class TenuredGeneration: public CardGeneration {
 
   void assert_correct_size_change_locking();
  public:
-  TenuredGeneration(ReservedSpace rs, size_t initial_byte_size,
-                               int level, GenRemSet* remset);
+  TenuredGeneration(ReservedSpace rs,
+                    size_t initial_byte_size,
+                    GenRemSet* remset);
 
   Generation::Name kind() { return Generation::MarkSweepCompact; }
 
@@ -120,7 +121,7 @@ class TenuredGeneration: public CardGeneration {
 
   // Statistics
 
-  virtual void update_gc_stats(int level, bool full);
+  virtual void update_gc_stats(Generation* current_generation, bool full);
 
   virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 

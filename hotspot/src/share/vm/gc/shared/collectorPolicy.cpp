@@ -746,11 +746,11 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
     return result;   // Could be null if we are out of space.
   } else if (!gch->incremental_collection_will_fail(false /* don't consult_young */)) {
     // Do an incremental collection.
-    gch->do_collection(false            /* full */,
-                       false            /* clear_all_soft_refs */,
-                       size             /* size */,
-                       is_tlab          /* is_tlab */,
-                       number_of_generations() - 1 /* max_level */);
+    gch->do_collection(false,                     // full
+                       false,                     // clear_all_soft_refs
+                       size,                      // size
+                       is_tlab,                   // is_tlab
+                       GenCollectedHeap::OldGen); // max_generation
   } else {
     if (Verbose && PrintGCDetails) {
       gclog_or_tty->print(" :: Trying full because partial may fail :: ");
@@ -759,11 +759,11 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
     // for the original code and why this has been simplified
     // with from-space allocation criteria modified and
     // such allocation moved out of the safepoint path.
-    gch->do_collection(true             /* full */,
-                       false            /* clear_all_soft_refs */,
-                       size             /* size */,
-                       is_tlab          /* is_tlab */,
-                       number_of_generations() - 1 /* max_level */);
+    gch->do_collection(true,                      // full
+                       false,                     // clear_all_soft_refs
+                       size,                      // size
+                       is_tlab,                   // is_tlab
+                       GenCollectedHeap::OldGen); // max_generation
   }
 
   result = gch->attempt_allocation(size, is_tlab, false /*first_only*/);
@@ -787,11 +787,11 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   {
     UIntXFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
 
-    gch->do_collection(true             /* full */,
-                       true             /* clear_all_soft_refs */,
-                       size             /* size */,
-                       is_tlab          /* is_tlab */,
-                       number_of_generations() - 1 /* max_level */);
+    gch->do_collection(true,                      // full
+                       true,                      // clear_all_soft_refs
+                       size,                      // size
+                       is_tlab,                   // is_tlab
+                       GenCollectedHeap::OldGen); // max_generation
   }
 
   result = gch->attempt_allocation(size, is_tlab, false /* first_only */);

@@ -300,6 +300,17 @@ void VM_Version::initialize() {
     }
   }
 
+  // GHASH/GCM intrinsics
+  if (has_vis3() && (UseVIS > 2)) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      UseGHASHIntrinsics = true;
+    }
+  } else if (UseGHASHIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
+      warning("GHASH intrinsics require VIS3 insructions support. Intriniscs will be disabled");
+    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
   // SHA1, SHA256, and SHA512 instructions were added to SPARC T-series at different times
   if (has_sha1() || has_sha256() || has_sha512()) {
     if (UseVIS > 0) { // SHA intrinsics use VIS1 instructions
