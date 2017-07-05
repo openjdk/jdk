@@ -1,225 +1,160 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-'\"macro stdmacro
-.TH javah 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH "̾��"
-javah \- C ����Υإå��ȥ����֥ե�����Υ����ͥ졼��
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH javah 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "名前"
+javah \- C ヘッダーとスタブファイルジェネレータ
+.LP
+.RS 3
+
+.LP
+.LP
+\f3javah\fP は、Java クラスから C ヘッダーファイルと C ソースファイルを作成します。これらのファイルは、Java プログラミング言語で書かれたコードと、C などのその他の言語で書かれたコードを接続し、コードが相互に作用するようにします。
+.LP
+.RE
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+javah [ \fP\f3options\fP\f3 ] fully\-qualified\-classname. . .
+.fl
+javah_g [ \fP\f3options\fP\f3 ] fully\-qualified\-classname. . .
+.fl
+\fP
+.fi
+
+.LP
+.SH "説明"
 .LP
 
 .LP
 .LP
-\f3javah\fP �ϡ�Java ���饹���� C �إå��ե������ C �������ե������������ޤ��������Υե�����ϡ�Java �ץ�����ߥ󥰸���ǽ񤫤줿�����ɤȡ�C �ʤɤΤ���¾�θ���ǽ񤫤줿�����ɤ���³���������ɤ���ߤ˺��Ѥ���褦�ˤ��ޤ���
+\f3javah\fP は、ネイティブメソッドを実装するために必要な C ヘッダーとソースファイルを生成します。作成されたヘッダーとソースファイルは、ネイティブソースコードからオブジェクトのインスタンス変数を参照するために C プログラムによって使用されます。.h ファイルは、対応するクラスと一致する配置を持つ構造体定義を含みます。構造体のフィールドは、クラスのインスタンス変数に対応します。
 .LP
-.SH "����"
-.B javah 
-[
-.B options
-]
-.I fully-qualified-classname . . .
-.br
-.B javah_g 
-[
-.B options
-]
-.I fully-qualified-classname . . .
-.SH "��ǽ����"
-.IX "stub file generator" "" "stub file generator \(em \fLjavah\fP"
-.IX "C header and stub file generator" "" "C header and stub file generator \(em \fLjavah\fP"
-.IX "javah" "" "\fLjavah\fP \(em C header and stub file generator"
-.B javah
-���ޥ�ɤϡ��ͥ��ƥ��֥᥽�åɤ��������Τ�ɬ�פ�
-C
-����Υإå�����ӥ������ե�������������ޤ���
-C
-�Υץ������ϡ�
-�������줿�إå��ȥ������ե������Ȥäơ�
-�ͥ��ƥ��֥����������ɤ��饪�֥������ȤΥ��󥹥���
-�ѿ��򻲾ȤǤ��ޤ���
-.B .h
-�ե�����ϡ��б����륯�饹�˹�ä��쥤�����Ȥ�
-��¤�������ޤ�Ǥ��ޤ���
-��¤�Τ˴ޤޤ��ե�����ɤϡ����饹��Υ��󥹥����ѿ���
-�б����Ƥ��ޤ���
 .LP
-�إå��ե�����̾����ӥإå��ե���������������빽¤��̾�ϡ�
-���饹̾�����������ޤ���
-.B javah
-���Ϥ���륯�饹���ѥå����������ˤ���С�
-���Υѥå�����̾���ե�����̾����ӹ�¤��̾����Ƭ���ղä���ޤ���
-̾���δ֤ϲ���
-(_)
-�Ƕ��ڤ��ޤ���
+ヘッダーファイルとその中で宣言される構造体の名前はクラスの名前から派生します。\f3javah\fP に渡されるクラスがパッケージの中にある場合、パッケージ名はヘッダーファイル名と構造体名の両方に付加されます。下線 (_) が名前の区切り文字として使用されます。
 .LP
-�ǥե���ȤǤϡ�
-.B javah
-�ϥ��ޥ�ɹԤǻ��ꤵ�줿�ġ��Υ��饹���Ф���
-�إå��ե����������������ߤΥǥ��쥯�ȥ�˽��Ϥ��ޤ���
-.B \-stubs
-���ץ�������ꤹ��ȥ������ե����뤬��������ޤ���
-.B \-o
-���ץ�������ꤹ��ȡ����ꤷ�������饹���Ф�����ϥե�����
-��Ϣ�뤷��
-1
-�ĤΥե�����Ȥ����������ޤ���
 .LP
-�������ͥ��ƥ��֥᥽�åɥ��󥿥ե�������
-Java Native Interface (JNI)
-�ϡ��إå�����䥹���֥ե������ɬ�פȤ��ޤ���
-������
-.B javah
-���ޥ�ɤϸ��ߤ� JNI �����Υͥ��ƥ��֥᥽�åɤ�ɬ�פ�
-�ͥ��ƥ��֥᥽�åɴؿ��ץ��ȥ����פ������Ǥ��ޤ���
-.B javah 
-�ϥǥե���Ȥ� JNI �����ǽ��Ϥ������η�̤� 
-.B .h
-�ե�����˳�Ǽ���ޤ���
+デフォルトでは \f3javah\fP は、コマンド行にリストされる各クラスのヘッダーファイルを作成し、現在のディレクトリにファイルを置きます。ソースファイルを作成するには、\f2\-stubs\fP オプションを使用してください。1 つのファイルの中に、リストされたすべてのクラスの結果を連結するには、\f2\-o\fP オプションを使用してください。
 .LP
-.B javah_g
-�����Ŭ���С�������
-.B javah
-�ǡ�
-.B jdb
-�ʤɤΥǥХå��Ѥλ��Ѥ�Ŭ���Ƥ��ޤ���
-.SH "���ץ����"
-.TP 15
-.BI \-o " outputfile"
-���ޥ�ɹԤǻ��ꤷ�����٤ƤΥ��饹���Ф����̤Υإå��ե�����ޤ���
-�������ե������Ϣ�뤷��
-.BR outputfile 
-�˳�Ǽ���ޤ���
-.B \-o
-���ץ����ޤ��� 
-.B \-d
-���ץ�����������ѤǤ��ޤ���
-.TP 15
-.BI \-d " directory"
-.B javah
-���إå��ե�����ޤ��ϥ����֥ե������񤭽Ф�
-�ǥ��쥯�ȥ����ꤷ�ޤ���
-.TP 15
-.B \-stubs
-Java ���֥������ȥե����뤫�� C �����������������ޤ���
-.TP 15
-.B \-verbose
-�ܺپ���ν��Ϥ��׵ᤷ�ޤ���
-.B javah
-�ϡ��������줿�ե�����ξ��֤˴ؤ����å�������
-.B stdout
-�˽񤭽Ф��ޤ���
-.TP 15
-.B  \-help
-.B javah
-�λ���ˡ�ˤĤ��ƥإ�ץ�å���������Ϥ��ޤ���
-.TP 15
-.B \-version
-javah �С������������Ϥ��ޤ���
-.TP 15
-.B  \-jni
-JNI �����Υͥ��ƥ��֤ʥ᥽�åɴؿ��Υץ��ȥ����פ����ä����ϥե������
-�������ޤ�������ϥǥե���Ȥν��ϤǤ��뤿�ᡢ
--B \-jni
-�Ͼ�ά��ǽ�Ǥ���
-.TP 15
-.BI \-classpath " path"
-.B javah
-�����饹�򸡺����뤿����Ѥ���ѥ���
-.I path
-�ǻ��ꤷ�ޤ������λ����ͤϡ��ǥե���Ȥ����
-.B CLASSPATH
-�Ķ��ѿ��������ͤ򥪡��С��饤�ɤ��ޤ���
-ʣ���Υǥ��쥯�ȥ����ꤹ����ϥ�����Ƕ��ڤ�ޤ���
-�������ä�
-.I path
-���̾�η����ϼ��Τ褦�ˤʤ�ޤ���
-.RS 20
-.sp 1n
 .LP
-.BI .:< your_path >
-.sp 1n
-.RE
-.RS 15
+新しいネイティブメソッドインタフェースである Java Native Interface (JNI) は、ヘッダー情報またはスタブファイルを必要としません。 現在では、\f3javah\fP は、JNI 形式のネイティブメソッドに必要なネイティブメソッド機能プロトタイプを生成します。 デフォルトでは、\f3javah\fP は JNI 形式で出力され、その結果は .h ファイルに格納されます。
 .LP
-�ѥ��λ����㡧
-.RE
-.RS 20
-.sp 1n
 .LP
-.B .:/home/avh/classes:/usr/local/java/classes
-.sp 1n
-.RE
+\f3javah_g\fP は、jdb(1) のようなデバッガに適した、\f3javah\fP の最適化されていないバージョンです。
 .LP
-�ص��塢\f2*\fP �Υ١���̾��ޤ९�饹�ѥ����Ǥϡ��ǥ��쥯�ȥ���γ�ĥ�� \f2.jar\fP �ޤ��� \f2.JAR\fP ����Ĥ��٤ƤΥե�����Υꥹ�Ȥ���ꤹ��Τ�Ʊ���Ȥߤʤ���ޤ� (Java �ץ������Ϥ��� 2 �ĤθƤӽФ�����̤Ǥ��ʤ�)��
+.SH "オプション"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-o outputfile 
+コマンド行にリストされたすべてのクラスに対して、結果のヘッダーまたはソースファイルを連結して \f2outputfile\fP に格納します。\f3\-o\fP または \f3\-d\fP のどちらか一方だけが使われます。 
+.TP 3
+\-d directory 
+\f3javah\fP がヘッダーファイルまたはスタブファイルを保存する、ディレクトリを設定します。\f3\-d\fP または \f3\-o\fP のどちらか一方だけが使われます。 
+.TP 3
+\-stubs 
+\f3javah\fP が、Java オブジェクトファイルから C 宣言を生成します。 
+.TP 3
+\-verbose 
+詳細出力を指定し、作成ファイルの状態に関するメッセージを、\f3javah\fP が標準出力に出力します。 
+.TP 3
+\-help 
+\f3javah\fP の使用法についてのヘルプメッセージを出力します。 
+.TP 3
+\-version 
+\f3javah\fP のバージョン情報を出力します。 
+.TP 3
+\-jni 
+JNI 形式のネイティブファイル機能プロトタイプを含む出力ファイルを、\f3javah\fP が作成します。これは標準出力であるため、\f3\-jni\fP の使用はオプションです。 
+.TP 3
+\-classpath path 
+クラスを探すために \f3javah\fP が使用するパスを指定します。デフォルトまたは CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
+.nf
+\f3
+.fl
+   .:<your_path>
+.fl
+\fP
+.fi
+例を示します。 
+.nf
+\f3
+.fl
+   .:/home/avh/classes:/usr/local/java/classes
+.fl
+\fP
+.fi
+.LP
+便宜上、\f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
 .br
 .br
-���Ȥ��С��ǥ��쥯�ȥ� \f2foo\fP �� \f2a.jar\fP �� \f2b.JAR\fP ���ޤޤ�Ƥ����硢���饹�ѥ����� \f2foo/*\fP �� \f2A.jar:b.JAR\fP ��Ÿ������ޤ�����������JAR �ե�����ν��֤�̤����Ȥʤ�ޤ������Υꥹ�Ȥˤϡ������ե������ޤᡢ���ꤵ�줿�ǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե����뤬�ޤޤ�ޤ���\f2*\fP �����������륯�饹�ѥ�����ȥ�ϡ������ȥǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե�����Υꥹ�Ȥ�Ÿ������ޤ���\f2CLASSPATH\fP �Ķ��ѿ��⡢������ˤ�Ʊ�ͤ�Ÿ������ޤ������饹�ѥ��Υ磻��ɥ�����Ÿ����ɬ����Java ���ۥޥ���ε�ư���˼¹Ԥ���ޤ����������äơ�\f2System.getenv("CLASSPATH")\fP �ƤӽФ��ʤɤδĶ����Ф����䤤��碌��Ԥ�ʤ��¤ꡢŸ������Ƥ��ʤ��磻��ɥ����ɤ� Java �ץ�������ǧ�����ޤ���   
-.TP 15
-.BI \-bootclasspath " path"
-bootstrap ���饹������ɤ���ѥ�����ꤷ�ޤ����ǥե���ȤǤϡ�bootstrap 
-���饹�ϥ����Ȥʤ� Java 2 �ץ�åȥե������������륯�饹�ǡ�
-.B jre/lib/rt.jar
-�����¾�ν��פ� jar �ե�����˴ޤޤ�Ƥ��ޤ���
-.TP 15
-.B \-old
-�Ť� JDK 1.0 �����Υإå��ե�������������ޤ���
-.TP 15
-.B  \-force
-��˽��ϥե�����˽񤭹��ळ�Ȥ���ꤷ�ޤ���
-.TP 15
-.BI \-J "option"
-.I option
-�� Java ���ۥޥ�����Ϥ��ޤ��������ǡ�
-.I option
-�ϡ�Java ���ץꥱ�������ư�ץ������λ��ȥڡ�����
-��������Ƥ��륪�ץ����� 1 �ĤǤ������Ȥ��С�
-.I \-J-Xms48m
-�ϡ���ư���˻��Ѥ������� 48M �Х��Ȥ����ꤷ�ޤ���
-.SH "�Ķ��ѿ�"
-.TP 15
-.B CLASSPATH
-�桼��������饹�ؤΥѥ��򥷥��ƥ�����Τ��뤿��˻��Ѥ��ޤ���
-ʣ���Υǥ��쥯�ȥ����ꤹ����ϥ�����Ƕ��ڤ�ޤ���
-�ʲ�����򼨤��ޤ���
-.RS 10
-.sp 1n
-.LP
-.B .:/home/avh/classes:/usr/local/java/classes
+たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。 ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。\f2*\fP だけから成るクラスパスエントリは、カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。\f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。   
+.TP 3
+\-bootclasspath path 
+ブートストラップクラスをロードするパスを指定します。ブートストラップクラスは、デフォルトでは \f2jre/lib/rt.jar\fP および他のいくつかの JAR ファイル にある、コア Java 2 プラットフォームを実装するクラスです。 
+.TP 3
+\-old 
+古い JDK1.0 形式のヘッダーファイルを生成するように指定します。 
+.TP 3
+\-force 
+出力ファイルが常に書き込まれるように指定します。 
+.TP 3
+\-Joption 
+Java 仮想マシンに \f2option\fP を渡します。 \f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
 .RE
-.SH "��Ϣ����"
+
+.LP
+.SH "環境変数"
+.LP
+
+.LP
+.RS 3
+.TP 3
+CLASSPATH 
+ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割されています。 
+.nf
+\f3
+.fl
+.:/home/avh/classes:/usr/local/java/classes
+.fl
+\fP
+.fi
+.RE
+
+.LP
+.SH "関連項目"
 .LP
 
 .LP
 .LP
-javac��java��jdb��javap��javadoc
+javac(1)、java(1)、jdb(1)、javap(1)、javadoc(1)
 .LP
 
 .LP
