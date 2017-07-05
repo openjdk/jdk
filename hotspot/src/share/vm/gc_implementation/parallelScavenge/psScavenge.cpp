@@ -70,9 +70,6 @@ bool                       PSScavenge::_promotion_failed = false;
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) {
-    assert(false, "Do not call.");
-  }
   bool do_object_b(oop p) {
     return (!PSScavenge::is_obj_in_young((HeapWord*) p)) || p->is_forwarded();
   }

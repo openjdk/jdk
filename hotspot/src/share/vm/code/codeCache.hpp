@@ -163,6 +163,7 @@ class CodeCache : AllStatic {
   static size_t  max_capacity()                  { return _heap->max_capacity(); }
   static size_t  unallocated_capacity()          { return _heap->unallocated_capacity(); }
   static bool    needs_flushing()                { return unallocated_capacity() < CodeCacheFlushingMinimumFreeSpace; }
+  static double  reverse_free_ratio();
 
   static bool needs_cache_clean()                { return _needs_cache_clean; }
   static void set_needs_cache_clean(bool v)      { _needs_cache_clean = v;    }

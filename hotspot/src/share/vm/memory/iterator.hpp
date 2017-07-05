@@ -158,7 +158,7 @@ class ObjectClosure : public Closure {
 };
 
 
-class BoolObjectClosure : public ObjectClosure {
+class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
 };
