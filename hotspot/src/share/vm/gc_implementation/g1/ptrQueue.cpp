@@ -25,8 +25,8 @@
 # include "incls/_precompiled.incl"
 # include "incls/_ptrQueue.cpp.incl"
 
-PtrQueue::PtrQueue(PtrQueueSet* qset_, bool perm) :
-  _qset(qset_), _buf(NULL), _index(0), _active(false),
+PtrQueue::PtrQueue(PtrQueueSet* qset_, bool perm, bool active) :
+  _qset(qset_), _buf(NULL), _index(0), _active(active),
   _perm(perm), _lock(NULL)
 {}
 
