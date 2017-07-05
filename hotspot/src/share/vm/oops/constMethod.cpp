@@ -39,18 +39,21 @@ ConstMethod* ConstMethod::allocate(ClassLoaderData* loader_data,
                                    int localvariable_table_length,
                                    int exception_table_length,
                                    int checked_exceptions_length,
+                                   int method_parameters_length,
                                    u2  generic_signature_index,
                                    MethodType method_type,
                                    TRAPS) {
   int size = ConstMethod::size(byte_code_size,
-                                      compressed_line_number_size,
-                                      localvariable_table_length,
-                                      exception_table_length,
-                                      checked_exceptions_length,
-                                      generic_signature_index);
+                               compressed_line_number_size,
+                               localvariable_table_length,
+                               exception_table_length,
+                               checked_exceptions_length,
+                               method_parameters_length,
+                               generic_signature_index);
   return new (loader_data, size, true, THREAD) ConstMethod(
       byte_code_size, compressed_line_number_size, localvariable_table_length,
-      exception_table_length, checked_exceptions_length, generic_signature_index,
+      exception_table_length, checked_exceptions_length,
+      method_parameters_length, generic_signature_index,
       method_type, size);
 }
 
@@ -59,6 +62,7 @@ ConstMethod::ConstMethod(int byte_code_size,
                          int localvariable_table_length,
                          int exception_table_length,
                          int checked_exceptions_length,
+                         int method_parameters_length,
                          u2  generic_signature_index,
                          MethodType method_type,
                          int size) {
@@ -74,7 +78,8 @@ ConstMethod::ConstMethod(int byte_code_size,
                             checked_exceptions_length,
                             compressed_line_number_size,
                             localvariable_table_length,
-                            exception_table_length);
+                            exception_table_length,
+                            method_parameters_length);
   set_method_type(method_type);
   assert(this->size() == size, "wrong size for object");
 }
@@ -92,11 +97,12 @@ void ConstMethod::deallocate_contents(ClassLoaderData* loader_data) {
 // How big must this constMethodObject be?
 
 int ConstMethod::size(int code_size,
-                                    int compressed_line_number_size,
-                                    int local_variable_table_length,
-                                    int exception_table_length,
-                                    int checked_exceptions_length,
-                                    u2  generic_signature_index) {
+                      int compressed_line_number_size,
+                      int local_variable_table_length,
+                      int exception_table_length,
+                      int checked_exceptions_length,
+                      int method_parameters_length,
+                      u2  generic_signature_index) {
   int extra_bytes = code_size;
   if (compressed_line_number_size > 0) {
     extra_bytes += compressed_line_number_size;
@@ -116,6 +122,10 @@ int ConstMethod::size(int code_size,
   }
   if (generic_signature_index != 0) {
     extra_bytes += sizeof(u2);
+  }
+  if (method_parameters_length > 0) {
+    extra_bytes += sizeof(u2);
+    extra_bytes += method_parameters_length * sizeof(MethodParametersElement);
   }
   int extra_words = align_size_up(extra_bytes, BytesPerWord) / BytesPerWord;
   return align_object_size(header_size() + extra_words);
@@ -143,6 +153,18 @@ u2* ConstMethod::generic_signature_index_addr() const {
 u2* ConstMethod::checked_exceptions_length_addr() const {
   // Located immediately before the generic signature index.
   assert(has_checked_exceptions(), "called only if table is present");
+  if(has_method_parameters()) {
+    // If method parameters present, locate immediately before them.
+    return (u2*)method_parameters_start() - 1;
+  } else {
+    // Else, the exception table is at the end of the constMethod.
+    return has_generic_signature() ? (last_u2_element() - 1) :
+                                     last_u2_element();
+  }
+}
+
+u2* ConstMethod::method_parameters_length_addr() const {
+  assert(has_method_parameters(), "called only if table is present");
   return has_generic_signature() ? (last_u2_element() - 1) :
                                     last_u2_element();
 }
@@ -153,10 +175,14 @@ u2* ConstMethod::exception_table_length_addr() const {
     // If checked_exception present, locate immediately before them.
     return (u2*) checked_exceptions_start() - 1;
   } else {
-    // Else, the exception table is at the end of the constMethod or
-    // immediately before the generic signature index.
+    if(has_method_parameters()) {
+      // If method parameters present, locate immediately before them.
+      return (u2*)method_parameters_start() - 1;
+    } else {
+      // Else, the exception table is at the end of the constMethod.
     return has_generic_signature() ? (last_u2_element() - 1) :
                                       last_u2_element();
+  }
   }
 }
 
@@ -170,11 +196,15 @@ u2* ConstMethod::localvariable_table_length_addr() const {
       // If checked_exception present, locate immediately before them.
       return (u2*) checked_exceptions_start() - 1;
     } else {
-      // Else, the linenumber table is at the end of the constMethod or
-      // immediately before the generic signature index.
+      if(has_method_parameters()) {
+        // If method parameters present, locate immediately before them.
+        return (u2*)method_parameters_start() - 1;
+      } else {
+        // Else, the exception table is at the end of the constMethod.
       return has_generic_signature() ? (last_u2_element() - 1) :
                                         last_u2_element();
     }
+  }
   }
 }
 
@@ -183,29 +213,57 @@ void ConstMethod::set_inlined_tables_length(u2  generic_signature_index,
                                             int checked_exceptions_len,
                                             int compressed_line_number_size,
                                             int localvariable_table_len,
-                                            int exception_table_len) {
-  // Must be done in the order below, otherwise length_addr accessors
-  // will not work. Only set bit in header if length is positive.
+                                            int exception_table_len,
+                                            int method_parameters_len) {
   assert(_flags == 0, "Error");
-  if (compressed_line_number_size > 0) {
+  if (compressed_line_number_size > 0)
     _flags |= _has_linenumber_table;
-  }
-  if (generic_signature_index != 0) {
+  if (generic_signature_index != 0)
     _flags |= _has_generic_signature;
-    *(generic_signature_index_addr()) = generic_signature_index;
-  }
-  if (checked_exceptions_len > 0) {
+  if (method_parameters_len > 0)
+    _flags |= _has_method_parameters;
+  if (checked_exceptions_len > 0)
     _flags |= _has_checked_exceptions;
-    *(checked_exceptions_length_addr()) = checked_exceptions_len;
-  }
-  if (exception_table_len > 0) {
+  if (exception_table_len > 0)
     _flags |= _has_exception_table;
-    *(exception_table_length_addr()) = exception_table_len;
-  }
-  if (localvariable_table_len > 0) {
+  if (localvariable_table_len > 0)
     _flags |= _has_localvariable_table;
+
+  // This code is extremely brittle and should possibly be revised.
+  // The *_length_addr functions walk backwards through the
+  // constMethod data, using each of the length indexes ahead of them,
+  // as well as the flags variable.  Therefore, the indexes must be
+  // initialized in reverse order, or else they will compute the wrong
+  // offsets.  Moving the initialization of _flags into a separate
+  // block solves *half* of the problem, but the following part will
+  // still break if the order is not exactly right.
+  //
+  // Also, the servicability agent needs to be informed anytime
+  // anything is added here.  It might be advisable to have some sort
+  // of indication of this inline.
+  if (generic_signature_index != 0)
+    *(generic_signature_index_addr()) = generic_signature_index;
+  // New data should probably go here.
+  if (method_parameters_len > 0)
+    *(method_parameters_length_addr()) = method_parameters_len;
+  if (checked_exceptions_len > 0)
+    *(checked_exceptions_length_addr()) = checked_exceptions_len;
+  if (exception_table_len > 0)
+    *(exception_table_length_addr()) = exception_table_len;
+  if (localvariable_table_len > 0)
     *(localvariable_table_length_addr()) = localvariable_table_len;
-  }
+}
+
+int ConstMethod::method_parameters_length() const {
+  return has_method_parameters() ? *(method_parameters_length_addr()) : 0;
+}
+
+MethodParametersElement* ConstMethod::method_parameters_start() const {
+  u2* addr = method_parameters_length_addr();
+  u2 length = *addr;
+  assert(length > 0, "should only be called if table is present");
+  addr -= length * sizeof(MethodParametersElement) / sizeof(u2);
+  return (MethodParametersElement*) addr;
 }
 
 
@@ -298,6 +356,10 @@ void ConstMethod::verify_on(outputStream* st) {
   }
   guarantee(compressed_table_end <= m_end, "invalid method layout");
   // Verify checked exceptions, exception table and local variable tables
+  if (has_method_parameters()) {
+    u2* addr = method_parameters_length_addr();
+    guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
+  }
   if (has_checked_exceptions()) {
     u2* addr = checked_exceptions_length_addr();
     guarantee(*addr > 0 && (address) addr >= compressed_table_end && (address) addr < m_end, "invalid method layout");
@@ -318,6 +380,8 @@ void ConstMethod::verify_on(outputStream* st) {
     uncompressed_table_start = (u2*) exception_table_start();
   } else if (has_checked_exceptions()) {
       uncompressed_table_start = (u2*) checked_exceptions_start();
+  } else if (has_method_parameters()) {
+      uncompressed_table_start = (u2*) method_parameters_start();
   } else {
       uncompressed_table_start = (u2*) m_end;
   }

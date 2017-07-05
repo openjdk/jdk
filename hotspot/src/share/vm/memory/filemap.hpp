@@ -63,6 +63,7 @@ private:
     int    _magic;                    // identify file type.
     int    _version;                  // (from enum, above.)
     size_t _alignment;                // how shared archive should be aligned
+    int    _obj_alignment;            // value of ObjectAlignmentInBytes
 
     struct space_info {
       int    _file_offset;   // sizeof(this) rounded to vm page size

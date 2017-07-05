@@ -169,7 +169,7 @@ COPY_FILES += \
 # are uncommented and the configuration file is stored in the output META-INF directory.
 
 # Make sure the output directory is created.
-$(shell $(MKDIR) -p $(JDK_OUTPUTDIR)/classes/META-INF/services)
+$(eval $(call MakeDir,$(JDK_OUTPUTDIR)/classes/META-INF/services))
 # Find all META-INF/services/* files
 ALL_META-INF_DIRS_share:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes -type d -a -name META-INF)
 ALL_META-INF_DIRS_targetapi:=$(shell $(FIND) $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes -type d -a -name META-INF)

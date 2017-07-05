@@ -32,8 +32,6 @@ include MakeBase.gmk
 # Definitions for $(DOCSDIR), $(MKDIR), $(BINDIR), etc.
 #
 
-CLASSPATH_SEPARATOR = :
-
 DOCSDIR=$(OUTPUT_ROOT)/docs
 TEMPDIR=$(OUTPUT_ROOT)/docstemp
 
@@ -137,7 +135,7 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 # List of all possible directories for javadoc to look for sources
 #    NOTE: Quotes are required around sourcepath argument only on Windows.
 #          Otherwise, you get "No packages or classes specified." due 
-#          to $(CLASSPATH_SEPARATOR) being interpreted as an end of 
+#          to $(PATH_SEP) being interpreted as an end of 
 #          command (newline or shell ; character)
 ALL_SOURCE_DIRS = $(JDK_SHARE_CLASSES) \
                   $(JDK_IMPSRC) \
@@ -154,7 +152,7 @@ ALL_EXISTING_SOURCE_DIRS := $(wildcard $(ALL_SOURCE_DIRS))
 EMPTY:=
 SPACE:= $(EMPTY) $(EMPTY)
 RELEASEDOCS_SOURCEPATH = \
-    $(subst $(SPACE),$(CLASSPATH_SEPARATOR),$(strip $(ALL_SOURCE_DIRS)))
+    $(subst $(SPACE),$(PATH_SEP),$(strip $(ALL_SOURCE_DIRS)))
 
 define prep-target
 $(MKDIR) -p $(@D)

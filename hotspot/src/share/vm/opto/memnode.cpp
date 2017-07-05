@@ -2725,10 +2725,8 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     zend  = phase->transform( new(C) URShiftXNode(zend,  shift) );
   }
 
-  Node* zsize = phase->transform( new(C) SubXNode(zend, zbase) );
-  Node* zinit = phase->zerocon((unit == BytesPerLong) ? T_LONG : T_INT);
-
   // Bulk clear double-words
+  Node* zsize = phase->transform( new(C) SubXNode(zend, zbase) );
   Node* adr = phase->transform( new(C) AddPNode(dest, dest, start_offset) );
   mem = new (C) ClearArrayNode(ctl, mem, zsize, adr);
   return phase->transform(mem);

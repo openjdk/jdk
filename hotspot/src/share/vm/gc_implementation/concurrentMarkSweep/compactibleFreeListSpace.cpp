@@ -214,7 +214,6 @@ HeapWord* CompactibleFreeListSpace::forward(oop q, size_t size,
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
-  VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(q, adjusted_size));
   compact_top += adjusted_size;
 
   // we need to update the offset table so that the beginnings of objects can be

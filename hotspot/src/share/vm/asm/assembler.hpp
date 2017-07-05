@@ -216,8 +216,6 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  void emit_long(jint x) { emit_int32(x); }  // deprecated
-
   // Instruction boundaries (required when emitting relocatable values).
   class InstructionMark: public StackObj {
    private:
