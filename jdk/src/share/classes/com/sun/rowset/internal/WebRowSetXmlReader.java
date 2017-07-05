@@ -46,6 +46,17 @@ import javax.sql.rowset.spi.*;
  */
 public class WebRowSetXmlReader implements XmlReader, Serializable {
 
+
+    private JdbcRowSetResourceBundle resBundle;
+
+    public WebRowSetXmlReader(){
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
     /**
      * Parses the given <code>WebRowSet</code> object, getting its input from
      * the given <code>java.io.Reader</code> object.  The parser will send
@@ -69,17 +80,6 @@ public class WebRowSetXmlReader implements XmlReader, Serializable {
      *            reader for the given rowset
      * @see XmlReaderContentHandler
      */
-
-    private JdbcRowSetResourceBundle resBundle;
-
-    public WebRowSetXmlReader(){
-        try {
-           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
-        } catch(IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-    }
-
     public void readXML(WebRowSet caller, java.io.Reader reader) throws SQLException {
         try {
             // Crimson Parser(as in J2SE 1.4.1 is NOT able to handle

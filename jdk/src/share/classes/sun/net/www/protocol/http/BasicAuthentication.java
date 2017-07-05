@@ -44,8 +44,6 @@ class BasicAuthentication extends AuthenticationInfo {
 
     private static final long serialVersionUID = 100L;
 
-    static final char BASIC_AUTH = 'B';
-
     /** The authentication string for this host, port, and realm.  This is
         a simple BASE64 encoding of "login:password".    */
     String auth;
@@ -56,7 +54,7 @@ class BasicAuthentication extends AuthenticationInfo {
     public BasicAuthentication(boolean isProxy, String host, int port,
                                String realm, PasswordAuthentication pw) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              BASIC_AUTH, host, port, realm);
+              AuthScheme.BASIC, host, port, realm);
         String plain = pw.getUserName() + ":";
         byte[] nameBytes = null;
         try {
@@ -86,7 +84,7 @@ class BasicAuthentication extends AuthenticationInfo {
     public BasicAuthentication(boolean isProxy, String host, int port,
                                String realm, String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              BASIC_AUTH, host, port, realm);
+              AuthScheme.BASIC, host, port, realm);
         this.auth = "Basic " + auth;
     }
 
@@ -96,7 +94,7 @@ class BasicAuthentication extends AuthenticationInfo {
     public BasicAuthentication(boolean isProxy, URL url, String realm,
                                    PasswordAuthentication pw) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              BASIC_AUTH, url, realm);
+              AuthScheme.BASIC, url, realm);
         String plain = pw.getUserName() + ":";
         byte[] nameBytes = null;
         try {
@@ -126,7 +124,7 @@ class BasicAuthentication extends AuthenticationInfo {
     public BasicAuthentication(boolean isProxy, URL url, String realm,
                                    String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              BASIC_AUTH, url, realm);
+              AuthScheme.BASIC, url, realm);
         this.auth = "Basic " + auth;
     }
 

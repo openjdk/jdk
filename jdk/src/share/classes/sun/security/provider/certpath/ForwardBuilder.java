@@ -82,6 +82,7 @@ class ForwardBuilder extends Builder {
     TrustAnchor trustAnchor;
     private Comparator<X509Certificate> comparator;
     private boolean searchAllCertStores = true;
+    private boolean onlyEECert = false;
 
     /**
      * Initialize the builder with the input parameters.
@@ -89,7 +90,8 @@ class ForwardBuilder extends Builder {
      * @param params the parameter set used to build a certification path
      */
     ForwardBuilder(PKIXBuilderParameters buildParams,
-        X500Principal targetSubjectDN, boolean searchAllCertStores)
+        X500Principal targetSubjectDN, boolean searchAllCertStores,
+        boolean onlyEECert)
     {
         super(buildParams, targetSubjectDN);
 
@@ -108,6 +110,7 @@ class ForwardBuilder extends Builder {
         }
         comparator = new PKIXCertComparator(trustedSubjectDNs);
         this.searchAllCertStores = searchAllCertStores;
+        this.onlyEECert = onlyEECert;
     }
 
     /**
@@ -875,8 +878,8 @@ class ForwardBuilder extends Builder {
             /* Check revocation if it is enabled */
             if (buildParams.isRevocationEnabled()) {
                 try {
-                    CrlRevocationChecker crlChecker =
-                        new CrlRevocationChecker(anchor, buildParams);
+                    CrlRevocationChecker crlChecker = new CrlRevocationChecker
+                        (anchor, buildParams, null, onlyEECert);
                     crlChecker.check(cert, anchor.getCAPublicKey(), true);
                 } catch (CertPathValidatorException cpve) {
                     if (debug != null) {

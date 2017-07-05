@@ -874,6 +874,7 @@ instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
                                                        class_loader,
                                                        protection_domain,
                                                        parsed_name,
+                                                       false,
                                                        CHECK_(h));
 
     // add to package table

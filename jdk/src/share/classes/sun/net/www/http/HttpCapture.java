@@ -24,14 +24,12 @@
  */
 
 package sun.net.www.http;
+
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import sun.net.NetProperties;
 import java.util.regex.*;
+import sun.net.NetProperties;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Main class of the HTTP traffic capture tool.
@@ -62,76 +60,6 @@ public class HttpCapture {
     private static boolean initialized = false;
     private static volatile ArrayList<Pattern> patterns = null;
     private static volatile ArrayList<String> capFiles = null;
-    /* Logging is done in an ugly way so that it does not require the presence
-     * the java.util.logging package. If the Logger class is not available, then
-     * logging is turned off. This is for helping the modularization effort.
-     */
-    private static Object logger = null;
-    private static boolean logging = false;
-
-    static {
-        Class cl;
-        try {
-            cl = Class.forName("java.util.logging.Logger");
-        } catch (ClassNotFoundException ex) {
-            cl = null;
-        }
-        if (cl != null) {
-            try {
-                Method m = cl.getMethod("getLogger", String.class);
-                logger = m.invoke(null, "sun.net.www.protocol.http.HttpURLConnection");
-                logging = true;
-            } catch (NoSuchMethodException noSuchMethodException) {
-            } catch (SecurityException securityException) {
-            } catch (IllegalAccessException illegalAccessException) {
-            } catch (IllegalArgumentException illegalArgumentException) {
-            } catch (InvocationTargetException invocationTargetException) {
-            }
-        }
-    }
-
-    public static void fine(String s) {
-        if (logging) {
-            ((Logger)logger).fine(s);
-        }
-    }
-
-    public static void finer(String s) {
-        if (logging) {
-            ((Logger)logger).finer(s);
-        }
-    }
-
-    public static void finest(String s) {
-        if (logging) {
-            ((Logger)logger).finest(s);
-        }
-    }
-
-    public static void severe(String s) {
-        if (logging) {
-            ((Logger)logger).finest(s);
-        }
-    }
-
-    public static void info(String s) {
-        if (logging) {
-            ((Logger)logger).info(s);
-        }
-    }
-
-    public static void warning(String s) {
-        if (logging) {
-            ((Logger)logger).warning(s);
-        }
-    }
-
-    public static boolean isLoggable(String level) {
-        if (!logging) {
-            return false;
-        }
-        return ((Logger)logger).isLoggable(Level.parse(level));
-    }
 
     private static synchronized void init() {
         initialized = true;
@@ -187,7 +115,7 @@ public class HttpCapture {
             out = new BufferedWriter(new FileWriter(file, true));
             out.write("URL: " + url + "\n");
         } catch (IOException ex) {
-            Logger.getLogger(HttpCapture.class.getName()).log(Level.SEVERE, null, ex);
+            PlatformLogger.getLogger(HttpCapture.class.getName()).severe(null, ex);
         }
     }
 

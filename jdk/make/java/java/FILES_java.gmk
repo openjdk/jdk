@@ -454,6 +454,8 @@ JAVA_JAVA_java = \
     sun/misc/JavaLangAccess.java \
     sun/misc/JavaIOAccess.java \
     sun/misc/JavaIOFileDescriptorAccess.java \
-    sun/misc/JavaNioAccess.java
+    sun/misc/JavaNioAccess.java \
+    sun/misc/Perf.java \
+    sun/misc/PerfCounter.java
 
 FILES_java = $(JAVA_JAVA_java)

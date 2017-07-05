@@ -34,8 +34,12 @@
 class Agent {
 
   private:
-    jrawMonitorID lock;
+    enum {
+      initial_monitor_list_size = 64,
+      monitor_list_grow_size = 16
+    };
     Monitor     **monitor_list;
+    unsigned      monitor_list_size;
     unsigned      monitor_count;
     Thread *get_thread(jvmtiEnv *jvmti, JNIEnv *env, jthread thread);
     Monitor *get_monitor(jvmtiEnv *jvmti, JNIEnv *env, jobject object);

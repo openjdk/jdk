@@ -555,7 +555,7 @@ class methodOopDesc : public oopDesc {
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id()                            { methodHandle this_h(this);
-                                                      return instanceKlass::jmethod_id_for_impl(method_holder(), this_h); }
+                                                      return instanceKlass::get_jmethod_id(method_holder(), this_h); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler
