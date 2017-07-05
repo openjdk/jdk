@@ -422,6 +422,14 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
                           const jbyte *buf, jsize len, jobject pd,
                           const char *source);
 
+/* Define a class with a source (MLVM) */
+JNIEXPORT jclass JNICALL
+JVM_DefineClassWithCP(JNIEnv *env, const char *name, jobject loader,
+                      const jbyte *buf, jsize len, jobject pd,
+                      const char *source,
+                      // same args as JVM_DefineClassWithSource to this point
+                      jobjectArray constants);
+
 /*
  * Reflection support functions
  */

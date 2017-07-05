@@ -86,6 +86,8 @@ import sun.misc.HexDumpEncoder;
  * the principal name from the configuration is used. In the
  * case where the principal property is not set and the principal
  * entry also does not exist, the user is prompted for the name.
+ * When this property of entry is set, and <code>useTicketCache</code>
+ * is set to true, only TGT belonging to this principal is used.
  *
  * <p> The following is a list of configuration options supported
  * for <code>Krb5LoginModule</code>:
@@ -101,18 +103,19 @@ import sun.misc.HexDumpEncoder;
  * to false if you do not want this module to use the ticket cache.
  * (Default is False).
  * This module will
- * search for the tickect
+ * search for the ticket
  * cache in the following locations:
- * For Windows 2000, it will use Local Security Authority (LSA) API
- * to get the TGT. On Solaris and Linux
+ * On Solaris and Linux
  * it will look for the ticket cache in /tmp/krb5cc_<code>uid</code>
  * where the uid is numeric user
  * identifier. If the ticket cache is
- * not available in either of the above locations, or if we are on a
- * different Windows platform,  it will look for the cache as
+ * not available in the above location, or if we are on a
+ * Windows platform, it will look for the cache as
  * {user.home}{file.separator}krb5cc_{user.name}.
  * You can override the ticket cache location by using
- * <code>ticketCache</code>
+ * <code>ticketCache</code>.
+ * For Windows, if a ticket cannot be retrieved from the file ticket cache,
+ * it will use Local Security Authority (LSA) API to get the TGT.
  * <P>
  * <dt><b><code>ticketCache</code></b>:</dt>
  * <dd>Set this to the name of the ticket
@@ -129,20 +132,20 @@ import sun.misc.HexDumpEncoder;
  * <dt><b><code>doNotPrompt</code></b>:</dt>
  * <dd>Set this to true if you do not want to be
  * prompted for the password
- * if credentials can
- * not be obtained from the cache or keytab.(Default is false)
- * If set to true authentication will fail if credentials can
- * not be obtained from the cache or keytab.</dd>
+ * if credentials can not be obtained from the cache, the keytab,
+ * or through shared state.(Default is false)
+ * If set to true, credential must be obtained through cache, keytab,
+ * or shared state. Otherwise, authentication will fail.</dd>
  * <P>
  * <dt><b><code>useKeyTab</code></b>:</dt>
  * <dd>Set this to true if you
  * want the module to get the principal's key from the
  * the keytab.(default value is False)
- * If <code>keyatb</code>
+ * If <code>keytab</code>
  * is not set then
  * the module will locate the keytab from the
- * Kerberos configuration file.</dd>
- * If it is not specifed in the Kerberos configuration file
+ * Kerberos configuration file.
+ * If it is not specified in the Kerberos configuration file
  * then it will look for the file
  * <code>{user.home}{file.separator}</code>krb5.keytab.</dd>
  * <P>
@@ -210,20 +213,34 @@ import sun.misc.HexDumpEncoder;
  *                   exist for the username and password in the shared
  *                   state, or if authentication fails.
  *
- *    clearPass     if, true, this <code>LoginModule</code> clears the
- *                  username and password stored in the module's shared
- *                  state  after both phases of authentication
- *                  (login and commit)  have completed.
+ *    clearPass      if, true, this LoginModule clears the
+ *                   username and password stored in the module's shared
+ *                   state  after both phases of authentication
+ *                   (login and commit) have completed.
  * </pre>
+ * <p>If the principal system property or key is already provided, the value of
+ * "javax.security.auth.login.name" in the shared state is ignored.
+ * <p>When multiple mechanisms to retrieve a ticket or key is provided, the
+ * preference order looks like this:
+ * <ol>
+ * <li>ticket cache
+ * <li>keytab
+ * <li>shared state
+ * <li>user prompt
+ * </ol>
+ * <p>Note that if any step fails, it will fallback to the next step.
+ * There's only one exception, it the shared state step fails and
+ * <code>useFirstPass</code>=true, no user prompt is made.
  * <p>Examples of some configuration values for Krb5LoginModule in
  * JAAS config file and the results are:
  * <ul>
  * <p> <code>doNotPrompt</code>=true;
  * </ul>
- * <p> This is an illegal combination since <code>useTicketCache</code>
- * is not set and the user can not be prompted for the password.
+ * <p> This is an illegal combination since none of <code>useTicketCache</code>,
+ * <code>useKeyTab</code>, <code>useFirstPass</code> and <code>tryFirstPass</code>
+ * is set and the user can not be prompted for the password.
  *<ul>
- * <p> <code>ticketCache</code> = < filename >;
+ * <p> <code>ticketCache</code> = &lt;filename&gt;;
  *</ul>
  * <p> This is an illegal combination since <code>useTicketCache</code>
  * is not set to true and the ticketCache is set. A configuration error
@@ -240,9 +257,9 @@ import sun.misc.HexDumpEncoder;
  *</ul>
  * <p> This is an illegal combination since  <code>storeKey</code> is set to
  * true but the key can not be obtained either by prompting the user or from
- * the keytab.A configuration error will occur.
+ * the keytab, or from the shared state. A configuration error will occur.
  * <ul>
- * <p>  <code>keyTab</code> = < filename > <code>doNotPrompt</code>=true ;
+ * <p>  <code>keyTab</code> = &lt;filename&gt; <code>doNotPrompt</code>=true ;
  * </ul>
  * <p>This is an illegal combination since useKeyTab is not set to true and
  * the keyTab is set. A configuration error will occur.
@@ -260,7 +277,7 @@ import sun.misc.HexDumpEncoder;
  * with the principal and TGT. If the TGT is not available,
  * do not prompt the user, instead fail the authentication.
  * <ul>
- * <p><code>principal</code>=< name ><code>useTicketCache</code> = true
+ * <p><code>principal</code>=&lt;name&gt;<code>useTicketCache</code> = true
  * <code>doNotPrompt</code>=true;
  *</ul>
  * <p> Get the TGT from the default cache for the principal and populate the
@@ -269,9 +286,9 @@ import sun.misc.HexDumpEncoder;
  * authentication will fail.
  * <ul>
  * <p> <code>useTicketCache</code> = true
- * <code>ticketCache</code>=< file name ><code>useKeyTab</code> = true
- * <code> keyTab</code>=< keytab filename >
- * <code>principal</code> = < principal name >
+ * <code>ticketCache</code>=&lt;file name&gt;<code>useKeyTab</code> = true
+ * <code> keyTab</code>=&lt;keytab filename&gt;
+ * <code>principal</code> = &lt;principal name&gt;
  * <code>doNotPrompt</code>=true;
  *</ul>
  * <p>  Search the cache for the principal's TGT. If it is not available
@@ -281,7 +298,7 @@ import sun.misc.HexDumpEncoder;
  * If the key is not available or valid then authentication will fail.
  * <ul>
  * <p><code>useTicketCache</code> = true
- * <code>ticketCache</code>=< file name >
+ * <code>ticketCache</code>=&lt;file name&gt;
  *</ul>
  * <p> The TGT will be obtained from the cache specified.
  * The Kerberos principal name used will be the principal name in
@@ -292,8 +309,8 @@ import sun.misc.HexDumpEncoder;
  * The Subject will be populated with the TGT.
  *<ul>
  * <p> <code>useKeyTab</code> = true
- * <code>keyTab</code>=< keytab filename >
- * <code>principal</code>= < principal name >
+ * <code>keyTab</code>=&lt;keytab filename&gt;
+ * <code>principal</code>= &lt;principal name&gt;
  * <code>storeKey</code>=true;
  *</ul>
  * <p>  The key for the principal will be retrieved from the keytab.
@@ -303,7 +320,7 @@ import sun.misc.HexDumpEncoder;
  * password entered.
  * <ul>
  * <p> <code>useKeyTab</code> = true
- * <code>keyTab</code>=< keytabname >
+ * <code>keyTab</code>=&lt;keytabname&gt;
  * <code>storeKey</code>=true
  * <code>doNotPrompt</code>=true;
  *</ul>
@@ -316,21 +333,23 @@ import sun.misc.HexDumpEncoder;
  * Subject's private credentials set. Otherwise the authentication will
  * fail.
  *<ul>
- * <p><code>useKeyTab</code> = true
- * <code>keyTab</code>=< file name > <code>storeKey</code>=true
- * <code>principal</code>= < principal name >
+ * <p>
  * <code>useTicketCache</code>=true
- * <code>ticketCache</code>=< file name >;
+ * <code>ticketCache</code>=&lt;file name&gt;;
+ * <code>useKeyTab</code> = true
+ * <code>keyTab</code>=&lt;file name&gt; <code>storeKey</code>=true
+ * <code>principal</code>= &lt;principal name&gt;
  *</ul>
- * <p>The principal's key will be retrieved from the keytab and added
- * to the <code>Subject</code>'s private credentials. If the key
- * is not available, the
- * user will be prompted for the password; the key derived from the password
- * will be added to the Subject's private credentials set. The
- * client's TGT will be retrieved from the ticket cache and added to the
+ * <p>
+ * The client's TGT will be retrieved from the ticket cache and added to the
  * <code>Subject</code>'s private credentials. If the TGT is not available
- * in the ticket cache, it will be obtained using the authentication
+ * in the ticket cache, or the TGT's client name does not match the principal
+ * name, Java will use a secret key to obtain the TGT using the authentication
  * exchange and added to the Subject's private credentials.
+ * This secret key will be first retrieved from the keytab. If the key
+ * is not available, the user will be prompted for the password. In either
+ * case, the key derived from the password will be added to the
+ * Subject's private credentials set.
  * <ul>
  * <p><code>isInitiator</code> = false
  *</ul>
@@ -856,11 +875,13 @@ public class Krb5LoginModule implements LoginModule {
     }
 
     private void validateConfiguration() throws LoginException {
-        if (doNotPrompt && !useTicketCache && !useKeyTab)
+        if (doNotPrompt && !useTicketCache && !useKeyTab
+                && !tryFirstPass && !useFirstPass)
             throw new LoginException
                 ("Configuration Error"
                  + " - either doNotPrompt should be "
-                 + " false or useTicketCache/useKeyTab "
+                 + " false or at least one of useTicketCache, "
+                 + " useKeyTab, tryFirstPass and useFirstPass"
                  + " should be true");
         if (ticketCacheName != null && !useTicketCache)
             throw new LoginException
@@ -872,11 +893,12 @@ public class Krb5LoginModule implements LoginModule {
             throw new LoginException
                 ("Configuration Error - useKeyTab should be set to true "
                  + "to use the keytab" + keyTabName);
-        if (storeKey && doNotPrompt && !useKeyTab)
+        if (storeKey && doNotPrompt && !useKeyTab
+                && !tryFirstPass && !useFirstPass)
             throw new LoginException
-                ("Configuration Error - either doNotPrompt "
-                 + "should be set to false or "
-                 + "useKeyTab must be set to true for storeKey option");
+                ("Configuration Error - either doNotPrompt should be set to "
+                 + " false or at least one of tryFirstPass, useFirstPass "
+                 + "or useKeyTab must be set to true for storeKey option");
         if (renewTGT && !useTicketCache)
             throw new LoginException
                 ("Configuration Error"

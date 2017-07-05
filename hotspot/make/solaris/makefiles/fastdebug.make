@@ -37,7 +37,7 @@ ifeq ("${Platform_compiler}", "sparcWorks")
 OPT_CFLAGS/SLOWER = -xO2
 
 # Problem with SS12 compiler, dtrace doesn't like the .o files  (bug 6693876)
-ifeq ($(COMPILER_REV), 5.9)
+ifeq ($(COMPILER_REV_NUMERIC), 509)
   # To avoid jvm98 crash
   OPT_CFLAGS/instanceKlass.o = $(OPT_CFLAGS/SLOWER)
   # Not clear this workaround could be skipped in some cases.
@@ -46,47 +46,41 @@ ifeq ($(COMPILER_REV), 5.9)
   OPT_CFLAGS/jni.o = $(OPT_CFLAGS/SLOWER)
 endif
 
-ifeq ($(COMPILER_REV), 5.5)
+ifeq ($(COMPILER_REV_NUMERIC), 505)
 # CC 5.5 has bug 4908364 with -xO4  (Fixed in 5.6)
 OPT_CFLAGS/library_call.o = $(OPT_CFLAGS/SLOWER)
-endif # COMPILER_REV == 5.5
+endif # COMPILER_REV_NUMERIC == 505
 
-ifeq ($(shell expr $(COMPILER_REV) \<= 5.4), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \<= 504), 1)
 # Compilation of *_<arch>.cpp can take an hour or more at O3.  Use O2
 # See comments at top of sparc.make.
-OPT_CFLAGS/ad_$(Platform_arch).o = $(OPT_CFLAGS/SLOWER)
-OPT_CFLAGS/dfa_$(Platform_arch).o = $(OPT_CFLAGS/SLOWER)
-endif # COMPILER_REV <= 5.4
+OPT_CFLAGS/ad_$(Platform_arch_model).o = $(OPT_CFLAGS/SLOWER)
+OPT_CFLAGS/dfa_$(Platform_arch_model).o = $(OPT_CFLAGS/SLOWER)
+endif # COMPILER_REV_NUMERIC <= 504
 
-ifeq (${COMPILER_REV}, 5.0)
-# Avoid a compiler bug caused by using -xO<level> -g<level>
-# Since the bug also occurs with -xO0, use an innocuous value (must not be null)
-OPT_CFLAGS/c1_LIROptimizer_i486.o = -c
-endif
-
-ifeq ($(shell expr $(COMPILER_REV) \< 5.5), 1)
-# Same problem with Solaris/x86 compiler (both 5.0 and 5.2) on ad_i486.cpp.
-# CC build time is also too long for ad_i486_{gen,misc}.o
-OPT_CFLAGS/ad_i486.o = -c
-OPT_CFLAGS/ad_i486_gen.o = -c
-OPT_CFLAGS/ad_i486_misc.o = -c
-ifeq ($(Platform_arch), i486)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \< 505), 1)
+# Same problem with Solaris/x86 compiler (both 5.0 and 5.2) on ad_x86_{32,64}.cpp.
+# CC build time is also too long for ad_$(Platform_arch_model)_{gen,misc}.o
+OPT_CFLAGS/ad_$(Platform_arch_model).o = -c
+OPT_CFLAGS/ad_$(Platform_arch_model)_gen.o = -c
+OPT_CFLAGS/ad_$(Platform_arch_model)_misc.o = -c
+ifeq ($(Platform_arch), x86)
 # Same problem for the wrapper roosts: jni.o jvm.o
 OPT_CFLAGS/jni.o = -c
 OPT_CFLAGS/jvm.o = -c
 # Same problem in parse2.o (probably the Big Switch over bytecodes)
 OPT_CFLAGS/parse2.o = -c
-endif # Platform_arch == i486
+endif # Platform_arch == x86
 endif
 
 # Frame size > 100k  if we allow inlining via -g0!
 DEBUG_CFLAGS/bytecodeInterpreter.o = -g
 DEBUG_CFLAGS/bytecodeInterpreterWithChecks.o = -g
-ifeq ($(Platform_arch), i486)
+ifeq ($(Platform_arch), x86)
 # ube explodes on x86
 OPT_CFLAGS/bytecodeInterpreter.o = -xO1
 OPT_CFLAGS/bytecodeInterpreterWithChecks.o =  -xO1
-endif # Platform_arch == i486
+endif # Platform_arch == x86
 
 endif # Platform_compiler == sparcWorks
 

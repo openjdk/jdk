@@ -102,6 +102,12 @@ GENERATED_NAMES_IN_INCL=\
 adlc.exe: main.obj adlparse.obj archDesc.obj arena.obj dfa.obj dict2.obj filebuff.obj \
           forms.obj formsopt.obj formssel.obj opcodes.obj output_c.obj output_h.obj
 	$(LINK) $(LINK_FLAGS) /subsystem:console /out:$@ $**
+!if "$(MT)" != ""
+# The previous link command created a .manifest file that we want to
+# insert into the linked artifact so we do not need to track it
+# separately.  Use ";#2" for .dll and ";#1" for .exe:
+	$(MT) /manifest $@.manifest /outputresource:$@;#1
+!endif
 
 $(GENERATED_NAMES_IN_INCL): $(Platform_arch_model).ad adlc.exe includeDB.current 
 	rm -f $(GENERATED_NAMES)

@@ -997,11 +997,11 @@ void OffsetTableContigSpace::serialize_block_offset_array_offsets(
 }
 
 
-int TenuredSpace::allowed_dead_ratio() const {
+size_t TenuredSpace::allowed_dead_ratio() const {
   return MarkSweepDeadRatio;
 }
 
 
-int ContigPermSpace::allowed_dead_ratio() const {
+size_t ContigPermSpace::allowed_dead_ratio() const {
   return PermMarkSweepDeadRatio;
 }

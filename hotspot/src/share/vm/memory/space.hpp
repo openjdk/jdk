@@ -421,7 +421,7 @@ public:
 
   // The maximum percentage of objects that can be dead in the compacted
   // live part of a compacted space ("deadwood" support.)
-  virtual int allowed_dead_ratio() const { return 0; };
+  virtual size_t allowed_dead_ratio() const { return 0; };
 
   // Some contiguous spaces may maintain some data structures that should
   // be updated whenever an allocation crosses a boundary.  This function
@@ -507,7 +507,7 @@ protected:
                                                                              \
   size_t allowed_deadspace = 0;                                              \
   if (skip_dead) {                                                           \
-    int ratio = allowed_dead_ratio();                                        \
+    const size_t ratio = allowed_dead_ratio();                               \
     allowed_deadspace = (capacity() * ratio / 100) / HeapWordSize;           \
   }                                                                          \
                                                                              \
@@ -1079,7 +1079,7 @@ class TenuredSpace: public OffsetTableContigSpace {
   friend class VMStructs;
  protected:
   // Mark sweep support
-  int allowed_dead_ratio() const;
+  size_t allowed_dead_ratio() const;
  public:
   // Constructor
   TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
@@ -1094,7 +1094,7 @@ class ContigPermSpace: public OffsetTableContigSpace {
   friend class VMStructs;
  protected:
   // Mark sweep support
-  int allowed_dead_ratio() const;
+  size_t allowed_dead_ratio() const;
  public:
   // Constructor
   ContigPermSpace(BlockOffsetSharedArray* sharedOffsetArray, MemRegion mr) :

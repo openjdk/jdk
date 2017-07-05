@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanRegistrationException;
 
@@ -90,17 +91,9 @@ import javax.management.namespace.JMXNamespaces;
 //     targetNs=<encoded-context> // context must be removed from object name
 //     sourceNs="" // nothing to add...
 //
-// RoutingProxies can also be used on the client side to implement
-// "withClientContext" operations. In that case, the boolean parameter
-// 'forwards context' is set to true, targetNs is "", and sourceNS may
-// also be "". When forwardsContext is true, the RoutingProxy dynamically
-// creates an ObjectNameRouter for each operation - in order to dynamically add
-// the context attached to the thread to the routing ObjectName. This is
-// performed in the getObjectNameRouter() method.
-//
 // Finally, in order to avoid too many layers of wrapping,
 // RoutingConnectionProxy and RoutingServerProxy can be created through a
-// factory method that can concatenate namespace pathes in order to
+// factory method that can concatenate namespace paths in order to
 // return a single RoutingProxy - rather than wrapping a RoutingProxy inside
 // another RoutingProxy. See RoutingConnectionProxy.cd and
 // RoutingServerProxy.cd
@@ -146,25 +139,27 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     private final T source;
 
     // The name space we're narrowing to (usually some name space in
-    // the source MBeanServerConnection
+    // the source MBeanServerConnection), e.g. "a" for the namespace
+    // "a//".  This is empty in the case of ClientContext described above.
     private final String                sourceNs;
 
-    // The name space we pretend to be mounted in (usually "")
+    // The name space we pretend to be mounted in.  This is empty except
+    // in the case of ClientContext described above (where it will be
+    // something like "jmx.context//foo=bar".
     private final String                targetNs;
 
     // The name of the JMXNamespace that handles the source name space
     private final ObjectName            handlerName;
     private final ObjectNameRouter      router;
-    final boolean forwardsContext;
     private volatile String             defaultDomain = null;
 
     /**
      * Creates a new instance of RoutingProxy
      */
     protected RoutingProxy(T source,
-                          String sourceNs,
-                          String targetNs,
-                          boolean forwardsContext) {
+                           String sourceNs,
+                           String targetNs,
+                           boolean probe) {
         if (source == null) throw new IllegalArgumentException("null");
         this.sourceNs = JMXNamespaces.normalizeNamespaceName(sourceNs);
 
@@ -177,13 +172,17 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
             // System.err.println("sourceNs: "+sourceNs);
             this.handlerName =
                 JMXNamespaces.getNamespaceObjectName(this.sourceNs);
-            try {
-                // System.err.println("handlerName: "+handlerName);
-                if (!source.isRegistered(handlerName))
-                    throw new IllegalArgumentException(sourceNs +
-                            ": no such name space");
-            } catch (IOException x) {
-                throw new IllegalArgumentException("source stale: "+x,x);
+            if (probe) {
+                try {
+                    if (!source.isRegistered(handlerName)) {
+                        InstanceNotFoundException infe =
+                                new InstanceNotFoundException(handlerName);
+                        throw new IllegalArgumentException(sourceNs +
+                                ": no such name space", infe);
+                    }
+                } catch (IOException x) {
+                    throw new IllegalArgumentException("source stale: "+x,x);
+                }
             }
         }
         this.source = source;
@@ -191,7 +190,6 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
             JMXNamespaces.normalizeNamespaceName(targetNs));
         this.router =
                 new ObjectNameRouter(this.targetNs,this.sourceNs);
-        this.forwardsContext = forwardsContext;
 
         if (LOG.isLoggable(Level.FINER))
             LOG.finer("RoutingProxy for " + this.sourceNs + " created");
@@ -199,14 +197,6 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
 
     @Override
     public T source() { return source; }
-
-    ObjectNameRouter getObjectNameRouter() {
-// TODO: uncomment this when contexts are added
-//        if (forwardsContext)
-//            return ObjectNameRouter.wrapWithContext(router);
-//        else
-            return router;
-    }
 
     @Override
     public ObjectName toSource(ObjectName targetName)
@@ -222,8 +212,7 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
             if (defaultDomain != null)
                 targetName = targetName.withDomain(defaultDomain);
         }
-        final ObjectNameRouter r = getObjectNameRouter();
-        return r.toSourceContext(targetName,true);
+        return router.toSourceContext(targetName,true);
     }
 
     @Override
@@ -243,8 +232,7 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     public ObjectName toTarget(ObjectName sourceName)
         throws MalformedObjectNameException {
         if (sourceName == null) return null;
-        final ObjectNameRouter r = getObjectNameRouter();
-        return r.toTargetContext(sourceName,false);
+        return router.toTargetContext(sourceName,false);
     }
 
     private Object getAttributeFromHandler(String attributeName)
@@ -357,11 +345,8 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     // instance.
     static interface RoutingProxyFactory<T extends MBeanServerConnection,
             R extends RoutingProxy<T>> {
-            R newInstance(T source,
-                    String sourcePath, String targetPath,
-                    boolean forwardsContext);
-            R newInstance(T source,
-                    String sourcePath);
+            public R newInstance(
+                    T source, String sourcePath, String targetPath, boolean probe);
     }
 
     // Performs a narrowDownToNamespace operation.
@@ -377,7 +362,7 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
     static <T extends MBeanServerConnection, R extends RoutingProxy<T>>
            R cd(Class<R> routingProxyClass,
               RoutingProxyFactory<T,R> factory,
-              T source, String sourcePath) {
+              T source, String sourcePath, boolean probe) {
         if (source == null) throw new IllegalArgumentException("null");
         if (source.getClass().equals(routingProxyClass)) {
             // cast is OK here, but findbugs complains unless we use class.cast
@@ -400,14 +385,13 @@ public abstract class RoutingProxy<T extends MBeanServerConnection>
                 final String path =
                     JMXNamespaces.concat(other.getSourceNamespace(),
                     sourcePath);
-                return factory.newInstance(other.source(),path,"",
-                                           other.forwardsContext);
+                return factory.newInstance(other.source(), path, "", probe);
             }
             // Note: we could do possibly something here - but it would involve
             //       removing part of targetDir, and possibly adding
             //       something to sourcePath.
             //       Too complex to bother! => simply default to stacking...
         }
-        return factory.newInstance(source,sourcePath);
+        return factory.newInstance(source, sourcePath, "", probe);
     }
 }
