@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.Collections;
@@ -87,8 +88,8 @@ abstract class SingleTypePropertyInfoImpl<T,C,F,M>
     public void link() {
         super.link();
 
-        if(!type.isSimpleType() && id()!=ID.IDREF) {
-            parent.builder.reportError(new IllegalAnnotationException(
+        if (!(NonElement.ANYTYPE_NAME.equals(type.getTypeName()) || type.isSimpleType() || id()==ID.IDREF)) {
+                parent.builder.reportError(new IllegalAnnotationException(
                 Messages.SIMPLE_TYPE_IS_REQUIRED.format(),
                 seed
             ));

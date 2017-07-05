@@ -141,15 +141,15 @@ class erSet extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromText(makeResult(), super._cookie, $value);
+            }
+            break;
         case 1:
             {
                 v = $value;
                 $_ngcc_current_state = 0;
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromText(makeResult(), super._cookie, $value);
             }
             break;
         }

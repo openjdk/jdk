@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: LogDomainConstants.java,v 1.5 2006/01/27 12:49:52 vj135062 Exp $
- * $Revision: 1.5 $
- * $Date: 2006/01/27 12:49:52 $
- */
 
 
 

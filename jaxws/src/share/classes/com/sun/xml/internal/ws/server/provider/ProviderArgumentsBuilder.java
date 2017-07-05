@@ -74,7 +74,7 @@ abstract class ProviderArgumentsBuilder<T> {
 
     public static ProviderArgumentsBuilder<?> create(ProviderEndpointModel model, WSBinding binding) {
         return (binding instanceof SOAPBinding) ? SOAPProviderArgumentBuilder.create(model, binding.getSOAPVersion())
-                : XMLProviderArgumentBuilder.create(model);
+                : XMLProviderArgumentBuilder.createBuilder(model, binding);
     }
 
 }

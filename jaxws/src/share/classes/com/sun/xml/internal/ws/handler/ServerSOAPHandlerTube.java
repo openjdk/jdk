@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.handler;
 
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -40,6 +39,7 @@ import com.sun.xml.internal.ws.message.DataHandlerAttachment;
 
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.Handler;
 import javax.xml.ws.WebServiceException;
 import javax.activation.DataHandler;
 import java.util.*;
@@ -51,7 +51,6 @@ import java.util.*;
 public class ServerSOAPHandlerTube extends HandlerTube {
 
     private WSBinding binding;
-    private List<SOAPHandler> soapHandlers;
     private Set<String> roles;
 
     /**
@@ -64,7 +63,7 @@ public class ServerSOAPHandlerTube extends HandlerTube {
             // TODO: throw Exception
         }
         this.binding = binding;
-        setUpProcessorOnce();
+        setUpHandlersOnce();
     }
 
     // Handle to LogicalHandlerTube means its used on SERVER-SIDE
@@ -78,7 +77,7 @@ public class ServerSOAPHandlerTube extends HandlerTube {
     public ServerSOAPHandlerTube(WSBinding binding, Tube next, HandlerTube cousinTube) {
         super(next, cousinTube);
         this.binding = binding;
-        setUpProcessorOnce();
+        setUpHandlersOnce();
     }
 
     /**
@@ -87,79 +86,32 @@ public class ServerSOAPHandlerTube extends HandlerTube {
     private ServerSOAPHandlerTube(ServerSOAPHandlerTube that, TubeCloner cloner) {
         super(that, cloner);
         this.binding = that.binding;
-        setUpProcessorOnce();
+        this.handlers = that.handlers;
+        this.roles = that.roles;
     }
 
-    boolean isHandlerChainEmpty() {
-        return soapHandlers.isEmpty();
-    }
-
-    /**
-     * Close SOAPHandlers first and then LogicalHandlers on Client
-     * Close LogicalHandlers first and then SOAPHandlers on Server
-     */
-    public void close(MessageContext msgContext) {
-        //assuming cousinTube is called if requestProcessingSucessful is true
-        if (requestProcessingSucessful) {
-            if (cousinTube != null) {
-                // Close LogicalHandlerTube
-                cousinTube.closeCall(msgContext);
-            }
-        }
-        if (processor != null)
-            closeSOAPHandlers(msgContext);
-
-    }
-
-    /**
-     * This is called from cousinTube.
-     * Close this Tube's handlers.
-     */
-    public void closeCall(MessageContext msgContext) {
-        closeSOAPHandlers(msgContext);
-    }
-
-    //TODO:
-    private void closeSOAPHandlers(MessageContext msgContext) {
-        if (processor == null)
-            return;
-        if (remedyActionTaken) {
-            //Close only invoked handlers in the chain
-            //SERVER-SIDE
-            processor.closeHandlers(msgContext, processor.getIndex(), soapHandlers.size() - 1);
-            processor.setIndex(-1);
-            //reset remedyActionTaken
-            remedyActionTaken = false;
-        } else {
-            //Close all handlers in the chain
-            //SERVER-SIDE
-            processor.closeHandlers(msgContext, 0, soapHandlers.size() - 1);
-
-        }
-    }
 
     public AbstractFilterTubeImpl copy(TubeCloner cloner) {
         return new ServerSOAPHandlerTube(this, cloner);
     }
 
-    private void setUpProcessorOnce() {
-        soapHandlers = new ArrayList<SOAPHandler>();
+    private void setUpHandlersOnce() {
+        handlers = new ArrayList<Handler>();
         HandlerConfiguration handlerConfig = ((BindingImpl) binding).getHandlerConfig();
         List<SOAPHandler> soapSnapShot= handlerConfig.getSoapHandlers();
         if (!soapSnapShot.isEmpty()) {
-            soapHandlers.addAll(soapSnapShot);
+            handlers.addAll(soapSnapShot);
             roles = new HashSet<String>();
             roles.addAll(handlerConfig.getRoles());
-            processor = new SOAPHandlerProcessor(false, this, binding, soapHandlers);
         }
     }
 
     void setUpProcessor() {
-        // Do nothing, Processor is setup in the constructor.
+        if(!handlers.isEmpty())
+            processor = new SOAPHandlerProcessor(false, this, binding, handlers);
     }
     MessageUpdatableContext getContext(Packet packet) {
-        SOAPMessageContextImpl context = new SOAPMessageContextImpl(binding, packet);
-        context.setRoles(roles);
+        SOAPMessageContextImpl context = new SOAPMessageContextImpl(binding, packet,roles);
         return context;
     }
 
@@ -187,8 +139,10 @@ public class ServerSOAPHandlerTube extends HandlerTube {
         Map<String, DataHandler> atts = (Map<String, DataHandler>) context.get(MessageContext.OUTBOUND_MESSAGE_ATTACHMENTS);
         AttachmentSet attSet = packet.getMessage().getAttachments();
         for(String cid : atts.keySet()){
-            Attachment att = new DataHandlerAttachment(cid, atts.get(cid));
-            attSet.add(att);
+            if (attSet.get(cid) == null) { // Otherwise we would be adding attachments twice
+                Attachment att = new DataHandlerAttachment(cid, atts.get(cid));
+                attSet.add(att);
+            }
         }
 
         try {
@@ -202,5 +156,10 @@ public class ServerSOAPHandlerTube extends HandlerTube {
             throw re;
 
         }
+    }
+
+    void closeHandlers(MessageContext mc) {
+        closeServersideHandlers(mc);
+
     }
 }

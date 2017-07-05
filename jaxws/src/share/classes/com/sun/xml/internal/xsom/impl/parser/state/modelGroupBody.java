@@ -95,15 +95,34 @@ class modelGroupBody extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromEnterElement(result, super._cookie, $__uri, $__local, $__qname, $attrs);
+                if((((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element")))))) {
+                    NGCCHandler h = new particle(this, super._source, $runtime, 179);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    $_ngcc_current_state = 1;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+            }
+            break;
+        case 6:
+            {
+                if((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")) || (((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element"))))))) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
             }
             break;
         case 1:
             {
-                if((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element")))))) {
-                    NGCCHandler h = new particle(this, super._source, $runtime, 31);
+                if((((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element")))))) {
+                    NGCCHandler h = new particle(this, super._source, $runtime, 178);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -113,22 +132,10 @@ class modelGroupBody extends NGCCHandler {
                 }
             }
             break;
-        case 2:
-            {
-                if((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element")))))) {
-                    NGCCHandler h = new particle(this, super._source, $runtime, 32);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 1;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
         case 4:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 35, null,AnnotationContext.MODELGROUP);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 182, null,AnnotationContext.MODELGROUP);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -137,16 +144,9 @@ class modelGroupBody extends NGCCHandler {
                 }
             }
             break;
-        case 6:
+        case 0:
             {
-                if((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group")) || (($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("any")) || (((($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("all")) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("choice"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("sequence"))) || ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("element"))))))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                }
+                revertToParentFromEnterElement(result, super._cookie, $__uri, $__local, $__qname, $attrs);
             }
             break;
         default:
@@ -163,9 +163,16 @@ class modelGroupBody extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromLeaveElement(result, super._cookie, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
+            {
+                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
             }
             break;
         case 1:
@@ -175,22 +182,15 @@ class modelGroupBody extends NGCCHandler {
                 $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 4:
             {
                 $_ngcc_current_state = 2;
                 $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 6:
+        case 0:
             {
-                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
+                revertToParentFromLeaveElement(result, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -207,9 +207,16 @@ class modelGroupBody extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromEnterAttribute(result, super._cookie, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 1;
+                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
+            {
+                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
             }
             break;
         case 1:
@@ -219,22 +226,15 @@ class modelGroupBody extends NGCCHandler {
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 4:
             {
                 $_ngcc_current_state = 2;
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 6:
+        case 0:
             {
-                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
+                revertToParentFromEnterAttribute(result, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -251,9 +251,16 @@ class modelGroupBody extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromLeaveAttribute(result, super._cookie, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 6:
+            {
+                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                spawnChildFromLeaveAttribute(h, $__uri, $__local, $__qname);
             }
             break;
         case 1:
@@ -263,22 +270,15 @@ class modelGroupBody extends NGCCHandler {
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 4:
             {
                 $_ngcc_current_state = 2;
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 6:
+        case 0:
             {
-                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                spawnChildFromLeaveAttribute(h, $__uri, $__local, $__qname);
+                revertToParentFromLeaveAttribute(result, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -292,9 +292,16 @@ class modelGroupBody extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 0:
+        case 2:
             {
-                revertToParentFromText(result, super._cookie, $value);
+                $_ngcc_current_state = 1;
+                $runtime.sendText(super._cookie, $value);
+            }
+            break;
+        case 6:
+            {
+                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 184, null);
+                spawnChildFromText(h, $value);
             }
             break;
         case 1:
@@ -304,22 +311,15 @@ class modelGroupBody extends NGCCHandler {
                 $runtime.sendText(super._cookie, $value);
             }
             break;
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendText(super._cookie, $value);
-            }
-            break;
         case 4:
             {
                 $_ngcc_current_state = 2;
                 $runtime.sendText(super._cookie, $value);
             }
             break;
-        case 6:
+        case 0:
             {
-                NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 37, null);
-                spawnChildFromText(h, $value);
+                revertToParentFromText(result, super._cookie, $value);
             }
             break;
         }
@@ -327,27 +327,27 @@ class modelGroupBody extends NGCCHandler {
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 31:
+        case 179:
             {
                 childParticle = ((ParticleImpl)$__result__);
                 action1();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 32:
-            {
-                childParticle = ((ParticleImpl)$__result__);
-                action1();
-                $_ngcc_current_state = 1;
-            }
-            break;
-        case 37:
+        case 184:
             {
                 fa = ((ForeignAttributesImpl)$__result__);
                 $_ngcc_current_state = 4;
             }
             break;
-        case 35:
+        case 178:
+            {
+                childParticle = ((ParticleImpl)$__result__);
+                action1();
+                $_ngcc_current_state = 1;
+            }
+            break;
+        case 182:
             {
                 annotation = ((AnnotationImpl)$__result__);
                 $_ngcc_current_state = 2;
@@ -357,7 +357,7 @@ class modelGroupBody extends NGCCHandler {
     }
 
     public boolean accepted() {
-        return((($_ngcc_current_state == 4) || (($_ngcc_current_state == 2) || (($_ngcc_current_state == 1) || ($_ngcc_current_state == 0)))));
+        return((($_ngcc_current_state == 0) || (($_ngcc_current_state == 4) || (($_ngcc_current_state == 1) || ($_ngcc_current_state == 2)))));
     }
 
 

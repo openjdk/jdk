@@ -76,16 +76,11 @@ class notation extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 10:
             {
-                revertToParentFromEnterElement(makeResult(), super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
-        case 14:
-            {
-                if((($ai = $runtime.getAttributeIndex("","name"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 571, null);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -95,7 +90,7 @@ class notation extends NGCCHandler {
         case 2:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 558, null,AnnotationContext.NOTATION);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 386, null,AnnotationContext.NOTATION);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -104,21 +99,9 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 4:
+        case 13:
             {
-                if(($ai = $runtime.getAttributeIndex("","system"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    $_ngcc_current_state = 2;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
-        case 10:
-            {
-                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
+                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
                     $runtime.consumeAttribute($ai);
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
                 }
@@ -139,11 +122,28 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 13:
+        case 0:
             {
-                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
+                revertToParentFromEnterElement(makeResult(), super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
+        case 4:
+            {
+                if(($ai = $runtime.getAttributeIndex("","system"))>=0) {
                     $runtime.consumeAttribute($ai);
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    $_ngcc_current_state = 2;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+            }
+            break;
+        case 14:
+            {
+                if((($ai = $runtime.getAttributeIndex("","name"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation")))) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 399, null);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -164,27 +164,11 @@ class notation extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 10:
             {
-                revertToParentFromLeaveElement(makeResult(), super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 14:
-            {
-                if((($ai = $runtime.getAttributeIndex("","name"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("notation")))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 571, null);
-                    spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
-                }
-                else {
-                    unexpectedLeaveElement($__qname);
-                }
-            }
-            break;
-        case 1:
-            {
-                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("notation"))) {
-                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
-                    $_ngcc_current_state = 0;
+                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -195,6 +179,22 @@ class notation extends NGCCHandler {
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 13:
+            {
+                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                }
+                else {
+                    unexpectedLeaveElement($__qname);
+                }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveElement(makeResult(), super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 4:
@@ -209,22 +209,22 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 10:
+        case 14:
             {
-                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                if((($ai = $runtime.getAttributeIndex("","name"))>=0 && ($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("notation")))) {
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 399, null);
+                    spawnChildFromLeaveElement(h, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedLeaveElement($__qname);
                 }
             }
             break;
-        case 13:
+        case 1:
             {
-                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("notation"))) {
+                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
+                    $_ngcc_current_state = 0;
                 }
                 else {
                     unexpectedLeaveElement($__qname);
@@ -245,16 +245,10 @@ class notation extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 10:
             {
-                revertToParentFromEnterAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 14:
-            {
-                if(($__uri.equals("") && $__local.equals("name"))) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 571, null);
-                    spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
+                if(($__uri.equals("") && $__local.equals("public"))) {
+                    $_ngcc_current_state = 9;
                 }
                 else {
                     unexpectedEnterAttribute($__qname);
@@ -265,6 +259,21 @@ class notation extends NGCCHandler {
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 13:
+            {
+                if(($__uri.equals("") && $__local.equals("name"))) {
+                    $_ngcc_current_state = 12;
+                }
+                else {
+                    unexpectedEnterAttribute($__qname);
+                }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromEnterAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 4:
@@ -278,20 +287,11 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 10:
-            {
-                if(($__uri.equals("") && $__local.equals("public"))) {
-                    $_ngcc_current_state = 9;
-                }
-                else {
-                    unexpectedEnterAttribute($__qname);
-                }
-            }
-            break;
-        case 13:
+        case 14:
             {
                 if(($__uri.equals("") && $__local.equals("name"))) {
-                    $_ngcc_current_state = 12;
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 399, null);
+                    spawnChildFromEnterAttribute(h, $__uri, $__local, $__qname);
                 }
                 else {
                     unexpectedEnterAttribute($__qname);
@@ -312,31 +312,20 @@ class notation extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
-            {
-                revertToParentFromLeaveAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 5:
-            {
-                if(($__uri.equals("") && $__local.equals("system"))) {
-                    $_ngcc_current_state = 2;
-                }
-                else {
-                    unexpectedLeaveAttribute($__qname);
-                }
-            }
-            break;
         case 2:
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 4:
+        case 8:
             {
-                $_ngcc_current_state = 2;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+                if(($__uri.equals("") && $__local.equals("public"))) {
+                    $_ngcc_current_state = 4;
+                }
+                else {
+                    unexpectedLeaveAttribute($__qname);
+                }
             }
             break;
         case 11:
@@ -349,14 +338,25 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 8:
+        case 5:
             {
-                if(($__uri.equals("") && $__local.equals("public"))) {
-                    $_ngcc_current_state = 4;
+                if(($__uri.equals("") && $__local.equals("system"))) {
+                    $_ngcc_current_state = 2;
                 }
                 else {
                     unexpectedLeaveAttribute($__qname);
                 }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveAttribute(makeResult(), super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 4:
+            {
+                $_ngcc_current_state = 2;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -370,17 +370,10 @@ class notation extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 0:
+        case 9:
             {
-                revertToParentFromText(makeResult(), super._cookie, $value);
-            }
-            break;
-        case 14:
-            {
-                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
-                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 571, null);
-                    spawnChildFromText(h, $value);
-                }
+                pub = $value;
+                $_ngcc_current_state = 8;
             }
             break;
         case 6:
@@ -389,10 +382,37 @@ class notation extends NGCCHandler {
                 $_ngcc_current_state = 5;
             }
             break;
+        case 10:
+            {
+                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendText(super._cookie, $value);
+                }
+            }
+            break;
+        case 12:
+            {
+                name = $value;
+                $_ngcc_current_state = 11;
+            }
+            break;
         case 2:
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendText(super._cookie, $value);
+            }
+            break;
+        case 13:
+            {
+                if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendText(super._cookie, $value);
+                }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromText(makeResult(), super._cookie, $value);
             }
             break;
         case 4:
@@ -407,31 +427,11 @@ class notation extends NGCCHandler {
                 }
             }
             break;
-        case 12:
-            {
-                name = $value;
-                $_ngcc_current_state = 11;
-            }
-            break;
-        case 10:
-            {
-                if(($ai = $runtime.getAttributeIndex("","public"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendText(super._cookie, $value);
-                }
-            }
-            break;
-        case 9:
-            {
-                pub = $value;
-                $_ngcc_current_state = 8;
-            }
-            break;
-        case 13:
+        case 14:
             {
                 if(($ai = $runtime.getAttributeIndex("","name"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendText(super._cookie, $value);
+                    NGCCHandler h = new foreignAttributes(this, super._source, $runtime, 399, null);
+                    spawnChildFromText(h, $value);
                 }
             }
             break;
@@ -440,16 +440,16 @@ class notation extends NGCCHandler {
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 571:
-            {
-                fa = ((ForeignAttributesImpl)$__result__);
-                $_ngcc_current_state = 13;
-            }
-            break;
-        case 558:
+        case 386:
             {
                 ann = ((AnnotationImpl)$__result__);
                 $_ngcc_current_state = 1;
+            }
+            break;
+        case 399:
+            {
+                fa = ((ForeignAttributesImpl)$__result__);
+                $_ngcc_current_state = 13;
             }
             break;
         }

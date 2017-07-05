@@ -249,26 +249,29 @@ public final class Fiber implements Runnable {
      * Wakes up a suspended fiber.
      *
      * <p>
-     * If a fiber was suspended from the {@link Tube#processRequest(Packet)} method,
-     * then the execution will be resumed from the corresponding
-     * {@link Tube#processResponse(Packet)} method with the specified response packet
-     * as the parameter.
+     * If a fiber was suspended without specifying the next {@link Tube},
+     * then the execution will be resumed in the response processing direction,
+     * by calling the {@link Tube#processResponse(Packet)} method on the next/first
+     * {@link Tube} in the {@link Fiber}'s processing stack with the specified resume
+     * packet as the parameter.
      *
      * <p>
-     * If a fiber was suspended from the {@link Tube#processResponse(Packet)} method,
-     * then the execution will be resumed from the next tube's
-     * {@link Tube#processResponse(Packet)} method with the specified response packet
-     * as the parameter.
+     * If a fiber was suspended with specifying the next {@link Tube},
+     * then the execution will be resumed in the request processing direction,
+     * by calling the next tube's {@link Tube#processRequest(Packet)} method with the
+     * specified resume packet as the parameter.
      *
      * <p>
      * This method is implemented in a race-free way. Another thread can invoke
      * this method even before this fiber goes into the suspension mode. So the caller
      * need not worry about synchronizing {@link NextAction#suspend()} and this method.
+     *
+     * @param resumePacket packet used in the resumed processing
      */
-    public synchronized void resume(@NotNull Packet response) {
+    public synchronized void resume(@NotNull Packet resumePacket) {
         if(isTraceEnabled())
             LOGGER.fine(getName()+" resumed");
-        packet = response;
+        packet = resumePacket;
         if( --suspendedCount == 0 ) {
             if(synchronous) {
                 notifyAll();
@@ -618,7 +621,7 @@ public final class Fiber implements Runnable {
                         break;
                     case NextAction.SUSPEND:
                         pushCont(last);
-                        next = null;
+                        next = na.next;
                         suspend();
                         break;
                     default:
@@ -686,6 +689,7 @@ public final class Fiber implements Runnable {
         return "engine-"+owner.id+"fiber-"+id;
     }
 
+    @Override
     public String toString() {
         return getName();
     }

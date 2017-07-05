@@ -23,9 +23,10 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
+
+
 <!--
   DTD binding information file which is supported by this version of XJC.
-  $Id: bindingfile.xsd,v 1.1 2005/04/29 18:11:05 kohsuke Exp $
   
   - Changes from the EA1 is marked by "CHANGE:"
   - "ref:key" and "ref:keyref" are used to specify cross-reference

@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
@@ -164,7 +165,7 @@ public final class NamespaceContextImpl implements NamespaceContext2 {
                                 break;
                             }
                         }
-
+                        current.setTagName(subst, current.elementLocalName, current.getOuterPeer());
                         return i;
                     } else {
                         // first, if the previous URI assigned to "" is
@@ -217,6 +218,7 @@ public final class NamespaceContextImpl implements NamespaceContext2 {
 
     public int force(@NotNull String uri, @NotNull String prefix) {
         // check for the existing binding
+
         for( int i=size-1; i>=0; i-- ) {
             if(prefixes[i].equals(prefix)) {
                 if(nsUris[i].equals(uri))
@@ -442,6 +444,8 @@ public final class NamespaceContextImpl implements NamespaceContext2 {
             }
             context.size = baseIndex;
             context.current = prev;
+            // release references to user objects
+            outerPeer = innerPeer = null;
             return prev;
         }
 

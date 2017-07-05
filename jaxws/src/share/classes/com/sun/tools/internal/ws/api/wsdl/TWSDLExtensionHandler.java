@@ -33,6 +33,7 @@ import org.w3c.dom.Element;
  * with it for the WSDL extensibility elements thats not already defined in the WSDL 1.1 spec, such as SOAP or MIME.
  *
  * @author Vivek Pandey
+ * @deprecated This class is deprecated, will be removed in JAX-WS 2.2 RI.
  */
 public abstract class TWSDLExtensionHandler {
     /**

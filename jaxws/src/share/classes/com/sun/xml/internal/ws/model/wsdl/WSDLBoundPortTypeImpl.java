@@ -30,9 +30,9 @@ import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundPortType;
+import com.sun.xml.internal.ws.resources.ClientMessages;
 import com.sun.xml.internal.ws.util.QNameMap;
 import com.sun.xml.internal.ws.util.exception.LocatableWebServiceException;
-import com.sun.xml.internal.ws.resources.ClientMessages;
 
 import javax.jws.WebParam.Mode;
 import javax.jws.soap.SOAPBinding;
@@ -52,7 +52,6 @@ public final class WSDLBoundPortTypeImpl extends AbstractFeaturedObjectImpl impl
     private WSDLPortTypeImpl portType;
     private BindingID bindingId;
     private final @NotNull WSDLModelImpl owner;
-    private boolean finalized = false;
     private final QNameMap<WSDLBoundOperationImpl> bindingOperations = new QNameMap<WSDLBoundOperationImpl>();
 
     /**
@@ -209,21 +208,20 @@ public final class WSDLBoundPortTypeImpl extends AbstractFeaturedObjectImpl impl
         }
 
         freezePayloadMap();
-        if(style == Style.RPC){
-            owner.finalizeRpcLitBinding(this);
-        }
+        owner.finalizeRpcLitBinding(this);
     }
 
     private void freezePayloadMap() {
         if(style== Style.RPC) {
-            // If the style is rpc then the tag name should be
-            // same as operation name so return the operation that matches the tag name.
-            payloadMap = bindingOperations;
+            payloadMap = new QNameMap<WSDLBoundOperationImpl>();
+            for(WSDLBoundOperationImpl op : bindingOperations.values()){
+                payloadMap.put(op.getReqPayloadName(), op);
+            }
         } else {
             payloadMap = new QNameMap<WSDLBoundOperationImpl>();
             // For doclit The tag will be the operation that has the same input part descriptor value
             for(WSDLBoundOperationImpl op : bindingOperations.values()){
-                QName name = op.getPayloadName();
+                QName name = op.getReqPayloadName();
                 if(name == null){
                     //empty payload
                     emptyPayloadOperation = op;

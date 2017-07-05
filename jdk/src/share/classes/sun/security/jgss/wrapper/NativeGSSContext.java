@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.jgss.spnego.NegTokenInit;
 import sun.security.jgss.spnego.NegTokenTarg;
 import javax.security.auth.kerberos.DelegationPermission;
+import com.sun.security.jgss.InquireType;
 import java.io.*;
 
 
@@ -614,5 +615,11 @@ class NativeGSSContext implements GSSContextSpi {
 
     protected void finalize() throws Throwable {
         dispose();
+    }
+
+    public Object inquireSecContext(InquireType type)
+            throws GSSException {
+        throw new GSSException(GSSException.UNAVAILABLE, -1,
+                "Inquire type not supported.");
     }
 }

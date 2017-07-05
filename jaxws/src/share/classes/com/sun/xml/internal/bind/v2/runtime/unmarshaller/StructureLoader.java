@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.util.Collection;
@@ -256,4 +257,8 @@ public final class StructureLoader extends Loader {
     }
 
     private static final QNameMap<TransducedAccessor> EMPTY = new QNameMap<TransducedAccessor>();
+
+    public JaxBeanInfo getBeanInfo() {
+        return beanInfo;
+    }
 }

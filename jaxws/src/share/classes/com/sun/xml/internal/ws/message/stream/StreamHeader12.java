@@ -63,14 +63,14 @@ public class StreamHeader12 extends StreamHeader {
             final String namespaceURI = reader.getAttributeNamespace(i);
             final String value = reader.getAttributeValue(i);
 
-            if (namespaceURI == SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE) {
-                if (localName == SOAP_1_2_MUST_UNDERSTAND) {
+            if (SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(namespaceURI)) {
+                if (SOAP_1_2_MUST_UNDERSTAND.equals(localName)) {
                     _isMustUnderstand = Util.parseBool(value);
-                } else if (localName == SOAP_1_2_ROLE) {
+                } else if (SOAP_1_2_ROLE.equals(localName)) {
                     if (value != null && value.length() > 0) {
                         _role = value;
                     }
-                } else if (localName == SOAP_1_2_RELAY) {
+                } else if (SOAP_1_2_RELAY.equals(localName)) {
                     _isRelay = Util.parseBool(value);
                 }
             }

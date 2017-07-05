@@ -25,24 +25,16 @@
 
 package com.sun.xml.internal.ws.server;
 
-import com.sun.xml.internal.ws.api.server.DocumentAddressResolver;
-import com.sun.xml.internal.ws.api.server.PortAddressResolver;
-import com.sun.xml.internal.ws.api.server.SDDocument;
-import com.sun.xml.internal.ws.api.server.SDDocumentFilter;
-import com.sun.xml.internal.ws.api.server.SDDocumentSource;
-import com.sun.xml.internal.ws.api.server.WSEndpoint;
+import com.sun.xml.internal.ws.api.server.*;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
+import com.sun.xml.internal.ws.util.RuntimeVersion;
+import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
 import com.sun.xml.internal.ws.wsdl.parser.ParserUtil;
 import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
-import com.sun.xml.internal.ws.util.RuntimeVersion;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 import javax.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,11 +53,12 @@ import java.util.Set;
  * @author Kohsuke Kawaguchi
  * @author Jitendra Kotamraju
  */
-class SDDocumentImpl extends SDDocumentSource implements SDDocument {
+public class SDDocumentImpl extends SDDocumentSource implements SDDocument {
 
     private static final String NS_XSD = "http://www.w3.org/2001/XMLSchema";
     private static final QName SCHEMA_INCLUDE_QNAME = new QName(NS_XSD, "include");
     private static final QName SCHEMA_IMPORT_QNAME = new QName(NS_XSD, "import");
+    private static final QName SCHEMA_REDEFINE_QNAME = new QName(NS_XSD, "redefine");
     private static final String VERSION_COMMENT =
         " Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is "+RuntimeVersion.VERSION+". ";
 
@@ -98,7 +91,8 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
                          if (reader.getEventType() != XMLStreamConstants.START_ELEMENT)
                             continue;
                         QName name = reader.getName();
-                        if (SCHEMA_INCLUDE_QNAME.equals(name) || SCHEMA_IMPORT_QNAME.equals(name)) {
+                        if (SCHEMA_INCLUDE_QNAME.equals(name) || SCHEMA_IMPORT_QNAME.equals(name) ||
+                                SCHEMA_REDEFINE_QNAME.equals(name)) {
                             String importedDoc = reader.getAttributeValue(null, "schemaLocation");
                             if (importedDoc != null) {
                                 importedDocs.add(new URL(src.getSystemId(), importedDoc).toString());
@@ -112,6 +106,7 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
                     boolean hasPortType = false;
                     boolean hasService = false;
                     Set<String> importedDocs = new HashSet<String>();
+                    Set<QName> allServices = new HashSet<QName>();
 
                     // if WSDL, parse more
                     while (XMLStreamReaderUtil.nextContent(reader) != XMLStreamConstants.END_DOCUMENT) {
@@ -129,6 +124,7 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
                         } else if (WSDLConstants.QNAME_SERVICE.equals(name)) {
                             String sn = ParserUtil.getMandatoryNonEmptyAttribute(reader, WSDLConstants.ATTR_NAME);
                             QName sqn = new QName(tns,sn);
+                            allServices.add(sqn);
                             if(serviceName.equals(sqn)) {
                                 hasService = true;
                             }
@@ -137,7 +133,8 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
                             if (importedDoc != null) {
                                 importedDocs.add(new URL(src.getSystemId(), importedDoc).toString());
                             }
-                        } else if (SCHEMA_INCLUDE_QNAME.equals(name) || SCHEMA_IMPORT_QNAME.equals(name)) {
+                        } else if (SCHEMA_INCLUDE_QNAME.equals(name) || SCHEMA_IMPORT_QNAME.equals(name) ||
+                                SCHEMA_REDEFINE_QNAME.equals(name)) {
                             String importedDoc = reader.getAttributeValue(null, "schemaLocation");
                             if (importedDoc != null) {
                                 importedDocs.add(new URL(src.getSystemId(), importedDoc).toString());
@@ -145,7 +142,7 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
                         }
                     }
                     return new WSDLImpl(
-                        rootName,systemId,src,tns,hasPortType,hasService,importedDocs);
+                        rootName,systemId,src,tns,hasPortType,hasService,importedDocs,allServices);
                 } else {
                     return new SDDocumentImpl(rootName,systemId,src);
                 }
@@ -225,6 +222,31 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
         return imports;
     }
 
+    public void writeTo(OutputStream os) throws IOException {
+        XMLStreamWriter w = null;
+        try {
+            //generate the WSDL with utf-8 encoding and XML version 1.0
+            w = XMLStreamWriterFactory.create(os, "UTF-8");
+            w.writeStartDocument("UTF-8", "1.0");
+            new XMLStreamReaderToXMLStreamWriter().bridge(source.read(), w);
+            w.writeEndDocument();
+        } catch (XMLStreamException e) {
+            IOException ioe = new IOException(e.getMessage());
+            ioe.initCause(e);
+            throw ioe;
+        } finally {
+            try {
+                if (w != null)
+                    w.close();
+            } catch (XMLStreamException e) {
+                IOException ioe = new IOException(e.getMessage());
+                ioe.initCause(e);
+                throw ioe;
+            }
+        }
+    }
+
+
     public void writeTo(PortAddressResolver portAddressResolver, DocumentAddressResolver resolver, OutputStream os) throws IOException {
         XMLStreamWriter w = null;
         try {
@@ -292,13 +314,15 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
         private final String targetNamespace;
         private final boolean hasPortType;
         private final boolean hasService;
+        private final Set<QName> allServices;
 
         public WSDLImpl(QName rootName, URL url, SDDocumentSource source, String targetNamespace, boolean hasPortType,
-                        boolean hasService, Set<String> imports) {
+                        boolean hasService, Set<String> imports,Set<QName> allServices) {
             super(rootName, url, source, imports);
             this.targetNamespace = targetNamespace;
             this.hasPortType = hasPortType;
             this.hasService = hasService;
+            this.allServices = allServices;
         }
 
         public String getTargetNamespace() {
@@ -311,6 +335,10 @@ class SDDocumentImpl extends SDDocumentSource implements SDDocument {
 
         public boolean hasService() {
             return hasService;
+        }
+
+        public Set<QName> getAllServices() {
+            return allServices;
         }
 
         public boolean isWSDL() {

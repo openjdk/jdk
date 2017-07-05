@@ -35,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URISyntaxException;
 
 /**
  * A helper class to invoke javac.
@@ -43,15 +44,19 @@ import java.net.URL;
  */
 class JavaCompilerHelper{
     static File getJarFile(Class clazz) {
+        URL url = null;
         try {
-            URL url = ParallelWorldClassLoader.toJarUrl(clazz.getResource('/'+clazz.getName().replace('.','/')+".class"));
-            return new File(url.getPath());   // this code is assuming that url is a file URL
+            url = ParallelWorldClassLoader.toJarUrl(clazz.getResource('/'+clazz.getName().replace('.','/')+".class"));
+            return new File(url.toURI());
         } catch (ClassNotFoundException e) {
             // if we can't figure out where JAXB/JAX-WS API are, we couldn't have been executing this code.
             throw new Error(e);
         } catch (MalformedURLException e) {
             // if we can't figure out where JAXB/JAX-WS API are, we couldn't have been executing this code.
             throw new Error(e);
+        } catch (URISyntaxException e) {
+            // url.toURI() is picky and doesn't like ' ' in URL, so this is the fallback
+            return new File(url.getPath());
         }
     }
 

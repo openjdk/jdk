@@ -27,7 +27,6 @@ package com.sun.xml.internal.ws.client;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
-import com.sun.xml.internal.ws.Closeable;
 import com.sun.xml.internal.ws.model.wsdl.WSDLProperties;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -70,7 +69,7 @@ import java.util.concurrent.Executor;
  *
  * @author Kohsuke Kawaguchi
  */
-public abstract class Stub implements WSBindingProvider, ResponseContextReceiver, Closeable {
+public abstract class Stub implements WSBindingProvider, ResponseContextReceiver  {
 
     /**
      * Reuse pipelines as it's expensive to create.
@@ -199,33 +198,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
      *                       So we take a setter that abstracts that away.
      */
     protected final Packet process(Packet packet, RequestContext requestContext, ResponseContextReceiver receiver) {
-        {// fill in Packet
-            packet.proxy = this;
-            packet.handlerConfig = binding.getHandlerConfig();
-            requestContext.fill(packet);
-            if (wsdlProperties != null) {
-                packet.addSatellite(wsdlProperties);
-            }
-            if (addrVersion != null) {
-                // populate request WS-Addressing headers
-                HeaderList headerList = packet.getMessage().getHeaders();
-                headerList.fillRequestAddressingHeaders(wsdlPort, binding, packet);
-
-
-                // Spec is not clear on if ReferenceParameters are to be added when addressing is not enabled,
-                // but the EPR has ReferenceParameters.
-                // Current approach: Add ReferenceParameters only if addressing enabled.
-                if (endpointReference != null)
-                    endpointReference.addReferenceParameters(packet.getMessage().getHeaders());
-            }
-
-            // to make it multi-thread safe we need to first get a stable snapshot
-            Header[] hl = userOutboundHeaders;
-            if(hl!=null)
-                packet.getMessage().getHeaders().addAll(hl);
-        }
-
-
+        configureRequestPacket(packet, requestContext);
         Pool<Tube> pool = tubes;
         if (pool == null)
             throw new WebServiceException("close method has already been invoked"); // TODO: i18n
@@ -250,6 +223,33 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
         }
     }
 
+    private void configureRequestPacket(Packet packet, RequestContext requestContext) {
+        // fill in Packet
+        packet.proxy = this;
+        packet.handlerConfig = binding.getHandlerConfig();
+        requestContext.fill(packet);
+        if (wsdlProperties != null) {
+            packet.addSatellite(wsdlProperties);
+        }
+        if (addrVersion != null) {
+            // populate request WS-Addressing headers
+            HeaderList headerList = packet.getMessage().getHeaders();
+            headerList.fillRequestAddressingHeaders(wsdlPort, binding, packet);
+
+
+            // Spec is not clear on if ReferenceParameters are to be added when addressing is not enabled,
+            // but the EPR has ReferenceParameters.
+            // Current approach: Add ReferenceParameters only if addressing enabled.
+            if (endpointReference != null)
+                endpointReference.addReferenceParameters(packet.getMessage().getHeaders());
+        }
+
+        // to make it multi-thread safe we need to first get a stable snapshot
+        Header[] hl = userOutboundHeaders;
+        if(hl!=null)
+                packet.getMessage().getHeaders().addAll(hl);
+    }
+
     /**
      * Passes a message through a {@link Tube}line for processing. The processing happens
      * asynchronously and when the response is available, Fiber.CompletionCallback is
@@ -269,16 +269,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
      */
     protected final void processAsync(Packet request, RequestContext requestContext, final Fiber.CompletionCallback completionCallback) {
         // fill in Packet
-        request.proxy = this;
-        request.handlerConfig = binding.getHandlerConfig();
-        requestContext.fill(request);
-        if (wsdlProperties != null) {
-            request.addSatellite(wsdlProperties);
-        }
-        if (AddressingVersion.isEnabled(binding)) {
-            if(endpointReference!=null)
-                endpointReference.addReferenceParameters(request.getMessage().getHeaders());
-        }
+        configureRequestPacket(request, requestContext);
 
         final Pool<Tube> pool = tubes;
         if (pool == null)
@@ -402,5 +393,9 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
     public final List<Header> getInboundHeaders() {
         return Collections.unmodifiableList((HeaderList)
             responseContext.get(JAXWSProperties.INBOUND_HEADER_LIST_PROPERTY));
+    }
+
+    public final void setAddress(String address) {
+        requestContext.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, address);
     }
 }

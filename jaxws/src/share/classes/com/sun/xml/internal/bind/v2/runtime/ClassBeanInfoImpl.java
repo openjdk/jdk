@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.ValidationEvent;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.helpers.ValidationEventImpl;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -44,6 +46,7 @@ import com.sun.istack.internal.FinalArrayList;
 import com.sun.xml.internal.bind.Util;
 import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.ClassFactory;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeClassInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
@@ -65,7 +68,9 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
-public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> {
+public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> implements AttributeAccessor<BeanT> {
+
+    private boolean isNilIncluded = false;
 
     /**
      * Properties of this bean class but not its ancestor classes.
@@ -288,17 +293,22 @@ public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> {
 
     public void serializeRoot(BeanT bean, XMLSerializer target) throws SAXException, IOException, XMLStreamException {
         if(tagName==null) {
-            target.reportError(
-                    new ValidationEventImpl(
-                            ValidationEvent.ERROR,
-                            Messages.UNABLE_TO_MARSHAL_NON_ELEMENT.format(bean.getClass().getName()),
-                            null,
-                            null));
+            Class beanClass = bean.getClass();
+            String message;
+
+            if (beanClass.isAnnotationPresent(XmlRootElement.class)) {
+                message = Messages.UNABLE_TO_MARSHAL_UNBOUND_CLASS.format(beanClass.getName());
+            } else {
+                message = Messages.UNABLE_TO_MARSHAL_NON_ELEMENT.format(beanClass.getName());
+            }
+
+            target.reportError(new ValidationEventImpl(ValidationEvent.ERROR,message,null, null));
         }
         else {
             target.startElement(tagName,bean);
             target.childAsSoleContent(bean,null);
             target.endElement();
+            target.currentProperty.remove();
         }
     }
 
@@ -306,18 +316,30 @@ public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> {
         if(superClazz!=null)
             superClazz.serializeBody(bean,target);
         try {
-            for( Property<BeanT> p : properties )
+            for( Property<BeanT> p : properties ) {
+                target.currentProperty.set(p);
                 p.serializeBody(bean,target, null);
+            }
         } catch (AccessorException e) {
             target.reportError(null,e);
         }
     }
 
     public void serializeAttributes(BeanT bean, XMLSerializer target) throws SAXException, IOException, XMLStreamException {
-        try {
-            for( AttributeProperty<BeanT> p : attributeProperties )
+        for( AttributeProperty<BeanT> p : attributeProperties )
+            try {
+                final Property parentProperty = target.getCurrentProperty();
+                target.currentProperty.set(p);
                 p.serializeAttributes(bean,target);
+                target.currentProperty.set(parentProperty);
+                if (p.attName.equals(WellKnownNamespace.XML_SCHEMA_INSTANCE, "nil")) {
+                    isNilIncluded = true;
+                }
+            } catch (AccessorException e) {
+                target.reportError(null,e);
+            }
 
+        try {
             if(inheritedAttWildcard!=null) {
                 Map<QName,String> map = inheritedAttWildcard.get(bean);
                 target.attWildcardAsAttributes(map,null);
@@ -329,8 +351,12 @@ public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> {
 
     public void serializeURIs(BeanT bean, XMLSerializer target) throws SAXException {
         try {
-            for( Property<BeanT> p : uriProperties )
+            final Property parentProperty = target.getCurrentProperty();
+            for( Property<BeanT> p : uriProperties ) {
+                target.currentProperty.set(p);
                 p.serializeURIs(bean,target);
+            }
+            target.currentProperty.set(parentProperty);
 
             if(inheritedAttWildcard!=null) {
                 Map<QName,String> map = inheritedAttWildcard.get(bean);
@@ -369,4 +395,8 @@ public final class ClassBeanInfoImpl<BeanT> extends JaxBeanInfo<BeanT> {
     private static final AttributeProperty[] EMPTY_PROPERTIES = new AttributeProperty[0];
 
     private static final Logger logger = Util.getClassLogger();
+
+    public boolean isNilIncluded() {
+        return isNilIncluded;
+    }
 }

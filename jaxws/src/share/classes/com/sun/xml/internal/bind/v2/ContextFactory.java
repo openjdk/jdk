@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2;
 
 import java.io.BufferedReader;
@@ -79,6 +80,10 @@ public class ContextFactory {
         if(allNillable==null)
             allNillable = false;
 
+        Boolean retainPropertyInfo = getPropertyValue(properties, JAXBRIContext.RETAIN_REFERENCE_TO_INFO, Boolean.class);
+        if(retainPropertyInfo==null)
+            retainPropertyInfo = false;
+
         Boolean xmlAccessorFactorySupport = getPropertyValue(properties,
            JAXBRIContext.XMLACCESSORFACTORY_SUPPORT,Boolean.class);
         if(xmlAccessorFactorySupport==null){
@@ -103,7 +108,7 @@ public class ContextFactory {
         }
 
         return createContext(classes,Collections.<TypeReference>emptyList(),
-                subclassReplacements,defaultNsUri,c14nSupport,ar,xmlAccessorFactorySupport,allNillable);
+                subclassReplacements,defaultNsUri,c14nSupport,ar,xmlAccessorFactorySupport,allNillable, retainPropertyInfo);
     }
 
     /**
@@ -123,9 +128,19 @@ public class ContextFactory {
     public static JAXBRIContext createContext( Class[] classes,
             Collection<TypeReference> typeRefs, Map<Class,Class> subclassReplacements,
             String defaultNsUri, boolean c14nSupport, RuntimeAnnotationReader ar,
-            boolean xmlAccessorFactorySupport, boolean allNillable) throws JAXBException {
-        return new JAXBContextImpl(classes,typeRefs,subclassReplacements,defaultNsUri,
-                c14nSupport,ar, xmlAccessorFactorySupport,allNillable);
+            boolean xmlAccessorFactorySupport, boolean allNillable, boolean retainPropertyInfo) throws JAXBException {
+
+        JAXBContextImpl.JAXBContextBuilder builder = new JAXBContextImpl.JAXBContextBuilder();
+        builder.setClasses(classes);
+        builder.setTypeRefs(typeRefs);
+        builder.setSubclassReplacements(subclassReplacements);
+        builder.setDefaultNsUri(defaultNsUri);
+        builder.setC14NSupport(c14nSupport);
+        builder.setAnnotationReader(ar);
+        builder.setXmlAccessorFactorySupport(xmlAccessorFactorySupport);
+        builder.setAllNillable(allNillable);
+        builder.setRetainPropertyInfo(retainPropertyInfo);
+        return builder.build();
     }
 
     /**

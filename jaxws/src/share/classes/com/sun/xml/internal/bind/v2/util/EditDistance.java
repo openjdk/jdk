@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * @(#)$Id$
- */
-
-
 package com.sun.xml.internal.bind.v2.util;
 
 import java.util.Collection;

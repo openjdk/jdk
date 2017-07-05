@@ -414,33 +414,54 @@ public abstract class JaxBeanInfo<BeanT> {
      */
     protected final void setLifecycleFlags() {
         try {
-            for( Method m : jaxbType.getDeclaredMethods() ) {
-                String name = m.getName();
-                if(name.equals("beforeUnmarshal")) {
-                    if(match(m,unmarshalEventParams)) {
-                        cacheLifecycleMethod(m, FLAG_HAS_BEFORE_UNMARSHAL_METHOD);
+            Class<BeanT> jt = jaxbType;
+
+            if (lcm == null) {
+                lcm = new LifecycleMethods();
+            }
+
+            while (jt != null) {
+                for (Method m : jt.getDeclaredMethods()) {
+                    String name = m.getName();
+
+                    if (lcm.beforeUnmarshal == null) {
+                        if (name.equals("beforeUnmarshal")) {
+                            if (match(m, unmarshalEventParams)) {
+                                cacheLifecycleMethod(m, FLAG_HAS_BEFORE_UNMARSHAL_METHOD);
+                            }
+                        }
                     }
-                } else
-                if(name.equals("afterUnmarshal")) {
-                    if(match(m,unmarshalEventParams)) {
-                        cacheLifecycleMethod(m, FLAG_HAS_AFTER_UNMARSHAL_METHOD);
+
+                    if (lcm.afterUnmarshal == null) {
+                        if (name.equals("afterUnmarshal")) {
+                            if (match(m, unmarshalEventParams)) {
+                                cacheLifecycleMethod(m, FLAG_HAS_AFTER_UNMARSHAL_METHOD);
+                            }
+                        }
                     }
-                } else
-                if(name.equals("beforeMarshal")) {
-                    if(match(m,marshalEventParams)) {
-                        cacheLifecycleMethod(m, FLAG_HAS_BEFORE_MARSHAL_METHOD);
+
+                    if (lcm.beforeMarshal == null) {
+                        if (name.equals("beforeMarshal")) {
+                            if (match(m, marshalEventParams)) {
+                                cacheLifecycleMethod(m, FLAG_HAS_BEFORE_MARSHAL_METHOD);
+                            }
+                        }
                     }
-                } else
-                if(name.equals("afterMarshal")) {
-                    if(match(m,marshalEventParams)) {
-                        cacheLifecycleMethod(m, FLAG_HAS_AFTER_MARSHAL_METHOD);
+
+                    if (lcm.afterMarshal == null) {
+                        if (name.equals("afterMarshal")) {
+                            if (match(m, marshalEventParams)) {
+                                cacheLifecycleMethod(m, FLAG_HAS_AFTER_MARSHAL_METHOD);
+                            }
+                        }
                     }
                 }
+                jt = (Class<BeanT>) jt.getSuperclass();
             }
-        } catch(SecurityException e) {
+        } catch (SecurityException e) {
             // this happens when we don't have enough permission.
-            logger.log( Level.WARNING, Messages.UNABLE_TO_DISCOVER_EVENTHANDLER.format(
-                jaxbType.getName(), e ));
+            logger.log(Level.WARNING, Messages.UNABLE_TO_DISCOVER_EVENTHANDLER.format(
+                    jaxbType.getName(), e));
         }
     }
 
@@ -512,9 +533,9 @@ public abstract class JaxBeanInfo<BeanT> {
         try {
             m.invoke(child,unm,parent);
         } catch (IllegalAccessException e) {
-            UnmarshallingContext.getInstance().handleError(e);
+            UnmarshallingContext.getInstance().handleError(e, false);
         } catch (InvocationTargetException e) {
-            UnmarshallingContext.getInstance().handleError(e);
+            UnmarshallingContext.getInstance().handleError(e, false);
         }
     }
 

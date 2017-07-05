@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
@@ -52,17 +53,29 @@ import org.xml.sax.Locator;
 public final class CReferencePropertyInfo extends CPropertyInfo implements ReferencePropertyInfo<NType,NClass> {
 
     /**
+     * True if this property can never be absent legally.
+     */
+    private final boolean required;
+
+    /**
      * List of referenced elements.
      */
     private final Set<CElement> elements = new HashSet<CElement>();
 
     private final boolean isMixed;
     private WildcardMode wildcard;
+    private boolean dummy;
+    private boolean content;
+    private boolean isMixedExtendedCust = false;
 
-    public CReferencePropertyInfo(String name, boolean collection, boolean isMixed, XSComponent source,
-                                  CCustomizations customizations, Locator locator) {
-        super(name, collection||isMixed, source, customizations, locator );
+    public CReferencePropertyInfo(String name, boolean collection, boolean required, boolean isMixed, XSComponent source,
+                                  CCustomizations customizations, Locator locator, boolean dummy, boolean content, boolean isMixedExtended) {   // 'dummy' and 'content' here for NHIN fix - a hack in order to be able to handle extended mixed types better
+        super(name, (collection||isMixed) && (!dummy), source, customizations, locator);
         this.isMixed = isMixed;
+        this.required = required;
+        this.dummy = dummy;
+        this.content = content;
+        this.isMixedExtendedCust = isMixedExtended;
     }
 
     public Set<? extends CTypeInfo> ref() {
@@ -108,7 +121,6 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
         if(isMixed())
             r.add(CBuiltinLeafInfo.STRING);
 
-
         return r;
     }
 
@@ -118,6 +130,18 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
 
     public boolean isMixed() {
         return isMixed;
+    }
+
+    public boolean isDummy() {
+        return dummy;
+    }
+
+    public boolean isContent() {
+        return content;
+    }
+
+    public boolean isMixedExtendedCust() {
+        return isMixedExtendedCust;
     }
 
     /**
@@ -196,6 +220,10 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
     // reference property cannot have a type.
     public QName getSchemaType() {
         return null;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     @Override

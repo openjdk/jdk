@@ -50,6 +50,7 @@ import com.sun.xml.internal.ws.model.RuntimeModeler;
 import com.sun.xml.internal.ws.model.SOAPSEIModel;
 import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
+import com.sun.xml.internal.ws.model.wsdl.WSDLServiceImpl;
 import com.sun.xml.internal.ws.resources.ServerMessages;
 import com.sun.xml.internal.ws.server.provider.ProviderInvokerTube;
 import com.sun.xml.internal.ws.server.sei.SEIInvokerTube;
@@ -160,7 +161,7 @@ public class EndpointFactory {
         AbstractSEIModelImpl seiModel = null;
         // create WSDL model
         if (primaryDoc != null) {
-            wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName);
+            wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container);
         }
 
         WebServiceFeatureList features=((BindingImpl)binding).getFeatures();
@@ -184,7 +185,7 @@ public class EndpointFactory {
             if (primaryDoc == null) {
                 primaryDoc = generateWSDL(binding, seiModel, docList, container, implType);
                 // create WSDL model
-                wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName);
+                wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container);
                 seiModel.freeze(wsdlPort);
             }
             // New Features might have been added in WSDL through Policy.
@@ -297,7 +298,7 @@ public class EndpointFactory {
         // wsdlPort will be null, means we will generate WSDL. Hence no need to apply
         // bindings or need to look in the WSDL
         if(wsdlPort == null){
-            rap = new RuntimeModeler(implType,serviceName, binding.getBindingId());
+            rap = new RuntimeModeler(implType,serviceName, binding.getBindingId(), binding.getFeatures().toArray());
         } else {
             /*
             This not needed anymore as wsdlFeatures are merged later anyway
@@ -305,7 +306,7 @@ public class EndpointFactory {
             applyEffectiveMtomSetting(wsdlPort.getBinding(), binding);
             */
             //now we got the Binding so lets build the model
-            rap = new RuntimeModeler(implType, serviceName, (WSDLPortImpl)wsdlPort);
+            rap = new RuntimeModeler(implType, serviceName, (WSDLPortImpl)wsdlPort, binding.getFeatures().toArray());
         }
         rap.setPortName(portName);
         return rap.buildRuntimeModel();
@@ -441,8 +442,11 @@ public class EndpointFactory {
         }
         SDDocument.WSDL wsdlDoc = (SDDocument.WSDL)primaryDoc;
         if (!wsdlDoc.hasService()) {
-            throw new WebServiceException("Not a primary WSDL="+primaryWsdl.getSystemId()+
-                    " since it doesn't have Service "+serviceName);
+            if(wsdlDoc.getAllServices().isEmpty())
+                throw new WebServiceException("Not a primary WSDL="+primaryWsdl.getSystemId()+
+                        " since it doesn't have Service "+serviceName);
+            else
+                throw new WebServiceException("WSDL "+primaryDoc.getSystemId()+" has the following services "+wsdlDoc.getAllServices()+" but not "+serviceName+". Maybe you forgot to specify a service name in @WebService/@WebServiceProvider?");
         }
     }
 
@@ -487,17 +491,25 @@ public class EndpointFactory {
      * @param metadata it may contain imported WSDL and schema documents
      * @param serviceName service name in wsdl
      * @param portName port name in WSDL
+     * @param container container in which this service is running
      * @return non-null wsdl port object
      */
     private static @NotNull WSDLPortImpl getWSDLPort(SDDocumentSource primaryWsdl, List<? extends SDDocumentSource> metadata,
-                                                     @NotNull QName serviceName, @NotNull QName portName) {
+                                                     @NotNull QName serviceName, @NotNull QName portName, Container container) {
         URL wsdlUrl = primaryWsdl.getSystemId();
         try {
             // TODO: delegate to another entity resolver
             WSDLModelImpl wsdlDoc = RuntimeWSDLParser.parse(
                 new Parser(primaryWsdl), new EntityResolverImpl(metadata),
-                    false, ServiceFinder.find(WSDLParserExtension.class).toArray());
-            WSDLPortImpl wsdlPort = wsdlDoc.getService(serviceName).get(portName);
+                    false, container, ServiceFinder.find(WSDLParserExtension.class).toArray());
+            if(wsdlDoc.getServices().size() == 0) {
+                throw new ServerRtException(ServerMessages.localizableRUNTIME_PARSER_WSDL_NOSERVICE_IN_WSDLMODEL(wsdlUrl));
+            }
+            WSDLServiceImpl wsdlService = wsdlDoc.getService(serviceName);
+            if (wsdlService == null) {
+                throw new ServerRtException(ServerMessages.localizableRUNTIME_PARSER_WSDL_INCORRECTSERVICE(serviceName,wsdlUrl));
+            }
+            WSDLPortImpl wsdlPort = wsdlService.get(portName);
             if (wsdlPort == null) {
                 throw new ServerRtException(ServerMessages.localizableRUNTIME_PARSER_WSDL_INCORRECTSERVICEPORT(serviceName, portName, wsdlUrl));
             }

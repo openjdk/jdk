@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: XmlDataContentHandler.java,v 1.12 2006/01/27 12:49:30 vj135062 Exp $
- * $Revision: 1.12 $
- * $Date: 2006/01/27 12:49:30 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap;
@@ -104,7 +99,7 @@ public class XmlDataContentHandler implements DataContentHandler {
      */
     public void writeTo(Object obj, String mimeType, OutputStream os)
         throws IOException {
-        if (!mimeType.equals("text/xml") && !mimeType.equals("application/xml"))
+        if (!mimeType.startsWith("text/xml") && !mimeType.startsWith("application/xml"))
             throw new IOException(
                 "Invalid content type \"" + mimeType + "\" for XmlDCH");
 
@@ -116,7 +111,13 @@ public class XmlDataContentHandler implements DataContentHandler {
                 // Streaming transform applies only to javax.xml.transform.StreamSource
                 transformer.transform((Source) getContent((DataSource)obj), result);
             } else {
-                transformer.transform((Source) obj, result);
+                Source src=null;
+                if (obj instanceof String) {
+                     src= new StreamSource(new java.io.StringReader((String) obj));
+                } else {
+                    src=(Source) obj;
+                }
+                transformer.transform(src, result);
             }
         } catch (Exception ex) {
             throw new IOException(

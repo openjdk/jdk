@@ -268,7 +268,7 @@ public class AttributesHolder implements EncodingAlgorithmAttributes {
     private final StringBuffer convertEncodingAlgorithmDataToString(int identifier, String URI, Object data) throws FastInfosetException, IOException {
         EncodingAlgorithm ea = null;
         if (identifier < EncodingConstants.ENCODING_ALGORITHM_BUILTIN_END) {
-            ea = BuiltInEncodingAlgorithmFactory.table[identifier];
+            ea = BuiltInEncodingAlgorithmFactory.getAlgorithm(identifier);
         } else if (identifier == EncodingAlgorithmIndexes.CDATA) {
             throw new EncodingAlgorithmException(CommonResourceBundle.getInstance().getString("message.CDATAAlgorithmNotSupported"));
         } else if (identifier >= EncodingConstants.ENCODING_ALGORITHM_APPLICATION_START) {

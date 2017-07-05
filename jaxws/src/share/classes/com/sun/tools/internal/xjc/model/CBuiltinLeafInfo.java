@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.model;
 
 import java.awt.*;
@@ -261,7 +262,9 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
         }
     };
     // XMLGregorianCalendar is mutable, so we can't support default values anyhow.
-    public static final CBuiltinLeafInfo CALENDAR = new NoConstantBuiltin(XMLGregorianCalendar.class,"dateTime");
+        // For CALENAR we are uses a most unlikely name so as to avoid potential name
+        // conflicts in the furture.
+        public static final CBuiltinLeafInfo CALENDAR = new NoConstantBuiltin(XMLGregorianCalendar.class,"\u0000");
     public static final CBuiltinLeafInfo DURATION = new NoConstantBuiltin(Duration.class,"duration");
 
     public static final CBuiltinLeafInfo BIG_INTEGER = new Builtin(BigInteger.class,"integer") {

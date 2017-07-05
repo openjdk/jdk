@@ -22,10 +22,14 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom;
 
 import com.sun.xml.internal.xsom.visitor.XSSimpleTypeFunction;
 import com.sun.xml.internal.xsom.visitor.XSSimpleTypeVisitor;
+
+import java.util.List;
 
 /**
  * Simple type.
@@ -130,6 +134,16 @@ public interface XSSimpleType extends XSType, XSContentType
      *      anywhere in its derivation chain, null will be returned.
      */
     XSFacet getFacet( String name );
+
+    /**
+     * For multi-valued facets (enumeration and pattern), obtain all values.
+     *
+     * @see #getFacet(String)
+     *
+     * @return
+     *      can be empty but never null.
+     */
+    List<XSFacet> getFacets( String name );
 
 
 

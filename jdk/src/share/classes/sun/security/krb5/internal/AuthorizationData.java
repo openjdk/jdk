@@ -174,4 +174,12 @@ public class AuthorizationData implements Cloneable {
         }
         return retVal;
     }
+
+    public int count() {
+        return entry.length;
+    }
+
+    public AuthorizationDataEntry item(int i) {
+        return (AuthorizationDataEntry)entry[i].clone();
+    }
 }

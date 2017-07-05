@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: Detail.java,v 1.8 2005/04/05 20:34:16 mk125090 Exp $
- * $Revision: 1.8 $
- * $Date: 2005/04/05 20:34:16 $
+ * $Id: Detail.java,v 1.9 2006/03/30 00:59:38 ofung Exp $
+ * $Revision: 1.9 $
+ * $Date: 2006/03/30 00:59:38 $
  */
 
 

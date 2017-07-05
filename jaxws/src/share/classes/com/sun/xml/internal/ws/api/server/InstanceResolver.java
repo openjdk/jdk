@@ -82,7 +82,27 @@ public abstract class InstanceResolver<T> {
      *      Always non-null. Represents the request message to be served.
      *      The caller may not consume the {@link Message}.
      */
-    public abstract @NotNull T resolve(Packet request);
+    public abstract @NotNull T resolve(@NotNull Packet request);
+
+    /**
+     * Called by the default {@link Invoker} after the method call is done.
+     * This gives {@link InstanceResolver} a chance to do clean up.
+     *
+     * <p>
+     * Alternatively, one could override {@link #createInvoker()} to
+     * create a custom invoker to do this in more flexible way.
+     *
+     * <p>
+     * The default implementation is a no-op.
+     *
+     * @param request
+     *      The same request packet given to {@link #resolve(Packet)} method.
+     * @param servant
+     *      The object returned from the {@link #resolve(Packet)} method.
+     * @since 2.1.2
+     */
+    public void postInvoke(@NotNull Packet request, @NotNull T servant) {
+    }
 
     /**
      * Called by {@link WSEndpoint} when it's set up.
@@ -210,12 +230,22 @@ public abstract class InstanceResolver<T> {
 
             @Override
             public Object invoke(Packet p, Method m, Object... args) throws InvocationTargetException, IllegalAccessException {
-                return m.invoke( resolve(p), args );
+                T t = resolve(p);
+                try {
+                    return m.invoke(t, args );
+                } finally {
+                    postInvoke(p,t);
+                }
             }
 
             @Override
-            public <T> T invokeProvider(@NotNull Packet p, T arg) {
-                return ((Provider<T>)resolve(p)).invoke(arg);
+            public <U> U invokeProvider(@NotNull Packet p, U arg) {
+                T t = resolve(p);
+                try {
+                    return ((Provider<U>) t).invoke(arg);
+                } finally {
+                    postInvoke(p,t);
+                }
             }
 
             public String toString() {

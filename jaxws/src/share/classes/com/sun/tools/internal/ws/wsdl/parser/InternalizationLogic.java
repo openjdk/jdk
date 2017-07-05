@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wsdl.parser;
 
 import org.w3c.dom.Element;

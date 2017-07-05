@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSAttGroupDecl;
@@ -67,7 +69,12 @@ public abstract class AttributesHolder extends DeclarationImpl {
     public void addProhibitedAttribute( UName name ) {
         prohibitedAtts.add(name);
     }
-    public List<XSAttributeUse> getAttributeUses() {
+
+    /**
+     * Returns the attribute uses by looking at attribute groups and etc.
+     * Searching for the base type is done in {@link ComplexTypeImpl}.
+     */
+    public Collection<XSAttributeUse> getAttributeUses() {
         // TODO: this is fairly inefficient
         List<XSAttributeUse> v = new ArrayList<XSAttributeUse>();
         v.addAll(attributes.values());

@@ -77,9 +77,12 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
 
     /**
      * A single-element array, initially containing
-     * <code>ImageInputStream.class</code>, to be returned from
-     * <code>getInputTypes</code>.
+     * <code>ImageOutputStream.class</code>, to be returned from
+     * <code>getOutputTypes</code>.
+     * @deprecated Instead of using this field, directly create
+     * the equivalent array <code>{ ImageOutputStream.class }<code>.
      */
+    @Deprecated
     public static final Class[] STANDARD_OUTPUT_TYPE =
         { ImageOutputStream.class };
 
@@ -228,7 +231,11 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
             throw new IllegalArgumentException
                 ("outputTypes.length == 0!");
         }
-        this.outputTypes = (Class[])outputTypes.clone();
+
+        this.outputTypes = (outputTypes == STANDARD_OUTPUT_TYPE) ?
+            new Class<?>[] { ImageOutputStream.class } :
+            outputTypes.clone();
+
         // If length == 0, leave it null
         if (readerSpiNames != null && readerSpiNames.length > 0) {
             this.readerSpiNames = (String[])readerSpiNames.clone();

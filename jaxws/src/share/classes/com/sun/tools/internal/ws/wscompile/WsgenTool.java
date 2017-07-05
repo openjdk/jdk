@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.mirror.apt.AnnotationProcessor;
@@ -32,6 +31,8 @@ import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.apt.AnnotationProcessorFactory;
 import com.sun.mirror.declaration.AnnotationTypeDeclaration;
 import com.sun.tools.internal.ws.ToolVersion;
+import com.sun.tools.internal.ws.api.WsgenExtension;
+import com.sun.tools.internal.ws.api.WsgenProtocol;
 import com.sun.tools.internal.ws.processor.modeler.annotation.AnnotationProcessorContext;
 import com.sun.tools.internal.ws.processor.modeler.annotation.WebServiceAP;
 import com.sun.tools.internal.ws.processor.modeler.wsdl.ConsoleErrorReporter;
@@ -46,11 +47,13 @@ import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.wsdl.writer.WSDLGeneratorExtension;
 import com.sun.xml.internal.ws.binding.WebServiceFeatureList;
+import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
 import com.sun.xml.internal.ws.model.AbstractSEIModelImpl;
 import com.sun.xml.internal.ws.model.RuntimeModeler;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 import com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator;
 import com.sun.xml.internal.ws.wsdl.writer.WSDLResolver;
+import com.sun.istack.internal.tools.ParallelWorldClassLoader;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
@@ -110,14 +113,16 @@ public class WsgenTool implements AnnotationProcessorFactory {
                 return false;
             }
         }catch (Options.WeAreDone done){
-            usage(done.getOptions());
+            usage((WsgenOptions)done.getOptions());
         }catch (BadCommandLineException e) {
             if(e.getMessage()!=null) {
                 System.out.println(e.getMessage());
                 System.out.println();
             }
-            usage(e.getOptions());
+            usage((WsgenOptions)e.getOptions());
             return false;
+        }catch(AbortException e){
+            //error might have been reported
         }finally{
             if(!options.keep){
                 options.removeGeneratedFiles();
@@ -161,12 +166,27 @@ public class WsgenTool implements AnnotationProcessorFactory {
         }
     }
 
+    /*
+     * To take care of JDK6-JDK6u3, where 2.1 API classes are not there
+     */
+    private static boolean useBootClasspath(Class clazz) {
+        try {
+            ParallelWorldClassLoader.toJarUrl(clazz.getResource('/'+clazz.getName().replace('.','/')+".class"));
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
+
     public boolean buildModel(String endpoint, Listener listener) throws BadCommandLineException {
         final ErrorReceiverFilter errReceiver = new ErrorReceiverFilter(listener);
         context = new AnnotationProcessorContext();
         webServiceAP = new WebServiceAP(options, context, errReceiver, out);
 
-        String[] args = new String[9];
+        boolean bootCP = useBootClasspath(EndpointReference.class) || useBootClasspath(XmlSeeAlso.class);
+
+        String[] args = new String[8 + (bootCP ? 1 :0)];
         args[0] = "-d";
         args[1] = options.destDir.getAbsolutePath();
         args[2] = "-classpath";
@@ -175,7 +195,9 @@ public class WsgenTool implements AnnotationProcessorFactory {
         args[5] = options.sourceDir.getAbsolutePath();
         args[6] = "-XclassesAsDecls";
         args[7] = endpoint;
-        args[8] = "-Xbootclasspath/p:"+JavaCompilerHelper.getJarFile(EndpointReference.class)+File.pathSeparator+JavaCompilerHelper.getJarFile(XmlSeeAlso.class);
+        if (bootCP) {
+            args[8] = "-Xbootclasspath/p:"+JavaCompilerHelper.getJarFile(EndpointReference.class)+File.pathSeparator+JavaCompilerHelper.getJarFile(XmlSeeAlso.class);
+        }
 
         // Workaround for bug 6499165: issue with javac debug option
         workAroundJavacDebug();
@@ -195,11 +217,12 @@ public class WsgenTool implements AnnotationProcessorFactory {
                 throw new BadCommandLineException(WscompileMessages.WSGEN_CLASS_NOT_FOUND(endpoint));
             }
 
-            BindingID bindingID = WsgenOptions.getBindingID(options.protocol);
+            BindingID bindingID = options.getBindingID(options.protocol);
             if (!options.protocolSet) {
                 bindingID = BindingID.parse(endpointClass);
             }
-            RuntimeModeler rtModeler = new RuntimeModeler(endpointClass, options.serviceName, bindingID);
+            WebServiceFeatureList wsfeatures = new WebServiceFeatureList(endpointClass);
+            RuntimeModeler rtModeler = new RuntimeModeler(endpointClass, options.serviceName, bindingID, wsfeatures.toArray());
             rtModeler.setClassLoader(classLoader);
             if (options.portName != null)
                 rtModeler.setPortName(options.portName);
@@ -207,7 +230,7 @@ public class WsgenTool implements AnnotationProcessorFactory {
 
             final File[] wsdlFileName = new File[1]; // used to capture the generated WSDL file.
             final Map<String,File> schemaFiles = new HashMap<String,File>();
-            WebServiceFeatureList wsfeatures = new WebServiceFeatureList(endpointClass);
+
             WSDLGenerator wsdlGenerator = new WSDLGenerator(rtModel,
                     new WSDLResolver() {
                         private File toFile(String suggestedFilename) {
@@ -327,8 +350,12 @@ public class WsgenTool implements AnnotationProcessorFactory {
         }
     }
 
-    protected void usage(Options options) {
-        System.out.println(WscompileMessages.WSGEN_HELP("WSGEN"));
+    protected void usage(WsgenOptions options) {
+        // Just don't see any point in passing WsgenOptions
+        // BadCommandLineException also shouldn't have options
+        if (options == null)
+            options = this.options;
+        System.out.println(WscompileMessages.WSGEN_HELP("WSGEN", options.protocols, options.nonstdProtocols.keySet()));
         System.out.println(WscompileMessages.WSGEN_USAGE_EXAMPLES());
     }
 

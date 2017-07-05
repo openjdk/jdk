@@ -25,6 +25,11 @@
 
 package com.sun.xml.internal.ws.api.model.wsdl;
 
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+
+import javax.xml.namespace.QName;
+
 /**
  * Abstraction of wsdl:portType/wsdl:operation/wsdl:input
  *
@@ -58,4 +63,27 @@ public interface WSDLInput extends WSDLObject, WSDLExtensible {
      * @return Action
      */
     String getAction();
+
+    /**
+     * Gives the owning {@link WSDLOperation}
+     */
+    @NotNull
+    WSDLOperation getOperation();
+
+    /**
+     * Gives qualified name of the wsdl:input 'name' attribute value. If there is no name, then it computes the name from:
+     *
+     * If the wsdl:operation is oneway:
+     *
+     * wsdl:operation@name value, which is local name of {@link WSDLOperation#getName()}
+     * <p/>
+     * otherwise
+     *
+     * wsdl:operation@name+"Request", which is local name of {@link WSDLOperation#getName()} + "Request"
+     * <p/>
+     *
+     * The namespace uri is determined from the enclosing wsdl:operation.
+     */
+    @NotNull
+    QName getQName();
 }

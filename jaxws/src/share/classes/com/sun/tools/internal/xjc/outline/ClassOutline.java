@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 /*
  * Use is subject to the license terms.
  */
@@ -81,7 +82,7 @@ public abstract class ClassOutline {
     /**
      * The implementation class that shall be used for reference.
      * <p>
-     * Usually this field holds the same value as the impl method,
+     * Usually this field holds the same value as the {@link #implClass} method,
      * but sometimes it holds the user-specified implementation class
      * when it is specified.
      * <p>

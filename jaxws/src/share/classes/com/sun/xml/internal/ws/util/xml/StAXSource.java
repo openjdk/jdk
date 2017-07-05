@@ -25,16 +25,10 @@
 
 package com.sun.xml.internal.ws.util.xml;
 
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.SAXParseException2;
 import com.sun.istack.internal.XMLStreamReaderToContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.DTDHandler;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.XMLFilterImpl;
 
@@ -88,6 +82,8 @@ public class StAXSource extends SAXSource {
     // this object will be wrapped by the XMLReader exposed to the client
     private final XMLStreamReaderToContentHandler reader;
 
+    private final XMLStreamReader staxReader;
+
     // SAX allows ContentHandler to be changed during the parsing,
     // but JAXB doesn't. So this repeater will sit between those
     // two components.
@@ -102,7 +98,14 @@ public class StAXSource extends SAXSource {
         }
 
         public void setFeature(String name, boolean value) throws SAXNotRecognizedException {
-            throw new SAXNotRecognizedException(name);
+            // Should support these two features according to XMLReader javadoc.
+            if (name.equals("http://xml.org/sax/features/namespaces") && value) {
+                // Ignore for now
+            } else if (name.equals("http://xml.org/sax/features/namespace-prefixes") && !value) {
+                // Ignore for now
+            } else {
+                throw new SAXNotRecognizedException(name);
+            }
         }
 
         public Object getProperty(String name) throws SAXNotRecognizedException {
@@ -171,12 +174,12 @@ public class StAXSource extends SAXSource {
             } catch( XMLStreamException e ) {
                 // wrap it in a SAXException
                 SAXParseException se =
-                    new SAXParseException(
+                    new SAXParseException2(
                         e.getMessage(),
                         null,
                         null,
-                        e.getLocation().getLineNumber(),
-                        e.getLocation().getColumnNumber(),
+                        e.getLocation() == null ? -1 : e.getLocation().getLineNumber(),
+                        e.getLocation() == null ? -1 : e.getLocation().getColumnNumber(),
                         e);
 
                 // if the consumer sets an error handler, it is our responsibility
@@ -188,9 +191,28 @@ public class StAXSource extends SAXSource {
                 // returns, we will abort anyway.
                 throw se;
 
+            } finally {
+                try {
+                    staxReader.close();
+                } catch(XMLStreamException xe) {
+                    //falls through. Not much can be done.
+                }
             }
         }
     };
+
+    /**
+     * Creates a new {@link javax.xml.transform.Source} for the given
+     * {@link XMLStreamReader}.
+     *
+     * @param reader XMLStreamReader that will be exposed as a Source
+     * @param eagerQuit if true, when the conversion is completed, leave the cursor to the last
+     *                  event that was fired (such as end element)
+     * @see #StAXSource(XMLStreamReader, boolean, String[])
+     */
+    public StAXSource(XMLStreamReader reader, boolean eagerQuit) {
+        this(reader, eagerQuit, new String[0]);
+    }
 
     /**
      * Creates a new {@link javax.xml.transform.Source} for the given
@@ -201,13 +223,18 @@ public class StAXSource extends SAXSource {
      * {@link javax.xml.stream.XMLStreamConstants#START_ELEMENT} event.
      *
      * @param reader XMLStreamReader that will be exposed as a Source
+     * @param eagerQuit if true, when the conversion is completed, leave the cursor to the last
+     *                  event that was fired (such as end element)
+     * @param inscope inscope Namespaces
+     *                array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }
      * @throws IllegalArgumentException iff the reader is null
      * @throws IllegalStateException iff the reader is not pointing at either a
      * START_DOCUMENT or START_ELEMENT event
      */
-    public StAXSource(XMLStreamReader reader, boolean eagerQuit) {
+    public StAXSource(XMLStreamReader reader, boolean eagerQuit, @NotNull String[] inscope) {
         if( reader == null )
             throw new IllegalArgumentException();
+        this.staxReader = reader;
 
         int eventType = reader.getEventType();
         if (!(eventType == XMLStreamConstants.START_DOCUMENT)
@@ -215,7 +242,7 @@ public class StAXSource extends SAXSource {
             throw new IllegalStateException();
         }
 
-        this.reader = new XMLStreamReaderToContentHandler(reader,repeater,eagerQuit,false);
+        this.reader = new XMLStreamReaderToContentHandler(reader,repeater,eagerQuit,false,inscope);
 
         super.setXMLReader(pseudoParser);
         // pass a dummy InputSource. We don't care

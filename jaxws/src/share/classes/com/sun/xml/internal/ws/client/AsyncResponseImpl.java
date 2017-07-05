@@ -39,10 +39,6 @@ import java.util.concurrent.FutureTask;
  * request to Fiber and returns. When the Fiber finishes the execution, it sets
  * response in the {@link FutureTask}
  *
- * <p>
- * {@link ResponseImpl} executes things synchronously and waits for the return
- * parameter.
- *
  * @author Jitendra Kotamraju
  */
 public final class AsyncResponseImpl<T> extends FutureTask<T> implements Response<T>, ResponseContextReceiver {

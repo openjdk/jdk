@@ -111,6 +111,14 @@ public final class JBlock implements JGenerable, JStatement {
         return r;
     }
 
+    /**
+     * Returns true if this block is empty and does not contain
+     * any statement.
+     */
+    public boolean isEmpty() {
+        return content.isEmpty();
+    }
+
 
     /**
      * Adds a local variable declaration to this block

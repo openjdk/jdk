@@ -28,6 +28,8 @@ package com.sun.xml.internal.ws.api.pipe;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.addressing.WsaServerTube;
+import com.sun.xml.internal.ws.addressing.W3CWsaServerTube;
+import com.sun.xml.internal.ws.addressing.v200408.MemberSubmissionWsaServerTube;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
@@ -35,10 +37,13 @@ import com.sun.xml.internal.ws.api.pipe.helper.PipeAdapter;
 import com.sun.xml.internal.ws.api.server.ServerPipelineHook;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.binding.BindingImpl;
+import com.sun.xml.internal.ws.developer.SchemaValidationFeature;
 import com.sun.xml.internal.ws.handler.HandlerTube;
 import com.sun.xml.internal.ws.handler.ServerLogicalHandlerTube;
+import com.sun.xml.internal.ws.handler.ServerMessageHandlerTube;
 import com.sun.xml.internal.ws.handler.ServerSOAPHandlerTube;
 import com.sun.xml.internal.ws.protocol.soap.ServerMUTube;
+import com.sun.xml.internal.ws.server.ServerSchemaValidationTube;
 import com.sun.xml.internal.ws.util.pipe.DumpTube;
 
 import javax.xml.ws.soap.SOAPBinding;
@@ -148,7 +153,11 @@ public class ServerTubeAssemblerContext {
             HandlerTube cousin = new ServerLogicalHandlerTube(binding, wsdlModel, next);
             next = cousin;
             if (binding instanceof SOAPBinding) {
-                return new ServerSOAPHandlerTube(binding, next, cousin);
+                //Add SOAPHandlerTube
+                next = cousin = new ServerSOAPHandlerTube(binding, next, cousin);
+
+                //Add MessageHandlerTube
+                next = new ServerMessageHandlerTube(seiModel, binding, next, cousin);
             }
         }
         return next;
@@ -187,12 +196,26 @@ public class ServerTubeAssemblerContext {
     }
 
     /**
+     * creates a {@link Tube} that validates messages against schema
+     */
+    public Tube createValidationTube(Tube next) {
+        if (binding instanceof SOAPBinding && binding.isFeatureEnabled(SchemaValidationFeature.class) && wsdlModel!=null)
+            return new ServerSchemaValidationTube(endpoint, binding, next);
+        else
+            return next;
+    }
+
+    /**
      * Creates WS-Addressing pipe
      */
     public Tube createWsaTube(Tube next) {
-        if (binding instanceof SOAPBinding && AddressingVersion.isEnabled(binding) && wsdlModel!=null)
-            return new WsaServerTube(wsdlModel, binding, next);
-        else
+        if (binding instanceof SOAPBinding && AddressingVersion.isEnabled(binding)) {
+            if(AddressingVersion.fromBinding(binding) == AddressingVersion.MEMBER) {
+                return new MemberSubmissionWsaServerTube(endpoint, wsdlModel, binding, next);
+            } else {
+                return new W3CWsaServerTube(endpoint, wsdlModel, binding, next);
+            }
+        } else
             return next;
     }
 

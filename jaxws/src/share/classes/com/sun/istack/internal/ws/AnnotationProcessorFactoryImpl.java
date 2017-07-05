@@ -66,10 +66,7 @@ public class AnnotationProcessorFactoryImpl implements AnnotationProcessorFactor
         types.add("javax.jws.soap.SOAPBinding");
         types.add("javax.jws.soap.SOAPMessageHandler");
         types.add("javax.jws.soap.SOAPMessageHandlers");
-        types.add("javax.xml.ws.BeginService");
-        types.add("javax.xml.ws.EndService");
         types.add("javax.xml.ws.BindingType");
-        types.add("javax.xml.ws.ParameterIndex");
         types.add("javax.xml.ws.RequestWrapper");
         types.add("javax.xml.ws.ResponseWrapper");
         types.add("javax.xml.ws.ServiceMode");
@@ -78,8 +75,6 @@ public class AnnotationProcessorFactoryImpl implements AnnotationProcessorFactor
         types.add("javax.xml.ws.WebServiceClient");
         types.add("javax.xml.ws.WebServiceProvider");
         types.add("javax.xml.ws.WebServiceRef");
-
-        types.add("javax.xml.ws.security.MessageSecurity");
         supportedAnnotations = Collections.unmodifiableCollection(types);
     }
 

@@ -27,7 +27,6 @@
 // http://www.saxproject.org
 // Written by David Megginson
 // This class is in the Public Domain.  NO WARRANTY!
-// $Id: NamespaceSupport.java,v 1.1 2005/04/14 21:45:18 kohsuke Exp $
 
 package com.sun.xml.internal.txw2;
 

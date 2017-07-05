@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -50,7 +51,7 @@ final class ArrayElementNodeProperty<BeanT,ListT,ItemT> extends ArrayElementProp
         if(item==null) {
             w.writeXsiNilTrue();
         } else {
-            w.childAsXsiType(item,fieldName,expected);
+            w.childAsXsiType(item,fieldName,expected, false);
         }
     }
 }

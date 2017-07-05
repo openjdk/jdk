@@ -172,7 +172,7 @@ abstract class MessageFiller {
     }
 
     private static boolean isXMLMimeType(String mimeType){
-        return (mimeType.equals("text/xml") || mimeType.equals("application/xml")) ? true : false;
+        return (mimeType.equals("text/xml") || mimeType.equals("application/xml"));
     }
 
 }

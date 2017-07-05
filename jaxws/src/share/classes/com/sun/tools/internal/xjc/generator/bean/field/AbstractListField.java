@@ -45,7 +45,7 @@ import com.sun.tools.internal.xjc.model.CPropertyInfo;
  * its underlying data structure.
  *
  * <p>
- * For performance reaons, the actual list object used to store
+ * For performance reasons, the actual list object used to store
  * data is lazily created.
  *
  * @author
@@ -136,7 +136,7 @@ abstract class AbstractListField extends AbstractField {
             .assign(field,newCoreList());
     }
 
-    public final JType getRawType() {
+    public JType getRawType() {
         return codeModel.ref(List.class).narrow(exposedType.boxify());
     }
 

@@ -56,14 +56,14 @@ abstract class XMLProviderArgumentBuilder<T> extends ProviderArgumentsBuilder<T>
         return response;
     }
 
-    static XMLProviderArgumentBuilder create(ProviderEndpointModel model) {
+    static XMLProviderArgumentBuilder createBuilder(ProviderEndpointModel model, WSBinding binding) {
         if (model.mode == Service.Mode.PAYLOAD) {
             return new PayloadSource();
         } else {
             if(model.datatype==Source.class)
                 return new PayloadSource();
             if(model.datatype== DataSource.class)
-                return new DataSourceParameter();
+                return new DataSourceParameter(binding);
             throw new WebServiceException(ServerMessages.PROVIDER_INVALID_PARAMETER_TYPE(model.implClass,model.datatype));
         }
     }
@@ -83,15 +83,20 @@ abstract class XMLProviderArgumentBuilder<T> extends ProviderArgumentsBuilder<T>
     }
 
     private static final class DataSourceParameter extends XMLProviderArgumentBuilder<DataSource> {
+        private final WSBinding binding;
+
+        DataSourceParameter(WSBinding binding) {
+            this.binding = binding;
+        }
         public DataSource getParameter(Packet packet) {
             Message msg = packet.getMessage();
             return (msg instanceof XMLMessage.MessageDataSource)
                     ? ((XMLMessage.MessageDataSource) msg).getDataSource()
-                    : XMLMessage.getDataSource(msg);
+                    : XMLMessage.getDataSource(msg, binding);
         }
 
         public Message getResponseMessage(DataSource ds) {
-            return XMLMessage.create(ds);
+            return XMLMessage.create(ds, binding);
         }
 
         protected Message getResponseMessage(Exception e) {

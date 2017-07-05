@@ -26,6 +26,8 @@
 package com.sun.xml.internal.ws.model.wsdl;
 
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLFault;
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLOperation;
+import com.sun.istack.internal.NotNull;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
@@ -37,11 +39,13 @@ public final class WSDLFaultImpl extends AbstractExtensibleImpl implements WSDLF
     private final String name;
     private final QName messageName;
     private WSDLMessageImpl message;
+    private WSDLOperationImpl operation;
 
-    public WSDLFaultImpl(XMLStreamReader xsr,String name, QName messageName) {
+    public WSDLFaultImpl(XMLStreamReader xsr, String name, QName messageName, WSDLOperationImpl operation) {
         super(xsr);
         this.name = name;
         this.messageName = messageName;
+        this.operation = operation;
     }
 
     public String getName() {
@@ -50,6 +54,16 @@ public final class WSDLFaultImpl extends AbstractExtensibleImpl implements WSDLF
 
     public WSDLMessageImpl getMessage() {
         return message;
+    }
+
+    @NotNull
+    public WSDLOperation getOperation() {
+        return operation;
+    }
+
+    @NotNull
+    public QName getQName() {
+        return new QName(operation.getName().getNamespaceURI(), name);
     }
 
     void freeze(WSDLModelImpl root){

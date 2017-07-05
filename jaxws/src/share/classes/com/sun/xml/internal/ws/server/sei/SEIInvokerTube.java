@@ -34,8 +34,11 @@ import com.sun.xml.internal.ws.api.server.Invoker;
 import com.sun.xml.internal.ws.client.sei.MethodHandler;
 import com.sun.xml.internal.ws.model.AbstractSEIModelImpl;
 import com.sun.xml.internal.ws.server.InvokerTube;
+import com.sun.xml.internal.ws.resources.ServerMessages;
+import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 
 import java.util.List;
+import java.text.MessageFormat;
 
 /**
  * This pipe is used to invoke SEI based endpoints.
@@ -68,24 +71,26 @@ public class SEIInvokerTube extends InvokerTube {
      * that traverses through the Pipeline to transport.
      */
     public @NotNull NextAction processRequest(@NotNull Packet req) {
-        Packet res = null;
-
-        try {
-            for (EndpointMethodDispatcher dispatcher : dispatcherList) {
-                EndpointMethodHandler handler = dispatcher.getEndpointMethodHandler(req);
-                if (handler != null) {
-                    res = handler.invoke(req);
-                    break;
-                }
+        for (EndpointMethodDispatcher dispatcher : dispatcherList) {
+            EndpointMethodHandler handler;
+            try {
+                handler = dispatcher.getEndpointMethodHandler(req);
+            } catch(DispatchException e) {
+                return doReturnWith(req.createServerResponse(e.fault, model.getPort(), null, binding));
             }
-        } catch (DispatchException e) {
-            return doReturnWith(req.createServerResponse(e.fault, model.getPort(), null, binding));
+            if (handler != null) {
+                Packet res = handler.invoke(req);
+                assert res!=null;
+                return doReturnWith(res);
+            }
         }
-
-        // PayloadQNameBasedDispatcher should throw DispatchException
-        assert res!=null;
-
-        return doReturnWith(res);
+        String err = MessageFormat.format("Request=[SOAPAction={0},Payload='{'{1}'}'{2}]",
+                req.soapAction,req.getMessage().getPayloadNamespaceURI(),
+                req.getMessage().getPayloadLocalPart());
+        String faultString = ServerMessages.DISPATCH_CANNOT_FIND_METHOD(err);
+        Message faultMsg = SOAPFaultBuilder.createSOAPFaultMessage(
+            binding.getSOAPVersion(), faultString, binding.getSOAPVersion().faultCodeClient);
+        return doReturnWith(req.createServerResponse(faultMsg, model.getPort(), null, binding));
     }
 
     public @NotNull NextAction processResponse(@NotNull Packet response) {

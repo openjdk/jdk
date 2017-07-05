@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.awt.*;
@@ -56,6 +57,7 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.helpers.ValidationEventImpl;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -174,6 +176,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
     public static final RuntimeBuiltinLeafInfoImpl<String> STRING = new StringImpl<String>(String.class,
         createXS("string"),
         createXS("normalizedString"),
+        createXS("anyURI"),
         createXS("token"),
         createXS("language"),
         createXS("Name"),
@@ -282,12 +285,29 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                     return v.toExternalForm();
                 }
             },
+            new StringImpl<URI>(URI.class, createXS("string")) {
+                public URI parse(CharSequence text) throws SAXException {
+                    try {
+                        return new URI(text.toString());
+                    } catch (URISyntaxException e) {
+                        UnmarshallingContext.getInstance().handleError(e);
+                        return null;
+                    }
+                }
+
+                public String print(URI v) {
+                    return v.toString();
+                }
+            },
             new StringImpl<Class>(Class.class, createXS("string")) {
                 public Class parse(CharSequence text) throws SAXException {
                     TODO.checkSpec("JSR222 Issue #42");
                     try {
                         String name = WhiteSpaceProcessor.trim(text).toString();
-                        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                        ClassLoader cl = UnmarshallingContext.getInstance().classLoader;
+                        if(cl==null)
+                            cl = Thread.currentThread().getContextClassLoader();
+
                         if(cl!=null)
                             return cl.loadClass(name);
                         else
@@ -319,7 +339,11 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                         // normally images can be content-sniffed.
                         // so the MIME type check will only make us slower and draconian, both of which
                         // JAXB 2.0 isn't interested.
-                        return ImageIO.read(is);
+                        try {
+                            return ImageIO.read(is);
+                        } finally {
+                            is.close();
+                        }
                     } catch (IOException e) {
                         UnmarshallingContext.getInstance().handleError(e);
                         return null;
@@ -366,8 +390,10 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                         Iterator<ImageWriter> itr = ImageIO.getImageWritersByMIMEType(mimeType);
                         if(itr.hasNext()) {
                             ImageWriter w = itr.next();
-                            w.setOutput(ImageIO.createImageOutputStream(imageData));
+                            ImageOutputStream os = ImageIO.createImageOutputStream(imageData);
+                            w.setOutput(os);
                             w.write(convertToBufferedImage(v));
+                            os.close();
                             w.dispose();
                         } else {
                             // no encoder
@@ -383,7 +409,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                         // TODO: proper error reporting
                         throw new RuntimeException(e);
                     }
-                    Base64Data bd = xs.getCachedBase64DataInstance();
+                    Base64Data bd = new Base64Data();
                     imageData.set(bd,mimeType);
                     return bd;
                 }
@@ -398,7 +424,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                 }
 
                 public Base64Data print(DataHandler v) {
-                    Base64Data bd = XMLSerializer.getInstance().getCachedBase64DataInstance();
+                    Base64Data bd = new Base64Data();
                     bd.set(v);
                     return bd;
                 }
@@ -419,7 +445,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
 
                 public Base64Data print(Source v) {
                     XMLSerializer xs = XMLSerializer.getInstance();
-                    Base64Data bd = xs.getCachedBase64DataInstance();
+                    Base64Data bd = new Base64Data();
 
                     String contentType = xs.getXMIMEContentType();
                     MimeType mt = null;
@@ -486,21 +512,27 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
 
                     QName type = xs.getSchemaType();
                     if(type!=null) {
-                        String format = xmlGregorianCalendarFormatString.get(type);
-                        if(format!=null)
-                            return format(format,cal);
-                        // TODO:
-                        // we need to think about how to report an error where @XmlSchemaType
-                        // didn't take effect. a general case is when a transducer isn't even
-                        // written to look at that value.
-                    }
-
+                                                try {
+                                                        checkXmlGregorianCalendarFieldRef(type, cal);
+                                                        String format = xmlGregorianCalendarFormatString.get(type);
+                                                        if(format!=null)
+                                                                return format(format,cal);
+                                                        // TODO:
+                                                        // we need to think about how to report an error where @XmlSchemaType
+                                                        // didn't take effect. a general case is when a transducer isn't even
+                                                        // written to look at that value.
+                                                } catch (javax.xml.bind.MarshalException e){
+                                                        //-xs.handleError(e);
+                                                        System.out.println(e.toString());
+                                                        return "";
+                                                }
+                                        }
                     return cal.toXMLFormat();
                 }
 
                 public XMLGregorianCalendar parse(CharSequence lexical) throws SAXException {
                     try {
-                        return datatypeFactory.newXMLGregorianCalendar(lexical.toString());
+                        return datatypeFactory.newXMLGregorianCalendar(lexical.toString().trim()); // (.trim() - issue 396)
                     } catch (Exception e) {
                         UnmarshallingContext.getInstance().handleError(e);
                         return null;
@@ -611,7 +643,7 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
 
                 public Base64Data print(byte[] v) {
                     XMLSerializer w = XMLSerializer.getInstance();
-                    Base64Data bd = w.getCachedBase64DataInstance();
+                    Base64Data bd = new Base64Data();
                     String mimeType = w.getXMIMEContentType();
                     bd.set(v,mimeType);
                     return bd;
@@ -737,21 +769,6 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
                     w.getNamespaceContext().declareNamespace(v.getNamespaceURI(),v.getPrefix(),false);
                 }
             },
-            new StringImpl<URI>(URI.class, createXS("anyURI")) {
-                public URI parse(CharSequence text) throws SAXException {
-                    TODO.checkSpec("JSR222 Issue #42");
-                    try {
-                        return new URI(text.toString());
-                    } catch (URISyntaxException e) {
-                        UnmarshallingContext.getInstance().handleError(e);
-                        return null;
-                    }
-                }
-
-                public String print(URI v) {
-                    return v.toString();
-                }
-            },
             new StringImpl<Duration>(Duration.class,  createXS("duration")) {
                 public String print(Duration duration) {
                     return duration.toString();
@@ -821,6 +838,61 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
         }
     }
 
+        private static void checkXmlGregorianCalendarFieldRef(QName type,
+                XMLGregorianCalendar cal)throws javax.xml.bind.MarshalException{
+                StringBuffer buf = new StringBuffer();
+                int bitField = xmlGregorianCalendarFieldRef.get(type);
+                final int l = 0x1;
+                int pos = 0;
+                while (bitField != 0x0){
+                        int bit = bitField & l;
+                        bitField >>>= 4;
+                        pos++;
+
+                        if (bit == 1) {
+                                switch(pos){
+                                        case 1:
+                                                if (cal.getSecond() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_SEC);
+                                                }
+                                                break;
+                                        case 2:
+                                                if (cal.getMinute() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_MIN);
+                                                }
+                                                break;
+                                        case 3:
+                                                if (cal.getHour() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_HR);
+                                                }
+                                                break;
+                                        case 4:
+                                                if (cal.getDay() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_DAY);
+                                                }
+                                                break;
+                                        case 5:
+                                                if (cal.getMonth() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_MONTH);
+                                                }
+                                                break;
+                                        case 6:
+                                                if (cal.getYear() == DatatypeConstants.FIELD_UNDEFINED){
+                                                        buf.append("  " + Messages.XMLGREGORIANCALENDAR_YEAR);
+                                                }
+                                                break;
+                                        case 7:  // ignore timezone setting
+                                                break;
+                                }
+                        }
+                }
+                if (buf.length() > 0){
+                        throw new javax.xml.bind.MarshalException(
+                         Messages.XMLGREGORIANCALENDAR_INVALID.format(type.getLocalPart())
+                         + buf.toString());
+                }
+        }
+
     /**
      * Format string for the {@link XMLGregorianCalendar}.
      */
@@ -838,6 +910,30 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
         m.put(DatatypeConstants.GYEARMONTH, "%Y-%M" + "%z");
         m.put(DatatypeConstants.GMONTHDAY,  "--%M-%D" +"%z");
     }
+
+        /**
+         * Field designations for XMLGregorianCalendar format string.
+         * sec          0x0000001
+         * min          0x0000010
+         * hrs          0x0000100
+         * day          0x0001000
+         * month        0x0010000
+         * year         0x0100000
+         * timezone 0x1000000
+         */
+        private static final Map<QName, Integer> xmlGregorianCalendarFieldRef =
+                new HashMap<QName, Integer>();
+        static {
+                Map<QName, Integer> f = xmlGregorianCalendarFieldRef;
+                f.put(DatatypeConstants.DATETIME,   0x1111111);
+                f.put(DatatypeConstants.DATE,       0x1111000);
+                f.put(DatatypeConstants.TIME,       0x1000111);
+                f.put(DatatypeConstants.GDAY,       0x1001000);
+                f.put(DatatypeConstants.GMONTH,     0x1010000);
+                f.put(DatatypeConstants.GYEAR,      0x1100000);
+                f.put(DatatypeConstants.GYEARMONTH, 0x1110000);
+                f.put(DatatypeConstants.GMONTHDAY,  0x1011000);
+        }
 
     /**
      * {@link RuntimeBuiltinLeafInfoImpl} for {@link UUID}.

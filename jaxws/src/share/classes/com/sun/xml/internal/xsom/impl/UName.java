@@ -22,7 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.xsom.impl;
+
+import com.sun.xml.internal.xsom.XSDeclaration;
 
 import java.util.Comparator;
 
@@ -49,6 +52,10 @@ public final class UName {
         this(nsUri,localName,localName);
     }
 
+    public UName(XSDeclaration decl) {
+        this(decl.getTargetNamespace(),decl.getName());
+    }
+
     private final String nsUri;
     private final String localName;
     private final String qname;
@@ -56,6 +63,32 @@ public final class UName {
     public String getName() { return localName; }
     public String getNamespaceURI() { return nsUri; }
     public String getQualifiedName() { return qname; }
+
+
+    // Issue 540; XSComplexType.getAttributeUse(String,String) always return null
+    // UName was used in HashMap without overriden equals and hashCode methods.
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof UName) {
+            UName u = (UName)obj;
+
+            return ((this.getName().compareTo(u.getName()) == 0) &&
+                    (this.getNamespaceURI().compareTo(u.getNamespaceURI()) == 0) &&
+                    (this.getQualifiedName().compareTo(u.getQualifiedName()) == 0));
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 13 * hash + (this.nsUri != null ? this.nsUri.hashCode() : 0);
+        hash = 13 * hash + (this.localName != null ? this.localName.hashCode() : 0);
+        hash = 13 * hash + (this.qname != null ? this.qname.hashCode() : 0);
+        return hash;
+    }
 
     /**
      * Compares {@link UName}s by their names.

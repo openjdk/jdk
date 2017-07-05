@@ -22,9 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: W3CAddressingExtensionHandler.java,v 1.1.2.9 2007/02/06 00:33:38 kohsuke Exp $
- */
 
 package com.sun.tools.internal.ws.wsdl.parser;
 

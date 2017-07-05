@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- *
- *
- *
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap.name;
@@ -38,10 +33,8 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.Name;
 import javax.xml.soap.SOAPConstants;
 
-import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+//import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import org.w3c.dom.Element;
-
-import com.sun.xml.internal.messaging.saaj.soap.impl.ElementImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 
 public class NameImpl implements Name {
@@ -67,6 +60,13 @@ public class NameImpl implements Name {
         Logger.getLogger(LogDomainConstants.NAMING_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.name.LocalStrings");
 
+    /**
+     * XML Information Set REC
+     * all namespace attributes (including those named xmlns,
+     * whose [prefix] property has no value) have a namespace URI of http://www.w3.org/2000/xmlns/
+     */
+    public final static String XMLNS_URI = "http://www.w3.org/2000/xmlns/".intern();
+
     protected NameImpl(String name) {
         this.localName = name == null ? "" : name;
     }
@@ -77,9 +77,9 @@ public class NameImpl implements Name {
         this.prefix = prefix == null ? "" : prefix;
 
         if (this.prefix.equals("xmlns") && this.uri.equals("")) {
-            this.uri = NamespaceContext.XMLNS_URI;
+            this.uri = XMLNS_URI;
         }
-        if (this.uri.equals(NamespaceContext.XMLNS_URI) && this.prefix.equals("")) {
+        if (this.uri.equals(XMLNS_URI) && this.prefix.equals("")) {
             this.prefix = "xmlns";
         }
     }

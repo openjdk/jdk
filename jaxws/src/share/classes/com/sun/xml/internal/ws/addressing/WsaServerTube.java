@@ -29,8 +29,8 @@ import com.sun.istack.internal.NotNull;
 import static com.sun.xml.internal.ws.addressing.W3CAddressingConstants.ONLY_ANONYMOUS_ADDRESS_SUPPORTED;
 import static com.sun.xml.internal.ws.addressing.W3CAddressingConstants.ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED;
 import com.sun.xml.internal.ws.addressing.model.ActionNotSupportedException;
-import com.sun.xml.internal.ws.addressing.model.InvalidMapException;
-import com.sun.xml.internal.ws.addressing.model.MapRequiredException;
+import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
+import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -42,28 +42,27 @@ import com.sun.xml.internal.ws.api.message.Messages;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.pipe.ClientTubeAssemblerContext;
-import com.sun.xml.internal.ws.api.pipe.Fiber;
-import com.sun.xml.internal.ws.api.pipe.NextAction;
-import com.sun.xml.internal.ws.api.pipe.TransportTubeFactory;
-import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.pipe.TubeCloner;
+import com.sun.xml.internal.ws.api.pipe.*;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
+import com.sun.xml.internal.ws.developer.JAXWSProperties;
 import com.sun.xml.internal.ws.message.FaultDetailHeader;
 import com.sun.xml.internal.ws.resources.AddressingMessages;
 
 import javax.xml.soap.SOAPFault;
 import javax.xml.ws.WebServiceException;
 import java.net.URI;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Handles WS-Addressing for the server.
  *
+ * @author Rama Pulavarthi
  * @author Kohsuke Kawaguchi
  * @author Arun Gupta
  */
-public final class WsaServerTube extends WsaTube {
-
+public class WsaServerTube extends WsaTube {
+    private WSEndpoint endpoint;
     // store the replyTo/faultTo of the message currently being processed.
     // both will be set to non-null in processRequest
     private WSEndpointReference replyTo;
@@ -74,12 +73,15 @@ public final class WsaServerTube extends WsaTube {
      * Used for determining ReplyTo or Fault Action for non-anonymous responses     *
      */
     private WSDLBoundOperation wbo;
-    public WsaServerTube(@NotNull WSDLPort wsdlPort, WSBinding binding, Tube next) {
+    public WsaServerTube(WSEndpoint endpoint, @NotNull WSDLPort wsdlPort, WSBinding binding, Tube next) {
         super(wsdlPort, binding, next);
+        this.endpoint = endpoint;
+
     }
 
     public WsaServerTube(WsaServerTube that, TubeCloner cloner) {
         super(that, cloner);
+        endpoint = that.endpoint;
     }
 
     public WsaServerTube copy(TubeCloner cloner) {
@@ -90,6 +92,8 @@ public final class WsaServerTube extends WsaTube {
         Message msg = request.getMessage();
         if(msg==null)   return doInvoke(next,request); // hmm?
 
+        // expose bunch of addressing related properties for advanced applications
+        request.addSatellite(new WsaPropertyBag(addressingVersion,soapVersion,request));
 
         // Store request ReplyTo and FaultTo in requestPacket.invocationProperties
         // so that they can be used after responsePacket is received.
@@ -97,33 +101,27 @@ public final class WsaServerTube extends WsaTube {
 
         HeaderList hl = request.getMessage().getHeaders();
         try {
-        replyTo = hl.getReplyTo(addressingVersion, soapVersion);
-        faultTo = hl.getFaultTo(addressingVersion, soapVersion);
-        } catch (InvalidMapException e) {
-            SOAPFault soapFault = helper.newInvalidMapFault(e, addressingVersion);
+            replyTo = hl.getReplyTo(addressingVersion, soapVersion);
+            faultTo = hl.getFaultTo(addressingVersion, soapVersion);
+        } catch (InvalidAddressingHeaderException e) {
+            LOGGER.log(Level.WARNING,
+                    addressingVersion.getInvalidMapText()+", Problem header:" + e.getProblemHeader()+ ", Reason: "+ e.getSubsubcode(),e);
+            SOAPFault soapFault = helper.createInvalidAddressingHeaderFault(e, addressingVersion);
             // WS-A fault processing for one-way methods
-            if (request.getMessage().isOneWay(wsdlPort)) {
-                request.createServerResponse(null, wsdlPort, null, binding);
-                return doInvoke(next, request);
+            if ((wsdlPort!=null) && request.getMessage().isOneWay(wsdlPort)) {
+                Packet response = request.createServerResponse(null, wsdlPort, null, binding);
+                return doReturnWith(response);
             }
 
             Message m = Messages.create(soapFault);
             if (soapVersion == SOAPVersion.SOAP_11) {
-                FaultDetailHeader s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getMapQName());
+                FaultDetailHeader s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getProblemHeader());
                 m.getHeaders().add(s11FaultDetailHeader);
             }
 
             Packet response = request.createServerResponse(m, wsdlPort, null, binding);
             return doReturnWith(response);
         }
-        String messageId = hl.getMessageID(addressingVersion, soapVersion);
-
-        // TODO: This is probably not a very good idea.
-        // if someone wants to get this data, let them get from HeaderList.
-        // we can even provide a convenience method
-        //  -- KK.
-        request.invocationProperties.put(REQUEST_MESSAGE_ID, messageId);
-
 
         // defaulting
         if (replyTo == null)    replyTo = addressingVersion.anonymousEpr;
@@ -136,7 +134,7 @@ public final class WsaServerTube extends WsaTube {
         // if one-way message and WS-A header processing fault has occurred,
         // then do no further processing
         if (p.getMessage() == null)
-            // TODO: record the problem that we are dropping this problem on the floor.
+            // request message is invalid, exception is logged by now  and response is sent back  with null message
             return doReturnWith(p);
 
         // if we find an error in addressing header, just turn around the direction here
@@ -201,7 +199,7 @@ public final class WsaServerTube extends WsaTube {
         if (packet.transportBackChannel != null)
             packet.transportBackChannel.close();
 
-        if (packet.getMessage().isOneWay(wsdlPort)) {
+        if ((wsdlPort!=null) && packet.getMessage().isOneWay(wsdlPort)) {
             // one way message but with replyTo. I believe this is a hack for WS-TX - KK.
             LOGGER.fine(AddressingMessages.NON_ANONYMOUS_RESPONSE_ONEWAY());
             return;
@@ -219,7 +217,7 @@ public final class WsaServerTube extends WsaTube {
         // we need to assemble a pipeline to talk to this endpoint.
         // TODO: what to pass as WSService?
         Tube transport = TransportTubeFactory.create(Thread.currentThread().getContextClassLoader(),
-            new ClientTubeAssemblerContext(adrs, wsdlPort, null, binding));
+            new ClientTubeAssemblerContext(adrs, wsdlPort, null, binding,endpoint.getContainer()));
 
         packet.endpointAddress = adrs;
         String action = packet.getMessage().isFault() ?
@@ -227,11 +225,12 @@ public final class WsaServerTube extends WsaTube {
                 helper.getOutputAction(wbo);
         //set the SOAPAction, as its got to be same as wsa:Action
         packet.soapAction = action;
+        packet.expectReply = false;
         Fiber.current().runSync(transport, packet);
     }
 
     @Override
-    public void validateAction(Packet packet) {
+    protected void validateAction(Packet packet) {
         //There may not be a WSDL operation.  There may not even be a WSDL.
         //For instance this may be a RM CreateSequence message.
         WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
@@ -254,9 +253,8 @@ public final class WsaServerTube extends WsaTube {
         }
     }
 
-    @Override
-    public void checkCardinality(Packet packet) {
-        super.checkCardinality(packet);
+    protected void checkMessageAddressingProperties(Packet packet) {
+        super.checkMessageAddressingProperties(packet);
 
         // wsaw:Anonymous validation
         WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
@@ -270,7 +268,7 @@ public final class WsaServerTube extends WsaTube {
             try {
                 new EndpointAddress(URI.create(replyTo.getAddress()));
             } catch (Exception e) {
-                throw new InvalidMapException(addressingVersion.replyToTag, addressingVersion.invalidAddressTag);
+                throw new InvalidAddressingHeaderException(addressingVersion.replyToTag, addressingVersion.invalidAddressTag);
             }
         }
         //for now only validate ReplyTo
@@ -279,30 +277,12 @@ public final class WsaServerTube extends WsaTube {
             try {
                 new EndpointAddress(URI.create(faultTo.getAddress()));
             } catch (IllegalArgumentException e) {
-                throw new InvalidMapException(addressingVersion.faultToTag, addressingVersion.invalidAddressTag);
+                throw new InvalidAddressingHeaderException(addressingVersion.faultToTag, addressingVersion.invalidAddressTag);
             }
         }
         */
 
     }
-
-    protected void checkMandatoryHeaders(
-        Packet packet, boolean foundAction, boolean foundTo, boolean foundMessageId, boolean foundRelatesTo) {
-        super.checkMandatoryHeaders(packet, foundAction, foundTo, foundMessageId, foundRelatesTo);
-        WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
-        // no need to check for for non-application messages
-        if (wbo == null)
-            return;
-
-        // if no wsa:To header is found
-        if (!foundTo)
-            throw new MapRequiredException(addressingVersion.toTag);
-
-        // if two-way and no wsa:MessageID is found
-        if (!wbo.getOperation().isOneWay() && !foundMessageId)
-            throw new MapRequiredException(addressingVersion.messageIDTag);
-    }
-
 
     final void checkAnonymousSemantics(WSDLBoundOperation wbo, WSEndpointReference replyTo, WSEndpointReference faultTo) {
         // no check if Addressing is not enabled or is Member Submission
@@ -329,17 +309,17 @@ public final class WsaServerTube extends WsaTube {
             break;
         case prohibited:
             if (replyToValue != null && replyToValue.equals(addressingVersion.anonymousUri))
-                throw new InvalidMapException(addressingVersion.replyToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
+                throw new InvalidAddressingHeaderException(addressingVersion.replyToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
 
             if (faultToValue != null && faultToValue.equals(addressingVersion.anonymousUri))
-                throw new InvalidMapException(addressingVersion.faultToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
+                throw new InvalidAddressingHeaderException(addressingVersion.faultToTag, ONLY_NON_ANONYMOUS_ADDRESS_SUPPORTED);
             break;
         case required:
             if (replyToValue != null && !replyToValue.equals(addressingVersion.anonymousUri))
-                throw new InvalidMapException(addressingVersion.replyToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
+                throw new InvalidAddressingHeaderException(addressingVersion.replyToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
 
             if (faultToValue != null && !faultToValue.equals(addressingVersion.anonymousUri))
-                throw new InvalidMapException(addressingVersion.faultToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
+                throw new InvalidAddressingHeaderException(addressingVersion.faultToTag, ONLY_ANONYMOUS_ADDRESS_SUPPORTED);
             break;
         default:
             // cannot reach here
@@ -347,6 +327,10 @@ public final class WsaServerTube extends WsaTube {
         }
     }
 
+    /**
+     * @deprecated
+     *      Use {@link JAXWSProperties#ADDRESSING_MESSAGEID}.
+     */
     public static final String REQUEST_MESSAGE_ID = "com.sun.xml.internal.ws.addressing.request.messageID";
 
     private static final Logger LOGGER = Logger.getLogger(WsaServerTube.class.getName());

@@ -33,7 +33,7 @@ import com.sun.xml.internal.org.jvnet.fastinfoset.EncodingAlgorithmIndexes;
 
 public final class BuiltInEncodingAlgorithmFactory {
 
-    public final static BuiltInEncodingAlgorithm[] table =
+    private final static BuiltInEncodingAlgorithm[] table =
             new BuiltInEncodingAlgorithm[EncodingConstants.ENCODING_ALGORITHM_BUILTIN_END + 1];
 
     public final static HexadecimalEncodingAlgorithm hexadecimalEncodingAlgorithm = new HexadecimalEncodingAlgorithm();
@@ -64,5 +64,9 @@ public final class BuiltInEncodingAlgorithmFactory {
         table[EncodingAlgorithmIndexes.FLOAT] = floatEncodingAlgorithm;
         table[EncodingAlgorithmIndexes.DOUBLE] = doubleEncodingAlgorithm;
         table[EncodingAlgorithmIndexes.UUID] = uuidEncodingAlgorithm;
+    }
+
+    public static BuiltInEncodingAlgorithm getAlgorithm(int index) {
+        return table[index];
     }
 }

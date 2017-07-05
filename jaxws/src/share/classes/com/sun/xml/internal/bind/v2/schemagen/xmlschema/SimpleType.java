@@ -35,10 +35,10 @@ public interface SimpleType
 
 
     @XmlAttribute("final")
-    public SimpleType _final(String[] value);
+    public SimpleType _final(String value);
 
     @XmlAttribute("final")
-    public SimpleType _final(String value);
+    public SimpleType _final(String[] value);
 
     @XmlAttribute
     public SimpleType name(String value);

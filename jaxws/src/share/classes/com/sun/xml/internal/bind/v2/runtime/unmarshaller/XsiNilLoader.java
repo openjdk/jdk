@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import com.sun.xml.internal.bind.DatatypeConverterImpl;
@@ -29,6 +30,9 @@ import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 
+import java.util.Collection;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import org.xml.sax.SAXException;
 
 /**
@@ -49,16 +53,23 @@ public class XsiNilLoader extends ProxyLoader {
     protected Loader selectLoader(UnmarshallingContext.State state, TagName ea) throws SAXException {
         int idx = ea.atts.getIndex(WellKnownNamespace.XML_SCHEMA_INSTANCE,"nil");
 
-        if(idx!=-1) {
-            String value = ea.atts.getValue(idx);
-            if(DatatypeConverterImpl._parseBoolean(value)) {
+        if (idx!=-1) {
+            if (DatatypeConverterImpl._parseBoolean(ea.atts.getValue(idx))) {
                 onNil(state);
-                return Discarder.INSTANCE;
+                boolean hasOtherAttributes = (ea.atts.getLength() - 1) > 0;
+                // see issues 6759703 and 565 - need to preserve attributes even if the element is nil; only when the type is stored in JAXBElement
+                if (!(hasOtherAttributes && (state.prev.target instanceof JAXBElement))) {
+                    return Discarder.INSTANCE;
+                }
             }
         }
-
         return defaultLoader;
     }
+
+        @Override
+        public Collection<QName> getExpectedChildElements() {
+            return defaultLoader.getExpectedChildElements();
+        }
 
     /**
      * Called when xsi:nil='true' was found.
@@ -75,13 +86,16 @@ public class XsiNilLoader extends ProxyLoader {
             this.acc = acc;
         }
 
+        @Override
         protected void onNil(UnmarshallingContext.State state) throws SAXException {
             try {
                 acc.set(state.prev.target,null);
+                state.prev.nil = true;
             } catch (AccessorException e) {
                 handleGenericException(e,true);
             }
         }
+
     }
 
     public static final class Array extends XsiNilLoader {
@@ -89,6 +103,7 @@ public class XsiNilLoader extends ProxyLoader {
             super(core);
         }
 
+        @Override
         protected void onNil(UnmarshallingContext.State state) {
             // let the receiver add this to the lister
             state.target = null;

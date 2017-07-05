@@ -42,12 +42,12 @@ final class CallbackMethodHandler extends AsyncMethodHandler {
      */
     private final int handlerPos;
 
-    public CallbackMethodHandler(SEIStub owner, JavaMethodImpl jm, SyncMethodHandler core, int handlerPos) {
+    CallbackMethodHandler(SEIStub owner, JavaMethodImpl jm, JavaMethodImpl core, int handlerPos) {
         super(owner,jm,core);
         this.handlerPos = handlerPos;
     }
 
-    public Future<?> invoke(Object proxy, Object[] args) throws WebServiceException {
+    Future<?> invoke(Object proxy, Object[] args) throws WebServiceException {
         // the spec requires the last argument
         final AsyncHandler handler = (AsyncHandler)args[handlerPos];
 

@@ -291,7 +291,9 @@ public final class BIProperty extends AbstractDeclarationImpl {
                 name = JJavaName.getPluralForm(name);
         }
 
-        return wrapUp(new CValuePropertyInfo(name, source,getCustomizations(source),source.getLocator(), tu, typeName ),source);
+        CValuePropertyInfo prop = wrapUp(new CValuePropertyInfo(name, source, getCustomizations(source), source.getLocator(), tu, typeName), source);
+        BIInlineBinaryData.handle(source, prop);
+        return prop;
     }
 
     public CAttributePropertyInfo createAttributeProperty( XSAttributeUse use, TypeUse tu ) {
@@ -353,17 +355,48 @@ public final class BIProperty extends AbstractDeclarationImpl {
 
         types.addTo(prop);
 
+        BIInlineBinaryData.handle(source.getTerm(), prop);
         return prop;
+    }
+
+    public CReferencePropertyInfo createDummyExtendedMixedReferenceProperty(
+            String defaultName, XSComponent source, RawTypeSet types) {
+            return createReferenceProperty(
+                    defaultName,
+                    false,
+                    source,
+                    types,
+                    true,
+                    true,
+                    false,
+                    true);
+    }
+
+    public CReferencePropertyInfo createContentExtendedMixedReferenceProperty(
+            String defaultName, XSComponent source, RawTypeSet types) {
+            return createReferenceProperty(
+                    defaultName,
+                    false,
+                    source,
+                    types,
+                    true,
+                    false,
+                    true,
+                    true);
     }
 
     public CReferencePropertyInfo createReferenceProperty(
             String defaultName, boolean forConstant, XSComponent source,
-            RawTypeSet types, boolean isMixed) {
+            RawTypeSet types, boolean isMixed, boolean dummy, boolean content, boolean isMixedExtended) {
 
-        if(!types.refs.isEmpty())
-            // if this property is empty, don't acknowleedge the customization
-            // this allows pointless property customization to be reported as an error
-            markAsAcknowledged();
+        if (types == null) {    // this is a special case where we need to generate content because potential subtypes would need to be able to override what's store inside
+            content = true;
+        } else {
+            if(!types.refs.isEmpty())
+                // if this property is empty, don't acknowleedge the customization
+                // this allows pointless property customization to be reported as an error
+                markAsAcknowledged();
+        }
         constantPropertyErrorCheck();
 
         String name = getPropertyName(forConstant);
@@ -371,15 +404,19 @@ public final class BIProperty extends AbstractDeclarationImpl {
             name = defaultName;
 
         CReferencePropertyInfo prop = wrapUp(
-            new CReferencePropertyInfo(
-                name,
-                types.getCollectionMode().isRepeated()||isMixed,
-                isMixed, source,
-                getCustomizations(source), source.getLocator() ),
-            source);
+                                            new CReferencePropertyInfo(
+                                                name,
+                                                (types == null) ? true : types.getCollectionMode().isRepeated()||isMixed,
+                                                (types == null) ? false : types.isRequired(),
+                                                isMixed,
+                                                source,
+                                                getCustomizations(source), source.getLocator(), dummy, content, isMixedExtended),
+                                        source);
+        if (types != null) {
+            types.addTo(prop);
+        }
 
-        types.addTo(prop);
-
+        BIInlineBinaryData.handle(source, prop);
         return prop;
     }
 
@@ -407,7 +444,7 @@ public final class BIProperty extends AbstractDeclarationImpl {
         }
 
         if(generateRef) {
-            return createReferenceProperty(defaultName,forConstant,source,types, false);
+            return createReferenceProperty(defaultName,forConstant,source,types, false, false, false, false);
         } else {
             return createElementProperty(defaultName,forConstant,source,types);
         }

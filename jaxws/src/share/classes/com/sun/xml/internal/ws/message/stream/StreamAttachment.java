@@ -28,6 +28,7 @@ package com.sun.xml.internal.ws.message.stream;
 import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.util.ByteArrayDataSource;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
+import com.sun.xml.internal.ws.encoding.DataSourceStreamingDataHandler;
 
 import javax.activation.DataHandler;
 import javax.xml.transform.Source;
@@ -77,7 +78,7 @@ public class StreamAttachment implements Attachment {
     }
 
     public DataHandler asDataHandler() {
-        return new DataHandler(new ByteArrayDataSource(data,0,len,getContentType()));
+        return new DataSourceStreamingDataHandler(new ByteArrayDataSource(data,0,len,getContentType()));
     }
 
     public Source asSource() {

@@ -33,6 +33,7 @@ import org.xml.sax.Locator;
  * it can be latter used by other extensions to resolve the namespaces.
  *
  * @author Vivek Pandey
+ * @deprecated This interface is deprecated, will be removed in JAX-WS 2.2 RI.
  */
 public interface TWSDLParserContext {
 

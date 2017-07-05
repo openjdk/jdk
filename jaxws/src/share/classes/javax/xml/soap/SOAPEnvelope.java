@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPEnvelope.java,v 1.6 2005/04/05 22:42:05 mk125090 Exp $
- * $Revision: 1.6 $
- * $Date: 2005/04/05 22:42:05 $
+ * $Id: SOAPEnvelope.java,v 1.7 2006/03/30 00:59:41 ofung Exp $
+ * $Revision: 1.7 $
+ * $Date: 2006/03/30 00:59:41 $
  */
 
 

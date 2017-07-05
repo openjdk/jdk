@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.lang.reflect.Constructor;
@@ -68,13 +69,14 @@ class StAXStreamConnector extends StAXConnector {
 
         // Quick hack until SJSXP fixes 6270116
         boolean isZephyr = readerClass.getName().equals("com.sun.xml.internal.stream.XMLReaderImpl");
-        if(isZephyr)
+        if (getBoolProp(reader,"org.codehaus.stax2.internNames") &&
+            getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
             ; // no need for interning
         else
-        if(checkImplementaionNameOfSjsxp(reader))
+        if (isZephyr)
             ; // no need for interning
-        if(getBoolProp(reader,"org.codehaus.stax2.internNames")
-        && getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
+        else
+        if (checkImplementaionNameOfSjsxp(reader))
             ; // no need for interning.
         else
             visitor = new InterningXmlVisitor(visitor);

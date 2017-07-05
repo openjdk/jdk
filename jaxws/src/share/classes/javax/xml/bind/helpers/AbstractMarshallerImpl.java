@@ -60,7 +60,7 @@ import java.io.IOException;
  * {@link Marshaller#marshal(Object, javax.xml.transform.Result) marshal(Object, javax.xml.stream.XMLEventWriter)}.
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li></ul>
- * @version $Revision$ $Date$
+ * @version $Revision: 1.8 $ $Date: 2006/08/28 17:56:38 $
  * @see javax.xml.bind.Marshaller
  * @since JAXB1.0
  */

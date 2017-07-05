@@ -175,7 +175,7 @@ public final class ModelerMessages {
     }
 
     /**
-     * Unable to create JAXBContext due to the security restriction
+     * Unable to create JAXBContext
      *
      */
     public static String UNABLE_TO_CREATE_JAXB_CONTEXT() {
@@ -276,6 +276,18 @@ public final class ModelerMessages {
      */
     public static String RUNTIME_MODELER_WSFEATURE_ILLEGAL_FTRCONSTRUCTOR(Object arg0, Object arg1) {
         return localizer.localize(localizableRUNTIME_MODELER_WSFEATURE_ILLEGAL_FTRCONSTRUCTOR(arg0, arg1));
+    }
+
+    public static Localizable localizableRUNTIME_MODELER_WEBMETHOD_MUST_BE_NONSTATICFINAL(Object arg0) {
+        return messageFactory.getMessage("runtime.modeler.webmethod.must.be.nonstaticfinal", arg0);
+    }
+
+    /**
+     * @WebMethod is not allowed on a static or final method {0}
+     *
+     */
+    public static String RUNTIME_MODELER_WEBMETHOD_MUST_BE_NONSTATICFINAL(Object arg0) {
+        return localizer.localize(localizableRUNTIME_MODELER_WEBMETHOD_MUST_BE_NONSTATICFINAL(arg0));
     }
 
 }

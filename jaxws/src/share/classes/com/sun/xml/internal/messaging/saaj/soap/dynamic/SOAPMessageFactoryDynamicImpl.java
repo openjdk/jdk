@@ -22,9 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: SOAPMessageFactoryDynamicImpl.java,v 1.4 2006/01/27 12:49:32 vj135062 Exp $
- */
 
 
 

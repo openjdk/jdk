@@ -30,17 +30,14 @@ import com.sun.xml.internal.ws.util.DOMUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.namespace.QName;
 import javax.xml.soap.Detail;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.SOAPFaultException;
+import java.util.Iterator;
 
 /**
  * This class represents SOAP1.1 Fault. This class will be used to marshall/unmarshall a soap fault using JAXB.
@@ -121,7 +118,12 @@ class SOAP11Fault extends SOAPFaultBuilder {
         this.faultstring = fault.getFaultString();
         this.faultactor = fault.getFaultActor();
         if (fault.getDetail() != null) {
-            detail = new DetailType(fault.getDetail());
+            detail = new DetailType();
+            Iterator iter = fault.getDetail().getDetailEntries();
+            while(iter.hasNext()){
+                Element fd = (Element)iter.next();
+                detail.getDetails().add(fd);
+            }
         }
     }
 
@@ -165,10 +167,12 @@ class SOAP11Fault extends SOAPFaultBuilder {
     protected Throwable getProtocolException() {
         try {
             SOAPFault fault = SOAPVersion.SOAP_11.saajSoapFactory.createFault(faultstring, faultcode);
-            if(detail != null && detail.getDetail(0) != null) {
-                Node n = fault.getOwnerDocument().importNode(detail.getDetail(0), true);
+            if(detail != null){
                 Detail d = fault.addDetail();
-                d.appendChild(n);
+                for(Element det : detail.getDetails()){
+                    Node n = fault.getOwnerDocument().importNode(det, true);
+                    d.appendChild(n);
+                }
             }
             fault.setFaultActor(faultactor);
             return new SOAPFaultException(fault);

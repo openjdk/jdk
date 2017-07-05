@@ -32,6 +32,8 @@ import javax.xml.namespace.QName;
  * A WSDL element or attribute that can be extended.
  *
  * @author Vivek Pandey
+ * @deprecated This interface is deprecated, will be removed in JAX-WS 2.2 RI.
+ *
  */
 public interface TWSDLExtensible {
     /**

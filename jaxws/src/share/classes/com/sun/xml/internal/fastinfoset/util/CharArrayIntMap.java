@@ -114,6 +114,26 @@ public class CharArrayIntMap extends KeyIntMap {
         }
     }
 
+    /**
+     * Method returns an index of the passed character buffer in
+     * <code>CharArrayIntMap</code>.
+     *
+     * @return index of character buffer in <code>CharArrayIntMap</code>,
+     * otherwise NOT_PRESENT.
+     */
+    public final int get(char[] ch, int start, int length) {
+        final int hash = hashHash(CharArray.hashCode(ch, start, length));
+        return get(ch, start, length, hash);
+    }
+
+    /**
+     * Method returns an index of the passed character buffer in
+     * <code>CharArrayIntMap</code>. If character buffer is not in
+     * <code>CharArrayIntMap</code> - it will be added.
+     *
+     * @return index of character buffer in <code>CharArrayIntMap</code>, or
+     * NOT_PRESENT if character buffer was just added.
+     */
     public final int obtainIndex(char[] ch, int start, int length, boolean clone) {
         final int hash = hashHash(CharArray.hashCode(ch, start, length));
 
@@ -162,7 +182,7 @@ public class CharArrayIntMap extends KeyIntMap {
             }
         }
 
-        return -1;
+        return NOT_PRESENT;
     }
 
     private final void addEntry(char[] ch, int start, int length, int hash, int value, int bucketIndex) {

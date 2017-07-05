@@ -23,9 +23,6 @@
  * have any questions.
  */
 
-/*
- * @(#)$Id: Discarder.java,v 1.4 2005/09/10 19:07:43 kohsuke Exp $
- */
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 

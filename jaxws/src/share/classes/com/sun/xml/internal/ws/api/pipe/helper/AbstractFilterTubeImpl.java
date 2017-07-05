@@ -50,7 +50,11 @@ public abstract class AbstractFilterTubeImpl extends AbstractTubeImpl {
 
     protected AbstractFilterTubeImpl(AbstractFilterTubeImpl that, TubeCloner cloner) {
         super(that, cloner);
-        this.next = cloner.copy(that.next);
+        if (that.next != null) {
+            this.next = cloner.copy(that.next);
+        } else {
+            this.next = null;
+        }
     }
 
     /**

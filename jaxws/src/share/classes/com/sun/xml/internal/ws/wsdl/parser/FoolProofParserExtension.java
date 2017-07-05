@@ -25,16 +25,7 @@
 package com.sun.xml.internal.ws.wsdl.parser;
 
 
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundPortType;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLFault;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLInput;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLMessage;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOperation;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOutput;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPortType;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
+import com.sun.xml.internal.ws.api.model.wsdl.*;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 
 import javax.xml.namespace.QName;
@@ -133,7 +124,7 @@ final class FoolProofParserExtension extends DelegatingParserExtension {
         return post(pre(reader),reader,super.bindingOperationOutputElements(operation, reader));
     }
 
-    public boolean bindingOperationFaultElements(WSDLBoundOperation operation, XMLStreamReader reader) {
-        return post(pre(reader),reader,super.bindingOperationFaultElements(operation, reader));
+    public boolean bindingOperationFaultElements(WSDLBoundFault fault, XMLStreamReader reader) {
+        return post(pre(reader),reader,super.bindingOperationFaultElements(fault, reader));
     }
 }

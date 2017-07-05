@@ -52,7 +52,7 @@ public interface WSDLPortType extends WSDLObject, WSDLExtensible {
 
 
     /**
-     * Gets {@link Iterable}<{$link WSDLOperation}>
+     * Gets {@link Iterable}<{@link WSDLOperation}>
      */
     public Iterable<? extends WSDLOperation> getOperations();
 }

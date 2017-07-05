@@ -62,9 +62,9 @@ public class DecoderStateTables {
     public final static int TERMINATOR_SINGLE               = 22;
     public final static int TERMINATOR_DOUBLE               = 23;
 
-    public static final int[] DII = new int[256];
+    private static final int[] DII = new int[256];
 
-    private static int[][] DII_RANGES = {
+    private static final int[][] DII_RANGES = {
         // EII
 
         // %00000000 to %00011111  EII no attributes small index
@@ -161,9 +161,9 @@ public class DecoderStateTables {
         { 0xFF, TERMINATOR_DOUBLE }
     };
 
-    public static final int[] EII = new int[256];
+    private static final int[] EII = new int[256];
 
-    private static int[][] EII_RANGES = {
+    private static final int[][] EII_RANGES = {
         // EII
 
         // %00000000 to %00011111  EII no attributes small index
@@ -349,9 +349,9 @@ public class DecoderStateTables {
     public final static int AII_TERMINATOR_SINGLE           = 4;
     public final static int AII_TERMINATOR_DOUBLE           = 5;
 
-    public static final int[] AII = new int[256];
+    private static final int[] AII = new int[256];
 
-    private static int[][] AII_RANGES = {
+    private static final int[][] AII_RANGES = {
         // %00000000 to %00111111  AII small index
         { 0x3F, AII_INDEX_SMALL },
 
@@ -404,9 +404,9 @@ public class DecoderStateTables {
     public final static int NISTRING_INDEX_LARGE           = 10;
     public final static int NISTRING_EMPTY                 = 11;
 
-    public static final int[] NISTRING = new int[256];
+    private static final int[] NISTRING = new int[256];
 
-    private static int[][] NISTRING_RANGES = {
+    private static final int[][] NISTRING_RANGES = {
         // UTF-8 string
 
         // %00000000 to %00000111  UTF-8 no add to table small length
@@ -521,9 +521,9 @@ public class DecoderStateTables {
     /* package */ final static int ISTRING_INDEX_MEDIUM        = 4;
     /* package */ final static int ISTRING_INDEX_LARGE         = 5;
 
-    /* package */ static final int[] ISTRING = new int[256];
+    private static final int[] ISTRING = new int[256];
 
-    private static int[][] ISTRING_RANGES = {
+    private static final int[][] ISTRING_RANGES = {
         // %00000000 to %00111111 small length
         { 0x3F, ISTRING_SMALL_LENGTH },
 
@@ -559,9 +559,9 @@ public class DecoderStateTables {
     /* package */ final static int ISTRING_PREFIX_NAMESPACE_LENGTH_36  = 9;
     /* package */ final static int ISTRING_PREFIX_NAMESPACE_INDEX_ZERO = 10;
 
-    /* package */ static final int[] ISTRING_PREFIX_NAMESPACE = new int[256];
+    private static final int[] ISTRING_PREFIX_NAMESPACE = new int[256];
 
-    private static int[][] ISTRING_PREFIX_NAMESPACE_RANGES = {
+    private static final int[][] ISTRING_PREFIX_NAMESPACE_RANGES = {
         // %00000000 to %00000001 small length
         { 0x01, ISTRING_SMALL_LENGTH },
 
@@ -627,9 +627,9 @@ public class DecoderStateTables {
     /* package */ final static int UTF8_THREE_BYTES           = 3;
     /* package */ final static int UTF8_FOUR_BYTES            = 4;
 
-    /* package */ static final int[] UTF8_NCNAME = new int[256];
+    private static final int[] UTF8_NCNAME = new int[256];
 
-    private static int[][] UTF8_NCNAME_RANGES = {
+    private static final int[][] UTF8_NCNAME_RANGES = {
 
         // Basic Latin
 
@@ -699,9 +699,9 @@ public class DecoderStateTables {
 
     /* package */ final static int UTF8_ONE_BYTE = 1;
 
-    /* package */ static final int[] UTF8 = new int[256];
+    private static final int[] UTF8 = new int[256];
 
-    private static int[][] UTF8_RANGES = {
+    private static final int[][] UTF8_RANGES = {
 
         // Basic Latin
 
@@ -763,8 +763,40 @@ public class DecoderStateTables {
         }
     }
 
+    public static final int DII(final int index) {
+        return DII[index];
+    }
+
+    public static final int EII(final int index) {
+        return EII[index];
+    }
+
+    public static final int AII(final int index) {
+        return AII[index];
+    }
+
+    public static final int NISTRING(final int index) {
+        return NISTRING[index];
+    }
+
+    public static final int ISTRING(final int index) {
+        return ISTRING[index];
+    }
+
+    public static final int ISTRING_PREFIX_NAMESPACE(final int index) {
+        return ISTRING_PREFIX_NAMESPACE[index];
+    }
+
+    public static final int UTF8(final int index) {
+        return UTF8[index];
+    }
+
+    public static final int UTF8_NCNAME(final int index) {
+        return UTF8_NCNAME[index];
+    }
+
     static {
-        // EII
+        // DII
         constructTable(DII, DII_RANGES);
 
         // EII

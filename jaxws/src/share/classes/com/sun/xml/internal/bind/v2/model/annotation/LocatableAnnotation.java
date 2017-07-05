@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 import java.lang.annotation.Annotation;
@@ -29,6 +30,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -96,8 +98,13 @@ public class LocatableAnnotation implements InvocationHandler, Locatable, Locati
         try {
             if(method.getDeclaringClass()==Locatable.class)
                 return method.invoke(this,args);
-            else
-                return method.invoke(core,args);
+            if(Modifier.isStatic(method.getModifiers()))
+                // malicious code can pass in a static Method object.
+                // doing method.invoke() would end up executing it,
+                // so we need to protect against it.
+                throw new IllegalArgumentException();
+
+            return method.invoke(core,args);
         } catch (InvocationTargetException e) {
             if(e.getTargetException()!=null)
                 throw e.getTargetException();

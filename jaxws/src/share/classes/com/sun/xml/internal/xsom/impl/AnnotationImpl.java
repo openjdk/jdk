@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSAnnotation;
@@ -51,6 +53,28 @@ public class AnnotationImpl implements XSAnnotation
         locator = NULL_LOCATION;
     }
 
+    private static class LocatorImplUnmodifiable extends LocatorImpl {
 
-    private static final LocatorImpl NULL_LOCATION = new LocatorImpl();
+        @Override
+        public void setColumnNumber(int columnNumber) {
+            return;
+        }
+
+        @Override
+        public void setPublicId(String publicId) {
+            return;
+        }
+
+        @Override
+        public void setSystemId(String systemId) {
+            return;
+        }
+
+        @Override
+        public void setLineNumber(int lineNumber) {
+            return;
+        }
+    };
+
+    private static final LocatorImplUnmodifiable NULL_LOCATION = new LocatorImplUnmodifiable();
 }

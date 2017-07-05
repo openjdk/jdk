@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.generator.bean;
 
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.annotation.XmlInlineBinaryData;
 import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.JClass;
@@ -157,7 +159,7 @@ abstract class ObjectFactoryGeneratorImpl extends ObjectFactoryGenerator {
 
         JClass scope=null;
         if(ei.getScope()!=null)
-            scope = outline.getClazz(ei.getScope()).implRef;
+            scope = outline.getClazz(ei.getScope()).implClass;
 
 
         JMethod m;
@@ -244,7 +246,10 @@ abstract class ObjectFactoryGeneratorImpl extends ObjectFactoryGenerator {
         if(ei.getDefaultValue()!=null)
             xemw.defaultValue(ei.getDefaultValue());
 
-        // if the element is adapter, put that annotation on the factory method
+        if(ei.getProperty().inlineBinaryData())
+            m.annotate(XmlInlineBinaryData.class);
+
+                    // if the element is adapter, put that annotation on the factory method
         outline.generateAdapterIfNecessary(ei.getProperty(),m);
     }
 

@@ -32,11 +32,19 @@ import com.sun.net.httpserver.HttpsExchange;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.server.WebServiceContextDelegate;
+import com.sun.xml.internal.ws.api.server.PortAddressResolver;
 import com.sun.xml.internal.ws.transport.http.HttpAdapter;
 import com.sun.xml.internal.ws.transport.http.WSHTTPConnection;
+import com.sun.xml.internal.ws.developer.JAXWSProperties;
+import com.sun.xml.internal.ws.resources.WsservletMessages;
 
 import javax.xml.ws.handler.MessageContext;
-import java.io.*;
+import javax.xml.ws.WebServiceException;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -81,9 +89,8 @@ final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceC
         for(Map.Entry <String, List<String>> entry : headers.entrySet()) {
             String name = entry.getKey();
             List<String> values = entry.getValue();
-            if (name.equalsIgnoreCase("Content-Length") || name.equalsIgnoreCase("Content-Type")) {
-                continue;  // ignore headers that interfere with our correct operations
-            } else {
+            // ignore headers that interfere with our correct operations
+            if (!name.equalsIgnoreCase("Content-Length") && !name.equalsIgnoreCase("Content-Type")) {
                 r.put(name,new ArrayList<String>(values));
             }
         }
@@ -111,17 +118,20 @@ final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceC
     }
 
     public @NotNull InputStream getInput() {
+
         // Light weight http server's InputStream.close() throws exception if
         // all the bytes are not read. Work around until it is fixed.
         return new FilterInputStream(httpExchange.getRequestBody()) {
+            // Workaround for "SJSXP XMLStreamReader.next() closes stream".
+            boolean closed;
+
             @Override
             public void close() throws IOException {
-                try {
+                if (!closed) {
                     while (read() != -1);
-                } catch(IOException e) {
-                    //Ignore
+                    super.close();
+                    closed = true;
                 }
-                super.close();
             }
         };
     }
@@ -146,7 +156,14 @@ final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceC
                     // Ignoring purposefully.
                 }
             }
+
+            // Otherwise, FilterOutpuStream writes byte by byte
+            @Override
+            public void write(byte[] buf, int start, int len) throws IOException {
+                out.write(buf, start, len);
+            }
         };
+
     }
 
     public @NotNull WebServiceContextDelegate getWebServiceContextDelegate() {
@@ -162,7 +179,14 @@ final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceC
     }
 
     public @NotNull String getEPRAddress(Packet request, WSEndpoint endpoint) {
-        return WSHttpHandler.getRequestAddress(httpExchange);
+        //return WSHttpHandler.getRequestAddress(httpExchange);
+
+        PortAddressResolver resolver = adapter.owner.createPortAddressResolver(getBaseAddress());
+        String address = resolver.getAddressFor(endpoint.getServiceName(), endpoint.getPortName().getLocalPart());
+        if(address==null)
+            throw new WebServiceException(WsservletMessages.SERVLET_NO_ADDRESS_AVAILABLE(endpoint.getPortName()));
+        return address;
+
     }
 
     public String getWSDLAddress(@NotNull Packet request, @NotNull WSEndpoint endpoint) {
@@ -204,6 +228,16 @@ final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceC
             return reqPath.substring(ctxtPath.length());
         }
         return null;
+    }
+
+    @Property(JAXWSProperties.HTTP_EXCHANGE)
+    public HttpExchange getExchange() {
+        return httpExchange;
+    }
+
+    @Override @NotNull
+    public String getBaseAddress() {
+        return WSHttpHandler.getRequestAddress(httpExchange);
     }
 
     @Override

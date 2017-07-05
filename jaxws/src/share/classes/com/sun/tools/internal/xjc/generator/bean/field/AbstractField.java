@@ -33,6 +33,7 @@ import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.XmlMixed;
 import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.bind.annotation.XmlValue;
+import javax.xml.bind.annotation.XmlInlineBinaryData;
 import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.JAnnotatable;
@@ -67,6 +68,9 @@ import com.sun.tools.internal.xjc.outline.ClassOutline;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
 import com.sun.tools.internal.xjc.reader.TypeUtil;
+import com.sun.tools.internal.xjc.Options;
+import com.sun.tools.internal.xjc.api.SpecVersion;
+import com.sun.xml.internal.bind.api.impl.NameConverter;
 import com.sun.xml.internal.bind.v2.TODO;
 
 /**
@@ -148,6 +152,9 @@ abstract class AbstractField implements FieldOutline {
             field.annotate2(XmlSchemaTypeWriter.class)
                 .name(st.getLocalPart())
                 .namespace(st.getNamespaceURI());
+
+        if(prop.inlineBinaryData())
+            field.annotate(XmlInlineBinaryData.class);
     }
 
     private void annotateReference(JAnnotatable field) {
@@ -165,6 +172,8 @@ abstract class AbstractField implements FieldOutline {
             refw.name(e.getElementName().getLocalPart())
                 .namespace(e.getElementName().getNamespaceURI())
                 .type(e.getType().toType(outline.parent(),IMPLEMENTATION));
+            if(getOptions().target.isLaterThan(SpecVersion.V2_2))
+                refw.required(rp.isRequired());
         } else
         if(elements.size()>1) {
             XmlElementRefsWriter refsw = field.annotate2(XmlElementRefsWriter.class);
@@ -173,6 +182,8 @@ abstract class AbstractField implements FieldOutline {
                 refw.name(e.getElementName().getLocalPart())
                     .namespace(e.getElementName().getNamespaceURI())
                     .type(e.getType().toType(outline.parent(),IMPLEMENTATION));
+                if(getOptions().target.isLaterThan(SpecVersion.V2_2))
+                    refw.required(rp.isRequired());
             }
         }
 
@@ -244,8 +255,14 @@ abstract class AbstractField implements FieldOutline {
 
         // these values are used to determine how to optimize the generated annotation
         XmlNsForm formDefault = parent()._package().getElementFormDefault();
-        String mostUsedURI = parent()._package().getMostUsedNamespaceURI();
         String propName = prop.getName(false);
+
+        String enclosingTypeNS;
+
+        if(parent().target.getTypeName()==null)
+            enclosingTypeNS = parent()._package().getMostUsedNamespaceURI();
+        else
+            enclosingTypeNS = parent().target.getTypeName().getNamespaceURI();
 
         // generate the name property?
         String generatedName = ctype.getTagName().getLocalPart();
@@ -256,7 +273,7 @@ abstract class AbstractField implements FieldOutline {
 
         // generate the namespace property?
         String generatedNS = ctype.getTagName().getNamespaceURI();
-        if (((formDefault == XmlNsForm.QUALIFIED) && !generatedNS.equals(mostUsedURI)) ||
+        if (((formDefault == XmlNsForm.QUALIFIED) && !generatedNS.equals(enclosingTypeNS)) ||
                 ((formDefault == XmlNsForm.UNQUALIFIED) && !generatedNS.equals(""))) {
             if(xew == null) xew = getXew(checkWrapper, field);
             xew.namespace(generatedNS);
@@ -281,7 +298,7 @@ abstract class AbstractField implements FieldOutline {
         // when generating code for 1.4, the runtime can't infer that ArrayList<Foo> derives
         // from Collection<Foo> (because List isn't parameterized), so always expclitly
         // generate @XmlElement(type=...)
-        if( !jtype.equals(exposedType) || (parent().parent().getModel().options.runtime14 && prop.isCollection())) {
+        if( !jtype.equals(exposedType) || (getOptions().runtime14 && prop.isCollection())) {
             if(xew == null) xew = getXew(checkWrapper, field);
             xew.type(jtype);
         }
@@ -298,6 +315,13 @@ abstract class AbstractField implements FieldOutline {
             if(xew == null) xew = getXew(checkWrapper, field);
             xew.nillable(true);
         }
+    }
+
+    /**
+     * Gets the {@link Options} in the current compilation context.
+     */
+    protected final Options getOptions() {
+        return parent().parent().getModel().options;
     }
 
     // ugly hack to lazily create
@@ -330,8 +354,9 @@ abstract class AbstractField implements FieldOutline {
         final String generatedName = attName.getLocalPart();
         final String generatedNS = attName.getNamespaceURI();
 
+        // Issue 570; always force generating name="" when do it when globalBindings underscoreBinding is set to non default value
         // generate name property?
-        if(!generatedName.equals(ap.getName(false))) {
+        if(!generatedName.equals(ap.getName(false)) || (outline.parent().getModel().getNameConverter() != NameConverter.standard)) {
             xaw.name(generatedName);
         }
 

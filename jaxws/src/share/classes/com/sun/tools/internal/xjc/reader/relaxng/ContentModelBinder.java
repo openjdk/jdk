@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.reader.relaxng;
 
 import javax.xml.namespace.QName;
@@ -101,7 +102,7 @@ final class ContentModelBinder extends DPatternWalker {
             clazz.addProperty(prop);
         } else {
             CReferencePropertyInfo prop = new CReferencePropertyInfo(
-                    calcName(p),true,false/*TODO*/,null,null,p.getLocation());
+                    calcName(p),true,!optional,false/*TODO*/,null,null,p.getLocation(), false, false, false);
             rts.addTo(prop);
             clazz.addProperty(prop);
         }

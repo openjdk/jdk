@@ -48,7 +48,7 @@ public final class BeanInfoFinder
     }
 
     private static boolean isValid(Class<?> type, Method method) {
-        return (method != null) && type.equals(method.getDeclaringClass());
+        return (method != null) && method.getDeclaringClass().isAssignableFrom(type);
     }
 
     @Override

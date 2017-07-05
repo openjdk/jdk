@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: MimeHeader.java,v 1.3 2005/04/05 20:49:48 mk125090 Exp $
- * $Revision: 1.3 $
- * $Date: 2005/04/05 20:49:48 $
+ * $Id: MimeHeader.java,v 1.4 2006/03/30 00:59:38 ofung Exp $
+ * $Revision: 1.4 $
+ * $Date: 2006/03/30 00:59:38 $
  */
 
 

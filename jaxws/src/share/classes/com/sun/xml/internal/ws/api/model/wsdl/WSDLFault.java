@@ -25,6 +25,10 @@
 
 package com.sun.xml.internal.ws.api.model.wsdl;
 
+import com.sun.istack.internal.NotNull;
+
+import javax.xml.namespace.QName;
+
 /**
  * Abstracts wsdl:portType/wsdl:operation/wsdl:fault
  *
@@ -45,4 +49,19 @@ public interface WSDLFault extends WSDLObject, WSDLExtensible {
      * @return Always returns null when called from inside WSDL extensions.
      */
     WSDLMessage getMessage();
+
+    /**
+     * Gives the owning {@link WSDLOperation}
+     */
+    @NotNull
+    WSDLOperation getOperation();
+
+    /**
+     * Gives qualified name of the wsdl:fault 'name' attribute value.
+     * <p/>
+     *
+     * The namespace uri is determined from the enclosing wsdl:operation.
+     */
+    @NotNull
+    QName getQName();
 }

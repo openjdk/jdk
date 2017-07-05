@@ -25,12 +25,16 @@
 package com.sun.xml.internal.ws.developer;
 
 import com.sun.xml.internal.ws.api.message.HeaderList;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
+import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.WebServiceContext;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.HostnameVerifier;
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.BindingType;
+import javax.xml.ws.http.HTTPBinding;
 import java.net.HttpURLConnection;
 
 public interface JAXWSProperties {
@@ -44,11 +48,35 @@ public interface JAXWSProperties {
 
     /**
      * Set this property on the {@link BindingProvider#getRequestContext()} to
+     * enable {@link HttpURLConnection#setConnectTimeout(int)}
+     *
+     *<p>
+     * int timeout = ...;
+     * Map<String, Object> ctxt = ((BindingProvider)proxy).getRequestContext();
+     * ctxt.put(CONNECT_TIMEOUT, timeout);
+     */
+    public static final String CONNECT_TIMEOUT =
+        "com.sun.xml.internal.ws.connect.timeout";
+
+    /**
+     * Set this property on the {@link BindingProvider#getRequestContext()} to
+     * enable {@link HttpURLConnection#httpConnection.setReadTimeout(int)}
+     *
+     *<p>
+     * int timeout = ...;
+     * Map<String, Object> ctxt = ((BindingProvider)proxy).getRequestContext();
+     * ctxt.put(REQUEST_TIMEOUT, timeout);
+     */
+     public static final String REQUEST_TIMEOUT =
+        "com.sun.xml.internal.ws.request.timeout";
+
+    /**
+     * Set this property on the {@link BindingProvider#getRequestContext()} to
      * enable {@link HttpURLConnection#setChunkedStreamingMode(int)}
      *
      *<p>
      * int chunkSize = ...;
-     * Map<String, Object> ctxt = (BindingProvider)proxy).getRequestContext();
+     * Map<String, Object> ctxt = ((BindingProvider)proxy).getRequestContext();
      * ctxt.put(HTTP_CLIENT_STREAMING_CHUNK_SIZE, chunkSize);
      */
     public static final String HTTP_CLIENT_STREAMING_CHUNK_SIZE = "com.sun.xml.internal.ws.transport.http.client.streaming.chunk.size";
@@ -61,7 +89,7 @@ public interface JAXWSProperties {
      *
      * <p>
      * HostNameVerifier hostNameVerifier = ...;
-     * Map<String, Object> ctxt = (BindingProvider)proxy).getRequestContext();
+     * Map<String, Object> ctxt = ((BindingProvider)proxy).getRequestContext();
      * ctxt.put(HOSTNAME_VERIFIER, hostNameVerifier);
      *
      * <p>
@@ -76,7 +104,7 @@ public interface JAXWSProperties {
      *
      * <p>
      * SSLSocketFactory sslFactory = ...;
-     * Map<String, Object> ctxt = (BindingProvider)proxy).getRequestContext();
+     * Map<String, Object> ctxt = ((BindingProvider)proxy).getRequestContext();
      * ctxt.put(SSL_SOCKET_FACTORY, sslFactory);
      *
      * <p>
@@ -101,4 +129,105 @@ public interface JAXWSProperties {
      * <b>THIS PROPERTY IS EXPERIMENTAL AND IS SUBJECT TO CHANGE WITHOUT NOTICE IN FUTURE.</b>
      */
     public static final String INBOUND_HEADER_LIST_PROPERTY = "com.sun.xml.internal.ws.api.message.HeaderList";
+
+    /**
+     * Access the {@link WSEndpoint} object that delivered the request.
+     *
+     * <p>
+     * {@link WSEndpoint} is the root of the objects that are together
+     * responsible for delivering requests to the application SEI object.
+     * One can look up this {@link WSEndpoint} from {@link WebServiceContext},
+     * and from there access many parts of the JAX-WS RI runtime.
+     *
+     * <p>
+     * <b>THIS PROPERTY IS EXPERIMENTAL AND IS SUBJECT TO CHANGE WITHOUT NOTICE IN FUTURE.</b>
+     *
+     * @since 2.1.2
+     */
+    public static final String WSENDPOINT = "com.sun.xml.internal.ws.api.server.WSEndpoint";
+
+    /**
+     * Gets the <tt>wsa:To</tt> header.
+     *
+     * The propery value is available on incoming SOAP message. The type of the value
+     * is {@link WSEndpointReference}.
+     *
+     * Null if the incoming SOAP message didn't have the header.
+     *
+     * @since 2.1.3
+     */
+    public static final String ADDRESSING_TO = "com.sun.xml.internal.ws.api.addressing.to";
+
+    /**
+     * Gets the <tt>wsa:From</tt> header.
+     *
+     * The propery value is available on incoming SOAP message. The type of the value
+     * is {@link WSEndpointReference}.
+     *
+     * Null if the incoming SOAP message didn't have the header.
+     *
+     * @since 2.1.3
+     */
+    public static final String ADDRESSING_FROM = "com.sun.xml.internal.ws.api.addressing.from";
+
+    /**
+     * Gets the <tt>wsa:Action</tt> header value.
+     *
+     * The propery value is available on incoming SOAP message. The type of the value
+     * is {@link String}.
+     *
+     * Null if the incoming SOAP message didn't have the header.
+     *
+     * @since 2.1.3
+     */
+    public static final String ADDRESSING_ACTION = "com.sun.xml.internal.ws.api.addressing.action";
+
+    /**
+     * Gets the <tt>wsa:MessageID</tt> header value.
+     *
+     * The propery value is available on incoming SOAP message. The type of the value
+     * is {@link String}.
+     *
+     * Null if the incoming SOAP message didn't have the header.
+     *
+     * @since 2.1.3
+     */
+    public static final String ADDRESSING_MESSAGEID = "com.sun.xml.internal.ws.api.addressing.messageId";
+
+    /**
+     * Reconstructs the URL the client used to make the request. The returned URL
+     * contains a protocol, server name, port number, and server path, but it does
+     * not include query string parameters.
+     * <p>
+     * The property value is available on incoming SOAP message on servlet transport.
+     *
+     * @since 2.1.3
+     */
+    public static final String HTTP_REQUEST_URL = "com.sun.xml.internal.ws.transport.http.servlet.requestURL";
+
+    /**
+     * Binding to represent RESTful services. {@link HTTPBinding#HTTP_BINDING} works
+     * only for Dispatch/Provider services, but this binding works with even SEI based
+     * services. It would be XML, NOT SOAP on the wire. Hence, the SEI parameters
+     * shouldn't be mapped to headers.
+     *
+     * <p>
+     * Note that, this only solves limited RESTful usecases.
+     *
+     * <p>To enable restful binding on the service, specify the binding id via
+     * {@link BindingType} or DD
+     * <pre>
+     * &#64;WebService
+     * &#64;BindingType(JAXWSProperties.REST_BINDING)
+     * </pre>
+     *
+     * <p>To enable restful binding on the client side, specify the binding id via
+     * {@link BindingTypeFeature}
+     * <pre>
+     * proxy = echoImplService.getEchoImplPort(new BindingTypeFeature(JAXWSProperties.REST_BINDING));
+     * </pre>
+     *
+     * @since 2.1.4
+     */
+    public static final String REST_BINDING = "http://jax-ws.dev.java.net/rest";
 }

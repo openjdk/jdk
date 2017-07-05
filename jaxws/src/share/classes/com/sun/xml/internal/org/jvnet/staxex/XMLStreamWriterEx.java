@@ -22,13 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.org.jvnet.staxex;
 
-import com.sun.xml.internal.org.jvnet.staxex.XMLStreamReaderEx;
-
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.XMLStreamException;
 import javax.activation.DataHandler;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.OutputStream;
 
 /**
@@ -85,6 +84,7 @@ public interface XMLStreamWriterEx extends XMLStreamWriter {
      *
      * <p>
      * (data,start,len) triplet identifies the binary data to be written.
+     * After the method invocation, the callee owns the buffer.
      *
      * @param contentType
      *      this mandatory parameter identifies the MIME type of the binary data.
@@ -103,7 +103,7 @@ public interface XMLStreamWriterEx extends XMLStreamWriter {
      * {@link DataHandler#getInputStream()}.
      *
      * @param data
-     *      always non-null.
+     *      always non-null. After this method call, the callee owns the data handler.
      */
     void writeBinary(DataHandler data) throws XMLStreamException;
 
@@ -132,7 +132,7 @@ public interface XMLStreamWriterEx extends XMLStreamWriter {
      * Writes like {@link #writeCharacters(String)} but hides
      * actual data format.
      *
-     * @return
+     * @param data
      *      The {@link CharSequence} that represents the
      *      character infoset items to be written.
      *
@@ -144,10 +144,6 @@ public interface XMLStreamWriterEx extends XMLStreamWriter {
      *      as binary data may take advantage of mor efficient
      *      data representation.)
      *
-     *      <p>
-     *      The object returned from this method belongs to the parser,
-     *      and its content is guaranteed to be the same only until
-     *      the {@link #next()} method is invoked.
      */
     void writePCDATA(CharSequence data) throws XMLStreamException;
 

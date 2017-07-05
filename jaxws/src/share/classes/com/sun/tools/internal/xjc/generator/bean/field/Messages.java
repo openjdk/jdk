@@ -31,7 +31,7 @@ import java.util.ResourceBundle;
 /**
  * Message resources
  */
-enum Messages {
+public enum Messages {
     DEFAULT_GETTER_JAVADOC,     // 1 arg
     DEFAULT_SETTER_JAVADOC,     // 1 arg
     ;

@@ -36,7 +36,10 @@ import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.api.server.AbstractServerAsyncTransport;
 import com.sun.xml.internal.ws.api.server.Adapter;
+import com.sun.xml.internal.ws.api.server.BoundEndpoint;
 import com.sun.xml.internal.ws.api.server.DocumentAddressResolver;
+import com.sun.xml.internal.ws.api.server.EndpointComponent;
+import com.sun.xml.internal.ws.api.server.Module;
 import com.sun.xml.internal.ws.api.server.PortAddressResolver;
 import com.sun.xml.internal.ws.api.server.SDDocument;
 import com.sun.xml.internal.ws.api.server.ServiceDefinition;
@@ -48,7 +51,9 @@ import com.sun.xml.internal.ws.server.ServerRtException;
 import com.sun.xml.internal.ws.server.UnsupportedMediaException;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 
+import javax.xml.ws.Binding;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.http.HTTPBinding;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -93,6 +98,12 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
     public final HttpAdapterList<? extends HttpAdapter> owner;
 
     /**
+     * Servlet URL pattern with which this {@link HttpAdapter} is associated.
+     */
+    public final String urlPattern;
+
+
+    /**
      * Creates a lone {@link HttpAdapter} that does not know of any other
      * {@link HttpAdapter}s.
      *
@@ -106,9 +117,18 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         return new DummyList().createAdapter("","",endpoint);
     }
 
+    /**
+     * @deprecated
+     *      remove as soon as we can update the test util.
+     */
     protected HttpAdapter(WSEndpoint endpoint, HttpAdapterList<? extends HttpAdapter> owner) {
+        this(endpoint,owner,null);
+    }
+
+    protected HttpAdapter(WSEndpoint endpoint, HttpAdapterList<? extends HttpAdapter> owner, String urlPattern) {
         super(endpoint);
         this.owner = owner;
+        this.urlPattern = urlPattern;
 
         // fill in WSDL map
         ServiceDefinition sdef = this.endpoint.getServiceDefinition();
@@ -150,6 +170,18 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         }
     }
 
+    /**
+     * Returns the "/abc/def/ghi" portion if
+     * the URL pattern is "/abc/def/ghi/*".
+     */
+    public String getValidPath() {
+        if (urlPattern.endsWith("/*")) {
+            return urlPattern.substring(0, urlPattern.length() - 2);
+        } else {
+            return urlPattern;
+        }
+    }
+
     protected HttpToolkit createToolkit() {
         return new HttpToolkit();
     }
@@ -173,6 +205,29 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
      * @throws IOException when I/O errors happen
      */
     public void handle(@NotNull WSHTTPConnection connection) throws IOException {
+        if(connection.getRequestMethod().equals("GET")) {
+            // metadata query. let the interceptor run
+            for( EndpointComponent c : endpoint.getComponentRegistry() ) {
+                HttpMetadataPublisher spi = c.getSPI(HttpMetadataPublisher.class);
+                if(spi!=null && spi.handleMetadataRequest(this,connection))
+                    return; // handled
+            }
+
+            if (isMetadataQuery(connection.getQueryString())) {
+                // Sends published WSDL and schema documents as the default action.
+                publishWSDL(connection);
+                return;
+            }
+
+            Binding binding = getEndpoint().getBinding();
+            if (!(binding instanceof HTTPBinding)) {
+                // Writes HTML page with all the endpoint descriptions
+                writeWebServicesHtmlPage(connection);
+                return;
+            }
+        }
+
+        // normal request handling
         HttpToolkit tk = pool.take();
         try {
             tk.handle(connection);
@@ -194,7 +249,7 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         String ct = con.getRequestHeader("Content-Type");
         InputStream in = con.getInput();
         Packet packet = new Packet();
-        packet.soapAction = con.getRequestHeader("SOAPAction");
+        packet.soapAction = fixQuotesAroundSoapAction(con.getRequestHeader("SOAPAction"));
         packet.wasTransportSecure = con.isSecure();
         packet.acceptableMimeTypes = con.getRequestHeader("Accept");
         packet.addSatellite(con);
@@ -204,6 +259,7 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         if (dump) {
             ByteArrayBuffer buf = new ByteArrayBuffer();
             buf.write(in);
+            in.close();
             dump(buf, "HTTP request", con.getRequestHeaders());
             in = buf.newInputStream();
         }
@@ -211,7 +267,25 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         return packet;
     }
 
-
+    /**
+     * Some stacks may send non WS-I BP 1.2 conformant SoapAction.
+     * Make sure SOAPAction is quoted as {@link Packet#soapAction} expectsa quoted soapAction value.
+     *
+     * @param soapAction SoapAction HTTP Header
+     * @return
+     */
+    private String fixQuotesAroundSoapAction(String soapAction) {
+        if(soapAction != null && (!soapAction.startsWith("\"") || !soapAction.endsWith("\"")) ) {
+            LOGGER.warning("Received WS-I BP non-conformant Unquoted SoapAction HTTP header: "+ soapAction);
+            String fixedSoapAction = soapAction;
+            if(!soapAction.startsWith("\""))
+                fixedSoapAction = "\"" + fixedSoapAction;
+            if(!soapAction.endsWith("\""))
+                fixedSoapAction = fixedSoapAction + "\"";
+            return fixedSoapAction;
+        }
+        return soapAction;
+    }
 
 
     private void encodePacket(@NotNull Packet packet, @NotNull WSHTTPConnection con, @NotNull Codec codec) throws IOException {
@@ -347,7 +421,12 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
         public void close() {
             if(!con.isClosed()) {
                 // close the response channel now
-                con.setStatus(WSHTTPConnection.ONEWAY);
+                if (con.getStatus() == 0) {
+                    // if the appliation didn't set the status code,
+                    // set the default one.
+                    con.setStatus(WSHTTPConnection.ONEWAY);
+                }
+
                 try {
                     con.getOutput().close(); // no payload
                 } catch (IOException e) {
@@ -360,20 +439,23 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
 
     final class HttpToolkit extends Adapter.Toolkit {
         public void handle(WSHTTPConnection con) throws IOException {
+            boolean invoke = false;
             try {
                 Packet packet = new Packet();
                 try {
                     packet = decodePacket(con, codec);
+                    invoke = true;
                 } catch(ExceptionHasMessage e) {
                     LOGGER.log(Level.SEVERE, e.getMessage(), e);
                     packet.setMessage(e.getFaultMessage());
                 } catch(UnsupportedMediaException e) {
                     LOGGER.log(Level.SEVERE, e.getMessage(), e);
                     con.setStatus(WSHTTPConnection.UNSUPPORTED_MEDIA);
-                } catch(ServerRtException e) {
+                } catch(Exception e) {
                     LOGGER.log(Level.SEVERE, e.getMessage(), e);
+                    con.setStatus(HttpURLConnection.HTTP_INTERNAL_ERROR);
                 }
-                if (packet.getMessage() != null && !packet.getMessage().isFault()) {
+                if (invoke) {
                     try {
                         packet = head.process(packet, con.getWebServiceContextDelegate(),
                                 packet.transportBackChannel);
@@ -403,7 +485,7 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
      * @return true for metadata requests
      *         false for web service requests
      */
-    public final boolean isMetadataQuery(String query) {
+    private boolean isMetadataQuery(String query) {
         // we intentionally return true even if documents don't exist,
         // so that they get 404.
         return query != null && (query.equals("WSDL") || query.startsWith("wsdl") || query.startsWith("xsd="));
@@ -414,35 +496,23 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
      * in response to the GET requests to URLs like "?wsdl" or "?xsd=2".
      *
      * @param con
-     *      The connection to which the data will be sent. Must not be null.
-     * @param baseAddress
-     *      The requested base URL (such as "http://myhost:2045/foo/bar").
-     *      Used to reference other resoures. Must not be null.
-     * @param queryString
-     *      The query string given by the client (which indicates
-     *      what document to serve.) Can be null (but it causes an 404 not found.)
+     *      The connection to which the data will be sent.
      *
      * @throws IOException when I/O errors happen
      */
-    public void publishWSDL(WSHTTPConnection con, final String baseAddress, String queryString) throws IOException {
-        // Workaround for a bug in http server. Read and close InputStream
-        // TODO remove once the bug is fixed in http server
-        InputStream in = con.getInput();
-        while(in.read() != -1);
-        in.close();
-
-        SDDocument doc = wsdls.get(queryString);
+    public void publishWSDL(@NotNull WSHTTPConnection con) throws IOException {
+        SDDocument doc = wsdls.get(con.getQueryString());
         if (doc == null) {
             writeNotFoundErrorPage(con,"Invalid Request");
             return;
         }
 
         con.setStatus(HttpURLConnection.HTTP_OK);
-        con.setContentTypeResponseHeader("text/xml;charset=utf-8");
+        con.setContentTypeResponseHeader("text/xml;charset=\"utf-8\"");
 
         OutputStream os = con.getProtocol().contains("1.1") ? con.getOutput() : new Http10OutputStream(con);
 
-        final PortAddressResolver portAddressResolver = owner.createPortAddressResolver(baseAddress);
+        final PortAddressResolver portAddressResolver = owner.createPortAddressResolver(con.getBaseAddress());
         final String address = portAddressResolver.getAddressFor(endpoint.getServiceName(), endpoint.getPortName().getLocalPart());
         assert address != null;
         DocumentAddressResolver resolver = new DocumentAddressResolver() {
@@ -480,7 +550,7 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
 
     private void writeNotFoundErrorPage(WSHTTPConnection con, String message) throws IOException {
         con.setStatus(HttpURLConnection.HTTP_NOT_FOUND);
-        con.setContentTypeResponseHeader("text/html; charset=UTF-8");
+        con.setContentTypeResponseHeader("text/html; charset=\"utf-8\"");
 
         PrintWriter out = new PrintWriter(new OutputStreamWriter(con.getOutput(),"UTF-8"));
         out.println("<html>");
@@ -502,7 +572,7 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
     private static final class DummyList extends HttpAdapterList<HttpAdapter> {
         @Override
         protected HttpAdapter createHttpAdapter(String name, String urlPattern, WSEndpoint<?> endpoint) {
-            return new HttpAdapter(endpoint, this);
+            return new HttpAdapter(endpoint,this,urlPattern);
         }
     }
 
@@ -526,20 +596,95 @@ public class HttpAdapter extends Adapter<HttpAdapter.HttpToolkit> {
     }
 
     /**
+     * Generates the listing of all services.
+     */
+    private void writeWebServicesHtmlPage(WSHTTPConnection con) throws IOException {
+        if (!publishStatusPage) return;
+
+        // TODO: resurrect the ability to localize according to the current request.
+
+        // standard browsable page
+        con.setStatus(WSHTTPConnection.OK);
+        con.setContentTypeResponseHeader("text/html; charset=\"utf-8\"");
+
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(con.getOutput(),"UTF-8"));
+        out.println("<html>");
+        out.println("<head><title>");
+        // out.println("Web Services");
+        out.println(WsservletMessages.SERVLET_HTML_TITLE());
+        out.println("</title></head>");
+        out.println("<body>");
+        // out.println("<h1>Web Services</h1>");
+        out.println(WsservletMessages.SERVLET_HTML_TITLE_2());
+
+        // what endpoints do we have in this system?
+        Module module = getEndpoint().getContainer().getSPI(Module.class);
+        List<BoundEndpoint> endpoints = Collections.emptyList();
+        if(module!=null) {
+            endpoints = module.getBoundEndpoints();
+        }
+
+        if (endpoints.isEmpty()) {
+            // out.println("<p>No JAX-WS context information available.</p>");
+            out.println(WsservletMessages.SERVLET_HTML_NO_INFO_AVAILABLE());
+        } else {
+            out.println("<table width='100%' border='1'>");
+            out.println("<tr>");
+            out.println("<td>");
+            // out.println("Endpoint");
+            out.println(WsservletMessages.SERVLET_HTML_COLUMN_HEADER_PORT_NAME());
+            out.println("</td>");
+
+            out.println("<td>");
+            // out.println("Information");
+            out.println(WsservletMessages.SERVLET_HTML_COLUMN_HEADER_INFORMATION());
+            out.println("</td>");
+            out.println("</tr>");
+
+            for (BoundEndpoint a : endpoints) {
+                String endpointAddress = a.getAddress(con.getBaseAddress()).toString();
+                out.println("<tr>");
+
+                out.println("<td>");
+                out.println(WsservletMessages.SERVLET_HTML_ENDPOINT_TABLE(
+                    a.getEndpoint().getServiceName(),
+                    a.getEndpoint().getPortName()
+                ));
+                out.println("</td>");
+
+                out.println("<td>");
+                out.println(WsservletMessages.SERVLET_HTML_INFORMATION_TABLE(
+                    endpointAddress,
+                    a.getEndpoint().getImplementationClass().getName()
+                ));
+                out.println("</td>");
+
+                out.println("</tr>");
+            }
+            out.println("</table>");
+        }
+        out.println("</body>");
+        out.println("</html>");
+        out.close();
+    }
+
+    /**
      * Dumps what goes across HTTP transport.
      */
-    public static boolean dump;
+    public static boolean dump = false;
+
+    public static boolean publishStatusPage = true;
 
     static {
-        boolean b;
         try {
-            b = Boolean.getBoolean(HttpAdapter.class.getName()+".dump");
+            dump = Boolean.getBoolean(HttpAdapter.class.getName()+".dump");
         } catch( Throwable t ) {
-            b = false;
         }
-        dump = b;
+        try {
+            publishStatusPage = System.getProperty(HttpAdapter.class.getName()+".publishStatusPage").equals("true");
+        } catch( Throwable t ) {
+        }
     }
 
     private static final Logger LOGGER = Logger.getLogger(HttpAdapter.class.getName());
-
 }

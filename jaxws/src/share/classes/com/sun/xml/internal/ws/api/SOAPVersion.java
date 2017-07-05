@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.ws.api;
 
+import com.sun.xml.internal.bind.util.Which;
 import com.sun.xml.internal.ws.encoding.soap.SOAP12Constants;
 
 import javax.xml.namespace.QName;
@@ -167,6 +168,11 @@ public enum SOAPVersion {
             saajSoapFactory = SOAPFactory.newInstance(saajFactoryString);
         } catch (SOAPException e) {
             throw new Error(e);
+        } catch (NoSuchMethodError e) {
+            // SAAJ 1.3 is not in the classpath
+            LinkageError x = new LinkageError("You are loading old SAAJ from "+ Which.which(MessageFactory.class));
+            x.initCause(e);
+            throw x;
         }
         this.faultCodeMustUnderstand = faultCodeMustUnderstand;
         this.requiredRoles = requiredRoles;

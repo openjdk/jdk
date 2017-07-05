@@ -54,20 +54,19 @@ public class WsaTubeHelperImpl extends WsaTubeHelper {
 
     public WsaTubeHelperImpl(WSDLPort wsdlPort, SEIModel seiModel, WSBinding binding) {
         super(binding,seiModel,wsdlPort);
-        try {
-            unmarshaller = jc.createUnmarshaller();
-            marshaller = jc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-        } catch (JAXBException e) {
-            throw new WebServiceException(e);
-        }
+    }
+
+    private Marshaller createMarshaller() throws JAXBException {
+        Marshaller marshaller = jc.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
+        return marshaller;
     }
 
     @Override
     public final void getProblemActionDetail(String action, Element element) {
         ProblemAction pa = new ProblemAction(action);
         try {
-            marshaller.marshal(pa, element);
+            createMarshaller().marshal(pa, element);
         } catch (JAXBException e) {
             throw new WebServiceException(e);
         }
@@ -77,7 +76,7 @@ public class WsaTubeHelperImpl extends WsaTubeHelper {
     public final void getInvalidMapDetail(QName name, Element element) {
         ProblemHeaderQName phq = new ProblemHeaderQName(name);
         try {
-            marshaller.marshal(phq, element);
+            createMarshaller().marshal(phq, element);
         } catch (JAXBException e) {
             throw new WebServiceException(e);
         }

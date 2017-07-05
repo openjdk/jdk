@@ -100,23 +100,42 @@ public class Collections {
 
     /**
      * Sorts the specified list into ascending order, according to the
-     * <i>natural ordering</i> of its elements.  All elements in the list must
-     * implement the <tt>Comparable</tt> interface.  Furthermore, all elements
-     * in the list must be <i>mutually comparable</i> (that is,
-     * <tt>e1.compareTo(e2)</tt> must not throw a <tt>ClassCastException</tt>
-     * for any elements <tt>e1</tt> and <tt>e2</tt> in the list).<p>
+     * {@linkplain Comparable natural ordering} of its elements.
+     * All elements in the list must implement the {@link Comparable}
+     * interface.  Furthermore, all elements in the list must be
+     * <i>mutually comparable</i> (that is, {@code e1.compareTo(e2)}
+     * must not throw a {@code ClassCastException} for any elements
+     * {@code e1} and {@code e2} in the list).
      *
-     * This sort is guaranteed to be <i>stable</i>:  equal elements will
-     * not be reordered as a result of the sort.<p>
+     * <p>This sort is guaranteed to be <i>stable</i>:  equal elements will
+     * not be reordered as a result of the sort.
      *
-     * The specified list must be modifiable, but need not be resizable.<p>
+     * <p>The specified list must be modifiable, but need not be resizable.
      *
-     * The sorting algorithm is a modified mergesort (in which the merge is
-     * omitted if the highest element in the low sublist is less than the
-     * lowest element in the high sublist).  This algorithm offers guaranteed
-     * n log(n) performance.
+     * <p>Implementation note: This implementation is a stable, adaptive,
+     * iterative mergesort that requires far fewer than n lg(n) comparisons
+     * when the input array is partially sorted, while offering the
+     * performance of a traditional mergesort when the input array is
+     * randomly ordered.  If the input array is nearly sorted, the
+     * implementation requires approximately n comparisons.  Temporary
+     * storage requirements vary from a small constant for nearly sorted
+     * input arrays to n/2 object references for randomly ordered input
+     * arrays.
      *
-     * This implementation dumps the specified list into an array, sorts
+     * <p>The implementation takes equal advantage of ascending and
+     * descending order in its input array, and can take advantage of
+     * ascending and descending order in different parts of the the same
+     * input array.  It is well-suited to merging two or more sorted arrays:
+     * simply concatenate the arrays and sort the resulting array.
+     *
+     * <p>The implementation was adapted from Tim Peters's list sort for Python
+     * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * Sorting and Information Theoretic Complexity", in Proceedings of the
+     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
+     * January 1993.
+     *
+     * <p>This implementation dumps the specified list into an array, sorts
      * the array, and iterates over the list resetting each element
      * from the corresponding position in the array.  This avoids the
      * n<sup>2</sup> log(n) performance that would result from attempting
@@ -126,8 +145,10 @@ public class Collections {
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> (for example, strings and integers).
      * @throws UnsupportedOperationException if the specified list's
-     *         list-iterator does not support the <tt>set</tt> operation.
-     * @see Comparable
+     *         list-iterator does not support the {@code set} operation.
+     * @throws IllegalArgumentException (optional) if the implementation
+     *         detects that the natural ordering of the list elements is
+     *         found to violate the {@link Comparable} contract
      */
     public static <T extends Comparable<? super T>> void sort(List<T> list) {
         Object[] a = list.toArray();
@@ -143,19 +164,38 @@ public class Collections {
      * Sorts the specified list according to the order induced by the
      * specified comparator.  All elements in the list must be <i>mutually
      * comparable</i> using the specified comparator (that is,
-     * <tt>c.compare(e1, e2)</tt> must not throw a <tt>ClassCastException</tt>
-     * for any elements <tt>e1</tt> and <tt>e2</tt> in the list).<p>
+     * {@code c.compare(e1, e2)} must not throw a {@code ClassCastException}
+     * for any elements {@code e1} and {@code e2} in the list).
      *
-     * This sort is guaranteed to be <i>stable</i>:  equal elements will
-     * not be reordered as a result of the sort.<p>
+     * <p>This sort is guaranteed to be <i>stable</i>:  equal elements will
+     * not be reordered as a result of the sort.
      *
-     * The sorting algorithm is a modified mergesort (in which the merge is
-     * omitted if the highest element in the low sublist is less than the
-     * lowest element in the high sublist).  This algorithm offers guaranteed
-     * n log(n) performance.
+     * <p>The specified list must be modifiable, but need not be resizable.
      *
-     * The specified list must be modifiable, but need not be resizable.
-     * This implementation dumps the specified list into an array, sorts
+     * <p>Implementation note: This implementation is a stable, adaptive,
+     * iterative mergesort that requires far fewer than n lg(n) comparisons
+     * when the input array is partially sorted, while offering the
+     * performance of a traditional mergesort when the input array is
+     * randomly ordered.  If the input array is nearly sorted, the
+     * implementation requires approximately n comparisons.  Temporary
+     * storage requirements vary from a small constant for nearly sorted
+     * input arrays to n/2 object references for randomly ordered input
+     * arrays.
+     *
+     * <p>The implementation takes equal advantage of ascending and
+     * descending order in its input array, and can take advantage of
+     * ascending and descending order in different parts of the the same
+     * input array.  It is well-suited to merging two or more sorted arrays:
+     * simply concatenate the arrays and sort the resulting array.
+     *
+     * <p>The implementation was adapted from Tim Peters's list sort for Python
+     * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * Sorting and Information Theoretic Complexity", in Proceedings of the
+     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
+     * January 1993.
+     *
+     * <p>This implementation dumps the specified list into an array, sorts
      * the array, and iterates over the list resetting each element
      * from the corresponding position in the array.  This avoids the
      * n<sup>2</sup> log(n) performance that would result from attempting
@@ -163,13 +203,14 @@ public class Collections {
      *
      * @param  list the list to be sorted.
      * @param  c the comparator to determine the order of the list.  A
-     *        <tt>null</tt> value indicates that the elements' <i>natural
+     *        {@code null} value indicates that the elements' <i>natural
      *        ordering</i> should be used.
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> using the specified comparator.
      * @throws UnsupportedOperationException if the specified list's
-     *         list-iterator does not support the <tt>set</tt> operation.
-     * @see Comparator
+     *         list-iterator does not support the {@code set} operation.
+     * @throws IllegalArgumentException (optional) if the comparator is
+     *         found to violate the {@link Comparator} contract
      */
     public static <T> void sort(List<T> list, Comparator<? super T> c) {
         Object[] a = list.toArray();

@@ -22,11 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 /*
  * @(#)$Id: MS1252Encoder.java,v 1.2 2005/09/10 19:07:33 kohsuke Exp $
  */
-
-
 package com.sun.codemodel.internal.util;
 
 import java.nio.charset.Charset;

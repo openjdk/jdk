@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSFacet;
@@ -86,6 +88,14 @@ public class RestrictionSimpleTypeImpl extends SimpleTypeImpl implements XSRestr
 
         // none was found on this datatype. check the base type.
         return getSimpleBaseType().getFacet(name);
+    }
+
+    public List<XSFacet> getFacets( String name ) {
+        List<XSFacet> f = getDeclaredFacets(name);
+        if(!f.isEmpty())     return f;
+
+        // none was found on this datatype. check the base type.
+        return getSimpleBaseType().getFacets(name);
     }
 
     public XSVariety getVariety() { return getSimpleBaseType().getVariety(); }

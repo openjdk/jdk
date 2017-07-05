@@ -2,7 +2,7 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
+ /*
  * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -112,7 +112,7 @@ import java.util.Arrays;
  * @author Michael Glavassevich, IBM
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
- * @version $Id: XMLChar.java,v 1.1 2005/04/18 12:54:47 sandoz Exp $
+ * @version $Id: XMLChar.java,v 1.2 2006/03/16 16:22:16 sandoz Exp $
  */
 public class XMLChar {
 

@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.jxc.model.nav;
 
 import java.util.ArrayList;
@@ -306,7 +307,7 @@ public class APTNavigator implements Navigator<TypeMirror,TypeDeclaration,FieldD
     }
 
     public boolean isInnerClass(TypeDeclaration clazz) {
-        return clazz.getDeclaringType()!=null;
+        return clazz.getDeclaringType()!=null && !clazz.getModifiers().contains(Modifier.STATIC);
     }
 
     public boolean isArray(TypeMirror t) {

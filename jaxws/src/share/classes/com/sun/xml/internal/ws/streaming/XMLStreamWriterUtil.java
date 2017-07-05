@@ -53,27 +53,38 @@ public class XMLStreamWriterUtil {
      * @throws XMLStreamException if any of writer operations throw the exception
      */
     public static @Nullable OutputStream getOutputStream(XMLStreamWriter writer) throws XMLStreamException {
-        // SJSXP
+        Object obj = null;
+
+        // Hack for JDK6's SJSXP
         if (writer instanceof Map) {
-            Object obj = ((Map) writer).get("sjsxp-outputstream");
-            if (obj != null) {
-                writer.writeCharacters("");  // Force completion of open elems
-                return (OutputStream)obj;
+            obj = ((Map) writer).get("sjsxp-outputstream");
+        }
+
+        // woodstox
+        if (obj == null) {
+            try {
+                obj = writer.getProperty("com.ctc.wstx.outputUnderlyingStream");
+            } catch(Exception ie) {
+                // Catch all exceptions. SJSXP in JDK throws NPE
+                // nothing to do here
             }
         }
-        // woodstox
-        try {
-            Object obj = writer.getProperty("com.ctc.wstx.outputUnderlyingStream");
-            if (obj != null) {
-                writer.writeCharacters("");  // Force completion of open elems
-                writer.flush();
-                return (OutputStream)obj;
-            }
-        } catch(Exception ie) {
-            //Above property lookup causes NPE on JDK6u1, should be ignored.
-            // We should not fail due to such lookups.
 
-            // nothing to do here
+        // SJSXP
+        if (obj == null) {
+            try {
+                obj = writer.getProperty("http://java.sun.com/xml/stream/properties/outputstream");
+            } catch(Exception ie) {
+                // Catch all exceptions. SJSXP in JDK throws NPE
+                // nothing to do here
+            }
+        }
+
+
+        if (obj != null) {
+            writer.writeCharacters("");  // Force completion of open elems
+            writer.flush();
+            return (OutputStream)obj;
         }
         return null;
     }

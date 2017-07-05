@@ -80,8 +80,10 @@ public class ClassNameCollector extends ExtendedModelVisitor
     protected void preVisit(Service service) throws Exception {
         registerClassName(
             ((JavaInterface)service.getJavaInterface()).getName());
-        registerClassName(
-            ((JavaInterface)service.getJavaInterface()).getImpl());
+        // We don't generate Impl classes, commenting it out.
+        // Otherwise, it would cause naming conflicts
+        //registerClassName(
+        //    ((JavaInterface)service.getJavaInterface()).getImpl());
     }
 
     protected void processPort11x(Port port){
