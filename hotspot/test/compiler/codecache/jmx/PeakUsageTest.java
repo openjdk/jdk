@@ -52,9 +52,7 @@ public class PeakUsageTest {
 
     public static void main(String[] args) {
         for (BlobType btype : BlobType.getAvailable()) {
-            if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
-                new PeakUsageTest(btype).runTest();
-            }
+            new PeakUsageTest(btype).runTest();
         }
     }
 
@@ -65,7 +63,7 @@ public class PeakUsageTest {
                 CodeCacheUtils.ALLOCATION_SIZE, btype.id);
         long newPeakUsage = bean.getPeakUsage().getUsed();
         try {
-            Asserts.assertEQ(newPeakUsage, bean.getUsage().getUsed(),
+            CodeCacheUtils.assertEQorGTE(btype, newPeakUsage, bean.getUsage().getUsed(),
                     "Peak usage does not match usage after allocation for "
                     + bean.getName());
         } finally {
@@ -73,18 +71,18 @@ public class PeakUsageTest {
                 CodeCacheUtils.WB.freeCodeBlob(addr);
             }
         }
-        Asserts.assertEQ(newPeakUsage, bean.getPeakUsage().getUsed(),
+        CodeCacheUtils.assertEQorGTE(btype, newPeakUsage, bean.getPeakUsage().getUsed(),
                 "Code cache peak usage has changed after usage decreased for "
                 + bean.getName());
         bean.resetPeakUsage();
-        Asserts.assertEQ(bean.getPeakUsage().getUsed(),
+        CodeCacheUtils.assertEQorGTE(btype, bean.getPeakUsage().getUsed(),
                 bean.getUsage().getUsed(),
                 "Code cache peak usage is not equal to usage after reset for "
                 + bean.getName());
         long addr2 = CodeCacheUtils.WB.allocateCodeBlob(
                 CodeCacheUtils.ALLOCATION_SIZE, btype.id);
         try {
-            Asserts.assertEQ(bean.getPeakUsage().getUsed(),
+            CodeCacheUtils.assertEQorGTE(btype, bean.getPeakUsage().getUsed(),
                     bean.getUsage().getUsed(),
                     "Code cache peak usage is not equal to usage after fresh "
                     + "allocation for " + bean.getName());

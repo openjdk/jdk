@@ -112,7 +112,7 @@ public final class crc32 extends MessageDigestSpi implements Cloneable {
      * This version is more efficient than the byte-at-a-time version;
      * it avoids data copies and reduces per-byte call overhead.
      */
-    protected synchronized void engineUpdate(byte input[], int offset,
+    protected synchronized void engineUpdate(byte[] input, int offset,
                                              int len) {
         processData(input, offset, len);
     }

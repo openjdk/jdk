@@ -212,7 +212,7 @@ class ObjectIdentifier implements Serializable
      * Constructor, from an array of integers.
      * Validity check included.
      */
-    public ObjectIdentifier (int values []) throws IOException
+    public ObjectIdentifier(int[] values) throws IOException
     {
         checkCount(values.length);
         checkFirstComponent(values[0]);

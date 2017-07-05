@@ -967,7 +967,7 @@ public class AVA implements DerEncoder {
 
                     previousWhite = false;
 
-                    byte valueBytes[] = null;
+                    byte[] valueBytes = null;
                     try {
                         valueBytes = Character.toString(c).getBytes("UTF8");
                     } catch (IOException ie) {
@@ -1051,7 +1051,7 @@ public class AVA implements DerEncoder {
                 // using the hex format below.  This will be used only
                 // when the value is not a string type
 
-                byte    data [] = value.toByteArray();
+                byte[] data = value.toByteArray();
 
                 retval.append('#');
                 for (int i = 0; i < data.length; i++) {

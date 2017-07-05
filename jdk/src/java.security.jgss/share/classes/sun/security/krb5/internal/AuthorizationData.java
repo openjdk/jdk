@@ -120,7 +120,7 @@ public class AuthorizationData implements Cloneable {
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
         DerOutputStream bytes = new DerOutputStream();
-        DerValue der[] = new DerValue[entry.length];
+        DerValue[] der = new DerValue[entry.length];
         for (int i = 0; i < entry.length; i++) {
             der[i] = new DerValue(entry[i].asn1Encode());
         }
