@@ -591,8 +591,8 @@ public final class LauncherHelper {
                 c = Class.forName(m, cn);
             }
         } catch (LinkageError le) {
-            abort(null, "java.launcher.module.error3",
-                    mainClass, m.getName(), le.getLocalizedMessage());
+            abort(null, "java.launcher.module.error3", mainClass, m.getName(),
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -645,7 +645,8 @@ public final class LauncherHelper {
                 }
             }
         } catch (LinkageError le) {
-            abort(le, "java.launcher.cls.error6", cn, le.getLocalizedMessage());
+            abort(le, "java.launcher.cls.error6", cn,
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         return mainClass;
     }
@@ -966,6 +967,10 @@ public final class LauncherHelper {
                     ostream.print("open ");
                 if (md.isAutomatic())
                     ostream.print("automatic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC))
+                    ostream.print("synthetic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED))
+                    ostream.print("mandated ");
                 ostream.println("module " + midAndLocation(md, mref.location()));
 
                 // unqualified exports (sorted by package)

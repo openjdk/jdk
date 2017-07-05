@@ -311,17 +311,17 @@ public class Basic {
         ModuleFinder finder = ModuleFinder.of(dir);
 
         // layer1
-        Configuration cf1 = cf0.resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of());
+        Configuration cf1 = cf0.resolveAndBind(finder, ModuleFinder.of(), Set.of());
         Layer layer1 = bootLayer.defineModulesWithOneLoader(cf1, scl);
         assertTrue(layer1.modules().size() == 1);
 
         // layer2
-        Configuration cf2 = cf0.resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of());
+        Configuration cf2 = cf0.resolveAndBind(finder, ModuleFinder.of(), Set.of());
         Layer layer2 = bootLayer.defineModulesWithOneLoader(cf2, scl);
         assertTrue(layer2.modules().size() == 1);
 
         // layer3 with layer1 and layer2 as parents
-        Configuration cf3 = Configuration.resolveRequiresAndUses(finder,
+        Configuration cf3 = Configuration.resolveAndBind(finder,
                 List.of(cf1, cf2),
                 ModuleFinder.of(),
                 Set.of());
@@ -413,7 +413,7 @@ public class Basic {
         Collections.addAll(roots, modules);
         Layer bootLayer = Layer.boot();
         Configuration parent = bootLayer.configuration();
-        Configuration cf = parent.resolveRequires(finder, ModuleFinder.of(), roots);
+        Configuration cf = parent.resolve(finder, ModuleFinder.of(), roots);
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
         assertTrue(layer.modules().size() == 1);
