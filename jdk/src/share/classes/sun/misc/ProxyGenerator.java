@@ -324,8 +324,8 @@ public class ProxyGenerator {
 
         if (saveGeneratedFiles) {
             java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                     try {
                         FileOutputStream file =
                             new FileOutputStream(dotToSlash(name) + ".class");
@@ -576,7 +576,7 @@ public class ProxyGenerator {
                      * compatibly with the throws clauses of both
                      * overridden methods.
                      */
-                    List<Class> legalExceptions = new ArrayList<Class>();
+                    List<Class<?>> legalExceptions = new ArrayList<Class<?>>();
                     collectCompatibleTypes(
                         exceptionTypes, pm.exceptionTypes, legalExceptions);
                     collectCompatibleTypes(
@@ -618,11 +618,11 @@ public class ProxyGenerator {
          * List of return types that are not yet known to be
          * assignable from ("covered" by) any of the others.
          */
-        LinkedList<Class> uncoveredReturnTypes = new LinkedList<Class>();
+        LinkedList<Class<?>> uncoveredReturnTypes = new LinkedList<Class<?>>();
 
     nextNewReturnType:
         for (ProxyMethod pm : methods) {
-            Class newReturnType = pm.returnType;
+            Class<?> newReturnType = pm.returnType;
             if (newReturnType.isPrimitive()) {
                 throw new IllegalArgumentException(
                     "methods with same signature " +
@@ -637,9 +637,9 @@ public class ProxyGenerator {
              * Compare the new return type to the existing uncovered
              * return types.
              */
-            ListIterator<Class> liter = uncoveredReturnTypes.listIterator();
+            ListIterator<Class<?>> liter = uncoveredReturnTypes.listIterator();
             while (liter.hasNext()) {
-                Class uncoveredReturnType = liter.next();
+                Class<?> uncoveredReturnType = liter.next();
 
                 /*
                  * If an existing uncovered return type is assignable
@@ -944,10 +944,10 @@ public class ProxyGenerator {
 
             tryEnd = pc = (short) minfo.code.size();
 
-            List<Class> catchList = computeUniqueCatchList(exceptionTypes);
+            List<Class<?>> catchList = computeUniqueCatchList(exceptionTypes);
             if (catchList.size() > 0) {
 
-                for (Class ex : catchList) {
+                for (Class<?> ex : catchList) {
                     minfo.exceptionTable.add(new ExceptionTableEntry(
                         tryBegin, tryEnd, pc,
                         cp.getClass(dotToSlash(ex.getName()))));
@@ -1521,8 +1521,9 @@ public class ProxyGenerator {
      * declared exceptions from duplicate methods inherited from
      * different interfaces.
      */
-    private static void collectCompatibleTypes(Class[] from, Class[] with,
-                                               List<Class> list)
+    private static void collectCompatibleTypes(Class<?>[] from,
+                                               Class<?>[] with,
+                                               List<Class<?>> list)
     {
         for (int i = 0; i < from.length; i++) {
             if (!list.contains(from[i])) {
@@ -1557,8 +1558,8 @@ public class ProxyGenerator {
      * given list of declared exceptions, indicating that no exceptions
      * need to be caught.
      */
-    private static List<Class> computeUniqueCatchList(Class[] exceptions) {
-        List<Class> uniqueList = new ArrayList<Class>();
+    private static List<Class<?>> computeUniqueCatchList(Class<?>[] exceptions) {
+        List<Class<?>> uniqueList = new ArrayList<Class<?>>();
                                                 // unique exceptions to catch
 
         uniqueList.add(Error.class);            // always catch/rethrow these
@@ -1566,7 +1567,7 @@ public class ProxyGenerator {
 
     nextException:
         for (int i = 0; i < exceptions.length; i++) {
-            Class ex = exceptions[i];
+            Class<?> ex = exceptions[i];
             if (ex.isAssignableFrom(Throwable.class)) {
                 /*
                  * If Throwable is declared to be thrown by the proxy method,
@@ -1586,7 +1587,7 @@ public class ProxyGenerator {
              * exceptions that need to be caught:
              */
             for (int j = 0; j < uniqueList.size();) {
-                Class ex2 = uniqueList.get(j);
+                Class<?> ex2 = uniqueList.get(j);
                 if (ex2.isAssignableFrom(ex)) {
                     /*
                      * if a superclass of this exception is already on

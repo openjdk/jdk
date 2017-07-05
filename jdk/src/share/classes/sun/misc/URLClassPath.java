@@ -86,16 +86,16 @@ public class URLClassPath {
     }
 
     /* The original search path of URLs. */
-    private ArrayList path = new ArrayList();
+    private ArrayList<URL> path = new ArrayList<URL>();
 
     /* The stack of unopened URLs */
-    Stack urls = new Stack();
+    Stack<URL> urls = new Stack<URL>();
 
     /* The resulting search path of Loaders */
-    ArrayList loaders = new ArrayList();
+    ArrayList<Loader> loaders = new ArrayList<Loader>();
 
     /* Map of each URL opened to its corresponding Loader */
-    HashMap lmap = new HashMap();
+    HashMap<URL, Loader> lmap = new HashMap<URL, Loader>();
 
     /* The jar protocol handler to use when creating new URLs */
     private URLStreamHandler jarHandler;
@@ -146,7 +146,7 @@ public class URLClassPath {
      */
     public URL[] getURLs() {
         synchronized (urls) {
-            return (URL[])path.toArray(new URL[path.size()]);
+            return path.toArray(new URL[path.size()]);
         }
     }
 
@@ -200,9 +200,9 @@ public class URLClassPath {
      * @param name the resource name
      * @return an Enumeration of all the urls having the specified name
      */
-    public Enumeration findResources(final String name,
+    public Enumeration<URL> findResources(final String name,
                                      final boolean check) {
-        return new Enumeration() {
+        return new Enumeration<URL>() {
             private int index = 0;
             private URL url = null;
 
@@ -225,7 +225,7 @@ public class URLClassPath {
                 return next();
             }
 
-            public Object nextElement() {
+            public URL nextElement() {
                 if (!next()) {
                     throw new NoSuchElementException();
                 }
@@ -247,9 +247,9 @@ public class URLClassPath {
      * @param name the resource name
      * @return an Enumeration of all the resources having the specified name
      */
-    public Enumeration getResources(final String name,
+    public Enumeration<Resource> getResources(final String name,
                                     final boolean check) {
-        return new Enumeration() {
+        return new Enumeration<Resource>() {
             private int index = 0;
             private Resource res = null;
 
@@ -272,7 +272,7 @@ public class URLClassPath {
                 return next();
             }
 
-            public Object nextElement() {
+            public Resource nextElement() {
                 if (!next()) {
                     throw new NoSuchElementException();
                 }
@@ -283,7 +283,7 @@ public class URLClassPath {
         };
     }
 
-    public Enumeration getResources(final String name) {
+    public Enumeration<Resource> getResources(final String name) {
         return getResources(name, true);
     }
 
@@ -302,7 +302,7 @@ public class URLClassPath {
                 if (urls.empty()) {
                     return null;
                 } else {
-                    url = (URL)urls.pop();
+                    url = urls.pop();
                 }
             }
             // Skip this URL if it already has a Loader. (Loader
@@ -329,7 +329,7 @@ public class URLClassPath {
             loaders.add(loader);
             lmap.put(url, loader);
         }
-        return (Loader)loaders.get(index);
+        return loaders.get(index);
     }
 
     /*
@@ -337,9 +337,9 @@ public class URLClassPath {
      */
     private Loader getLoader(final URL url) throws IOException {
         try {
-            return (Loader)java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction() {
-                public Object run() throws IOException {
+            return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedExceptionAction<Loader>() {
+                public Loader run() throws IOException {
                     String file = url.getFile();
                     if (file != null && file.endsWith("/")) {
                         if ("file".equals(url.getProtocol())) {
@@ -561,13 +561,14 @@ public class URLClassPath {
         private JarIndex index;
         private MetaIndex metaIndex;
         private URLStreamHandler handler;
-        private HashMap lmap;
+        private HashMap<URL, Loader> lmap;
 
         /*
          * Creates a new JarLoader for the specified URL referring to
          * a JAR file.
          */
-        JarLoader(URL url, URLStreamHandler jarHandler, HashMap loaderMap)
+        JarLoader(URL url, URLStreamHandler jarHandler,
+                  HashMap<URL, Loader> loaderMap)
             throws IOException
         {
             super(new URL("jar", "", -1, url + "!/", jarHandler));
@@ -615,8 +616,8 @@ public class URLClassPath {
             if (jar == null) {
                 try {
                     java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedExceptionAction() {
-                            public Object run() throws IOException {
+                        new java.security.PrivilegedExceptionAction<Void>() {
+                            public Void run() throws IOException {
                                 if (DEBUG) {
                                     System.err.println("Opening " + csu);
                                     Thread.dumpStack();
@@ -732,9 +733,9 @@ public class URLClassPath {
 
             String entryName;
             ZipEntry entry;
-            Enumeration enum_ = jar.entries();
+            Enumeration<JarEntry> enum_ = jar.entries();
             while (enum_.hasMoreElements()) {
-                entry = (ZipEntry)enum_.nextElement();
+                entry = enum_.nextElement();
                 entryName = entry.getName();
                 if((pos = entryName.lastIndexOf("/")) != -1)
                     entryName = entryName.substring(0, pos);
@@ -778,7 +779,7 @@ public class URLClassPath {
             if (index == null)
                 return null;
 
-            HashSet visited = new HashSet();
+            HashSet<URL> visited = new HashSet<URL>();
             return getResource(name, check, visited);
         }
 
@@ -790,7 +791,7 @@ public class URLClassPath {
          * non-existent resource
          */
         Resource getResource(final String name, boolean check,
-                Set visited) {
+                             Set<URL> visited) {
 
             Resource res;
             Object[] jarFiles;
@@ -819,10 +820,9 @@ public class URLClassPath {
                             /* no loader has been set up for this jar file
                              * before
                              */
-                            newLoader = (JarLoader)
-                                AccessController.doPrivileged(
-                                    new PrivilegedExceptionAction() {
-                                    public Object run() throws IOException {
+                            newLoader = AccessController.doPrivileged(
+                                new PrivilegedExceptionAction<JarLoader>() {
+                                    public JarLoader run() throws IOException {
                                         return new JarLoader(url, handler,
                                             lmap);
                                     }

@@ -1088,7 +1088,7 @@ public class Arrays {
      *          <i>mutually comparable</i> (for example, strings and integers).
      */
     public static void sort(Object[] a) {
-        Object[] aux = (Object[])a.clone();
+        Object[] aux = a.clone();
         mergeSort(aux, a, 0, a.length, 0);
     }
 
@@ -1216,7 +1216,7 @@ public class Arrays {
      *          not <i>mutually comparable</i> using the specified comparator.
      */
     public static <T> void sort(T[] a, Comparator<? super T> c) {
-        T[] aux = (T[])a.clone();
+        T[] aux = a.clone();
         if (c==null)
             mergeSort(aux, a, 0, a.length, 0);
         else
@@ -1257,7 +1257,7 @@ public class Arrays {
     public static <T> void sort(T[] a, int fromIndex, int toIndex,
                                 Comparator<? super T> c) {
         rangeCheck(a.length, fromIndex, toIndex);
-        T[] aux = (T[])copyOfRange(a, fromIndex, toIndex);
+        T[] aux = copyOfRange(a, fromIndex, toIndex);
         if (c==null)
             mergeSort(aux, a, fromIndex, toIndex, -fromIndex);
         else
@@ -4128,7 +4128,7 @@ public class Arrays {
         if (a.length != 0 && bufLen <= 0)
             bufLen = Integer.MAX_VALUE;
         StringBuilder buf = new StringBuilder(bufLen);
-        deepToString(a, buf, new HashSet());
+        deepToString(a, buf, new HashSet<Object[]>());
         return buf.toString();
     }
 

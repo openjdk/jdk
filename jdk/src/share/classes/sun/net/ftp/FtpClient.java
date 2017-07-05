@@ -117,8 +117,8 @@ public class FtpClient extends TransferProtocolClient {
     public static int getFtpProxyPort() {
         final int result[] = {80};
         java.security.AccessController.doPrivileged(
-          new java.security.PrivilegedAction() {
-            public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
 
                 String tmp = System.getProperty("ftp.proxyPort");
                 if (tmp == null) {
@@ -343,9 +343,9 @@ public class FtpClient extends TransferProtocolClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = (Socket) AccessController.doPrivileged(
-                                            new PrivilegedAction() {
-                              public Object run() {
+                s = AccessController.doPrivileged(
+                    new PrivilegedAction<Socket>() {
+                        public Socket run() {
                                   return new Socket(proxy);
                               }});
             } else

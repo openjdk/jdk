@@ -205,9 +205,9 @@ public class URLClassLoader extends SecureClassLoader {
          throws ClassNotFoundException
     {
         try {
-            return (Class)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws ClassNotFoundException {
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Class>() {
+                    public Class run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
                         Resource res = ucp.getResource(path, false);
                         if (res != null) {
@@ -376,9 +376,9 @@ public class URLClassLoader extends SecureClassLoader {
         /*
          * The same restriction to finding classes applies to resources
          */
-        URL url =
-            (URL) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        URL url = AccessController.doPrivileged(
+            new PrivilegedAction<URL>() {
+                public URL run() {
                     return ucp.findResource(name, true);
                 }
             }, acc);
@@ -397,7 +397,7 @@ public class URLClassLoader extends SecureClassLoader {
     public Enumeration<URL> findResources(final String name)
         throws IOException
     {
-        final Enumeration e = ucp.findResources(name, true);
+        final Enumeration<URL> e = ucp.findResources(name, true);
 
         return new Enumeration<URL>() {
             private URL url = null;
@@ -407,9 +407,9 @@ public class URLClassLoader extends SecureClassLoader {
                     return true;
                 }
                 do {
-                    URL u = (URL)
-                        AccessController.doPrivileged(new PrivilegedAction() {
-                            public Object run() {
+                    URL u = AccessController.doPrivileged(
+                        new PrivilegedAction<URL>() {
+                            public URL run() {
                                 if (!e.hasMoreElements())
                                     return null;
                                 return e.nextElement();
@@ -515,8 +515,8 @@ public class URLClassLoader extends SecureClassLoader {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 final Permission fp = p;
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() throws SecurityException {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() throws SecurityException {
                         sm.checkPermission(fp);
                         return null;
                     }
@@ -544,9 +544,9 @@ public class URLClassLoader extends SecureClassLoader {
         // Save the caller's context
         AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
-        URLClassLoader ucl =
-            (URLClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        URLClassLoader ucl = AccessController.doPrivileged(
+            new PrivilegedAction<URLClassLoader>() {
+                public URLClassLoader run() {
                     return new FactoryURLClassLoader(urls, parent);
                 }
             });
@@ -571,9 +571,9 @@ public class URLClassLoader extends SecureClassLoader {
         // Save the caller's context
         AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
-        URLClassLoader ucl = (URLClassLoader)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        URLClassLoader ucl = AccessController.doPrivileged(
+            new PrivilegedAction<URLClassLoader>() {
+                public URLClassLoader run() {
                     return new FactoryURLClassLoader(urls);
                 }
             });

@@ -48,15 +48,15 @@ public
 class FileInputStream extends InputStream
 {
     /* File Descriptor - handle to the open file */
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
 
     private FileChannel channel = null;
 
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
     private volatile boolean closed = false;
 
-    private static ThreadLocal<Boolean> runningFinalize =
-                                new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> runningFinalize =
+        new ThreadLocal<Boolean>();
 
     private static boolean isRunningFinalize() {
         Boolean val;
@@ -151,7 +151,7 @@ class FileInputStream extends InputStream
      * is thrown.
      * <p>
      * This constructor does not throw an exception if <code>fdObj</code>
-     * is {link java.io.FileDescriptor#valid() invalid}.
+     * is {@link java.io.FileDescriptor#valid() invalid}.
      * However, if the methods are invoked on the resulting stream to attempt
      * I/O on the stream, an <code>IOException</code> is thrown.
      *
@@ -389,7 +389,7 @@ class FileInputStream extends InputStream
      * @see        java.io.FileInputStream#close()
      */
     protected void finalize() throws IOException {
-        if ((fd != null) &&  (fd != fd.in)) {
+        if ((fd != null) &&  (fd != FileDescriptor.in)) {
 
             /*
              * Finalizer should not release the FileDescriptor if another

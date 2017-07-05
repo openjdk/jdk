@@ -392,11 +392,12 @@ class MethodAccessorGenerator extends AccessorGenerator {
         // same namespace as the target class. Since the generated code
         // is privileged anyway, the protection domain probably doesn't
         // matter.
-        return (MagicAccessorImpl)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<MagicAccessorImpl>() {
+                public MagicAccessorImpl run() {
                         try {
-                            return ClassDefiner.defineClass
+                        return (MagicAccessorImpl)
+                        ClassDefiner.defineClass
                                 (generatedName,
                                  bytes,
                                  0,

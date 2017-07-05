@@ -1,5 +1,5 @@
-/* 
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+/*
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,129 +33,155 @@ import java.io.*;
  */
 
 final class UNIXProcess extends Process {
-    private FileDescriptor stdin_fd;
-    private FileDescriptor stdout_fd;
-    private FileDescriptor stderr_fd;
-    private int pid;
+    private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
+        = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    private final int pid;
     private int exitcode;
     private boolean hasExited;
 
     private OutputStream stdin_stream;
-    private BufferedInputStream stdout_stream;
+    private InputStream stdout_stream;
     private DeferredCloseInputStream stdout_inner_stream;
-    private DeferredCloseInputStream stderr_stream;
+    private InputStream stderr_stream;
 
     /* this is for the reaping thread */
     private native int waitForProcessExit(int pid);
 
+    /**
+     * Create a process using fork(2) and exec(2).
+     *
+     * @param std_fds array of file descriptors.  Indexes 0, 1, and
+     *        2 correspond to standard input, standard output and
+     *        standard error, respectively.  On input, a value of -1
+     *        means to create a pipe to connect child and parent
+     *        processes.  On output, a value which is not -1 is the
+     *        parent pipe fd corresponding to the pipe which has
+     *        been created.  An element of this array is -1 on input
+     *        if and only if it is <em>not</em> -1 on output.
+     * @return the pid of the subprocess
+     */
     private native int forkAndExec(byte[] prog,
-				   byte[] argBlock, int argc,
-				   byte[] envBlock, int envc,
-				   byte[] dir,
-				   boolean redirectErrorStream,
-				   FileDescriptor stdin_fd,
-				   FileDescriptor stdout_fd,
-				   FileDescriptor stderr_fd)
-	throws IOException;
+                                   byte[] argBlock, int argc,
+                                   byte[] envBlock, int envc,
+                                   byte[] dir,
+                                   int[] std_fds,
+                                   boolean redirectErrorStream)
+        throws IOException;
 
     UNIXProcess(final byte[] prog,
-		final byte[] argBlock, int argc,
-		final byte[] envBlock, int envc,
-		final byte[] dir,
-		final boolean redirectErrorStream)
+                final byte[] argBlock, int argc,
+                final byte[] envBlock, int envc,
+                final byte[] dir,
+                final int[] std_fds,
+                final boolean redirectErrorStream)
     throws IOException {
-	stdin_fd  = new FileDescriptor();
-	stdout_fd = new FileDescriptor();
-	stderr_fd = new FileDescriptor();
+        pid = forkAndExec(prog,
+                          argBlock, argc,
+                          envBlock, envc,
+                          dir,
+                          std_fds,
+                          redirectErrorStream);
 
-	pid = forkAndExec(prog,
-			  argBlock, argc,
-			  envBlock, envc,
-			  dir,
-			  redirectErrorStream,
-			  stdin_fd, stdout_fd, stderr_fd);
+        java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedAction<Void>() { public Void run() {
+            if (std_fds[0] == -1)
+                stdin_stream = new ProcessBuilder.NullOutputStream();
+            else {
+                FileDescriptor stdin_fd = new FileDescriptor();
+                fdAccess.set(stdin_fd, std_fds[0]);
+                stdin_stream = new BufferedOutputStream(
+                    new FileOutputStream(stdin_fd));
+            }
 
-	java.security.AccessController.doPrivileged(
-				    new java.security.PrivilegedAction() {
-	    public Object run() {
-	        stdin_stream
-		    = new BufferedOutputStream(new FileOutputStream(stdin_fd));
-		stdout_inner_stream = new DeferredCloseInputStream(stdout_fd);
-	        stdout_stream = new BufferedInputStream(stdout_inner_stream);
-	        stderr_stream = new DeferredCloseInputStream(stderr_fd);
-		return null;
-	    }
-	});
+            if (std_fds[1] == -1)
+                stdout_stream = new ProcessBuilder.NullInputStream();
+            else {
+                FileDescriptor stdout_fd = new FileDescriptor();
+                fdAccess.set(stdout_fd, std_fds[1]);
+                stdout_inner_stream = new DeferredCloseInputStream(stdout_fd);
+                stdout_stream = new BufferedInputStream(stdout_inner_stream);
+            }
 
-	/*
-	 * For each subprocess forked a corresponding reaper thread
-	 * is started.  That thread is the only thread which waits
-	 * for the subprocess to terminate and it doesn't hold any
-	 * locks while doing so.  This design allows waitFor() and
-	 * exitStatus() to be safely executed in parallel (and they
-	 * need no native code).
-	 */
+            if (std_fds[2] == -1)
+                stderr_stream = new ProcessBuilder.NullInputStream();
+            else {
+                FileDescriptor stderr_fd = new FileDescriptor();
+                fdAccess.set(stderr_fd, std_fds[2]);
+                stderr_stream = new DeferredCloseInputStream(stderr_fd);
+            }
 
-	java.security.AccessController.doPrivileged(
-			    new java.security.PrivilegedAction() {
-	    public Object run() {
-		Thread t = new Thread("process reaper") {
-		    public void run() {
-			int res = waitForProcessExit(pid);
-			synchronized (UNIXProcess.this) {
-			    hasExited = true;
-			    exitcode = res;
-			    UNIXProcess.this.notifyAll();
-			}
-		    }
-		};
-		t.setDaemon(true);
-		t.start();
-		return null;
-	    }
-	});
+            return null; }});
+
+        /*
+         * For each subprocess forked a corresponding reaper thread
+         * is started.  That thread is the only thread which waits
+         * for the subprocess to terminate and it doesn't hold any
+         * locks while doing so.  This design allows waitFor() and
+         * exitStatus() to be safely executed in parallel (and they
+         * need no native code).
+         */
+
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() { public Void run() {
+                Thread t = new Thread("process reaper") {
+                    public void run() {
+                        int res = waitForProcessExit(pid);
+                        synchronized (UNIXProcess.this) {
+                            hasExited = true;
+                            exitcode = res;
+                            UNIXProcess.this.notifyAll();
+                        }
+                    }
+                };
+                t.setDaemon(true);
+                t.start();
+                return null; }});
     }
 
     public OutputStream getOutputStream() {
-	return stdin_stream;
+        return stdin_stream;
     }
 
     public InputStream getInputStream() {
-	return stdout_stream;
+        return stdout_stream;
     }
 
     public InputStream getErrorStream() {
-	return stderr_stream;
+        return stderr_stream;
     }
 
     public synchronized int waitFor() throws InterruptedException {
         while (!hasExited) {
-	    wait();
-	}
-	return exitcode;
+            wait();
+        }
+        return exitcode;
     }
 
     public synchronized int exitValue() {
-	if (!hasExited) {
-	    throw new IllegalThreadStateException("process hasn't exited");
-	}
-	return exitcode;
+        if (!hasExited) {
+            throw new IllegalThreadStateException("process hasn't exited");
+        }
+        return exitcode;
     }
 
     private static native void destroyProcess(int pid);
     public synchronized void destroy() {
-	// There is a risk that pid will be recycled, causing us to
-	// kill the wrong process!  So we only terminate processes
-	// that appear to still be running.  Even with this check,
-	// there is an unavoidable race condition here, but the window
-	// is very small, and OSes try hard to not recycle pids too
-	// soon, so this is quite safe.
-	if (!hasExited)
-	    destroyProcess(pid);
-	try {
+        // There is a risk that pid will be recycled, causing us to
+        // kill the wrong process!  So we only terminate processes
+        // that appear to still be running.  Even with this check,
+        // there is an unavoidable race condition here, but the window
+        // is very small, and OSes try hard to not recycle pids too
+        // soon, so this is quite safe.
+        if (!hasExited)
+            destroyProcess(pid);
+        try {
             stdin_stream.close();
-	    stdout_inner_stream.closeDeferred(stdout_stream);
-	    stderr_stream.closeDeferred(stderr_stream);
+            if (stdout_inner_stream != null)
+                stdout_inner_stream.closeDeferred(stdout_stream);
+            if (stderr_stream instanceof DeferredCloseInputStream)
+                ((DeferredCloseInputStream) stderr_stream)
+                    .closeDeferred(stderr_stream);
         } catch (IOException e) {
             // ignore
         }
@@ -172,99 +198,99 @@ final class UNIXProcess extends Process {
     // (EOF) as they did before.
     //
     private static class DeferredCloseInputStream
-	extends FileInputStream
+        extends FileInputStream
     {
 
-	private DeferredCloseInputStream(FileDescriptor fd) {
-	    super(fd);
-	}
+        private DeferredCloseInputStream(FileDescriptor fd) {
+            super(fd);
+        }
 
-	private Object lock = new Object();	// For the following fields
-	private boolean closePending = false;
-	private int useCount = 0;
-	private InputStream streamToClose;
+        private Object lock = new Object();     // For the following fields
+        private boolean closePending = false;
+        private int useCount = 0;
+        private InputStream streamToClose;
 
-	private void raise() {
-	    synchronized (lock) {
-		useCount++;
-	    }
-	}
+        private void raise() {
+            synchronized (lock) {
+                useCount++;
+            }
+        }
 
-	private void lower() throws IOException {
-	    synchronized (lock) {
-		useCount--;
-		if (useCount == 0 && closePending) {
-		    streamToClose.close();
-		}
-	    }
-	}
+        private void lower() throws IOException {
+            synchronized (lock) {
+                useCount--;
+                if (useCount == 0 && closePending) {
+                    streamToClose.close();
+                }
+            }
+        }
 
-	// stc is the actual stream to be closed; it might be this object, or
-	// it might be an upstream object for which this object is downstream.
-	//
-	private void closeDeferred(InputStream stc) throws IOException {
-	    synchronized (lock) {
-		if (useCount == 0) {
-		    stc.close();
-		} else {
-		    closePending = true;
-		    streamToClose = stc;
-		}
-	    }
-	}
+        // stc is the actual stream to be closed; it might be this object, or
+        // it might be an upstream object for which this object is downstream.
+        //
+        private void closeDeferred(InputStream stc) throws IOException {
+            synchronized (lock) {
+                if (useCount == 0) {
+                    stc.close();
+                } else {
+                    closePending = true;
+                    streamToClose = stc;
+                }
+            }
+        }
 
-	public void close() throws IOException {
-	    synchronized (lock) {
-		useCount = 0;
-		closePending = false;
-	    }
-	    super.close();
-	}
+        public void close() throws IOException {
+            synchronized (lock) {
+                useCount = 0;
+                closePending = false;
+            }
+            super.close();
+        }
 
-	public int read() throws IOException {
-	    raise();
-	    try {
-		return super.read();
-	    } finally {
-		lower();
-	    }
-	}
+        public int read() throws IOException {
+            raise();
+            try {
+                return super.read();
+            } finally {
+                lower();
+            }
+        }
 
-	public int read(byte[] b) throws IOException {
-	    raise();
-	    try {
-		return super.read(b);
-	    } finally {
-		lower();
-	    }
-	}
+        public int read(byte[] b) throws IOException {
+            raise();
+            try {
+                return super.read(b);
+            } finally {
+                lower();
+            }
+        }
 
-	public int read(byte[] b, int off, int len) throws IOException {
-	    raise();
-	    try {
-		return super.read(b, off, len);
-	    } finally {
-		lower();
-	    }
-	}
+        public int read(byte[] b, int off, int len) throws IOException {
+            raise();
+            try {
+                return super.read(b, off, len);
+            } finally {
+                lower();
+            }
+        }
 
-	public long skip(long n) throws IOException {
-	    raise();
-	    try {
-		return super.skip(n);
-	    } finally {
-		lower();
-	    }
-	}
+        public long skip(long n) throws IOException {
+            raise();
+            try {
+                return super.skip(n);
+            } finally {
+                lower();
+            }
+        }
 
-	public int available() throws IOException {
-	    raise();
-	    try {
-		return super.available();
-	    } finally {
-		lower();
-	    }
-	}
+        public int available() throws IOException {
+            raise();
+            try {
+                return super.available();
+            } finally {
+                lower();
+            }
+        }
 
     }
 
@@ -272,6 +298,6 @@ final class UNIXProcess extends Process {
     private static native void initIDs();
 
     static {
-	initIDs();
+        initIDs();
     }
 }

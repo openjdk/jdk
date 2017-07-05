@@ -66,7 +66,27 @@ public final class Channels {
     private Channels() { }              // No instantiation
 
 
-    private static int write(WritableByteChannel ch, ByteBuffer bb)
+    /**
+     * Write all remaining bytes in buffer to the given channel.
+     * If the channel is selectable then it must be configured blocking.
+     */
+    private static void writeFullyImpl(WritableByteChannel ch, ByteBuffer bb)
+        throws IOException
+    {
+        while (bb.remaining() > 0) {
+            int n = ch.write(bb);
+            if (n <= 0)
+                throw new RuntimeException("no bytes written");
+        }
+    }
+
+    /**
+     * Write all remaining bytes in buffer to the given channel.
+     *
+     * @throws  IllegalBlockingException
+     *          If the channel is selectable and configured non-blocking.
+     */
+    private static void writeFully(WritableByteChannel ch, ByteBuffer bb)
         throws IOException
     {
         if (ch instanceof SelectableChannel) {
@@ -74,13 +94,12 @@ public final class Channels {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
-                return ch.write(bb);
+                writeFullyImpl(ch, bb);
             }
         } else {
-            return ch.write(bb);
+            writeFullyImpl(ch, bb);
         }
     }
-
 
     // -- Byte streams from channels --
 
@@ -148,7 +167,7 @@ public final class Channels {
                     bb.position(off);
                     this.bb = bb;
                     this.bs = bs;
-                    Channels.write(ch, bb);
+                    Channels.writeFully(ch, bb);
                 }
 
                 public void close() throws IOException {
