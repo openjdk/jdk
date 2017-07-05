@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,6 @@ public:
   ciType* element_type();       // JLS calls this the "component type"
   ciType* base_element_type();  // JLS calls this the "element type"
   bool is_leaf_type();          // No subtypes of this array type.
-
-  ciInstance* component_mirror() {
-    // This is a real field in ArrayKlass, but we derive it from element_type.
-    return element_type()->java_mirror();
-  }
 
   // What kind of vmObject is this?
   bool is_array_klass() const { return true; }

@@ -325,6 +325,10 @@ ifeq ($(USE_CLANG), true)
   else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 1), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1
+  # Clang 6.0 
+  else ifeq ($(shell expr $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) = 0), 1) 
+    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT) 
+    OPT_CFLAGS/unsafe.o += -O1 
   else
     $(error "Update compiler workarounds for Clang $(CC_VER_MAJOR).$(CC_VER_MINOR)")
   endif

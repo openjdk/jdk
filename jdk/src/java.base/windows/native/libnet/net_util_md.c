@@ -627,7 +627,7 @@ void dumpAddr (char *str, void *addr) {
  * and returns SOCKET_ERROR. Used in NET_BindV6 only.
  */
 
-#define CLOSE_SOCKETS_AND_RETURN {      \
+#define CLOSE_SOCKETS_AND_RETURN do {   \
     if (fd != -1) {                     \
         closesocket (fd);               \
         fd = -1;                        \
@@ -646,7 +646,7 @@ void dumpAddr (char *str, void *addr) {
     }                                   \
     b->ipv4_fd = b->ipv6_fd = -1;       \
     return SOCKET_ERROR;                \
-}
+} while(0)
 
 /*
  * if ipv6 is available, call NET_BindV6 to bind to the required address/port.

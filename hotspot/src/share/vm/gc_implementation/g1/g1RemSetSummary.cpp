@@ -253,6 +253,7 @@ public:
     size_t occupied_cards = hrrs->occupied();
     size_t code_root_mem_sz = hrrs->strong_code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
+      _max_code_root_mem_sz = code_root_mem_sz;
       _max_code_root_mem_sz_region = r;
     }
     size_t code_root_elems = hrrs->strong_code_roots_list_length();

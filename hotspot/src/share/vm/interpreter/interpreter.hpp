@@ -55,7 +55,9 @@ class InterpreterCodelet: public Stub {
  public:
   // Initialization/finalization
   void    initialize(int size,
-                     CodeStrings& strings)       { _size = size; DEBUG_ONLY(_strings.assign(strings);) }
+                     CodeStrings& strings)       { _size = size;
+                                                   DEBUG_ONLY(::new(&_strings) CodeStrings();)
+                                                   DEBUG_ONLY(_strings.assign(strings);) }
   void    finalize()                             { ShouldNotCallThis(); }
 
   // General info/converters

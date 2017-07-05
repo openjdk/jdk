@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ ifeq ($(JRE_RELEASE_VER),1.6.0)
   VALIDATED_COMPILER_REVS   := 5.8
   VALIDATED_CC_COMPILER_REVS := 5.8
 else
-  # Validated compiler for JDK7 is SS12 update 1 + patches (5.10)
-  VALIDATED_COMPILER_REVS   := 5.10
-  VALIDATED_CC_COMPILER_REVS := 5.10
+  # Validated compiler for JDK9 is SS12.3 (5.12)
+  VALIDATED_COMPILER_REVS   := 5.12
+  VALIDATED_CC_COMPILER_REVS := 5.12
 endif
 
 # Warning messages about not using the above validated versions
