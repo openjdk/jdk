@@ -105,7 +105,7 @@ LIR_Opr LIR_OprFact::dummy_value_type(ValueType* type) {
 
 
 LIR_Address::Scale LIR_Address::scale(BasicType type) {
-  int elem_size = type2aelembytes[type];
+  int elem_size = type2aelembytes(type);
   switch (elem_size) {
   case 1: return LIR_Address::times_1;
   case 2: return LIR_Address::times_2;

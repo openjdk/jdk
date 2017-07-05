@@ -173,7 +173,7 @@ jint ParallelScavengeHeap::initialize() {
     new PSAdaptiveSizePolicy(eden_capacity,
                              initial_promo_size,
                              young_gen()->to_space()->capacity_in_bytes(),
-                             intra_generation_alignment(),
+                             intra_heap_alignment(),
                              max_gc_pause_sec,
                              max_gc_minor_pause_sec,
                              GCTimeRatio

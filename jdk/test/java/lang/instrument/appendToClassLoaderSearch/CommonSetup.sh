@@ -24,7 +24,6 @@
 #
 
 
-#%E
 #
 # Common setup for unit tests. Setups up the following variables:
 #
@@ -66,7 +65,7 @@ then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
 fi
- 
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."

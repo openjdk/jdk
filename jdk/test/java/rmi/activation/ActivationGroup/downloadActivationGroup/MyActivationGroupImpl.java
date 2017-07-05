@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,11 +27,11 @@ import java.rmi.activation.*;
 
 
 public class MyActivationGroupImpl extends ActivationGroupImpl {
-    
+
     public MyActivationGroupImpl(ActivationGroupID id, MarshalledObject mobj)
-	throws RemoteException, ActivationException
+        throws RemoteException, ActivationException
     {
-	super(id, mobj);
-	System.err.println("custom group implementation created");
+        super(id, mobj);
+        System.err.println("custom group implementation created");
     }
 }

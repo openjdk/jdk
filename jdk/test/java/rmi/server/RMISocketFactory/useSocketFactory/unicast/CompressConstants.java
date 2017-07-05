@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +27,9 @@
 interface CompressConstants {
 
     // constants for 6-bit code values
-    static final int NOP  = 0;	// no operation: used to pad words on flush()
-    static final int RAW  = 1;	// introduces raw byte format
-    static final int BASE = 2;	// base for codes found in lookup table
+    static final int NOP  = 0;  // no operation: used to pad words on flush()
+    static final int RAW  = 1;  // introduces raw byte format
+    static final int BASE = 2;  // base for codes found in lookup table
     static final String codeTable =
-	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ,.!?\"'()";
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ,.!?\"'()";
 }

@@ -54,9 +54,9 @@ protected:
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
                                            int caller_bci);
-  const char* try_to_inline(ciMethod* callee_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result);
-  const char* shouldInline(ciMethod* callee_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const;
-  const char* shouldNotInline(ciMethod* callee_method, WarmCallInfo* wci_result) const;
+  const char* try_to_inline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result);
+  const char* shouldInline(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile, WarmCallInfo* wci_result) const;
+  const char* shouldNotInline(ciMethod* callee_method, ciMethod* caller_method, WarmCallInfo* wci_result) const;
   void        print_inlining(ciMethod *callee_method, int caller_bci, const char *failure_msg) const PRODUCT_RETURN;
 
   InlineTree *caller_tree()       const { return _caller_tree;  }

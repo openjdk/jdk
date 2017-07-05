@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,49 +36,49 @@ public class HelloImpl
     public static boolean clientCalledSuccessfully = false;
 
     public HelloImpl() throws RemoteException {
-	super(0);
+        super(0);
     }
-    
+
     public synchronized String sayHello() {
-	HelloImpl.clientCalledSuccessfully = true;
-	System.out.println("hello method called");
-	this.notifyAll();
-	return "hello";
+        HelloImpl.clientCalledSuccessfully = true;
+        System.out.println("hello method called");
+        this.notifyAll();
+        return "hello";
     }
 
     public static void main(String[] args) {
-	/*
-	 * The following line is required with the JDK 1.2 VM so that the
-	 * VM can exit gracefully when this test completes.  Otherwise, the
-	 * conservative garbage collector will find a handle to the server
-	 * object on the native stack and not clear the weak reference to
-	 * it in the RMI runtime's object table.
-	 */
-	Object dummy = new Object();
-	Hello hello = null;
-	Registry registry = null;
+        /*
+         * The following line is required with the JDK 1.2 VM so that the
+         * VM can exit gracefully when this test completes.  Otherwise, the
+         * conservative garbage collector will find a handle to the server
+         * object on the native stack and not clear the weak reference to
+         * it in the RMI runtime's object table.
+         */
+        Object dummy = new Object();
+        Hello hello = null;
+        Registry registry = null;
 
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");	
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
-	try {
-	    String protocol = "";
-	    if (args.length >= 1)
-		protocol = args[0];
+        try {
+            String protocol = "";
+            if (args.length >= 1)
+                protocol = args[0];
 
-	    registry = java.rmi.registry.LocateRegistry.
-		getRegistry("localhost", TestLibrary.REGISTRY_PORT,
-			    new Compress.CompressRMIClientSocketFactory());
-	    UseCustomSocketFactory.checkStub(registry, "RMIClientSocket");
-	    hello = (Hello) registry.lookup("/HelloServer");
+            registry = java.rmi.registry.LocateRegistry.
+                getRegistry("localhost", TestLibrary.REGISTRY_PORT,
+                            new Compress.CompressRMIClientSocketFactory());
+            UseCustomSocketFactory.checkStub(registry, "RMIClientSocket");
+            hello = (Hello) registry.lookup("/HelloServer");
 
-	    /* lookup server */
-	    System.err.println(hello.sayHello() + 
-			       ", remote greeting.");
-	} catch (Exception e) {
-	    System.err.println("EXCEPTION OCCURRED:");
-	    e.printStackTrace();
-	} finally {
-	    hello = null;
-	}
+            /* lookup server */
+            System.err.println(hello.sayHello() +
+                               ", remote greeting.");
+        } catch (Exception e) {
+            System.err.println("EXCEPTION OCCURRED:");
+            e.printStackTrace();
+        } finally {
+            hello = null;
+        }
     }
 }

@@ -788,21 +788,17 @@ sane-cacerts:
 
 ifdef OPENJDK
 
-#name of test program that prints out "Failed" if freetype is not good enough
-FREETYPE_VERSION_CHECK_NAME = freetype_versioncheck
-FREETYPE_VERSION_CHECK = $(TEMPDIR)/$(FREETYPE_VERSION_CHECK_NAME)$(EXE_SUFFIX)
+# The freetypecheck Makefile prints out "Failed" if not good enough
+$(TEMPDIR)/freetypeinfo: FRC
+	@$(prep-target)
+	@(($(CD) $(BUILDDIR)/tools/freetypecheck && $(MAKE)) || \
+	    $(ECHO) "Failed to build freetypecheck." ) > $@
 
-sane-freetype:
-	@-($(CD) $(BUILDDIR)/tools/freetypecheck && \
-	$(MAKE) REQUIRED_FREETYPE_VERSION=$(REQUIRED_FREETYPE_VERSION) \
-	        FT_TEST=$(FREETYPE_VERSION_CHECK_NAME) \
-	        FT_HEADERS=$(FREETYPE_HEADERS_PATH) \
-	        FT_LIB=$(FREETYPE_LIB_PATH) \
-	        XARCH=$(XARCH))
-	@if [ ! -r $(FREETYPE_VERSION_CHECK) -o \
-	  "`$(FREETYPE_VERSION_CHECK) | $(GREP) Fail`" != "" ]; then \
+sane-freetype: $(TEMPDIR)/freetypeinfo
+	@if [ "`$(CAT) $< | $(GREP) Fail`" != "" ]; then \
 	  $(ECHO) "ERROR: FreeType version " $(REQUIRED_FREETYPE_VERSION) \
-	          "or higher is required. \n" >> $(ERROR_FILE) ; \
+	          " or higher is required. \n" \
+		  "`$(CAT) $<`  \n" >> $(ERROR_FILE) ; \
 	fi
 
 else
@@ -1339,7 +1335,7 @@ sane-compiler: sane-link
 ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
 	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
-	      "      Specifically the $(COMPILER_NAME) $(CC_TYPE) compiler. \n " \
+	      "      Specifically the $(COMPILER_NAME) compiler. \n " \
 	      "      $(YOU_ARE_USING) compiler version: $(CC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(COMPILER_PATH) \n" \

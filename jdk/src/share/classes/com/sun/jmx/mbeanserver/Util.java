@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
 public class Util {
     static <K, V> Map<K, V> newMap() {
@@ -83,6 +85,14 @@ public class Util {
 
     static <E> List<E> newList(Collection<E> c) {
         return new ArrayList<E>(c);
+    }
+
+    public static ObjectName newObjectName(String s) {
+        try {
+            return new ObjectName(s);
+        } catch (MalformedObjectNameException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /* This method can be used by code that is deliberately violating the

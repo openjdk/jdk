@@ -49,7 +49,7 @@ JAVA="${TESTJAVA}"/bin/java
 
 "$JAVAC" -d "${TESTCLASSES}" "${TESTSRC}"/DummyMain.java
 
-"${JAVA}" -javaagent:"${TESTSRC}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
+"${JAVA}" ${TESTVMOPTS} -javaagent:"${TESTSRC}"/Agent.jar -classpath "${TESTCLASSES}" DummyMain
 result=$?
 
 exit $result

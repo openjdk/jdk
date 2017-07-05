@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,40 +50,40 @@ public class ChangeHostName
     }
 
     public void receive(Remote obj) {
-	System.err.println("received: " + obj.toString());
+        System.err.println("received: " + obj.toString());
     }
 
     public static void main(String[] args) throws Exception {
 
-	InetAddress localAddress = InetAddress.getLocalHost();
-	String[] hostlist = new String[] {
-	    localAddress.getHostAddress(), localAddress.getHostName() };
+        InetAddress localAddress = InetAddress.getLocalHost();
+        String[] hostlist = new String[] {
+            localAddress.getHostAddress(), localAddress.getHostName() };
 
-	for (int i = 0; i < hostlist.length; i++) {
-		
-	    System.setProperty("java.rmi.server.hostname", hostlist[i]);
-	    Remote impl = new ChangeHostName();
-	    System.err.println("\ncreated impl extending URO: " + impl);
-		
-	    Receiver stub = (Receiver) RemoteObject.toStub(impl);
-	    System.err.println("stub for impl: " + stub);
+        for (int i = 0; i < hostlist.length; i++) {
 
-	    System.err.println("invoking method on stub");
-	    stub.receive(stub);
+            System.setProperty("java.rmi.server.hostname", hostlist[i]);
+            Remote impl = new ChangeHostName();
+            System.err.println("\ncreated impl extending URO: " + impl);
 
-	    UnicastRemoteObject.unexportObject(impl, true);
-	    System.err.println("unexported impl");
+            Receiver stub = (Receiver) RemoteObject.toStub(impl);
+            System.err.println("stub for impl: " + stub);
 
-	    if (stub.toString().indexOf(hostlist[i]) >= 0) {
-		System.err.println("stub's ref contains hostname: " +
-				   hostlist[i]);
-	    } else {
-		throw new RuntimeException(
-		    "TEST FAILED: stub's ref doesn't contain hostname: " +
-		    hostlist[i]);
-	    }
-	}
-	System.err.println("TEST PASSED");
+            System.err.println("invoking method on stub");
+            stub.receive(stub);
+
+            UnicastRemoteObject.unexportObject(impl, true);
+            System.err.println("unexported impl");
+
+            if (stub.toString().indexOf(hostlist[i]) >= 0) {
+                System.err.println("stub's ref contains hostname: " +
+                                   hostlist[i]);
+            } else {
+                throw new RuntimeException(
+                    "TEST FAILED: stub's ref doesn't contain hostname: " +
+                    hostlist[i]);
+            }
+        }
+        System.err.println("TEST PASSED");
     }
 }
 

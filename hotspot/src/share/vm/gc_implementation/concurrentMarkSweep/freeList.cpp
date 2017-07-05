@@ -302,3 +302,29 @@ void FreeList::assert_proper_lock_protection_work() const {
 #endif
 }
 #endif
+
+// Print the "label line" for free list stats.
+void FreeList::print_labels_on(outputStream* st, const char* c) {
+  st->print("%16s\t", c);
+  st->print("%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"
+            "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "\n",
+            "bfrsurp", "surplus", "desired", "prvSwep", "bfrSwep",
+            "count",   "cBirths", "cDeaths", "sBirths", "sDeaths");
+}
+
+// Print the AllocationStats for the given free list. If the second argument
+// to the call is a non-null string, it is printed in the first column;
+// otherwise, if the argument is null (the default), then the size of the
+// (free list) block is printed in the first column.
+void FreeList::print_on(outputStream* st, const char* c) const {
+  if (c != NULL) {
+    st->print("%16s", c);
+  } else {
+    st->print(SIZE_FORMAT_W(16), size());
+  }
+  st->print("\t"
+           SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t"
+           SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\n",
+           bfrSurp(),             surplus(),             desired(),             prevSweep(),           beforeSweep(),
+           count(),               coalBirths(),          coalDeaths(),          splitBirths(),         splitDeaths());
+}

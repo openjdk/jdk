@@ -79,6 +79,12 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     protected static final int TOTAL_THREADS = MAX_TRANS - MIN_TRANS + 1;
 
     private byte[]          fDummyClassBytes;
+    // fCheckedTransformers is a Vector that is used to verify
+    // that the transform() function is called in the same
+    // order in which the transformers were added to the
+    // TransformerManager. The test currently verifies that all
+    // transformers for a specific worker thread are in
+    // increasing order by index value.
     private Vector              fCheckedTransformers;
     private Instrumentation fInstrumentation;
     private int             fFinished;
@@ -131,9 +137,16 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
             threads[i].start();
         }
 
-        while (!exec.fDone)
+        // Effective Java - Item 48: Synchronize access to shared mutable data
+        // Don't use a direct field getter.
+        while (!exec.isDone())
         {
-            Thread.currentThread().yield();
+            // Effective Java - Item 51: Don't depend on the thread scheduler
+            // Use sleep() instead of yield().
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+            }
         }
         assertTrue(finalCheck());
 
@@ -169,13 +182,17 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
         this.fExec = exec;
     }
 
+    // Effective Java - Item 48: Synchronize access to shared mutable data
+    // Document a synchronized setter.
     protected synchronized void
     threadFinished(Thread t)
     {
         fFinished++;
     }
 
-    protected boolean
+    // Effective Java - Item 48: Synchronize access to shared mutable data
+    // Provide synchronized getter.
+    protected synchronized boolean
     threadsDone()
     {
         return fFinished == TOTAL_THREADS;
@@ -188,7 +205,9 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     protected boolean
     testCompleted()
     {
-        return getExecThread().fDone;
+        // Effective Java - Item 48: Synchronize access to shared mutable data
+        // Don't use direct field getter.
+        return getExecThread().isDone();
     }
 
     /**
@@ -264,11 +283,19 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     private void
     executeTransform()
     {
-        fCheckedTransformers.clear();
-
         try
         {
             ClassDefinition cd = new ClassDefinition(DummyClass.class, fDummyClassBytes);
+
+            // When the ClassDefinition above is created for the first
+            // time and every time redefineClasses() below is called,
+            // the transform() function is called for each registered
+            // transformer. We only want one complete set of calls to
+            // be logged in the fCheckedTransformers Vector so we clear
+            // any calls logged for ClassDefinition above and just use
+            // the ones logged for redefineClasses() below.
+            fCheckedTransformers.clear();
+
             getInstrumentation().redefineClasses(new ClassDefinition[]{ cd });
         }
         catch (ClassNotFoundException e)
@@ -325,6 +352,18 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
     {
         private boolean fDone = false;
 
+        // Effective Java - Item 48: Synchronize access to shared mutable data
+        // Provide a synchronized getter.
+        private synchronized boolean isDone() {
+            return fDone;
+        }
+
+        // Effective Java - Item 48: Synchronize access to shared mutable data
+        // Provide a synchronized setter.
+        private synchronized void setIsDone() {
+            fDone = true;
+        }
+
         public void
         run()
         {
@@ -335,7 +374,9 @@ public class TransformerManagementThreadAddTests extends ATestCaseScaffold
 
             // Do a final check for good measure
             executeTransform();
-            fDone = true;
+            // Effective Java - Item 48: Synchronize access to shared mutable data
+            // Don't use direct field setter.
+            setIsDone();
         }
     }
 

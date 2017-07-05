@@ -467,6 +467,11 @@ JRT_ENTRY(void, SharedRuntime::throw_AbstractMethodError(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_AbstractMethodError());
 JRT_END
 
+JRT_ENTRY(void, SharedRuntime::throw_IncompatibleClassChangeError(JavaThread* thread))
+  // These errors occur only at call sites
+  throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_IncompatibleClassChangeError(), "vtable stub");
+JRT_END
+
 JRT_ENTRY(void, SharedRuntime::throw_ArithmeticException(JavaThread* thread))
   throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArithmeticException(), "/ by zero");
 JRT_END
@@ -1481,11 +1486,9 @@ char* SharedRuntime::generate_class_cast_message(
   const char* desc = " cannot be cast to ";
   size_t msglen = strlen(objName) + strlen(desc) + strlen(targetKlassName) + 1;
 
-  char* message = NEW_C_HEAP_ARRAY(char, msglen);
+  char* message = NEW_RESOURCE_ARRAY(char, msglen);
   if (NULL == message) {
-    // out of memory - can't use a detailed message.  Since caller is
-    // using a resource mark to free memory, returning this should be
-    // safe (caller won't explicitly delete it).
+    // Shouldn't happen, but don't cause even more problems if it does
     message = const_cast<char*>(objName);
   } else {
     jio_snprintf(message, msglen, "%s%s%s", objName, desc, targetKlassName);
@@ -1834,7 +1837,25 @@ int AdapterHandlerLibrary::get_create_adapter_index(methodHandle method) {
                                                                         regs);
 
     B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
-    if (B == NULL)  return -2;          // Out of CodeCache space
+    if (B == NULL) {
+      // CodeCache is full, disable compilation
+      // Ought to log this but compile log is only per compile thread
+      // and we're some non descript Java thread.
+      UseInterpreter = true;
+      if (UseCompiler || AlwaysCompileLoopMethods ) {
+#ifndef PRODUCT
+        warning("CodeCache is full. Compiler has been disabled");
+        if (CompileTheWorld || ExitOnFullCodeCache) {
+          before_exit(JavaThread::current());
+          exit_globals(); // will delete tty
+          vm_direct_exit(CompileTheWorld ? 0 : 1);
+        }
+#endif
+        UseCompiler               = false;
+        AlwaysCompileLoopMethods  = false;
+      }
+      return 0; // Out of CodeCache space (_handlers[0] == NULL)
+    }
     entry->relocate(B->instructions_begin());
 #ifndef PRODUCT
     // debugging suppport
