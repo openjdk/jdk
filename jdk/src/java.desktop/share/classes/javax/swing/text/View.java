@@ -501,6 +501,7 @@ public abstract class View implements SwingConstants {
      * @exception IllegalArgumentException if <code>direction</code>
      *          doesn't have one of the legal values above
      */
+    @SuppressWarnings("deprecation")
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
       throws BadLocationException {

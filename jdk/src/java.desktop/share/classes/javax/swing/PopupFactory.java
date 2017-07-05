@@ -614,6 +614,7 @@ public class PopupFactory {
          * Returns true if popup can fit the screen and the owner's top parent.
          * It determines can popup be lightweight or mediumweight.
          */
+        @SuppressWarnings("deprecation")
         boolean fitsOnScreen() {
             boolean result = false;
             Component component = getComponent();
@@ -783,6 +784,8 @@ public class PopupFactory {
             component.removeAll();
             recycleLightWeightPopup(this);
         }
+
+        @SuppressWarnings("deprecation")
         public void show() {
             Container parent = null;
 
@@ -938,6 +941,8 @@ public class PopupFactory {
             rootPane.getContentPane().removeAll();
             recycleMediumWeightPopup(this);
         }
+
+        @SuppressWarnings("deprecation")
         public void show() {
             Component component = getComponent();
             Container parent = null;

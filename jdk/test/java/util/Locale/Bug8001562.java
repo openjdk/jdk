@@ -30,37 +30,46 @@
  * @run main Bug8001562
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.BreakIterator;
+import java.text.Collator;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class Bug8001562 {
 
-    static final String[] jdk7availTags = {
-        "ar", "ar-AE", "ar-BH", "ar-DZ", "ar-EG", "ar-IQ", "ar-JO", "ar-KW",
-        "ar-LB", "ar-LY", "ar-MA", "ar-OM", "ar-QA", "ar-SA", "ar-SD", "ar-SY",
-        "ar-TN", "ar-YE", "be", "be-BY", "bg", "bg-BG", "ca", "ca-ES", "cs",
-        "cs-CZ", "da", "da-DK", "de", "de-AT", "de-CH", "de-DE", "de-LU", "el",
-        "el-CY", "el-GR", "en", "en-AU", "en-CA", "en-GB", "en-IE", "en-IN",
-        "en-MT", "en-NZ", "en-PH", "en-SG", "en-US", "en-ZA", "es", "es-AR",
-        "es-BO", "es-CL", "es-CO", "es-CR", "es-DO", "es-EC", "es-ES", "es-GT",
-        "es-HN", "es-MX", "es-NI", "es-PA", "es-PE", "es-PR", "es-PY", "es-SV",
-        "es-US", "es-UY", "es-VE", "et", "et-EE", "fi", "fi-FI", "fr", "fr-BE",
-        "fr-CA", "fr-CH", "fr-FR", "fr-LU", "ga", "ga-IE", "he", "he-IL",
-        "hi-IN", "hr", "hr-HR", "hu", "hu-HU", "id", "id-ID", "is", "is-IS",
-        "it", "it-CH", "it-IT", "ja", "ja-JP",
-        "ja-JP-u-ca-japanese-x-lvariant-JP", "ko", "ko-KR", "lt", "lt-LT", "lv",
-        "lv-LV", "mk", "mk-MK", "ms", "ms-MY", "mt", "mt-MT", "nl", "nl-BE",
-        "nl-NL", "no", "no-NO", "no-NO-x-lvariant-NY", "pl", "pl-PL", "pt",
-        "pt-BR", "pt-PT", "ro", "ro-RO", "ru", "ru-RU", "sk", "sk-SK", "sl",
-        "sl-SI", "sq", "sq-AL", "sr", "sr-BA", "sr-CS", "sr-Latn", "sr-Latn-BA",
-        "sr-Latn-ME", "sr-Latn-RS", "sr-ME", "sr-RS", "sv", "sv-SE", "th",
-        "th-TH", "th-TH-u-nu-thai-x-lvariant-TH", "tr", "tr-TR", "uk", "uk-UA",
-        "vi", "vi-VN", "zh", "zh-CN", "zh-HK", "zh-SG", "zh-TW", };
-    static List<Locale> jdk7availLocs = new ArrayList<>();
+    static final List<String> jdk7availTags = List.of(
+            "ar", "ar-AE", "ar-BH", "ar-DZ", "ar-EG", "ar-IQ", "ar-JO", "ar-KW",
+            "ar-LB", "ar-LY", "ar-MA", "ar-OM", "ar-QA", "ar-SA", "ar-SD", "ar-SY",
+            "ar-TN", "ar-YE", "be", "be-BY", "bg", "bg-BG", "ca", "ca-ES", "cs",
+            "cs-CZ", "da", "da-DK", "de", "de-AT", "de-CH", "de-DE", "de-LU", "el",
+            "el-CY", "el-GR", "en", "en-AU", "en-CA", "en-GB", "en-IE", "en-IN",
+            "en-MT", "en-NZ", "en-PH", "en-SG", "en-US", "en-ZA", "es", "es-AR",
+            "es-BO", "es-CL", "es-CO", "es-CR", "es-DO", "es-EC", "es-ES", "es-GT",
+            "es-HN", "es-MX", "es-NI", "es-PA", "es-PE", "es-PR", "es-PY", "es-SV",
+            "es-US", "es-UY", "es-VE", "et", "et-EE", "fi", "fi-FI", "fr", "fr-BE",
+            "fr-CA", "fr-CH", "fr-FR", "fr-LU", "ga", "ga-IE", "he", "he-IL",
+            "hi-IN", "hr", "hr-HR", "hu", "hu-HU", "id", "id-ID", "is", "is-IS",
+            "it", "it-CH", "it-IT", "ja", "ja-JP",
+            "ja-JP-u-ca-japanese-x-lvariant-JP", "ko", "ko-KR", "lt", "lt-LT", "lv",
+            "lv-LV", "mk", "mk-MK", "ms", "ms-MY", "mt", "mt-MT", "nl", "nl-BE",
+            "nl-NL", "no", "no-NO", "no-NO-x-lvariant-NY", "pl", "pl-PL", "pt",
+            "pt-BR", "pt-PT", "ro", "ro-RO", "ru", "ru-RU", "sk", "sk-SK", "sl",
+            "sl-SI", "sq", "sq-AL", "sr", "sr-BA", "sr-CS", "sr-Latn", "sr-Latn-BA",
+            "sr-Latn-ME", "sr-Latn-RS", "sr-ME", "sr-RS", "sv", "sv-SE", "th",
+            "th-TH", "th-TH-u-nu-thai-x-lvariant-TH", "tr", "tr-TR", "uk", "uk-UA",
+            "vi", "vi-VN", "zh", "zh-CN", "zh-HK", "zh-SG", "zh-TW");
+    static List<Locale> jdk7availLocs;
+
     static {
-        for (String locStr : jdk7availTags) {
-            jdk7availLocs.add(Locale.forLanguageTag(locStr));
-        }
+        jdk7availLocs = jdk7availTags.stream()
+                .map(Locale::forLanguageTag)
+                .collect(Collectors.toList());
     }
 
     public static void main(String[] args) {
@@ -86,13 +95,13 @@ public class Bug8001562 {
         diffLocale(Locale.class, avail);
     }
 
-    static void diffLocale(Class c, List<Locale> locs) {
+    static void diffLocale(Class<?> c, List<Locale> locs) {
         String diff = "";
 
         System.out.printf("Only in target locales (%s.getAvailableLocales()): ", c.getSimpleName());
         for (Locale l : locs) {
             if (!jdk7availLocs.contains(l)) {
-                diff += "\""+l.toLanguageTag()+"\", ";
+                diff += "\"" + l.toLanguageTag() + "\", ";
             }
         }
         System.out.println(diff);
@@ -101,7 +110,7 @@ public class Bug8001562 {
         System.out.printf("Only in JDK7 (%s.getAvailableLocales()): ", c.getSimpleName());
         for (Locale l : jdk7availLocs) {
             if (!locs.contains(l)) {
-                diff += "\""+l.toLanguageTag()+"\", ";
+                diff += "\"" + l.toLanguageTag() + "\", ";
             }
         }
         System.out.println(diff);

@@ -58,6 +58,26 @@ package java.security;
  * a {@code SecureRandomParameters} argument will never
  * return an instance of this implementation. The
  * {@link #engineGetParameters()} method must return {@code null}.
+ * <p>
+ * See {@link SecureRandom} for additional details on thread safety. By
+ * default, a {@code SecureRandomSpi} implementation is considered to be
+ * not safe for use by multiple concurrent threads and {@code SecureRandom}
+ * will synchronize access to each of the applicable engine methods
+ * (see {@link SecureRandom} for the list of methods). However, if a
+ * {@code SecureRandomSpi} implementation is thread-safe, the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#Service">
+ * service provider attribute</a> "ThreadSafe" should be set to "true" during
+ * its registration, as follows:
+ * <blockquote><pre>
+ * put("SecureRandom.AlgName ThreadSafe", "true");</pre>
+ * </blockquote>
+ * or
+ * <blockquote><pre>
+ * putService(new Service(this, "SecureRandom", "AlgName", className,
+ *          null, Map.of("ThreadSafe", "true")));</pre>
+ * </blockquote>
+ * {@code SecureRandom} will call the applicable engine methods
+ * without any synchronization.
  *
  * @since 1.2
  */

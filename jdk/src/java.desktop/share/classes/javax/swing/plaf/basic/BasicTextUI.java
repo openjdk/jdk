@@ -1309,6 +1309,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @see javax.swing.text.View#getToolTipText
      * @since 1.4
      */
+    @SuppressWarnings("deprecation")
     public String getToolTipText(JTextComponent t, Point pt) {
         if (!painted) {
             return null;
@@ -2264,6 +2265,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * <li>the press event is located over a selection
          * </ul>
          */
+        @SuppressWarnings("deprecation")
         protected boolean isDragPossible(MouseEvent e) {
             JTextComponent c = (JTextComponent)e.getSource();
             if (c.isEnabled()) {
