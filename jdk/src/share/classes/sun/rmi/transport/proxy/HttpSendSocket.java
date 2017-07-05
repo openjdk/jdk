@@ -78,7 +78,7 @@ class HttpSendSocket extends Socket implements RMISocketInfo {
      * property at the moment that the socket was created.
      */
     private String lineSeparator =
-        (String) java.security.AccessController.doPrivileged(
+        java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("line.separator"));
 
     /**

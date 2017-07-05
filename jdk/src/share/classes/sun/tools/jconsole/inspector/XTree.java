@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.tools.jconsole.inspector;
 
-import java.awt.EventQueue;
+import java.io.IOException;
 import java.util.*;
 import javax.management.*;
 import javax.swing.*;
@@ -34,13 +34,14 @@ import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.MBeansTab;
 import sun.tools.jconsole.Resources;
 import sun.tools.jconsole.inspector.XNodeInfo;
-import sun.tools.jconsole.inspector.XNodeInfo.Type;
+import static sun.tools.jconsole.inspector.XNodeInfo.Type;
 
 @SuppressWarnings("serial")
 public class XTree extends JTree {
 
     private static final List<String> orderedKeyPropertyList =
             new ArrayList<String>();
+
     static {
         String keyPropertyList =
                 System.getProperty("com.sun.tools.jconsole.mbeans.keyPropertyList");
@@ -54,9 +55,7 @@ public class XTree extends JTree {
             }
         }
     }
-
     private MBeansTab mbeansTab;
-
     private Map<String, DefaultMutableTreeNode> nodes =
             new HashMap<String, DefaultMutableTreeNode>();
 
@@ -65,7 +64,7 @@ public class XTree extends JTree {
     }
 
     public XTree(TreeNode root, MBeansTab mbeansTab) {
-        super(root);
+        super(root, true);
         this.mbeansTab = mbeansTab;
         setRootVisible(false);
         setShowsRootHandles(true);
@@ -90,15 +89,8 @@ public class XTree extends JTree {
             DefaultMutableTreeNode parent,
             DefaultMutableTreeNode child,
             int index) {
-        // Tree does not show up when there is only the root node
-        //
         DefaultTreeModel model = (DefaultTreeModel) getModel();
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
-        boolean rootLeaf = root.isLeaf();
         model.insertNodeInto(child, parent, index);
-        if (rootLeaf) {
-            model.nodeStructureChanged(root);
-        }
     }
 
     /**
@@ -114,32 +106,29 @@ public class XTree extends JTree {
         int childCount = parent.getChildCount();
         if (childCount == 0) {
             addChildNode(parent, child, 0);
-        } else if (child instanceof ComparableDefaultMutableTreeNode) {
+            return;
+        }
+        if (child instanceof ComparableDefaultMutableTreeNode) {
             ComparableDefaultMutableTreeNode comparableChild =
-                (ComparableDefaultMutableTreeNode)child;
-            int i = 0;
-            for (; i < childCount; i++) {
+                    (ComparableDefaultMutableTreeNode) child;
+            for (int i = childCount - 1; i >= 0; i--) {
                 DefaultMutableTreeNode brother =
                         (DefaultMutableTreeNode) parent.getChildAt(i);
-                //child < brother
-                if (comparableChild.compareTo(brother) < 0) {
-                    addChildNode(parent, child, i);
-                    break;
-                }
-                //child = brother
-                else if (comparableChild.compareTo(brother) == 0) {
-                    addChildNode(parent, child, i);
-                    break;
+                // expr1: child node must be inserted after metadata nodes
+                // - OR -
+                // expr2: "child >= brother"
+                if ((i <= 2 && isMetadataNode(brother)) ||
+                        comparableChild.compareTo(brother) >= 0) {
+                    addChildNode(parent, child, i + 1);
+                    return;
                 }
             }
-            //child < all brothers
-            if (i == childCount) {
-                addChildNode(parent, child, childCount);
-            }
-        } else {
-            //not comparable, add at the end
-            addChildNode(parent, child, childCount);
+            // "child < all brothers", add at the beginning
+            addChildNode(parent, child, 0);
+            return;
         }
+        // "child not comparable", add at the end
+        addChildNode(parent, child, childCount);
     }
 
     /**
@@ -147,6 +136,7 @@ public class XTree extends JTree {
      * but does not affect actual MBeanServer contents.
      */
     // Call on EDT
+    @Override
     public synchronized void removeAll() {
         DefaultTreeModel model = (DefaultTreeModel) getModel();
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
@@ -155,51 +145,56 @@ public class XTree extends JTree {
         nodes.clear();
     }
 
-    public void delMBeanFromView(final ObjectName mbean) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                // We assume here that MBeans are removed one by one (on MBean
-                // unregistered notification). Deletes the tree node associated
-                // with the given MBean and recursively all the node parents
-                // which are leaves and non XMBean.
-                //
-                synchronized (XTree.this) {
-                    DefaultMutableTreeNode node = null;
-                    Dn dn = buildDn(mbean);
-                    if (dn.size() > 0) {
-                        DefaultTreeModel model = (DefaultTreeModel) getModel();
-                        Token token = dn.getToken(0);
-                        String hashKey = dn.getHashKey(token);
-                        node = nodes.get(hashKey);
-                        if ((node != null) && (!node.isRoot())) {
-                            if (hasMBeanChildren(node)) {
-                                removeNonMBeanChildren(node);
-                                String label = token.getValue().toString();
-                                XNodeInfo userObject = new XNodeInfo(
-                                        Type.NONMBEAN, label,
-                                        label, token.toString());
-                                changeNodeValue(node, userObject);
-                            } else {
-                                DefaultMutableTreeNode parent =
-                                        (DefaultMutableTreeNode) node.getParent();
-                                model.removeNodeFromParent(node);
-                                nodes.remove(hashKey);
-                                delParentFromView(dn, 1, parent);
-                            }
-                        }
-                    }
+    // Call on EDT
+    public synchronized void removeMBeanFromView(ObjectName mbean) {
+        // We assume here that MBeans are removed one by one (on MBean
+        // unregistered notification). Deletes the tree node associated
+        // with the given MBean and recursively all the node parents
+        // which are leaves and non XMBean.
+        //
+        DefaultMutableTreeNode node = null;
+        Dn dn = new Dn(mbean);
+        if (dn.getTokenCount() > 0) {
+            DefaultTreeModel model = (DefaultTreeModel) getModel();
+            Token token = dn.getToken(0);
+            String hashKey = dn.getHashKey(token);
+            node = nodes.get(hashKey);
+            if ((node != null) && (!node.isRoot())) {
+                if (hasNonMetadataNodes(node)) {
+                    removeMetadataNodes(node);
+                    String label = token.getValue();
+                    XNodeInfo userObject = new XNodeInfo(
+                            Type.NONMBEAN, label,
+                            label, token.getTokenValue());
+                    changeNodeValue(node, userObject);
+                } else {
+                    DefaultMutableTreeNode parent =
+                            (DefaultMutableTreeNode) node.getParent();
+                    model.removeNodeFromParent(node);
+                    nodes.remove(hashKey);
+                    removeParentFromView(dn, 1, parent);
                 }
             }
-        });
+        }
     }
 
     /**
-     * Returns true if any of the children nodes is an MBean.
+     * Returns true if any of the children nodes is a non MBean metadata node.
      */
-    private boolean hasMBeanChildren(DefaultMutableTreeNode node) {
-        for (Enumeration e = node.children(); e.hasMoreElements(); ) {
+    private boolean hasNonMetadataNodes(DefaultMutableTreeNode node) {
+        for (Enumeration e = node.children(); e.hasMoreElements();) {
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
-            if (((XNodeInfo) n.getUserObject()).getType().equals(Type.MBEAN)) {
+            Object uo = n.getUserObject();
+            if (uo instanceof XNodeInfo) {
+                switch (((XNodeInfo) uo).getType()) {
+                    case ATTRIBUTES:
+                    case NOTIFICATIONS:
+                    case OPERATIONS:
+                        break;
+                    default:
+                        return true;
+                }
+            } else {
                 return true;
             }
         }
@@ -207,16 +202,68 @@ public class XTree extends JTree {
     }
 
     /**
-     * Remove all the children nodes which are not MBean.
+     * Returns true if any of the children nodes is an MBean metadata node.
      */
-    private void removeNonMBeanChildren(DefaultMutableTreeNode node) {
+    public boolean hasMetadataNodes(DefaultMutableTreeNode node) {
+        for (Enumeration e = node.children(); e.hasMoreElements();) {
+            DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
+            Object uo = n.getUserObject();
+            if (uo instanceof XNodeInfo) {
+                switch (((XNodeInfo) uo).getType()) {
+                    case ATTRIBUTES:
+                    case NOTIFICATIONS:
+                    case OPERATIONS:
+                        return true;
+                    default:
+                        break;
+                }
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the given node is an MBean metadata node.
+     */
+    public boolean isMetadataNode(DefaultMutableTreeNode node) {
+        Object uo = node.getUserObject();
+        if (uo instanceof XNodeInfo) {
+            switch (((XNodeInfo) uo).getType()) {
+                case ATTRIBUTES:
+                case NOTIFICATIONS:
+                case OPERATIONS:
+                    return true;
+                default:
+                    return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Remove the metadata nodes associated with a given MBean node.
+     */
+    // Call on EDT
+    private void removeMetadataNodes(DefaultMutableTreeNode node) {
         Set<DefaultMutableTreeNode> metadataNodes =
                 new HashSet<DefaultMutableTreeNode>();
         DefaultTreeModel model = (DefaultTreeModel) getModel();
-        for (Enumeration e = node.children(); e.hasMoreElements(); ) {
+        for (Enumeration e = node.children(); e.hasMoreElements();) {
             DefaultMutableTreeNode n = (DefaultMutableTreeNode) e.nextElement();
-            if (!((XNodeInfo) n.getUserObject()).getType().equals(Type.MBEAN)) {
-                metadataNodes.add(n);
+            Object uo = n.getUserObject();
+            if (uo instanceof XNodeInfo) {
+                switch (((XNodeInfo) uo).getType()) {
+                    case ATTRIBUTES:
+                    case NOTIFICATIONS:
+                    case OPERATIONS:
+                        metadataNodes.add(n);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         for (DefaultMutableTreeNode n : metadataNodes) {
@@ -228,7 +275,8 @@ public class XTree extends JTree {
      * Removes only the parent nodes which are non MBean and leaf.
      * This method assumes the child nodes have been removed before.
      */
-    private DefaultMutableTreeNode delParentFromView(
+    // Call on EDT
+    private DefaultMutableTreeNode removeParentFromView(
             Dn dn, int index, DefaultMutableTreeNode node) {
         if ((!node.isRoot()) && node.isLeaf() &&
                 (!(((XNodeInfo) node.getUserObject()).getType().equals(Type.MBEAN)))) {
@@ -237,115 +285,100 @@ public class XTree extends JTree {
             removeChildNode(node);
             String hashKey = dn.getHashKey(dn.getToken(index));
             nodes.remove(hashKey);
-            delParentFromView(dn, index + 1, parent);
+            removeParentFromView(dn, index + 1, parent);
         }
         return node;
     }
 
-    public synchronized void addMBeanToView(final ObjectName mbean) {
-        final XMBean xmbean;
-        try {
-            xmbean = new XMBean(mbean, mbeansTab);
-            if (xmbean == null) {
-                return;
-            }
-        } catch (Exception e) {
-            // Got exception while trying to retrieve the
-            // given MBean from the underlying MBeanServer
+    // Call on EDT
+    public synchronized void addMBeansToView(Set<ObjectName> mbeans) {
+        Set<Dn> dns = new TreeSet<Dn>();
+        for (ObjectName mbean : mbeans) {
+            Dn dn = new Dn(mbean);
+            dns.add(dn);
+        }
+        for (Dn dn : dns) {
+            ObjectName mbean = dn.getObjectName();
+            XMBean xmbean = new XMBean(mbean, mbeansTab);
+            addMBeanToView(mbean, xmbean, dn);
+        }
+    }
+
+    // Call on EDT
+    public synchronized void addMBeanToView(ObjectName mbean) {
+        // Build XMBean for the given MBean
+        //
+        XMBean xmbean = new XMBean(mbean, mbeansTab);
+        // Build Dn for the given MBean
+        //
+        Dn dn = new Dn(mbean);
+        // Add the new nodes to the MBean tree from leaf to root
+        //
+        addMBeanToView(mbean, xmbean, dn);
+    }
+
+    // Call on EDT
+    private synchronized void addMBeanToView(
+            ObjectName mbean, XMBean xmbean, Dn dn) {
+
+        DefaultMutableTreeNode childNode = null;
+        DefaultMutableTreeNode parentNode = null;
+
+        // Add the node or replace its user object if already added
+        //
+        Token token = dn.getToken(0);
+        String hashKey = dn.getHashKey(token);
+        if (nodes.containsKey(hashKey)) {
+            // Found existing node previously created when adding another node
             //
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
-            }
+            childNode = nodes.get(hashKey);
+            // Replace user object to reflect that this node is an MBean
+            //
+            Object data = createNodeValue(xmbean, token);
+            String label = data.toString();
+            XNodeInfo userObject =
+                    new XNodeInfo(Type.MBEAN, data, label, mbean.toString());
+            changeNodeValue(childNode, userObject);
             return;
         }
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                synchronized (XTree.this) {
-                    // Add the new nodes to the MBean tree from leaf to root
 
-                    Dn dn = buildDn(mbean);
-                    if (dn.size() == 0) return;
-                    Token token = dn.getToken(0);
-                    DefaultMutableTreeNode node = null;
-                    boolean nodeCreated = true;
+        // Create new leaf node
+        //
+        childNode = createDnNode(dn, token, xmbean);
+        nodes.put(hashKey, childNode);
 
-                    //
-                    // Add the node or replace its user object if already added
-                    //
-
-                    String hashKey = dn.getHashKey(token);
-                    if (nodes.containsKey(hashKey)) {
-                        //already in the tree, means it has been created previously
-                        //when adding another node
-                        node = nodes.get(hashKey);
-                        //sets the user object
-                        final Object data = createNodeValue(xmbean, token);
-                        final String label = data.toString();
-                        final XNodeInfo userObject =
-                                new XNodeInfo(Type.MBEAN, data, label, mbean.toString());
-                        changeNodeValue(node, userObject);
-                        nodeCreated = false;
-                    } else {
-                        //create a new node
-                        node = createDnNode(dn, token, xmbean);
-                        if (node != null) {
-                            nodes.put(hashKey, node);
-                            nodeCreated = true;
-                        } else {
-                            return;
-                        }
-                    }
-
-                    //
-                    // Add (virtual) nodes without user object if necessary
-                    //
-
-                    for (int i = 1; i < dn.size(); i++) {
-                        DefaultMutableTreeNode currentNode = null;
-                        token = dn.getToken(i);
-                        hashKey = dn.getHashKey(token);
-                        if (nodes.containsKey(hashKey)) {
-                            //node already present
-                            if (nodeCreated) {
-                                //previous node created, link to do
-                                currentNode = nodes.get(hashKey);
-                                addChildNode(currentNode, node);
-                                return;
-                            } else {
-                                //both nodes already present
-                                return;
-                            }
-                        } else {
-                            //creates the node that can be a virtual one
-                            if (token.getKeyDn().equals("domain")) {
-                                //better match on keyDn that on Dn
-                                currentNode = createDomainNode(dn, token);
-                                if (currentNode != null) {
-                                    final DefaultMutableTreeNode root =
-                                            (DefaultMutableTreeNode) getModel().getRoot();
-                                    addChildNode(root, currentNode);
-                                }
-                            } else {
-                                currentNode = createSubDnNode(dn, token);
-                                if (currentNode == null) {
-                                    //skip
-                                    continue;
-                                }
-                            }
-                            nodes.put(hashKey, currentNode);
-                            addChildNode(currentNode, node);
-                            nodeCreated = true;
-                        }
-                        node = currentNode;
-                    }
+        // Add intermediate non MBean nodes
+        //
+        for (int i = 1; i < dn.getTokenCount(); i++) {
+            token = dn.getToken(i);
+            hashKey = dn.getHashKey(token);
+            if (nodes.containsKey(hashKey)) {
+                // Intermediate node already present, add new node as child
+                //
+                parentNode = nodes.get(hashKey);
+                addChildNode(parentNode, childNode);
+                return;
+            } else {
+                // Create new intermediate node
+                //
+                if ("domain".equals(token.getTokenType())) {
+                    parentNode = createDomainNode(dn, token);
+                    DefaultMutableTreeNode root =
+                            (DefaultMutableTreeNode) getModel().getRoot();
+                    addChildNode(root, parentNode);
+                } else {
+                    parentNode = createSubDnNode(dn, token);
                 }
+                nodes.put(hashKey, parentNode);
+                addChildNode(parentNode, childNode);
             }
-        });
+            childNode = parentNode;
+        }
     }
 
     // Call on EDT
     private synchronized void changeNodeValue(
-            final DefaultMutableTreeNode node, XNodeInfo nodeValue) {
+            DefaultMutableTreeNode node, XNodeInfo nodeValue) {
         if (node instanceof ComparableDefaultMutableTreeNode) {
             // should it stay at the same place?
             DefaultMutableTreeNode clone =
@@ -373,9 +406,12 @@ public class XTree extends JTree {
         }
         // Load the MBean metadata if type is MBEAN
         if (nodeValue.getType().equals(Type.MBEAN)) {
-            XMBeanInfo.loadInfo(node);
-            DefaultTreeModel model = (DefaultTreeModel) getModel();
-            model.nodeStructureChanged(node);
+            removeMetadataNodes(node);
+            TreeNode[] treeNodes = node.getPath();
+            TreePath path = new TreePath(treeNodes);
+            if (isExpanded(path)) {
+                addMetadataNodes(node);
+            }
         }
         // Clear the current selection and set it
         // again so valueChanged() gets called
@@ -386,7 +422,9 @@ public class XTree extends JTree {
         }
     }
 
-    //creates the domain node, called on a domain token
+    /**
+     * Creates the domain node.
+     */
     private DefaultMutableTreeNode createDomainNode(Dn dn, Token token) {
         DefaultMutableTreeNode node = new ComparableDefaultMutableTreeNode();
         String label = dn.getDomain();
@@ -396,7 +434,9 @@ public class XTree extends JTree {
         return node;
     }
 
-    //creates the node corresponding to the whole Dn
+    /**
+     * Creates the node corresponding to the whole Dn, i.e. an MBean.
+     */
     private DefaultMutableTreeNode createDnNode(
             Dn dn, Token token, XMBean xmbean) {
         DefaultMutableTreeNode node = new ComparableDefaultMutableTreeNode();
@@ -405,38 +445,36 @@ public class XTree extends JTree {
         XNodeInfo userObject = new XNodeInfo(Type.MBEAN, data, label,
                 xmbean.getObjectName().toString());
         node.setUserObject(userObject);
-        XMBeanInfo.loadInfo(node);
         return node;
     }
 
-    //creates a node with the token value, call for each non domain sub
-    //dn token
+    /**
+     * Creates the node corresponding to a subDn, i.e. a non-MBean
+     * intermediate node.
+     */
     private DefaultMutableTreeNode createSubDnNode(Dn dn, Token token) {
         DefaultMutableTreeNode node = new ComparableDefaultMutableTreeNode();
-        String label = isKeyValueView() ? token.toString() :
-            token.getValue().toString();
+        String label = isKeyValueView() ? token.getTokenValue() : token.getValue();
         XNodeInfo userObject =
-                new XNodeInfo(Type.NONMBEAN, label, label, token.toString());
+                new XNodeInfo(Type.NONMBEAN, label, label, token.getTokenValue());
         node.setUserObject(userObject);
         return node;
     }
 
     private Object createNodeValue(XMBean xmbean, Token token) {
-        String label = isKeyValueView() ? token.toString() :
-            token.getValue().toString();
+        String label = isKeyValueView() ? token.getTokenValue() : token.getValue();
         xmbean.setText(label);
         return xmbean;
     }
 
     /**
-     * Parses MBean ObjectName comma-separated properties string and put the
-     * individual key/value pairs into the map. Key order in the properties
+     * Parses the MBean ObjectName comma-separated properties string and puts
+     * the individual key/value pairs into the map. Key order in the properties
      * string is preserved by the map.
      */
-    private Map<String,String> extractKeyValuePairs(
-            String properties, ObjectName mbean) {
-        String props = properties;
-        Map<String,String> map = new LinkedHashMap<String,String>();
+    private static Map<String, String> extractKeyValuePairs(
+            String props, ObjectName mbean) {
+        Map<String, String> map = new LinkedHashMap<String, String>();
         int eq = props.indexOf("=");
         while (eq != -1) {
             String key = props.substring(0, eq);
@@ -461,9 +499,9 @@ public class XTree extends JTree {
      * in the comma-separated key property list does not apply to the given
      * MBean then it will be discarded.
      */
-    private String getKeyPropertyListString(ObjectName mbean) {
+    private static String getKeyPropertyListString(ObjectName mbean) {
         String props = mbean.getKeyPropertyListString();
-        Map<String,String> map = extractKeyValuePairs(props, mbean);
+        Map<String, String> map = extractKeyValuePairs(props, mbean);
         StringBuilder sb = new StringBuilder();
         // Add the key/value pairs to the buffer following the
         // key order defined by the "orderedKeyPropertyList"
@@ -474,7 +512,7 @@ public class XTree extends JTree {
             }
         }
         // Add the remaining key/value pairs to the buffer
-        for (Map.Entry<String,String> entry : map.entrySet()) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
             sb.append(entry.getKey() + "=" + entry.getValue() + ",");
         }
         String orderedKeyPropertyListString = sb.toString();
@@ -483,67 +521,158 @@ public class XTree extends JTree {
         return orderedKeyPropertyListString;
     }
 
-    /**
-     * Builds the Dn for the given MBean.
-     */
-    private Dn buildDn(ObjectName mbean) {
-
-        String domain = mbean.getDomain();
-        String globalDn = getKeyPropertyListString(mbean);
-
-        Dn dn = buildDn(domain, globalDn, mbean);
-
-        //update the Dn tokens to add the domain
-        dn.updateDn();
-
-        //reverse the Dn (from leaf to root)
-        dn.reverseOrder();
-
-        //compute the hashDn
-        dn.computeHashDn();
-
-        return dn;
+    // Call on EDT
+    public void addMetadataNodes(DefaultMutableTreeNode node) {
+        XMBean mbean = (XMBean) ((XNodeInfo) node.getUserObject()).getData();
+        DefaultTreeModel model = (DefaultTreeModel) getModel();
+        MBeanInfoNodesSwingWorker sw =
+                new MBeanInfoNodesSwingWorker(model, node, mbean);
+        if (sw != null) {
+            sw.execute();
+        }
     }
 
-    /**
-     * Builds the Dn for the given MBean.
-     */
-    private Dn buildDn(String domain, String globalDn, ObjectName mbean) {
-        Dn dn = new Dn(domain, globalDn);
-        String keyDn = "no_key";
-        if (isTreeView()) {
-            String props = globalDn;
-            Map<String,String> map = extractKeyValuePairs(props, mbean);
-            for (Map.Entry<String,String> entry : map.entrySet()) {
-                dn.addToken(new Token(keyDn,
-                        entry.getKey() + "=" + entry.getValue()));
+    private static class MBeanInfoNodesSwingWorker
+            extends SwingWorker<Object[], Void> {
+
+        private final DefaultTreeModel model;
+        private final DefaultMutableTreeNode node;
+        private final XMBean mbean;
+
+        public MBeanInfoNodesSwingWorker(
+                DefaultTreeModel model,
+                DefaultMutableTreeNode node,
+                XMBean mbean) {
+            this.model = model;
+            this.node = node;
+            this.mbean = mbean;
+        }
+
+        @Override
+        public Object[] doInBackground() throws InstanceNotFoundException,
+                IntrospectionException, ReflectionException, IOException {
+            Object result[] = new Object[2];
+            // Retrieve MBeanInfo for this MBean
+            result[0] = mbean.getMBeanInfo();
+            // Check if this MBean is a notification emitter
+            result[1] = mbean.isBroadcaster();
+            return result;
+        }
+
+        @Override
+        protected void done() {
+            try {
+                Object result[] = get();
+                MBeanInfo mbeanInfo = (MBeanInfo) result[0];
+                Boolean isBroadcaster = (Boolean) result[1];
+                if (mbeanInfo != null) {
+                    addMBeanInfoNodes(model, node, mbean, mbeanInfo, isBroadcaster);
+                }
+            } catch (Exception e) {
+                Throwable t = Utils.getActualException(e);
+                if (JConsole.isDebug()) {
+                    t.printStackTrace();
+                }
             }
-        } else {
-            //flat view
-            dn.addToken(new Token(keyDn, "properties=" + globalDn));
         }
-        return dn;
-    }
 
-    //
-    //utility objects
-    //
+        // Call on EDT
+        private void addMBeanInfoNodes(
+                DefaultTreeModel tree, DefaultMutableTreeNode node,
+                XMBean mbean, MBeanInfo mbeanInfo, Boolean isBroadcaster) {
+            MBeanAttributeInfo[] ai = mbeanInfo.getAttributes();
+            MBeanOperationInfo[] oi = mbeanInfo.getOperations();
+            MBeanNotificationInfo[] ni = mbeanInfo.getNotifications();
 
-    public static class ComparableDefaultMutableTreeNode
-            extends DefaultMutableTreeNode
-            implements Comparable<DefaultMutableTreeNode> {
-        public int compareTo(DefaultMutableTreeNode node) {
-            return (this.toString().compareTo(node.toString()));
+            // Insert the Attributes/Operations/Notifications metadata nodes as
+            // the three first children of this MBean node. This is only useful
+            // when this MBean node denotes an MBean but it's not a leaf in the
+            // MBean tree
+            //
+            int childIndex = 0;
+
+            // MBeanAttributeInfo node
+            //
+            if (ai != null && ai.length > 0) {
+                DefaultMutableTreeNode attributes = new DefaultMutableTreeNode();
+                XNodeInfo attributesUO = new XNodeInfo(Type.ATTRIBUTES, mbean,
+                        Resources.getText("Attributes"), null);
+                attributes.setUserObject(attributesUO);
+                node.insert(attributes, childIndex++);
+                for (MBeanAttributeInfo mbai : ai) {
+                    DefaultMutableTreeNode attribute = new DefaultMutableTreeNode();
+                    XNodeInfo attributeUO = new XNodeInfo(Type.ATTRIBUTE,
+                            new Object[]{mbean, mbai}, mbai.getName(), null);
+                    attribute.setUserObject(attributeUO);
+                    attribute.setAllowsChildren(false);
+                    attributes.add(attribute);
+                }
+            }
+            // MBeanOperationInfo node
+            //
+            if (oi != null && oi.length > 0) {
+                DefaultMutableTreeNode operations = new DefaultMutableTreeNode();
+                XNodeInfo operationsUO = new XNodeInfo(Type.OPERATIONS, mbean,
+                        Resources.getText("Operations"), null);
+                operations.setUserObject(operationsUO);
+                node.insert(operations, childIndex++);
+                for (MBeanOperationInfo mboi : oi) {
+                    // Compute the operation's tool tip text:
+                    // "operationname(param1type,param2type,...)"
+                    //
+                    StringBuilder sb = new StringBuilder();
+                    for (MBeanParameterInfo mbpi : mboi.getSignature()) {
+                        sb.append(mbpi.getType() + ",");
+                    }
+                    String signature = sb.toString();
+                    if (signature.length() > 0) {
+                        // Remove the trailing ','
+                        //
+                        signature = signature.substring(0, signature.length() - 1);
+                    }
+                    String toolTipText = mboi.getName() + "(" + signature + ")";
+                    // Create operation node
+                    //
+                    DefaultMutableTreeNode operation = new DefaultMutableTreeNode();
+                    XNodeInfo operationUO = new XNodeInfo(Type.OPERATION,
+                            new Object[]{mbean, mboi}, mboi.getName(), toolTipText);
+                    operation.setUserObject(operationUO);
+                    operation.setAllowsChildren(false);
+                    operations.add(operation);
+                }
+            }
+            // MBeanNotificationInfo node
+            //
+            if (isBroadcaster != null && isBroadcaster.booleanValue()) {
+                DefaultMutableTreeNode notifications = new DefaultMutableTreeNode();
+                XNodeInfo notificationsUO = new XNodeInfo(Type.NOTIFICATIONS, mbean,
+                        Resources.getText("Notifications"), null);
+                notifications.setUserObject(notificationsUO);
+                node.insert(notifications, childIndex++);
+                if (ni != null && ni.length > 0) {
+                    for (MBeanNotificationInfo mbni : ni) {
+                        DefaultMutableTreeNode notification =
+                                new DefaultMutableTreeNode();
+                        XNodeInfo notificationUO = new XNodeInfo(Type.NOTIFICATION,
+                                mbni, mbni.getName(), null);
+                        notification.setUserObject(notificationUO);
+                        notification.setAllowsChildren(false);
+                        notifications.add(notification);
+                    }
+                }
+            }
+            // Update tree model
+            //
+            model.reload(node);
         }
     }
-
     //
-    //tree preferences
+    // Tree preferences
     //
+    private static boolean treeView;
+    private static boolean treeViewInit = false;
 
-    private boolean treeView;
-    private boolean treeViewInit = false;
-    public boolean isTreeView() {
+    private static boolean isTreeView() {
         if (!treeViewInit) {
             treeView = getTreeViewValue();
             treeViewInit = true;
@@ -551,78 +680,84 @@ public class XTree extends JTree {
         return treeView;
     }
 
-    private boolean getTreeViewValue() {
-        String treeView = System.getProperty("treeView");
-        return ((treeView == null) ? true : !(treeView.equals("false")));
+    private static boolean getTreeViewValue() {
+        String tv = System.getProperty("treeView");
+        return ((tv == null) ? true : !(tv.equals("false")));
     }
-
     //
-    //MBean key-value preferences
+    // MBean key-value preferences
     //
-
     private boolean keyValueView = Boolean.getBoolean("keyValueView");
-    public boolean isKeyValueView() {
+
+    private boolean isKeyValueView() {
         return keyValueView;
     }
 
     //
-    //utility classes
+    // Utility classes
     //
+    private static class ComparableDefaultMutableTreeNode
+            extends DefaultMutableTreeNode
+            implements Comparable<DefaultMutableTreeNode> {
 
-    public static class Dn {
+        public int compareTo(DefaultMutableTreeNode node) {
+            return (this.toString().compareTo(node.toString()));
+        }
+    }
 
+    private static class Dn implements Comparable<Dn> {
+
+        private ObjectName mbean;
         private String domain;
-        private String dn;
+        private String keyPropertyList;
         private String hashDn;
-        private ArrayList<Token> tokens = new ArrayList<Token>();
+        private List<Token> tokens = new ArrayList<Token>();
 
-        public Dn(String domain, String dn) {
-            this.domain = domain;
-            this.dn = dn;
-        }
+        public Dn(ObjectName mbean) {
+            this.mbean = mbean;
+            this.domain = mbean.getDomain();
+            this.keyPropertyList = getKeyPropertyListString(mbean);
 
-        public void clearTokens() {
-            tokens.clear();
-        }
-
-        public void addToken(Token token) {
-            tokens.add(token);
-        }
-
-        public void addToken(int index, Token token) {
-            tokens.add(index, token);
-        }
-
-        public void setToken(int index, Token token) {
-            tokens.set(index, token);
-        }
-
-        public void removeToken(int index) {
-            tokens.remove(index);
-        }
-
-        public Token getToken(int index) {
-            return tokens.get(index);
-        }
-
-        public void reverseOrder() {
-            ArrayList<Token> newOrder = new ArrayList<Token>(tokens.size());
-            for (int i = tokens.size() - 1; i >= 0; i--) {
-                newOrder.add(tokens.get(i));
+            if (isTreeView()) {
+                // Tree view
+                Map<String, String> map =
+                        extractKeyValuePairs(keyPropertyList, mbean);
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    tokens.add(new Token("key", entry.getKey() + "=" + entry.getValue()));
+                }
+            } else {
+                // Flat view
+                tokens.add(new Token("key", "properties=" + keyPropertyList));
             }
-            tokens = newOrder;
+
+            // Add the domain as the first token in the Dn
+            tokens.add(0, new Token("domain", "domain=" + domain));
+
+            // Reverse the Dn (from leaf to root)
+            Collections.reverse(tokens);
+
+            // Compute hash for Dn
+            computeHashDn();
         }
 
-        public int size() {
-            return tokens.size();
+        public ObjectName getObjectName() {
+            return mbean;
         }
 
         public String getDomain() {
             return domain;
         }
 
-        public String getDn() {
-            return dn;
+        public String getKeyPropertyList() {
+            return keyPropertyList;
+        }
+
+        public Token getToken(int index) {
+            return tokens.get(index);
+        }
+
+        public int getTokenCount() {
+            return tokens.size();
         }
 
         public String getHashDn() {
@@ -630,91 +765,51 @@ public class XTree extends JTree {
         }
 
         public String getHashKey(Token token) {
-            final int begin = getHashDn().indexOf(token.getHashToken());
-            return  getHashDn().substring(begin, getHashDn().length());
+            final int begin = hashDn.indexOf(token.getTokenValue());
+            return hashDn.substring(begin, hashDn.length());
         }
 
-        public void computeHashDn() {
-            final StringBuilder hashDn = new StringBuilder();
-            final int tokensSize = tokens.size();
-            for (int i = 0; i < tokensSize; i++) {
-                Token token = tokens.get(i);
-                String hashToken = token.getHashToken();
-                if (hashToken == null) {
-                    hashToken = token.getToken() + (tokensSize - i);
-                    token.setHashToken(hashToken);
-                }
-                hashDn.append(hashToken);
-                hashDn.append(",");
+        private void computeHashDn() {
+            if (tokens.isEmpty()) {
+                return;
             }
-            if (tokensSize > 0) {
-                this.hashDn = hashDn.substring(0, hashDn.length() - 1);
-            } else {
-                this.hashDn = "";
+            final StringBuilder hdn = new StringBuilder();
+            for (int i = 0; i < tokens.size(); i++) {
+                hdn.append(tokens.get(i).getTokenValue());
+                hdn.append(",");
             }
+            hashDn = hdn.substring(0, hdn.length() - 1);
         }
 
-        /**
-         * Adds the domain as the first token in the Dn.
-         */
-        public void updateDn() {
-            addToken(0, new Token("domain", "domain=" + getDomain()));
-        }
-
+        @Override
         public String toString() {
-            return tokens.toString();
+            return domain + ":" + keyPropertyList;
+        }
+
+        public int compareTo(Dn dn) {
+            return this.toString().compareTo(dn.toString());
         }
     }
 
-    public static class Token {
+    private static class Token {
 
-        private String keyDn;
-        private String token;
-        private String hashToken;
+        private String tokenType;
+        private String tokenValue;
         private String key;
         private String value;
 
-        public Token(String keyDn, String token) {
-            this.keyDn = keyDn;
-            this.token = token;
+        public Token(String tokenType, String tokenValue) {
+            this.tokenType = tokenType;
+            this.tokenValue = tokenValue;
             buildKeyValue();
         }
 
-        public Token(String keyDn, String token, String hashToken) {
-            this.keyDn = keyDn;
-            this.token = token;
-            this.hashToken = hashToken;
-            buildKeyValue();
+        public String getTokenType() {
+            return tokenType;
         }
 
-        public String getKeyDn() {
-            return keyDn;
-        }
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-            this.token = key + "=" + value;
-        }
-
-        public void setKey(String key) {
-            this.key = key;
-            this.token = key + "=" + value;
-        }
-
-        public void setKeyDn(String keyDn) {
-            this.keyDn = keyDn;
-        }
-
-        public  void setHashToken(String hashToken) {
-            this.hashToken = hashToken;
-        }
-
-        public String getHashToken() {
-            return hashToken;
+        public String getTokenValue() {
+            return tokenValue;
         }
 
         public String getKey() {
@@ -725,26 +820,14 @@ public class XTree extends JTree {
             return value;
         }
 
-        public String toString(){
-            return getToken();
-        }
-
-        public boolean equals(Object object) {
-            if (object instanceof Token) {
-                return token.equals(((Token) object));
-            } else {
-                return false;
-            }
-        }
-
         private void buildKeyValue() {
-            int index = token.indexOf("=");
+            int index = tokenValue.indexOf("=");
             if (index < 0) {
-                key = token;
-                value = token;
+                key = tokenValue;
+                value = tokenValue;
             } else {
-                key = token.substring(0, index);
-                value = token.substring(index + 1, token.length());
+                key = tokenValue.substring(0, index);
+                value = tokenValue.substring(index + 1, tokenValue.length());
             }
         }
     }

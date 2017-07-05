@@ -1072,7 +1072,7 @@ public abstract class URLConnection {
      * properties to be appended into a single property.
      *
      * @param   key     the keyword by which the request is known
-     *                  (e.g., "<code>accept</code>").
+     *                  (e.g., "<code>Accept</code>").
      * @param   value   the value associated with it.
      * @throws IllegalStateException if already connected
      * @throws NullPointerException if key is <CODE>null</CODE>
@@ -1096,7 +1096,7 @@ public abstract class URLConnection {
      * existing values associated with the same key.
      *
      * @param   key     the keyword by which the request is known
-     *                  (e.g., "<code>accept</code>").
+     *                  (e.g., "<code>Accept</code>").
      * @param   value  the value associated with it.
      * @throws IllegalStateException if already connected
      * @throws NullPointerException if key is null
@@ -1120,7 +1120,7 @@ public abstract class URLConnection {
      * Returns the value of the named general request property for this
      * connection.
      *
-     * @param key the keyword by which the request is known (e.g., "accept").
+     * @param key the keyword by which the request is known (e.g., "Accept").
      * @return  the value of the named general request property for this
      *           connection. If key is null, then null is returned.
      * @throws IllegalStateException if already connected
@@ -1164,7 +1164,7 @@ public abstract class URLConnection {
      * these properties.
      *
      * @param   key     the keyword by which the request is known
-     *                  (e.g., "<code>accept</code>").
+     *                  (e.g., "<code>Accept</code>").
      * @param   value   the value associated with the key.
      *
      * @see java.net.URLConnection#setRequestProperty(java.lang.String,java.lang.String)
@@ -1183,7 +1183,7 @@ public abstract class URLConnection {
      * Returns the value of the default request property. Default request
      * properties are set for every connection.
      *
-     * @param key the keyword by which the request is known (e.g., "accept").
+     * @param key the keyword by which the request is known (e.g., "Accept").
      * @return  the value of the default request property
      * for the specified key.
      *

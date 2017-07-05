@@ -71,7 +71,7 @@ public abstract class Log {
     private static final LogFactory logFactory;
     static {
         boolean useOld =
-            Boolean.valueOf((String) java.security.AccessController.
+            Boolean.valueOf(java.security.AccessController.
                 doPrivileged(new sun.security.action.GetPropertyAction(
                     "sun.rmi.log.useOld"))).booleanValue();
 
@@ -179,17 +179,16 @@ public abstract class Log {
     private static class LoggerLog extends Log {
 
         /* alternate console handler for RMI loggers */
-        private static final Handler alternateConsole = (Handler)
+        private static final Handler alternateConsole =
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+                new java.security.PrivilegedAction<Handler>() {
+                    public Handler run() {
                             InternalStreamHandler alternate =
                                 new InternalStreamHandler(System.err);
                             alternate.setLevel(Level.ALL);
                             return alternate;
                         }
-                    }
-                );
+                });
 
         /** handler to which messages are copied */
         private InternalStreamHandler copyHandler = null;
@@ -206,8 +205,8 @@ public abstract class Log {
 
             if (level != null){
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+                    new java.security.PrivilegedAction<Void>() {
+                        public Void run() {
                             if (!logger.isLoggable(level)) {
                                 logger.setLevel(level);
                             }

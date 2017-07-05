@@ -232,10 +232,7 @@ public class ExecutionManager {
         if (pattern.startsWith("*.")) {
             // Wildcard matches any leading package name.
             pattern = pattern.substring(1);
-            List classes = vm().allClasses();
-            Iterator iter = classes.iterator();
-            while (iter.hasNext()) {
-                ReferenceType type = ((ReferenceType)iter.next());
+            for (ReferenceType type : vm().allClasses()) {
                 if (type.name().endsWith(pattern)) {
                     result.add(type);
                 }
@@ -278,7 +275,7 @@ public class ExecutionManager {
     public ThreadGroupReference systemThreadGroup()
                                                 throws NoSessionException {
         ensureActiveSession();
-        return (ThreadGroupReference)vm().topLevelThreadGroups().get(0);
+        return vm().topLevelThreadGroups().get(0);
     }
 
     /*
@@ -349,10 +346,9 @@ public class ExecutionManager {
          * attach sessions.
          */
         VirtualMachineManager mgr = Bootstrap.virtualMachineManager();
-        List connectors = mgr.attachingConnectors();
-        AttachingConnector connector = (AttachingConnector)connectors.get(0);
+        AttachingConnector connector = mgr.attachingConnectors().get(0);
         Map<String, Connector.Argument> arguments = connector.defaultArguments();
-        ((Connector.Argument)arguments.get("port")).setValue(portName);
+        arguments.get("port").setValue(portName);
 
         Session newSession = internalAttach(connector, arguments);
         if (newSession != null) {
@@ -504,10 +500,7 @@ public class ExecutionManager {
          * if so, it gets removed here.
          */
          EventRequestManager mgr = vm().eventRequestManager();
-         List requests = mgr.stepRequests();
-         Iterator iter = requests.iterator();
-         while (iter.hasNext()) {
-             StepRequest request = (StepRequest)iter.next();
+         for (StepRequest request : mgr.stepRequests()) {
              if (request.thread().equals(thread)) {
                  mgr.deleteEventRequest(request);
                  break;
@@ -591,7 +584,7 @@ public class ExecutionManager {
         if (session == null || thread == null) {
             return null;
         }
-        ThreadInfo info = (ThreadInfo)threadInfoMap.get(thread);
+        ThreadInfo info = threadInfoMap.get(thread);
         if (info == null) {
             //### Should not hardcode initial frame count and prefetch here!
             //info = new ThreadInfo(thread, 10, 10);
@@ -607,24 +600,22 @@ public class ExecutionManager {
 
      void validateThreadInfo() {
         session.interrupted = true;
-        Iterator iter = threadInfoList.iterator();
-            while (iter.hasNext()) {
-                ((ThreadInfo)iter.next()).validate();
+        for (ThreadInfo threadInfo : threadInfoList) {
+            threadInfo.validate();
             }
     }
 
     private void invalidateThreadInfo() {
         if (session != null) {
             session.interrupted = false;
-            Iterator iter = threadInfoList.iterator();
-            while (iter.hasNext()) {
-                ((ThreadInfo)iter.next()).invalidate();
+            for (ThreadInfo threadInfo : threadInfoList) {
+                threadInfo.invalidate();
             }
         }
     }
 
     void removeThreadInfo(ThreadReference thread) {
-        ThreadInfo info = (ThreadInfo)threadInfoMap.get(thread);
+        ThreadInfo info = threadInfoMap.get(thread);
         if (info != null) {
             info.invalidate();
             threadInfoMap.remove(thread);
@@ -702,7 +693,7 @@ public class ExecutionManager {
                         while (inputBuffer.size() < 1) {
                             inputLock.wait();
                         }
-                        line = (String)inputBuffer.removeLast();
+                        line = inputBuffer.removeLast();
                     } catch (InterruptedException e) {}
                 }
             }
@@ -774,7 +765,7 @@ public class ExecutionManager {
 
     public BreakpointSpec
     createMethodBreakpoint(String classPattern,
-                           String methodId, List methodArgs) {
+                           String methodId, List<String> methodArgs) {
         return specList.createMethodBreakpoint(classPattern,
                                                  methodId, methodArgs);
     }
@@ -811,7 +802,7 @@ public class ExecutionManager {
         specList.install(spec, vm());
     }
 
-    public List eventRequestSpecs() {
+    public List<EventRequestSpec> eventRequestSpecs() {
         return specList.eventRequestSpecs();
     }
 }

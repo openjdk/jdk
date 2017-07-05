@@ -98,9 +98,29 @@ class OrQueryExp extends QueryEval implements QueryExp {
     }
 
     /**
-     * Returns a string representation of this AndQueryExp
+     * Returns a string representation of this OrQueryExp
      */
     public String toString() {
         return "(" + exp1 + ") or (" + exp2 + ")";
+    }
+
+    @Override
+    String toQueryString() {
+        return parens(exp1) + " or " + parens(exp2);
+    }
+
+    // Add parentheses to avoid possible confusion.  If we have an expression
+    // such as Query.or(Query.and(a, b), c), then we return
+    // (a and b) or c
+    // rather than just
+    // a and b or c
+    // In fact the precedence rules are such that the parentheses are not
+    // strictly necessary, but omitting them would be confusing.
+    private static String parens(QueryExp exp) {
+        String s = Query.toString(exp);
+        if (exp instanceof AndQueryExp)
+            return "(" + s + ")";
+        else
+            return s;
     }
 }

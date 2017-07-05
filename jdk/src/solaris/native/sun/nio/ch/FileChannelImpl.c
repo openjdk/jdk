@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include "sun_nio_ch_FileChannelImpl.h"
 #include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
 #include <dlfcn.h>
@@ -291,7 +292,11 @@ Java_sun_nio_ch_FileChannelImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     struct flock64 fl;
 
     fl.l_whence = SEEK_SET;
-    fl.l_len = (off64_t)size;
+    if (size == (jlong)java_lang_Long_MAX_VALUE) {
+        fl.l_len = (off64_t)0;
+    } else {
+        fl.l_len = (off64_t)size;
+    }
     fl.l_start = (off64_t)pos;
     if (shared == JNI_TRUE) {
         fl.l_type = F_RDLCK;
@@ -325,7 +330,11 @@ Java_sun_nio_ch_FileChannelImpl_release0(JNIEnv *env, jobject this,
     int cmd = F_SETLK64;
 
     fl.l_whence = SEEK_SET;
-    fl.l_len = (off64_t)size;
+    if (size == (jlong)java_lang_Long_MAX_VALUE) {
+        fl.l_len = (off64_t)0;
+    } else {
+        fl.l_len = (off64_t)size;
+    }
     fl.l_start = (off64_t)pos;
     fl.l_type = F_UNLCK;
     lockResult = fcntl(fd, cmd, &fl);

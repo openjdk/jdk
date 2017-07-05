@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,6 +516,16 @@ final class HttpsClient extends HttpClient
 
     protected void putInKeepAliveCache() {
         kac.put(url, sslSocketFactory, this);
+    }
+
+    /*
+     * Close an idle connection to this URL (if it exists in the cache).
+     */
+    public void closeIdleConnection() {
+        HttpClient http = (HttpClient) kac.get(url, sslSocketFactory);
+        if (http != null) {
+            http.closeServer();
+        }
     }
 
     /**

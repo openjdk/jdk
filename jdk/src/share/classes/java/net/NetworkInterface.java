@@ -425,8 +425,6 @@ public final class NetworkInterface {
         return virtual;
     }
 
-    private native static long getSubnet0(String name, int ind) throws SocketException;
-    private native static Inet4Address getBroadcast0(String name, int ind) throws SocketException;
     private native static boolean isUp0(String name, int ind) throws SocketException;
     private native static boolean isLoopback0(String name, int ind) throws SocketException;
     private native static boolean supportsMulticast0(String name, int ind) throws SocketException;

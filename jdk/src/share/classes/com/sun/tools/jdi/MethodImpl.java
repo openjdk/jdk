@@ -158,7 +158,7 @@ public abstract class MethodImpl extends TypeComponentImpl
 
     Type argumentType(int index) throws ClassNotLoadedException {
         ReferenceTypeImpl enclosing = (ReferenceTypeImpl)declaringType();
-        String signature = (String)argumentSignatures().get(index);
+        String signature = argumentSignatures().get(index);
         return enclosing.findType(signature);
     }
 
@@ -263,10 +263,10 @@ public abstract class MethodImpl extends TypeComponentImpl
             return argumentType(index);
         }
         public String typeName(){
-            return (String)argumentTypeNames().get(index);
+            return argumentTypeNames().get(index);
         }
         public String signature() {
-            return (String)argumentSignatures().get(index);
+            return argumentSignatures().get(index);
         }
         public Type findType(String signature) throws ClassNotLoadedException {
             return MethodImpl.this.findType(signature);
@@ -307,7 +307,7 @@ public abstract class MethodImpl extends TypeComponentImpl
             arguments.add(argArray);
             return;
         }
-        Value nthArgValue = (Value)arguments.get(paramCount - 1);
+        Value nthArgValue = arguments.get(paramCount - 1);
         if (nthArgValue == null) {
             return;
         }
@@ -371,7 +371,7 @@ public abstract class MethodImpl extends TypeComponentImpl
         }
 
         for (int i = 0; i < argSize; i++) {
-            Value value = (Value)arguments.get(i);
+            Value value = arguments.get(i);
             value = ValueImpl.prepareForAssignment(value,
                                                    new ArgumentContainer(i));
             arguments.set(i, value);
@@ -386,11 +386,11 @@ public abstract class MethodImpl extends TypeComponentImpl
         sb.append(name());
         sb.append("(");
         boolean first = true;
-        for (Iterator it = argumentTypeNames().iterator(); it.hasNext();) {
+        for (String name : argumentTypeNames()) {
             if (!first) {
                 sb.append(", ");
             }
-            sb.append((String)it.next());
+            sb.append(name);
             first = false;
         }
         sb.append(")");

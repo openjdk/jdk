@@ -177,13 +177,6 @@ public class XEmbedServerTester implements XEventDispatcher {
         embedCompletely();
     }
 
-    public void test3_2() {
-        embedCompletely();
-        int res = getEventPos();
-        sendMessage(XEmbedHelper._SUN_XEMBED_START);
-        waitEmbeddedNotify(res);
-    }
-
     public void test3_3() {
         reparent = true;
         embedCompletely();

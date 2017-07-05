@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,10 +426,17 @@ private:
   */
 private:
     BOOL m_displayChanged;  /* Tracks displayChanged events */
+    // 0 means we are not embedded.
+    DWORD m_embedderProcessID;
 
 public:
     BOOL HasDisplayChanged() { return m_displayChanged; }
     void ResetDisplayChanged() { m_displayChanged = FALSE; }
+    void RegisterEmbedderProcessId(HWND);
+    BOOL IsEmbedderProcessId(const DWORD processID) const
+    {
+        return m_embedderProcessID && (processID == m_embedderProcessID);
+    }
 
  private:
     static JNIEnv *m_env;

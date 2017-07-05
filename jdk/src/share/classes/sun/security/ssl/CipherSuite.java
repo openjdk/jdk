@@ -191,7 +191,7 @@ final class CipherSuite implements Comparable {
         if (s == null) {
             throw new IllegalArgumentException("Name must not be null");
         }
-        CipherSuite c = (CipherSuite)nameMap.get(s);
+        CipherSuite c = nameMap.get(s);
         if ((c == null) || (c.allowed == false)) {
             throw new IllegalArgumentException("Unsupported ciphersuite " + s);
         }
@@ -395,7 +395,7 @@ final class CipherSuite implements Comparable {
         }
 
         private static synchronized boolean isAvailable(BulkCipher cipher) {
-            Boolean b = (Boolean)availableCache.get(cipher);
+            Boolean b = availableCache.get(cipher);
             if (b == null) {
                 try {
                     SecretKey key = new SecretKeySpec

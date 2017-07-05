@@ -85,21 +85,21 @@ final class DGCClient {
 
     /** lease duration to request (usually ignored by server) */
     private static final long leaseValue =              // default 10 minutes
-        ((Long) AccessController.doPrivileged(
+        AccessController.doPrivileged(
             new GetLongAction("java.rmi.dgc.leaseValue",
-                              600000))).longValue();
+                              600000)).longValue();
 
     /** maximum interval between retries of failed clean calls */
     private static final long cleanInterval =           // default 3 minutes
-        ((Long) AccessController.doPrivileged(
+        AccessController.doPrivileged(
             new GetLongAction("sun.rmi.dgc.cleanInterval",
-                              180000))).longValue();
+                              180000)).longValue();
 
     /** maximum interval between complete garbage collections of local heap */
     private static final long gcInterval =              // default 1 hour
-        ((Long) AccessController.doPrivileged(
+        AccessController.doPrivileged(
             new GetLongAction("sun.rmi.dgc.client.gcInterval",
-                              3600000))).longValue();
+                              3600000)).longValue();
 
     /** minimum retry count for dirty calls that fail */
     private static final int dirtyFailureRetries = 5;
@@ -243,7 +243,7 @@ final class DGCClient {
             } catch (RemoteException e) {
                 throw new Error("internal error creating DGC stub");
             }
-            renewCleanThread = (Thread) AccessController.doPrivileged(
+            renewCleanThread =  AccessController.doPrivileged(
                 new NewThreadAction(new RenewCleanThread(),
                                     "RenewClean-" + endpoint, true));
             renewCleanThread.start();
@@ -473,8 +473,9 @@ final class DGCClient {
             if (newRenewTime < renewTime) {
                 renewTime = newRenewTime;
                 if (interruptible) {
-                    AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
+                    AccessController.doPrivileged(
+                        new PrivilegedAction<Void>() {
+                            public Void run() {
                             renewCleanThread.interrupt();
                             return null;
                         }

@@ -38,7 +38,14 @@ FT_TEST_PATH = $(TEMPDIR)/$(FT_TEST)
 
 all: $(FT_TEST_PATH)
 
-FT_OPTIONS  = -I$(FT_HEADERS) -I$(FT_HEADERS)/freetype2
+# Start with CFLAGS (which gets us the required -xarch setting on solaris)
+ifeq ($(PLATFORM), windows)
+  FT_OPTIONS  =
+else
+  FT_OPTIONS  = $(CFLAGS)
+endif
+
+FT_OPTIONS += -I$(FT_HEADERS) -I$(FT_HEADERS)/freetype2
 FT_OPTIONS += $(XARCH)
 
 #add runtime library search path

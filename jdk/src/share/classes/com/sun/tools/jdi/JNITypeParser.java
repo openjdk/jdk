@@ -82,7 +82,7 @@ public class JNITypeParser {
     }
 
     String typeName() {
-        return (String)typeNameList().get(typeNameList().size()-1);
+        return typeNameList().get(typeNameList().size()-1);
     }
 
     List<String> argumentTypeNames() {
@@ -90,7 +90,7 @@ public class JNITypeParser {
     }
 
     String signature() {
-        return (String)signatureList().get(signatureList().size()-1);
+        return signatureList().get(signatureList().size()-1);
     }
 
     List<String> argumentSignatures() {
