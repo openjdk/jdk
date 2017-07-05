@@ -101,7 +101,7 @@ void PhaseLive::compute(uint maxlrg) {
       for( uint k=1; k<cnt; k++ ) {
         Node *nk = n->in(k);
         uint nkidx = nk->_idx;
-        if( _cfg._bbs[nkidx] != b ) {
+        if (_cfg.get_block_for_node(nk) != b) {
           uint u = _names[nkidx];
           use->insert( u );
           DEBUG_ONLY(def_outside->insert( u );)
@@ -121,7 +121,7 @@ void PhaseLive::compute(uint maxlrg) {
 
     // Push these live-in things to predecessors
     for( uint l=1; l<b->num_preds(); l++ ) {
-      Block *p = _cfg._bbs[b->pred(l)->_idx];
+      Block *p = _cfg.get_block_for_node(b->pred(l));
       add_liveout( p, use, first_pass );
 
       // PhiNode uses go in the live-out set of prior blocks.
@@ -142,8 +142,10 @@ void PhaseLive::compute(uint maxlrg) {
       assert( delta->count(), "missing delta set" );
 
       // Add new-live-in to predecessors live-out sets
-      for( uint l=1; l<b->num_preds(); l++ )
-        add_liveout( _cfg._bbs[b->pred(l)->_idx], delta, first_pass );
+      for (uint l = 1; l < b->num_preds(); l++) {
+        Block* block = _cfg.get_block_for_node(b->pred(l));
+        add_liveout(block, delta, first_pass);
+      }
 
       freeset(b);
     } // End of while-worklist-not-empty
