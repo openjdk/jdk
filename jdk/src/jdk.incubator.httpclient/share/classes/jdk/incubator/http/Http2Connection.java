@@ -241,14 +241,7 @@ class Http2Connection  {
                                                           Http2ClientImpl client2,
                                                           Exchange<?> exchange,
                                                           ByteBuffer initial) {
-        CompletableFuture<Http2Connection> cf = new MinimalFuture<>();
-        try {
-            Http2Connection c = new Http2Connection(connection, client2, exchange, initial);
-            cf.complete(c);
-        } catch (IOException | InterruptedException e) {
-            cf.completeExceptionally(e);
-        }
-        return cf;
+        return MinimalFuture.supply(() -> new Http2Connection(connection, client2, exchange, initial));
     }
 
     /**

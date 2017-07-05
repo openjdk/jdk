@@ -26,7 +26,7 @@
  * @bug 6266438
  * @summary Query.match code for character sequences like [a-z] is wrong.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean QueryMatchTest
  * @run build QueryMatchTest
  * @run main QueryMatchTest
