@@ -303,6 +303,9 @@ class instanceKlass: public Klass {
     inner_class_next_offset = 4
   };
 
+  // method override check
+  bool is_override(methodHandle super_method, Handle targetclassloader, symbolHandle targetclassname, TRAPS);
+
   // package
   bool is_same_class_package(klassOop class2);
   bool is_same_class_package(oop classloader2, symbolOop classname2);

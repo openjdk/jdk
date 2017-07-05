@@ -56,8 +56,8 @@ public abstract class DebuggerBase implements Debugger {
   // heap data.
   protected long oopSize;
   protected long heapOopSize;
-  protected long heapBase;                 // heap base for compressed oops.
-  protected long logMinObjAlignmentInBytes; // Used to decode compressed oops.
+  protected long narrowOopBase;  // heap base for compressed oops.
+  protected int  narrowOopShift; // shift to decode compressed oops.
   // Should be initialized if desired by calling initCache()
   private PageCache cache;
 
@@ -159,10 +159,10 @@ public abstract class DebuggerBase implements Debugger {
     javaPrimitiveTypesConfigured = true;
   }
 
-  public void putHeapConst(long heapBase, long heapOopSize, long logMinObjAlignmentInBytes) {
-    this.heapBase = heapBase;
+  public void putHeapConst(long heapOopSize, long narrowOopBase, int narrowOopShift) {
     this.heapOopSize = heapOopSize;
-    this.logMinObjAlignmentInBytes = logMinObjAlignmentInBytes;
+    this.narrowOopBase = narrowOopBase;
+    this.narrowOopShift = narrowOopShift;
   }
 
   /** May be called by subclasses if desired to initialize the page
@@ -459,7 +459,7 @@ public abstract class DebuggerBase implements Debugger {
     long value = readCInteger(address, getHeapOopSize(), true);
     if (value != 0) {
       // See oop.inline.hpp decode_heap_oop
-      value = (long)(heapBase + (long)(value << logMinObjAlignmentInBytes));
+      value = (long)(narrowOopBase + (long)(value << narrowOopShift));
     }
     return value;
   }
@@ -545,10 +545,10 @@ public abstract class DebuggerBase implements Debugger {
     return heapOopSize;
   }
 
-  public long getHeapBase() {
-    return heapBase;
+  public long getNarrowOopBase() {
+    return narrowOopBase;
   }
-  public long getLogMinObjAlignmentInBytes() {
-    return logMinObjAlignmentInBytes;
+  public int getNarrowOopShift() {
+    return narrowOopShift;
   }
 }

@@ -508,7 +508,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   typedef PosParPRT* PosParPRTPtr;
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
-    _max_fine_entries = (1 << G1LogRSRegionEntries);
+    _max_fine_entries = (size_t)(1 << G1LogRSRegionEntries);
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 #if SAMPLE_FOR_EVICTION
     assert(_fine_eviction_sample_size == 0

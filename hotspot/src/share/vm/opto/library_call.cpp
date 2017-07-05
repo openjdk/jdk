@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_CAS(BasicType type);
   bool inline_unsafe_ordered_store(BasicType type);
   bool inline_fp_conversions(vmIntrinsics::ID id);
+  bool inline_bitCount(vmIntrinsics::ID id);
   bool inline_reverseBytes(vmIntrinsics::ID id);
 };
 
@@ -312,6 +313,11 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseNewReflection)  return NULL;
     if (!InlineReflectionGetCallerClass)  return NULL;
     if (!JDK_Version::is_gte_jdk14x_version())  return NULL;
+    break;
+
+  case vmIntrinsics::_bitCount_i:
+  case vmIntrinsics::_bitCount_l:
+    if (!UsePopCountInstruction)  return NULL;
     break;
 
  default:
@@ -616,6 +622,10 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:
     return inline_fp_conversions(intrinsic_id());
+
+  case vmIntrinsics::_bitCount_i:
+  case vmIntrinsics::_bitCount_l:
+    return inline_bitCount(intrinsic_id());
 
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
@@ -1712,6 +1722,27 @@ inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
   } else {
     return basic_plus_adr(base, offset);
   }
+}
+
+//----------------------------inline_bitCount_int/long-----------------------
+// inline int Integer.bitCount(int)
+// inline int Long.bitCount(long)
+bool LibraryCallKit::inline_bitCount(vmIntrinsics::ID id) {
+  assert(id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l, "not bitCount");
+  if (id == vmIntrinsics::_bitCount_i && !Matcher::has_match_rule(Op_PopCountI)) return false;
+  if (id == vmIntrinsics::_bitCount_l && !Matcher::has_match_rule(Op_PopCountL)) return false;
+  _sp += arg_size();  // restore stack pointer
+  switch (id) {
+  case vmIntrinsics::_bitCount_i:
+    push(_gvn.transform(new (C, 2) PopCountINode(pop())));
+    break;
+  case vmIntrinsics::_bitCount_l:
+    push(_gvn.transform(new (C, 2) PopCountLNode(pop_pair())));
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+  return true;
 }
 
 //----------------------------inline_reverseBytes_int/long-------------------

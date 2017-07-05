@@ -23,9 +23,6 @@
  * have any questions.
  */
 
-/*
- */
-
 package sun.nio.cs;
 
 import java.nio.ByteBuffer;
@@ -34,10 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.MalformedInputException;
-import java.nio.charset.UnmappableCharacterException;
-
+import java.util.Arrays;
 
 class ISO_8859_1
     extends Charset
@@ -65,8 +59,8 @@ class ISO_8859_1
         return new Encoder(this);
     }
 
-    private static class Decoder extends CharsetDecoder {
-
+    private static class Decoder extends CharsetDecoder
+                                 implements ArrayDecoder {
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -127,16 +121,28 @@ class ISO_8859_1
                 return decodeBufferLoop(src, dst);
         }
 
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            if (len > dst.length)
+                len = dst.length;
+            int dp = 0;
+            while (dp < len)
+                dst[dp++] = (char)(src[sp++] & 0xff);
+            return dp;
+        }
     }
 
-    private static class Encoder extends CharsetEncoder {
-
+    private static class Encoder extends CharsetEncoder
+                                 implements ArrayEncoder {
         private Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
 
         public boolean canEncode(char c) {
             return c <= '\u00FF';
+        }
+
+        public boolean isLegalReplacement(byte[] repl) {
+            return (repl.length == 1);  // we accept any byte value
         }
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -208,5 +214,31 @@ class ISO_8859_1
                 return encodeBufferLoop(src, dst);
         }
 
+        private byte repl = (byte)'?';
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement[0];
+        }
+
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + Math.min(len, dst.length);
+            while (sp < sl) {
+                char c = src[sp++];
+                if (c <= '\u00FF') {
+                    dst[dp++] = (byte)c;
+                    continue;
+                }
+                if (Surrogate.isHigh(c) && sp < sl &&
+                    Surrogate.isLow(src[sp])) {
+                    if (len > dst.length) {
+                        sl++;
+                        len--;
+                    }
+                    sp++;
+                }
+                dst[dp++] = repl;
+            }
+            return dp;
+        }
     }
 }

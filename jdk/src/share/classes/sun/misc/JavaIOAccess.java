@@ -29,6 +29,5 @@ import java.nio.charset.Charset;
 
 public interface JavaIOAccess {
     public Console console();
-    public Runnable consoleRestoreHook();
     public Charset charset();
 }

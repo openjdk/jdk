@@ -1598,18 +1598,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
     // get instance klass
     __ movptr(k_RInfo, Address(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
-    // get super_check_offset
-    __ movl(Rtmp1, Address(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes()));
-    // See if we get an immediate positive hit
-    __ cmpptr(k_RInfo, Address(klass_RInfo, Rtmp1, Address::times_1));
-    __ jcc(Assembler::equal, done);
-    // check for immediate negative hit
-    __ cmpl(Rtmp1, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-    __ jcc(Assembler::notEqual, *stub->entry());
-    // check for self
-    __ cmpptr(klass_RInfo, k_RInfo);
-    __ jcc(Assembler::equal, done);
-
+    // perform the fast part of the checking logic
+    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, &done, stub->entry(), NULL);
+    // call out-of-line instance of __ check_klass_subtype_slow_path(...):
     __ push(klass_RInfo);
     __ push(k_RInfo);
     __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
@@ -1735,17 +1726,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         }
         __ bind(done);
       } else {
-        __ movl(Rtmp1, Address(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes()));
-        // See if we get an immediate positive hit
-        __ cmpptr(k_RInfo, Address(klass_RInfo, Rtmp1, Address::times_1));
-        __ jcc(Assembler::equal, done);
-        // check for immediate negative hit
-        __ cmpl(Rtmp1, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-        __ jcc(Assembler::notEqual, *stub->entry());
-        // check for self
-        __ cmpptr(klass_RInfo, k_RInfo);
-        __ jcc(Assembler::equal, done);
-
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, &done, stub->entry(), NULL);
+        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
         __ push(klass_RInfo);
         __ push(k_RInfo);
         __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
@@ -1821,23 +1804,15 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           __ pop(dst);
           __ jmp(done);
         }
-      } else {
-#else
-      { // YUCK
+      }
+        else // next block is unconditional if LP64:
 #endif // LP64
+      {
         assert(dst != klass_RInfo && dst != k_RInfo, "need 3 registers");
 
-        __ movl(dst, Address(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes()));
-        // See if we get an immediate positive hit
-        __ cmpptr(k_RInfo, Address(klass_RInfo, dst, Address::times_1));
-        __ jcc(Assembler::equal, one);
-        // check for immediate negative hit
-        __ cmpl(dst, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-        __ jcc(Assembler::notEqual, zero);
-        // check for self
-        __ cmpptr(klass_RInfo, k_RInfo);
-        __ jcc(Assembler::equal, one);
-
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, dst, &one, &zero, NULL);
+        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
         __ push(klass_RInfo);
         __ push(k_RInfo);
         __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
