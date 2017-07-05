@@ -312,10 +312,6 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
         assert !varNode.isBlockScoped(); //TODO: we must handle these too, but we currently don't
 
         final Expression init = varNode.getInit();
-        if (varNode.isAnonymousFunctionDeclaration()) {
-            // We ain't moving anonymous function declarations.
-            return super.enterVarNode(varNode);
-        }
 
         // Move a declaration-only var statement to the top of the outermost function.
         getCurrentFunctionState().varStatements.add(varNode.setInit(null));

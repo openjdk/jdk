@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6657026 7077259
  * @summary Tests shared MetalSliderUI in different application contexts
  * @author Sergey Malenkov
+ * @modules java.desktop/sun.awt
  * @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel Test6657026
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,53 +619,14 @@ bool os::is_allocatable(size_t bytes) {
 
 #ifdef AMD64
 size_t os::Linux::min_stack_allowed  = 64 * K;
-
-// amd64: pthread on amd64 is always in floating stack mode
-bool os::Linux::supports_variable_stack_size() {  return true; }
 #else
 size_t os::Linux::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
-
-#ifdef __GNUC__
-#define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
-#endif
-
-// Test if pthread library can support variable thread stack size. LinuxThreads
-// in fixed stack mode allocates 2M fixed slot for each thread. LinuxThreads
-// in floating stack mode and NPTL support variable stack size.
-bool os::Linux::supports_variable_stack_size() {
-  if (os::Linux::is_NPTL()) {
-     // NPTL, yes
-     return true;
-
-  } else {
-    // Note: We can't control default stack size when creating a thread.
-    // If we use non-default stack size (pthread_attr_setstacksize), both
-    // floating stack and non-floating stack LinuxThreads will return the
-    // same value. This makes it impossible to implement this function by
-    // detecting thread stack size directly.
-    //
-    // An alternative approach is to check %gs. Fixed-stack LinuxThreads
-    // do not use %gs, so its value is 0. Floating-stack LinuxThreads use
-    // %gs (either as LDT selector or GDT selector, depending on kernel)
-    // to access thread specific data.
-    //
-    // Note that %gs is a reserved glibc register since early 2001, so
-    // applications are not allowed to change its value (Ulrich Drepper from
-    // Redhat confirmed that all known offenders have been modified to use
-    // either %fs or TSD). In the worst case scenario, when VM is embedded in
-    // a native application that plays with %gs, we might see non-zero %gs
-    // even LinuxThreads is running in fixed stack mode. As the result, we'll
-    // return true and skip _thread_safety_check(), so we may not be able to
-    // detect stack-heap collisions. But otherwise it's harmless.
-    //
-#ifdef __GNUC__
-    return (GET_GS() != 0);
-#else
-    return false;
-#endif
-  }
-}
 #endif // AMD64
+
+// Test if pthread library can support variable thread stack size.
+bool os::Linux::supports_variable_stack_size() {
+  return true;
+}
 
 // return default stack size for thr_type
 size_t os::Linux::default_stack_size(os::ThreadType thr_type) {

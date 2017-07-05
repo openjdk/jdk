@@ -25,14 +25,6 @@
  * @test
  * @bug 7040151
  * @summary SPNEGO GSS code does not parse tokens in accordance to RFC 2478
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file SPNEGO.java
  * @run main/othervm SPNEGO
  */

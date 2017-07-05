@@ -234,14 +234,14 @@ class ParScanThreadState {
 
 class ParNewGenTask: public AbstractGangTask {
  private:
-  ParNewGeneration*            _gen;
+  ParNewGeneration*            _young_gen;
   Generation*                  _old_gen;
   HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
   StrongRootsScope*            _strong_roots_scope;
 
 public:
-  ParNewGenTask(ParNewGeneration*      gen,
+  ParNewGenTask(ParNewGeneration*      young_gen,
                 Generation*            old_gen,
                 HeapWord*              young_old_boundary,
                 ParScanThreadStateSet* state_set,
@@ -264,11 +264,10 @@ class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
 class EvacuateFollowersClosureGeneral: public VoidClosure {
  private:
   GenCollectedHeap* _gch;
-  int               _level;
   OopsInGenClosure* _scan_cur_or_nonheap;
   OopsInGenClosure* _scan_older;
  public:
-  EvacuateFollowersClosureGeneral(GenCollectedHeap* gch, int level,
+  EvacuateFollowersClosureGeneral(GenCollectedHeap* gch,
                                   OopsInGenClosure* cur,
                                   OopsInGenClosure* older);
   virtual void do_void();
@@ -288,12 +287,14 @@ class ScanClosureWithParBarrier: public ScanClosure {
 // Implements AbstractRefProcTaskExecutor for ParNew.
 class ParNewRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
  private:
-  ParNewGeneration&      _generation;
+  ParNewGeneration&      _young_gen;
+  Generation&            _old_gen;
   ParScanThreadStateSet& _state_set;
  public:
-  ParNewRefProcTaskExecutor(ParNewGeneration& generation,
+  ParNewRefProcTaskExecutor(ParNewGeneration& young_gen,
+                            Generation& old_gen,
                             ParScanThreadStateSet& state_set)
-    : _generation(generation), _state_set(state_set)
+    : _young_gen(young_gen), _old_gen(old_gen), _state_set(state_set)
   { }
 
   // Executes a task using worker threads.
@@ -353,7 +354,7 @@ class ParNewGeneration: public DefNewGeneration {
   void set_survivor_overflow(bool v) { _survivor_overflow = v; }
 
  public:
-  ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level);
+  ParNewGeneration(ReservedSpace rs, size_t initial_byte_size);
 
   ~ParNewGeneration() {
     for (uint i = 0; i < ParallelGCThreads; i++)

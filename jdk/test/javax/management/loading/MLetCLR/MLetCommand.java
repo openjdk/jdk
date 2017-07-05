@@ -31,7 +31,7 @@
  * @modules java.management
  * @run clean MLetCommand
  * @run build MLetCommand
- * @run main/othervm/policy=policy MLetCommand
+ * @run main/othervm/java.security.policy=policy MLetCommand
  */
 
 import javax.management.MBeanServer;

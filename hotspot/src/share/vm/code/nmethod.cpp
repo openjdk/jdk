@@ -1421,7 +1421,7 @@ void nmethod::flush() {
   Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, this);
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
-        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(_comp_level))/1024);
+        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
   }
 
   // We need to deallocate any ExceptionCache data.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@
 //
 // Defines all global flags used by the client compiler.
 //
-#define C1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
+#define C1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
                                                                             \
   /* Printing */                                                            \
   notproduct(bool, PrintC1Statistics, false,                                \
@@ -148,6 +148,7 @@
                                                                             \
   product(intx, ValueMapInitialSize, 11,                                    \
           "Initial size of a value map")                                    \
+          range(1, NOT_LP64(1*K) LP64_ONLY(32*K))                           \
                                                                             \
   product(intx, ValueMapMaxLoopSize, 8,                                     \
           "maximum size of a loop optimized by global value numbering")     \
@@ -191,6 +192,7 @@
                                                                             \
   develop(intx, NestedInliningSizeRatio, 90,                                \
           "Percentage of prev. allowed inline size in recursive inlining")  \
+          range(0, 100)                                                     \
                                                                             \
   notproduct(bool, PrintIRWithLIR, false,                                   \
           "Print IR instructions with generated LIR")                       \
@@ -338,10 +340,15 @@
   diagnostic(bool, C1PatchInvokeDynamic, true,                              \
              "Patch invokedynamic appendix not known at compile time")      \
                                                                             \
-
-
 // Read default values for c1 globals
 
-C1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+C1_FLAGS(DECLARE_DEVELOPER_FLAG, \
+         DECLARE_PD_DEVELOPER_FLAG, \
+         DECLARE_PRODUCT_FLAG, \
+         DECLARE_PD_PRODUCT_FLAG, \
+         DECLARE_DIAGNOSTIC_FLAG, \
+         DECLARE_NOTPRODUCT_FLAG, \
+         IGNORE_RANGE, \
+         IGNORE_CONSTRAINT)
 
 #endif // SHARE_VM_C1_C1_GLOBALS_HPP

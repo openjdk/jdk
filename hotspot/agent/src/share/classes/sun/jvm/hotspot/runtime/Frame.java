@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,12 +357,6 @@ public abstract class Frame implements Cloneable {
   // FIXME: avoiding implementing this for now if possible
   //  public void interpreter_frame_set_monitor_end(BasicObjectLock* value);
   //  public void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
-  //
-  // Tells whether the current interpreter_frame frame pointer
-  // corresponds to the old compiled/deoptimized fp
-  // The receiver used to be a top level frame
-  // public boolean interpreter_frame_equals_unpacked_fp(intptr_t* fp);
-
   //--------------------------------------------------------------------------------
   // Method and constant pool cache:
   //
