@@ -367,7 +367,7 @@ public abstract class Monitor
     /**
      * Constant used to initialize all the numeric values.
      */
-    static final Integer INTEGER_ZERO = new Integer(0);
+    static final Integer INTEGER_ZERO = 0;
 
 
     /*
@@ -1122,12 +1122,12 @@ public abstract class Monitor
      */
     private void monitor(ObservedObject o, int index, int an[]) {
 
-        String attribute = null;
+        String attribute;
         String notifType = null;
         String msg = null;
         Object derGauge = null;
         Object trigger = null;
-        ObjectName object = null;
+        ObjectName object;
         Comparable<?> value = null;
         MonitorNotification alarm = null;
 
@@ -1565,7 +1565,7 @@ public abstract class Monitor
         final ThreadGroup group;
         final AtomicInteger threadNumber = new AtomicInteger(1);
         final String namePrefix;
-        final String nameSuffix = "]";
+        static final String nameSuffix = "]";
 
         public DaemonThreadFactory(String poolName) {
             SecurityManager s = System.getSecurityManager();

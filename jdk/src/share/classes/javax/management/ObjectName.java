@@ -449,7 +449,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         // parses domain part
     domain_parsing:
         while (index < len) {
-            switch (c = name_chars[index]) {
+            switch (name_chars[index]) {
                 case ':' :
                     _domain_length = index++;
                     break domain_parsing;
@@ -619,7 +619,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                     case '\n' :
                         final String ichar = ((c1=='\n')?"\\n":""+c1);
                         throw new MalformedObjectNameException(
-                                                 "Invalid character '" + c1 +
+                                                 "Invalid character '" + ichar +
                                                  "' in value part of property");
                     default :
                         in_index++;

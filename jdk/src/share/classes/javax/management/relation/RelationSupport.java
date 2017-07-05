@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import static com.sun.jmx.defaults.JmxProperties.RELATION_LOGGER;
 import static com.sun.jmx.mbeanserver.Util.cast;
 import javax.management.InstanceNotFoundException;
@@ -110,7 +111,7 @@ public class RelationSupport
     private Map<String,Role> myRoleName2ValueMap = new HashMap<String,Role>();
 
     // Flag to indicate if the object has been added in the Relation Service
-    private Boolean myInRelServFlg = null;
+    private final AtomicBoolean myInRelServFlg = new AtomicBoolean();
 
     //
     // Constructors
@@ -403,7 +404,7 @@ public class RelationSupport
                 "getRoleCardinality", roleName);
 
         // Try to retrieve the role
-        Role role = null;
+        Role role;
         synchronized(myRoleName2ValueMap) {
             // No null Role is allowed, so direct use of get()
             role = (myRoleName2ValueMap.get(roleName));
@@ -427,7 +428,7 @@ public class RelationSupport
 
         RELATION_LOGGER.exiting(RelationSupport.class.getName(),
                 "getRoleCardinality");
-        return new Integer(roleValue.size());
+        return roleValue.size();
     }
 
     /**
@@ -701,11 +702,7 @@ public class RelationSupport
      * the Relation Service.
      */
     public Boolean isInRelationService() {
-        Boolean result = null;
-        synchronized(myInRelServFlg) {
-            result = Boolean.valueOf(myInRelServFlg.booleanValue());
-        }
-        return result;
+        return myInRelServFlg.get();
     }
 
     public void setRelationServiceManagementFlag(Boolean flag)
@@ -715,10 +712,7 @@ public class RelationSupport
             String excMsg = "Invalid parameter.";
             throw new IllegalArgumentException(excMsg);
         }
-        synchronized(myInRelServFlg) {
-            myInRelServFlg = Boolean.valueOf(flag.booleanValue());
-        }
-        return;
+        myInRelServFlg.set(flag);
     }
 
     //
@@ -790,7 +784,7 @@ public class RelationSupport
 
         int pbType = 0;
 
-        Role role = null;
+        Role role;
         synchronized(myRoleName2ValueMap) {
             // No null Role is allowed, so direct use of get()
             role = (myRoleName2ValueMap.get(roleName));
@@ -801,7 +795,7 @@ public class RelationSupport
 
         } else {
             // Checks if the role is readable
-            Integer status = null;
+            Integer status;
 
             if (relationServCallFlg) {
 
@@ -851,7 +845,7 @@ public class RelationSupport
             pbType = status.intValue();
         }
 
-        Object result = null;
+        Object result;
 
         if (pbType == 0) {
             // Role can be retrieved
@@ -937,7 +931,7 @@ public class RelationSupport
         for (int i = 0; i < roleNameArray.length; i++) {
             String currRoleName = roleNameArray[i];
 
-            Object currResult = null;
+            Object currResult;
 
             // Can throw RelationServiceNotRegisteredException
             //
@@ -1102,13 +1096,13 @@ public class RelationSupport
         // handle initialization of role when creating the relation
         // (roles provided in the RoleList parameter are directly set but
         // roles automatically initialized are set using setRole())
-        Role role = null;
+        Role role;
         synchronized(myRoleName2ValueMap) {
             role = (myRoleName2ValueMap.get(roleName));
         }
 
         List<ObjectName> oldRoleValue;
-        Boolean initFlg = null;
+        Boolean initFlg;
 
         if (role == null) {
             initFlg = true;
@@ -1122,7 +1116,7 @@ public class RelationSupport
         // Checks if the role can be set: is writable (except if
         // initialization) and correct value
         try {
-            Integer status = null;
+            Integer status;
 
             if (relationServCallFlg) {
 
@@ -1314,7 +1308,7 @@ public class RelationSupport
             Object[] params = new Object[3];
             params[0] = myRelId;
             params[1] = newRole;
-            params[2] = ((ArrayList)oldRoleValue);
+            params[2] = oldRoleValue;
             String[] signature = new String[3];
             signature[0] = "java.lang.String";
             signature[1] = "javax.management.relation.Role";
@@ -1598,7 +1592,6 @@ public class RelationSupport
         myRelTypeName = relationTypeName;
         // Can throw InvalidRoleValueException
         initRoleMap(list);
-        myInRelServFlg = Boolean.FALSE;
 
         RELATION_LOGGER.exiting(RelationSupport.class.getName(), "initMembers");
         return;
@@ -1710,7 +1703,7 @@ public class RelationSupport
                 roleName, relationServCallFlg, relationServ});
 
         // Retrieves current role value
-        Role role = null;
+        Role role;
         synchronized(myRoleName2ValueMap) {
             role = (myRoleName2ValueMap.get(roleName));
         }
