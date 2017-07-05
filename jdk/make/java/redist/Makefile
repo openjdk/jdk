@@ -43,6 +43,7 @@ SERVER_LOCATION = server
 CLIENT_LOCATION = client
 
 DB_SUFFIX = _db
+DTRACE_SUFFIX = _dtrace
 
 ifeq ($(PLATFORM), windows)
   LIB_LOCATION = $(BINDIR)
@@ -56,6 +57,7 @@ JVMMAP_NAME            = $(LIB_PREFIX)jvm.map
 JVMPDB_NAME            = $(LIB_PREFIX)jvm.pdb
 LIBJSIG_NAME           = $(LIB_PREFIX)jsig.$(LIBRARY_SUFFIX)
 JVMDB_NAME             = $(LIB_PREFIX)jvm$(DB_SUFFIX).$(LIBRARY_SUFFIX)
+JVMDTRACE_NAME         = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).$(LIBRARY_SUFFIX)
 
 CLASSSHARINGDATA_DIR   = $(BUILDDIR)/tools/sharing
 
@@ -161,6 +163,12 @@ IMPORT_LIST += \
 
 ifeq ($(PLATFORM), solaris)
   IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
+# The conditional can be removed when import JDKs contain these files.
+ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)),)
+  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME)
+else
+  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/$(JVMDB_NAME) not found!)
+endif 
 endif 
 
 ifneq ($(ZERO_BUILD), true)
@@ -171,14 +179,29 @@ IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME)
 ifeq ($(PLATFORM), solaris)
 #  solaris   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  solaris
 
-ifeq ($(ARCH), sparc)
-  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME)
-endif
-
 IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME)
 
-ifeq ($(ARCH), sparc)
+# The conditional can be removed when import JDKs contain these files.
+ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)),)
+  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_NAME)
+  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME)
+else
+  $(warning WARNING: $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME) not found!)
+endif
+
+# The conditional can be removed when import JDKs contain these files.
+ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)),)
+  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME)
+else
+  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME) not found!)
+endif
+
+# The conditional can be removed when import JDKs contain these files.
+ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)),)
+  IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME)
+else
+  $(warning WARNING: $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME) not found!)
 endif
 
 # For backwards compatability, make a link of the 32-bit client JVM to $(LIBDIR)
@@ -222,6 +245,18 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDTRACE_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_NAME)
