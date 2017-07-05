@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    Address ctr(G5, SharedRuntime::nof_megamorphic_calls_addr());
-    __ sethi(ctr);
-    __ ld(ctr, G3_scratch);
-    __ inc(G3_scratch);
-    __ st(G3_scratch, ctr);
+    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), G5, G3_scratch);
   }
 #endif /* PRODUCT */
 
@@ -154,11 +150,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    Address ctr(L0, SharedRuntime::nof_megamorphic_calls_addr());
-    __ sethi(ctr);
-    __ ld(ctr, L1);
-    __ inc(L1);
-    __ st(L1, ctr);
+    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), L0, L1);
   }
 #endif /* PRODUCT */
 
@@ -198,8 +190,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ delayed()->nop();
 
   __ bind(throw_icce);
-  Address icce(G3_scratch, StubRoutines::throw_IncompatibleClassChangeError_entry());
-  __ jump_to(icce, 0);
+  AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
+  __ jump_to(icce, G3_scratch);
   __ delayed()->restore();
 
   masm->flush();

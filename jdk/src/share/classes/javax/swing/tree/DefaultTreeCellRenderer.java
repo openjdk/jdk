@@ -25,16 +25,24 @@
 
 package javax.swing.tree;
 
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JTree;
+import javax.swing.LookAndFeel;
+import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
+import sun.swing.DefaultLookup;
 
 /**
  * Displays an entry in a tree.
@@ -148,6 +156,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     protected Color borderSelectionColor;
 
     private boolean isDropCell;
+    private boolean fillBackground = true;
 
     /**
      * Set to true after the constructor has run.
@@ -177,41 +186,48 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
         // null. As such, if the value is null, this does not reset the
         // value.
         if (!inited || (getLeafIcon() instanceof UIResource)) {
-            setLeafIcon(UIManager.getIcon("Tree.leafIcon"));
+            setLeafIcon(DefaultLookup.getIcon(this, ui, "Tree.leafIcon"));
         }
         if (!inited || (getClosedIcon() instanceof UIResource)) {
-            setClosedIcon(UIManager.getIcon("Tree.closedIcon"));
+            setClosedIcon(DefaultLookup.getIcon(this, ui, "Tree.closedIcon"));
         }
         if (!inited || (getOpenIcon() instanceof UIManager)) {
-            setOpenIcon(UIManager.getIcon("Tree.openIcon"));
+            setOpenIcon(DefaultLookup.getIcon(this, ui, "Tree.openIcon"));
         }
         if (!inited || (getTextSelectionColor() instanceof UIResource)) {
             setTextSelectionColor(
-                    UIManager.getColor("Tree.selectionForeground"));
+                    DefaultLookup.getColor(this, ui, "Tree.selectionForeground"));
         }
         if (!inited || (getTextNonSelectionColor() instanceof UIResource)) {
             setTextNonSelectionColor(
-                UIManager.getColor("Tree.textForeground"));
+                    DefaultLookup.getColor(this, ui, "Tree.textForeground"));
         }
         if (!inited || (getBackgroundSelectionColor() instanceof UIResource)) {
             setBackgroundSelectionColor(
-                UIManager.getColor("Tree.selectionBackground"));
+                    DefaultLookup.getColor(this, ui, "Tree.selectionBackground"));
         }
         if (!inited ||
                 (getBackgroundNonSelectionColor() instanceof UIResource)) {
             setBackgroundNonSelectionColor(
-                    UIManager.getColor("Tree.textBackground"));
+                    DefaultLookup.getColor(this, ui, "Tree.textBackground"));
         }
         if (!inited || (getBorderSelectionColor() instanceof UIResource)) {
             setBorderSelectionColor(
-                UIManager.getColor("Tree.selectionBorderColor"));
+                    DefaultLookup.getColor(this, ui, "Tree.selectionBorderColor"));
         }
-        Object value = UIManager.get("Tree.drawsFocusBorderAroundIcon");
-        drawsFocusBorderAroundIcon = (value != null && ((Boolean)value).
-                                      booleanValue());
-        value = UIManager.get("Tree.drawDashedFocusIndicator");
-        drawDashedFocusIndicator = (value != null && ((Boolean)value).
-                                    booleanValue());
+        drawsFocusBorderAroundIcon = DefaultLookup.getBoolean(
+                this, ui, "Tree.drawsFocusBorderAroundIcon", false);
+        drawDashedFocusIndicator = DefaultLookup.getBoolean(
+                this, ui, "Tree.drawDashedFocusIndicator", false);
+
+        fillBackground = DefaultLookup.getBoolean(this, ui, "Tree.rendererFillBackground", true);
+        Insets margins = DefaultLookup.getInsets(this, ui, "Tree.rendererMargins");
+        if (margins != null) {
+            setBorder(new EmptyBorder(margins.top, margins.left,
+                    margins.bottom, margins.right));
+        }
+
+        setName("Tree.cellRenderer");
     }
 
 
@@ -220,7 +236,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
       * represent non-leaf nodes that are expanded.
       */
     public Icon getDefaultOpenIcon() {
-        return UIManager.getIcon("Tree.openIcon");
+        return DefaultLookup.getIcon(this, ui, "Tree.openIcon");
     }
 
     /**
@@ -228,7 +244,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
       * represent non-leaf nodes that are not expanded.
       */
     public Icon getDefaultClosedIcon() {
-        return UIManager.getIcon("Tree.closedIcon");
+        return DefaultLookup.getIcon(this, ui, "Tree.closedIcon");
     }
 
     /**
@@ -236,7 +252,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
       * represent leaf nodes.
       */
     public Icon getDefaultLeafIcon() {
-        return UIManager.getIcon("Tree.leafIcon");
+        return DefaultLookup.getIcon(this, ui, "Tree.leafIcon");
     }
 
     /**
@@ -425,7 +441,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
                 && dropLocation.getChildIndex() == -1
                 && tree.getRowForPath(dropLocation.getPath()) == row) {
 
-            Color col = UIManager.getColor("Tree.dropCellForeground");
+            Color col = DefaultLookup.getColor(this, ui, "Tree.dropCellForeground");
             if (col != null) {
                 fg = col;
             } else {
@@ -441,26 +457,24 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
         setForeground(fg);
 
-        // There needs to be a way to specify disabled icons.
+        Icon icon = null;
+        if (leaf) {
+            icon = getLeafIcon();
+        } else if (expanded) {
+            icon = getOpenIcon();
+        } else {
+            icon = getClosedIcon();
+        }
+
         if (!tree.isEnabled()) {
             setEnabled(false);
-            if (leaf) {
-                setDisabledIcon(getLeafIcon());
-            } else if (expanded) {
-                setDisabledIcon(getOpenIcon());
-            } else {
-                setDisabledIcon(getClosedIcon());
-            }
-        }
-        else {
+            LookAndFeel laf = UIManager.getLookAndFeel();
+            Icon disabledIcon = laf.getDisabledIcon(tree, icon);
+            if (disabledIcon != null) icon = disabledIcon;
+            setDisabledIcon(icon);
+        } else {
             setEnabled(true);
-            if (leaf) {
-                setIcon(getLeafIcon());
-            } else if (expanded) {
-                setIcon(getOpenIcon());
-            } else {
-                setIcon(getClosedIcon());
-            }
+            setIcon(icon);
         }
         setComponentOrientation(tree.getComponentOrientation());
 
@@ -476,7 +490,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
         Color bColor;
 
         if (isDropCell) {
-            bColor = UIManager.getColor("Tree.dropCellBackground");
+            bColor = DefaultLookup.getColor(this, ui, "Tree.dropCellBackground");
             if (bColor == null) {
                 bColor = getBackgroundSelectionColor();
             }
@@ -490,9 +504,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
         }
 
         int imageOffset = -1;
-        if(bColor != null) {
-            Icon currentI = getIcon();
-
+        if (bColor != null && fillBackground) {
             imageOffset = getLabelStart();
             g.setColor(bColor);
             if(getComponentOrientation().isLeftToRight()) {

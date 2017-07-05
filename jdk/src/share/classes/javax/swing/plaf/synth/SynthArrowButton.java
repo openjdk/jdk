@@ -113,6 +113,31 @@ class SynthArrowButton extends JButton implements SwingConstants, UIResource {
                     context.getStyle().getInt(context, "ArrowButton.size", 16);
                 dim = new Dimension(size, size);
             }
+
+            // handle scaling for sizeVarients for special case components. The
+            // key "JComponent.sizeVariant" scales for large/small/mini
+            // components are based on Apples LAF
+            Container parent = context.getComponent().getParent();
+            if (parent instanceof JComponent && !(parent instanceof JComboBox)) {
+                Object scaleKey = ((JComponent)parent).
+                                    getClientProperty("JComponent.sizeVariant");
+                if (scaleKey != null){
+                    if ("large".equals(scaleKey)){
+                        dim = new Dimension(
+                                (int)(dim.width * 1.15),
+                                (int)(dim.height * 1.15));
+                    } else if ("small".equals(scaleKey)){
+                        dim = new Dimension(
+                                (int)(dim.width * 0.857),
+                                (int)(dim.height * 0.857));
+                    } else if ("mini".equals(scaleKey)){
+                        dim = new Dimension(
+                                (int)(dim.width * 0.714),
+                                (int)(dim.height * 0.714));
+                    }
+                }
+            }
+
             context.dispose();
             return dim;
         }

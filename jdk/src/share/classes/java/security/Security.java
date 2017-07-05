@@ -501,7 +501,7 @@ public final class Security {
      * <li> <i>&lt;crypto_service>.&lt;algorithm_or_type>
      * &lt;attribute_name>:&lt attribute_value></i>
      * <p> The cryptographic service name must not contain any dots. There
-     * must be one or more space charaters between the the
+     * must be one or more space charaters between the
      * <i>&lt;algorithm_or_type></i> and the <i>&lt;attribute_name></i>.
      *  <p> A provider satisfies this selection criterion iff the
      * provider implements the specified algorithm or type for the specified

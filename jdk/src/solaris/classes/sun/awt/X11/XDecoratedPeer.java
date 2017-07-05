@@ -490,8 +490,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             // if the window manager or any other part of the windowing
             // system sets inappropriate size for this window, we can
             // do nothing but accept it.
-            Rectangle reqBounds = newDimensions.getBounds();
-            Rectangle newBounds = constrainBounds(reqBounds.x, reqBounds.y, reqBounds.width, reqBounds.height);
+            Rectangle newBounds = newDimensions.getBounds();
             Insets insets = newDimensions.getInsets();
             // Inherit isClientSizeSet from newDimensions
             if (newDimensions.isClientSizeSet()) {
@@ -618,46 +617,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     // This method gets overriden in XFramePeer & XDialogPeer.
     abstract boolean isTargetUndecorated();
-
-    @Override
-    Rectangle constrainBounds(int x, int y, int width, int height) {
-        // We don't restrict the setBounds() operation if the code is trusted.
-        if (!hasWarningWindow()) {
-            return new Rectangle(x, y, width, height);
-        }
-
-        // If it's undecorated or is not currently visible,
-        // apply the same constraints as for the Window.
-        if (!isVisible() || isTargetUndecorated()) {
-            return super.constrainBounds(x, y, width, height);
-        }
-
-        // If it's visible & decorated, constraint the size only
-        int newX = x;
-        int newY = y;
-        int newW = width;
-        int newH = height;
-
-        GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
-        Rectangle sB = gc.getBounds();
-        Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
-
-        Rectangle curBounds = getBounds();
-
-        int maxW = Math.max(sB.width - sIn.left - sIn.right, curBounds.width);
-        int maxH = Math.max(sB.height - sIn.top - sIn.bottom, curBounds.height);
-
-        // First make sure the size is withing the visible part of the screen
-        if (newW > maxW) {
-            newW = maxW;
-        }
-
-        if (newH > maxH) {
-            newH = maxH;
-        }
-
-        return new Rectangle(newX, newY, newW, newH);
-    }
 
     /**
      * @see java.awt.peer.ComponentPeer#setBounds

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class BufferManagerReadStream
     // We should convert endOfStream to a final static dummy end node
     private boolean endOfStream = true;
     private BufferQueue fragmentQueue = new BufferQueue();
+    private long FRAGMENT_TIMEOUT = 60000;
 
     // REVISIT - This should go in BufferManagerRead. But, since
     //           BufferManagerRead is an interface. BufferManagerRead
@@ -111,9 +112,16 @@ public class BufferManagerReadStream
                     throw wrapper.endOfStream() ;
                 }
 
+                boolean interrupted = false;
                 try {
-                    fragmentQueue.wait();
-                } catch (InterruptedException e) {}
+                    fragmentQueue.wait(FRAGMENT_TIMEOUT);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+
+                if (!interrupted && fragmentQueue.size() == 0) {
+                    throw wrapper.bufferReadManagerTimeout();
+                }
 
                 if (receivedCancel) {
                     throw new RequestCanceledException(cancelReqId);

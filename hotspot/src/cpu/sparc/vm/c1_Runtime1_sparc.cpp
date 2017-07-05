@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
 
   // check for pending exceptions
   { Label L;
-    Address exception_addr(G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
+    Address exception_addr(G2_thread, Thread::pending_exception_offset());
     ld_ptr(exception_addr, Gtemp);
     br_null(Gtemp, false, pt, L);
     delayed()->nop();
-    Address vm_result_addr(G2_thread, 0, in_bytes(JavaThread::vm_result_offset()));
+    Address vm_result_addr(G2_thread, JavaThread::vm_result_offset());
     st_ptr(G0, vm_result_addr);
-    Address vm_result_addr_2(G2_thread, 0, in_bytes(JavaThread::vm_result_2_offset()));
+    Address vm_result_addr_2(G2_thread, JavaThread::vm_result_2_offset());
     st_ptr(G0, vm_result_addr_2);
 
     if (frame_size() == no_frame_size) {
@@ -73,8 +73,8 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     } else if (_stub_id == Runtime1::forward_exception_id) {
       should_not_reach_here();
     } else {
-      Address exc(G4, Runtime1::entry_for(Runtime1::forward_exception_id));
-      jump_to(exc, 0);
+      AddressLiteral exc(Runtime1::entry_for(Runtime1::forward_exception_id));
+      jump_to(exc, G4);
       delayed()->nop();
     }
     bind(L);
@@ -85,7 +85,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     get_vm_result  (oop_result1);
   } else {
     // be a little paranoid and clear the result
-    Address vm_result_addr(G2_thread, 0, in_bytes(JavaThread::vm_result_offset()));
+    Address vm_result_addr(G2_thread, JavaThread::vm_result_offset());
     st_ptr(G0, vm_result_addr);
   }
 
@@ -93,7 +93,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     get_vm_result_2(oop_result2);
   } else {
     // be a little paranoid and clear the result
-    Address vm_result_addr_2(G2_thread, 0, in_bytes(JavaThread::vm_result_2_offset()));
+    Address vm_result_addr_2(G2_thread, JavaThread::vm_result_2_offset());
     st_ptr(G0, vm_result_addr_2);
   }
 
@@ -479,8 +479,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register G4_length = G4; // Incoming
         Register O0_obj   = O0; // Outgoing
 
-        Address klass_lh(G5_klass, 0, ((klassOopDesc::header_size() * HeapWordSize)
-                                       + Klass::layout_helper_offset_in_bytes()));
+        Address klass_lh(G5_klass, ((klassOopDesc::header_size() * HeapWordSize)
+                                    + Klass::layout_helper_offset_in_bytes()));
         assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
         assert(Klass::_lh_header_size_mask == 0xFF, "bytewise");
         // Use this offset to pick out an individual byte of the layout_helper:
@@ -902,8 +902,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ srl(addr, CardTableModRefBS::card_shift, addr);
 #endif
 
-        Address rs(cardtable, (address)byte_map_base);
-        __ load_address(rs); // cardtable := <card table base>
+        AddressLiteral rs(byte_map_base);
+        __ set(rs, cardtable);         // cardtable := <card table base>
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
         __ br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
@@ -1022,8 +1022,8 @@ void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_map
 
   __ restore();
 
-  Address exc(G4, Runtime1::entry_for(Runtime1::unwind_exception_id));
-  __ jump_to(exc, 0);
+  AddressLiteral exc(Runtime1::entry_for(Runtime1::unwind_exception_id));
+  __ jump_to(exc, G4);
   __ delayed()->nop();
 
 

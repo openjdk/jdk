@@ -354,16 +354,9 @@ public class WindowsAsynchronousFileChannelImpl
         }
     }
 
-    // invoke by FileFileImpl to release lock
     @Override
-    void release(FileLockImpl fli) throws IOException {
-        try {
-            begin();
-            nd.release(fdObj, fli.position(), fli.size());
-            removeFromFileLockTable(fli);
-        } finally {
-            end();
-        }
+    protected void implRelease(FileLockImpl fli) throws IOException {
+        nd.release(fdObj, fli.position(), fli.size());
     }
 
     /**
