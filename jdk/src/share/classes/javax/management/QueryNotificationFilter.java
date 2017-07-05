@@ -170,7 +170,7 @@ public class QueryNotificationFilter implements NotificationFilter {
     private static final long serialVersionUID = -8408613922660635231L;
 
     private static final ObjectName DEFAULT_NAME =
-            Util.newObjectName(":type=Notification");
+            ObjectName.valueOf(":type=Notification");
     private static final QueryExp trueQuery;
     static {
         ValueExp zero = Query.value(0);

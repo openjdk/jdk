@@ -25,6 +25,7 @@
  * @test VirtualMBeanNotifTest.java
  * @bug 5108776
  * @build VirtualMBeanNotifTest Wombat WombatMBean
+ * @run main VirtualMBeanNotifTest
  * @summary Test that Virtual MBeans can be implemented and emit notifs.
  * @author  Daniel Fuchs
  */

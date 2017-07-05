@@ -388,7 +388,7 @@ enum PlatformComponent {
             // if there are more than 1 key properties (i.e. other than "type")
             domainAndType += ",*";
         }
-        ObjectName on = com.sun.jmx.mbeanserver.Util.newObjectName(domainAndType);
+        ObjectName on = ObjectName.valueOf(domainAndType);
         Set<ObjectName> set =  mbs.queryNames(on, null);
         for (PlatformComponent pc : subComponents) {
             set.addAll(pc.getObjectNames(mbs));
