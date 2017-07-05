@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,8 @@ class ciMethod : public ciObject {
   bool check_call(int refinfo_index, bool is_static) const;
   void build_method_data();  // make sure it exists in the VM also
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
+  bool is_method_handle_invoke();
+  ciInstance* method_handle_type();
 
   // What kind of ciObject is this?
   bool is_method()                               { return true; }
