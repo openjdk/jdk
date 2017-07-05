@@ -76,11 +76,11 @@
 //    [locals and parameters   ]
 //                               <- sender sp
 
-// [1] When the c++ interpreter calls a new method it returns to the frame
+// [1] When the C++ interpreter calls a new method it returns to the frame
 //     manager which allocates a new frame on the stack. In that case there
 //     is no real callee of this newly allocated frame. The frame manager is
-//     aware of the  additional frame(s) and will pop them as nested calls
-//     complete. Howevers tTo make it look good in the debugger the frame
+//     aware of the additional frame(s) and will pop them as nested calls
+//     complete. However, to make it look good in the debugger the frame
 //     manager actually installs a dummy pc pointing to RecursiveInterpreterActivation
 //     with a fake interpreter_state* parameter to make it easy to debug
 //     nested calls.
@@ -88,7 +88,7 @@
 // Note that contrary to the layout for the assembly interpreter the
 // expression stack allocated for the C++ interpreter is full sized.
 // However this is not as bad as it seems as the interpreter frame_manager
-// will truncate the unused space on succesive method calls.
+// will truncate the unused space on successive method calls.
 //
 // ------------------------------ C++ interpreter ----------------------------------------
 
@@ -167,10 +167,7 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(   nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return = false);
-  static void verify_deopt_mh_original_pc(nmethod* nm, intptr_t* unextended_sp) {
-    verify_deopt_original_pc(nm, unextended_sp, true);
-  }
+  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
 #endif
 
  public:

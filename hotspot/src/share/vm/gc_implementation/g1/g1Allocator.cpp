@@ -110,15 +110,15 @@ void G1DefaultAllocator::abandon_gc_alloc_regions() {
   _retained_old_gc_alloc_region = NULL;
 }
 
-G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
-  ParGCAllocBuffer(gclab_word_size), _retired(true) { }
+G1PLAB::G1PLAB(size_t gclab_word_size) :
+  PLAB(gclab_word_size), _retired(true) { }
 
 HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
                                                         size_t word_sz,
                                                         AllocationContext_t context) {
   size_t gclab_word_size = _g1h->desired_plab_sz(dest);
   if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
-    G1ParGCAllocBuffer* alloc_buf = alloc_buffer(dest, context);
+    G1PLAB* alloc_buf = alloc_buffer(dest, context);
     add_to_alloc_buffer_waste(alloc_buf->words_remaining());
     alloc_buf->retire();
 
@@ -151,7 +151,7 @@ G1DefaultParGCAllocator::G1DefaultParGCAllocator(G1CollectedHeap* g1h) :
 
 void G1DefaultParGCAllocator::retire_alloc_buffers() {
   for (uint state = 0; state < InCSetState::Num; state++) {
-    G1ParGCAllocBuffer* const buf = _alloc_buffers[state];
+    G1PLAB* const buf = _alloc_buffers[state];
     if (buf != NULL) {
       add_to_alloc_buffer_waste(buf->words_remaining());
       buf->flush_and_retire_stats(_g1h->alloc_buffer_stats(state));

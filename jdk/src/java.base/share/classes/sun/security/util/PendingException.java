@@ -47,8 +47,6 @@ public class PendingException extends RuntimeException {
      * A detail message is a String that describes this particular
      * exception.
      *
-     * <p>
-     *
      * @param msg the detail message.
      */
     public PendingException(String msg) {

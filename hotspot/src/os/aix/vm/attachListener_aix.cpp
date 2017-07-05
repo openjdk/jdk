@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,10 @@ class ArgumentIterator : public StackObj {
   }
   char* next() {
     if (*_pos == '\0') {
+      if (_pos < _end) {
+        _pos += 1;
+      }
+
       return NULL;
     }
     char* res = _pos;
@@ -214,6 +218,7 @@ int AixAttachListener::init() {
 
   // bind socket
   struct sockaddr_un addr;
+  memset((void *)&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);

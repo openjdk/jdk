@@ -90,6 +90,37 @@ class AddVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------ReductionNode------------------------------------
+// Perform reduction of a vector
+class ReductionNode : public Node {
+ public:
+  ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2) {}
+
+  static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
+  static int  opcode(int opc, BasicType bt);
+  static bool implemented(int opc, uint vlen, BasicType bt);
+};
+
+//------------------------------AddReductionVINode--------------------------------------
+// Vector add int as a reduction
+class AddReductionVINode : public ReductionNode {
+public:
+  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------AddReductionVLNode--------------------------------------
+// Vector add long as a reduction
+class AddReductionVLNode : public ReductionNode {
+public:
+  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------AddVLNode--------------------------------------
 // Vector add long
 class AddVLNode : public VectorNode {
@@ -106,12 +137,32 @@ class AddVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------AddReductionVFNode--------------------------------------
+// Vector add float as a reduction
+class AddReductionVFNode : public ReductionNode {
+public:
+  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
 //------------------------------AddVDNode--------------------------------------
 // Vector add double
 class AddVDNode : public VectorNode {
  public:
   AddVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+};
+
+//------------------------------AddReductionVDNode--------------------------------------
+// Vector add double as a reduction
+class AddReductionVDNode : public ReductionNode {
+public:
+  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------SubVBNode--------------------------------------
@@ -178,6 +229,16 @@ class MulVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MulReductionVINode--------------------------------------
+// Vector multiply int as a reduction
+class MulReductionVINode : public ReductionNode {
+public:
+  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
 //------------------------------MulVFNode--------------------------------------
 // Vector multiply float
 class MulVFNode : public VectorNode {
@@ -186,12 +247,32 @@ class MulVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------MulReductionVFNode--------------------------------------
+// Vector multiply float as a reduction
+class MulReductionVFNode : public ReductionNode {
+public:
+  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
 //------------------------------MulVDNode--------------------------------------
 // Vector multiply double
 class MulVDNode : public VectorNode {
  public:
   MulVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+};
+
+//------------------------------MulReductionVDNode--------------------------------------
+// Vector multiply double as a reduction
+class MulReductionVDNode : public ReductionNode {
+public:
+  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------DivVFNode--------------------------------------

@@ -38,7 +38,17 @@ import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
  * under section 6.5. It needs to be constructed w/ an initialized
  * cipher object, and initial counter block(ICB). Given an input X
  * of arbitrary length, it processes and returns an output which has
- * the same length as X.
+ * the same length as X. The invariants of this class are:
+ *
+ * (1) The length of intialCounterBlk (and also of its clones, e.g.,
+ * fields counter and counterSave) is equal to AES_BLOCK_SIZE.
+ *
+ * (2) After construction, the field counter never becomes null, it
+ * always contains a byte array of length AES_BLOCK_SIZE.
+ *
+ * If any invariant is broken, failures can occur because the
+ * AESCrypt.encryptBlock method can be intrinsified on the HotSpot VM
+ * (see JDK-8067648 for details).
  *
  * <p>This function is used in the implementation of GCM mode.
  *
@@ -59,6 +69,10 @@ final class GCTR {
     // NOTE: cipher should already be initialized
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
         this.aes = cipher;
+        if (initialCounterBlk.length != AES_BLOCK_SIZE) {
+            throw new RuntimeException("length of initial counter block (" + initialCounterBlk.length +
+                                       ") not equal to AES_BLOCK_SIZE (" + AES_BLOCK_SIZE + ")");
+        }
         this.icb = initialCounterBlk;
         this.counter = icb.clone();
     }
@@ -137,6 +151,8 @@ final class GCTR {
      * Restores the content of this object to the previous saved one.
      */
     void restore() {
-        this.counter = this.counterSave;
+        if (this.counterSave != null) {
+            this.counter = this.counterSave;
+        }
     }
 }

@@ -250,9 +250,14 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # The law doesn't give abbreviations.
 #
 # From Paul Eggert (2000-01-08), following a heads-up from Rives McDow:
-# Public law 106-564 (2000-12-23) introduced the abbreviation
-# "Chamorro Standard Time" for time in Guam and the Northern Marianas.
-# See the file "australasia".
+# Public law 106-564 (2000-12-23) introduced ... "Chamorro Standard Time"
+# for time in Guam and the Northern Marianas.  See the file "australasia".
+#
+# From Paul Eggert (2015-04-17):
+# HST and HDT are standardized abbreviations for Hawaii-Aleutian
+# standard and daylight times.  See section 9.47 (p 234) of the
+# U.S. Government Printing Office Style Manual (2008)
+# http://www.gpo.gov/fdsys/pkg/GPO-STYLEMANUAL-2008/pdf/GPO-STYLEMANUAL-2008.pdf
 
 # From Arthur David Olson, 2005-08-09
 # The following was signed into law on 2005-08-08.
@@ -559,7 +564,7 @@ Zone America/Adak	 12:13:21 -	LMT	1867 Oct 18
 			-11:00	-	BST	1969
 			-11:00	US	B%sT	1983 Oct 30  2:00
 			-10:00	US	AH%sT	1983 Nov 30
-			-10:00	US	HA%sT
+			-10:00	US	H%sT
 # The following switches don't quite make our 1970 cutoff.
 #
 # Shanks writes that part of southwest Alaska (e.g. Aniak)
@@ -1354,14 +1359,9 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 
 # Quebec
 
-# From Paul Eggert (2013-08-30):
-# Since 1970 most of Quebec has been like Toronto.
-# However, because earlier versions of the tz database mistakenly relied on data
-# from Shanks & Pottenger saying that Quebec differed from Ontario after 1970,
-# a separate entry was created for most of Quebec.  We're loath to lose
-# its pre-1970 info, even though the tz database is normally limited to
-# zones that differ after 1970, so keep this otherwise out-of-scope entry.
-
+# From Paul Eggert (2015-03-24):
+# See America/Toronto for most of Quebec, including Montreal.
+#
 # Matthews and Vincent (1998) also write that Quebec east of the -63
 # meridian is supposed to observe AST, but residents as far east as
 # Natashquan use EST/EDT, and residents east of Natashquan use AST.
@@ -1375,39 +1375,10 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 # For lack of better info, guess this practice began around 1970, contra to
 # Shanks & Pottenger who have this region observing AST/ADT.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Mont	1917	only	-	Mar	25	2:00	1:00	D
-Rule	Mont	1917	only	-	Apr	24	0:00	0	S
-Rule	Mont	1919	only	-	Mar	31	2:30	1:00	D
-Rule	Mont	1919	only	-	Oct	25	2:30	0	S
-Rule	Mont	1920	only	-	May	 2	2:30	1:00	D
-Rule	Mont	1920	1922	-	Oct	Sun>=1	2:30	0	S
-Rule	Mont	1921	only	-	May	 1	2:00	1:00	D
-Rule	Mont	1922	only	-	Apr	30	2:00	1:00	D
-Rule	Mont	1924	only	-	May	17	2:00	1:00	D
-Rule	Mont	1924	1926	-	Sep	lastSun	2:30	0	S
-Rule	Mont	1925	1926	-	May	Sun>=1	2:00	1:00	D
-Rule	Mont	1927	1937	-	Apr	lastSat	24:00	1:00	D
-Rule	Mont	1927	1937	-	Sep	lastSat	24:00	0	S
-Rule	Mont	1938	1940	-	Apr	lastSun	0:00	1:00	D
-Rule	Mont	1938	1939	-	Sep	lastSun	0:00	0	S
-Rule	Mont	1946	1973	-	Apr	lastSun	2:00	1:00	D
-Rule	Mont	1945	1948	-	Sep	lastSun	2:00	0	S
-Rule	Mont	1949	1950	-	Oct	lastSun	2:00	0	S
-Rule	Mont	1951	1956	-	Sep	lastSun	2:00	0	S
-Rule	Mont	1957	1973	-	Oct	lastSun	2:00	0	S
-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Blanc-Sablon -3:48:28 -	LMT	1884
 			-4:00	Canada	A%sT	1970
 			-4:00	-	AST
-Zone America/Montreal	-4:54:16 -	LMT	1884
-			-5:00	Mont	E%sT	1918
-			-5:00	Canada	E%sT	1919
-			-5:00	Mont	E%sT	1942 Feb  9  2:00s
-			-5:00	Canada	E%sT	1946
-			-5:00	Mont	E%sT	1974
-			-5:00	Canada	E%sT
 
 # Ontario
 
@@ -1898,17 +1869,115 @@ Zone America/Creston	-7:46:04 -	LMT	1884
 # Dawson switched to PST in 1973.  Inuvik switched to MST in 1979.
 # Mathew Englander (1996-10-07) gives the following refs:
 #	* 1967. Paragraph 28(34)(g) of the Interpretation Act, S.C. 1967-68,
-#	c. 7 defines Yukon standard time as UTC-9.  This is still valid;
+#	c. 7 defines Yukon standard time as UTC-9....
 #	see Interpretation Act, R.S.C. 1985, c. I-21, s. 35(1).
+#	[http://canlii.ca/t/7vhg]
 #	* C.O. 1973/214 switched Yukon to PST on 1973-10-28 00:00.
 #	* O.I.C. 1980/02 established DST.
 #	* O.I.C. 1987/056 changed DST to Apr firstSun 2:00 to Oct lastSun 2:00.
-# Shanks & Pottenger say Yukon's 1973-10-28 switch was at 2:00; go
-# with Englander.
-# From Chris Walton (2006-06-26):
-# Here is a link to the old daylight saving portion of the interpretation
-# act which was last updated in 1987:
-# http://www.gov.yk.ca/legislation/regs/oic1987_056.pdf
+
+# From Brian Inglis (2015-04-14):
+#
+# I tried to trace the history of Yukon time and found the following
+# regulations, giving the reference title and URL if found, regulation name,
+# and relevant quote if available.  Each regulation specifically revokes its
+# predecessor.  The final reference is to the current Interpretation Act
+# authorizing and resulting from these regulatory changes.
+#
+# Only recent regulations were retrievable via Yukon government site search or
+# index, and only some via Canadian legal sources.  Other sources used include
+# articles titled "Standard Time and Time Zones in Canada" from JRASC via ADS
+# Abstracts, cited by ADO for 1932 ..., and updated versions from 1958 and
+# 1970 quoted below; each article includes current extracts from provincial
+# and territorial ST and DST regulations at the end, summaries and details of
+# standard times and daylight saving time at many locations across Canada,
+# with time zone maps, tables and calculations for Canadian Sunrise, Sunset,
+# and LMST; they also cover many countries and global locations, with a chart
+# and table showing current Universal Time offsets, and may be useful as
+# another source of information for 1970 and earlier.
+#
+# * Standard Time and Time Zones in Canada; Smith, C.C.; JRASC, Vol. 26,
+#   pp.49-77; February 1932; SAO/NASA Astrophysics Data System (ADS)
+#   http://adsabs.harvard.edu/abs/1932JRASC..26...49S from p.75:
+#   Yukon Interpretation Ordinance
+#   Yukon standard time is the local mean time at the one hundred and
+#   thirty-fifth meridian.
+#
+# * Standard Time and Time Zones in Canada; Smith, C.C.; Thomson, Malcolm M.;
+#   JRASC, Vol. 52, pp.193-223; October 1958; SAO/NASA Astrophysics Data System
+#   (ADS) http://adsabs.harvard.edu/abs/1958JRASC..52..193S from pp.220-1:
+#   Yukon Interpretation Ordinance, 1955, Chap. 16.
+#
+#     (1) Subject to this section, standard time shall be reckoned as nine
+#     hours behind Greenwich Time and called Yukon Standard Time.
+#
+#     (2) Notwithstanding subsection (1), the Commissioner may make regulations
+#     varying the manner of reckoning standard time.
+#
+# * Yukon Territory Commissioner's Order 1966-20 Interpretation Ordinance
+#   http://? - no online source found
+#
+# * Standard Time and Time Zones in Canada; Thomson, Malcolm M.; JRASC,
+#   Vol. 64, pp.129-162; June 1970; SAO/NASA Astrophysics Data System (ADS)
+#   http://adsabs.harvard.edu/abs/1970JRASC..64..129T from p.156: Yukon
+#   Territory Commissioner's Order 1967-59 Interpretation Ordinance ...
+#
+#     1. Commissioner's Order 1966-20 dated at Whitehorse in the Yukon
+#     Territory on 27th January, 1966, is hereby revoked.
+#
+#     2. Yukon (East) Standard Time as defined by section 36 of the
+#     Interpretation Ordinance from and after mid-night on the 28th day of May,
+#     1967 shall be reckoned in the same manner as Pacific Standard Time, that
+#     is to say, eight hours behind Greenwich Time in the area of the Yukon
+#     Territory lying east of the 138th degree longitude west.
+#
+#     3. In the remainder of the Territory, lying west of the 138th degree
+#     longitude west, Yukon (West) Standard Time shall be reckoned as nine
+#     hours behind Greenwich Time.
+#
+# * Yukon Standard Time defined as Pacific Standard Time, YCO 1973/214
+#   http://www.canlii.org/en/yk/laws/regu/yco-1973-214/latest/yco-1973-214.html
+#   C.O. 1973/214 INTERPRETATION ACT ...
+#
+#     1. Effective October 28, 1973 Commissioner's Order 1967/59 is hereby
+#     revoked.
+#
+#     2. Yukon Standard Time as defined by section 36 of the Interpretation
+#     Act from and after midnight on the twenty-eighth day of October, 1973
+#     shall be reckoned in the same manner as Pacific Standard Time, that is
+#     to say eight hours behind Greenwich Time.
+#
+# * O.I.C. 1980/02 INTERPRETATION ACT
+#   http://? - no online source found
+#
+# * Yukon Daylight Saving Time, YOIC 1987/56
+#   http://www.canlii.org/en/yk/laws/regu/yoic-1987-56/latest/yoic-1987-56.html
+#   O.I.C. 1987/056 INTERPRETATION ACT ...
+#
+#   In every year between
+#     (a) two o'clock in the morning in the first Sunday in April, and
+#     (b) two o'clock in the morning in the last Sunday in October,
+#   Standard Time shall be reckoned as seven hours behind Greenwich Time and
+#   called Yukon Daylight Saving Time.
+#   ...
+#   Dated ... 9th day of March, A.D., 1987.
+#
+# * Yukon Daylight Saving Time 2006, YOIC 2006/127
+#   http://www.canlii.org/en/yk/laws/regu/yoic-2006-127/latest/yoic-2006-127.html
+#   O.I.C. 2006/127 INTERPRETATION ACT ...
+#
+#     1. In Yukon each year the time for general purposes shall be 7 hours
+#     behind Greenwich mean time during the period commencing at two o'clock
+#     in the forenoon on the second Sunday of March and ending at two o'clock
+#     in the forenoon on the first Sunday of November and shall be called
+#     Yukon Daylight Saving Time.
+#
+#     2. Order-in-Council 1987/56 is revoked.
+#
+#     3. This order comes into force January 1, 2007.
+#
+# * Interpretation Act, RSY 2002, c 125
+# http://www.canlii.org/en/yk/laws/stat/rsy-2002-c-125/latest/rsy-2002-c-125.html
 
 # From Rives McDow (1999-09-04):
 # Nunavut ... moved ... to incorporate the whole territory into one time zone.
@@ -2134,7 +2203,7 @@ Zone America/Inuvik	0	-	zzz	1953 # Inuvik founded
 			-7:00	NT_YK	M%sT	1980
 			-7:00	Canada	M%sT
 Zone America/Whitehorse	-9:00:12 -	LMT	1900 Aug 20
-			-9:00	NT_YK	Y%sT	1966 Jul  1  2:00
+			-9:00	NT_YK	Y%sT	1967 May 28  0:00
 			-8:00	NT_YK	P%sT	1980
 			-8:00	Canada	P%sT
 Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20

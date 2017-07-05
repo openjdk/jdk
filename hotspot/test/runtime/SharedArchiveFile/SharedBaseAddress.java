@@ -49,11 +49,12 @@ public class SharedBaseAddress {
             return;
 
         for (String testEntry : testTable) {
+            String filename = "SharedBaseAddress" + testEntry + ".jsa";
             System.out.println("sharedBaseAddress = " + testEntry);
 
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                "-XX:+UnlockDiagnosticVMOptions",
-               "-XX:SharedArchiveFile=test.jsa",
+               "-XX:SharedArchiveFile=" + filename,
                "-XX:SharedBaseAddress=" + testEntry,
                "-Xshare:dump");
 
@@ -64,7 +65,7 @@ public class SharedBaseAddress {
             try {
                 pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:SharedArchiveFile=test.jsa",
+                    "-XX:SharedArchiveFile=" + filename,
                     "-Xshare:on",
                     "-version");
                 output = new OutputAnalyzer(pb.start());

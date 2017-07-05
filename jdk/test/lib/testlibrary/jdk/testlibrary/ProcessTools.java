@@ -227,7 +227,8 @@ public final class ProcessTools {
      * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
      * It is possible to wait for the process to get to a warmed-up state
-     * via {@linkplain Predicate} condition on the STDOUT
+     * via {@linkplain Predicate} condition on the STDOUT. The warm-up will
+     * wait indefinitely.
      * </p>
      * @param name The process name
      * @param processBuilder The process builder

@@ -32,7 +32,7 @@ final class NewTreeImpl extends ExpressionTreeImpl implements NewTree {
 
     NewTreeImpl(final UnaryNode node, final ExpressionTree constrExpr) {
         super(node);
-        assert (node.tokenType() == TokenType.NEW) : "new expected";
+        assert (node.isTokenType(TokenType.NEW)) : "new expected";
         this.constrExpr = constrExpr;
     }
 

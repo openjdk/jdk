@@ -36,7 +36,7 @@ package sun.security.action;
  * property named <code>"prop"</code> as a privileged action. Since it does
  * not pass a default value to be used in case the property
  * <code>"prop"</code> is not defined, it has to check the result for
- * <code>null</code>: <p>
+ * <code>null</code>:
  *
  * <pre>
  * Integer tmp = java.security.AccessController.doPrivileged
@@ -50,7 +50,7 @@ package sun.security.action;
  * <p>The following code retrieves the integer value of the system
  * property named <code>"prop"</code> as a privileged action, and also passes
  * a default value to be used in case the property <code>"prop"</code> is not
- * defined: <p>
+ * defined:
  *
  * <pre>
  * int i = ((Integer)java.security.AccessController.doPrivileged(
@@ -84,7 +84,7 @@ public class GetIntegerAction
      * value of that property.
      *
      * @param theProp the name of the system property.
-     * @param defaulVal the default value.
+     * @param defaultVal the default value.
      */
     public GetIntegerAction(String theProp, int defaultVal) {
         this.theProp = theProp;

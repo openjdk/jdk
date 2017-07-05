@@ -58,7 +58,7 @@ import sun.security.util.DerValue;
  *         accessMethod          OBJECT IDENTIFIER,
  *         accessLocation        GeneralName  }
  * </pre>
- * <p>
+ *
  * @see Extension
  * @see CertAttrSet
  */

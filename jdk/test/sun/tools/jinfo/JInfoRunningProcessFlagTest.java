@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
  * questions.
  */
 
-import sun.management.ManagementFactoryHelper;
-
+import java.lang.management.ManagementFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
-
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.Platform.isSolaris;
 import static jdk.testlibrary.Asserts.assertEquals;
@@ -37,6 +35,7 @@ import static jdk.testlibrary.Asserts.assertTrue;
  * @test
  * @summary The test sanity checks 'jinfo -flag' option.
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.* JInfoHelper
  * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError JInfoRunningProcessFlagTest
  */
@@ -114,13 +113,15 @@ public class JInfoRunningProcessFlagTest {
     }
 
     private static void verifyIsEnabled(String flag) {
-        HotSpotDiagnosticMXBean hotspotDiagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+        HotSpotDiagnosticMXBean hotspotDiagnostic =
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         String flagValue = hotspotDiagnostic.getVMOption(flag).getValue();
         assertEquals(flagValue, "true", "Expected '" + flag + "' flag be enabled");
     }
 
     private static void verifyIsDisabled(String flag) {
-        HotSpotDiagnosticMXBean hotspotDiagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+        HotSpotDiagnosticMXBean hotspotDiagnostic =
+                ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         String flagValue = hotspotDiagnostic.getVMOption(flag).getValue();
         assertEquals(flagValue, "false", "Expected '" + flag + "' flag be disabled");
     }

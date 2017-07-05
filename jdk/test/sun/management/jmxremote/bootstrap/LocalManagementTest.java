@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
+ * @modules java.management/sun.management
  * @build jdk.testlibrary.* TestManager TestApplication
  * @run main/othervm/timeout=300 -XX:+UsePerfData LocalManagementTest
  */
@@ -120,9 +121,7 @@ public class LocalManagementTest {
                         return true;
                     }
                     return false;
-                },
-                5,
-                TimeUnit.SECONDS
+                }
             );
 
             System.out.println("Attaching test manager:");
@@ -142,9 +141,7 @@ public class LocalManagementTest {
             clientPrc = ProcessTools.startProcess(
                 "TestManager",
                 client,
-                (String line) -> line.startsWith("Starting TestManager for PID"),
-                10,
-                TimeUnit.SECONDS
+                (String line) -> line.startsWith("Starting TestManager for PID")
             );
 
             int clientExitCode = clientPrc.waitFor();

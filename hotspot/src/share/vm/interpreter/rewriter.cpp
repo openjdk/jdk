@@ -26,6 +26,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -167,12 +168,12 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     if (_pool->tag_at(cp_index).is_interface_method()) {
-    int cache_index = add_invokespecial_cp_cache_entry(cp_index);
-    if (cache_index != (int)(jushort) cache_index) {
-      *invokespecial_error = true;
-    }
-    Bytes::put_native_u2(p, cache_index);
-  } else {
+      int cache_index = add_invokespecial_cp_cache_entry(cp_index);
+      if (cache_index != (int)(jushort) cache_index) {
+        *invokespecial_error = true;
+      }
+      Bytes::put_native_u2(p, cache_index);
+    } else {
       rewrite_member_reference(bcp, offset, reverse);
     }
   } else {
@@ -500,11 +501,13 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 }
 
 void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
+  if (!DumpSharedSpaces) {
+    assert(!MetaspaceShared::is_in_shared_space(klass()), "archive methods must not be rewritten at run time");
+  }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
-
 
 Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),

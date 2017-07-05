@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"
 

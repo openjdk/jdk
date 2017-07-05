@@ -43,7 +43,7 @@ ALL_TOP_SRC_DIRS := \
 
 # Find all modules with java sources by looking in the source dirs
 define FindJavaModules
-  $(filter-out $(JAVA_MODULES_FILTER), $(sort $(notdir \
+  $(filter-out $(MODULES_FILTER), $(sort $(notdir \
       $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir \
       $(wildcard $(patsubst %,%/*/share/classes/*, $(ALL_TOP_SRC_DIRS)) \
           $(patsubst %,%/*/$(OPENJDK_TARGET_OS)/classes/*, $(ALL_TOP_SRC_DIRS)) \
@@ -52,7 +52,8 @@ endef
 
 # Find all modules with source for the target platform.
 define FindAllModules
-  $(sort $(filter-out closed demo sample, $(notdir $(patsubst %/,%, $(dir \
+  $(sort $(filter-out $(MODULES_FILTER) closed demo sample, \
+      $(notdir $(patsubst %/,%, $(dir \
       $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
       $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
       $(patsubst %, %/*/$(OPENJDK_TARGET_OS_TYPE), $(ALL_TOP_SRC_DIRS))))))))

@@ -90,7 +90,7 @@ public class NamingUtils {
 
     /**
      * Create a error print stream to the supplied file.
-     * @param logFile the file to which error messages will go.
+     * @param errFile the file to which error messages will go.
      * @exception IOException thrown if the file cannot be opened for output.
      */
     public static void makeErrStream(File errFile)

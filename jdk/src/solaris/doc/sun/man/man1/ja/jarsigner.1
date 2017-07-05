@@ -2,10 +2,10 @@
 .\" Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jarsigner
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: �������ƥ����ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: セキュリティ・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jarsigner" "1" "2013ǯ11��21��" "JDK 8" "�������ƥ����ġ���"
+.TH "jarsigner" "1" "2013年11月21日" "JDK 8" "セキュリティ・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jarsigner \- Java����������(JAR)�ե�������Ф��ƽ�̾����Ӹ��ڤ�Ԥ��ޤ���
-.SH "����"
+jarsigner \- Javaアーカイブ(JAR)ファイルに対して署名および検証を行います。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -74,30 +74,30 @@ jarsigner \- Java����������(JAR)�ե�������Ф��ƽ�̾����Ӹ��ڤ�Ԥ��ޤ���
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \-verify
 .RS 4
-\fI\-verify\fR���ץ����Ǥϡ�JAR�ե�����̾�θ��0�İʾ�Υ������ȥ���̾�����Ǥ��ޤ���\fI\-verify\fR���ץ���󤬻��ꤵ�줿��硢\fIjarsigner\fR���ޥ�ɤǤϡ�JAR�ե�������γƽ�̾�դ�����ƥ��ƥ��θ��ڤ˻��Ѥ��������񤬡������줫�Υ������ȥ���̾�˰��פ��뤳�Ȥ�����å����ޤ�����̾�ϡ�\fI\-keystore\fR�ǻ��ꤵ�줿�������ȥ���ޤ��ϥǥե���ȤΥ������ȥ�����������ޤ���
+\fI\-verify\fRオプションでは、JARファイル名の後に0個以上のキーストア別名を指定できます。\fI\-verify\fRオプションが指定された場合、\fIjarsigner\fRコマンドでは、JARファイル内の各署名付きエンティティの検証に使用される証明書が、いずれかのキーストア別名に一致することをチェックします。別名は、\fI\-keystore\fRで指定されたキーストア内またはデフォルトのキーストア内に定義されます。
 .sp
-\fI\-strict\fR���ץ�������ꤷ����硢\fIjarsigner\fR���ޥ�ɤˤ�����ʷٹ𤬸��Ф����ȡ���å�������jar�����ڤ���ޤ�������̾�ԥ��顼�פ�ɽ������ޤ���
+\fI\-strict\fRオプションも指定した場合、\fIjarsigner\fRコマンドにより重大な警告が検出されると、メッセージ「jarが検証されました。署名者エラー」が表示されます。
 .RE
 .PP
 \fIjar\-file\fR
 .RS 4
-��̾�����JAR�ե����롣
+署名されるJARファイル。
 .sp
-\fI\-strict\fR���ץ�������ꤷ����硢\fIjarsigner\fR���ޥ�ɤˤ�����ʷٹ𤬸��Ф����ȡ���å�������jar�Ͻ�̾����ޤ��� \- ��̾�ԥ��顼������ޤ����פȤ�����å�������ɽ������ޤ���
+\fI\-strict\fRオプションも指定した場合、\fIjarsigner\fRコマンドにより重大な警告が検出されると、メッセージ「jarは署名されました \- 署名者エラーがあります。」というメッセージが表示されます。
 .RE
 .PP
 \fIalias\fR
 .RS 4
-��̾�ϡ�\fI\-keystore\fR�ǻ��ꤵ�줿�������ȥ���ޤ��ϥǥե���ȤΥ������ȥ�����������ޤ���
+別名は、\fI\-keystore\fRで指定されたキーストア内またはデフォルトのキーストア内に定義されます。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjarsigner\fR�ġ���ˤϡ�����2�Ĥ���Ū������ޤ���
+\fIjarsigner\fRツールには、次の2つの目的があります。
 .sp
 .RS 4
 .ie n \{\
@@ -107,33 +107,7 @@ jarsigner \- Java����������(JAR)�ե�������Ф��ƽ�̾����Ӹ��ڤ�Ԥ��ޤ���
 .sp -1
 .IP \(bu 2.3
 .\}
-Java����������(JAR)�ե�����˽�̾������Ū��
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-��̾�դ�JAR�ե�����ν�̾���������򸡾ڤ�����Ū��
-.RE
-.PP
-JAR��ǽ����Ѥ���ȡ����饹���ե����롢���᡼����������ɤ���Ӥ���¾�Υǥ����롦�ǡ�����ñ��Υե�����˥ѥå��������Ǥ���Τǡ��ե�������®�����ưפ����ۤǤ��ޤ���\fIjar\fR�Ȥ���̾���Υġ������Ѥ��ơ���ȯ�Ԥ�JAR�ե����������Ǥ��ޤ���(����Ū�ʴ�����������С����٤Ƥ�ZIP�ե������JAR�ե�����Ȥߤʤ����Ȥ��Ǥ��ޤ�����������\fIjar\fR���ޥ�ɤˤ�äƺ������줿JAR�ե����롢�ޤ���\fIjarsigner\fR���ޥ�ɤˤ�äƽ������줿JAR�ե�����ˤϡ�\fIMETA\-INF/MANIFEST\&.MF\fR�ե������ޤޤ�Ƥ��ޤ���)
-.PP
-�ǥ������̾�ϡ��ʤ�餫�Υǡ���(��̾���оݤȤʤ�ǡ���)������ӥ���ƥ��ƥ�(�͡���Ҥʤ�)����̩������׻������ӥåȤ�ʸ����Ǥ�����񤭤ν�̾Ʊ�͡��ǥ������̾�ˤ�¿��������������ޤ���
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-��̾�������˻��Ѥ��줿��̩�����б��������������Ѥ���׻��ˤ�äơ����줬��ʪ�Ǥ��뤳�Ȥ򸡾ڤǤ��ޤ���
+Javaアーカイブ(JAR)ファイルに署名する目的。
 .RE
 .sp
 .RS 4
@@ -144,7 +118,22 @@ JAR��ǽ����Ѥ���ȡ����饹���ե����롢���᡼����������ɤ���Ӥ���¾�Υǥ�����
 .sp -1
 .IP \(bu 2.3
 .\}
-��̩����¾�ͤ��Τ��ʤ��¤ꡢ�ǥ������̾�ε�¤���Բ�ǽ�Ǥ���
+署名付きJARファイルの署名と整合性を検証する目的。
+.RE
+.PP
+JAR機能を使用すると、クラス・ファイル、イメージ、サウンドおよびその他のデジタル・データを単一のファイルにパッケージ化できるので、ファイルを迅速かつ容易に配布できます。\fIjar\fRという名前のツールを使用して、開発者はJARファイルを作成できます。(技術的な観点から言えば、すべてのZIPファイルもJARファイルとみなすことができます。ただし、\fIjar\fRコマンドによって作成されたJARファイル、または\fIjarsigner\fRコマンドによって処理されたJARファイルには、\fIMETA\-INF/MANIFEST\&.MF\fRファイルも含まれています。)
+.PP
+デジタル署名は、なんらかのデータ(署名の対象となるデータ)、およびエンティティ(人、会社など)の秘密鍵から計算されるビットの文字列です。手書きの署名同様、デジタル署名には多くの利点があります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+署名の生成に使用された秘密鍵に対応する公開鍵を使用する計算によって、それが本物であることを検証できます。
 .RE
 .sp
 .RS 4
@@ -155,7 +144,7 @@ JAR��ǽ����Ѥ���ȡ����饹���ե����롢���᡼����������ɤ���Ӥ���¾�Υǥ�����
 .sp -1
 .IP \(bu 2.3
 .\}
-����ϡ���̾���դ����ǡ����ε�ǽ�Ǥ��ꡢ¾�Υǡ����ν�̾�Ȥʤ�褦���׵�Ǥ��ޤ���
+秘密鍵が他人に知られない限り、デジタル署名の偽造は不可能です。
 .RE
 .sp
 .RS 4
@@ -166,27 +155,38 @@ JAR��ǽ����Ѥ���ȡ����饹���ե����롢���᡼����������ɤ���Ӥ���¾�Υǥ�����
 .sp -1
 .IP \(bu 2.3
 .\}
-��̾�դ��ǡ������ѹ��Ǥ��ޤ��󡣥ǡ������ѹ����줿��硢��̾�ˤ�ä���ʪ�Ǥ���ȸ��ڤǤ��ޤ���
+これは、署名が付いたデータの機能であり、他のデータの署名となるように要求できません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+署名付きデータは変更できません。データが変更された場合、署名によって本物であると検証できません。
 .RE
 .PP
-�ե�������Ф��ƥ���ƥ��ƥ��ν�̾����������ˤϡ��ޤ�������ƥ��ƥ��ϡ����Υ���ƥ��ƥ��˴�Ϣ���������/��̩���Υڥ��ȡ���������ǧ�ڤ���1�İʾ�ξ���������ɬ�פ�����ޤ���������Ȥϡ����륨��ƥ��ƥ�����Υǥ������̾�դ���ʸ��ǡ��̤Υ���ƥ��ƥ��θ�������������ͤ���Ĥ��Ȥ򼨤��Ƥ��ޤ���
+ファイルに対してエンティティの署名を生成するには、まず、エンティティは、そのエンティティに関連する公開鍵/秘密鍵のペアと、公開鍵を認証する1つ以上の証明書を持つ必要があります。証明書とは、あるエンティティからのデジタル署名付きの文書で、別のエンティティの公開鍵が特定の値を持つことを示しています。
 .PP
-\fIjarsigner\fR���ޥ�ɤϡ��������ȥ�����θ��Ⱦ�����������Ѥ��ơ�JAR�ե�����Υǥ������̾���������ޤ����������ȥ��ϡ���̩����������б������������ǧ�ڤ��롢��̩���˴�Ϣ����X\&.509�������������Υǡ����١����Ǥ���\fIkeytool\fR���ޥ�ɤ���Ѥ��ơ��������ȥ����������Ӵ������ޤ���
+\fIjarsigner\fRコマンドは、キーストアからの鍵と証明書情報を使用して、JARファイルのデジタル署名を生成します。キーストアは、秘密鍵、および対応する公開鍵を認証する、秘密鍵に関連したX\&.509証明書チェーンのデータベースです。\fIkeytool\fRコマンドを使用して、キーストアを作成および管理します。
 .PP
-\fIjarsigner\fR���ޥ�ɤǤϡ�����ƥ��ƥ�����̩������Ѥ��ƽ�̾���������ޤ�����̾�դ�JAR�ե�����ˤϡ��äˡ��ե�����ؤν�̾�˻��Ѥ�����̩�����б�����������Υ������ȥ�����ξ�����Υ��ԡ����ޤޤ�ޤ���\fIjarsigner\fR���ޥ�ɤǤϡ�����(��̾�֥��å����ե�������)�ξ��������Ѥ��ơ���̾�դ�JAR�ե�����Υǥ������̾�򸡾ڤǤ��ޤ���
+\fIjarsigner\fRコマンドでは、エンティティの秘密鍵を使用して署名を生成します。署名付きJARファイルには、特に、ファイルへの署名に使用する秘密鍵に対応する公開鍵のキーストアからの証明書のコピーが含まれます。\fIjarsigner\fRコマンドでは、内部(署名ブロック・ファイル内)の証明書を使用して、署名付きJARファイルのデジタル署名を検証できます。
 .PP
-\fIjarsigner\fR���ޥ�ɤǤϡ���̾�������ͭ���������JAR�ե����뤬��̾���줿���줿���ɤ����򥷥��ƥ��ǥץ�����(Java Plug\-in��ޤ�)�������å��Ǥ��롢�����ॹ����פ�ޤ��̾�������Ǥ��ޤ�������ˡ�API����Ѥ���ȡ����ץꥱ�������ǥ����ॹ����׾��������Ǥ��ޤ���
+\fIjarsigner\fRコマンドでは、署名証明書の有効期間中にJARファイルが署名されたされたかどうかをシステムやデプロイヤ(Java Plug\-inを含む)がチェックできる、タイムスタンプを含む署名を生成できます。さらに、APIを使用すると、アプリケーションでタイムスタンプ情報を取得できます。
 .PP
-�������Ǥϡ�\fIjarsigner\fR���ޥ�ɤǤϡ�\fIjar\fR���ޥ�ɤޤ���ZIP�ե�����ˤ�äƺ������줿JAR�ե�����Τߤ˽�̾�Ǥ��ޤ���JAR�ե������ZIP�ե������Ʊ���Ǥ�����JAR�ե�����ˤ�\fIMETA\-INF/MANIFEST\&.MF\fR�ե������ޤޤ�Ƥ��������ۤʤ�ޤ���\fIMETA\-INF/MANIFEST\&.MF\fR�ե�����ϡ�\fIjarsigner\fR���ޥ�ɤˤ�ä�ZIP�ե�����˽�̾����ݤ˺�������ޤ���
+現時点では、\fIjarsigner\fRコマンドでは、\fIjar\fRコマンドまたはZIPファイルによって作成されたJARファイルのみに署名できます。JARファイルはZIPファイルと同じですが、JARファイルには\fIMETA\-INF/MANIFEST\&.MF\fRファイルも含まれている点が異なります。\fIMETA\-INF/MANIFEST\&.MF\fRファイルは、\fIjarsigner\fRコマンドによってZIPファイルに署名する際に作成されます。
 .PP
-�ǥե���Ȥ�\fIjarsigner\fR���ޥ�ɤ�ư��Ǥϡ�JAR�ޤ���ZIP�ե�����˽�̾���ޤ���\fI\-verify\fR���ץ�������Ѥ��ơ���̾�դ�JAR�ե�����򸡾ڤ��ޤ���
+デフォルトの\fIjarsigner\fRコマンドの動作では、JARまたはZIPファイルに署名します。\fI\-verify\fRオプションを使用して、署名付きJARファイルを検証します。
 .PP
-\fIjarsigner\fR���ޥ�ɤϡ���̾�ޤ��ϸ��ڤθ�˽�̾�Ԥξ�����θ��ڤ��Ԥ��ޤ������ڥ��顼�ޤ��Ϥ���¾�����꤬ȯ������ȡ����ޥ�ɤˤ��ٹ��å���������������ޤ���\fI\-strict\fR���ץ�������ꤷ����硢���ޥ�ɤˤ�����ʷٹ𤬥��顼�Ȥ��ƽ�������ޤ������顼�ȷٹ�򻲾Ȥ��Ƥ���������
-.SS "�������ȥ�����̾"
+\fIjarsigner\fRコマンドは、署名または検証の後に署名者の証明書の検証も試行します。検証エラーまたはその他の問題が発生すると、コマンドにより警告メッセージが生成されます。\fI\-strict\fRオプションを指定した場合、コマンドにより重大な警告がエラーとして処理されます。エラーと警告を参照してください。
+.SS "キーストアの別名"
 .PP
-�������ȥ��Τ��٤ƤΥ���ƥ��ƥ��ϡ���դ���̾����Ѥ��ƥ�����������ޤ���
+キーストアのすべてのエンティティは、一意の別名を使用してアクセスされます。
 .PP
-\fIjarsigner\fR���ޥ�ɤ���Ѥ���JAR�ե�����˽�̾����Ȥ��ϡ���̾��������ɬ�פ���̩����ޤ७�����ȥ�������ȥ����̾����ꤹ��ɬ�פ�����ޤ������Ȥ��С����Υ��ޥ�ɤǤϡ�\fIworking\fR�ǥ��쥯�ȥ��\fImystore\fR�Ȥ���̾���Υ������ȥ��˴ޤޤ����̾\fIduke\fR�˴�Ϣ�դ���줿��̩������Ѥ��ơ�\fIMyJARFile\&.jar\fR�Ȥ���̾����JAR�ե�����˽�̾���ޤ������ϥե�����ϻ��ꤵ��Ƥ��ʤ����ᡢ\fIMyJARFile\&.jar\fR�Ͻ�̾�դ���JAR�ե�����ˤ�äƾ�񤭤���ޤ���
+\fIjarsigner\fRコマンドを使用してJARファイルに署名するときは、署名の生成に必要な秘密鍵を含むキーストア・エントリの別名を指定する必要があります。たとえば、次のコマンドでは、\fIworking\fRディレクトリの\fImystore\fRという名前のキーストアに含まれる別名\fIduke\fRに関連付けられた秘密鍵を使用して、\fIMyJARFile\&.jar\fRという名前のJARファイルに署名します。出力ファイルは指定されていないため、\fIMyJARFile\&.jar\fRは署名付きのJARファイルによって上書きされます。
 .sp
 .if n \{\
 .RS 4
@@ -199,36 +199,36 @@ jarsigner \-keystore /working/mystore \-storepass <keystore password>
 .RE
 .\}
 .PP
-�������ȥ��ϥѥ���ɤ��ݸ��Ƥ���Τǡ����ȥ��Υѥ���ɤ���ꤹ��ɬ�פ�����ޤ������ޥ�ɥ饤��ǻ��ꤷ�ʤ��ȡ����Ϥ�����ޤ���Ʊ�ͤˡ���̩���⥭�����ȥ���ǥѥ���ɤˤ�ä��ݸ��Ƥ��뤿�ᡢ��̩���Υѥ���ɤ���ꤹ��ɬ�פ�����ޤ������ޥ�ɥ饤��ǥѥ���ɤ���ꤷ�Ƥ��ʤ���硢�ޤ��ϻ��ꤷ���ѥ���Ȥ���¸����Ƥ���ѥ���ɤ�Ʊ���ǤϤʤ����ϡ��ѥ���ɤ����Ϥ�����ޤ���
-.SS "�������ȥ��ξ��"
+キーストアはパスワードで保護されているので、ストアのパスワードを指定する必要があります。コマンドラインで指定しないと、入力を求められます。同様に、秘密鍵もキーストア内でパスワードによって保護されているため、秘密鍵のパスワードを指定する必要があります。コマンドラインでパスワードを指定していない場合、または指定したパスワートが保存されているパスワードと同じではない場合は、パスワードの入力を求められます。
+.SS "キーストアの場所"
 .PP
-\fIjarsigner\fR���ޥ�ɤˤϡ����Ѥ��륭�����ȥ���URL����ꤹ��\fI\-keystore\fR���ץ���󤬤���ޤ����������ȥ��ϥǥե���Ȥǡ�\fIuser\&.home\fR�����ƥࡦ�ץ��ѥƥ��Ƿ�ޤ�桼�����Υۡ��ࡦ�ǥ��쥯�ȥ��\fI\&.keystore\fR�Ȥ���̾���Υե�������˳�Ǽ����ޤ���
+\fIjarsigner\fRコマンドには、使用するキーストアのURLを指定する\fI\-keystore\fRオプションがあります。キーストアはデフォルトで、\fIuser\&.home\fRシステム・プロパティで決まるユーザーのホーム・ディレクトリの\fI\&.keystore\fRという名前のファイル内に格納されます。
 .PP
-Oracle Solaris�����ƥ�ξ�硢\fIuser\&.home\fR�ϡ��桼�����Υۡ��ࡦ�ǥ��쥯�ȥ�˥ǥե�������ꤵ��ޤ���
+Oracle Solarisシステムの場合、\fIuser\&.home\fRは、ユーザーのホーム・ディレクトリにデフォルト設定されます。
 .PP
-\fI\-keystore\fR���ץ���󤫤�����ϥ��ȥ꡼��ϡ�\fIKeyStore\&.load\fR�᥽�åɤ��Ϥ���ޤ���URL�Ȥ���\fINONE\fR�����ꤵ��Ƥ�����ϡ�null�Υ��ȥ꡼�ब\fIKeyStore\&.load\fR�᥽�åɤ��Ϥ���ޤ���\fINONE\fR�ϡ�\fIKeyStore\fR���饹���ե�����١����ǤϤʤ���硢���Ȥ��С��ϡ��ɥ��������ȡ����󡦥ǥХ������֤���Ƥ�����˻��ꤷ�ޤ���
-.SS "�������ȥ��μ���"
+\fI\-keystore\fRオプションからの入力ストリームは、\fIKeyStore\&.load\fRメソッドに渡されます。URLとして\fINONE\fRが指定されている場合は、nullのストリームが\fIKeyStore\&.load\fRメソッドに渡されます。\fINONE\fRは、\fIKeyStore\fRクラスがファイルベースではない場合、たとえば、ハードウェア・トークン・デバイスに置かれている場合に指定します。
+.SS "キーストアの実装"
 .PP
-\fIjava\&.security package\fR���󶡤���Ƥ���\fIKeyStore\fR���饹�ϡ��������ȥ���ξ���ؤΥ�����������Ӿ�����ѹ���Ԥ�����Ρ����Τ�������줿¿���Υ��󥿥ե��������󶡤��ޤ���ʣ���ΰۤʤ�����������ꤹ�뤳�Ȥ��Ǥ����Ƽ���������Υ����פΥ������ȥ����оݤȤ��ޤ���
+\fIjava\&.security package\fRで提供されている\fIKeyStore\fRクラスは、キーストア内の情報へのアクセスおよび情報の変更を行うための、明確に定義された多くのインタフェースを提供します。複数の異なる固定実装を指定することができ、各実装は特定のタイプのキーストアを対象とします。
 .PP
-���ߡ��������ȥ��μ�������Ѥ���2�ĤΥ��ޥ�ɥ饤�󡦥ġ���(\fIkeytool\fR��\fIjarsigner\fR)������ӥݥꥷ�����ġ���Ȥ���̾����1�Ĥ�GUI�١����Υġ��뤬����ޤ���\fIKeyStore\fR���饹�ϸ�������Ƥ��뤿�ᡢJDK�桼�����ϡ��������Ѥ���¾�Υ������ƥ������ץꥱ��������񤭹��ळ�Ȥ��Ǥ��ޤ���
+現在、キーストアの実装を使用する2つのコマンドライン・ツール(\fIkeytool\fRと\fIjarsigner\fR)、およびポリシー・ツールという名前の1つのGUIベースのツールがあります。\fIKeyStore\fRクラスは公開されているため、JDKユーザーは、それを使用する他のセキュリティ・アプリケーションを書き込むことができます。
 .PP
-Oracle���󶡤����ȹ��ߤΥǥե���Ȥμ���������ޤ�������ϡ�JKS�Ȥ���̾�����ȼ��Υ������ȥ���������(����)����Ѥ����Τǡ��������ȥ���ե�����Ȥ��Ƽ������Ƥ��ޤ����ȹ��ߤμ����Ǥϡ�����̩���ϸ��̤Υѥ���ɤˤ�ä��ݸ�졢�������ȥ����Τ���������(��̩���Ȥ��̤�)�ѥ���ɤˤ�ä��ݸ��ޤ���
+Oracleが提供する組込みのデフォルトの実装があります。これは、JKSという名前の独自のキーストア・タイプ(形式)を使用するもので、キーストアをファイルとして実装しています。組込みの実装では、各秘密鍵は個別のパスワードによって保護され、キーストア全体の整合性は(秘密鍵とは別の)パスワードによって保護されます。
 .PP
-�������ȥ��μ����ϥץ��Х����١����ǡ��Ĥޤꡢ\fIKeyStore\fR���饹�ˤ���󶡤���륢�ץꥱ������󡦥��󥿥ե������ϡ������ӥ����ץ��Х��������󥿥ե�����(SPI)�˴ؤ��Ƽ�������ޤ����б�����\fIKeystoreSpi\fR��ݥ��饹�����ꡢ�����\fIjava\&.security package\fR�˴ޤޤ�Ƥ��ޤ������Υ��饹�����ץ��Х�������������ɬ�פΤ��륵���ӥ����ץ��Х��������󥿥ե������Υ᥽�åɤ�������Ƥ��ޤ��������ǡ��ץ��Х����Ȥϡ�Java Security API�ˤ�äƥ���������ǽ�ʥ����ӥ��Υ��֥��åȤ��Ф������θ���������󶡤���ѥå������ޤ��ϥѥå������ν���Τ��ȤǤ����������ȥ��μ������󶡤���ˤϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider\&.html�ˤ���
-Java�Ź沽�������ƥ�����Υץ��Х����μ�����ˡ���������Ƥ���褦�ˡ����饤����Ȥϥץ��Х������������\fIKeystoreSpi\fR���֥��饹�μ������󶡤���ɬ�פ�����ޤ���
+キーストアの実装はプロバイダベースで、つまり、\fIKeyStore\fRクラスにより提供されるアプリケーション・インタフェースは、サービス・プロバイダ・インタフェース(SPI)に関して実装されます。対応する\fIKeystoreSpi\fR抽象クラスがあり、これも\fIjava\&.security package\fRに含まれています。このクラスが、プロバイダが実装する必要のあるサービス・プロバイダ・インタフェースのメソッドを定義しています。ここで、プロバイダとは、Java Security APIによってアクセス可能なサービスのサブセットに対し、その固定実装を提供するパッケージまたはパッケージの集合のことです。キーストアの実装を提供するには、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/HowToImplAProvider\&.htmlにある
+Java暗号化アーキテクチャのプロバイダの実装方法で説明しているように、クライアントはプロバイダを実装し、\fIKeystoreSpi\fRサブクラスの実装を提供する必要があります。
 .PP
-���ץꥱ�������Ǥϡ�\fIKeyStore\fR���饹��\fIgetInstance\fR�ե����ȥꡦ�᥽�åɤ���Ѥ��ơ��͡��ʥץ��Х�������ۤʤ륿���פΥ������ȥ��μ���������Ǥ��ޤ����������ȥ��Υ����פϡ��������ȥ�����γ�Ǽ�����ȥǡ����������������ȤȤ�ˡ��������ȥ������̩���ȥ������ȥ����Τ����������ݸ�뤿��˻��Ѥ���륢�르�ꥺ���������ޤ����ۤʤ륿���פΥ������ȥ��μ����ˤϡ��ߴ����Ϥ���ޤ���
+アプリケーションでは、\fIKeyStore\fRクラスの\fIgetInstance\fRファクトリ・メソッドを使用して、様々なプロバイダから異なるタイプのキーストアの実装を選択できます。キーストアのタイプは、キーストア情報の格納形式とデータ形式を定義するとともに、キーストア内の秘密鍵とキーストア自体の整合性を保護するために使用されるアルゴリズムを定義します。異なるタイプのキーストアの実装には、互換性はありません。
 .PP
-\fIjarsigner\fR�����\fIpolicytool\fR���ޥ�ɤϡ�URL����Ѥ��ƻ���Ǥ���Ǥ�դξ�꤫��ե�����١����Υ������ȥ����ɤ߼�뤳�Ȥ��Ǥ��ޤ����ޤ��������Υ��ޥ�ɤϡ�Windows���MSCAPI����Ӥ��٤ƤΥץ�åȥե�������PKCS11���󶡤����褦����ե�����١����Υ������ȥ����ɤ߼�뤳�Ȥ��Ǥ��ޤ���
+\fIjarsigner\fRおよび\fIpolicytool\fRコマンドは、URLを使用して指定できる任意の場所からファイルベースのキーストアを読み取ることができます。また、これらのコマンドは、Windows上のMSCAPIおよびすべてのプラットフォーム上のPKCS11で提供されるような非ファイルベースのキーストアを読み取ることができます。
 .PP
-\fIjarsigner\fR���ޥ�ɤ����\fIkeytool\fR���ޥ�ɤξ�硢\fI\-storetype\fR���ץ�������Ѥ��ơ����ޥ�ɥ饤��ǥ������ȥ��Υ����פ����Ǥ��ޤ����ݥꥷ�����ġ���ξ�硢\fB�֥������ȥ���\fR��˥塼��\fB���Խ���\fR���ޥ�ɤ���Ѥ��ơ��������ȥ��Υ����פ����Ǥ��ޤ���
+\fIjarsigner\fRコマンドおよび\fIkeytool\fRコマンドの場合、\fI\-storetype\fRオプションを使用して、コマンドラインでキーストアのタイプを指定できます。ポリシー・ツールの場合、\fB「キーストア」\fRメニューの\fB「編集」\fRコマンドを使用して、キーストアのタイプを指定できます。
 .PP
-�桼�������������ȥ��Υ����פ�����Ū�˻��ꤷ�ʤ��ä���硢�������ƥ����ץ��ѥƥ����ե�����ǻ��ꤵ�줿\fIkeystore\&.type\fR�ץ��ѥƥ����ͤ˴�Ť��ơ��ġ���ˤ�äƥ������ȥ��μ��������򤵤�ޤ������Υ������ƥ����ץ��ѥƥ����ե������\fIjava\&.security\fR�ȸƤФ졢JDK�������ƥ����ץ��ѥƥ����ǥ��쥯�ȥ�\fIjava\&.home/lib/security\fR���¸�ߤ��Ƥ��ޤ��������ǡ�\fIjava\&.home\fR�ϼ¹Ի��Ķ��Υǥ��쥯�ȥ�Ǥ���\fIjre\fR�ǥ��쥯�ȥ�ϡ�JDK�ޤ���Java Runtime Environment (JRE)�κǾ�̤Υǥ��쥯�ȥ�ˤ���ޤ���
+ユーザーがキーストアのタイプを明示的に指定しなかった場合、セキュリティ・プロパティ・ファイルで指定された\fIkeystore\&.type\fRプロパティの値に基づいて、ツールによってキーストアの実装が選択されます。このセキュリティ・プロパティ・ファイルは\fIjava\&.security\fRと呼ばれ、JDKセキュリティ・プロパティ・ディレクトリ\fIjava\&.home/lib/security\fR内に存在しています。ここで、\fIjava\&.home\fRは実行時環境のディレクトリです。\fIjre\fRディレクトリは、JDKまたはJava Runtime Environment (JRE)の最上位のディレクトリにあります。
 .PP
-�ƥġ���ϡ�\fIkeystore\&.type\fR���ͤ�����������Υ����פΥ������ȥ���������Ƥ���ץ��Х��������Ĥ���ޤǡ����󥹥ȡ��뤵��Ƥ��뤹�٤ƤΥץ��Х�����Ĵ�٤ޤ�����Ū�Υץ��Х��������Ĥ���ȡ����Υץ��Х�������Υ������ȥ��μ�������Ѥ��ޤ���
+各ツールは、\fIkeystore\&.type\fRの値を取得し、そのタイプのキーストアを実装しているプロバイダが見つかるまで、インストールされているすべてのプロバイダを調べます。目的のプロバイダが見つかると、そのプロバイダからのキーストアの実装を使用します。
 .PP
-\fIKeyStore\fR���饹���������Ƥ���static�᥽�å�\fIgetDefaultType\fR����Ѥ���ȡ����ץꥱ�������䥢�ץ�åȤ���\fIkeystore\&.type\fR�ץ��ѥƥ����ͤ�����Ǥ��ޤ������Υ����ɤιԤǤϡ�\fIkeystore\&.type property\fR�ǻ��ꤵ�줿���ǥե���ȤΥ������ȥ��������פΥ��󥹥��󥹤�������ޤ���
+\fIKeyStore\fRクラスに定義されているstaticメソッド\fIgetDefaultType\fRを使用すると、アプリケーションやアプレットから\fIkeystore\&.type\fRプロパティの値を取得できます。次のコードの行では、\fIkeystore\&.type property\fRで指定された、デフォルトのキーストア・タイプのインスタンスを作成します。
 .sp
 .if n \{\
 .RS 4
@@ -240,8 +240,8 @@ KeyStore keyStore = KeyStore\&.getInstance(KeyStore\&.getDefaultType());
 .RE
 .\}
 .PP
-�ǥե���ȤΥ������ȥ��������פϡ�\fIjks\fR
-(Oracle���󶡤����ȼ��Υ����פΥ������ȥ��μ���)�Ǥ�������ϡ��������ƥ����ץ��ѥƥ����ե�������μ��ιԤˤ�äƻ��ꤵ��Ƥ��ޤ���
+デフォルトのキーストア・タイプは、\fIjks\fR
+(Oracleが提供する独自のタイプのキーストアの実装)です。これは、セキュリティ・プロパティ・ファイル内の次の行によって指定されています。
 .sp
 .if n \{\
 .RS 4
@@ -253,9 +253,9 @@ keystore\&.type=jks
 .RE
 .\}
 .PP
-�������ȥ��Υ����פλ���Ǥϡ���ʸ���Ⱦ�ʸ���϶��̤���ޤ��󡣤��Ȥ��С�\fIJKS\fR��\fIjks\fR��Ʊ���ˤʤ�ޤ���
+キーストアのタイプの指定では、大文字と小文字は区別されません。たとえば、\fIJKS\fRは\fIjks\fRと同じになります。
 .PP
-�ġ���ǥǥե���Ȱʳ��Υ������ȥ��μ�������Ѥ���ˤϡ����ιԤ��ѹ������̤Υ������ȥ��Υ����פ���ꤷ�ޤ������Ȥ��С�\fIpkcs12\fR�ȸƤФ�륭�����ȥ��Υ����פΥ������ȥ��μ������󶡤���ץ��Х������ѥå������������硢�Ԥ򼡤Τ褦���ѹ����ޤ���
+ツールでデフォルト以外のキーストアの実装を使用するには、その行を変更して別のキーストアのタイプを指定します。たとえば、\fIpkcs12\fRと呼ばれるキーストアのタイプのキーストアの実装を提供するプロバイダ・パッケージがある場合、行を次のように変更します。
 .sp
 .if n \{\
 .RS 4
@@ -267,12 +267,12 @@ keystore\&.type=pkcs12
 .RE
 .\}
 .PP
-\fB����:\fR
-PKCS 11�ץ��Х������ѥå���������Ѥ����硢http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/p11guide\&.html�ˤ���
-Java PKCS #11��ե���󥹡������ɤΡ�KeyTool�פ���ӡ�JarSigner�פ򻲾Ȥ��Ƥ���������
-.SS "���ݡ��Ȥ���륢�르�ꥺ��"
+\fB注意:\fR
+PKCS 11プロバイダ・パッケージを使用する場合、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/p11guide\&.htmlにある
+Java PKCS #11リファレンス・ガイドの「KeyTool」および「JarSigner」を参照してください。
+.SS "サポートされるアルゴリズム"
 .PP
-�ǥե���Ȥǡ�\fIjarsigner\fR���ޥ�ɤǤϼ��Τ����줫�Υ��르�ꥺ�����Ѥ���JAR�ե�����˽�̾���ޤ���
+デフォルトで、\fIjarsigner\fRコマンドでは次のいずれかのアルゴリズムを使用してJARファイルに署名します。
 .sp
 .RS 4
 .ie n \{\
@@ -282,7 +282,7 @@ Java PKCS #11��ե���󥹡������ɤΡ�KeyTool�פ���ӡ�JarSigner�פ򻲾Ȥ��Ƥ����
 .sp -1
 .IP \(bu 2.3
 .\}
-SHA1�����������ȡ����르�ꥺ�����Ѥ����ǥ������̾���르�ꥺ��(DSA)
+SHA1ダイジェスト・アルゴリズムを使用したデジタル署名アルゴリズム(DSA)
 .RE
 .sp
 .RS 4
@@ -293,7 +293,7 @@ SHA1�����������ȡ����르�ꥺ�����Ѥ����ǥ������̾���르�ꥺ��(DSA)
 .sp -1
 .IP \(bu 2.3
 .\}
-SHA256�����������ȡ����르�ꥺ�����Ѥ���RSA���르�ꥺ�ࡣ
+SHA256ダイジェスト・アルゴリズムを使用したRSAアルゴリズム。
 .RE
 .sp
 .RS 4
@@ -304,15 +304,15 @@ SHA256�����������ȡ����르�ꥺ�����Ѥ���RSA���르�ꥺ�ࡣ
 .sp -1
 .IP \(bu 2.3
 .\}
-SHA256���ʱ߶����ǥ������̾���르�ꥺ��(ECDSA)����Ѥ����ʱ߶���(EC)�Ź��������르�ꥺ��
+SHA256と楕円曲線デジタル署名アルゴリズム(ECDSA)を使用した楕円曲線(EC)暗号方式アルゴリズム
 .RE
 .PP
-��̾�Ԥθ���������̩����DSA���Ǥ����硢\fIjarsigner\fR��\fISHA1withDSA\fR���르�ꥺ�����Ѥ���JAR�ե�����˽�̾���ޤ�����̾�Ԥθ���RSA���Ǥ����硢\fIjarsigner\fR��\fISHA256withRSA\fR���르�ꥺ�����Ѥ���JAR�ե�����˽�̾���褦�Ȥ��ޤ�����̾�Ԥθ���EC���Ǥ����硢\fIjarsigner\fR��\fISHA256withECDSA\fR���르�ꥺ�����Ѥ���JAR�ե�����˽�̾���ޤ���
+署名者の公開鍵と秘密鍵がDSA鍵である場合、\fIjarsigner\fRは\fISHA1withDSA\fRアルゴリズムを使用してJARファイルに署名します。署名者の鍵がRSA鍵である場合、\fIjarsigner\fRは\fISHA256withRSA\fRアルゴリズムを使用してJARファイルに署名しようとします。署名者の鍵がEC鍵である場合、\fIjarsigner\fRは\fISHA256withECDSA\fRアルゴリズムを使用してJARファイルに署名します。
 .PP
-�����Υǥե���Ȥν�̾���르�ꥺ��ϡ�\fI\-sigalg\fR���ץ�������Ѥ��ƥ����С��饤�ɤǤ��ޤ���
-.SS "��̾�դ�JAR�ե�����"
+これらのデフォルトの署名アルゴリズムは、\fI\-sigalg\fRオプションを使用してオーバーライドできます。
+.SS "署名付きJARファイル"
 .PP
-\fIjarsigner\fR���ޥ�ɤ���Ѥ���JAR�ե�����˽�̾�����硢���Ϥ�����̾�դ�JAR�ե����������JAR�ե������Ʊ���Ǥ���������2�Ĥ��ɲåե����뤬META\-INF�ǥ��쥯�ȥ���֤���������ۤʤ�ޤ���
+\fIjarsigner\fRコマンドを使用してJARファイルに署名する場合、出力される署名付きJARファイルは入力JARファイルと同じですが、次の2つの追加ファイルがMETA\-INFディレクトリに置かれる点が異なります。
 .sp
 .RS 4
 .ie n \{\
@@ -322,35 +322,7 @@ SHA256���ʱ߶����ǥ������̾���르�ꥺ��(ECDSA)����Ѥ����ʱ߶���(EC)�Ź��������
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\&.SF\fR��ĥ�Ҥ��դ�����̾�ե�����
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fI\&.DSA\fR��\fI\&.RSA\fR�ޤ���\fI\&.EC\fR��ĥ�Ҥ��դ�����̾�֥��å����ե�����
-.RE
-.PP
-�����2�ĤΥե�����Υ١������ե�����̾�ϡ�\fI\-sigFile\fR���ץ������ͤ����������ޤ������Ȥ��С����ץ����\fI\-sigFile MKSIGN\fR�ξ�硢�ե������\fIMKSIGN\&.SF\fR�����\fIMKSIGN\&.DSA\fR�Ȥ���̾���ˤʤ�ޤ���
-.PP
-���ޥ�ɥ饤���\fI\-sigfile\fR���ץ�������ꤷ�ʤ��ä���硢\fI\&.SF\fR�ե������\fI\&.DSA\fR�ե�����Υ١������ե�����̾�ϡ����ޥ�ɥ饤��ǻ��ꤵ�줿��̾����Ƭ��8ʸ���򤹤٤���ʸ�����Ѵ�������Τˤʤ�ޤ�����̾��8ʸ��̤���ξ��ϡ���̾�����Τޤ޻��Ѥ���ޤ�����̾�ˡ���̾�ե�����̾�ǻ��ѤǤ��ʤ�ʸ�����ޤޤ�Ƥ����硢�ե�����̾�κ������ˡ���������ʸ��������(_)ʸ�����Ѵ�����ޤ���ͭ����ʸ���ϡ�����ե��٥åȡ���������������ӥϥ��ե�Ǥ���
-��̾�ե�����.PP
-��̾�ե�����(\fI\&.SF\fR�ե�����)�ϡ�\fIjarsigner\fR���ޥ�ɤ���Ѥ��ƥե�����˽�̾����ݤ�JAR�ե�����˾�˴ޤޤ��ޥ˥ե����ȡ��ե�����Ȼ��Ƥ��ޤ���JAR�ե�����˴ޤޤ�Ƥ��륽�������ե����뤴�Ȥˡ�\fI\&.SF\fR�ե�����ˤϡ��ޥ˥ե����ȡ��ե�����ˤ���褦�ʡ����˼���3�ĤιԤ�����ޤ���
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-�ե�����̾
+\fI\&.SF\fR拡張子の付いた署名ファイル
 .RE
 .sp
 .RS 4
@@ -361,7 +333,24 @@ SHA256���ʱ߶����ǥ������̾���르�ꥺ��(ECDSA)����Ѥ����ʱ߶���(EC)�Ź��������
 .sp -1
 .IP \(bu 2.3
 .\}
-�����������ȡ����르�ꥺ��(SHA)��̾��
+\fI\&.DSA\fR、\fI\&.RSA\fRまたは\fI\&.EC\fR拡張子の付いた署名ブロック・ファイル
+.RE
+.PP
+これら2つのファイルのベース・ファイル名は、\fI\-sigFile\fRオプションの値から作成されます。たとえば、オプションが\fI\-sigFile MKSIGN\fRの場合、ファイルは\fIMKSIGN\&.SF\fRおよび\fIMKSIGN\&.DSA\fRという名前になります。
+.PP
+コマンドラインで\fI\-sigfile\fRオプションを指定しなかった場合、\fI\&.SF\fRファイルと\fI\&.DSA\fRファイルのベース・ファイル名は、コマンドラインで指定された別名の先頭の8文字をすべて大文字に変換したものになります。別名が8文字未満の場合は、別名がそのまま使用されます。別名に、署名ファイル名で使用できない文字が含まれている場合、ファイル名の作成時に、該当する文字が下線(_)文字に変換されます。有効な文字は、アルファベット、数字、下線およびハイフンです。
+署名ファイル.PP
+署名ファイル(\fI\&.SF\fRファイル)は、\fIjarsigner\fRコマンドを使用してファイルに署名する際にJARファイルに常に含まれるマニフェスト・ファイルと似ています。JARファイルに含まれているソース・ファイルごとに、\fI\&.SF\fRファイルには、マニフェスト・ファイルにあるような、次に示す3つの行があります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ファイル名
 .RE
 .sp
 .RS 4
@@ -372,17 +361,28 @@ SHA256���ʱ߶����ǥ������̾���르�ꥺ��(ECDSA)����Ѥ����ʱ߶���(EC)�Ź��������
 .sp -1
 .IP \(bu 2.3
 .\}
-SHA�����������Ȥ���
+ダイジェスト・アルゴリズム(SHA)の名前
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SHAダイジェストの値
 .RE
 .PP
-�ޥ˥ե����ȡ��ե�����Ǥϡ��ƥ��������ե������SHA�����������Ȥ��ͤϡ����������ե�����ΥХ��ʥꡦ�ǡ����Υ�����������(�ϥå���)�ˤʤ�ޤ���\fI\&.SF\fR�ե�����Ǥϡ����ꤵ�줿���������ե�����Υ����������Ȥ��ͤϡ����������ե�����Υޥ˥ե����ȡ��ե�������Τ���3�ԤΥϥå���ˤʤ�ޤ���
+マニフェスト・ファイルでは、各ソース・ファイルのSHAダイジェストの値は、ソース・ファイルのバイナリ・データのダイジェスト(ハッシュ)になります。\fI\&.SF\fRファイルでは、指定されたソース・ファイルのダイジェストの値は、ソース・ファイルのマニフェスト・ファイル内のその3行のハッシュになります。
 .PP
-��̾�ե�����ˤϡ��ǥե���Ȥǡ��ޥ˥ե����ȡ��ե��������ΤΥϥå��夬��Ǽ���줿�إå������ޤޤ�Ƥ��ޤ����إå����ˤϥޥ˥ե����ȡ��إå����Υϥå����ޤޤ�Ƥ��ޤ����إå�����¸�ߤ���ȡ����ڤκ�Ŭ����ͭ���ˤʤ�ޤ���JAR�ե�����θ��ڤ򻲾Ȥ��Ƥ���������
-��̾�֥��å����ե�����.PP
-\fI\&.SF\fR�ե�����ˤϽ�̾���դ���졢��̾�Ͻ�̾�֥��å����ե�������֤���ޤ������Υե�����ˤϡ���̾�˻��Ѥ��줿��̩�����б������������ǧ�ڤ��륭�����ȥ�����ξ�����ޤ��Ͼ������������⡢�����ǥ��󥳡��ɤ���ƴޤޤ�Ƥ��ޤ����ե�����γ�ĥ�Ҥϡ����Ѥ��������������ȡ����르�ꥺ��˱����ơ�\fI\&.DSA\fR��\fI\&.RSA\fR�ޤ���\fI\&.EC\fR�ˤʤ�ޤ���
-.SS "��̾�����ॹ�����"
+署名ファイルには、デフォルトで、マニフェスト・ファイル全体のハッシュが格納されたヘッダーが含まれています。ヘッダーにはマニフェスト・ヘッダーのハッシュも含まれています。ヘッダーが存在すると、検証の最適化が有効になります。JARファイルの検証を参照してください。
+署名ブロック・ファイル.PP
+\fI\&.SF\fRファイルには署名が付けられ、署名は署名ブロック・ファイルに置かれます。このファイルには、署名に使用された秘密鍵に対応する公開鍵を認証するキーストアからの証明書または証明書チェーンも、内部でエンコードされて含まれています。ファイルの拡張子は、使用されるダイジェスト・アルゴリズムに応じて、\fI\&.DSA\fR、\fI\&.RSA\fRまたは\fI\&.EC\fRになります。
+.SS "署名タイムスタンプ"
 .PP
-\fIjarsigner\fR���ޥ�ɤǤϡ�JAR�ե�����ν�̾���˽�̾�����ॹ����פ������������¸�Ǥ��ޤ�������ˡ�\fIjarsigner\fR�����ؽ�̾�����򥵥ݡ��Ȥ��ޤ�������ư��Ͼ�ά��ǽ�ǡ���̾���˼��γƥ��ץ����ˤ�ä����椵��ޤ������ץ����򻲾Ȥ��Ƥ���������
+\fIjarsigner\fRコマンドでは、JARファイルの署名時に署名タイムスタンプを生成および保存できます。さらに、\fIjarsigner\fRは代替署名機構をサポートします。この動作は省略可能で、署名時に次の各オプションによって制御されます。オプションを参照してください。
 .sp
 .if n \{\
 .RS 4
@@ -397,9 +397,9 @@ SHA�����������Ȥ���
 .if n \{\
 .RE
 .\}
-.SS "JAR�ե�����θ���"
+.SS "JARファイルの検証"
 .PP
-JAR�ե�����θ��ڤ���������Τϡ���̾��ͭ���Ǥ��ꡢ���Ľ�̾�������ʹߤ�JAR�ե�������ΤɤΥե�������ѹ�����Ƥ��ʤ����Ǥ���JAR�ե�����θ��ڤϡ����μ��ǹԤ��ޤ���
+JARファイルの検証が成功するのは、署名が有効であり、かつ署名の生成以降にJARファイル内のどのファイルも変更されていない場合です。JARファイルの検証は、次の手順で行われます。
 .sp
 .RS 4
 .ie n \{\
@@ -409,9 +409,9 @@ JAR�ե�����θ��ڤ���������Τϡ���̾��ͭ���Ǥ��ꡢ���Ľ�̾�������ʹߤ�JAR�ե���
 .sp -1
 .IP "  1." 4.2
 .\}
-\fI\&.SF\fR�ե�����ν�̾�򸡾ڤ��ޤ���
+\fI\&.SF\fRファイルの署名を検証します。
 .sp
-���ڤǤϡ��ƽ�̾�֥��å�(\fI\&.DSA\fR)�ե�����˳�Ǽ���줿��̾����������(�ޤ��Ͼ������������)��\fI\&.DSA\fR�ե�����˼��������������б�������̩������Ѥ����������줿���Ȥ��ǧ���ޤ����ޤ�����̾���б������̾(\fI\&.SF\fR)�ե������ͭ���ʽ�̾�Ǥ��뤳�Ȥ���ǧ���졢����ˤ�ꡢ\fI\&.SF\fR�ե����뤬�����󤵤�Ƥ��ʤ����Ȥ��ǧ����ޤ���
+検証では、各署名ブロック(\fI\&.DSA\fR)ファイルに格納された署名が、証明書(または証明書チェーン)も\fI\&.DSA\fRファイルに示される公開鍵に対応する秘密鍵を使用して生成されたことを確認します。また、署名が対応する署名(\fI\&.SF\fR)ファイルの有効な署名であることが確認され、それにより、\fI\&.SF\fRファイルが改ざんされていないことも確認されます。
 .RE
 .sp
 .RS 4
@@ -422,13 +422,13 @@ JAR�ե�����θ��ڤ���������Τϡ���̾��ͭ���Ǥ��ꡢ���Ľ�̾�������ʹߤ�JAR�ե���
 .sp -1
 .IP "  2." 4.2
 .\}
-\fI\&.SF\fR�ե�������γƥ���ȥ�˼����������������Ȥ򡢥ޥ˥ե���������б�����ƥ����������ͤ����碌�Ƹ��ڤ��ޤ���
+\fI\&.SF\fRファイル内の各エントリに示されるダイジェストを、マニフェスト内の対応する各セクションと突きあわせて検証します。
 .sp
-\fI\&.SF\fR�ե�����ˤϡ��ޥ˥ե����ȡ��ե��������ΤΥϥå��夬��Ǽ���줿�إå������ǥե���ȤǴޤޤ�Ƥ��ޤ����إå�����¸�ߤ����硢���ڤǤϡ��إå�����Υϥå��夬�ޥ˥ե����ȡ��ե�����Υϥå���Ȱ��פ��뤫�ɤ������ǧ���뤿��˥����å��Ǥ��ޤ������פ����硢���ڤϼ��μ��˿ʤߤޤ���
+\fI\&.SF\fRファイルには、マニフェスト・ファイル全体のハッシュが格納されたヘッダーがデフォルトで含まれています。ヘッダーが存在する場合、検証では、ヘッダー内のハッシュがマニフェスト・ファイルのハッシュと一致するかどうかを確認するためにチェックできます。一致する場合、検証は次の手順に進みます。
 .sp
-���פ��ʤ���硢\fI\&.SF\fR�ե�������γƥ��������ե�������󥻥������Υϥå��夬���ޥ˥ե����ȡ��ե���������б����륻�������Υϥå���Ȱ��פ��뤳�Ȥ��ǧ���뤿��ˡ����ޤ��Ŭ������Ƥ��ʤ����ڤ�ɬ�פˤʤ�ޤ�����̾�ե�����򻲾Ȥ��Ƥ���������
+一致しない場合、\fI\&.SF\fRファイル内の各ソース・ファイル情報セクションのハッシュが、マニフェスト・ファイル内の対応するセクションのハッシュと一致することを確認するために、あまり最適化されていない検証が必要になります。署名ファイルを参照してください。
 .sp
-\fI\&.SF\fR�ե�����Υإå����˳�Ǽ���줿�ޥ˥ե����ȡ��ե�����Υϥå��夬�����ߤΥޥ˥ե����ȡ��ե�����Υϥå���˰��פ��ʤ���ͳ��1�Ĥϡ���̾�����\fI\&.SF\fR�ե������������ˡ�(\fIjar\fR�ġ������Ѥ���)1�İʾ�Υե����뤬JAR�ե�������ɲä��줿���ȤǤ���\fIjar\fR�ġ������Ѥ��ƥե�������ɲä�����硢�������ե������ѤΥ���������ɲä���뤳�Ȥˤ�ꡢ�ޥ˥ե����ȡ��ե�������ѹ�����ޤ�����\fI\&.SF\fR�ե�������ѹ�����ޤ��󡣸��ڤ��ޤ��������Ƥ���Ȥߤʤ����Τϡ���̾�������ʹߤ�JAR�ե�������ΤɤΥե�������ѹ�����Ƥ��ʤ����Ǥ������줬ȯ������Τϡ�\fI\&.SF\fR�ե�����Υإå����ʳ��Υ��������Υϥå��夬���ޥ˥ե����ȡ��ե���������б����륻�������Υϥå���Ȱ��פ�����Ǥ���
+\fI\&.SF\fRファイルのヘッダーに格納されたマニフェスト・ファイルのハッシュが、現在のマニフェスト・ファイルのハッシュに一致しない理由の1つは、署名および\fI\&.SF\fRファイルの生成後に、(\fIjar\fRツールを使用して)1つ以上のファイルがJARファイルに追加されたことです。\fIjar\fRツールを使用してファイルを追加した場合、新しいファイル用のセクションが追加されることにより、マニフェスト・ファイルは変更されますが、\fI\&.SF\fRファイルは変更されません。検証がまだ成功しているとみなされるのは、署名の生成以降にJARファイル内のどのファイルも変更されていない場合です。これが発生するのは、\fI\&.SF\fRファイルのヘッダー以外のセクションのハッシュが、マニフェスト・ファイル内の対応するセクションのハッシュと一致する場合です。
 .RE
 .sp
 .RS 4
@@ -439,16 +439,16 @@ JAR�ե�����θ��ڤ���������Τϡ���̾��ͭ���Ǥ��ꡢ���Ľ�̾�������ʹߤ�JAR�ե���
 .sp -1
 .IP "  3." 4.2
 .\}
-\fI\&.SF\fR�ե�������˥���ȥ�����JAR�ե�������γƥե�������ɤ߼��ޤ����ɼ����˥ե�����Υ����������Ȥ�׻�������̤�ޥ˥ե����ȡ������������Τ��Υե�����Υ����������Ȥ���Ӥ��ޤ��������������Ȥ�Ʊ���Ǥ���ɬ�פ����ꡢ�����Ǥʤ����ϸ��ڤ����Ԥ��ޤ���
+\fI\&.SF\fRファイル内にエントリを持つJARファイル内の各ファイルを読み取ります。読取り中にファイルのダイジェストを計算し、結果をマニフェスト・セクション内のこのファイルのダイジェストと比較します。ダイジェストは同じである必要があり、そうでない場合は検証が失敗します。
 .sp
-���ڥץ�������ˤʤ�餫�ν���ʸ��ڥ��顼��ȯ��������硢���Υץ���������ߤ��졢�������ƥ��㳰������������ޤ���\fIjarsigner\fR���ޥ�ɤǤϡ��㳰����ª�����ɽ�����ޤ���
+検証プロセス中になんらかの重大な検証エラーが発生した場合、そのプロセスは停止され、セキュリティ例外がスローされます。\fIjarsigner\fRコマンドでは、例外を捕捉および表示します。
 .RE
 .PP
-\fB����:\fR
-�ɲäηٹ�(�ޤ��ϡ�\fI\-strict\fR���ץ�������ꤷ�����ϥ��顼)�Ϥ��٤��ɤ�ɬ�פ�����ޤ���Ʊ�ͤˡ�����������Ǥ��뤫����ꤹ�뤿��ˡ�(\fI\-verbose\fR�����\fI\-certs\fR���ץ�������ꤷ��)����������Ƥ��ɤ�ɬ�פ�����ޤ���
-.SS "1�Ĥ�JAR�ե�������оݤȤ���ʣ���ν�̾"
+\fB注意:\fR
+追加の警告(または、\fI\-strict\fRオプションを指定した場合はエラー)はすべて読む必要があります。同様に、証明が信頼できるかを決定するために、(\fI\-verbose\fRおよび\fI\-certs\fRオプションを指定して)証明書の内容も読む必要があります。
+.SS "1つのJARファイルを対象とする複数の署名"
 .PP
-���Τ褦�ˡ�\fIjarsigner\fR���ޥ�ɤ�ե������ʣ����¹Ԥ����¹ԤΤ��Ӥ˰ۤʤ�桼��������̾����ꤹ�뤳�Ȥˤ�äơ�1�Ĥ�JAR�ե������ʣ���Υ桼�����ν�̾���դ��뤳�Ȥ��Ǥ��ޤ���
+次のように、\fIjarsigner\fRコマンドをファイルで複数回実行し、実行のたびに異なるユーザーの別名を指定することによって、1つのJARファイルに複数のユーザーの署名を付けることができます。
 .sp
 .if n \{\
 .RS 4
@@ -461,7 +461,7 @@ jarsigner myBundle\&.jar kevin
 .RE
 .\}
 .PP
-JAR�ե����뤬ʣ�����̾����Ƥ����硢����JAR�ե�����ˤϡ�ʣ����\fI\&.SF\fR�ե������\fI\&.DSA\fR�ե����뤬�ޤޤ�Ƥ��ꡢ1��ν�̾���Ф���1�ĤΥڥ��Ȥʤ�ޤ������Ҥ���Ǥϡ�����JAR�ե�����ˤϡ�����̾���Υե����뤬�ޤޤ�Ƥ��ޤ���
+JARファイルが複数回署名されている場合、そのJARファイルには、複数の\fI\&.SF\fRファイルと\fI\&.DSA\fRファイルが含まれており、1回の署名に対して1つのペアとなります。前述の例では、出力JARファイルには、次の名前のファイルが含まれています。
 .sp
 .if n \{\
 .RS 4
@@ -475,9 +475,9 @@ KEVIN\&.DSA
 .if n \{\
 .RE
 .\}
-.SH "���ץ����"
+.SH "オプション"
 .PP
-���γƹ�Ǥϡ��͡���\fIjarsigner\fR���ץ����ˤĤ����������ޤ�������ɸ������դ��Ƥ���������
+次の各項では、様々な\fIjarsigner\fRオプションについて説明します。次の標準に注意してください。
 .sp
 .RS 4
 .ie n \{\
@@ -487,7 +487,7 @@ KEVIN\&.DSA
 .sp -1
 .IP \(bu 2.3
 .\}
-�ɤΥ��ץ����̾�ˤ���Ƭ�˥ޥ��ʥ�����(\-)���դ��ޤ���
+どのオプション名にも先頭にマイナス記号(\-)が付きます。
 .RE
 .sp
 .RS 4
@@ -498,7 +498,7 @@ KEVIN\&.DSA
 .sp -1
 .IP \(bu 2.3
 .\}
-���ץ�����Ǥ�դν���ǻ���Ǥ��ޤ���
+オプションは任意の順序で指定できます。
 .RE
 .sp
 .RS 4
@@ -509,7 +509,7 @@ KEVIN\&.DSA
 .sp -1
 .IP \(bu 2.3
 .\}
-������å��Τޤ��ϲ����դ��ι���(���ץ�������)�μºݤ��ͤϡ����ꤹ��ɬ�פ�����ޤ���
+イタリック体または下線付きの項目(オプションの値)の実際の値は、指定する必要があります。
 .RE
 .sp
 .RS 4
@@ -520,18 +520,18 @@ KEVIN\&.DSA
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-storepass\fR��\fI\-keypass\fR��\fI\-sigfile\fR��\fI\-sigalg\fR��\fI\-digestalg\fR��\fI\-signedjar\fR�����TSA��Ϣ�Υ��ץ�������ѤǤ���Τϡ�JAR�ե�����˽�̾������ΤߤǤ�����̾�դ�JAR�ե�����򸡾ڤ�����ǤϤ���ޤ���\fI\-keystore \fR���ץ����ϡ�JAR�ե�����ν�̾����Ӹ��ڤ˴�Ϣ���ޤ����ޤ�����̾�ϡ�JAR�ե�����ν�̾����Ӹ��ڻ��˻��ꤷ�ޤ���
+\fI\-storepass\fR、\fI\-keypass\fR、\fI\-sigfile\fR、\fI\-sigalg\fR、\fI\-digestalg\fR、\fI\-signedjar\fRおよびTSA関連のオプションを使用できるのは、JARファイルに署名する場合のみです。署名付きJARファイルを検証する場合ではありません。\fI\-keystore \fRオプションは、JARファイルの署名および検証に関連します。また、別名は、JARファイルの署名および検証時に指定します。
 .RE
 .PP
 \-keystore \fIurl\fR
 .RS 4
-�������ȥ��ξ��򼨤�URL����ꤷ�ޤ�������ˤ�ꡢ\fIuser\&.home\fR�����ƥࡦ�ץ��ѥƥ��Ƿ��ꤵ�줿�桼�����Υۡ��ࡦ�ǥ��쥯�ȥ���Υե�����\fI\&.keystore\fR�˥ǥե�������ꤵ��ޤ���
+キーストアの場所を示すURLを指定します。これにより、\fIuser\&.home\fRシステム・プロパティで決定されたユーザーのホーム・ディレクトリ内のファイル\fI\&.keystore\fRにデフォルト設定されます。
 .sp
-�������ȥ��Ͻ�̾���ˤ�ɬ�פǤ����ǥե���ȤΥ������ȥ���¸�ߤ��ʤ���硢�ޤ��ϥǥե���Ȱʳ��Υ������ȥ�����Ѥ�����ϡ��������ȥ�������Ū�˻��ꤹ��ɬ�פ�����ޤ���
+キーストアは署名時には必要です。デフォルトのキーストアが存在しない場合、またはデフォルト以外のキーストアを使用する場合は、キーストアを明示的に指定する必要があります。
 .sp
-���ڤ���Ȥ��ϥ������ȥ���ɬ�פ���ޤ��󡣤��������������ȥ������ꤵ��Ƥ��뤫�����뤤�ϥǥե���ȤΥ������ȥ���¸�ߤ��Ƥ��ơ������\fI\-verbose\fR���ץ�������ꤵ��Ƥ�����硢JAR�ե�����θ��ڤ˻��Ѥ��������񤬤��Υ������ȥ���1�ĤǤ�ޤޤ�Ƥ��뤫�ɤ����˴ؤ����ɲþ��󤬽��Ϥ���ޤ���
+検証するときはキーストアは必要ありません。ただし、キーストアが指定されているか、あるいはデフォルトのキーストアが存在していて、さらに\fI\-verbose\fRオプションも指定されていた場合、JARファイルの検証に使用される証明書がそのキーストアに1つでも含まれているかどうかに関する追加情報が出力されます。
 .sp
-\fI\-keystore\fR�����ˤϡ�URL�ǤϤʤ��ե�����̾�ȥѥ������Ǥ������ξ�硢�ե�����: URL��Ʊ���褦�˽�������ޤ������Ȥ��С����ˤ褦�˻��ꤹ���Ʊ���ˤʤ�ޤ���
+\fI\-keystore\fR引数には、URLではなくファイル名とパスを指定でき、この場合、ファイル: URLと同じように処理されます。たとえば、次にように指定すると同等になります。
 .sp
 .if n \{\
 .RS 4
@@ -543,8 +543,8 @@ KEVIN\&.DSA
 .if n \{\
 .RE
 .\}
-(JRE��\fI$JAVA_HOME/lib/security directory\fR�ˤ���)
-\fIjava\&.security\fR�������ƥ����ץ��ѥƥ����ե��������Sun PKCS #11�ץ��Х������������줿��硢\fIkeytool\fR�����\fIjarsigner\fR�ġ����PKCS#11�ȡ�����˴�Ť���ư��Ǥ��ޤ������Υ��ץ�������ꤷ�ޤ���
+(JREの\fI$JAVA_HOME/lib/security directory\fRにある)
+\fIjava\&.security\fRセキュリティ・プロパティ・ファイル内でSun PKCS #11プロバイダが構成された場合、\fIkeytool\fRおよび\fIjarsigner\fRツールはPKCS#11トークンに基づいて動作できます。次のオプションを指定します。
 .sp
 .if n \{\
 .RS 4
@@ -556,7 +556,7 @@ KEVIN\&.DSA
 .if n \{\
 .RE
 .\}
-���Ȥ��С����Υ��ޥ�ɤϡ��������줿PKCS#11�ȡ���������Ƥ����ɽ�����ޤ���
+たとえば、次のコマンドは、構成されたPKCS#11トークンの内容を一覧表示します。
 .sp
 .if n \{\
 .RS 4
@@ -571,17 +571,17 @@ keytool \-keystore NONE \-storetype PKCS11 \-list
 .PP
 \-storetype \fIstoretype\fR
 .RS 4
-���󥹥��󥹤��������륭�����ȥ��Υ����פ���ꤷ�ޤ����ǥե���ȤΥ������ȥ��������פϡ��������ƥ����ץ��ѥƥ����ե��������\fIkeystore\&.type\fR�ץ��ѥƥ����ͤǻ��ꤵ�줿�����פǤ��������ͤϡ�\fIjava\&.security\&.KeyStore\fR��static
-\fIgetDefaultType\fR�᥽�åɤˤ�ä��֤���ޤ���
+インスタンスを生成するキーストアのタイプを指定します。デフォルトのキーストア・タイプは、セキュリティ・プロパティ・ファイル内の\fIkeystore\&.type\fRプロパティの値で指定されたタイプです。この値は、\fIjava\&.security\&.KeyStore\fRのstatic
+\fIgetDefaultType\fRメソッドによって返されます。
 .sp
-\fI\-storepass\fR���ץ�������Ѥ��ơ�PCKS #11�ȡ������PIN����ꤹ�뤳�Ȥ�Ǥ��ޤ���������ꤷ�ʤ���硢\fIkeytool\fR�����\fIjarsigner\fR���ޥ�ɤˤ�äơ��ȡ�����PIN�λ��������ޤ����ȡ�������ݸ�줿ǧ�ڥѥ�(���Ѥ�PIN�ѥåɤ������ɼ�굡�ʤ�)�������硢\fI\-protected\fR���ץ�������ꤹ��ɬ�פ�����ޤ������ѥ���ɡ����ץ����ϻ���Ǥ��ޤ���
+\fI\-storepass\fRオプションを使用して、PCKS #11トークンのPINを指定することもできます。何も指定しない場合、\fIkeytool\fRおよび\fIjarsigner\fRコマンドによって、トークンPINの指定を求められます。トークンに保護された認証パス(専用のPINパッドや生体読取り機など)がある場合、\fI\-protected\fRオプションを指定する必要がありますが、パスワード・オプションは指定できません。
 .RE
 .PP
 \-storepass[:env | :file] \fIargument\fR
 .RS 4
-�������ȥ��˥�����������Τ�ɬ�פʥѥ���ɤ���ꤷ�ޤ������줬ɬ�פʤΤϡ�JAR�ե�����˽�̾���դ���Ȥ��ΤߤǤ�(���ڤ���Ȥ��ˤ����פǤ�)�����ξ�硢\fI\-storepass\fR���ץ����򥳥ޥ�ɥ饤��ǻ��ꤷ�ʤ��ȡ��ѥ���ɤ����Ϥ�����ޤ���
+キーストアにアクセスするのに必要なパスワードを指定します。これが必要なのは、JARファイルに署名を付けるときのみです(検証するときには不要です)。その場合、\fI\-storepass\fRオプションをコマンドラインで指定しないと、パスワードの入力を求められます。
 .sp
-������\fIenv\fR�ޤ���\fIfile\fR�����ꤵ��Ƥ��ʤ���硢�ѥ���ɤ��ͤ�\fIargument\fR�ˤʤ�ޤ�������ʳ��ξ�硢�ѥ���ɤϼ��Τ褦�ˤ��Ƽ�������ޤ���
+修飾子\fIenv\fRまたは\fIfile\fRが指定されていない場合、パスワードの値は\fIargument\fRになります。それ以外の場合、パスワードは次のようにして取得されます。
 .sp
 .RS 4
 .ie n \{\
@@ -592,7 +592,7 @@ keytool \-keystore NONE \-storetype PKCS11 \-list
 .IP \(bu 2.3
 .\}
 \fIenv\fR:
-\fIargument\fR�Ȥ���̾���δĶ��ѿ�����ѥ���ɤ�������ޤ���
+\fIargument\fRという名前の環境変数からパスワードを取得します。
 .RE
 .sp
 .RS 4
@@ -604,18 +604,18 @@ keytool \-keystore NONE \-storetype PKCS11 \-list
 .IP \(bu 2.3
 .\}
 \fIfile\fR:
-\fIargument\fR�Ȥ���̾���Υե����뤫��ѥ���ɤ�������ޤ���
+\fIargument\fRという名前のファイルからパスワードを取得します。
 .RE
 .sp
-\fB����:\fR
-�ƥ��Ȥ���Ū�Ȥ�����ޤ��ϥ������ƥ��ݸ�줿�����ƥ����Ѥ��Ƥ�����ʳ��ϡ����ޥ�ɥ饤��䥹����ץȤǥѥ���ɤ���ꤷ�ʤ��Ǥ���������
+\fB注意:\fR
+テストを目的とする場合またはセキュリティ保護されたシステムを使用している場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。
 .RE
 .PP
 \-keypass [:env | :file] \fIargument\fR
 .RS 4
-���ޥ�ɥ饤��ǻ��ꤵ�줿��̾���б����륭�����ȥ�������ȥ����̩�����ݸ��Τ˻��Ѥ���ѥ���ɤ���ꤷ�ޤ���\fIjarsigner\fR����Ѥ���JAR�ե�����˽�̾���դ���Ȥ��ϡ��ѥ���ɤ�ɬ�פǤ������ޥ�ɥ饤��ǥѥ���ɤ����ꤵ��Ƥ��餺��ɬ�פʥѥ���ɤ����ȥ��Υѥ���ɤȰۤʤ���ϡ��ѥ���ɤ����Ϥ�����ޤ���
+コマンドラインで指定された別名に対応するキーストア・エントリの秘密鍵を保護するのに使用するパスワードを指定します。\fIjarsigner\fRを使用してJARファイルに署名を付けるときは、パスワードが必要です。コマンドラインでパスワードが指定されておらず、必要なパスワードがストアのパスワードと異なる場合は、パスワードの入力を求められます。
 .sp
-������\fIenv\fR�ޤ���\fIfile\fR�����ꤵ��Ƥ��ʤ���硢�ѥ���ɤ��ͤ�\fIargument\fR�ˤʤ�ޤ�������ʳ��ξ�硢�ѥ���ɤϼ��Τ褦�ˤ��Ƽ�������ޤ���
+修飾子\fIenv\fRまたは\fIfile\fRが指定されていない場合、パスワードの値は\fIargument\fRになります。それ以外の場合、パスワードは次のようにして取得されます。
 .sp
 .RS 4
 .ie n \{\
@@ -626,7 +626,7 @@ keytool \-keystore NONE \-storetype PKCS11 \-list
 .IP \(bu 2.3
 .\}
 \fIenv\fR:
-\fIargument\fR�Ȥ���̾���δĶ��ѿ�����ѥ���ɤ�������ޤ���
+\fIargument\fRという名前の環境変数からパスワードを取得します。
 .RE
 .sp
 .RS 4
@@ -638,84 +638,84 @@ keytool \-keystore NONE \-storetype PKCS11 \-list
 .IP \(bu 2.3
 .\}
 \fIfile\fR:
-\fIargument\fR�Ȥ���̾���Υե����뤫��ѥ���ɤ�������ޤ���
+\fIargument\fRという名前のファイルからパスワードを取得します。
 .RE
 .sp
-\fB����:\fR
-�ƥ��Ȥ���Ū�Ȥ�����ޤ��ϥ������ƥ��ݸ�줿�����ƥ����Ѥ��Ƥ�����ʳ��ϡ����ޥ�ɥ饤��䥹����ץȤǥѥ���ɤ���ꤷ�ʤ��Ǥ���������
+\fB注意:\fR
+テストを目的とする場合またはセキュリティ保護されたシステムを使用している場合以外は、コマンドラインやスクリプトでパスワードを指定しないでください。
 .RE
 .PP
 \-sigfile \fIfile\fR
 .RS 4
-�������줿\fI\&.SF\fR�ե����뤪���\fI\&.DSA\fR�ե�����˻��Ѥ���١������ե�����̾����ꤷ�ޤ������Ȥ��С��ե����뤬\fIDUKESIGN\fR�ξ�硢���������\fI\&.SF\fR�����\fI\&.DSA\fR�ե�����ϡ�\fIDUKESIGN\&.SF\fR�����\fIDUKESIGN\&.DSA\fR�Ȥ���̾���ǡ���̾�դ�JAR�ե������\fIMETA\-INF\fR�ǥ��쥯�ȥ�˳�Ǽ����ޤ���
+生成された\fI\&.SF\fRファイルおよび\fI\&.DSA\fRファイルに使用するベース・ファイル名を指定します。たとえば、ファイルが\fIDUKESIGN\fRの場合、生成される\fI\&.SF\fRおよび\fI\&.DSA\fRファイルは、\fIDUKESIGN\&.SF\fRおよび\fIDUKESIGN\&.DSA\fRという名前で、署名付きJARファイルの\fIMETA\-INF\fRディレクトリに格納されます。
 .sp
-�ե��������ʸ���ϡ����å�\fIa\-zA\-Z0\-9_\-\fR������ꤵ���ɬ�פ�����ޤ�������ե��٥åȡ���������������ӥϥ��ե�ʸ���Τߤ���ѤǤ��ޤ���\fI\&.SF\fR�����\fI\&.DSA\fR�Υե�����̾�Ǥϡ���ʸ���Ϥ��٤���ʸ�����Ѵ�����ޤ���
+ファイル内の文字は、セット\fIa\-zA\-Z0\-9_\-\fRから指定される必要があります。アルファベット、数字、下線およびハイフン文字のみを使用できます。\fI\&.SF\fRおよび\fI\&.DSA\fRのファイル名では、小文字はすべて大文字に変換されます。
 .sp
-���ޥ�ɥ饤���\fI\-sigfile\fR���ץ�������ꤷ�ʤ��ä���硢\fI\&.SF\fR�ե������\fI\&.DSA\fR�ե�����Υ١������ե�����̾�ϡ����ޥ�ɥ饤��ǻ��ꤵ�줿��̾����Ƭ��8ʸ���򤹤٤���ʸ�����Ѵ�������Τˤʤ�ޤ�����̾��8ʸ��̤���ξ��ϡ���̾�����Τޤ޻��Ѥ���ޤ�����̾�ˡ���̾�ե�����̾��̵����ʸ�����ޤޤ�Ƥ����硢�ե�����̾��������뤿��ˡ���������ʸ��������(_)ʸ�����Ѵ�����ޤ���
+コマンドラインで\fI\-sigfile\fRオプションを指定しなかった場合、\fI\&.SF\fRファイルと\fI\&.DSA\fRファイルのベース・ファイル名は、コマンドラインで指定された別名の先頭の8文字をすべて大文字に変換したものになります。別名が8文字未満の場合は、別名がそのまま使用されます。別名に、署名ファイル名で無効な文字が含まれている場合、ファイル名を作成するために、該当する文字が下線(_)文字に変換されます。
 .RE
 .PP
 \-sigalg \fIalgorithm\fR
 .RS 4
-JAR�ե�����ν�̾�˻��Ѥ����̾���르�ꥺ���̾������ꤷ�ޤ���
+JARファイルの署名に使用する署名アルゴリズムの名前を指定します。
 .sp
-ɸ��Ū�ʽ�̾���르�ꥺ��̾�Υꥹ�Ȥϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppA�ˤ���
-Java Cryptography Architecture (JCA)��ե���󥹡������ɤΡ���ϿA: ɸ��̾�פ򻲾Ȥ��Ƥ���������
+標準的な署名アルゴリズム名のリストは、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppAにある
+Java Cryptography Architecture (JCA)リファレンス・ガイドの「付録A: 標準名」を参照してください。
 .sp
-���Υ��르�ꥺ��ˤϡ�JAR�ե�����ν�̾�˻��Ѥ�����̩���Ȥθߴ�����ɬ�פǤ������Υ��ץ�������ꤷ�ʤ���硢��̩���Υ����פ˱����ơ�\fISHA1withDSA\fR��\fISHA256withRSA\fR�ޤ���\fISHA256withECDSA\fR�����Ѥ���ޤ������ꤵ�줿���르�ꥺ��μ������󶡤���ץ��Х�������Ū�˥��󥹥ȡ��뤵��Ƥ��뤫��\fI\-providerClass\fR���ץ�������Ѥ��Ƥ��Τ褦�ʥץ��Х�����桼���������ꤹ��ɬ�פ�����ޤ��������Ǥʤ���硢���ޥ�ɤϼ��Ԥ��ޤ���
+このアルゴリズムには、JARファイルの署名に使用する秘密鍵との互換性が必要です。このオプションを指定しない場合、秘密鍵のタイプに応じて、\fISHA1withDSA\fR、\fISHA256withRSA\fRまたは\fISHA256withECDSA\fRが使用されます。指定されたアルゴリズムの実装を提供するプロバイダが静的にインストールされているか、\fI\-providerClass\fRオプションを使用してそのようなプロバイダをユーザーが指定する必要があります。そうでない場合、コマンドは失敗します。
 .RE
 .PP
 \-digestalg \fIalgorithm\fR
 .RS 4
-JAR�ե�����Υ���ȥ������������Ȥ���ݤ˻��Ѥ����å������������������ȡ����르�ꥺ���̾������ꤷ�ޤ���
+JARファイルのエントリをダイジェストする際に使用するメッセージ・ダイジェスト・アルゴリズムの名前を指定します。
 .sp
-ɸ��Ū�ʥ�å������������������ȡ����르�ꥺ��̾�Υꥹ�Ȥϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppA�ˤ���
-Java Cryptography Architecture (JCA)��ե���󥹡������ɤΡ���ϿA: ɸ��̾�פ򻲾Ȥ��Ƥ���������
+標準的なメッセージ・ダイジェスト・アルゴリズム名のリストは、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec\&.html#AppAにある
+Java Cryptography Architecture (JCA)リファレンス・ガイドの「付録A: 標準名」を参照してください。
 .sp
-���Υ��ץ�������ꤷ�ʤ���硢\fISHA256\fR�����Ѥ���ޤ������ꤵ�줿���르�ꥺ��μ������󶡤���ץ��Х�������Ū�˥��󥹥ȡ��뤵��Ƥ��뤫��\fI\-providerClass\fR���ץ�������Ѥ��Ƥ��Τ褦�ʥץ��Х�����桼���������ꤹ��ɬ�פ�����ޤ��������Ǥʤ���硢���ޥ�ɤϼ��Ԥ��ޤ���
+このオプションを指定しない場合、\fISHA256\fRが使用されます。指定されたアルゴリズムの実装を提供するプロバイダが静的にインストールされているか、\fI\-providerClass\fRオプションを使用してそのようなプロバイダをユーザーが指定する必要があります。そうでない場合、コマンドは失敗します。
 .RE
 .PP
 \-certs
 .RS 4
-���ޥ�ɥ饤��ǡ�\fI\-certs\fR���ץ�����\fI\-verify\fR�����\fI\-verbose\fR���ץ����ȤȤ�˻��ꤷ����硢JAR�ե�����γƽ�̾�Ԥξ�������󤬽��Ϥ˴ޤޤ�ޤ������ξ���ˤϡ���̾�Ԥθ�������������������(\fI\&.DSA\fR�ե�����˳�Ǽ)�Υ����פ�̾�����ޤޤ졢������X\&.509������(\fIjava\&.security\&.cert\&.X509Certificate\fR�Υ��󥹥���)�ξ�硢��̾�Ԥμ���̾���ޤޤ�ޤ���
+コマンドラインで、\fI\-certs\fRオプションを\fI\-verify\fRおよび\fI\-verbose\fRオプションとともに指定した場合、JARファイルの各署名者の証明書情報が出力に含まれます。この情報には、署名者の公開鍵を証明する証明書(\fI\&.DSA\fRファイルに格納)のタイプの名前が含まれ、証明書がX\&.509証明書(\fIjava\&.security\&.cert\&.X509Certificate\fRのインスタンス)の場合、署名者の識別名が含まれます。
 .sp
-�������ȥ��γ�ǧ��Ԥ��ޤ������ޥ�ɥ饤��ǥ������ȥ����ͤ����ꤵ��Ƥ��ʤ���硢�ǥե���ȤΥ������ȥ����ե�����(������)�������å�����ޤ�����̾�Ԥθ������ξ����񤬥������ȥ���Υ���ȥ�Ȱ��פ����硢���ν�̾�ԤΥ������ȥ��Υ���ȥ����̾���ݥ��å����ɽ������ޤ���
+キーストアの確認も行われます。コマンドラインでキーストアの値が指定されていない場合、デフォルトのキーストア・ファイル(ある場合)がチェックされます。署名者の公開鍵の証明書がキーストア内のエントリと一致する場合、その署名者のキーストアのエントリの別名が丸カッコ内に表示されます。
 .RE
 .PP
 \-certchain \fIfile\fR
 .RS 4
-���ޥ�ɥ饤��ǻ��ꤷ����̾�ˤ�ä�ɽ����륭�����ȥ�������ȥ����̩���˴�Ϣ�դ���줿������������󤬴����ǤϤʤ����ˡ����Ѥ������������������ꤷ�ޤ�������ϡ�����������������Τ��ݻ�����Τ˽�ʬ���ΰ褬�ʤ��ϡ��ɥ��������ȡ������˥������ȥ�����Ǽ����Ƥ������ȯ�����ޤ������Υե�����ϰ�Ϣ��Ϣ�뤵�줿X\&.509������PKCS#7������ñ��ǡ������֥��å��Τ����줫�Ȥʤꡢ���Υ��󥳡��ǥ��󥰷����ϥХ��ʥꡦ���󥳡��ǥ��󥰷�����Internet RFC 1421ɸ��ǵ��ꤵ��������ǽ���󥳡��ǥ��󥰷���(Base64���󥳡��ǥ��󥰤Ȥ�ƤФ��)�Τ����줫�ˤʤ�ޤ������󥿡��ͥå�RFC 1421��������沽���ʤ����http://tools\&.ietf\&.org/html/rfc1421�򻲾Ȥ��Ƥ���������
+コマンドラインで指定した別名によって表されるキーストア・エントリの秘密鍵に関連付けられた証明書チェーンが完全ではない場合に、使用する証明書チェーンを指定します。これは、証明書チェーン全体を保持するのに十分な領域がないハードウェア・トークン上にキーストアが格納されている場合に発生します。このファイルは一連の連結されたX\&.509証明書、PKCS#7形式の単一データ・ブロックのいずれかとなり、そのエンコーディング形式はバイナリ・エンコーディング形式、Internet RFC 1421標準で規定される印刷可能エンコーディング形式(Base64エンコーディングとも呼ばれる)のいずれかになります。インターネットRFC 1421証明書符号化規格およびhttp://tools\&.ietf\&.org/html/rfc1421を参照してください。
 .RE
 .PP
 \-verbose
 .RS 4
-���ޥ�ɥ饤���\fI\-verbose\fR���ץ�������ꤷ����硢��Ĺ�⡼�ɤ�ư������Υ⡼�ɤǤϡ�\fIjarsigner\fR�ϡ�JAR�ν�̾�ޤ��ϸ��ڤοʹԾ����˴ؤ����ɲþ������Ϥ��ޤ���
+コマンドラインで\fI\-verbose\fRオプションを指定した場合、冗長モードで動作し、このモードでは、\fIjarsigner\fRは、JARの署名または検証の進行状況に関する追加情報を出力します。
 .RE
 .PP
 \-internalsf
 .RS 4
-�����ϡ�JAR�ե�����ν�̾�����������줿\fI\&.DSA\fR
-(��̾�֥��å�)�ե�����ˡ��������줿\fI\&.SF\fR�ե�����(��̾�ե�����)�Υ��󥳡��ɤ��줿�����ʥ��ԡ����ޤޤ�Ƥ��ޤ����� ����ư����ѹ�����ޤ���������JAR�ե��������ΤΥ������򾮤������뤿��ˡ��ǥե���ȤǤ�\fI\&.DSA\fR�ե�����ˤ�\fI\&.SF\fR�ե�����Υ��ԡ����ޤޤ�ʤ��褦�ˤʤäƤ��ޤ������ޥ�ɥ饤���\fI\-internalsf\fR����ꤷ����硢������Ʊ���褦��ư��ޤ������Υ��ץ����ϡ��ƥ��Ȥ�Ԥ����������Ǥ����ºݤˤϡ�\fI\-internalsf\fR���ץ����ϡ������С��إåɤ��礭���ʤ뤿�ᡢ���Ѥ��ʤ��Ǥ���������
+以前は、JARファイルの署名時に生成された\fI\&.DSA\fR
+(署名ブロック)ファイルに、生成された\fI\&.SF\fRファイル(署名ファイル)のエンコードされた完全なコピーが含まれていました。 この動作は変更されました。出力JARファイル全体のサイズを小さくするために、デフォルトでは\fI\&.DSA\fRファイルには\fI\&.SF\fRファイルのコピーが含まれないようになっています。コマンドラインで\fI\-internalsf\fRを指定した場合、以前と同じように動作します。このオプションは、テストを行う場合に便利です。実際には、\fI\-internalsf\fRオプションは、オーバーヘッドが大きくなるため、使用しないでください。
 .RE
 .PP
 \-sectionsonly
 .RS 4
-���ޥ�ɥ饤���\fI\-sectionsonly\fR���ץ�������ꤷ����硢JAR�ե�����ν�̾�������������\fI\&.SF\fR�ե�����(��̾�ե�����)�ˤϡ��ޥ˥ե����ȡ��ե��������ΤΥϥå����ޤ�إå����ϴޤޤ�ޤ��󡣤���˴ޤޤ��Τϡ�JAR�ե�������γƥ��������ե�����˴�Ϣ������󤪤�ӥϥå���ΤߤǤ�����̾�ե�����򻲾Ȥ��Ƥ���������
+コマンドラインで\fI\-sectionsonly\fRオプションを指定した場合、JARファイルの署名時に生成される\fI\&.SF\fRファイル(署名ファイル)には、マニフェスト・ファイル全体のハッシュを含むヘッダーは含まれません。これに含まれるのは、JARファイル内の各ソース・ファイルに関連する情報およびハッシュのみです。署名ファイルを参照してください。
 .sp
-�ǥե���ȤǤϡ���Ŭ���Τ���ˡ����Υإå������ɲä���ޤ����إå�����¸�ߤ����硢JAR�ե�����򸡾ڤ��뤿�Ӥˡ����ڤǤϡ��ޤ��إå�����Υϥå��夬�ޥ˥ե����ȡ��ե��������ΤΥϥå���Ȱ��פ��뤫�ɤ������ǧ���뤿��˥����å��Ǥ��ޤ������פ����硢���ڤϼ��μ��˿ʤߤޤ������פ��ʤ���硢\fI\&.SF\fR�ե�������γƥ��������ե�������󥻥������Υϥå��夬���ޥ˥ե����ȡ��ե���������б����륻�������Υϥå���Ȱ��פ���Ȥ��������ޤ��Ŭ������Ƥ��ʤ����ڤ�¹Ԥ���ɬ�פ�����ޤ���JAR�ե�����θ��ڤ򻲾Ȥ��Ƥ���������
+デフォルトでは、最適化のために、このヘッダーが追加されます。ヘッダーが存在する場合、JARファイルを検証するたびに、検証では、まずヘッダー内のハッシュがマニフェスト・ファイル全体のハッシュと一致するかどうかを確認するためにチェックできます。一致する場合、検証は次の手順に進みます。一致しない場合、\fI\&.SF\fRファイル内の各ソース・ファイル情報セクションのハッシュが、マニフェスト・ファイル内の対応するセクションのハッシュと一致するという、あまり最適化されていない検証を実行する必要があります。JARファイルの検証を参照してください。
 .sp
-\fI\-sectionsonly\fR���ץ����ϡ���˥ƥ����Ѥ˻��Ѥ���ޤ����������Ѥ���ȥ����С��إåɤ��礭���ʤ뤿�ᡢ�ƥ����Ѱʳ��Ǥϻ��Ѥ��ʤ��Ǥ���������
+\fI\-sectionsonly\fRオプションは、主にテスト用に使用されます。これを使用するとオーバーヘッドが大きくなるため、テスト用以外では使用しないでください。
 .RE
 .PP
 \-protected
 .RS 4
-\fItrue\fR�ޤ���\fIfalse\fR�Τ����줫���ͤ����Ǥ��ޤ�������PIN�꡼�����ʤɤ��ݸ�줿ǧ�ڥѥ��ˤ�äƥѥ���ɤ���ꤹ��ɬ�פ������硢\fItrue\fR����ꤷ�ޤ���
+\fItrue\fRまたは\fIfalse\fRのいずれかの値を指定できます。専用PINリーダーなどの保護された認証パスによってパスワードを指定する必要がある場合、\fItrue\fRを指定します。
 .RE
 .PP
 \-providerClass \fIprovider\-class\-name\fR
 .RS 4
-�Ź沽�����ӥ����ץ��Х�����\fIjava\&.security\fR�������ƥ����ץ��ѥƥ����ե�����˻��ꤵ��Ƥ��ʤ��Ȥ��ϡ����Υޥ����������饹���ե������̾������ꤹ��Ȥ��˻��Ѥ���ޤ���
+暗号化サービス・プロバイダが\fIjava\&.security\fRセキュリティ・プロパティ・ファイルに指定されていないときは、そのマスター・クラス・ファイルの名前を指定するときに使用されます。
 .sp
-\fI\-providerArg ConfigFilePath\fR���ץ����ȤȤ�˻��Ѥ���\fIkeytool\fR�����\fIjarsigner\fR�ġ���ϡ��ץ��Х�����ưŪ�˥��󥹥ȡ��뤷���ȡ��������ե�����ؤΥѥ���\fIConfigFilePath\fR����Ѥ��ޤ���������ϡ�Oracle PKCS #11�ץ��Х������������ƥ����ץ��ѥƥ����ե�����˹�������Ƥ��ʤ��ä�����\fIPKCS #11\fR�������ȥ������ɽ�����륳�ޥ�ɤ򼨤��Ƥ��ޤ���
+\fI\-providerArg ConfigFilePath\fRオプションとともに使用し、\fIkeytool\fRおよび\fIjarsigner\fRツールは、プロバイダを動的にインストールし、トークン構成ファイルへのパスに\fIConfigFilePath\fRを使用します。次の例は、Oracle PKCS #11プロバイダがセキュリティ・プロパティ・ファイルに構成されていなかった場合に\fIPKCS #11\fRキーストアを一覧表示するコマンドを示しています。
 .sp
 .if n \{\
 .RS 4
@@ -733,9 +733,9 @@ jarsigner \-keystore NONE \-storetype PKCS11 \e
 .PP
 \-providerName \fIproviderName\fR
 .RS 4
-\fIjava\&.security\fR�������ƥ����ץ��ѥƥ����ե��������2�İʾ�Υץ��Х������������줿��硢\fI\-providerName\fR���ץ�������Ѥ��ơ�����Υץ��Х��������󥹥��󥹤��оݤˤ��뤳�Ȥ��Ǥ��ޤ������Υ��ץ����ΰ����ϡ��ץ��Х�����̾���Ǥ���
+\fIjava\&.security\fRセキュリティ・プロパティ・ファイル内で2つ以上のプロバイダが構成された場合、\fI\-providerName\fRオプションを使用して、特定のプロバイダ・インスタンスを対象にすることができます。このオプションの引数は、プロバイダの名前です。
 .sp
-Oracle PKCS #11�ץ��Х����ξ�硢\fIproviderName\fR��\fISunPKCS11\-\fR\fITokenName\fR�Ȥ��������ˤʤ�ޤ��������ǡ�����°����ɽ�Ǿܺ٤���������Ƥ���褦�ˡ�\fITokenName\fR�ϡ��ץ��Х��������󥹥��󥹤��������줿̾�����������Ǥ������Ȥ��С����Υ��ޥ�ɤϡ�̾��������\fISmartCard\fR��\fIPKCS #11\fR�������ȥ����ץ��Х��������󥹥��󥹤����Ƥ����ɽ�����ޤ���
+Oracle PKCS #11プロバイダの場合、\fIproviderName\fRは\fISunPKCS11\-\fR\fITokenName\fRという形式になります。ここで、構成属性の表で詳細に説明されているように、\fITokenName\fRは、プロバイダ・インスタンスが構成された名前の接尾辞です。たとえば、次のコマンドは、名前接尾辞\fISmartCard\fRの\fIPKCS #11\fRキーストア・プロバイダ・インスタンスの内容を一覧表示します。
 .sp
 .if n \{\
 .RS 4
@@ -752,45 +752,45 @@ jarsigner \-keystore NONE \-storetype PKCS11 \e
 .PP
 \-J\fIjavaoption\fR
 .RS 4
-���ꤵ�줿\fIjavaoption\fRʸ�����Java���󥿥ץ꥿��ľ���Ϥ��ޤ���\fIjarsigner\fR���ޥ�ɤϡ����󥿥ץ꥿���Ф����åѡ��Ǥ������Υ��ץ����ˤϡ������ޤ�뤳�ȤϤǤ��ޤ��󡣤��Υ��ץ����ϡ��¹ԴĶ��ޤ��ϥ��꡼���Ѥ�Ĵ��������������Ǥ�������Ǥ��륤�󥿥ץ꥿�����ץ��������ɽ������ˤϡ����ޥ�ɥ饤���\fIjava \-h\fR�ޤ���\fIjava \-X\fR�����Ϥ��Ƥ���������
+指定された\fIjavaoption\fR文字列をJavaインタプリタに直接渡します。\fIjarsigner\fRコマンドは、インタプリタに対するラッパーです。このオプションには、空白を含めることはできません。このオプションは、実行環境またはメモリー使用を調整する場合に便利です。指定できるインタプリタ・オプションを一覧表示するには、コマンドラインで\fIjava \-h\fRまたは\fIjava \-X\fRと入力してください。
 .RE
 .PP
 \-tsa \fIurl\fR
 .RS 4
-\fI\-tsa http://example\&.tsa\&.url\fR��JAR�ե�����ν�̾���˥��ޥ�ɥ饤��ˤ����硢��̾�Υ����ॹ����פ���������ޤ���URL
-\fIhttp://example\&.tsa\&.url\fR�ϡ�Time Stamping Authority (TSA)�ξ������ꤷ��\fI\-tsacert\fR���ץ�������ꤷ�Ƹ��Ф��줿URL�򥪡��С��饤�ɤ��ޤ���\fI\-tsa\fR���ץ����Ǥϡ�TSA�θ�����������򥭡����ȥ������֤���ɬ�פϤ���ޤ���
+\fI\-tsa http://example\&.tsa\&.url\fRがJARファイルの署名時にコマンドラインにある場合、署名のタイムスタンプが生成されます。URL
+\fIhttp://example\&.tsa\&.url\fRは、Time Stamping Authority (TSA)の場所を特定し、\fI\-tsacert\fRオプションを指定して検出されたURLをオーバーライドします。\fI\-tsa\fRオプションでは、TSAの公開鍵証明書をキーストアに配置する必要はありません。
 .sp
-�����ॹ����פ��������뤿��ˡ�\fIjarsigner\fR�ϡ�RFC 3161���������Ƥ��륿���ॹ����ס��ץ��ȥ���(TSP)����Ѥ���TSA���̿����ޤ�����������ȡ�TSA�ˤ�ä��֤��줿�����ॹ����ס��ȡ�����ϡ���̾�֥��å����ե�����ν�̾�ȤȤ����¸����ޤ���
+タイムスタンプを生成するために、\fIjarsigner\fRは、RFC 3161で定義されているタイムスタンプ・プロトコル(TSP)を使用してTSAと通信します。成功すると、TSAによって返されたタイムスタンプ・トークンは、署名ブロック・ファイルの署名とともに保存されます。
 .RE
 .PP
 \-tsacert \fIalias\fR
 .RS 4
-\fI\-tsacert alias\fR��JAR�ե�����ν�̾���˥��ޥ�ɥ饤��ˤ����硢��̾�Υ����ॹ����פ���������ޤ�����̾�ϡ��������ȥ����ͭ����TSA�θ���������������ꤷ�ޤ�������ȥ�ξ�����ǡ�TSA�ξ������ꤹ��URL��ޤ�Subject Information Access��ĥ��ǽ����ǧ����ޤ���
+\fI\-tsacert alias\fRがJARファイルの署名時にコマンドラインにある場合、署名のタイムスタンプが生成されます。別名は、キーストア内の有効なTSAの公開鍵証明書を特定します。エントリの証明書で、TSAの場所を特定するURLを含むSubject Information Access拡張機能が確認されます。
 .sp
-\fI\-tsacert\fR���ץ�������Ѥ�����ϡ�TSA�θ����������񤬥������ȥ������֤���Ƥ���ɬ�פ�����ޤ���
+\fI\-tsacert\fRオプションを使用する場合は、TSAの公開鍵証明書がキーストアに配置されている必要があります。
 .RE
 .PP
 \-tsapolicyid \fIpolicyid\fR
 .RS 4
-TSA�����С�����������ݥꥷ��ID���̤��륪�֥������ȼ��̻�(OID)����ꤷ�ޤ������Υ��ץ�������ꤷ�ʤ���硢�ݥꥷ��ID���������줺��TSA�����С��ϥǥե���ȤΥݥꥷ��ID�����򤷤ޤ���
+TSAサーバーに送信するポリシーIDを識別するオブジェクト識別子(OID)を指定します。このオプションを指定しない場合、ポリシーIDは送信されず、TSAサーバーはデフォルトのポリシーIDを選択します。
 .sp
-���֥������ȼ��̻Ҥϡ�ITU Telecommunication Standardization Sector (ITU\-T)ɸ��Ǥ���X\&.696�ˤ�ä��������ޤ��������μ��̻Ҥϡ��̾\fI1\&.2\&.3\&.4\fR�ʤɤΡ���ǤϤʤ������Υԥꥪ�ɶ��ڤ�Υ��åȤǤ���
+オブジェクト識別子は、ITU Telecommunication Standardization Sector (ITU\-T)標準であるX\&.696によって定義されます。これらの識別子は、通常、\fI1\&.2\&.3\&.4\fRなどの、負ではない数字のピリオド区切りのセットです。
 .RE
 .PP
 \-altsigner \fIclass\fR
 .RS 4
-���Υ��ץ����ϡ����ؽ�̾�ᥫ�˥������ꤷ�ޤ��������������饹̾�ϡ�\fIcom\&.sun\&.jarsigner\&.ContentSigner\fR��ݥ��饹���ĥ���륯�饹���ե�������̤��ޤ������Υ��饹���ե�����ؤΥѥ��ϡ�\fI\-altsignerpath\fR���ץ����ˤ�ä��������ޤ���\fI\-altsigner\fR���ץ�������Ѥ�����硢\fIjarsigner\fR���ޥ�ɤǤϡ����ꤵ�줿���饹�ˤ�ä��󶡤�����̾�ᥫ�˥������Ѥ��ޤ�������ʳ��ξ�硢\fIjarsigner\fR���ޥ�ɤϥǥե���Ȥν�̾�ᥫ�˥������Ѥ��ޤ���
+このオプションは、代替署名メカニズムを指定します。完全修飾クラス名は、\fIcom\&.sun\&.jarsigner\&.ContentSigner\fR抽象クラスを拡張するクラス・ファイルを識別します。このクラス・ファイルへのパスは、\fI\-altsignerpath\fRオプションによって定義されます。\fI\-altsigner\fRオプションを使用した場合、\fIjarsigner\fRコマンドでは、指定されたクラスによって提供される署名メカニズムを使用します。それ以外の場合、\fIjarsigner\fRコマンドはデフォルトの署名メカニズムを使用します。
 .sp
-���Ȥ��С�\fIcom\&.sun\&.sun\&.jarsigner\&.AuthSigner\fR�Ȥ���̾���Υ��饹���󶡤����̾�ᥫ�˥������Ѥ���ˤϡ�jarsigner�Υ��ץ����\fI\-altsigner com\&.sun\&.jarsigner\&.AuthSigner\fR����Ѥ��ޤ���
+たとえば、\fIcom\&.sun\&.sun\&.jarsigner\&.AuthSigner\fRという名前のクラスが提供する署名メカニズムを使用するには、jarsignerのオプション\fI\-altsigner com\&.sun\&.jarsigner\&.AuthSigner\fRを使用します。
 .RE
 .PP
 \-altsignerpath \fIclasspathlist\fR
 .RS 4
-���饹���ե����뤪��Ӥ��줬��¸����JAR�ե�����ؤΥѥ�����ꤷ�ޤ���\fI\-altsigner\fR���ץ�������Ѥ��ơ����饹���ե�����̾����ꤷ�ޤ������饹���ե����뤬JAR�ե�������ˤ����硢���Υ��ץ����Ǥϡ�����JAR�ե�����ؤΥѥ�����ꤷ�ޤ���
+クラス・ファイルおよびそれが依存するJARファイルへのパスを指定します。\fI\-altsigner\fRオプションを使用して、クラス・ファイル名を指定します。クラス・ファイルがJARファイル内にある場合、このオプションでは、そのJARファイルへのパスを指定します。
 .sp
-���Хѥ��ޤ��ϸ��ߤΥǥ��쥯�ȥ�ؤ����Хѥ������Ǥ��ޤ���\fIclasspathlist\fR��ʣ���Υѥ���JAR�ե����뤬�ޤޤ���硢������Oracle Solaris�ξ��ϥ�����(:)�ǡ�Windows�ξ��ϥ��ߥ�����(;)�ǡ����줾����ڤ�ޤ�����Ū�Υ��饹�����Ǥ˸����ѥ���ˤ�����ϡ����Υ��ץ��������פǤ���
+絶対パスまたは現在のディレクトリへの相対パスを指定できます。\fIclasspathlist\fRに複数のパスやJARファイルが含まれる場合、それらを、Oracle Solarisの場合はコロン(:)で、Windowsの場合はセミコロン(;)で、それぞれ区切ります。目的のクラスがすでに検索パス内にある場合は、このオプションは不要です。
 .sp
-������Ǥϡ����饹���ե������ޤ�JAR�ե�����ؤΥѥ�����ꤹ����ˡ�򼨤��ޤ���JAR�ե�����̾��ޤ�ޤ���
+次の例では、クラス・ファイルを含むJARファイルへのパスを指定する方法を示します。JARファイル名を含めます。
 .sp
 .if n \{\
 .RS 4
@@ -801,7 +801,7 @@ TSA�����С�����������ݥꥷ��ID���̤��륪�֥������ȼ��̻�(OID)����ꤷ�ޤ�����
 .if n \{\
 .RE
 .\}
-������Ǥϡ����饹���ե������ޤ�JAR�ե�����ؤΥѥ�����ꤹ����ˡ�򼨤��ޤ���JAR�ե�����̾���ά���ޤ���
+次の例では、クラス・ファイルを含むJARファイルへのパスを指定する方法を示します。JARファイル名を省略します。
 .sp
 .if n \{\
 .RS 4
@@ -816,101 +816,101 @@ TSA�����С�����������ݥꥷ��ID���̤��륪�֥������ȼ��̻�(OID)����ꤷ�ޤ�����
 .PP
 \-strict
 .RS 4
-��̾�ޤ��ϸ��ڽ�����ˡ����ޥ�ɤˤ��ٹ��å�������ȯ�Ԥ�����礬����ޤ������Υ��ץ�������ꤹ��ȡ����ޥ�ɤˤ�긡�Ф��줿����ʷٹ��å��������ġ���ν�λ�����ɤ�ȿ�Ǥ���ޤ������顼�ȷٹ�򻲾Ȥ��Ƥ���������
+署名または検証処理中に、コマンドにより警告メッセージが発行される場合があります。このオプションを指定すると、コマンドにより検出された重大な警告メッセージがツールの終了コードに反映されます。エラーと警告を参照してください。
 .RE
 .PP
 \-verbose \fIsuboptions\fR
 .RS 4
-���ڽ����ξ�硢\fI\-verbose\fR���ץ����ˤϡ�ɽ�����������̤���ꤹ�륵�֥��ץ�������ꤷ�ޤ���\fI\-certs\fR���ץ�������ꤷ����硢�ǥե���ȡ��⡼��(�ޤ��ϥ��֥��ץ����\fIall\fR)�Ǥϡ�����ȥ꤬��������뤿�Ӥ˳ƥ���ȥ꤬ɽ�����졢���θ��JAR�ե�����γƽ�̾�Ԥξ���������ɽ������ޤ���\fI\-certs\fR�����\fI\-verbose:grouped\fR���֥��ץ�������ꤷ����硢Ʊ����̾�Ծ������ĥ���ȥ꤬�����ξ��������ȤȤ�ˡ����롼�ײ������ɽ������ޤ���\fI\-certs\fR�����\fI\-verbose:summary\fR���֥��ץ�������ꤷ����硢Ʊ����̾�Ծ������ĥ���ȥ꤬�����ξ��������ȤȤ�ˡ����롼�ײ������ɽ������ޤ����ƥ���ȥ�ξܺ٤ϡ�\fI1�ĤΥ���ȥ�(�ʾ�)\fR�ˤޤȤ����ɽ������ޤ�����򻲾Ȥ��Ƥ���������
+検証処理の場合、\fI\-verbose\fRオプションには、表示する情報の量を決定するサブオプションを指定します。\fI\-certs\fRオプションも指定した場合、デフォルト・モード(またはサブオプション\fIall\fR)では、エントリが処理されるたびに各エントリが表示され、その後にJARファイルの各署名者の証明書情報も表示されます。\fI\-certs\fRおよび\fI\-verbose:grouped\fRサブオプションを指定した場合、同じ署名者情報を持つエントリが、その証明書情報とともに、グループ化されて表示されます。\fI\-certs\fRおよび\fI\-verbose:summary\fRサブオプションを指定した場合、同じ署名者情報を持つエントリが、その証明書情報とともに、グループ化されて表示されます。各エントリの詳細は、\fI1つのエントリ(以上)\fRにまとめられて表示されます。例を参照してください。
 .RE
-.SH "���顼�ȷٹ�"
+.SH "エラーと警告"
 .PP
-��̾�ޤ��ϸ��ڥץ�������ˡ�\fIjarsigner\fR���ޥ�ɤǡ��͡��ʥ��顼�ޤ��Ϸٹ�ȯ�Ԥ�����ǽ��������ޤ���
+署名または検証プロセス中に、\fIjarsigner\fRコマンドで、様々なエラーまたは警告が発行される可能性があります。
 .PP
-�㳲�������硢\fIjarsigner\fR���ޥ�ɤϥ�����1�ǽ�λ���ޤ����㳲�Ϥʤ�����1�İʾ�ν���ʷٹ𤬤����硢\fI\-strict\fR���ץ���󤬻��ꤵ���\fB���ʤ�\fR���ϡ�\fIjarsigner\fR���ޥ�ɤϥ�����0�ǽ�λ����\fI\-strict\fR�����ꤵ��Ƥ�����Ϸٹ𥳡��ɤ�OR�ͤǽ�λ���ޤ�������ٹ�Τߤ����롢�ޤ��Ϸٹ𤬤ޤä����ʤ���硢���ޥ�ɤϾ�˥�����0�ǽ�λ���ޤ���
+障害がある場合、\fIjarsigner\fRコマンドはコード1で終了します。障害はないが、1つ以上の重大な警告がある場合、\fI\-strict\fRオプションが指定されて\fBいない\fR場合は、\fIjarsigner\fRコマンドはコード0で終了し、\fI\-strict\fRが指定されている場合は警告コードのOR値で終了します。情報警告のみがある、または警告がまったくない場合、コマンドは常にコード0で終了します。
 .PP
-���Ȥ��С�����ȥ�ν�̾�˻��Ѥ��������񤬴����ڤ�ǡ��ե�����ν�̾����Ĥ��ʤ�KeyUsage��ĥ��ǽ����Ѥ��Ƥ����硢\fI\-strict\fR���ץ���󤬻��ꤵ��Ƥ���ȡ�\fIjarsigner\fR���ޥ�ɤϥ�����12 (=4+8)�ǽ�λ���ޤ���
+たとえば、エントリの署名に使用される証明書が期限切れで、ファイルの署名を許可しないKeyUsage拡張機能を使用している場合、\fI\-strict\fRオプションが指定されていると、\fIjarsigner\fRコマンドはコード12 (=4+8)で終了します。
 .PP
-\fB����:\fR
-UNIX�١����Υ��ڥ졼�ƥ��󥰡������ƥ�Ǥ�0����255�ޤǤ��ͤΤߤ�ͭ���Τ��ᡢ��λ�����ɤϺ����Ѥ���ޤ���
+\fB注意:\fR
+UNIXベースのオペレーティング・システムでは0から255までの値のみが有効のため、終了コードは再利用されます。
 .PP
-���Υ��������Ǥϡ�\fIjarsigner\fR���ޥ�ɤˤ��ȯ�ԤǤ��륨�顼����ӷٹ��̾���������ɡ������򵭽Ҥ��ޤ���
-.SS "�㳲"
+次のセクションでは、\fIjarsigner\fRコマンドにより発行できるエラーおよび警告の名前、コード、説明を記述します。
+.SS "障害"
 .PP
-���ޥ�ɥ饤����ϥ��顼��JAR�ե�����˽�̾���븰�ڥ��򸡺��Ǥ��ʤ����ޤ��Ͻ�̾�դ�JAR�ե�����θ��ڼ��Ԥʤ�(���ꤵ��ޤ���)��\fIjarsigner\fR���ޥ�ɤμ�����ͳ��
+コマンドライン解析エラー、JARファイルに署名する鍵ペアを検索できない、または署名付きJARファイルの検証失敗など(限定されません)、\fIjarsigner\fRコマンドの失敗理由。
 .PP
 failure
 .RS 4
-������1����̾�ޤ��ϸ��ڤ����Ԥ��ޤ���
+コード1。署名または検証が失敗します。
 .RE
-.SS "����ʷٹ�"
+.SS "重大な警告"
 .PP
-\fB����:\fR
-\fI\-strict\fR���ץ�������ꤷ����硢����ʷٹ�ϥ��顼�Ȥ�����𤵤�ޤ���
+\fB注意:\fR
+\fI\-strict\fRオプションを指定した場合、重大な警告はエラーとして報告されます。
 .PP
-JAR�ե�����ν�̾�˻��Ѥ��������˥��顼�����롢�ޤ��Ͻ�̾�դ�JAR�ե������¾�����꤬����ʤɡ�\fIjarsigner\fR���ޥ�ɤ�����ʷٹ��ȯ�Ԥ�����ͳ��
+JARファイルの署名に使用する証明書にエラーがある、または署名付きJARファイルに他の問題があるなど、\fIjarsigner\fRコマンドが重大な警告を発行する理由。
 .PP
 hasExpiredCert
 .RS 4
-������4������jar�ˤϡ���̾�Ծ����񤬴����ڤ�Υ���ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード4。このjarには、署名者証明書が期限切れのエントリが含まれています。
 .RE
 .PP
 notYetValidCert
 .RS 4
-������4������jar�ˤϡ���̾�Ծ����񤬤ޤ�ͭ���ˤʤäƤ��ʤ�����ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード4。このjarには、署名者証明書がまだ有効になっていないエントリが含まれています。
 .RE
 .PP
 chainNotValidated
 .RS 4
-������4������jar�ˤϡ�����������������������ڤǤ��ʤ�����ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード4。このjarには、証明書チェーンが正しく検証できないエントリが含まれています。
 .RE
 .PP
 badKeyUsage
 .RS 4
-������8������JAR�ˤϡ���̾�Ծ������KeyUsage��ĥ��ǽ�������ɽ�̾����Ĥ��ʤ�����ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード8。このJARには、署名者証明書のKeyUsage拡張機能がコード署名を許可しないエントリが含まれています。
 .RE
 .PP
 badExtendedKeyUsage
 .RS 4
-������8������jar�ˤϡ���̾�Ծ������ExtendedKeyUsage��ĥ��ǽ�������ɽ�̾����Ĥ��ʤ�����ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード8。このjarには、署名者証明書のExtendedKeyUsage拡張機能がコード署名を許可しないエントリが含まれています。
 .RE
 .PP
 badNetscapeCertType
 .RS 4
-������8������jar�ˤϡ���̾�Ծ������NetscapeCertType��ĥ��ǽ�������ɽ�̾����Ĥ��ʤ�����ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード8。このjarには、署名者証明書のNetscapeCertType拡張機能がコード署名を許可しないエントリが含まれています。
 .RE
 .PP
 hasUnsignedEntry
 .RS 4
-������16������jar�ˤϡ������������å��򤷤Ƥ��ʤ�̤��̾�Υ���ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード16。このjarには、整合性チェックをしていない未署名のエントリが含まれています。
 .RE
 .PP
 notSignedByAlias
 .RS 4
-������32������jar�ˤϡ����ꤵ�줿��̾�ˤ�äƽ�̾����Ƥ��ʤ���̾�ѥ���ȥ꤬�ޤޤ�Ƥ��ޤ���
+コード32。このjarには、指定された別名によって署名されていない署名済エントリが含まれています。
 .RE
 .PP
 aliasNotInStore
 .RS 4
-������32������jar�ˤϡ����Υ������ȥ������̾�ˤ�äƽ�̾����Ƥ��ʤ���̾�ѥ���ȥ꤬�ޤޤ�ޤ���
+コード32。このjarには、このキーストア内の別名によって署名されていない署名済エントリが含まれます。
 .RE
-.SS "����ٹ�"
+.SS "情報警告"
 .PP
-����ٹ�ˤϡ����顼�ǤϤʤ�����Ŭ�ڤȤߤʤ�����Τ��ޤޤ�ޤ��������ɤϤ���ޤ���
+情報警告には、エラーではないが不適切とみなされるものが含まれます。コードはありません。
 .PP
 hasExpiringCert
 .RS 4
-����jar�ˤϡ���̾�Ծ�����6�������˴����ڤ�Ȥʤ륨��ȥ꤬�ޤޤ�Ƥ��ޤ���
+このjarには、署名者証明書が6か月以内に期限切れとなるエントリが含まれています。
 .RE
 .PP
 noTimestamp
 .RS 4
-����jar�ˤϡ������ॹ����פ�ޤޤʤ���̾���ޤޤ�Ƥ��ޤ��������ॹ����פʤ��Ǥϡ���̾�Ծ������ͭ������(\fIYYYY\-MM\-DD\fR)��ޤ��Ͼ���μ�����塢�桼�����Ϥ���JAR�ե�����򸡾ڤǤ��ʤ���礬����ޤ���
+このjarには、タイムスタンプを含まない署名が含まれています。タイムスタンプなしでは、署名者証明書の有効期限(\fIYYYY\-MM\-DD\fR)後または将来の取消日後、ユーザーはこのJARファイルを検証できない場合があります。
 .RE
-.SH "��"
-.SS "JAR�ե�����ν�̾"
+.SH "例"
+.SS "JARファイルの署名"
 .PP
-���Υ��ޥ�ɤ���Ѥ��ơ��������ȥ���̾��\fIworking\fR�ǥ��쥯�ȥ��\fImystore\fR�Ȥ���̾���Υ������ȥ��ˤ���\fIjane\fR�Ǥ���桼��������̩����bundle\&.jar�˽�̾������̾�դ�JAR�ե������\fIsbundle\&.jar\fR�Ȥ���̾�����դ��ޤ���
+次のコマンドを使用して、キーストア別名が\fIworking\fRディレクトリの\fImystore\fRという名前のキーストアにある\fIjane\fRであるユーザーの秘密鍵でbundle\&.jarに署名し、署名付きJARファイルに\fIsbundle\&.jar\fRという名前を付けます。
 .sp
 .if n \{\
 .RS 4
@@ -925,9 +925,9 @@ jarsigner \-keystore /working/mystore
 .RE
 .\}
 .PP
-���ҤΥ��ޥ�ɤǤ�\fI\-sigfile\fR�����ꤵ��Ƥ��ʤ����ᡢ��̾�դ�JAR�ե�����˳�Ǽ������������줿\fI\&.SF\fR�ե����뤪���\fI\&.DSA\fR�ե������̾���ϡ���̾�˴�Ť����ǥե���Ȥ�̾���ˤʤ�ޤ��������ϡ�̾���դ���\fIJANE\&.SF\fR�����\fIJANE\&.DSA\fR�Ǥ���
+前述のコマンドでは\fI\-sigfile\fRが指定されていないため、署名付きJARファイルに格納される生成された\fI\&.SF\fRファイルおよび\fI\&.DSA\fRファイルの名前は、別名に基づいたデフォルトの名前になります。これらは、名前付きの\fIJANE\&.SF\fRおよび\fIJANE\&.DSA\fRです。
 .PP
-���ȥ��Υѥ���ɤ������̩���Υѥ���ɤ�������硢���ҤΥ��ޥ�ɤ�û�̤��ơ����Τ��Ȥ�¹ԤǤ��ޤ���
+ストアのパスワードおよび秘密鍵のパスワードを求められる場合、前述のコマンドを短縮して、次のことを実行できます。
 .sp
 .if n \{\
 .RS 4
@@ -940,7 +940,7 @@ jarsigner \-keystore /working/mystore
 .RE
 .\}
 .PP
-�������ȥ����ǥե���ȤΥ������ȥ�(�ۡ��ࡦ�ǥ��쥯�ȥ����\&.keystore)�Ǥ����硢���˼����褦�ˡ��������ȥ�����ꤹ��ɬ�פ�����ޤ���
+キーストアがデフォルトのキーストア(ホーム・ディレクトリ内の\&.keystore)である場合、次に示すように、キーストアを指定する必要がありません。
 .sp
 .if n \{\
 .RS 4
@@ -952,7 +952,7 @@ jarsigner \-signedjar sbundle\&.jar bundle\&.jar jane
 .RE
 .\}
 .PP
-����JAR�ե�����(bundle\&.jar)���̾�դ�JAR�ե�����Ǿ�񤭤����硢���Τ褦��\fI\-signedjar\fR���ץ�������ꤹ��ɬ�פϤ���ޤ���
+入力JARファイル(bundle\&.jar)を署名付きJARファイルで上書きする場合、次のように\fI\-signedjar\fRオプションを指定する必要はありません。
 .sp
 .if n \{\
 .RS 4
@@ -963,9 +963,9 @@ jarsigner bundle\&.jar jane
 .if n \{\
 .RE
 .\}
-.SS "��̾�դ�JAR�ե�����θ���"
+.SS "署名付きJARファイルの検証"
 .PP
-��̾�դ�JAR�ե�����򸡾ڤ��ơ���̾��ͭ����JAR�ե����뤬�����󤵤�ʤ��ä����Ȥ��ǧ����ˤϡ����Τ褦�ʥ��ޥ�ɤ���Ѥ��ޤ���
+署名付きJARファイルを検証して、署名が有効でJARファイルが改ざんされなかったことを確認するには、次のようなコマンドを使用します。
 .sp
 .if n \{\
 .RS 4
@@ -977,7 +977,7 @@ jarsigner \-verify sbundle\&.jar
 .RE
 .\}
 .PP
-���ڤ���������ȡ�\fIjar verified\fR��ɽ������ޤ��������Ǥʤ����ϡ����顼����å�������ɽ������ޤ���\fI\-verbose\fR���ץ�������Ѥ���ȡ��ܺپ��������Ǥ��ޤ���\fIjarsigner\fR��\fI\-verbose\fR���ץ����ȤȤ�˻��Ѥ��륵��ץ�򡢼��˼����ޤ���
+検証が成功すると、\fIjar verified\fRが表示されます。そうでない場合は、エラー・メッセージが表示されます。\fI\-verbose\fRオプションを使用すると、詳細情報を取得できます。\fIjarsigner\fRを\fI\-verbose\fRオプションとともに使用するサンプルを、次に示します。
 .sp
 .if n \{\
 .RS 4
@@ -1000,9 +1000,9 @@ jarsigner \-verify \-verbose sbundle\&.jar
 .if n \{\
 .RE
 .\}
-.SS "������������Ѥ�������"
+.SS "証明書情報を使用した検証"
 .PP
-\fI\-certs\fR���ץ�����\fI\-verify\fR�����\fI\-verbose\fR���ץ����ȤȤ�˻��ꤷ����硢JAR�ե�����γƽ�̾�Ԥξ�������󤬽��Ϥ˴ޤޤ�ޤ������ξ���ˤϡ������񥿥��ס���̾�Ԥμ���̾����(X\&.509������ξ��)���ޤޤ졢�ݥ��å���ˤϡ�JAR�ե�����θ����������񤬥������ȥ�������ȥ�θ�����������˰��פ�����ν�̾�ԤΥ������ȥ���̾���ޤޤ�ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+\fI\-certs\fRオプションを\fI\-verify\fRおよび\fI\-verbose\fRオプションとともに指定した場合、JARファイルの各署名者の証明書情報が出力に含まれます。この情報には、証明書タイプ、署名者の識別名情報(X\&.509証明書の場合)が含まれ、丸カッコ内には、JARファイルの公開鍵証明書がキーストア・エントリの公開鍵証明書に一致する場合の署名者のキーストア別名が含まれます。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -1030,8 +1030,8 @@ jarsigner \-keystore /working/mystore \-verify \-verbose \-certs myTest\&.jar
 .RE
 .\}
 .PP
-��̾�Ԥξ�����X\&.509������ǤϤʤ���硢����̾�����ɽ������ޤ��󡣤��ξ��ˤϡ�������Υ����פ���̾�Τߤ�ɽ������ޤ������Ȥ��С�������PGP������ǡ���̾��\fIbob\fR�Ǥ����硢\fIPGP, (bob)\fR��������ޤ���
-.SH "��Ϣ����"
+署名者の証明書がX\&.509証明書ではない場合、識別名情報は表示されません。その場合には、証明書のタイプと別名のみが表示されます。たとえば、証明書がPGP証明書で、別名が\fIbob\fRである場合、\fIPGP, (bob)\fRを取得します。
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -1063,8 +1063,8 @@ keytool(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/tutorial/security/index\&.html�ˤ���
-�֥�����: Java SE�Υ������ƥ���ǽ��
+http://docs\&.oracle\&.com/javase/tutorial/security/index\&.htmlにある
+「コース: Java SEのセキュリティ機能」
 .RE
 .br
 'pl 8.5i

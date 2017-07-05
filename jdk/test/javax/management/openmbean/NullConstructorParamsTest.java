@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6434298
  * @summary Test IAE is thrown when typeName or description parameter is null for TabularType and CompositeType constructors
  * @author Joel FERAUD
+ * @modules java.management
  */
 
 import javax.management.openmbean.*;

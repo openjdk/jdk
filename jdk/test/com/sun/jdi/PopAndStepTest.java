@@ -8,6 +8,7 @@
  *  @author jjh
  *
  *  @library ..
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g PopAndStepTest.java
  *  @run driver PopAndStepTest
@@ -23,20 +24,20 @@ import java.util.*;
 class PopAndStepTarg {
     public void B() {
         System.out.println("debuggee: in B");
-        System.out.println("debuggee: in B, back to A");   // add line breakpoint here line 26 !!!
+        System.out.println("debuggee: in B, back to A");   // add line breakpoint here line 27 !!!
     }
 
     public void A() {
-        System.out.println("debuggee: in A, about to call B");  // line 30
+        System.out.println("debuggee: in A, about to call B");  // line 31
         B();
-        System.out.println("debuggee: in A, back from B");      // line 32
-        throw new RuntimeException("debuggee: Got to line 33");
+        System.out.println("debuggee: in A, back from B");      // line 33
+        throw new RuntimeException("debuggee: Got to line 34");
     }
 
     public static void main(String[] args) {
-        System.out.println("debuggee: Howdy!");      // line 37
-        PopAndStepTarg xxx = new PopAndStepTarg();   // line 39
-        xxx.A();                                     // line 40
+        System.out.println("debuggee: Howdy!");      // line 38
+        PopAndStepTarg xxx = new PopAndStepTarg();   // line 40
+        xxx.A();                                     // line 41
         System.out.println("debugee: Goodbye from PopAndStepTarg!");
     }
 }
@@ -115,10 +116,10 @@ public class PopAndStepTest extends TestScaffold {
         BreakpointEvent bpe = startToMain("PopAndStepTarg");
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
-        getDebuggeeLineNum(37);
+        getDebuggeeLineNum(38);
 
-        println("Resuming to line 26");
-        bpe = resumeTo("PopAndStepTarg", 26); getDebuggeeLineNum(26);
+        println("Resuming to line 27");
+        bpe = resumeTo("PopAndStepTarg", 27); getDebuggeeLineNum(27);
 
         // The failure is this:
         //   create step request
@@ -140,21 +141,21 @@ public class PopAndStepTest extends TestScaffold {
         srInto.enable(); // This fails
         mainThread.popFrames(frameFor("A"));
         //srInto.enable();   // if the enable is moved here, it passes
-        println("Popped back to line 40 in main, the call to A()");
-        println("Stepping into line 30");
+        println("Popped back to line 41 in main, the call to A()");
+        println("Stepping into line 31");
         waitForRequestedEvent(srInto);   // println
         srInto.disable();
 
-        getDebuggeeLineNum(30);
-
-        // The failure occurs here.
-        println("Stepping over to line 31");
-        stepOverLine(mainThread);   // println
         getDebuggeeLineNum(31);
 
+        // The failure occurs here.
         println("Stepping over to line 32");
-        stepOverLine(mainThread);        // call to B()
+        stepOverLine(mainThread);   // println
         getDebuggeeLineNum(32);
+
+        println("Stepping over to line 33");
+        stepOverLine(mainThread);        // call to B()
+        getDebuggeeLineNum(33);
 
         vm().exit(0);
 

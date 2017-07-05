@@ -48,7 +48,7 @@ public class ProblematicFrameTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "-XX:-TransmitErrorReport", "-XX:-CreateMinidumpOnCrash", Crasher.class.getName());
+            "-Xmx64m", "-XX:-TransmitErrorReport", "-XX:-CreateCoredumpOnCrash", Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotMatch("error occurred during error reporting \\(printing problematic frame\\)");
     }

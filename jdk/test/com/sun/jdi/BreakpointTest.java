@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *
  *  @author jjh
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g BreakpointTest.java
  *  @run driver BreakpointTest
@@ -44,7 +45,7 @@ import java.util.*;
 // the debuggee, waits a bit, and enables the bkpt again.
 
 class BreakpointTarg {
-    public final static int BKPT_LINE = 54;
+    public final static int BKPT_LINE = 55;
             // LINE NUMBER SENSITIVE
 
     public static long count;

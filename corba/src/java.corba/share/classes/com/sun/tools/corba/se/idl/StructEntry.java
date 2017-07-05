@@ -90,7 +90,7 @@ public class StructEntry extends SymtabEntry
   } // generate
 
   /** Access the struct generator.
-      @returns an object which implements the StructGen interface.
+      @return an object which implements the StructGen interface.
       @see StructGen */
   public Generator generator ()
   {

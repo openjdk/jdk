@@ -47,9 +47,6 @@ import com.sun.corba.se.impl.encoding.EncapsOutputStream ;
 import com.sun.corba.se.impl.logging.IORSystemException ;
 
 
-/**
- * @author
- */
 public abstract class ObjectKeyTemplateBase implements ObjectKeyTemplate
 {
     // Fixed constants for Java IDL object key template forms

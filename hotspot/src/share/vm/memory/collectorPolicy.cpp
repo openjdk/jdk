@@ -669,7 +669,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
       }
 
       // Read the gc count while the heap lock is held.
-      gc_count_before = Universe::heap()->total_collections();
+      gc_count_before = gch->total_collections();
     }
 
     VM_GenCollectForAllocation op(size, is_tlab, gc_count_before);

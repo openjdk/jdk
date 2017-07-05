@@ -50,11 +50,11 @@ import sun.security.util.*;
  * }
  * </pre>
  * All subclasses need to implement a constructor of the form
- * <pre>
+ * <pre>{@code
  *     <subclass> (Boolean, Object)
- * </pre>
+ * }</pre>
  * where the Object is typically an array of DER encoded bytes.
- * <p>
+ *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */

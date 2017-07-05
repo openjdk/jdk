@@ -126,7 +126,7 @@ public class GeneralNames {
     /**
      * compare this GeneralNames to other object for equality
      *
-     * @returns true iff this equals other
+     * @return true if this equals obj
      */
     public boolean equals(Object obj) {
         if (this == obj) {

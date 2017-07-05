@@ -33,7 +33,7 @@ import com.sun.corba.se.spi.logging.CORBALogDomains;
  *  will be stored in this object. This object is capable of storing CorbaLoc
  *  profiles as defined in the CorbaName grammer.
  *
- *  @Author Hemanth
+ *  @author Hemanth
  */
 public class CorbanameURL extends INSURLBase
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2581,6 +2581,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ lea(c_rarg1, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
 
     __ mov(c_rarg0, obj_reg);
+    __ mov(c_rarg2, r15_thread);
     __ mov(r12, rsp); // remember sp
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
@@ -2590,6 +2591,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ movptr(rbx, Address(r15_thread, in_bytes(Thread::pending_exception_offset())));
     __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
 
+    // args are (oop obj, BasicLock* lock, JavaThread* thread)
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C)));
     __ mov(rsp, r12); // restore sp
     __ reinit_heapbase();
@@ -3393,8 +3395,8 @@ void OptoRuntime::generate_exception_blob() {
 
   // Save callee-saved registers.  See x86_64.ad.
 
-  // rbp is an implicitly saved callee saved register (i.e. the calling
-  // convention will save restore it in prolog/epilog) Other than that
+  // rbp is an implicitly saved callee saved register (i.e., the calling
+  // convention will save/restore it in the prolog/epilog). Other than that
   // there are no callee save registers now that adapter frames are gone.
 
   __ movptr(Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt), rbp);
@@ -3436,9 +3438,9 @@ void OptoRuntime::generate_exception_blob() {
 
   // Restore callee-saved registers
 
-  // rbp is an implicitly saved callee saved register (i.e. the calling
+  // rbp is an implicitly saved callee-saved register (i.e., the calling
   // convention will save restore it in prolog/epilog) Other than that
-  // there are no callee save registers no that adapter frames are gone.
+  // there are no callee save registers now that adapter frames are gone.
 
   __ movptr(rbp, Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt));
 
@@ -3446,10 +3448,6 @@ void OptoRuntime::generate_exception_blob() {
   __ pop(rdx);                  // No need for exception pc anymore
 
   // rax: exception handler
-
-  // Restore SP from BP if the exception PC is a MethodHandle call site.
-  __ cmpl(Address(r15_thread, JavaThread::is_method_handle_return_offset()), 0);
-  __ cmovptr(Assembler::notEqual, rsp, rbp_mh_SP_save);
 
   // We have a handler in rax (could be deopt blob).
   __ mov(r8, rax);

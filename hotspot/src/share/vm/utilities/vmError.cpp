@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 bool VMError::coredump_status;
 char VMError::coredump_message[O_BUFLEN];
 
-void VMError::report_coredump_status(const char* message, bool status) {
+void VMError::record_coredump_status(const char* message, bool status) {
   coredump_status = status;
   strncpy(coredump_message, message, sizeof(coredump_message));
   coredump_message[sizeof(coredump_message)-1] = 0;
@@ -231,7 +231,7 @@ char* VMError::error_string(char* buf, int buflen) {
 
   if (signame) {
     jio_snprintf(buf, buflen,
-                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" UINTX_FORMAT,
+                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" INTPTR_FORMAT,
                  signame, _id, _pc,
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != NULL && _lineno > 0) {
@@ -239,7 +239,7 @@ char* VMError::error_string(char* buf, int buflen) {
     char separator = os::file_separator()[0];
     const char *p = strrchr(_filename, separator);
     int n = jio_snprintf(buf, buflen,
-                         "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
+                         "Internal Error at %s:%d, pid=%d, tid=" INTPTR_FORMAT,
                          p ? p + 1 : _filename, _lineno,
                          os::current_process_id(), os::current_thread_id());
     if (n >= 0 && n < buflen && _message) {
@@ -253,7 +253,7 @@ char* VMError::error_string(char* buf, int buflen) {
     }
   } else {
     jio_snprintf(buf, buflen,
-                 "Internal Error (0x%x), pid=%d, tid=" UINTX_FORMAT,
+                 "Internal Error (0x%x), pid=%d, tid=" INTPTR_FORMAT,
                  _id, os::current_process_id(), os::current_thread_id());
   }
 
@@ -463,14 +463,7 @@ void VMError::report(outputStream* st) {
 #else
          const char *file = _filename;
 #endif
-         size_t len = strlen(file);
-         size_t buflen = sizeof(buf);
-
-         strncpy(buf, file, buflen);
-         if (len + 10 < buflen) {
-           sprintf(buf + len, ":%d", _lineno);
-         }
-         st->print(" (%s)", buf);
+         st->print(" (%s:%d)", file, _lineno);
        } else {
          st->print(" (0x%x)", _id);
        }
@@ -480,7 +473,7 @@ void VMError::report(outputStream* st) {
 
      // process id, thread id
      st->print(", pid=%d", os::current_process_id());
-     st->print(", tid=" UINTX_FORMAT, os::current_thread_id());
+     st->print(", tid=" INTPTR_FORMAT, os::current_thread_id());
      st->cr();
 
   STEP(40, "(printing error message)")
@@ -525,10 +518,14 @@ void VMError::report(outputStream* st) {
      }
   STEP(63, "(printing core file information)")
     st->print("# ");
-    if (coredump_status) {
-      st->print("Core dump written. Default location: %s", coredump_message);
+    if (CreateCoredumpOnCrash) {
+      if (coredump_status) {
+        st->print("Core dump will be written. %s", coredump_message);
+      } else {
+        st->print("No core dump will be written. %s", coredump_message);
+      }
     } else {
-      st->print("Failed to write core dump. %s", coredump_message);
+      st->print("CreateCoredumpOnCrash turned off, no core file dumped");
     }
     st->cr();
     st->print_cr("#");
@@ -768,7 +765,7 @@ void VMError::report(outputStream* st) {
   STEP(220, "(printing environment variables)" )
 
      if (_verbose) {
-       os::print_environment_variables(st, env_list, buf, sizeof(buf));
+       os::print_environment_variables(st, env_list);
        st->cr();
      }
 
@@ -918,7 +915,7 @@ void VMError::report_and_die() {
   static bool transmit_report_done = false; // done error reporting
 
   if (SuppressFatalErrorMessage) {
-      os::abort();
+      os::abort(CreateCoredumpOnCrash);
   }
   jlong mytid = os::current_thread_id();
   if (first_error == NULL &&
@@ -936,8 +933,7 @@ void VMError::report_and_die() {
       ShowMessageBoxOnError = false;
     }
 
-    // Write a minidump on Windows, check core dump limits on Linux/Solaris
-    os::check_or_create_dump(_siginfo, _context, buffer, sizeof(buffer));
+    os::check_dump_limit(buffer, sizeof(buffer));
 
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
@@ -1108,7 +1104,7 @@ void VMError::report_and_die() {
     if (!skip_os_abort) {
       skip_os_abort = true;
       bool dump_core = should_report_bug(first_error->_id);
-      os::abort(dump_core);
+      os::abort(dump_core && CreateCoredumpOnCrash, _siginfo, _context);
     }
 
     // if os::abort() doesn't abort, try os::die();

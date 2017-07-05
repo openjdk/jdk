@@ -2,10 +2,10 @@
 .\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jar
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ���ܥġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jar" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
+.TH "jar" "1" "2013年11月21日" "JDK 8" "基本ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,9 +49,9 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jar \- Java Archive (JAR)�ե���������ޤ���
-.SH "����"
-JAR�ե�����κ���
+jar \- Java Archive (JAR)ファイルを操作します。
+.SH "概要"
+JARファイルの作成
 .sp
 .if n \{\
 .RS 4
@@ -62,7 +62,7 @@ JAR�ե�����κ���
 .if n \{\
 .RE
 .\}
-JAR�ե�����ι���
+JARファイルの更新
 .sp
 .if n \{\
 .RS 4
@@ -73,7 +73,7 @@ JAR�ե�����ι���
 .if n \{\
 .RE
 .\}
-JAR�ե���������
+JARファイルの抽出
 .sp
 .if n \{\
 .RS 4
@@ -84,7 +84,7 @@ JAR�ե���������
 .if n \{\
 .RE
 .\}
-JAR�ե�����Υ���ƥ�ĤΥꥹ��
+JARファイルのコンテンツのリスト
 .sp
 .if n \{\
 .RS 4
@@ -95,7 +95,7 @@ JAR�ե�����Υ���ƥ�ĤΥꥹ��
 .if n \{\
 .RE
 .\}
-JAR�ե�����ؤκ������ɲ�
+JARファイルへの索引の追加
 .sp
 .if n \{\
 .RS 4
@@ -106,48 +106,48 @@ JAR�ե�����ؤκ������ɲ�
 .if n \{\
 .RE
 .\}
-.SH "����"
+.SH "説明"
 .PP
-\fIjar\fR���ޥ�ɤϡ�ZIP�����ZLIB���̷����˴�Ť����ѤΥ��������֤���Ӱ��̥ġ���Ǥ�����������\fIjar\fR���ޥ�ɤϡ���ˤ����Ĥ���Java���ץ�åȤ䥢�ץꥱ��������ñ��Υ��������֤˥ѥå�����������褦���߷פ���ޤ��������ץ�åȤ䥢�ץꥱ�������Υ���ݡ��ͥ��(�ե����롢���᡼��������ӥ������)��1�ĤΥ��������֤˷�礵��Ƥ���ȡ�Java�����������(�֥饦���ʤ�)�ϡ������Υ���ݡ��ͥ�Ȥ�1���HTTP�ȥ�󥶥������ǥ���������ɤ��뤳�Ȥ��Ǥ�������ݡ��ͥ�Ȥ��Ȥ˿�������³�����פˤʤ�ޤ�������ˤ�ꡢ����������ɻ��֤�������û�̤���ޤ����ޤ���\fIjar\fR���ޥ�ɤϥե�����ΰ��̤�Ԥ����ᡢ����������ɻ��֤������û�̤���ޤ����ޤ���\fIjar\fR���ޥ�ɤˤ�äơ��ե�������θġ��Υ���ȥ�˥��ץ�åȺ����Ԥˤ���̾��񤭹���뤿�ᡢ���۸���ǧ�ڤ���ǽ�ˤʤ�ޤ���JAR�ե�����ϡ����̤���Ƥ��뤫�ɤ����ˤ�����餺�����饹���ѥ��Υ���ȥ�Ȥ��ƻ��ѤǤ��ޤ���
+\fIjar\fRコマンドは、ZIPおよびZLIB圧縮形式に基づく汎用のアーカイブおよび圧縮ツールです。ただし、\fIjar\fRコマンドは、主にいくつかのJavaアプレットやアプリケーションを単一のアーカイブにパッケージ化するように設計されました。アプレットやアプリケーションのコンポーネント(ファイル、イメージ、およびサウンド)が1つのアーカイブに結合されていると、Javaエージェント(ブラウザなど)は、それらのコンポーネントを1回のHTTPトランザクションでダウンロードすることができ、コンポーネントごとに新しい接続が不要になります。これにより、ダウンロード時間が大幅に短縮されます。また、\fIjar\fRコマンドはファイルの圧縮も行うため、ダウンロード時間がさらに短縮されます。また、\fIjar\fRコマンドによって、ファイル内の個々のエントリにアプレット作成者による署名を書き込めるため、配布元の認証が可能になります。JARファイルは、圧縮されているかどうかにかかわらず、クラス・パスのエントリとして使用できます。
 .PP
-\fIjar\fR���ޥ�ɤι�ʸ�ϡ�\fItar\fR���ޥ�ɤι�ʸ�˻��Ƥ��ޤ���ɬ�ܤ�\fI���ΰ���\fR��1�Ĥ�������줿ʣ�������⡼�ɤ�����ޤ���¾�ΰ����ϡ�����ư����ѹ�����\fI���ץ����\fR���ޤ�������¹Ԥ��뤿���ɬ�פ�\fI���ڥ���\fR����Ѥ��ޤ���
-.SH "���ΰ���"
+\fIjar\fRコマンドの構文は、\fItar\fRコマンドの構文に似ています。必須の\fI操作の引数\fRの1つで定義された複数の操作モードがあります。他の引数は、操作の動作を変更する\fIオプション\fR、または操作を実行するために必要な\fIオペランド\fRを使用します。
+.SH "操作の引数"
 .PP
-\fIjar\fR���ޥ�ɤ���Ѥ�����ϡ��������ΰ����Τ����줫����ꤷ�Ƽ¹Ԥ�����������򤹤�ɬ�פ�����ޤ������ޥ�ɥ饤���¾��1ʸ���Υ��ץ����Ⱥ��ߤ����뤳�Ȥ��Ǥ��ޤ������̾���ΰ����ϻ��ꤵ���ǽ�ΰ����Ǥ���
+\fIjar\fRコマンドを使用する場合は、次の操作の引数のいずれかを指定して実行される操作を選択する必要があります。コマンドラインで他の1文字のオプションと混在させることができますが、通常、操作の引数は指定される最初の引数です。
 .PP
 c
 .RS 4
-������JAR���������֤�������ޤ���
+新しいJARアーカイブを作成します。
 .RE
 .PP
 i
 .RS 4
-JAR���������֤κ���������������ޤ���
+JARアーカイブの索引情報を生成します。
 .RE
 .PP
 t
 .RS 4
-JAR���������֤Υ���ƥ�Ĥ�ꥹ�Ȥ��ޤ���
+JARアーカイブのコンテンツをリストします。
 .RE
 .PP
 u
 .RS 4
-JAR���������֤򹹿����ޤ���
+JARアーカイブを更新します。
 .RE
 .PP
 x
 .RS 4
-JAR���������֤���ե��������Ф��ޤ���
+JARアーカイブからファイルを抽出します。
 .RE
-.SH "���ץ����"
+.SH "オプション"
 .PP
-���Υ��ץ�������Ѥ��ơ�JAR�ե�������������������Фޤ���ɽ��������ˡ�򥫥����ޥ������ޤ���
+次のオプションを使用して、JARファイルを作成、更新、抽出または表示する方法をカスタマイズします。
 .PP
 e
 .RS 4
-\fIentrypoint\fR���ڥ��ɤǻ��ꤵ��륯�饹�򡢼¹Բ�ǽJAR�ե�����˥Х�ɥ뤵��륹����ɥ�����Java���ץꥱ�������Υ���ȥꡦ�ݥ���Ȥ����ꤷ�ޤ������Υ��ץ�������Ѥ���ȡ��ޥ˥ե����ȡ��ե��������\fIMain\-Class\fR°���ͤ������ޤ��ϥ����С��饤�ɤ���ޤ���\fIe\fR���ץ����ϡ�JAR�ե�����κ�����(\fIc\fR)�ޤ��Ϲ�����(\fIu\fR)�˻��ѤǤ��ޤ���
+\fIentrypoint\fRオペランドで指定されるクラスを、実行可能JARファイルにバンドルされるスタンドアロンJavaアプリケーションのエントリ・ポイントに設定します。このオプションを使用すると、マニフェスト・ファイル内の\fIMain\-Class\fR属性値が作成またはオーバーライドされます。\fIe\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
 .sp
-���Ȥ��С����Υ��ޥ�ɤǤϡ�\fIMain\&.jar\fR���������֤�\fIMain\&.class\fR�ե�����ȤȤ�˺�������ޤ��������κݡ��ޥ˥ե��������\fIMain\-Class\fR°���ͤ�\fIMain\fR�����ꤵ��ޤ���
+たとえば、次のコマンドでは、\fIMain\&.jar\fRアーカイブが\fIMain\&.class\fRファイルとともに作成されますが、その際、マニフェスト内の\fIMain\-Class\fR属性値は\fIMain\fRに設定されます。
 .sp
 .if n \{\
 .RS 4
@@ -158,7 +158,7 @@ jar cfe Main\&.jar Main Main\&.class
 .if n \{\
 .RE
 .\}
-Java Runtime Environment (JRE)�ϡ����Υ��ޥ�ɤ�¹Ԥ��ơ����Υ��ץꥱ��������ľ�ܸƤӽФ����Ȥ��Ǥ��ޤ���
+Java Runtime Environment (JRE)は、次のコマンドを実行して、このアプリケーションを直接呼び出すことができます。
 .sp
 .if n \{\
 .RS 4
@@ -169,7 +169,7 @@ java \-jar Main\&.jar
 .if n \{\
 .RE
 .\}
-����ѥå�������˥���ȥꡦ�ݥ���ȤΥ��饹̾���ޤޤ�Ƥ����硢�ɥå�(\&.)�ޤ��ϥ���å���(/)�Τ����줫����ڤ�ʸ���Ȥ��ƻ��ѤǤ��ޤ������Ȥ��С�\fIMain\&.class\fR��\fImydir\fR�Ȥ���̾���Υѥå������˴ޤޤ�Ƥ����硢����ȥꡦ�ݥ���Ȥϼ��Τ����줫����ˡ�ǻ���Ǥ��ޤ���
+あるパッケージ内にエントリ・ポイントのクラス名が含まれている場合、ドット(\&.)またはスラッシュ(/)のいずれかを区切り文字として使用できます。たとえば、\fIMain\&.class\fRが\fImydir\fRという名前のパッケージに含まれている場合、エントリ・ポイントは次のいずれかの方法で指定できます。
 .sp
 .if n \{\
 .RS 4
@@ -197,8 +197,8 @@ jar \-cfe Main\&.jar mydir\&.Main mydir/Main\&.class
 allbox tab(:);
 l.
 T{
-����
-����Υޥ˥ե����Ȥˤ�\fIMain\-Class\fR°�����ޤޤ�Ƥ������\fIm\fR���ץ�����\fIe\fR���ץ�����ξ����Ʊ���˻��ꤹ��ȡ�\fIMain\-Class\fR�λ��꤬�����ޤ��ˤʤ�ޤ������Τ����ޤ����ˤ�äƥ��顼��ȯ������\fIjar\fR���ޥ�ɤκ����乹��������λ���ޤ���
+注意
+特定のマニフェストにも\fIMain\-Class\fR属性が含まれている場合に\fIm\fRオプションと\fIe\fRオプションの両方を同時に指定すると、\fIMain\-Class\fRの指定があいまいになります。このあいまいさによってエラーが発生し、\fIjar\fRコマンドの作成や更新の操作が終了します。
 T}
 .TE
 .sp 1
@@ -208,42 +208,42 @@ T}
 .PP
 f
 .RS 4
-\fIjarfile\fR���ڥ��ɤǻ��ꤵ�줿�ե�����򡢺���(\fIc\fR)������(\fIu\fR)�����(\fIx\fR)�ޤ���ɽ��(\fIt\fR)�����JAR�ե������̾�������ꤷ�ޤ���\fIf\fR���ץ���󤪤��\fIjarfile\fR���ڥ��ɤ��ά����ȡ�\fIjar\fR���ޥ�ɤˡ�\fIstdin\fR�����JAR�ե�����̾���������뤫(\fIx\fR�����\fIt\fR�ξ��)��JAR�ե������\fIstdout\fR���������뤳��(\fIc\fR�����\fIu\fR�ξ��)���ؼ�����ޤ���
+\fIjarfile\fRオペランドで指定されたファイルを、作成(\fIc\fR)、更新(\fIu\fR)、抽出(\fIx\fR)または表示(\fIt\fR)されるJARファイルの名前に設定します。\fIf\fRオプションおよび\fIjarfile\fRオペランドを省略すると、\fIjar\fRコマンドに、\fIstdin\fRからのJARファイル名を受け入れるか(\fIx\fRおよび\fIt\fRの場合)、JARファイルを\fIstdout\fRに送信すること(\fIc\fRおよび\fIu\fRの場合)が指示されます。
 .RE
 .PP
 m
 .RS 4
-(\fIMETA\-INF/MANIFEST\&.MF\fR�Υ��������֤ˤ���)
-\fIjar\fR���ޥ�ɤΥޥ˥ե����ȡ��ե������\fImanifest\fR���ڥ��ɤǻ��ꤵ�줿�ե����뤫�顢°����̾�����ͤΥڥ���ޤ�ޤ���\fIjar\fR���ޥ�ɤϡ�Ʊ��̾���Υ���ȥ꤬���Ǥ�¸�ߤ�����������°����̾�����ͤ�JAR�ե�������ɲä��ޤ���Ʊ��̾���Υ���ȥ꤬���Ǥ�¸�ߤ����硢\fIjar\fR���ޥ�ɤ�°�����ͤ򹹿����ޤ���\fIm\fR���ץ����ϡ�JAR�ե�����κ�����(\fIc\fR)�ޤ��Ϲ�����(\fIu\fR)�˻��ѤǤ��ޤ���
+(\fIMETA\-INF/MANIFEST\&.MF\fRのアーカイブにある)
+\fIjar\fRコマンドのマニフェスト・ファイルの\fImanifest\fRオペランドで指定されたファイルから、属性の名前と値のペアを含めます。\fIjar\fRコマンドは、同じ名前のエントリがすでに存在する場合を除き、属性の名前と値をJARファイルに追加します。同じ名前のエントリがすでに存在する場合、\fIjar\fRコマンドは属性の値を更新します。\fIm\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
 .sp
-�ǥե���ȤΥޥ˥ե����ȡ��ե�����ˤϴޤޤ�ʤ��ޥ˥ե����Ȥˡ����̤���Ū��̾��\-�ͤ�°���ڥ����ɲäǤ��ޤ������Ȥ��С��٥�������󡢥�꡼�����󡢥ѥå�������������󥰤���ꤹ��°�����ޤ���JAR�˥Х�ɥ뤵�줿���ץꥱ��������¹Բ�ǽ�ˤ��뤿���°�����ɲäǤ��ޤ���\fIm\fR���ץ����λ�����ϡ�http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.html�ˤ���
-�ץ������Υѥå��������˴ؤ����򻲾Ȥ��Ƥ���������
+デフォルトのマニフェスト・ファイルには含まれないマニフェストに、特別な目的の名前\-値の属性ペアを追加できます。たとえば、ベンダー情報、リリース情報、パッケージ・シーリングを指定する属性、またはJARにバンドルされたアプリケーションを実行可能にするための属性を追加できます。\fIm\fRオプションの使用例は、http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
+プログラムのパッケージ化に関する項を参照してください。
 .RE
 .PP
 M
 .RS 4
-�ޥ˥ե����ȡ��ե����롦����ȥ��������ʤ�(\fIc\fR�����\fIu\fR�ξ��)�����ޤ��ϥޥ˥ե����ȡ��ե����롦����ȥ꤬¸�ߤ�����Ϻ�����ޤ�(\fIu\fR�ξ��)��\fIM\fR���ץ����ϡ�JAR�ե�����κ�����(\fIc\fR)�ޤ��Ϲ�����(\fIu\fR)�˻��ѤǤ��ޤ���
+マニフェスト・ファイル・エントリを作成しない(\fIc\fRおよび\fIu\fRの場合)か、またはマニフェスト・ファイル・エントリが存在する場合は削除します(\fIu\fRの場合)。\fIM\fRオプションは、JARファイルの作成時(\fIc\fR)または更新時(\fIu\fR)に使用できます。
 .RE
 .PP
 n
 .RS 4
-JAR�ե�����κ���(\fIc\fR)���ˡ����Υ��ץ����ϡ�����ƥ�Ĥ�pack200(1)���ޥ�ɤΥѥå�����ӥ���ѥå����αƶ�������ʤ��褦�˥��������֤����������ޤ�����������������Ѥ��ʤ���硢��̾�դ�JAR�ν�̾��̵���ˤʤ�ޤ���
+JARファイルの作成(\fIc\fR)時に、このオプションは、コンテンツがpack200(1)コマンドのパックおよびアンパック操作の影響を受けないようにアーカイブを正規化します。この正規化を使用しない場合、署名付きJARの署名は無効になります。
 .RE
 .PP
 v
 .RS 4
-�ܺ٤ʽ��Ϥ�ɸ����Ϥ��������ޤ�����򻲾Ȥ��Ƥ���������
+詳細な出力を標準出力に生成します。例を参照してください。
 .RE
 .PP
 0
 .RS 4
-(����) ZIP���̤���Ѥ��ʤ���JAR�ե���������(\fIc\fR)�ޤ��Ϲ���(\fIu\fR)���ޤ���
+(ゼロ) ZIP圧縮を使用しないでJARファイルを作成(\fIc\fR)または更新(\fIu\fR)します。
 .RE
 .PP
 \-C \fIdir\fR
 .RS 4
-JAR�ե�����κ���(\fIc\fR)�ޤ��Ϲ���(\fIu\fR)���ˡ����Υ��ץ�����\fIfile\fR���ڥ��ɤǻ��ꤵ�줿�ե�����ν�����˥ǥ��쥯�ȥ����Ū���ѹ����ޤ����������ϡ�UNIX
-\fItar\fR�桼�ƥ���ƥ���\fI\-C\fR���ץ�����Ʊ�ͤˤʤ뤳�Ȥ���Ū�Ȥ��Ƥ��ޤ������Ȥ��С����Υ��ޥ�ɤˤ�äơ�\fIclasses\fR�ǥ��쥯�ȥ���ѹ����졢���Υǥ��쥯�ȥ꤫��\fImy\&.jar\fR��\fIBar\&.class\fR�ե����뤬�ɲä���ޤ���
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、このオプションは\fIfile\fRオペランドで指定されたファイルの処理中にディレクトリを一時的に変更します。この操作は、UNIX
+\fItar\fRユーティリティの\fI\-C\fRオプションと同様になることを目的としています。たとえば、次のコマンドによって、\fIclasses\fRディレクトリに変更され、そのディレクトリから\fImy\&.jar\fRに\fIBar\&.class\fRファイルが追加されます。
 .sp
 .if n \{\
 .RS 4
@@ -254,7 +254,7 @@ jar uf my\&.jar \-C classes Bar\&.class
 .if n \{\
 .RE
 .\}
-���Υ��ޥ�ɤǤϡ�\fIclasses\fR�ǥ��쥯�ȥ�˰�ư����classes�ǥ��쥯�ȥ���Τ��٤ƤΥե������\fImy\&.jar\fR���ɲä��ޤ�(JAR�ե�����ˤ�\fIclasses\fR�ǥ��쥯�ȥ��������ޤ���)�����˸��Υǥ��쥯�ȥ����äƤ��顢\fIbin\fR�ǥ��쥯�ȥ�˰�ư����\fIXyz\&.class\fR��\fImy\&.jar\fR���ɲä��ޤ���
+次のコマンドでは、\fIclasses\fRディレクトリに移動し、classesディレクトリ内のすべてのファイルを\fImy\&.jar\fRに追加します(JARファイルには\fIclasses\fRディレクトリを作成しません)。次に元のディレクトリに戻ってから、\fIbin\fRディレクトリに移動し、\fIXyz\&.class\fRを\fImy\&.jar\fRに追加します。
 .sp
 .if n \{\
 .RS 4
@@ -265,7 +265,7 @@ jar uf my\&.jar \-C classes \&. \-C bin Xyz\&.class
 .if n \{\
 .RE
 .\}
-\fIclasses\fR��\fIbar1\fR�ե������\fIbar2\fR�ե����뤬�ޤޤ�Ƥ����硢���ҤΥ��ޥ�ɤ�¹Ԥ����塢JAR�ե�����ˤϼ��Τ�Τ��ޤޤ�ޤ���
+\fIclasses\fRに\fIbar1\fRファイルと\fIbar2\fRファイルが含まれている場合、前述のコマンドを実行した後、JARファイルには次のものが含まれます。
 .sp
 .if n \{\
 .RS 4
@@ -285,41 +285,41 @@ Xyz\&.class
 .PP
 \-J\fIoption\fR
 .RS 4
-���ꤷ��JVM���ץ�����JRE��JAR�ե������¹Ԥ���ݤ˻��Ѥ���褦�����ꤷ�ޤ���JVM���ץ����ϡ�java(1)���ޥ�ɤΥ�ե���󥹡��ڡ�������������Ƥ��ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���
+指定したJVMオプションを、JREがJARファイルを実行する際に使用するように設定します。JVMオプションは、java(1)コマンドのリファレンス・ページで説明されています。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。
 .RE
-.SH "���ڥ���"
+.SH "オペランド"
 .PP
-���Υ��ڥ��ɤϡ�\fIjar\fR���ޥ�ɤ�ǧ������ޤ���
+次のオペランドは、\fIjar\fRコマンドで認識されます。
 .PP
 \fIfile\fR
 .RS 4
-JAR�ե�����κ���(\fIc\fR)�ޤ��Ϲ���(\fIu\fR)���ˡ�\fIfile\fR���ڥ��ɤϡ����������֤��ɲä���ɬ�פΤ���ե�����ޤ��ϥǥ��쥯�ȥ�Υѥ���̾����������ޤ���JAR�ե���������(\fIx\fR)�ޤ��ϥ���ƥ�ĤΥꥹ��(\fIt\fR)���ˡ�\fIfile\fR���ڥ��ɤ���Фޤ��ϥꥹ�Ȥ���ե�����Υѥ���̾����������ޤ������ʤ��Ȥ�1�Ĥ�ͭ���ʥե�����ޤ��ϥǥ��쥯�ȥ����ꤹ��ɬ�פ�����ޤ���ʣ����\fIfile\fR���ڥ��ɤ����Ƕ��ڤ�ޤ���\fIentrypoint\fR��\fIjarfile\fR�ޤ���\fImanifest\fR���ڥ��ɤ����Ѥ������ϡ����θ��\fIfile\fR���ڥ��ɤ���ꤹ��ɬ�פ�����ޤ���
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fIfile\fRオペランドは、アーカイブに追加する必要のあるファイルまたはディレクトリのパスと名前を定義します。JARファイルの抽出(\fIx\fR)またはコンテンツのリスト(\fIt\fR)時に、\fIfile\fRオペランドは抽出またはリストするファイルのパスと名前を定義します。少なくとも1つの有効なファイルまたはディレクトリを指定する必要があります。複数の\fIfile\fRオペランドを空白で区切ります。\fIentrypoint\fR、\fIjarfile\fRまたは\fImanifest\fRオペランドが使用される場合は、その後に\fIfile\fRオペランドを指定する必要があります。
 .RE
 .PP
 \fIentrypoint\fR
 .RS 4
-JAR�ե�����κ���(\fIc\fR)�ޤ��Ϲ���(\fIu\fR)���ˡ�\fIentrypoint\fR���ڥ��ɤϡ��¹Բ�ǽJAR�ե�����˥Х�ɥ뤵��Ƥ��륹����ɥ�����Java���ץꥱ�������Υ���ȥꡦ�ݥ���ȤȤʤ륯�饹��̾����������ޤ���\fIe\fR���ץ����¸�ߤ������\fIentrypoint\fR���ڥ��ɤ���ꤹ��ɬ�פ�����ޤ���
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fIentrypoint\fRオペランドは、実行可能JARファイルにバンドルされているスタンドアロンJavaアプリケーションのエントリ・ポイントとなるクラスの名前を定義します。\fIe\fRオプションが存在する場合は\fIentrypoint\fRオペランドを指定する必要があります。
 .RE
 .PP
 \fIjarfile\fR
 .RS 4
-����(\fIc\fR)������(\fIu\fR)�����(\fIx\fR)�ޤ���ɽ��(\fIt\fR)����ե������̾����������ޤ���\fIf\fR���ץ����¸�ߤ������\fIjarfile\fR���ڥ��ɤ���ꤹ��ɬ�פ�����ޤ���\fIf\fR���ץ���󤪤��\fIjarfile\fR���ڥ��ɤ��ά����ȡ�\fIjar\fR���ޥ�ɤˡ�\fIstdin\fR�����JAR�ե�����̾���������뤫(\fIx\fR�����\fIt\fR�ξ��)��JAR�ե������\fIstdout\fR���������뤳��(\fIc\fR�����\fIu\fR�ξ��)���ؼ�����ޤ���
+作成(\fIc\fR)、更新(\fIu\fR)、抽出(\fIx\fR)または表示(\fIt\fR)するファイルの名前を定義します。\fIf\fRオプションが存在する場合は\fIjarfile\fRオペランドを指定する必要があります。\fIf\fRオプションおよび\fIjarfile\fRオペランドを省略すると、\fIjar\fRコマンドに、\fIstdin\fRからのJARファイル名を受け入れるか(\fIx\fRおよび\fIt\fRの場合)、JARファイルを\fIstdout\fRに送信すること(\fIc\fRおよび\fIu\fRの場合)が指示されます。
 .sp
-JAR�ե����������դ�(\fIi\fR)������ϡ�\fIf\fR���ץ�������ꤷ�ʤ���\fIjarfile\fR���ڥ��ɤ���ꤷ�ޤ���
+JARファイルを索引付け(\fIi\fR)する場合は、\fIf\fRオプションを指定しないで\fIjarfile\fRオペランドを指定します。
 .RE
 .PP
 \fImanifest\fR
 .RS 4
-JAR�ե�����κ���(\fIc\fR)�ޤ��Ϲ���(\fIu\fR)���ˡ�\fImanifest\fR���ڥ��ɤ�JAR�ե������\fIMANIFEST\&.MF\fR�˴ޤ��°����̾�����ͤ���Ĵ�¸�Υޥ˥ե����ȡ��ե������������ޤ���\fIf\fR���ץ����¸�ߤ������\fImanifest\fR���ڥ��ɤ���ꤹ��ɬ�פ�����ޤ���
+JARファイルの作成(\fIc\fR)または更新(\fIu\fR)時に、\fImanifest\fRオペランドはJARファイルの\fIMANIFEST\&.MF\fRに含める属性の名前と値を持つ既存のマニフェスト・ファイルを定義します。\fIf\fRオプションが存在する場合は\fImanifest\fRオペランドを指定する必要があります。
 .RE
 .PP
 \fI@arg\-file\fR
 .RS 4
-\fIjar\fR���ޥ�ɤ�û�̤ޤ��ϴ��ǲ�����ˤϡ��̤Υƥ����ȡ��ե�������ΰ�������ꤷ����Ƭ���Ȥ��ƥ��åȥޡ���(@)���դ���\fIjar\fR���ޥ�ɤ��Ϥ����Ȥ��Ǥ��ޤ���\fIjar\fR���ޥ�ɤϡ����åȥޡ���ʸ���ǻϤޤ�����򸫤Ĥ���ȡ����Υե���������Ƥ�Ÿ�����ư����ꥹ�Ȥ��������ޤ���
+\fIjar\fRコマンドを短縮または簡素化するには、別のテキスト・ファイル内の引数を指定し、接頭辞としてアットマーク(@)を付けて\fIjar\fRコマンドに渡すことができます。\fIjar\fRコマンドは、アットマーク文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
 .sp
-�����ե�����ˤϡ�\fIjar\fR���ޥ�ɤΥ��ץ����Ȱ���(�����ե�����򥵥ݡ��Ȥ��ʤ���ư�ġ�����Ϥ����\fI\-J\fR���ץ��������)��ޤ�뤳�Ȥ��Ǥ��ޤ����ե�������ΰ����ϡ�����ޤ��ϲ���ʸ���Ƕ��ڤ뤳�Ȥ��Ǥ��ޤ��������ե�������Υե�����̾�ϡ�\fIjar\fR���ޥ�ɤ�¹ԤǤ��븽�ߤΥǥ��쥯�ȥ���Ф�������Ū�Ǥ��ꡢ�����ե�����ξ����Ф��Ƥ�����Ū�ǤϤ���ޤ����̾�ϥ��ڥ졼�ƥ��󥰡������ƥࡦ������ˤ�ä�Ÿ������륢�����ꥹ��(*)�ʤɤΥ磻��ɥ����ɤ�Ÿ������ޤ���
+引数ファイルには、\fIjar\fRコマンドのオプションと引数(引数ファイルをサポートしない起動ツールに渡される\fI\-J\fRオプションを除く)を含めることができます。ファイル内の引数は、空白または改行文字で区切ることができます。引数ファイル内のファイル名は、\fIjar\fRコマンドを実行できる現在のディレクトリに対して相対的であり、引数ファイルの場所に対しては相対的ではありません。通常はオペレーティング・システム・シェルによって展開されるアスタリスク(*)などのワイルドカードは展開されません。
 .sp
-������ϡ�\fIfind\fR���ޥ�ɤˤ�븽�ߤΥǥ��쥯�ȥ���Ϥ���Υե�����̾��\fIclasses\&.list\fR�ե���������������ˡ�򼨤��ޤ���
+次の例は、\fIfind\fRコマンドによる現在のディレクトリ出力からのファイル名で\fIclasses\&.list\fRファイルを作成する方法を示します。
 .sp
 .if n \{\
 .RS 4
@@ -330,7 +330,7 @@ find \&. \-name \*(Aq*\&.class\*(Aq \-print > classes\&.list
 .if n \{\
 .RE
 .\}
-\fIjar\fR���ޥ�ɤ�¹Ԥ���\fI@arg\-file\fR��ʸ����Ѥ���\fIclasses\&.list\fR�ե�������Ϥ����Ȥ��Ǥ��ޤ���
+\fIjar\fRコマンドを実行し、\fI@arg\-file\fR構文を使用して\fIclasses\&.list\fRファイルを渡すことができます。
 .sp
 .if n \{\
 .RS 4
@@ -341,7 +341,7 @@ jar cf my\&.jar @classes\&.list
 .if n \{\
 .RE
 .\}
-�����ե�����ϥѥ������Ǥ��ޤ��������Хѥ������Ҥ��줿�����ե�������Τ��٤ƤΥե�����̾�ϡ��Ϥ��줿�ѥ����Ф�������Ū�ǤϤʤ���\fIjar\fR���ޥ�ɤθ��ߤκ�ȥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ������Ȥ��С����Τ褦�ˤʤ�ޤ���
+引数ファイルはパスを指定できますが、相対パスが記述された引数ファイル内のすべてのファイル名は、渡されたパスに対して相対的ではなく、\fIjar\fRコマンドの現在の作業ディレクトリに相対的となります。たとえば、次のようになります。
 .sp
 .if n \{\
 .RS 4
@@ -353,9 +353,9 @@ jar @dir/classes\&.list
 .RE
 .\}
 .RE
-.SH "����"
+.SH "注意"
 .PP
-\fIe\fR��\fIf\fR�����\fIm\fR���ץ����ϡ�\fIentrypoint\fR��\fIjarfile\fR�����\fImanifest\fR���ڥ��ɤ�Ʊ������ǥ��ޥ�ɥ饤��˽и�����ɬ�פ�����ޤ���
+\fIe\fR、\fIf\fRおよび\fIm\fRオプションは、\fIentrypoint\fR、\fIjarfile\fRおよび\fImanifest\fRオペランドと同じ順序でコマンドラインに出現する必要があります。
 .sp
 .if n \{\
 .RS 4
@@ -366,9 +366,9 @@ jar cmef myManifestFile MyMainClass myFile\&.jar *\&.class
 .if n \{\
 .RE
 .\}
-.SH "��"
+.SH "例"
 .PP
-\fBExample 1\fR, ��Ĺ�ʽ��Ϥˤ�븽�ߤΥǥ��쥯�ȥ꤫��Τ��٤ƤΥե�������ɲ�
+\fBExample 1\fR, 冗長な出力による現在のディレクトリからのすべてのファイルの追加
 .RS 4
 .sp
 .if n \{\
@@ -396,7 +396,7 @@ adding: spacemusic\&.au(in = 3079) (out= 73)(deflated 97%)
 .\}
 .RE
 .PP
-\fBExample 2\fR, ���֥ǥ��쥯�ȥ꤫��Υե�������ɲ�
+\fBExample 2\fR, サブディレクトリからのファイルの追加
 .RS 4
 .sp
 .if n \{\
@@ -427,7 +427,7 @@ audio/ bundle\&.jar classes/ images/
 .\}
 .RE
 .PP
-\fBExample 3\fR, JAR�Υ���ƥ�ĤΥꥹ��
+\fBExample 3\fR, JARのコンテンツのリスト
 .RS 4
 .sp
 .if n \{\
@@ -460,9 +460,9 @@ images/at_work\&.gif
 .\}
 .RE
 .PP
-\fBExample 4\fR, �������ɲ�
+\fBExample 4\fR, 索引の追加
 .RS 4
-��������Υ��ץꥱ����������߰�¸���饹��\fImain\&.jar\fR��\fIbuy\&.jar\fR�����\fIsell\&.jar\fR��3�Ĥ�JAR�ե������ʬ�䤹���硢\fIi\fR���ץ�������Ѥ��ޤ���\fImain\&.jar\fR�ޥ˥ե��������\fIClass\-Path\fR°������ꤹ���硢\fIi\fR���ץ�������Ѥ��ơ����ץꥱ�������Υ��饹�������ɤ�®�٤����Ǥ��ޤ���
+株式取引のアプリケーションの相互依存クラスを、\fImain\&.jar\fR、\fIbuy\&.jar\fRおよび\fIsell\&.jar\fRの3つのJARファイルに分割する場合、\fIi\fRオプションを使用します。\fImain\&.jar\fRマニフェスト内の\fIClass\-Path\fR属性を指定する場合、\fIi\fRオプションを使用して、アプリケーションのクラス・ロードの速度を向上できます。
 .sp
 .if n \{\
 .RS 4
@@ -474,9 +474,9 @@ jar i main\&.jar
 .if n \{\
 .RE
 .\}
-\fIINDEX\&.LIST\fR�ե����뤬\fIMETA\-INF\fR�ǥ��쥯�ȥ����������ޤ�������ˤ�ꡢ���ץꥱ�������Υ��饹�����������ˤ�äƥ��饹�ޤ��ϥ꥽�����θ������Ԥ���Ȥ��ˡ����ꤷ��JAR�ե����뤬����������ɤ����褦�ˤʤ�ޤ���
+\fIINDEX\&.LIST\fRファイルが\fIMETA\-INF\fRディレクトリに挿入されます。これにより、アプリケーションのクラス・ローダーによってクラスまたはリソースの検索が行われるときに、指定したJARファイルがダウンロードされるようになります。
 .sp
-���ץꥱ�������Υ��饹�����������ϡ����Υե�����˳�Ǽ����Ƥ���������Ѥ��ơ���ΨŪ�˥��饹������ɤ��ޤ����ǥ��쥯�ȥ�򥳥ԡ�����ˤϡ��ǽ��\fIdir1\fR��Υե������\fIstdout\fR�˰��̤��Ƥ��顢\fIstdin\fR����\fIdir2\fR�˥ѥ��ץ饤������������Ф��ޤ�(\fI\-f\fR���ץ�����ξ����\fIjar\fR���ޥ�ɤǾ�ά���ޤ�)��
+アプリケーションのクラス・ローダーは、このファイルに格納されている情報を使用して、効率的にクラスをロードします。ディレクトリをコピーするには、最初に\fIdir1\fR内のファイルを\fIstdout\fRに圧縮してから、\fIstdin\fRから\fIdir2\fRにパイプラインを作成して抽出します(\fI\-f\fRオプションは両方の\fIjar\fRコマンドで省略します)。
 .sp
 .if n \{\
 .RS 4
@@ -488,7 +488,7 @@ jar i main\&.jar
 .RE
 .\}
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -509,8 +509,8 @@ pack200(1)\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.html�ˤ���
-Java���塼�ȥꥢ���JAR�˴ؤ����
+http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
+JavaチュートリアルのJARに関する項
 .RE
 .br
 'pl 8.5i

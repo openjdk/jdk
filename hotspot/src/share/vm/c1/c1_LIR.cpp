@@ -458,7 +458,7 @@ void LIR_OpRTCall::verify() const {
 //-------------------visits--------------------------
 
 // complete rework of LIR instruction visitor.
-// The virtual calls for each instruction type is replaced by a big
+// The virtual call for each instruction type is replaced by a big
 // switch that adds the operands for each instruction
 
 void LIR_OpVisitState::visit(LIR_Op* op) {
@@ -825,7 +825,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
-      if (opJavaCall->is_method_handle_invoke()) {
+      if (FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr &&
+          opJavaCall->is_method_handle_invoke()) {
         opJavaCall->_method_handle_invoke_SP_save_opr = FrameMap::method_handle_invoke_SP_save_opr();
         do_temp(opJavaCall->_method_handle_invoke_SP_save_opr);
       }

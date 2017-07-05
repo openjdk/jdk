@@ -34,6 +34,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -144,7 +145,7 @@ public class NestedActions {
         }
         cmds.add(sb.toString());
         if (JAVA_OPTS != null && !JAVA_OPTS.isEmpty()) {
-            cmds.add(JAVA_OPTS);
+            Collections.addAll(cmds, JAVA_OPTS.trim().split("\\s+"));
         }
         cmds.add("-Djava.security.manager");
         cmds.add("-Djava.security.policy=" + TEST_SOURCES + FS + args[1]);

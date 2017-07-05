@@ -143,9 +143,9 @@ public class DistributionPoint {
      * Constructor for the class using GeneralNames for DistributionPointName
      *
      * @param fullName the GeneralNames of the distribution point; may be null
-     * @param reasons the CRL reasons included in the CRL at this distribution
+     * @param reasonFlags the CRL reasons included in the CRL at this distribution
      *        point; may be null
-     * @param issuer the name(s) of the CRL issuer for the CRL at this
+     * @param crlIssuer the name(s) of the CRL issuer for the CRL at this
      *        distribution point; may be null
      */
     public DistributionPoint(GeneralNames fullName, boolean[] reasonFlags,
@@ -165,9 +165,9 @@ public class DistributionPoint {
      *
      * @param relativeName the RelativeDistinguishedName of the distribution
      *        point; may not be null
-     * @param reasons the CRL reasons included in the CRL at this distribution
+     * @param reasonFlags the CRL reasons included in the CRL at this distribution
      *        point; may be null
-     * @param issuer the name(s) of the CRL issuer for the CRL at this
+     * @param crlIssuer the name(s) of the CRL issuer for the CRL at this
      *        distribution point; may not be null or empty.
      */
     public DistributionPoint(RDN relativeName, boolean[] reasonFlags,

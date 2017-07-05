@@ -691,10 +691,4 @@ class DirectMethodHandle extends MethodHandle {
             }
         }
     }
-
-    @Override
-    void customize() {
-        assert(form.customized == null);
-        // No need to customize DMHs.
-    }
 }

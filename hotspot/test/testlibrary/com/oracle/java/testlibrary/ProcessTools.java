@@ -139,6 +139,9 @@ public final class ProcessTools {
     args.add(javapath);
     Collections.addAll(args, getPlatformSpecificVMArgs());
 
+    args.add("-cp");
+    args.add(System.getProperty("java.class.path"));
+
     if (addTestVmAndJavaOptions) {
       Collections.addAll(args, Utils.getTestJavaOpts());
     }
