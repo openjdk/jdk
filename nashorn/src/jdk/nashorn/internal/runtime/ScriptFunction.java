@@ -203,6 +203,16 @@ public abstract class ScriptFunction extends ScriptObject {
     }
 
     /**
+     * Execute this script function as a constructor.
+     * @param arguments  Call arguments.
+     * @return Newly constructed result.
+     * @throws Throwable if there is an exception/error with the invocation or thrown from it
+     */
+    Object construct(final Object... arguments) throws Throwable {
+        return data.construct(this, arguments);
+    }
+
+    /**
      * Allocate function. Called from generated {@link ScriptObject} code
      * for allocation as a factory method
      *

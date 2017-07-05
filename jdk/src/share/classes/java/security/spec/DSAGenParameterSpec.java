@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ public final class DSAGenParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * Creates a domain parameter specification for DSA parameter
-     * generation using <code>primePLen</code> and <code>subprimeQLen</code>.
-     * The value of <code>subprimeQLen</code> is also used as the default
+     * generation using {@code primePLen} and {@code subprimeQLen}.
+     * The value of {@code subprimeQLen} is also used as the default
      * length of the domain parameter seed in bits.
      * @param primePLen the desired length of the prime P in bits.
      * @param subprimeQLen the desired length of the sub-prime Q in bits.
-     * @exception IllegalArgumentException if <code>primePLen</code>
-     * or <code>subprimeQLen</code> is illegal per the specification of
+     * @exception IllegalArgumentException if {@code primePLen}
+     * or {@code subprimeQLen} is illegal per the specification of
      * FIPS 186-3.
      */
     public DSAGenParameterSpec(int primePLen, int subprimeQLen) {
@@ -56,14 +56,14 @@ public final class DSAGenParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * Creates a domain parameter specification for DSA parameter
-     * generation using <code>primePLen</code>, <code>subprimeQLen</code>,
-     * and <code>seedLen</code>.
+     * generation using {@code primePLen}, {@code subprimeQLen},
+     * and {@code seedLen}.
      * @param primePLen the desired length of the prime P in bits.
      * @param subprimeQLen the desired length of the sub-prime Q in bits.
      * @param seedLen the desired length of the domain parameter seed in bits,
-     * shall be equal to or greater than <code>subprimeQLen</code>.
-     * @exception IllegalArgumentException if <code>primePLenLen</code>,
-     * <code>subprimeQLen</code>, or <code>seedLen</code> is illegal per the
+     * shall be equal to or greater than {@code subprimeQLen}.
+     * @exception IllegalArgumentException if {@code primePLenLen},
+     * {@code subprimeQLen}, or {@code seedLen} is illegal per the
      * specification of FIPS 186-3.
      */
     public DSAGenParameterSpec(int primePLen, int subprimeQLen, int seedLen) {

@@ -549,3 +549,13 @@ bool FileMapInfo::is_in_shared_space(const void* p) {
 
   return false;
 }
+
+void FileMapInfo::print_shared_spaces() {
+  gclog_or_tty->print_cr("Shared Spaces:");
+  for (int i = 0; i < MetaspaceShared::n_regions; i++) {
+    struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[i];
+    gclog_or_tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
+                        shared_region_name[i],
+                        si->_base, si->_base + si->_used);
+  }
+}

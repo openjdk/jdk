@@ -3250,6 +3250,8 @@ public final class Class<T> implements java.io.Serializable,
      * could not be checked at runtime (because generic types are implemented
      * by erasure).
      *
+     * @param <U> the type to cast this class object to
+     * @param clazz the class of the type to cast this class object to
      * @return this {@code Class} object, cast to represent a subclass of
      *    the specified class object.
      * @throws ClassCastException if this {@code Class} object does not
@@ -3405,6 +3407,7 @@ public final class Class<T> implements java.io.Serializable,
      * If this Class represents either the Object class, an interface type, an
      * array type, a primitive type, or void, the return value is null.
      *
+     * @return an object representing the superclass
      * @since 1.8
      */
     public AnnotatedType getAnnotatedSuperclass() {
@@ -3436,6 +3439,7 @@ public final class Class<T> implements java.io.Serializable,
      * If this Class represents either the Object class, an array type, a
      * primitive type, or void, the return value is an array of length 0.
      *
+     * @return an array representing the superinterfaces
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedInterfaces() {

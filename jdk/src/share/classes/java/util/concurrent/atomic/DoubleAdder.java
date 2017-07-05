@@ -63,7 +63,7 @@ import java.io.Serializable;
 public class DoubleAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
-    /**
+    /*
      * Note that we must use "long" for underlying representations,
      * because there is no compareAndSet for double, due to the fact
      * that the bitwise equals used in any CAS implementation is not

@@ -27,8 +27,6 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.uriError;
 
-import java.io.UnsupportedEncodingException;
-
 /**
  * URI handling global functions. ECMA 15.1.3 URI Handling Function Properties
  *
@@ -127,6 +125,7 @@ public final class URIUtils {
 
             k += 2;
             char C;
+            // Most significant bit is zero
             if ((B & 0x80) == 0) {
                 C = (char) B;
                 if (!component && URI_RESERVED.indexOf(C) >= 0) {
@@ -137,31 +136,49 @@ public final class URIUtils {
                     sb.append(C);
                 }
             } else {
-                int n;
-                for (n = 1; n < 6; n++) {
-                    if (((B << n) & 0x80) == 0) {
-                        break;
-                    }
-                }
+                // n is utf8 length, V is codepoint and minV is lower bound
+                int n, V, minV;
 
-                if (n == 1 || n > 4) {
+                if ((B & 0xC0) == 0x80) {
+                    // 10xxxxxx - illegal first byte
+                    return error(string, k);
+                } else if ((B & 0x20) == 0) {
+                    // 110xxxxx 10xxxxxx
+                    n = 2;
+                    V = B & 0x1F;
+                    minV = 0x80;
+                } else if ((B & 0x10) == 0) {
+                    // 1110xxxx 10xxxxxx 10xxxxxx
+                    n = 3;
+                    V = B & 0x0F;
+                    minV = 0x800;
+                } else if ((B & 0x08) == 0) {
+                    // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    n = 4;
+                    V = B & 0x07;
+                    minV = 0x10000;
+                } else if ((B & 0x04) == 0) {
+                    // 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    n = 5;
+                    V =  B & 0x03;
+                    minV = 0x200000;
+                } else if ((B & 0x02) == 0) {
+                    // 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    n = 6;
+                    V = B & 0x01;
+                    minV = 0x4000000;
+                } else {
                     return error(string, k);
                 }
 
-                if ((k + (3 * (n - 1))) >= len) {
+                // check bound for sufficient chars
+                if (k + (3*(n-1)) >= len) {
                     return error(string, k);
                 }
-
-                final byte[] bbuf = new byte[n];
-                bbuf[0] = (byte) B;
 
                 for (int j = 1; j < n; j++) {
                     k++;
                     if (string.charAt(k) != '%') {
-                        return error(string, k);
-                    }
-
-                    if (k + 2 == len) {
                         return error(string, k);
                     }
 
@@ -170,16 +187,17 @@ public final class URIUtils {
                         return error(string, k + 1);
                     }
 
+                    V = (V << 6) | (B & 0x3F);
                     k += 2;
-                    bbuf[j] = (byte) B;
                 }
 
-                int V;
-                try {
-                    V = ucs4Char(bbuf);
-                } catch (final Exception e) {
-                    throw uriError(e, "bad.uri", string, Integer.toString(k));
+                // Check for overlongs and invalid codepoints.
+                // The high and low surrogate halves used by UTF-16
+                // (U+D800 through U+DFFF) are not legal Unicode values.
+                if ((V < minV) || (V >= 0xD800 && V <= 0xDFFF)) {
+                    V = Integer.MAX_VALUE;
                 }
+
                 if (V < 0x10000) {
                     C = (char) V;
                     if (!component && URI_RESERVED.indexOf(C) >= 0) {
@@ -222,10 +240,6 @@ public final class URIUtils {
             return (i1 << 4) | i2;
         }
         return -1;
-    }
-
-    private static int ucs4Char(final byte[] utf8) throws UnsupportedEncodingException {
-        return new String(utf8, "UTF-8").codePointAt(0);
     }
 
     private static String toHexEscape(final int u0) {

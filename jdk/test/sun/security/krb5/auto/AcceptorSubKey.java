@@ -26,10 +26,10 @@
  * @bug 7077646
  * @summary gssapi wrap for CFX per-message tokens always set FLAG_ACCEPTOR_SUBKEY
  * @compile -XDignore.symbol.file AcceptorSubKey.java
- * @run main/othervm AcceptorSubKey
+ * @run main/othervm AcceptorSubKey 0
+ * @run main/othervm AcceptorSubKey 4
  */
 
-import java.util.Arrays;
 import sun.security.jgss.GSSUtil;
 
 // The basic krb5 test skeleton you can copy from
@@ -37,7 +37,13 @@ public class AcceptorSubKey {
 
     public static void main(String[] args) throws Exception {
 
+        int expected = Integer.parseInt(args[0]);
+
         new OneKDC(null).writeJAASConf();
+
+        if (expected != 0) {
+            System.setProperty("sun.security.krb5.acceptor.subkey", "true");
+        }
 
         Context c, s;
         c = Context.fromJAAS("client");
@@ -53,8 +59,8 @@ public class AcceptorSubKey {
 
         // FLAG_ACCEPTOR_SUBKEY is 4
         int flagOn = wrapped[2] & 4;
-        if (flagOn != 0) {
-            throw new Exception("Java GSS should not have set acceptor subkey");
+        if (flagOn != expected) {
+            throw new Exception("not expected");
         }
 
         s.dispose();

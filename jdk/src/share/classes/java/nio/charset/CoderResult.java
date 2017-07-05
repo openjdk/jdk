@@ -227,6 +227,9 @@ public class CoderResult {
      * Static factory method that returns the unique object describing a
      * malformed-input error of the given length.
      *
+     * @param   length
+     *          The given length
+     *
      * @return  The requested coder-result object
      */
     public static CoderResult malformedForLength(int length) {
@@ -242,6 +245,9 @@ public class CoderResult {
     /**
      * Static factory method that returns the unique result object describing
      * an unmappable-character error of the given length.
+     *
+     * @param   length
+     *          The given length
      *
      * @return  The requested coder-result object
      */

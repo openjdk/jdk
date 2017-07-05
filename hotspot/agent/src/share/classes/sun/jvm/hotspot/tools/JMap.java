@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.tools;
 
 import java.io.*;
+import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.utilities.*;
 
 public class JMap extends Tool {
@@ -34,6 +35,10 @@ public class JMap extends Tool {
 
     public JMap() {
         this(MODE_PMAP);
+    }
+
+    public JMap(JVMDebugger d) {
+        super(d);
     }
 
     protected boolean needsJavaPrefix() {

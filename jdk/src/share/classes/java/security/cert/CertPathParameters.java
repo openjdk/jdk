@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package java.security.cert;
 /**
  * A specification of certification path algorithm parameters.
  * The purpose of this interface is to group (and provide type safety for)
- * all <code>CertPath</code> parameter specifications. All
- * <code>CertPath</code> parameter specifications must implement this
+ * all {@code CertPath} parameter specifications. All
+ * {@code CertPath} parameter specifications must implement this
  * interface.
  *
  * @author      Yassir Elley
@@ -40,10 +40,10 @@ package java.security.cert;
 public interface CertPathParameters extends Cloneable {
 
   /**
-   * Makes a copy of this <code>CertPathParameters</code>. Changes to the
+   * Makes a copy of this {@code CertPathParameters}. Changes to the
    * copy will not affect the original and vice versa.
    *
-   * @return a copy of this <code>CertPathParameters</code>
+   * @return a copy of this {@code CertPathParameters}
    */
   Object clone();
 }

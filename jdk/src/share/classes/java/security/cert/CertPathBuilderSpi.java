@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,23 +30,23 @@ import java.security.InvalidAlgorithmParameterException;
 /**
  * The <i>Service Provider Interface</i> (<b>SPI</b>)
  * for the {@link CertPathBuilder CertPathBuilder} class. All
- * <code>CertPathBuilder</code> implementations must include a class (the
- * SPI class) that extends this class (<code>CertPathBuilderSpi</code>) and
+ * {@code CertPathBuilder} implementations must include a class (the
+ * SPI class) that extends this class ({@code CertPathBuilderSpi}) and
  * implements all of its methods. In general, instances of this class should
- * only be accessed through the <code>CertPathBuilder</code> class. For
+ * only be accessed through the {@code CertPathBuilder} class. For
  * details, see the Java Cryptography Architecture.
  * <p>
  * <b>Concurrent Access</b>
  * <p>
  * Instances of this class need not be protected against concurrent
  * access from multiple threads. Threads that need to access a single
- * <code>CertPathBuilderSpi</code> instance concurrently should synchronize
+ * {@code CertPathBuilderSpi} instance concurrently should synchronize
  * amongst themselves and provide the necessary locking before calling the
- * wrapping <code>CertPathBuilder</code> object.
+ * wrapping {@code CertPathBuilder} object.
  * <p>
- * However, implementations of <code>CertPathBuilderSpi</code> may still
+ * However, implementations of {@code CertPathBuilderSpi} may still
  * encounter concurrency issues, since multiple threads each
- * manipulating a different <code>CertPathBuilderSpi</code> instance need not
+ * manipulating a different {@code CertPathBuilderSpi} instance need not
  * synchronize.
  *
  * @since       1.4
@@ -68,7 +68,7 @@ public abstract class CertPathBuilderSpi {
      * @throws CertPathBuilderException if the builder is unable to construct
      * a certification path that satisfies the specified parameters
      * @throws InvalidAlgorithmParameterException if the specified parameters
-     * are inappropriate for this <code>CertPathBuilder</code>
+     * are inappropriate for this {@code CertPathBuilder}
      */
     public abstract CertPathBuilderResult engineBuild(CertPathParameters params)
         throws CertPathBuilderException, InvalidAlgorithmParameterException;

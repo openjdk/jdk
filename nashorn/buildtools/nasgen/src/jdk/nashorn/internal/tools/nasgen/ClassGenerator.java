@@ -166,11 +166,11 @@ public class ClassGenerator {
         mi.putStatic(className, MAP_FIELD_NAME, MAP_DESC);
         mi.loadClass(className);
         mi.invokeStatic(MAP_TYPE, MAP_NEWMAP, MAP_NEWMAP_DESC);
-        mi.storeLocal(0);
+        // stack: PropertyMap
     }
 
     static void emitStaticInitSuffix(final MethodGenerator mi, final String className) {
-        mi.loadLocal(0);
+        // stack: PropertyMap
         mi.putStatic(className, MAP_FIELD_NAME, MAP_DESC);
         mi.returnVoid();
         mi.computeMaxs();
@@ -278,7 +278,7 @@ public class ClassGenerator {
 
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo memInfo) {
         final String propertyName = memInfo.getName();
-        mi.loadLocal(0);
+        // stack: PropertyMap
         mi.loadLiteral(propertyName);
         // setup flags
         mi.push(memInfo.getAttributes());
@@ -293,12 +293,12 @@ public class ClassGenerator {
             mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, setterDesc(memInfo)));
         }
         mi.invokeStatic(LOOKUP_TYPE, LOOKUP_NEWPROPERTY, LOOKUP_NEWPROPERTY_DESC);
-        mi.storeLocal(0);
+        // stack: PropertyMap
     }
 
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo getter, final MemberInfo setter) {
         final String propertyName = getter.getName();
-        mi.loadLocal(0);
+        // stack: PropertyMap
         mi.loadLiteral(propertyName);
         // setup flags
         mi.push(getter.getAttributes());
@@ -313,7 +313,7 @@ public class ClassGenerator {
                     setter.getJavaName(), setter.getJavaDesc()));
         }
         mi.invokeStatic(LOOKUP_TYPE, LOOKUP_NEWPROPERTY, LOOKUP_NEWPROPERTY_DESC);
-        mi.storeLocal(0);
+        // stack: PropertyMap
     }
 
     static ScriptClassInfo getScriptClassInfo(final String fileName) throws IOException {

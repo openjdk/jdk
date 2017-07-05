@@ -256,9 +256,14 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(LambdaTestHelpers.identity()).parallel()
         );
 
-        for (Consumer<Stream<Integer>> terminalOp : terminalOps) {
-            for (UnaryOperator<Stream<Integer>> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            setContext("termOpIndex", i);
+            Consumer<Stream<Integer>> terminalOp = terminalOps.get(i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<Stream<Integer>> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     Spliterator<Integer> sp = intermediateOp.apply(l.stream()).spliterator();
                     ProxyNoExactSizeSpliterator<Integer> psp = new ProxyNoExactSizeSpliterator<>(sp, proxyEstimateSize);
                     Stream<Integer> s = StreamSupport.parallelStream(psp);
@@ -345,9 +350,14 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<IntStream> terminalOp : terminalOps) {
-            for (UnaryOperator<IntStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            setContext("termOpIndex", i);
+            Consumer<IntStream> terminalOp = terminalOps.get(i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<IntStream> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfInt sp = intermediateOp.apply(IntStream.range(0, 1000)).spliterator();
@@ -433,9 +443,14 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<LongStream> terminalOp : terminalOps) {
-            for (UnaryOperator<LongStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            Consumer<LongStream> terminalOp = terminalOps.get(i);
+            setContext("termOpIndex", i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                setContext("intOpIndex", j);
+                UnaryOperator<LongStream> intermediateOp = intermediateOps.get(j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfLong sp = intermediateOp.apply(LongStream.range(0, 1000)).spliterator();
@@ -521,9 +536,14 @@ public class StreamSpliteratorTest extends OpTestCase {
                 s -> s.map(i -> i).parallel()
         );
 
-        for (Consumer<DoubleStream> terminalOp : terminalOps) {
-            for (UnaryOperator<DoubleStream> intermediateOp : intermediateOps) {
-                for (boolean proxyEstimateSize : new boolean[]{false, true}) {
+        for (int i = 0; i < terminalOps.size(); i++) {
+            Consumer<DoubleStream> terminalOp = terminalOps.get(i);
+            setContext("termOpIndex", i);
+            for (int j = 0; j < intermediateOps.size(); j++) {
+                UnaryOperator<DoubleStream> intermediateOp = intermediateOps.get(j);
+                setContext("intOpIndex", j);
+                for (boolean proxyEstimateSize : new boolean[] {false, true}) {
+                    setContext("proxyEstimateSize", proxyEstimateSize);
                     // Size is assumed to be larger than the target size for no splitting
                     // @@@ Need way to obtain the target size
                     Spliterator.OfDouble sp = intermediateOp.apply(IntStream.range(0, 1000).asDoubleStream()).spliterator();

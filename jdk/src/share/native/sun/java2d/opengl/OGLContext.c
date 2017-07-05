@@ -662,6 +662,13 @@ OGLContext_IsFBObjectExtensionAvailable(JNIEnv *env,
         return JNI_FALSE;
     }
 
+    // next see if the depth texture extension is available
+    if (!OGLContext_IsExtensionAvailable(extString,
+                                         "GL_ARB_depth_texture"))
+    {
+        return JNI_FALSE;
+    }
+
     // next see if the fbobject system property has been enabled
     isFBObjectEnabled =
         JNU_GetStaticFieldByName(env, NULL,

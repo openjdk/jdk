@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Comparators;
 import java.util.DoubleSummaryStatistics;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -78,7 +77,7 @@ import java.util.function.ToLongFunction;
  *
  *     // Find highest-paid employee
  *     Employee highestPaid = employees.stream()
- *                                     .collect(Collectors.maxBy(Comparators.comparing(Employee::getSalary)));
+ *                                     .collect(Collectors.maxBy(Comparator.comparing(Employee::getSalary)));
  *
  *     // Group employees by department
  *     Map<Department, List<Employee>> byDept
@@ -89,7 +88,7 @@ import java.util.function.ToLongFunction;
  *     Map<Department, Employee> highestPaidByDept
  *         = employees.stream()
  *                    .collect(Collectors.groupingBy(Employee::getDepartment,
- *                                                   Collectors.maxBy(Comparators.comparing(Employee::getSalary))));
+ *                                                   Collectors.maxBy(Comparator.comparing(Employee::getSalary))));
  *
  *     // Partition students into passing and failing
  *     Map<Boolean, List<Student>> passingFailing =
@@ -404,7 +403,7 @@ public final class Collectors {
      * @implSpec
      * This produces a result equivalent to:
      * <pre>{@code
-     *     reducing(Comparators.lesserOf(comparator))
+     *     reducing(BinaryOperator.minBy(comparator))
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -413,7 +412,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, T>
     minBy(Comparator<? super T> comparator) {
-        return reducing(Comparators.lesserOf(comparator));
+        return reducing(BinaryOperator.minBy(comparator));
     }
 
     /**
@@ -423,7 +422,7 @@ public final class Collectors {
      * @implSpec
      * This produces a result equivalent to:
      * <pre>{@code
-     *     reducing(Comparators.greaterOf(comparator))
+     *     reducing(BinaryOperator.maxBy(comparator))
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -432,7 +431,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, T>
     maxBy(Comparator<? super T> comparator) {
-        return reducing(Comparators.greaterOf(comparator));
+        return reducing(BinaryOperator.maxBy(comparator));
     }
 
     /**
@@ -491,8 +490,8 @@ public final class Collectors {
      * <p>For example, given a stream of {@code Person}, to calculate tallest
      * person in each city:
      * <pre>{@code
-     *     Comparator<Person> byHeight = Comparators.comparing(Person::getHeight);
-     *     BinaryOperator<Person> tallerOf = Comparators.greaterOf(byHeight);
+     *     Comparator<Person> byHeight = Comparator.comparing(Person::getHeight);
+     *     BinaryOperator<Person> tallerOf = BinaryOperator.greaterOf(byHeight);
      *     Map<City, Person> tallestByCity
      *         = people.stream().collect(groupingBy(Person::getCity, reducing(tallerOf)));
      * }</pre>
@@ -531,8 +530,8 @@ public final class Collectors {
      * <p>For example, given a stream of {@code Person}, to calculate the longest
      * last name of residents in each city:
      * <pre>{@code
-     *     Comparator<String> byLength = Comparators.comparing(String::length);
-     *     BinaryOperator<String> longerOf = Comparators.greaterOf(byLength);
+     *     Comparator<String> byLength = Comparator.comparing(String::length);
+     *     BinaryOperator<String> longerOf = BinaryOperator.greaterOf(byLength);
      *     Map<City, String> longestLastNameByCity
      *         = people.stream().collect(groupingBy(Person::getCity,
      *                                              reducing(Person::getLastName, longerOf)));

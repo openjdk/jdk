@@ -43,6 +43,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.BitVector;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.regexp.RegExp;
 import jdk.nashorn.internal.runtime.regexp.RegExpFactory;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
@@ -65,6 +66,9 @@ public final class NativeRegExp extends ScriptObject {
 
     // Reference to global object needed to support static RegExp properties
     private Global globalObject;
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     NativeRegExp(final String input, final String flagString) {
         try {

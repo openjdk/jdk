@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import jdk.nashorn.internal.scripts.JO;
+
 import static jdk.nashorn.internal.runtime.PropertyHashMap.EMPTY_HASHMAP;
 
 import java.lang.invoke.MethodHandle;
@@ -166,7 +168,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      */
     public static PropertyMap newMap(final Class<?> structure, final Collection<Property> properties, final int fieldCount, final int fieldMaximum) {
         // Reduce the number of empty maps in the context.
-        if (structure == jdk.nashorn.internal.scripts.JO.class) {
+        if (structure == JO.class) {
             return EMPTY_MAP;
         }
 
@@ -302,7 +304,7 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
      *
      * @return New {@link PropertyMap} with {@link Property} added.
      */
-    PropertyMap addProperty(final Property property) {
+    public PropertyMap addProperty(final Property property) {
         PropertyMap newMap = checkHistory(property);
 
         if (newMap == null) {
@@ -381,6 +383,21 @@ public final class PropertyMap implements Iterable<Object>, PropertyListener {
          */
         newMap.spillLength = spillLength + (sameType? 0 : newProperty.getSpillCount());
         return newMap;
+    }
+
+    /*
+     * Make a new UserAccessorProperty property. getter and setter functions are stored in
+     * this ScriptObject and slot values are used in property object. Note that slots
+     * are assigned speculatively and should be added to map before adding other
+     * properties.
+     */
+    public UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
+        int oldSpillLength = spillLength;
+
+        final int getterSlot = oldSpillLength++;
+        final int setterSlot = oldSpillLength++;
+
+        return new UserAccessorProperty(key, propertyFlags, getterSlot, setterSlot);
     }
 
     /**

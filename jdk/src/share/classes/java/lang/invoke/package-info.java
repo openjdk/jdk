@@ -43,13 +43,13 @@
  * </li>
  * </ul>
  *
- * <h2><a name="jvm_mods"></a>Summary of relevant Java Virtual Machine changes</h2>
+ * <h1><a name="jvm_mods"></a>Summary of relevant Java Virtual Machine changes</h1>
  * The following low-level information summarizes relevant parts of the
  * Java Virtual Machine specification.  For full details, please see the
  * current version of that specification.
  *
  * Each occurrence of an {@code invokedynamic} instruction is called a <em>dynamic call site</em>.
- * <h3><a name="indyinsn"></a>{@code invokedynamic} instructions</h3>
+ * <h2><a name="indyinsn"></a>{@code invokedynamic} instructions</h2>
  * A dynamic call site is originally in an unlinked state.  In this state, there is
  * no target method for the call site to invoke.
  * <p>
@@ -97,7 +97,7 @@
  * If this happens, the same error will the thrown for all subsequent
  * attempts to execute the dynamic call site.
  *
- * <h3>timing of linkage</h3>
+ * <h2>timing of linkage</h2>
  * A dynamic call site is linked just before its first execution.
  * The bootstrap method call implementing the linkage occurs within
  * a thread that is attempting a first execution.
@@ -131,7 +131,7 @@
  * just before its first invocation.
  * There is no way to undo the effect of a completed bootstrap method call.
  *
- * <h3>types of bootstrap methods</h3>
+ * <h2>types of bootstrap methods</h2>
  * As long as each bootstrap method can be correctly invoked
  * by {@code MethodHandle.invoke}, its detailed type is arbitrary.
  * For example, the first argument could be {@code Object}

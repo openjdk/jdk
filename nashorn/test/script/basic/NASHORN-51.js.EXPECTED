@@ -1,24 +1,72 @@
-ReferenceError: "1" can not be used as the left-hand side of assignment
-ReferenceError: "1" can not be used as the left-hand side of assignment
-ReferenceError: "1" can not be used as the left-hand side of assignment
-ReferenceError: "1" can not be used as the left-hand side of assignment
-ReferenceError: "0" can not be used as the left-hand side of assignment
-ReferenceError: "0" can not be used as the left-hand side of assignment
-ReferenceError: "0" can not be used as the left-hand side of assignment
-ReferenceError: "0" can not be used as the left-hand side of assignment
-ReferenceError: "3.14" can not be used as the left-hand side of assignment
-ReferenceError: "3.14" can not be used as the left-hand side of assignment
-ReferenceError: "3.14" can not be used as the left-hand side of assignment
-ReferenceError: "3.14" can not be used as the left-hand side of assignment
-ReferenceError: "true" can not be used as the left-hand side of assignment
-ReferenceError: "true" can not be used as the left-hand side of assignment
-ReferenceError: "true" can not be used as the left-hand side of assignment
-ReferenceError: "true" can not be used as the left-hand side of assignment
-ReferenceError: "false" can not be used as the left-hand side of assignment
-ReferenceError: "false" can not be used as the left-hand side of assignment
-ReferenceError: "false" can not be used as the left-hand side of assignment
-ReferenceError: "false" can not be used as the left-hand side of assignment
-ReferenceError: "null" can not be used as the left-hand side of assignment
-ReferenceError: "null" can not be used as the left-hand side of assignment
-ReferenceError: "null" can not be used as the left-hand side of assignment
-ReferenceError: "null" can not be used as the left-hand side of assignment
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+1++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+1--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++1
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--1
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+0++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+0--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++0
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--0
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+3.14++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+3.14--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++3.14
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--3.14
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+true++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+true--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++true
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--true
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+false++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+false--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++false
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--false
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#35<eval>:1:0 Invalid left hand side for assignment
+null++
+^
+ReferenceError: test/script/basic/NASHORN-51.js#42<eval>:1:0 Invalid left hand side for assignment
+null--
+^
+ReferenceError: test/script/basic/NASHORN-51.js#49<eval>:1:2 Invalid left hand side for assignment
+++null
+  ^
+ReferenceError: test/script/basic/NASHORN-51.js#56<eval>:1:2 Invalid left hand side for assignment
+--null
+  ^

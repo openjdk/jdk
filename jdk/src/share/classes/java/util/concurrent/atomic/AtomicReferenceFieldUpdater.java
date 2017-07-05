@@ -37,14 +37,13 @@ package java.util.concurrent.atomic;
 import java.util.function.UnaryOperator;
 import java.util.function.BinaryOperator;
 import sun.misc.Unsafe;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
 
 /**
  * A reflection-based utility that enables atomic updates to
@@ -82,29 +81,30 @@ import java.security.PrivilegedActionException;
  * @param <T> The type of the object holding the updatable field
  * @param <V> The type of the field
  */
-public abstract class AtomicReferenceFieldUpdater<T, V> {
+public abstract class AtomicReferenceFieldUpdater<T,V> {
 
     /**
      * Creates and returns an updater for objects with the given field.
      * The Class arguments are needed to check that reflective types and
      * generic types match.
      *
-     * @param tclass the class of the objects holding the field.
+     * @param tclass the class of the objects holding the field
      * @param vclass the class of the field
-     * @param fieldName the name of the field to be updated.
+     * @param fieldName the name of the field to be updated
      * @return the updater
-     * @throws IllegalArgumentException if the field is not a volatile reference type.
+     * @throws ClassCastException if the field is of the wrong type
+     * @throws IllegalArgumentException if the field is not volatile
      * @throws RuntimeException with a nested reflection-based
      * exception if the class does not hold field or is the wrong type,
      * or the field is inaccessible to the caller according to Java language
      * access control
      */
     @CallerSensitive
-    public static <U, W> AtomicReferenceFieldUpdater<U,W> newUpdater(Class<U> tclass, Class<W> vclass, String fieldName) {
-        return new AtomicReferenceFieldUpdaterImpl<U,W>(tclass,
-                                                        vclass,
-                                                        fieldName,
-                                                        Reflection.getCallerClass());
+    public static <U,W> AtomicReferenceFieldUpdater<U,W> newUpdater(Class<U> tclass,
+                                                                    Class<W> vclass,
+                                                                    String fieldName) {
+        return new AtomicReferenceFieldUpdaterImpl<U,W>
+            (tclass, vclass, fieldName, Reflection.getCallerClass());
     }
 
     /**
@@ -123,7 +123,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public abstract boolean compareAndSet(T obj, V expect, V update);
 
@@ -134,14 +134,14 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * other calls to {@code compareAndSet} and {@code set}, but not
      * necessarily with respect to other changes in the field.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public abstract boolean weakCompareAndSet(T obj, V expect, V update);
 
@@ -301,10 +301,9 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
          */
 
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
-                                        Class<V> vclass,
+                                        final Class<V> vclass,
                                         final String fieldName,
-                                        final Class<?> caller)
-        {
+                                        final Class<?> caller) {
             final Field field;
             final Class<?> fieldClass;
             final int modifiers;

@@ -1304,6 +1304,7 @@ public final class DateTimeFormatter {
      *  LocalTime time = parsed.query(LocalTime::from);
      *  Period extraDays = parsed.query(DateTimeFormatter.parsedExcessDays());
      * </pre>
+     * @return a query that provides access to the excess days that were parsed
      */
     public static final TemporalQuery<Period> parsedExcessDays() {
         return PARSED_EXCESS_DAYS;
@@ -1344,6 +1345,7 @@ public final class DateTimeFormatter {
      *    // validate leap-second is correct and apply correct smoothing
      *  }
      * </pre>
+     * @return a query that provides access to whether a leap-second was parsed
      */
     public static final TemporalQuery<Boolean> parsedLeapSecond() {
         return PARSED_LEAP_SECOND;

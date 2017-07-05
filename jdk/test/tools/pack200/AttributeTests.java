@@ -37,6 +37,7 @@ public class AttributeTests {
     public static void main(String... args) throws Exception {
         test6746111();
         testMethodParameters();
+        Utils.cleanup();
     }
 
     /*

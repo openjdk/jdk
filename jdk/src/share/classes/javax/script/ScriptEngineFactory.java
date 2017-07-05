@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public interface ScriptEngineFactory {
      * identify the <code>ScriptEngine</code> by the <code>ScriptEngineManager</code>.
      * For instance, an implementation based on the Mozilla Rhino Javascript engine might
      * return list containing {&quot;javascript&quot;, &quot;rhino&quot;}.
+     * @return an immutable list of short names
      */
     public List<String> getNames();
 

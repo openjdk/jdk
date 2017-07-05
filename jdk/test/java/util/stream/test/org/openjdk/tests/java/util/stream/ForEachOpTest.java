@@ -58,6 +58,17 @@ public class ForEachOpTest extends OpTestCase {
                             55);
     }
 
+    private <U> ResultAsserter<List<U>> resultAsserter() {
+        return (act, exp, ord, par) -> {
+            if (par) {
+                LambdaTestHelpers.assertContentsUnordered(act, exp);
+            }
+            else {
+                LambdaTestHelpers.assertContents(act, exp);
+            }
+        };
+    }
+
     @Test
     public void testForEachOrdered() {
         List<Integer> input = countTo(10000);
@@ -93,13 +104,13 @@ public class ForEachOpTest extends OpTestCase {
         // Test head
         withData(data).
                 terminal(terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
 
         // Test multiple stages
         withData(data).
                 terminal(s -> s.map(LambdaTestHelpers.identity()), terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
     }
 
@@ -141,13 +152,13 @@ public class ForEachOpTest extends OpTestCase {
         // Test head
         withData(data).
                 terminal(terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
 
         // Test multiple stages
         withData(data).
                 terminal(s -> s.map(i -> i), terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
     }
 
@@ -189,13 +200,13 @@ public class ForEachOpTest extends OpTestCase {
         // Test head
         withData(data).
                 terminal(terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
 
         // Test multiple stages
         withData(data).
                 terminal(s -> s.map(i -> i), terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
     }
 
@@ -237,13 +248,13 @@ public class ForEachOpTest extends OpTestCase {
         // Test head
         withData(data).
                 terminal(terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
 
         // Test multiple stages
         withData(data).
                 terminal(s -> s.map(i -> i), terminalFunc).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
+                resultAsserter(resultAsserter()).
                 exercise();
     }
 
