@@ -238,7 +238,7 @@ public class Krb5InitCredential
         retVal = (int)(getEndTime().getTime()
                        - (new Date().getTime()));
 
-        return retVal;
+        return retVal/1000;
     }
 
     /**

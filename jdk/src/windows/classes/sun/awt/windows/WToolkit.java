@@ -886,14 +886,12 @@ public class WToolkit extends SunToolkit implements Runnable {
      * this should be done in lazilyLoadDesktopProperty() only.
      */
     protected synchronized void initializeDesktopProperties() {
-        desktopProperties.put("DnD.Autoscroll.initialDelay",     Integer.valueOf(50));
-        desktopProperties.put("DnD.Autoscroll.interval",         Integer.valueOf(50));
-
-        try {
-            desktopProperties.put("Shell.shellFolderManager",
-                                  Class.forName("sun.awt.shell.Win32ShellFolderManager2"));
-        } catch (ClassNotFoundException ex) {
-        }
+        desktopProperties.put("DnD.Autoscroll.initialDelay",
+                              Integer.valueOf(50));
+        desktopProperties.put("DnD.Autoscroll.interval",
+                              Integer.valueOf(50));
+        desktopProperties.put("Shell.shellFolderManager",
+                              "sun.awt.shell.Win32ShellFolderManager2");
     }
 
     /*
