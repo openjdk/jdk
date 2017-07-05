@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,34 +110,34 @@ VerificationType VerificationType::get_component(ClassVerifier *context, TRAPS) 
   }
 }
 
-#ifndef PRODUCT
-
 void VerificationType::print_on(outputStream* st) const {
   switch (_u._data) {
-    case Bogus:            st->print(" bogus "); break;
-    case Category1:        st->print(" category1 "); break;
-    case Category2:        st->print(" category2 "); break;
-    case Category2_2nd:    st->print(" category2_2nd "); break;
-    case Boolean:          st->print(" boolean "); break;
-    case Byte:             st->print(" byte "); break;
-    case Short:            st->print(" short "); break;
-    case Char:             st->print(" char "); break;
-    case Integer:          st->print(" integer "); break;
-    case Float:            st->print(" float "); break;
-    case Long:             st->print(" long "); break;
-    case Double:           st->print(" double "); break;
-    case Long_2nd:         st->print(" long_2nd "); break;
-    case Double_2nd:       st->print(" double_2nd "); break;
-    case Null:             st->print(" null "); break;
+    case Bogus:            st->print("top"); break;
+    case Category1:        st->print("category1"); break;
+    case Category2:        st->print("category2"); break;
+    case Category2_2nd:    st->print("category2_2nd"); break;
+    case Boolean:          st->print("boolean"); break;
+    case Byte:             st->print("byte"); break;
+    case Short:            st->print("short"); break;
+    case Char:             st->print("char"); break;
+    case Integer:          st->print("integer"); break;
+    case Float:            st->print("float"); break;
+    case Long:             st->print("long"); break;
+    case Double:           st->print("double"); break;
+    case Long_2nd:         st->print("long_2nd"); break;
+    case Double_2nd:       st->print("double_2nd"); break;
+    case Null:             st->print("null"); break;
+    case ReferenceQuery:   st->print("reference type"); break;
+    case Category1Query:   st->print("category1 type"); break;
+    case Category2Query:   st->print("category2 type"); break;
+    case Category2_2ndQuery: st->print("category2_2nd type"); break;
     default:
       if (is_uninitialized_this()) {
-        st->print(" uninitializedThis ");
+        st->print("uninitializedThis");
       } else if (is_uninitialized()) {
-        st->print(" uninitialized %d ", bci());
+        st->print("uninitialized %d", bci());
       } else {
-        st->print(" class %s ", name()->as_klass_external_name());
+        name()->print_value_on(st);
       }
   }
 }
-
-#endif

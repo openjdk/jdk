@@ -108,7 +108,7 @@ ProjectCreatorIDEOptions =       $(ProjectCreatorIDEOptions) \
       -define              HOTSPOT_VM_DISTRO=\\\"$(HOTSPOT_VM_DISTRO)\\\"
 
 $(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
-	@$(RUN_JAVA) -Djava.class.path=$(HOTSPOTBUILDSPACE)/classes ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
+	@$(RUN_JAVA) -Djava.class.path="$(HOTSPOTBUILDSPACE)/classes" ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:
 	@rm -rf $(HOTSPOTBUILDSPACE)/classes
