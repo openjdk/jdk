@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,10 +117,8 @@ public class MOAT {
         final List<Integer> emptyArray = Arrays.asList(new Integer[]{});
         testCollection(emptyArray);
         testEmptyList(emptyArray);
-        THROWS(IndexOutOfBoundsException.class,
-               new Fun(){void f(){ emptyArray.set(0,1); }});
-        THROWS(UnsupportedOperationException.class,
-               new Fun(){void f(){ emptyArray.add(0,1); }});
+        THROWS(IndexOutOfBoundsException.class, () -> emptyArray.set(0,1));
+        THROWS(UnsupportedOperationException.class, () -> emptyArray.add(0,1));
 
         List<Integer> noOne = nCopies(0,1);
         testCollection(noOne);
@@ -204,8 +202,7 @@ public class MOAT {
         if (rnd.nextBoolean())
             check(! it.hasNext());
 
-        THROWS(NoSuchElementException.class,
-               new Fun(){void f(){ it.next(); }});
+        THROWS(NoSuchElementException.class, () -> it.next());
 
         try { it.remove(); }
         catch (IllegalStateException ignored) { pass(); }
@@ -232,16 +229,15 @@ public class MOAT {
 
     private static void testImmutableCollection(final Collection<Integer> c) {
         THROWS(UnsupportedOperationException.class,
-               new Fun(){void f(){ c.add(99); }},
-               new Fun(){void f(){ c.addAll(singleton(99)); }});
+               () -> c.add(99),
+               () -> c.addAll(singleton(99)));
         if (! c.isEmpty()) {
             final Integer first = c.iterator().next();
             THROWS(UnsupportedOperationException.class,
-                   new Fun(){void f(){ c.clear(); }},
-                   new Fun(){void f(){ c.remove(first); }},
-                   new Fun(){void f(){ c.removeAll(singleton(first)); }},
-                   new Fun(){void f(){ c.retainAll(emptyList()); }}
-                   );
+                   () -> c.clear(),
+                   () -> c.remove(first),
+                   () -> c.removeAll(singleton(first)),
+                   () -> c.retainAll(emptyList()));
         }
     }
 
@@ -253,17 +249,17 @@ public class MOAT {
         testList(c);
         testImmutableCollection(c);
         THROWS(UnsupportedOperationException.class,
-               new Fun(){void f(){ c.set(0,42); }},
-               new Fun(){void f(){ c.add(0,42); }},
-               new Fun(){void f(){ c.addAll(0,singleton(86)); }});
+               () -> c.set(0,42),
+               () -> c.add(0,42),
+               () -> c.addAll(0,singleton(86)));
         if (! c.isEmpty())
             THROWS(UnsupportedOperationException.class,
-                   new Fun(){void f(){
-                           Iterator<Integer> it = c.iterator();
-                           it.next(); it.remove();}},
-                   new Fun(){void f(){
-                           ListIterator<Integer> it = c.listIterator();
-                           it.next(); it.remove();}});
+                   () -> { Iterator<Integer> it = c.iterator();
+                           it.next();
+                           it.remove(); },
+                   () -> { ListIterator<Integer> it = c.listIterator();
+                           it.next();
+                           it.remove(); });
     }
 
     private static void clear(Collection<Integer> c) {
@@ -290,19 +286,19 @@ public class MOAT {
 
     private static void testImmutableMap(final Map<Integer,Integer> m) {
         THROWS(UnsupportedOperationException.class,
-               new Fun(){void f(){ m.put(1,1); }},
-               new Fun(){void f(){ m.putAll(singletonMap(1,1)); }});
+               () -> m.put(1,1),
+               () -> m.putAll(singletonMap(1,1)));
         if (! m.isEmpty()) {
             final Integer first = m.keySet().iterator().next();
             THROWS(UnsupportedOperationException.class,
-                   new Fun(){void f(){ m.remove(first); }},
-                   new Fun(){void f(){ m.clear(); }});
+                   () -> m.remove(first),
+                   () -> m.clear());
             final Map.Entry<Integer,Integer> me
                 = m.entrySet().iterator().next();
             Integer key = me.getKey();
             Integer val = me.getValue();
             THROWS(UnsupportedOperationException.class,
-                   new Fun(){void f(){ me.setValue(3); }});
+                   () -> me.setValue(3));
             equal(key, me.getKey());
             equal(val, me.getValue());
         }
@@ -492,9 +488,9 @@ public class MOAT {
             // insert, query, remove element at head
             if (isEmpty) {
                 THROWS(NoSuchElementException.class,
-                       new Fun(){void f(){ deq.getFirst(); }},
-                       new Fun(){void f(){ deq.element(); }},
-                       new Fun(){void f(){ deq.iterator().next(); }});
+                       () -> deq.getFirst(),
+                       () -> deq.element(),
+                       () -> deq.iterator().next());
                 check(deq.peekFirst() == null);
                 check(deq.peek() == null);
             } else {
@@ -546,9 +542,9 @@ public class MOAT {
             }
             if (isEmpty) {
                 THROWS(NoSuchElementException.class,
-                       new Fun(){void f(){ deq.getFirst(); }},
-                       new Fun(){void f(){ deq.element(); }},
-                       new Fun(){void f(){ deq.iterator().next(); }});
+                       () -> deq.getFirst(),
+                       () -> deq.element(),
+                       () -> deq.iterator().next());
                 check(deq.peekFirst() == null);
                 check(deq.peek() == null);
             } else {
@@ -571,8 +567,7 @@ public class MOAT {
             // insert, query, remove element at tail
             if (isEmpty) {
                 check(deq.peekLast() == null);
-                THROWS(NoSuchElementException.class,
-                       new Fun(){void f(){ deq.getLast(); }});
+                THROWS(NoSuchElementException.class, () -> deq.getLast());
             } else {
                 check(deq.peekLast() != e);
                 check(deq.getLast() != e);
@@ -615,8 +610,7 @@ public class MOAT {
             }
             if (isEmpty) {
                 check(deq.peekLast() == null);
-                THROWS(NoSuchElementException.class,
-                       new Fun(){void f(){ deq.getLast(); }});
+                THROWS(NoSuchElementException.class, () -> deq.getLast());
             } else {
                 check(deq.peekLast() != e);
                 check(deq.getLast() != e);
@@ -649,17 +643,17 @@ public class MOAT {
             if (isList) {
                 check(!asList.listIterator().hasPrevious());
                 THROWS(NoSuchElementException.class,
-                       new Fun(){void f(){ asList.listIterator().previous(); }});
+                       () -> asList.listIterator().previous());
             }
             THROWS(NoSuchElementException.class,
-                   new Fun(){void f(){ deq.iterator().next(); }},
-                   new Fun(){void f(){ deq.element(); }},
-                   new Fun(){void f(){ deq.getFirst(); }},
-                   new Fun(){void f(){ deq.getLast(); }},
-                   new Fun(){void f(){ deq.pop(); }},
-                   new Fun(){void f(){ deq.remove(); }},
-                   new Fun(){void f(){ deq.removeFirst(); }},
-                   new Fun(){void f(){ deq.removeLast(); }});
+                   () -> deq.iterator().next(),
+                   () -> deq.element(),
+                   () -> deq.getFirst(),
+                   () -> deq.getLast(),
+                   () -> deq.pop(),
+                   () -> deq.remove(),
+                   () -> deq.removeFirst(),
+                   () -> deq.removeLast());
 
             check(deq.poll() == null);
             check(deq.pollFirst() == null);
@@ -728,8 +722,8 @@ public class MOAT {
         l.listIterator(0);
         l.listIterator(l.size());
         THROWS(IndexOutOfBoundsException.class,
-               new Fun(){void f(){l.listIterator(-1);}},
-               new Fun(){void f(){l.listIterator(l.size() + 1);}});
+               () -> l.listIterator(-1),
+               () -> l.listIterator(l.size() + 1));
 
         if (l instanceof AbstractList) {
             try {
@@ -1004,22 +998,22 @@ public class MOAT {
             ? (ConcurrentMap<T,Integer>) m
             : null;
         List<Fun> fs = new ArrayList<Fun>();
-        fs.add(new Fun(){void f(){ check(! m.containsKey(null));}});
-        fs.add(new Fun(){void f(){ equal(m.remove(null), null);}});
-        fs.add(new Fun(){void f(){ equal(m.get(null), null);}});
-        if (cm != null) {
-            fs.add(new Fun(){void f(){ check(! cm.remove(null,null));}});}
+        fs.add(() -> check(! m.containsKey(null)));
+        fs.add(() -> equal(m.remove(null), null));
+        fs.add(() -> equal(m.get(null), null));
+        if (cm != null)
+            fs.add(() -> check(! cm.remove(null,null)));
         throwsConsistently(NullPointerException.class, fs);
 
         fs.clear();
         final Map<T,Integer> sm = singletonMap(null,1);
-        fs.add(new Fun(){void f(){ equal(m.put(null,1), null); m.clear();}});
-        fs.add(new Fun(){void f(){ m.putAll(sm); m.clear();}});
+        fs.add(() -> { equal(m.put(null,1), null); m.clear();});
+        fs.add(() -> { m.putAll(sm); m.clear();});
         if (cm != null) {
-            fs.add(new Fun(){void f(){ check(! cm.remove(null,null));}});
-            fs.add(new Fun(){void f(){ equal(cm.putIfAbsent(null,1), 1);}});
-            fs.add(new Fun(){void f(){ equal(cm.replace(null,1), null);}});
-            fs.add(new Fun(){void f(){ equal(cm.replace(null,1, 1), 1);}});
+            fs.add(() -> check(! cm.remove(null,null)));
+            fs.add(() -> equal(cm.putIfAbsent(null,1), 1));
+            fs.add(() -> equal(cm.replace(null,1), null));
+            fs.add(() -> equal(cm.replace(null,1, 1), 1));
         }
         throwsConsistently(NullPointerException.class, fs);
     }
@@ -1180,8 +1174,7 @@ public class MOAT {
             equalNext(it, 3);
             equalNext(it, 1);
             check(! it.hasNext());
-            THROWS(NoSuchElementException.class,
-                   new Fun(){void f(){it.next();}});
+            THROWS(NoSuchElementException.class, () -> it.next());
         }
 
         {
@@ -1191,8 +1184,7 @@ public class MOAT {
             check(it.hasNext()); equal(it.next().getKey(), 3);
             check(it.hasNext()); equal(it.next().getKey(), 1);
             check(! it.hasNext());
-            THROWS(NoSuchElementException.class,
-                   new Fun(){void f(){it.next();}});
+            THROWS(NoSuchElementException.class, () -> it.next());
         }
 
         prepMapForDescItrTests(m);
@@ -1262,8 +1254,7 @@ public class MOAT {
             equalNext(it, 3);
             equalNext(it, 1);
             check(! it.hasNext());
-            THROWS(NoSuchElementException.class,
-                   new Fun(){void f(){it.next();}});
+            THROWS(NoSuchElementException.class, () -> it.next());
         }
 
         prepSetForDescItrTests(s);
@@ -1365,7 +1356,7 @@ public class MOAT {
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");
     }
-    private static abstract class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
     private static void THROWS(Class<? extends Throwable> k, Fun... fs) {
           for (Fun f : fs)
               try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

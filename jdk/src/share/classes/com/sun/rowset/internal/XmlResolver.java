@@ -39,7 +39,7 @@ import org.xml.sax.InputSource;
 public class XmlResolver implements EntityResolver {
 
         public InputSource resolveEntity(String publicId, String systemId) {
-           String schemaName = systemId.substring(systemId.lastIndexOf("/"));
+           String schemaName = systemId.substring(systemId.lastIndexOf('/'));
 
            if(systemId.startsWith("http://java.sun.com/xml/ns/jdbc")) {
                return new InputSource(this.getClass().getResourceAsStream(schemaName));

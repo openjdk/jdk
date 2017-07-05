@@ -70,8 +70,8 @@ public class NotificationTargetImpl implements NotificationTarget {
 
         String addrStr;
         if (target.startsWith("[")) {
-            final int index = target.indexOf("]");
-            final int index2 = target.lastIndexOf(":");
+            final int index = target.indexOf(']');
+            final int index2 = target.lastIndexOf(':');
             if(index == -1)
                 throw new IllegalArgumentException("Host starts with [ but " +
                                                    "does not end with ]");
@@ -85,8 +85,8 @@ public class NotificationTargetImpl implements NotificationTarget {
             if (addrStr.startsWith("["))
                 throw new IllegalArgumentException("More than one [[...]]");
         } else {
-            final int index = target.indexOf(":");
-            final int index2 = target.lastIndexOf(":");
+            final int index = target.indexOf(':');
+            final int index2 = target.lastIndexOf(':');
             if(index == -1) throw new
                 IllegalArgumentException("Missing port separator \":\"");
             addrStr = target.substring(0, index);
@@ -98,7 +98,7 @@ public class NotificationTargetImpl implements NotificationTarget {
         address = InetAddress.getByName(addrStr);
 
         //THE CHECK SHOULD BE STRONGER!!!
-        final int index = target.lastIndexOf(":");
+        final int index = target.lastIndexOf(':');
 
         community = target.substring(index + 1, target.length());
 

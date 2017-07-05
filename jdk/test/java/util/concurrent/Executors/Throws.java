@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,33 +45,31 @@ public class Throws {
                                                   ThreadPoolExecutor executor) {}};
         final RejectedExecutionHandler nullHandler = null;
 
-        THROWS(
-            NullPointerException.class,
-            new Fun(){void f(){ newFixedThreadPool(3, null); }},
-            new Fun(){void f(){ newCachedThreadPool(null); }},
-            new Fun(){void f(){ newSingleThreadScheduledExecutor(null); }},
-            new Fun(){void f(){ newScheduledThreadPool(0, null); }},
-            new Fun(){void f(){ unconfigurableExecutorService(null); }},
-            new Fun(){void f(){ unconfigurableScheduledExecutorService(null); }},
-            new Fun(){void f(){ callable(null, "foo"); }},
-            new Fun(){void f(){ callable((Runnable) null); }},
-            new Fun(){void f(){ callable((PrivilegedAction<?>) null); }},
-            new Fun(){void f(){ callable((PrivilegedExceptionAction<?>) null); }},
-            new Fun(){void f(){ privilegedCallable((Callable<?>) null); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(0, nullFactory); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(0, nullFactory, reh); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(0, fac, nullHandler); }});
+        THROWS(NullPointerException.class,
+               () -> newFixedThreadPool(3, null),
+               () -> newCachedThreadPool(null),
+               () -> newSingleThreadScheduledExecutor(null),
+               () -> newScheduledThreadPool(0, null),
+               () -> unconfigurableExecutorService(null),
+               () -> unconfigurableScheduledExecutorService(null),
+               () -> callable(null, "foo"),
+               () -> callable((Runnable) null),
+               () -> callable((PrivilegedAction<?>) null),
+               () -> callable((PrivilegedExceptionAction<?>) null),
+               () -> privilegedCallable((Callable<?>) null),
+               () -> new ScheduledThreadPoolExecutor(0, nullFactory),
+               () -> new ScheduledThreadPoolExecutor(0, nullFactory, reh),
+               () -> new ScheduledThreadPoolExecutor(0, fac, nullHandler));
 
-        THROWS(
-            IllegalArgumentException.class,
-            new Fun(){void f(){ newFixedThreadPool(-42); }},
-            new Fun(){void f(){ newFixedThreadPool(0)  ; }},
-            new Fun(){void f(){ newFixedThreadPool(-42, fac); }},
-            new Fun(){void f(){ newFixedThreadPool(0,   fac); }},
-            new Fun(){void f(){ newScheduledThreadPool(-42); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(-42); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(-42, reh); }},
-            new Fun(){void f(){ new ScheduledThreadPoolExecutor(-42, fac, reh); }});
+        THROWS(IllegalArgumentException.class,
+               () -> newFixedThreadPool(-42),
+               () -> newFixedThreadPool(0),
+               () -> newFixedThreadPool(-42, fac),
+               () -> newFixedThreadPool(0,   fac),
+               () -> newScheduledThreadPool(-42),
+               () -> new ScheduledThreadPoolExecutor(-42),
+               () -> new ScheduledThreadPoolExecutor(-42, reh),
+               () -> new ScheduledThreadPoolExecutor(-42, fac, reh));
 
         try { newFixedThreadPool(1).shutdownNow(); pass(); }
         catch (Throwable t) { unexpected(t); }
@@ -122,7 +120,7 @@ public class Throws {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private abstract static class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

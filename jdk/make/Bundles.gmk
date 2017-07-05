@@ -74,19 +74,16 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
   JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
 
-  # The old builds implementation of this did not preserve symlinks so
-  # make sure they are followed and the contents copied instead.
-  # To fix this, remove -L
   # Copy empty directories (jre/lib/applet).
   $(JDK_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
   $(JRE_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
 	$(MKDIR) -p $(@D)
-	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -L '$<' '$@'; fi
+	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
   $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib:
 	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@)

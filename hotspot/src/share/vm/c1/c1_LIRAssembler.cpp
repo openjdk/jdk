@@ -58,7 +58,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
     _masm->nop();
   }
   patch->install(_masm, patch_code, obj, info);
-  append_patching_stub(patch);
+  append_code_stub(patch);
 
 #ifdef ASSERT
   Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->stack()->bci());
@@ -131,11 +131,6 @@ LIR_Assembler::~LIR_Assembler() {
 }
 
 
-void LIR_Assembler::append_patching_stub(PatchingStub* stub) {
-  _slow_case_stubs->append(stub);
-}
-
-
 void LIR_Assembler::check_codespace() {
   CodeSection* cs = _masm->code_section();
   if (cs->remaining() < (int)(NOT_LP64(1*K)LP64_ONLY(2*K))) {
@@ -144,7 +139,7 @@ void LIR_Assembler::check_codespace() {
 }
 
 
-void LIR_Assembler::emit_code_stub(CodeStub* stub) {
+void LIR_Assembler::append_code_stub(CodeStub* stub) {
   _slow_case_stubs->append(stub);
 }
 
@@ -442,7 +437,7 @@ void LIR_Assembler::add_debug_info_for_null_check_here(CodeEmitInfo* cinfo) {
 
 void LIR_Assembler::add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo) {
   ImplicitNullCheckStub* stub = new ImplicitNullCheckStub(pc_offset, cinfo);
-  emit_code_stub(stub);
+  append_code_stub(stub);
 }
 
 void LIR_Assembler::add_debug_info_for_div0_here(CodeEmitInfo* info) {
@@ -451,7 +446,7 @@ void LIR_Assembler::add_debug_info_for_div0_here(CodeEmitInfo* info) {
 
 void LIR_Assembler::add_debug_info_for_div0(int pc_offset, CodeEmitInfo* cinfo) {
   DivByZeroStub* stub = new DivByZeroStub(pc_offset, cinfo);
-  emit_code_stub(stub);
+  append_code_stub(stub);
 }
 
 void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {

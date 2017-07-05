@@ -210,7 +210,7 @@ public class Utils {
     public static String getArrayClassName(String name) {
         String className = null;
         if (name.startsWith("[")) {
-            int index = name.lastIndexOf("[");
+            int index = name.lastIndexOf('[');
             className = name.substring(index, name.length());
             if (className.startsWith("[L")) {
                 className = className.substring(2, className.length() - 1);
@@ -241,7 +241,7 @@ public class Utils {
         if (className == null) {
             return name;
         }
-        int index = name.lastIndexOf("[");
+        int index = name.lastIndexOf('[');
         StringBuilder brackets = new StringBuilder(className);
         for (int i = 0; i <= index; i++) {
             brackets.append("[]");

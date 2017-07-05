@@ -276,7 +276,7 @@ class JarVerifier {
 
                 // now we are parsing a signature block file
 
-                String key = uname.substring(0, uname.lastIndexOf("."));
+                String key = uname.substring(0, uname.lastIndexOf('.'));
 
                 if (signerCache == null)
                     signerCache = new ArrayList<>();
