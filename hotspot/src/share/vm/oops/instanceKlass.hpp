@@ -31,6 +31,7 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassVtable.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"
@@ -169,6 +170,11 @@ class InstanceKlass: public Klass {
     fully_initialized,                  // initialized (successfull final state)
     initialization_error                // error happened during initialization
   };
+
+  static int number_of_instance_classes() { return _total_instanceKlass_count; }
+
+ private:
+  static volatile int _total_instanceKlass_count;
 
  protected:
   // Protection domain.
@@ -454,7 +460,7 @@ class InstanceKlass: public Klass {
   bool link_class_or_fail(TRAPS); // returns false on failure
   void unlink_class();
   void rewrite_class(TRAPS);
-  void relocate_and_link_methods(TRAPS);
+  void link_methods(TRAPS);
   Method* class_initializer();
 
   // set the class to initialized if no static initializer is present
@@ -656,6 +662,10 @@ class InstanceKlass: public Klass {
   Array<AnnotationArray*>* fields_annotations() const {
     if (annotations() == NULL) return NULL;
     return annotations()->fields_annotations();
+  }
+  Annotations* type_annotations() const {
+    if (annotations() == NULL) return NULL;
+    return annotations()->type_annotations();
   }
 
   // allocation

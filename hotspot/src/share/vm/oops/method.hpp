@@ -160,6 +160,7 @@ class Method : public Metadata {
                           int localvariable_table_length,
                           int exception_table_length,
                           int checked_exceptions_length,
+                          int method_parameters_length,
                           u2 generic_signature_index,
                           ConstMethod::MethodType method_type,
                           TRAPS);
@@ -225,6 +226,13 @@ class Method : public Metadata {
     }
     return ik->annotations()->get_method_default_annotations_of(method_idnum());
   }
+  AnnotationArray* type_annotations() const {
+  InstanceKlass* ik = method_holder();
+  Annotations* type_annos = ik->type_annotations();
+  if (type_annos == NULL)
+    return NULL;
+  return type_annos->get_method_annotations_of(method_idnum());
+}
 
 #ifdef CC_INTERP
   void set_result_index(BasicType type);
@@ -343,7 +351,7 @@ class Method : public Metadata {
   // exception handler which caused the exception to be thrown, which
   // is needed for proper retries. See, for example,
   // InterpreterRuntime::exception_handler_for_exception.
-  int fast_exception_handler_bci_for(KlassHandle ex_klass, int throw_bci, TRAPS);
+  static int fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS);
 
   // method data access
   MethodData* method_data() const              {
@@ -472,6 +480,12 @@ class Method : public Metadata {
   void print_codes() const            { print_codes_on(tty); }
   void print_codes_on(outputStream* st) const                      PRODUCT_RETURN;
   void print_codes_on(int from, int to, outputStream* st) const    PRODUCT_RETURN;
+
+  // method parameters
+  int method_parameters_length() const
+                         { return constMethod()->method_parameters_length(); }
+  MethodParametersElement* method_parameters_start() const
+                          { return constMethod()->method_parameters_start(); }
 
   // checked exceptions
   int checked_exceptions_length() const
@@ -790,6 +804,7 @@ class Method : public Metadata {
                            Array<AnnotationArray*>* methods_annotations,
                            Array<AnnotationArray*>* methods_parameter_annotations,
                            Array<AnnotationArray*>* methods_default_annotations,
+                           Array<AnnotationArray*>* methods_type_annotations,
                            bool idempotent = false);
 
   // Deallocation function for redefine classes or if an error occurs

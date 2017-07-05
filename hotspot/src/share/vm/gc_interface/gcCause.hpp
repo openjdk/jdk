@@ -99,9 +99,9 @@ class GCCauseString : StackObj {
  public:
    GCCauseString(const char* prefix, GCCause::Cause cause) {
      if (PrintGCCause) {
-      _position = jio_snprintf(_buffer, _length, "%s (%s)", prefix, GCCause::to_string(cause));
+      _position = jio_snprintf(_buffer, _length, "%s (%s) ", prefix, GCCause::to_string(cause));
      } else {
-      _position = jio_snprintf(_buffer, _length, "%s", prefix);
+      _position = jio_snprintf(_buffer, _length, "%s ", prefix);
      }
      assert(_position >= 0 && _position <= _length,
        err_msg("Need to increase the buffer size in GCCauseString? %d", _position));

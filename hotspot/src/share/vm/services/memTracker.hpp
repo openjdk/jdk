@@ -142,6 +142,7 @@ class Thread;
  * MemTracker is the 'gate' class to native memory tracking runtime.
  */
 class MemTracker : AllStatic {
+  friend class GenerationData;
   friend class MemTrackWorker;
   friend class MemSnapshot;
   friend class SyncThreadRecorderClosure;
