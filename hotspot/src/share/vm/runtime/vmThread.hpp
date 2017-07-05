@@ -26,7 +26,7 @@
 #define SHARE_VM_RUNTIME_VMTHREAD_HPP
 
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vm_operations.hpp"
 
 //

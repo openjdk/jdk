@@ -27,7 +27,6 @@
 #define CPU_PPC_VM_FRAME_PPC_HPP
 
 #include "runtime/synchronizer.hpp"
-#include "utilities/top.hpp"
 
   //  C frame layout on PPC-64.
   //

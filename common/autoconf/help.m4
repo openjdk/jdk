@@ -119,6 +119,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
+    dtrace)
+      PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
   esac
 }
 
@@ -170,6 +172,13 @@ AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
       TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
       $PRINTF "  %-10s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
     done
+    $PRINTF "\n"
+
+    # Print available jvm features
+    $PRINTF "The following JVM features are available as arguments to --with-jvm-features.\n"
+    $PRINTF "Which are valid to use depends on the target platform.\n  "
+    $PRINTF "%s " $VALID_JVM_FEATURES
+    $PRINTF "\n"
 
     # And now exit directly
     exit 0
@@ -206,7 +215,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JDK variant:    $JDK_VARIANT\n"
-  printf "* JVM variants:   $with_jvm_variants\n"
+  printf "* JVM variants:   $JVM_VARIANTS\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
@@ -232,7 +241,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   fi
   printf "\n"
 
-  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
+  if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"
     printf "will result in longer build times.\n"
     printf "\n"

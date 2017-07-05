@@ -62,6 +62,16 @@ public class ClassInitializationTest {
             out.shouldContain("[Initialized").shouldContain("without side effects]");
             out.shouldHaveExitValue(0);
         }
+
+        // (3) classinit should turn off.
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=off",
+                                                   "-Xverify:all",
+                                                   "-Xmx64m",
+                                                   "BadMap50");
+        out = new OutputAnalyzer(pb.start());
+        out.shouldNotContain("[classinit]");
+        out.shouldNotContain("Fail over class verification to old verifier for: BadMap50");
+
     }
     public static class InnerClass {
         public static void main(String[] args) throws Exception {

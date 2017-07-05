@@ -131,7 +131,7 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     HeapRegion* hr = _g1h->heap_region_containing((HeapWord*) obj);
-    _cm->grayRoot(obj, obj->size(), _worker_id, hr);
+    _cm->grayRoot(obj, hr);
   }
 }
 
@@ -246,7 +246,7 @@ void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
-  _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
+  _cm->grayRoot(obj);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
@@ -261,7 +261,7 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   // worker so we cannot trust that its to-space image is
   // well-formed. So we have to read its size from its from-space
   // image which we know should not be changing.
-  _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
+  _cm->grayRoot(to_obj);
 }
 
 template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
