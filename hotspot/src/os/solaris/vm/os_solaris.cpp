@@ -969,9 +969,6 @@ bool os::create_main_thread(JavaThread* thread) {
   return true;
 }
 
-// _T2_libthread is true if we believe we are running with the newer
-// SunSoft lwp/libthread.so (2.8 patch, 2.9 default)
-bool os::Solaris::_T2_libthread = false;
 
 bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   // Allocate the OSThread object
@@ -1056,70 +1053,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   thread->set_osthread(osthread);
 
   // Create the Solaris thread
-  // explicit THR_BOUND for T2_libthread case in case
-  // that assumption is not accurate, but our alternate signal stack
-  // handling is based on it which must have bound threads
   thread_t tid = 0;
-  long     flags = (UseDetachedThreads ? THR_DETACHED : 0) | THR_SUSPENDED
-                   | ((UseBoundThreads || os::Solaris::T2_libthread() ||
-                       (thr_type == vm_thread) ||
-                       (thr_type == cgc_thread) ||
-                       (thr_type == pgc_thread) ||
-                       (thr_type == compiler_thread && BackgroundCompilation)) ?
-                      THR_BOUND : 0);
+  long     flags = (UseDetachedThreads ? THR_DETACHED : 0) | THR_SUSPENDED;
   int      status;
-
-  // 4376845 -- libthread/kernel don't provide enough LWPs to utilize all CPUs.
-  //
-  // On multiprocessors systems, libthread sometimes under-provisions our
-  // process with LWPs.  On a 30-way systems, for instance, we could have
-  // 50 user-level threads in ready state and only 2 or 3 LWPs assigned
-  // to our process.  This can result in under utilization of PEs.
-  // I suspect the problem is related to libthread's LWP
-  // pool management and to the kernel's SIGBLOCKING "last LWP parked"
-  // upcall policy.
-  //
-  // The following code is palliative -- it attempts to ensure that our
-  // process has sufficient LWPs to take advantage of multiple PEs.
-  // Proper long-term cures include using user-level threads bound to LWPs
-  // (THR_BOUND) or using LWP-based synchronization.  Note that there is a
-  // slight timing window with respect to sampling _os_thread_count, but
-  // the race is benign.  Also, we should periodically recompute
-  // _processors_online as the min of SC_NPROCESSORS_ONLN and the
-  // the number of PEs in our partition.  You might be tempted to use
-  // THR_NEW_LWP here, but I'd recommend against it as that could
-  // result in undesirable growth of the libthread's LWP pool.
-  // The fix below isn't sufficient; for instance, it doesn't take into count
-  // LWPs parked on IO.  It does, however, help certain CPU-bound benchmarks.
-  //
-  // Some pathologies this scheme doesn't handle:
-  // *  Threads can block, releasing the LWPs.  The LWPs can age out.
-  //    When a large number of threads become ready again there aren't
-  //    enough LWPs available to service them.  This can occur when the
-  //    number of ready threads oscillates.
-  // *  LWPs/Threads park on IO, thus taking the LWP out of circulation.
-  //
-  // Finally, we should call thr_setconcurrency() periodically to refresh
-  // the LWP pool and thwart the LWP age-out mechanism.
-  // The "+3" term provides a little slop -- we want to slightly overprovision.
-
-  if (AdjustConcurrency && os::Solaris::_os_thread_count < (_processors_online+3)) {
-    if (!(flags & THR_BOUND)) {
-      thr_setconcurrency (os::Solaris::_os_thread_count);       // avoid starvation
-    }
-  }
-  // Although this doesn't hurt, we should warn of undefined behavior
-  // when using unbound T1 threads with schedctl().  This should never
-  // happen, as the compiler and VM threads are always created bound
-  DEBUG_ONLY(
-      if ((VMThreadHintNoPreempt || CompilerThreadHintNoPreempt) &&
-          (!os::Solaris::T2_libthread() && (!(flags & THR_BOUND))) &&
-          ((thr_type == vm_thread) || (thr_type == cgc_thread) ||
-           (thr_type == pgc_thread) || (thr_type == compiler_thread && BackgroundCompilation))) {
-         warning("schedctl behavior undefined when Compiler/VM/GC Threads are Unbound");
-      }
-  );
-
 
   // Mark that we don't have an lwp or thread id yet.
   // In case we attempt to set the priority before the thread starts.
@@ -1144,13 +1080,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 
   // Remember that we created this thread so we can set priority on it
   osthread->set_vm_created();
-
-  // Set the default thread priority.  If using bound threads, setting
-  // lwp priority will be delayed until thread start.
-  set_native_priority(thread,
-                      DefaultThreadPriority == -1 ?
-                        java_to_os_priority[NormPriority] :
-                        DefaultThreadPriority);
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -1333,39 +1262,8 @@ void os::initialize_thread(Thread* thr) {
     jt->set_stack_size(stack_size);
   }
 
-   // 5/22/01: Right now alternate signal stacks do not handle
-   // throwing stack overflow exceptions, see bug 4463178
-   // Until a fix is found for this, T2 will NOT imply alternate signal
-   // stacks.
-   // If using T2 libthread threads, install an alternate signal stack.
-   // Because alternate stacks associate with LWPs on Solaris,
-   // see sigaltstack(2), if using UNBOUND threads, or if UseBoundThreads
-   // we prefer to explicitly stack bang.
-   // If not using T2 libthread, but using UseBoundThreads any threads
-   // (primordial thread, jni_attachCurrentThread) we do not create,
-   // probably are not bound, therefore they can not have an alternate
-   // signal stack. Since our stack banging code is generated and
-   // is shared across threads, all threads must be bound to allow
-   // using alternate signal stacks.  The alternative is to interpose
-   // on _lwp_create to associate an alt sig stack with each LWP,
-   // and this could be a problem when the JVM is embedded.
-   // We would prefer to use alternate signal stacks with T2
-   // Since there is currently no accurate way to detect T2
-   // we do not. Assuming T2 when running T1 causes sig 11s or assertions
-   // on installing alternate signal stacks
-
-
-   // 05/09/03: removed alternate signal stack support for Solaris
-   // The alternate signal stack mechanism is no longer needed to
-   // handle stack overflow. This is now handled by allocating
-   // guard pages (red zone) and stackbanging.
-   // Initially the alternate signal stack mechanism was removed because
-   // it did not work with T1 llibthread. Alternate
-   // signal stacks MUST have all threads bound to lwps. Applications
-   // can create their own threads and attach them without their being
-   // bound under T1. This is frequently the case for the primordial thread.
-   // If we were ever to reenable this mechanism we would need to
-   // use the dynamic check for T2 libthread.
+  // With the T2 libthread (T1 is no longer supported) threads are always bound
+  // and we use stackbanging in all cases.
 
   os::Solaris::init_thread_fpu_state();
   std::set_terminate(_handle_uncaught_cxx_exception);
@@ -2092,12 +1990,7 @@ void os::Solaris::print_distro_info(outputStream* st) {
 }
 
 void os::Solaris::print_libversion_info(outputStream* st) {
-  if (os::Solaris::T2_libthread()) {
-    st->print("  (T2 libthread)");
-  }
-  else {
-    st->print("  (T1 libthread)");
-  }
+  st->print("  (T2 libthread)");
   st->cr();
 }
 
@@ -3323,47 +3216,19 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
 
-
-// On Solaris we found that yield_all doesn't always yield to all other threads.
-// There have been cases where there is a thread ready to execute but it doesn't
-// get an lwp as the VM thread continues to spin with sleeps of 1 millisecond.
-// The 1 millisecond wait doesn't seem long enough for the kernel to issue a
-// SIGWAITING signal which will cause a new lwp to be created. So we count the
-// number of times yield_all is called in the one loop and increase the sleep
-// time after 8 attempts. If this fails too we increase the concurrency level
-// so that the starving thread would get an lwp
-
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
-  if (attempts == 0) {
-    os::sleep(Thread::current(), 1, false);
-  } else {
-    int iterations = attempts % 30;
-    if (iterations == 0 && !os::Solaris::T2_libthread()) {
-      // thr_setconcurrency and _getconcurrency make sense only under T1.
-      int noofLWPS = thr_getconcurrency();
-      if (noofLWPS < (Threads::number_of_threads() + 2)) {
-        thr_setconcurrency(thr_getconcurrency() + 1);
-      }
-    } else if (iterations < 25) {
-      os::sleep(Thread::current(), 1, false);
-    } else {
-      os::sleep(Thread::current(), 10, false);
-    }
-  }
+  os::sleep(Thread::current(), 1, false);
 }
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
-}
-
 
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,
 // all of our threads will be assigned to real lwp's.  Using the thr_setprio
 // function is meaningless in this mode so we must adjust the real lwp's priority
 // The routines below implement the getting and setting of lwp priorities.
+//
+// Note: T2 is now the only supported libthread. UseBoundThreads flag is
+//       being deprecated and all threads are now BoundThreads
 //
 // Note: There are three priority scales used on Solaris.  Java priotities
 //       which range from 1 to 10, libthread "thr_setprio" scale which range
@@ -3437,29 +3302,19 @@ static int lwp_priocntl_init () {
 
   if (!UseThreadPriorities) return 0;
 
-  // We are using Bound threads, we need to determine our priority ranges
-  if (os::Solaris::T2_libthread() || UseBoundThreads) {
-    // If ThreadPriorityPolicy is 1, switch tables
-    if (ThreadPriorityPolicy == 1) {
-      for (i = 0 ; i < CriticalPriority+1; i++)
-        os::java_to_os_priority[i] = prio_policy1[i];
-    }
-    if (UseCriticalJavaThreadPriority) {
-      // MaxPriority always maps to the FX scheduling class and criticalPrio.
-      // See set_native_priority() and set_lwp_class_and_priority().
-      // Save original MaxPriority mapping in case attempt to
-      // use critical priority fails.
-      java_MaxPriority_to_os_priority = os::java_to_os_priority[MaxPriority];
-      // Set negative to distinguish from other priorities
-      os::java_to_os_priority[MaxPriority] = -criticalPrio;
-    }
-  }
-  // Not using Bound Threads, set to ThreadPolicy 1
-  else {
-    for ( i = 0 ; i < CriticalPriority+1; i++ ) {
+  // If ThreadPriorityPolicy is 1, switch tables
+  if (ThreadPriorityPolicy == 1) {
+    for (i = 0 ; i < CriticalPriority+1; i++)
       os::java_to_os_priority[i] = prio_policy1[i];
-    }
-    return 0;
+  }
+  if (UseCriticalJavaThreadPriority) {
+    // MaxPriority always maps to the FX scheduling class and criticalPrio.
+    // See set_native_priority() and set_lwp_class_and_priority().
+    // Save original MaxPriority mapping in case attempt to
+    // use critical priority fails.
+    java_MaxPriority_to_os_priority = os::java_to_os_priority[MaxPriority];
+    // Set negative to distinguish from other priorities
+    os::java_to_os_priority[MaxPriority] = -criticalPrio;
   }
 
   // Get IDs for a set of well-known scheduling classes.
@@ -3583,10 +3438,6 @@ int     scale_to_lwp_priority (int rMin, int rMax, int x)
 
 
 // set_lwp_class_and_priority
-//
-// Set the class and priority of the lwp.  This call should only
-// be made when using bound threads (T2 threads are bound by default).
-//
 int set_lwp_class_and_priority(int ThreadID, int lwpid,
                                int newPrio, int new_class, bool scale) {
   int rslt;
@@ -3812,23 +3663,20 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
     status = thr_setprio(thread->osthread()->thread_id(), newpri);
   }
 
-  if (os::Solaris::T2_libthread() ||
-      (UseBoundThreads && osthread->is_vm_created())) {
-    int lwp_status =
-      set_lwp_class_and_priority(osthread->thread_id(),
-                                 osthread->lwp_id(),
-                                 newpri,
-                                 fxcritical ? fxLimits.schedPolicy : myClass,
-                                 !fxcritical);
-    if (lwp_status != 0 && fxcritical) {
-      // Try again, this time without changing the scheduling class
-      newpri = java_MaxPriority_to_os_priority;
-      lwp_status = set_lwp_class_and_priority(osthread->thread_id(),
-                                              osthread->lwp_id(),
-                                              newpri, myClass, false);
-    }
-    status |= lwp_status;
+  int lwp_status =
+          set_lwp_class_and_priority(osthread->thread_id(),
+          osthread->lwp_id(),
+          newpri,
+          fxcritical ? fxLimits.schedPolicy : myClass,
+          !fxcritical);
+  if (lwp_status != 0 && fxcritical) {
+    // Try again, this time without changing the scheduling class
+    newpri = java_MaxPriority_to_os_priority;
+    lwp_status = set_lwp_class_and_priority(osthread->thread_id(),
+            osthread->lwp_id(),
+            newpri, myClass, false);
   }
+  status |= lwp_status;
   return (status == 0) ? OS_OK : OS_ERR;
 }
 
@@ -4495,13 +4343,6 @@ const char* os::exception_name(int exception_code, char* buf, size_t size) {
   }
 }
 
-// (Static) wrappers for the new libthread API
-int_fnP_thread_t_iP_uP_stack_tP_gregset_t os::Solaris::_thr_getstate;
-int_fnP_thread_t_i_gregset_t os::Solaris::_thr_setstate;
-int_fnP_thread_t_i os::Solaris::_thr_setmutator;
-int_fnP_thread_t os::Solaris::_thr_suspend_mutator;
-int_fnP_thread_t os::Solaris::_thr_continue_mutator;
-
 // (Static) wrapper for getisax(2) call.
 os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
 
@@ -4536,77 +4377,8 @@ static address resolve_symbol(const char* name) {
   return addr;
 }
 
-
-
-// isT2_libthread()
-//
-// Routine to determine if we are currently using the new T2 libthread.
-//
-// We determine if we are using T2 by reading /proc/self/lstatus and
-// looking for a thread with the ASLWP bit set.  If we find this status
-// bit set, we must assume that we are NOT using T2.  The T2 team
-// has approved this algorithm.
-//
-// We need to determine if we are running with the new T2 libthread
-// since setting native thread priorities is handled differently
-// when using this library.  All threads created using T2 are bound
-// threads. Calling thr_setprio is meaningless in this case.
-//
-bool isT2_libthread() {
-  static prheader_t * lwpArray = NULL;
-  static int lwpSize = 0;
-  static int lwpFile = -1;
-  lwpstatus_t * that;
-  char lwpName [128];
-  bool isT2 = false;
-
-#define ADR(x)  ((uintptr_t)(x))
-#define LWPINDEX(ary,ix)   ((lwpstatus_t *)(((ary)->pr_entsize * (ix)) + (ADR((ary) + 1))))
-
-  lwpFile = ::open("/proc/self/lstatus", O_RDONLY, 0);
-  if (lwpFile < 0) {
-      if (ThreadPriorityVerbose) warning ("Couldn't open /proc/self/lstatus\n");
-      return false;
-  }
-  lwpSize = 16*1024;
-  for (;;) {
-    ::lseek64 (lwpFile, 0, SEEK_SET);
-    lwpArray = (prheader_t *)NEW_C_HEAP_ARRAY(char, lwpSize, mtInternal);
-    if (::read(lwpFile, lwpArray, lwpSize) < 0) {
-      if (ThreadPriorityVerbose) warning("Error reading /proc/self/lstatus\n");
-      break;
-    }
-    if ((lwpArray->pr_nent * lwpArray->pr_entsize) <= lwpSize) {
-       // We got a good snapshot - now iterate over the list.
-      int aslwpcount = 0;
-      for (int i = 0; i < lwpArray->pr_nent; i++ ) {
-        that = LWPINDEX(lwpArray,i);
-        if (that->pr_flags & PR_ASLWP) {
-          aslwpcount++;
-        }
-      }
-      if (aslwpcount == 0) isT2 = true;
-      break;
-    }
-    lwpSize = lwpArray->pr_nent * lwpArray->pr_entsize;
-    FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);  // retry.
-  }
-
-  FREE_C_HEAP_ARRAY(char, lwpArray, mtInternal);
-  ::close (lwpFile);
-  if (ThreadPriorityVerbose) {
-    if (isT2) tty->print_cr("We are running with a T2 libthread\n");
-    else tty->print_cr("We are not running with a T2 libthread\n");
-  }
-  return isT2;
-}
-
-
 void os::Solaris::libthread_init() {
   address func = (address)dlsym(RTLD_DEFAULT, "_thr_suspend_allmutators");
-
-  // Determine if we are running with the new T2 libthread
-  os::Solaris::set_T2_libthread(isT2_libthread());
 
   lwp_priocntl_init();
 
@@ -4617,22 +4389,6 @@ void os::Solaris::libthread_init() {
     // later) that it will have a new enough libthread.so.
     guarantee(func != NULL, "libthread.so is too old.");
   }
-
-  // Initialize the new libthread getstate API wrappers
-  func = resolve_symbol("thr_getstate");
-  os::Solaris::set_thr_getstate(CAST_TO_FN_PTR(int_fnP_thread_t_iP_uP_stack_tP_gregset_t, func));
-
-  func = resolve_symbol("thr_setstate");
-  os::Solaris::set_thr_setstate(CAST_TO_FN_PTR(int_fnP_thread_t_i_gregset_t, func));
-
-  func = resolve_symbol("thr_setmutator");
-  os::Solaris::set_thr_setmutator(CAST_TO_FN_PTR(int_fnP_thread_t_i, func));
-
-  func = resolve_symbol("thr_suspend_mutator");
-  os::Solaris::set_thr_suspend_mutator(CAST_TO_FN_PTR(int_fnP_thread_t, func));
-
-  func = resolve_symbol("thr_continue_mutator");
-  os::Solaris::set_thr_continue_mutator(CAST_TO_FN_PTR(int_fnP_thread_t, func));
 
   int size;
   void (*handler_info_func)(address *, int *);
@@ -5536,11 +5292,7 @@ void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
 }
 
 bool os::is_thread_cpu_time_supported() {
-  if ( os::Solaris::T2_libthread() || UseBoundThreads ) {
-    return true;
-  } else {
-    return false;
-  }
+  return true;
 }
 
 // System loadavg support.  Returns -1 if load average cannot be obtained.

@@ -40,6 +40,7 @@ import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
+import sun.misc.ThreadGroupUtils;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.Win32GraphicsEnvironment;
 import sun.awt.datatransfer.DataTransferer;
@@ -224,7 +225,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static native void postDispose();
 
-    private static native boolean startToolkitThread(Runnable thread);
+    private static native boolean startToolkitThread(Runnable thread, ThreadGroup rootThreadGroup);
 
     public WToolkit() {
         // Startup toolkit threads
@@ -241,8 +242,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
          */
         AWTAutoShutdown.notifyToolkitThreadBusy();
 
-        if (!startToolkitThread(this)) {
-            Thread toolkitThread = new Thread(this, "AWT-Windows");
+        // Find a root TG and attach Appkit thread to it
+        ThreadGroup rootTG = AccessController.doPrivileged(
+                (PrivilegedAction<ThreadGroup>) ThreadGroupUtils::getRootThreadGroup);
+        if (!startToolkitThread(this, rootTG)) {
+            Thread toolkitThread = new Thread(rootTG, this, "AWT-Windows");
             toolkitThread.setDaemon(true);
             toolkitThread.start();
         }
@@ -268,32 +272,21 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     private final void registerShutdownHook() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                ThreadGroup currentTG =
-                    Thread.currentThread().getThreadGroup();
-                ThreadGroup parentTG = currentTG.getParent();
-                while (parentTG != null) {
-                    currentTG = parentTG;
-                    parentTG = currentTG.getParent();
-                }
-                Thread shutdown = new Thread(currentTG, new Runnable() {
-                    @Override
-                    public void run() {
-                        shutdown();
-                    }
-                });
-                shutdown.setContextClassLoader(null);
-                Runtime.getRuntime().addShutdownHook(shutdown);
-                return null;
-            }
-        });
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Thread shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), this::shutdown);
+            shutdown.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(shutdown);
+            return null;
+         });
      }
 
     @Override
     public void run() {
-        Thread.currentThread().setPriority(Thread.NORM_PRIORITY+1);
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Thread.currentThread().setContextClassLoader(null);
+            return null;
+        });
+        Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
         boolean startPump = init();
 
         if (startPump) {

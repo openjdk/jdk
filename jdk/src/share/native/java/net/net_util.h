@@ -40,7 +40,7 @@
 #define IPv6 2
 
 #define NET_ERROR(env, ex, msg) \
-{ if (!(*env)->ExceptionOccurred(env)) JNU_ThrowByName(env, ex, msg) }
+{ if (!(*env)->ExceptionOccurred(env)) JNU_ThrowByName(env, ex, msg); }
 
 /************************************************************************
  * Cached field IDs

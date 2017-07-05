@@ -110,6 +110,8 @@ le_bool ContextualSubstitutionBase::matchGlyphClasses(
     LEErrorCode &success,
     le_bool backtrack)
 {
+    if (LE_FAILURE(success)) { return FALSE; }
+
     le_int32 direction = 1;
     le_int32 match = 0;
 
@@ -255,6 +257,7 @@ le_uint32 ContextualSubstitutionFormat1Subtable::process(const LETableReference 
                 le_uint16 matchCount = SWAPW(subRuleTable->glyphCount) - 1;
                 le_uint16 substCount = SWAPW(subRuleTable->substCount);
                 LEReferenceToArrayOf<TTGlyphID> inputGlyphArray(base, success, subRuleTable->inputGlyphArray, matchCount+2);
+                if (LE_FAILURE(success)) { return 0; }
                 if (matchGlyphIDs(inputGlyphArray, matchCount, glyphIterator)) {
                   LEReferenceToArrayOf<SubstitutionLookupRecord>
                     substLookupRecordArray(base, success, (const SubstitutionLookupRecord *) &subRuleTable->inputGlyphArray[matchCount], substCount);
@@ -315,6 +318,7 @@ le_uint32 ContextualSubstitutionFormat2Subtable::process(const LETableReference 
 
                 LEReferenceToArrayOf<le_uint16> classArray(base, success, subClassRuleTable->classArray, matchCount+1);
 
+                if (LE_FAILURE(success)) { return 0; }
                 if (matchGlyphClasses(classArray, matchCount, glyphIterator, classDefinitionTable, success)) {
                     LEReferenceToArrayOf<SubstitutionLookupRecord>
                       substLookupRecordArray(base, success, (const SubstitutionLookupRecord *) &subClassRuleTable->classArray[matchCount], substCount);
@@ -573,7 +577,7 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
                 if (matchGlyphClasses(inputClassArray, inputGlyphCount, glyphIterator, inputClassDefinitionTable, success)) {
                     LEReferenceToArrayOf<SubstitutionLookupRecord>
                       substLookupRecordArray(base, success, (const SubstitutionLookupRecord *) lookaheadClassArray.getAlias(lookaheadGlyphCount + 1, success), substCount);
-
+                    if (LE_FAILURE(success)) { return 0; }
                     applySubstitutionLookups(lookupProcessor, substLookupRecordArray, substCount, glyphIterator, fontInstance, position, success);
 
                     return inputGlyphCount + 1;
@@ -601,9 +605,10 @@ le_uint32 ChainingContextualSubstitutionFormat3Subtable::process(const LETableRe
     le_uint16 backtrkGlyphCount = SWAPW(backtrackGlyphCount);
     le_uint16 inputGlyphCount = (le_uint16) SWAPW(backtrackCoverageTableOffsetArray[backtrkGlyphCount]);
     LEReferenceToArrayOf<Offset>   inputCoverageTableOffsetArray(base, success, &backtrackCoverageTableOffsetArray[backtrkGlyphCount + 1], inputGlyphCount+2); // offset
+    if (LE_FAILURE(success)) { return 0; }
     const le_uint16 lookaheadGlyphCount = (le_uint16) SWAPW(inputCoverageTableOffsetArray[inputGlyphCount]);
 
-    if( LE_FAILURE(success) ) { return 0; }
+    if( LE_FAILURE(success)) { return 0; }
     LEReferenceToArrayOf<Offset>   lookaheadCoverageTableOffsetArray(base, success, inputCoverageTableOffsetArray.getAlias(inputGlyphCount + 1, success), lookaheadGlyphCount+2);
 
     if( LE_FAILURE(success) ) { return 0; }

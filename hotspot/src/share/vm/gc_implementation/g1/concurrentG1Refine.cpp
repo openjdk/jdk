@@ -57,10 +57,10 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
 
   _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads, mtGC);
 
-  int worker_id_offset = (int)DirtyCardQueueSet::num_par_ids();
+  uint worker_id_offset = DirtyCardQueueSet::num_par_ids();
 
   ConcurrentG1RefineThread *next = NULL;
-  for (int i = _n_threads - 1; i >= 0; i--) {
+  for (uint i = _n_threads - 1; i != UINT_MAX; i--) {
     ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
     assert(t != NULL, "Conc refine should have been created");
     if (t->osthread() == NULL) {
@@ -87,7 +87,7 @@ void ConcurrentG1Refine::init() {
 
 void ConcurrentG1Refine::stop() {
   if (_threads != NULL) {
-    for (int i = 0; i < _n_threads; i++) {
+    for (uint i = 0; i < _n_threads; i++) {
       _threads[i]->stop();
     }
   }
@@ -96,7 +96,7 @@ void ConcurrentG1Refine::stop() {
 void ConcurrentG1Refine::reinitialize_threads() {
   reset_threshold_step();
   if (_threads != NULL) {
-    for (int i = 0; i < _n_threads; i++) {
+    for (uint i = 0; i < _n_threads; i++) {
       _threads[i]->initialize();
     }
   }
@@ -104,7 +104,7 @@ void ConcurrentG1Refine::reinitialize_threads() {
 
 ConcurrentG1Refine::~ConcurrentG1Refine() {
   if (_threads != NULL) {
-    for (int i = 0; i < _n_threads; i++) {
+    for (uint i = 0; i < _n_threads; i++) {
       delete _threads[i];
     }
     FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads, mtGC);
@@ -113,7 +113,7 @@ ConcurrentG1Refine::~ConcurrentG1Refine() {
 
 void ConcurrentG1Refine::threads_do(ThreadClosure *tc) {
   if (_threads != NULL) {
-    for (int i = 0; i < _n_threads; i++) {
+    for (uint i = 0; i < _n_threads; i++) {
       tc->do_thread(_threads[i]);
     }
   }
@@ -121,20 +121,20 @@ void ConcurrentG1Refine::threads_do(ThreadClosure *tc) {
 
 void ConcurrentG1Refine::worker_threads_do(ThreadClosure * tc) {
   if (_threads != NULL) {
-    for (int i = 0; i < worker_thread_num(); i++) {
+    for (uint i = 0; i < worker_thread_num(); i++) {
       tc->do_thread(_threads[i]);
     }
   }
 }
 
-int ConcurrentG1Refine::thread_num() {
-  int n_threads = (G1ConcRefinementThreads > 0) ? G1ConcRefinementThreads
+uint ConcurrentG1Refine::thread_num() {
+  uint n_threads = (G1ConcRefinementThreads > 0) ? G1ConcRefinementThreads
                                                 : ParallelGCThreads;
-  return MAX2<int>(n_threads, 1);
+  return MAX2<uint>(n_threads, 1);
 }
 
 void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
-  for (int i = 0; i < _n_threads; ++i) {
+  for (uint i = 0; i < _n_threads; ++i) {
     _threads[i]->print_on(st);
     st->cr();
   }

@@ -2687,7 +2687,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (!is_critical_native) {
     // reset handle block
     __ ld_ptr(G2_thread, in_bytes(JavaThread::active_handles_offset()), L5);
-    __ st_ptr(G0, L5, JNIHandleBlock::top_offset_in_bytes());
+    __ st(G0, L5, JNIHandleBlock::top_offset_in_bytes());
 
     __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), G3_scratch);
     check_forward_pending_exception(masm, G3_scratch);

@@ -84,7 +84,7 @@ class SATBMarkQueueSet: public PtrQueueSet {
   // Utility function to support sequential and parallel versions.  If
   // "par" is true, then "worker" is the par thread id; if "false", worker
   // is ignored.
-  bool apply_closure_to_completed_buffer_work(bool par, int worker);
+  bool apply_closure_to_completed_buffer_work(bool par, uint worker);
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -124,7 +124,7 @@ public:
   // be called serially and at a safepoint.
   void iterate_closure_all_threads();
   // Parallel version of the above.
-  void par_iterate_closure_all_threads(int worker);
+  void par_iterate_closure_all_threads(uint worker);
 
   // If there exists some completed buffer, pop it, then apply the
   // registered closure to all its elements, and return true.  If no
@@ -133,7 +133,7 @@ public:
     return apply_closure_to_completed_buffer_work(false, 0);
   }
   // Parallel version of the above.
-  bool par_apply_closure_to_completed_buffer(int worker) {
+  bool par_apply_closure_to_completed_buffer(uint worker) {
     return apply_closure_to_completed_buffer_work(true, worker);
   }
 

@@ -1585,7 +1585,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         if (flavor != null && !isDocFlavorSupported(flavor)) {
             throw new IllegalArgumentException("flavor " + flavor +
-                                               "is not supported");
+                                               " is not supported");
         }
 
         if (attributes == null) {

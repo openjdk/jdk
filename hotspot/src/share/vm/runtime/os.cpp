@@ -929,6 +929,10 @@ void os::print_cpu_info(outputStream* st) {
 }
 
 void os::print_date_and_time(outputStream *st) {
+  const int secs_per_day  = 86400;
+  const int secs_per_hour = 3600;
+  const int secs_per_min  = 60;
+
   time_t tloc;
   (void)time(&tloc);
   st->print("time: %s", ctime(&tloc));  // ctime adds newline.
@@ -937,7 +941,17 @@ void os::print_date_and_time(outputStream *st) {
   // NOTE: It tends to crash after a SEGV if we want to printf("%f",...) in
   //       Linux. Must be a bug in glibc ? Workaround is to round "t" to int
   //       before printf. We lost some precision, but who cares?
-  st->print_cr("elapsed time: %d seconds", (int)t);
+  int eltime = (int)t;  // elapsed time in seconds
+
+  // print elapsed time in a human-readable format:
+  int eldays = eltime / secs_per_day;
+  int day_secs = eldays * secs_per_day;
+  int elhours = (eltime - day_secs) / secs_per_hour;
+  int hour_secs = elhours * secs_per_hour;
+  int elmins = (eltime - day_secs - hour_secs) / secs_per_min;
+  int minute_secs = elmins * secs_per_min;
+  int elsecs = (eltime - day_secs - hour_secs - minute_secs);
+  st->print_cr("elapsed time: %d seconds (%dd %dh %dm %ds)", eltime, eldays, elhours, elmins, elsecs);
 }
 
 // moved from debug.cpp (used to be find()) but still called from there
