@@ -153,7 +153,8 @@ public class JSJavaFrame extends DefaultScriptObject {
             List visibleVars = new ArrayList(0);
             for (int i = 0; i < localVars.length; i++) {
                 LocalVariableTableElement cur = localVars[i];
-                if (cur.getStartBCI() >= bci && cur.getLength() > 0) {
+                int startBCI = cur.getStartBCI();
+                if (startBCI <= bci && bci < startBCI + cur.getLength()) {
                     visibleVars.add(cur);
                 }
             }

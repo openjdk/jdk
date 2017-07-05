@@ -89,6 +89,10 @@ class Linux {
 
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
 
+  static void print_full_memory_info(outputStream* st);
+  static void print_distro_info(outputStream* st);
+  static void print_libversion_info(outputStream* st);
+
  public:
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();

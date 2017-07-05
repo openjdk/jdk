@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,20 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+#ifndef OS_POSIX_VM_OS_POSIX_HPP
+#define OS_POSIX_VM_OS_POSIX_HPP
+class Posix {
+  friend class os;
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.x86.*;
+protected:
+  static void print_distro_info(outputStream* st);
+  static void print_rlimit_info(outputStream* st);
+  static void print_uname_info(outputStream* st);
+  static void print_libversion_info(outputStream* st);
+  static void print_load_average(outputStream* st);
 
-class BsdThreadContextFactory {
-   static ThreadContext createThreadContext(BsdDebugger dbg) {
-      String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-         return new BsdAMD64ThreadContext(dbg);
-      } else {
-         throw new RuntimeException("cpu " + cpu + " is not yet supported");
-      }
-   }
-}
+
+};
+
+
+#endif
