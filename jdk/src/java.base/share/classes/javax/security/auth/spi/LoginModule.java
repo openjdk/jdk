@@ -122,6 +122,7 @@ import java.util.Map;
  * no arguments.  This allows classes which load the {@code LoginModule}
  * to instantiate it.
  *
+ * @since 1.4
  * @see javax.security.auth.login.LoginContext
  * @see javax.security.auth.login.Configuration
  */

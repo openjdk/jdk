@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4913702
-   @summary validates canEncode(char c) method for sun.nio.cs.Shift_JIS
+ * @bug 4913702
+ * @summary validates canEncode(char c) method for sun.nio.cs.Shift_JIS
+ * @modules jdk.charsets
  */
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,32 @@
  */
 
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequencer;
 
 /**
  * @test
  * @bug 5001943
  * @summary Sequencer.startRecording throws unexpected NPE
- * @key headful
  */
 public class SeqStartRecording {
-    public static void main(String argv[]) throws Exception {
-        Sequencer seq = MidiSystem.getSequencer();
-        seq.open();
+
+    public static void main(String argv[]) {
+        Sequencer seq = null;
+        try {
+            seq = MidiSystem.getSequencer();
+            seq.open();
+        } catch (final MidiUnavailableException ignored) {
+            // the test is not applicable
+            return;
+        }
         try {
             seq.startRecording();
             System.out.println("Test passed.");
         } catch (NullPointerException npe) {
             System.out.println("Caught NPE: "+npe);
             npe.printStackTrace();
-            throw new Exception("Test FAILED!");
+            throw new RuntimeException("Test FAILED!");
         } catch (Exception e) {
             System.out.println("Unexpected Exception: "+e);
             e.printStackTrace();

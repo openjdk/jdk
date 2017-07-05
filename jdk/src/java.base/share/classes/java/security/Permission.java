@@ -60,6 +60,7 @@ package java.security;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public abstract class Permission implements Guard, java.io.Serializable {

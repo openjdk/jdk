@@ -54,6 +54,7 @@ package java.security;
  *
  * @author Benjamin Renaud
  * @author Josh Bloch
+ * @since 1.1
  */
 
 public interface PrivateKey extends Key, javax.security.auth.Destroyable {

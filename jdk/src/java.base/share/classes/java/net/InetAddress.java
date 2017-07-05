@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,10 @@ import sun.net.util.IPAddressUtil;
  *
  * <h3> Address types </h3>
  *
- * <blockquote><table cellspacing=2 summary="Description of unicast and multicast address types">
- *   <tr><th valign=top><i>unicast</i></th>
+ * <blockquote><table class="borderless">
+ *   <caption style="display:none">Description of unicast and multicast address types</caption>
+ *   <tbody>
+ *   <tr><th style="vertical-align:top"><i>unicast</i></th>
  *       <td>An identifier for a single interface. A packet sent to
  *         a unicast address is delivered to the interface identified by
  *         that address.
@@ -92,10 +94,11 @@ import sun.net.util.IPAddressUtil;
  *         IP address loops around and becomes IP input on the local
  *         host. This address is often used when testing a
  *         client.</td></tr>
- *   <tr><th valign=top><i>multicast</i></th>
+ *   <tr><th style="vertical-align:top"><i>multicast</i></th>
  *       <td>An identifier for a set of interfaces (typically belonging
  *         to different nodes). A packet sent to a multicast address is
  *         delivered to all interfaces identified by that address.</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * <h4> IP address scope </h4>

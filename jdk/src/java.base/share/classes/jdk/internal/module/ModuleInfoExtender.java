@@ -56,16 +56,14 @@ public final class ModuleInfoExtender {
     // the packages in the ModulePackages attribute
     private Set<String> packages;
 
-    // the value of the module_version in Module attribute
+    // the value for the module version in the Module attribute
     private Version version;
 
     // the value of the ModuleMainClass attribute
     private String mainClass;
 
-    // the values for the ModuleTarget attribute
-    private String osName;
-    private String osArch;
-    private String osVersion;
+    // the value for the ModuleTarget attribute
+    private String targetPlatform;
 
     // the hashes for the ModuleHashes attribute
     private ModuleHashes hashes;
@@ -78,7 +76,11 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the set of packages for the ModulePackages attribute
+     * Sets the packages for the ModulePackages attribute
+     *
+     * @apiNote This method does not check that the package names are legal
+     * package names or that the set of packages is a super set of the
+     * packages in the module.
      */
     public ModuleInfoExtender packages(Set<String> packages) {
         this.packages = Collections.unmodifiableSet(packages);
@@ -86,7 +88,7 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the value of the module_version in Module attribute.
+     * Sets the value for the module version in the Module attribute
      */
     public ModuleInfoExtender version(Version version) {
         this.version = version;
@@ -95,6 +97,9 @@ public final class ModuleInfoExtender {
 
     /**
      * Sets the value of the ModuleMainClass attribute.
+     *
+     * @apiNote This method does not check that the main class is a legal
+     * class name in a named package.
      */
     public ModuleInfoExtender mainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -102,14 +107,10 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the values for the ModuleTarget attribute.
+     * Sets the value for the ModuleTarget attribute.
      */
-    public ModuleInfoExtender targetPlatform(String osName,
-                                             String osArch,
-                                             String osVersion) {
-        this.osName = osName;
-        this.osArch = osArch;
-        this.osVersion = osVersion;
+    public ModuleInfoExtender targetPlatform(String targetPlatform) {
+        this.targetPlatform = targetPlatform;
         return this;
     }
 
@@ -133,7 +134,7 @@ public final class ModuleInfoExtender {
 
     /**
      * A ClassVisitor that supports adding class file attributes. If an
-     * attribute already exists then the first occurence of the attribute
+     * attribute already exists then the first occurrence of the attribute
      * is replaced.
      */
     private static class AttributeAddingClassVisitor extends ClassVisitor {
@@ -196,8 +197,8 @@ public final class ModuleInfoExtender {
             cv.addAttribute(new ModulePackagesAttribute(packages));
         if (mainClass != null)
             cv.addAttribute(new ModuleMainClassAttribute(mainClass));
-        if (osName != null || osArch != null || osVersion != null)
-            cv.addAttribute(new ModuleTargetAttribute(osName, osArch, osVersion));
+        if (targetPlatform != null)
+            cv.addAttribute(new ModuleTargetAttribute(targetPlatform));
         if (hashes != null)
             cv.addAttribute(new ModuleHashesAttribute(hashes));
         if (moduleResolution != null)

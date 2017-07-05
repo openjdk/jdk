@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,10 @@ package javax.swing;
  * The following figure shows the relationship between size and position data
  * for a multi-column component.
  *
- * <center>
+ * <p style="text-align:center">
  * <img src="doc-files/SizeSequence-1.gif" width=384 height = 100
  * alt="The first item begins at position 0, the second at the position equal
  to the size of the previous item, and so on.">
- * </center>
  * <p>
  * In the figure, the first index (0) corresponds to the first column,
  * the second index (1) to the second column, and so on.

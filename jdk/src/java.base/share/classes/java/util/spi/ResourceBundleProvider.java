@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@ import java.util.ResourceBundle;
  * during a call to the
  * {@link ResourceBundle#getBundle(String, Locale, ClassLoader)
  * ResourceBundle.getBundle} method. The provider service type is determined by
- * {@code basename+"Provider"}.
+ * {@code <package name> + ".spi." + <simple name> + "Provider"}.
  *
  * <p>
  * For example, if the base name is "com.example.app.MyResources",
- * {@code com.example.app.MyResourcesProvider} will be the provider service type:
+ * {@code com.example.app.spi.MyResourcesProvider} will be the provider service type:
  * <pre>{@code
  * public interface MyResourcesProvider extends ResourceBundleProvider {
  * }
@@ -57,6 +57,7 @@ import java.util.ResourceBundle;
  * @see <a href="../ResourceBundle.html#RBP_support">
  *     ResourceBundleProvider Service Providers</a>
  * @since 9
+ * @spec JPMS
  */
 public interface ResourceBundleProvider {
     /**

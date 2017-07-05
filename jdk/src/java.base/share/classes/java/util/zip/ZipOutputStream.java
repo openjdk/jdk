@@ -41,6 +41,7 @@ import sun.security.action.GetPropertyAction;
  * entries.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {

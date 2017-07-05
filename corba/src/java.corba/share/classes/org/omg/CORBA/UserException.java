@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ package org.omg.CORBA;
  * means that they need to
  * be declared in method signatures.
  *
- * @see <A href="../../../../technotes/guides/idl/jidlExceptions.html">documentation on
- * Java&nbsp;IDL exceptions</A>
+ * <p>See also {@extLink jidlexception documentation on Java&nbsp;IDL exceptions}.
+ * </p>
  */
 public abstract class UserException extends java.lang.Exception implements org.omg.CORBA.portable.IDLEntity {
 

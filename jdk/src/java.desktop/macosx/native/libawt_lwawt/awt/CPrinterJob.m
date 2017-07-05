@@ -376,7 +376,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     static JNF_MEMBER_CACHE(jm_getMaxPage, sjc_CPrinterJob, "getMaxPageAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getSelectAttrib, sjc_CPrinterJob, "getSelectAttrib", "()I");
     static JNF_MEMBER_CACHE(jm_getNumberOfPages, jc_Pageable, "getNumberOfPages", "()I");
-    static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
+    static JNF_MEMBER_CACHE(jm_getPageFormat, sjc_CPrinterJob, "getPageFormat", "(I)Ljava/awt/print/PageFormat;");
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
@@ -412,7 +412,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     [printingDictionary setObject:[NSNumber numberWithInteger:fromPage] forKey:NSPrintFirstPage];
     [printingDictionary setObject:[NSNumber numberWithInteger:toPage] forKey:NSPrintLastPage];
 
-    jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat); 
+    jobject page = JNFCallObjectMethod(env, srcPrinterJob, jm_getPageFormat, (jint)0);
     if (page != NULL) {
         javaPageFormatToNSPrintInfo(env, NULL, page, dst);
     }

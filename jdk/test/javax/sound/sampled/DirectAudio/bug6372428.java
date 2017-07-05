@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.sound.sampled.TargetDataLine;
  * @summary playback and capture doesn't interrupt after terminating thread that
  *          calls start()
  * @run main bug6372428
- * @key headful
  */
 public class bug6372428 {
     public bug6372428() {

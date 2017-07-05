@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,10 @@ class FileOutputStream extends OutputStream
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
      * reason then a <code>FileNotFoundException</code> is thrown.
+     * <p>
+     * @implSpec Invoking this constructor with the parameter {@code name} is
+     * equivalent to invoking {@link #FileOutputStream(String,boolean)
+     * new FileOutputStream(name, false)}.
      *
      * @param      name   the system-dependent filename
      * @exception  FileNotFoundException  if the file exists but is a directory
@@ -427,9 +431,18 @@ class FileOutputStream extends OutputStream
      * <code>close</code> method of this file output stream is
      * called when there are no more references to this stream.
      *
+     * @deprecated The {@code finalize} method has been deprecated.
+     * Subclasses that override {@code finalize} in order to perform cleanup
+     * should be modified to use alternative cleanup mechanisms and
+     * to remove the overriding {@code finalize} method.
+     * When overriding the {@code finalize} method, its implementation must explicitly
+     * ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     * See the specification for {@link Object#finalize()} for further
+     * information about migration options.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FileInputStream#close()
      */
+    @Deprecated(since="9")
     protected void finalize() throws IOException {
         if (fd != null) {
             if (fd == FileDescriptor.out || fd == FileDescriptor.err) {

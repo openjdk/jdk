@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -763,12 +763,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (supports_sse4_2()) {
+  if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       UseCRC32CIntrinsics = true;
     }
-  }
-  else if (UseCRC32CIntrinsics) {
+  } else if (UseCRC32CIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       warning("CRC32C intrinsics are not available on this CPU");
     }
@@ -850,6 +849,12 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
+    if (is_client_compilation_mode_vm()) {
+      // Only C2 does RTM locking optimization.
+      // Can't continue because UseRTMLocking affects UseBiasedLocking flag
+      // setting during arguments processing. See use_biased_locking().
+      vm_exit_during_initialization("RTM locking optimization is not supported in emulated client VM");
+    }
     if (is_intel_family_core()) {
       if ((_model == CPU_MODEL_HASWELL_E3) ||
           (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
