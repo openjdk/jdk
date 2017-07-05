@@ -322,11 +322,11 @@ public:
   // Attempts to claim a task from the "local" end of the queue (the most
   // recently pushed).  If successful, returns true and sets t to the task;
   // otherwise, returns false (the queue is empty).
-  inline bool pop_local(E& t);
+  inline bool pop_local(volatile E& t);
 
   // Like pop_local(), but uses the "global" end of the queue (the least
   // recently pushed).
-  bool pop_global(E& t);
+  bool pop_global(volatile E& t);
 
   // Delete any resource associated with the queue.
   ~GenericTaskQueue();
@@ -424,7 +424,7 @@ bool GenericTaskQueue<E, F, N>::pop_local_slow(uint localBot, Age oldAge) {
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
-bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
+bool GenericTaskQueue<E, F, N>::pop_global(volatile E& t) {
   Age oldAge = _age.get();
   // Architectures with weak memory model require a barrier here
   // to guarantee that bottom is not older than age,
@@ -701,7 +701,7 @@ GenericTaskQueue<E, F, N>::push(E t) {
 }
 
 template<class E, MEMFLAGS F, unsigned int N> inline bool
-GenericTaskQueue<E, F, N>::pop_local(E& t) {
+GenericTaskQueue<E, F, N>::pop_local(volatile E& t) {
   uint localBot = _bottom;
   // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
@@ -799,7 +799,7 @@ public:
   }
   volatile ObjArrayTask&
   operator =(const volatile ObjArrayTask& t) volatile {
-    _obj = t._obj;
+    (void)const_cast<oop&>(_obj = t._obj);
     _index = t._index;
     return *this;
   }

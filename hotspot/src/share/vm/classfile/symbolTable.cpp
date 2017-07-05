@@ -840,7 +840,7 @@ StringTable::VerifyRetTypes StringTable::compare_entries(
   if (str1 == str2) {
     tty->print_cr("ERROR: identical oop values (0x" PTR_FORMAT ") "
                   "in entry @ bucket[%d][%d] and entry @ bucket[%d][%d]",
-                  str1, bkt1, e_cnt1, bkt2, e_cnt2);
+                  (void *)str1, bkt1, e_cnt1, bkt2, e_cnt2);
     return _verify_fail_continue;
   }
 

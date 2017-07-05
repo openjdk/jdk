@@ -337,6 +337,9 @@ public:
   // Register for MODL projection of divmodL
   static RegMask modL_proj_mask();
 
+  static const RegMask mathExactI_result_proj_mask();
+  static const RegMask mathExactI_flags_proj_mask();
+
   // Use hardware DIV instruction when it is faster than
   // a code which use multiply for division by constant.
   static bool use_asm_for_ldiv_by_con( jlong divisor );
