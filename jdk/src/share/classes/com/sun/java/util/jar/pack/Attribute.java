@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static com.sun.java.util.jar.pack.Constants.*;
  * attribute layouts.
  * @author John Rose
  */
-class Attribute implements Comparable {
+class Attribute implements Comparable<Attribute> {
     // Attribute instance fields.
 
     Layout def;     // the name and format of this attr
@@ -99,8 +99,7 @@ class Attribute implements Comparable {
         return this == def.canon;
     }
 
-    public int compareTo(Object o) {
-        Attribute that = (Attribute) o;
+    public int compareTo(Attribute that) {
         return this.def.compareTo(that.def);
     }
 
@@ -447,7 +446,7 @@ class Attribute implements Comparable {
      *  and format.  The formats are specified in a "little language".
      */
     public static
-    class Layout implements Comparable {
+    class Layout implements Comparable<Layout> {
         int ctype;       // attribute context type, e.g., ATTR_CONTEXT_CODE
         String name;     // name of attribute
         boolean hasRefs; // this kind of attr contains CP refs?
@@ -540,8 +539,7 @@ class Attribute implements Comparable {
                     * 37 + layout.hashCode())
                     * 37 + ctype);
         }
-        public int compareTo(Object o) {
-            Layout that = (Layout) o;
+        public int compareTo(Layout that) {
             int r;
             r = this.name.compareTo(that.name);
             if (r != 0)  return r;
@@ -663,6 +661,8 @@ class Attribute implements Comparable {
 
     public static
     class FormatException extends IOException {
+        private static final long serialVersionUID = -2542243830788066513L;
+
         private int ctype;
         private String name;
         String layout;

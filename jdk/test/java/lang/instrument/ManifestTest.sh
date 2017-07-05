@@ -26,7 +26,7 @@
 # @summary JLI JAR manifest processing should ignore leading and trailing white space.
 # @author Daniel D. Daugherty
 #
-# @run build ManifestTestApp
+# @run build ManifestTestApp ExampleForBootClassPath
 # @run shell/timeout=900 ManifestTest.sh
 #
 
@@ -42,6 +42,9 @@ make_a_JAR() {
     expect_retrans_line="isRetransformClassesSupported()=false"
     can_set_nmp_line=""
     expect_set_nmp_line="isNativeMethodPrefixSupported()=false"
+    # some tests create directories with spaces in their name,
+    # explicitly delete these.
+    to_be_deleted=""
 
     while [ $# != 0 ] ; do
         case "$1" in
@@ -59,30 +62,33 @@ make_a_JAR() {
         boot_cp_line2)
             boot_cp_line="Boot-Class-Path:  has_leading_blank"
             expect_boot_cp_line="ExampleForBootClassPath was loaded."
+            to_be_deleted=" has_leading_blank"
             mkdir -p has_leading_blank " has_leading_blank"
             # the good class is in the directory without the blank
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class \
                 has_leading_blank
             # the bad class is in the directory with the blank
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class.bad \
-                " has_leading_blank"/ExampleForBootClassPath.class
+                " has_leading_blank/ExampleForBootClassPath.class"
             ;;
 
         boot_cp_line3)
             boot_cp_line="Boot-Class-Path: has_trailing_blank "
             expect_boot_cp_line="ExampleForBootClassPath was loaded."
+            to_be_deleted="has_trailing_blank "
             mkdir -p has_trailing_blank "has_trailing_blank "
             # the good class is in the directory without the blank
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class \
                 has_trailing_blank
             # the bad class is in the directory with the blank
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class.bad \
-                "has_trailing_blank "/ExampleForBootClassPath.class
+                "has_trailing_blank /ExampleForBootClassPath.class"
             ;;
 
         boot_cp_line4)
             boot_cp_line="Boot-Class-Path:  has_leading_and_trailing_blank "
             expect_boot_cp_line="ExampleForBootClassPath was loaded."
+            to_be_deleted=" has_leading_and_trailing_blank "
             mkdir -p has_leading_and_trailing_blank \
                 " has_leading_and_trailing_blank "
             # the good class is in the directory without the blanks
@@ -90,18 +96,19 @@ make_a_JAR() {
                 has_leading_and_trailing_blank
             # the bad class is in the directory with the blanks
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class.bad \
-                " has_leading_and_trailing_blank "/ExampleForBootClassPath.class
+                " has_leading_and_trailing_blank /ExampleForBootClassPath.class"
             ;;
 
         boot_cp_line5)
             boot_cp_line="Boot-Class-Path: has_embedded blank"
             expect_boot_cp_line="ExampleForBootClassPath was loaded."
+            to_be_deleted="has_embedded blank"
             mkdir -p has_embedded "has_embedded blank"
             # the good class is in the first blank separated word
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class has_embedded
             # the bad class is in the directory with the blank
             cp -p $OUT_OF_THE_WAY/ExampleForBootClassPath.class.bad \
-                "has_embedded blank"/ExampleForBootClassPath.class
+                "has_embedded blank/ExampleForBootClassPath.class"
             ;;
 
         can_redef_line1)
@@ -427,6 +434,12 @@ while read token; do
     else
         echo "FAIL: did NOT find '$MESG' in the test output"
         touch $FAIL_MARKER
+    fi
+
+    #clean up any problematic directories
+    if [ -n "$to_be_deleted" ]; then
+        echo "Test removing [$to_be_deleted]"
+        rm -rf "$to_be_deleted"
     fi
 
     echo "===== end test case: $token ====="

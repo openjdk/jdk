@@ -266,7 +266,7 @@ void TemplateTable::sipush() {
 
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
-  Label call_ldc, notInt, notString, notClass, exit;
+  Label call_ldc, notInt, isString, notString, notClass, exit;
 
   if (wide) {
     __ get_2_byte_integer_at_bcp(1, G3_scratch, O1, InterpreterMacroAssembler::Unsigned);
@@ -317,8 +317,11 @@ void TemplateTable::ldc(bool wide) {
 
   __ bind(notInt);
  // __ cmp(O2, JVM_CONSTANT_String);
+  __ brx(Assembler::equal, true, Assembler::pt, isString);
+  __ delayed()->cmp(O2, JVM_CONSTANT_Object);
   __ brx(Assembler::notEqual, true, Assembler::pt, notString);
   __ delayed()->ldf(FloatRegisterImpl::S, O0, O1, Ftos_f);
+  __ bind(isString);
   __ ld_ptr(O0, O1, Otos_i);
   __ verify_oop(Otos_i);
   __ push(atos);

@@ -2716,6 +2716,10 @@ void CMSCollector::gc_epilogue(bool full) {
   bitMapLock()->unlock();
   releaseFreelistLocks();
 
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
+  }
+
   _between_prologue_and_epilogue = false;  // ready for next cycle
 }
 
@@ -7888,60 +7892,64 @@ SweepClosure::SweepClosure(CMSCollector* collector,
   assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
          "sweep _limit out of bounds");
   if (CMSTraceSweeper) {
-    gclog_or_tty->print("\n====================\nStarting new sweep\n");
+    gclog_or_tty->print_cr("\n====================\nStarting new sweep with limit " PTR_FORMAT,
+                        _limit);
   }
 }
 
-// We need this destructor to reclaim any space at the end
-// of the space, which do_blk below may not yet have added back to
-// the free lists.
+void SweepClosure::print_on(outputStream* st) const {
+  tty->print_cr("_sp = [" PTR_FORMAT "," PTR_FORMAT ")",
+                _sp->bottom(), _sp->end());
+  tty->print_cr("_limit = " PTR_FORMAT, _limit);
+  tty->print_cr("_freeFinger = " PTR_FORMAT, _freeFinger);
+  NOT_PRODUCT(tty->print_cr("_last_fc = " PTR_FORMAT, _last_fc);)
+  tty->print_cr("_inFreeRange = %d, _freeRangeInFreeLists = %d, _lastFreeRangeCoalesced = %d",
+                _inFreeRange, _freeRangeInFreeLists, _lastFreeRangeCoalesced);
+}
+
+#ifndef PRODUCT
+// Assertion checking only:  no useful work in product mode --
+// however, if any of the flags below become product flags,
+// you may need to review this code to see if it needs to be
+// enabled in product mode.
 SweepClosure::~SweepClosure() {
   assert_lock_strong(_freelistLock);
   assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
          "sweep _limit out of bounds");
-  // Flush any remaining coterminal free run as a single
-  // coalesced chunk to the appropriate free list.
   if (inFreeRange()) {
-    assert(freeFinger() < _limit, "freeFinger points too high");
-    flush_cur_free_chunk(freeFinger(), pointer_delta(_limit, freeFinger()));
-    if (CMSTraceSweeper) {
-      gclog_or_tty->print("Sweep: last chunk: ");
-      gclog_or_tty->print("put_free_blk 0x%x ("SIZE_FORMAT") [coalesced:"SIZE_FORMAT"]\n",
-                          freeFinger(), pointer_delta(_limit, freeFinger()), lastFreeRangeCoalesced());
-    }
-  } // else nothing to flush
-  NOT_PRODUCT(
-    if (Verbose && PrintGC) {
-      gclog_or_tty->print("Collected "SIZE_FORMAT" objects, "
-                          SIZE_FORMAT " bytes",
-                 _numObjectsFreed, _numWordsFreed*sizeof(HeapWord));
-      gclog_or_tty->print_cr("\nLive "SIZE_FORMAT" objects,  "
-                             SIZE_FORMAT" bytes  "
-        "Already free "SIZE_FORMAT" objects, "SIZE_FORMAT" bytes",
-        _numObjectsLive, _numWordsLive*sizeof(HeapWord),
-        _numObjectsAlreadyFree, _numWordsAlreadyFree*sizeof(HeapWord));
-      size_t totalBytes = (_numWordsFreed + _numWordsLive + _numWordsAlreadyFree) *
-        sizeof(HeapWord);
-      gclog_or_tty->print_cr("Total sweep: "SIZE_FORMAT" bytes", totalBytes);
+    warning("inFreeRange() should have been reset; dumping state of SweepClosure");
+    print();
+    ShouldNotReachHere();
+  }
+  if (Verbose && PrintGC) {
+    gclog_or_tty->print("Collected "SIZE_FORMAT" objects, " SIZE_FORMAT " bytes",
+                        _numObjectsFreed, _numWordsFreed*sizeof(HeapWord));
+    gclog_or_tty->print_cr("\nLive "SIZE_FORMAT" objects,  "
+                           SIZE_FORMAT" bytes  "
+      "Already free "SIZE_FORMAT" objects, "SIZE_FORMAT" bytes",
+      _numObjectsLive, _numWordsLive*sizeof(HeapWord),
+      _numObjectsAlreadyFree, _numWordsAlreadyFree*sizeof(HeapWord));
+    size_t totalBytes = (_numWordsFreed + _numWordsLive + _numWordsAlreadyFree)
+                        * sizeof(HeapWord);
+    gclog_or_tty->print_cr("Total sweep: "SIZE_FORMAT" bytes", totalBytes);
 
-      if (PrintCMSStatistics && CMSVerifyReturnedBytes) {
-        size_t indexListReturnedBytes = _sp->sumIndexedFreeListArrayReturnedBytes();
-        size_t dictReturnedBytes = _sp->dictionary()->sumDictReturnedBytes();
-        size_t returnedBytes = indexListReturnedBytes + dictReturnedBytes;
-        gclog_or_tty->print("Returned "SIZE_FORMAT" bytes", returnedBytes);
-        gclog_or_tty->print("   Indexed List Returned "SIZE_FORMAT" bytes",
-          indexListReturnedBytes);
-        gclog_or_tty->print_cr("        Dictionary Returned "SIZE_FORMAT" bytes",
-          dictReturnedBytes);
-      }
+    if (PrintCMSStatistics && CMSVerifyReturnedBytes) {
+      size_t indexListReturnedBytes = _sp->sumIndexedFreeListArrayReturnedBytes();
+      size_t dictReturnedBytes = _sp->dictionary()->sumDictReturnedBytes();
+      size_t returnedBytes = indexListReturnedBytes + dictReturnedBytes;
+      gclog_or_tty->print("Returned "SIZE_FORMAT" bytes", returnedBytes);
+      gclog_or_tty->print("   Indexed List Returned "SIZE_FORMAT" bytes",
+        indexListReturnedBytes);
+      gclog_or_tty->print_cr("        Dictionary Returned "SIZE_FORMAT" bytes",
+        dictReturnedBytes);
     }
-  )
-  // Now, in debug mode, just null out the sweep_limit
-  NOT_PRODUCT(_sp->clear_sweep_limit();)
+  }
   if (CMSTraceSweeper) {
-    gclog_or_tty->print("end of sweep\n================\n");
+    gclog_or_tty->print_cr("end of sweep with _limit = " PTR_FORMAT "\n================",
+                           _limit);
   }
 }
+#endif  // PRODUCT
 
 void SweepClosure::initialize_free_range(HeapWord* freeFinger,
     bool freeRangeInFreeLists) {
@@ -8001,15 +8009,17 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
   // we started the sweep, it may no longer be one because heap expansion
   // may have caused us to coalesce the block ending at the address _limit
   // with a newly expanded chunk (this happens when _limit was set to the
-  // previous _end of the space), so we may have stepped past _limit; see CR 6977970.
+  // previous _end of the space), so we may have stepped past _limit:
+  // see the following Zeno-like trail of CRs 6977970, 7008136, 7042740.
   if (addr >= _limit) { // we have swept up to or past the limit: finish up
     assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
            "sweep _limit out of bounds");
     assert(addr < _sp->end(), "addr out of bounds");
-    // Flush any remaining coterminal free run as a single
+    // Flush any free range we might be holding as a single
     // coalesced chunk to the appropriate free list.
     if (inFreeRange()) {
-      assert(freeFinger() < _limit, "finger points too high");
+      assert(freeFinger() >= _sp->bottom() && freeFinger() < _limit,
+             err_msg("freeFinger() " PTR_FORMAT" is out-of-bounds", freeFinger()));
       flush_cur_free_chunk(freeFinger(),
                            pointer_delta(addr, freeFinger()));
       if (CMSTraceSweeper) {
@@ -8033,7 +8043,16 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
     res = fc->size();
     do_already_free_chunk(fc);
     debug_only(_sp->verifyFreeLists());
-    assert(res == fc->size(), "Don't expect the size to change");
+    // If we flush the chunk at hand in lookahead_and_flush()
+    // and it's coalesced with a preceding chunk, then the
+    // process of "mangling" the payload of the coalesced block
+    // will cause erasure of the size information from the
+    // (erstwhile) header of all the coalesced blocks but the
+    // first, so the first disjunct in the assert will not hold
+    // in that specific case (in which case the second disjunct
+    // will hold).
+    assert(res == fc->size() || ((HeapWord*)fc) + res >= _limit,
+           "Otherwise the size info doesn't change at this step");
     NOT_PRODUCT(
       _numObjectsAlreadyFree++;
       _numWordsAlreadyFree += res;
@@ -8103,7 +8122,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
 //
 
 void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
-  size_t size = fc->size();
+  const size_t size = fc->size();
   // Chunks that cannot be coalesced are not in the
   // free lists.
   if (CMSTestInFreeList && !fc->cantCoalesce()) {
@@ -8112,7 +8131,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
   }
   // a chunk that is already free, should not have been
   // marked in the bit map
-  HeapWord* addr = (HeapWord*) fc;
+  HeapWord* const addr = (HeapWord*) fc;
   assert(!_bitMap->isMarked(addr), "free chunk should be unmarked");
   // Verify that the bit map has no bits marked between
   // addr and purported end of this block.
@@ -8149,7 +8168,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
         }
       } else {
         // the midst of a free range, we are coalescing
-        debug_only(record_free_block_coalesced(fc);)
+        print_free_block_coalesced(fc);
         if (CMSTraceSweeper) {
           gclog_or_tty->print("  -- pick up free block 0x%x (%d)\n", fc, size);
         }
@@ -8173,6 +8192,10 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
         }
       }
     }
+    // Note that if the chunk is not coalescable (the else arm
+    // below), we unconditionally flush, without needing to do
+    // a "lookahead," as we do below.
+    if (inFreeRange()) lookahead_and_flush(fc, size);
   } else {
     // Code path common to both original and adaptive free lists.
 
@@ -8191,8 +8214,8 @@ size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
   // This is a chunk of garbage.  It is not in any free list.
   // Add it to a free list or let it possibly be coalesced into
   // a larger chunk.
-  HeapWord* addr = (HeapWord*) fc;
-  size_t size = CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size());
+  HeapWord* const addr = (HeapWord*) fc;
+  const size_t size = CompactibleFreeListSpace::adjustObjectSize(oop(addr)->size());
 
   if (_sp->adaptive_freelists()) {
     // Verify that the bit map has no bits marked between
@@ -8205,7 +8228,6 @@ size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
       // start of a new free range
       assert(size > 0, "A free range should have a size");
       initialize_free_range(addr, false);
-
     } else {
       // this will be swept up when we hit the end of the
       // free range
@@ -8235,6 +8257,9 @@ size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
     // addr and purported end of just dead object.
     _bitMap->verifyNoOneBitsInRange(addr + 1, addr + size);
   }
+  assert(_limit >= addr + size,
+         "A freshly garbage chunk can't possibly straddle over _limit");
+  if (inFreeRange()) lookahead_and_flush(fc, size);
   return size;
 }
 
@@ -8284,8 +8309,8 @@ size_t SweepClosure::do_live_chunk(FreeChunk* fc) {
            (!_collector->should_unload_classes()
             || oop(addr)->is_parsable()),
            "Should be an initialized object");
-    // Note that there are objects used during class redefinition
-    // (e.g., merge_cp in VM_RedefineClasses::merge_cp_and_rewrite()
+    // Note that there are objects used during class redefinition,
+    // e.g. merge_cp in VM_RedefineClasses::merge_cp_and_rewrite(),
     // which are discarded with their is_conc_safe state still
     // false.  These object may be floating garbage so may be
     // seen here.  If they are floating garbage their size
@@ -8307,7 +8332,7 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
                                                  size_t chunkSize) {
   // do_post_free_or_garbage_chunk() should only be called in the case
   // of the adaptive free list allocator.
-  bool fcInFreeLists = fc->isFree();
+  const bool fcInFreeLists = fc->isFree();
   assert(_sp->adaptive_freelists(), "Should only be used in this case.");
   assert((HeapWord*)fc <= _limit, "sweep invariant");
   if (CMSTestInFreeList && fcInFreeLists) {
@@ -8318,11 +8343,11 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
     gclog_or_tty->print_cr("  -- pick up another chunk at 0x%x (%d)", fc, chunkSize);
   }
 
-  HeapWord* addr = (HeapWord*) fc;
+  HeapWord* const fc_addr = (HeapWord*) fc;
 
   bool coalesce;
-  size_t left  = pointer_delta(addr, freeFinger());
-  size_t right = chunkSize;
+  const size_t left  = pointer_delta(fc_addr, freeFinger());
+  const size_t right = chunkSize;
   switch (FLSCoalescePolicy) {
     // numeric value forms a coalition aggressiveness metric
     case 0:  { // never coalesce
@@ -8355,15 +8380,15 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
   // If the chunk is in a free range and either we decided to coalesce above
   // or the chunk is near the large block at the end of the heap
   // (isNearLargestChunk() returns true), then coalesce this chunk.
-  bool doCoalesce = inFreeRange() &&
-    (coalesce || _g->isNearLargestChunk((HeapWord*)fc));
+  const bool doCoalesce = inFreeRange()
+                          && (coalesce || _g->isNearLargestChunk(fc_addr));
   if (doCoalesce) {
     // Coalesce the current free range on the left with the new
     // chunk on the right.  If either is on a free list,
     // it must be removed from the list and stashed in the closure.
     if (freeRangeInFreeLists()) {
-      FreeChunk* ffc = (FreeChunk*)freeFinger();
-      assert(ffc->size() == pointer_delta(addr, freeFinger()),
+      FreeChunk* const ffc = (FreeChunk*)freeFinger();
+      assert(ffc->size() == pointer_delta(fc_addr, freeFinger()),
         "Size of free range is inconsistent with chunk size.");
       if (CMSTestInFreeList) {
         assert(_sp->verifyChunkInFreeLists(ffc),
@@ -8380,17 +8405,54 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
       _sp->removeFreeChunkFromFreeLists(fc);
     }
     set_lastFreeRangeCoalesced(true);
+    print_free_block_coalesced(fc);
   } else {  // not in a free range and/or should not coalesce
     // Return the current free range and start a new one.
     if (inFreeRange()) {
       // In a free range but cannot coalesce with the right hand chunk.
       // Put the current free range into the free lists.
       flush_cur_free_chunk(freeFinger(),
-                           pointer_delta(addr, freeFinger()));
+                           pointer_delta(fc_addr, freeFinger()));
     }
     // Set up for new free range.  Pass along whether the right hand
     // chunk is in the free lists.
     initialize_free_range((HeapWord*)fc, fcInFreeLists);
+  }
+}
+
+// Lookahead flush:
+// If we are tracking a free range, and this is the last chunk that
+// we'll look at because its end crosses past _limit, we'll preemptively
+// flush it along with any free range we may be holding on to. Note that
+// this can be the case only for an already free or freshly garbage
+// chunk. If this block is an object, it can never straddle
+// over _limit. The "straddling" occurs when _limit is set at
+// the previous end of the space when this cycle started, and
+// a subsequent heap expansion caused the previously co-terminal
+// free block to be coalesced with the newly expanded portion,
+// thus rendering _limit a non-block-boundary making it dangerous
+// for the sweeper to step over and examine.
+void SweepClosure::lookahead_and_flush(FreeChunk* fc, size_t chunk_size) {
+  assert(inFreeRange(), "Should only be called if currently in a free range.");
+  HeapWord* const eob = ((HeapWord*)fc) + chunk_size;
+  assert(_sp->used_region().contains(eob - 1),
+         err_msg("eob = " PTR_FORMAT " out of bounds wrt _sp = [" PTR_FORMAT "," PTR_FORMAT ")"
+                 " when examining fc = " PTR_FORMAT "(" SIZE_FORMAT ")",
+                 _limit, _sp->bottom(), _sp->end(), fc, chunk_size));
+  if (eob >= _limit) {
+    assert(eob == _limit || fc->isFree(), "Only a free chunk should allow us to cross over the limit");
+    if (CMSTraceSweeper) {
+      gclog_or_tty->print_cr("_limit " PTR_FORMAT " reached or crossed by block "
+                             "[" PTR_FORMAT "," PTR_FORMAT ") in space "
+                             "[" PTR_FORMAT "," PTR_FORMAT ")",
+                             _limit, fc, eob, _sp->bottom(), _sp->end());
+    }
+    // Return the storage we are tracking back into the free lists.
+    if (CMSTraceSweeper) {
+      gclog_or_tty->print_cr("Flushing ... ");
+    }
+    assert(freeFinger() < eob, "Error");
+    flush_cur_free_chunk( freeFinger(), pointer_delta(eob, freeFinger()));
   }
 }
 
@@ -8419,6 +8481,8 @@ void SweepClosure::flush_cur_free_chunk(HeapWord* chunk, size_t size) {
     }
     _sp->addChunkAndRepairOffsetTable(chunk, size,
             lastFreeRangeCoalesced());
+  } else if (CMSTraceSweeper) {
+    gclog_or_tty->print_cr("Already in free list: nothing to flush");
   }
   set_inFreeRange(false);
   set_freeRangeInFreeLists(false);
@@ -8477,13 +8541,14 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
 bool debug_verifyChunkInFreeLists(FreeChunk* fc) {
   return debug_cms_space->verifyChunkInFreeLists(fc);
 }
+#endif
 
-void SweepClosure::record_free_block_coalesced(FreeChunk* fc) const {
+void SweepClosure::print_free_block_coalesced(FreeChunk* fc) const {
   if (CMSTraceSweeper) {
-    gclog_or_tty->print("Sweep:coal_free_blk 0x%x (%d)\n", fc, fc->size());
+    gclog_or_tty->print_cr("Sweep:coal_free_blk " PTR_FORMAT " (" SIZE_FORMAT ")",
+                           fc, fc->size());
   }
 }
-#endif
 
 // CMSIsAliveClosure
 bool CMSIsAliveClosure::do_object_b(oop obj) {

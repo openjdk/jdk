@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.spi.CharsetProvider;
 import java.security.AccessController;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
@@ -339,15 +338,15 @@ public abstract class Charset
     // those whose lookup or instantiation causes a security exception to be
     // thrown.  Should be invoked with full privileges.
     //
-    private static Iterator providers() {
-        return new Iterator() {
+    private static Iterator<CharsetProvider> providers() {
+        return new Iterator<CharsetProvider>() {
 
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
                 ServiceLoader<CharsetProvider> sl =
                     ServiceLoader.load(CharsetProvider.class, cl);
                 Iterator<CharsetProvider> i = sl.iterator();
 
-                Object next = null;
+                CharsetProvider next = null;
 
                 private boolean getNext() {
                     while (next == null) {
@@ -370,10 +369,10 @@ public abstract class Charset
                     return getNext();
                 }
 
-                public Object next() {
+                public CharsetProvider next() {
                     if (!getNext())
                         throw new NoSuchElementException();
-                    Object n = next;
+                    CharsetProvider n = next;
                     next = null;
                     return n;
                 }
@@ -386,7 +385,8 @@ public abstract class Charset
     }
 
     // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal<ThreadLocal> gate = new ThreadLocal<ThreadLocal>();
+    private static ThreadLocal<ThreadLocal<?>> gate =
+            new ThreadLocal<ThreadLocal<?>>();
 
     private static Charset lookupViaProviders(final String charsetName) {
 
@@ -410,8 +410,9 @@ public abstract class Charset
             return AccessController.doPrivileged(
                 new PrivilegedAction<Charset>() {
                     public Charset run() {
-                        for (Iterator i = providers(); i.hasNext();) {
-                            CharsetProvider cp = (CharsetProvider)i.next();
+                        for (Iterator<CharsetProvider> i = providers();
+                             i.hasNext();) {
+                            CharsetProvider cp = i.next();
                             Charset cs = cp.charsetForName(charsetName);
                             if (cs != null)
                                 return cs;
@@ -588,8 +589,8 @@ public abstract class Charset
                         new TreeMap<String,Charset>(
                             ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
                     put(standardProvider.charsets(), m);
-                    for (Iterator i = providers(); i.hasNext();) {
-                        CharsetProvider cp = (CharsetProvider)i.next();
+                    for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
+                        CharsetProvider cp = i.next();
                         put(cp.charsets(), m);
                     }
                     return Collections.unmodifiableSortedMap(m);

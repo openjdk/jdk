@@ -111,6 +111,8 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
+  static CallGenerator* for_method_handle_inline(Node* method_handle, JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
+
   // How to generate a replace a direct call with an inline version
   static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);
 

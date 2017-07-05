@@ -46,10 +46,10 @@ PSPermGen::PSPermGen(ReservedSpace rs, size_t alignment,
 
 HeapWord* PSPermGen::allocate_permanent(size_t size) {
   assert_locked_or_safepoint(Heap_lock);
-  HeapWord* obj = allocate_noexpand(size, false);
+  HeapWord* obj = allocate_noexpand(size);
 
   if (obj == NULL) {
-    obj = expand_and_allocate(size, false);
+    obj = expand_and_allocate(size);
   }
 
   return obj;

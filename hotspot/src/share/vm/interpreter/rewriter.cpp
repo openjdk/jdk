@@ -63,6 +63,15 @@ void Rewriter::compute_index_maps() {
   _have_invoke_dynamic = ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamic)) != 0);
 }
 
+// Unrewrite the bytecodes if an error occurs.
+void Rewriter::restore_bytecodes() {
+  int len = _methods->length();
+
+  for (int i = len-1; i >= 0; i--) {
+    methodOop method = (methodOop)_methods->obj_at(i);
+    scan_method(method, true);
+  }
+}
 
 // Creates a constant pool cache given a CPC map
 void Rewriter::make_constant_pool_cache(TRAPS) {
@@ -133,57 +142,94 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
 
 
 // Rewrite a classfile-order CP index into a native-order CPC index.
-void Rewriter::rewrite_member_reference(address bcp, int offset) {
+void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
   address p = bcp + offset;
-  int  cp_index    = Bytes::get_Java_u2(p);
-  int  cache_index = cp_entry_to_cp_cache(cp_index);
-  Bytes::put_native_u2(p, cache_index);
+  if (!reverse) {
+    int  cp_index    = Bytes::get_Java_u2(p);
+    int  cache_index = cp_entry_to_cp_cache(cp_index);
+    Bytes::put_native_u2(p, cache_index);
+  } else {
+    int cache_index = Bytes::get_native_u2(p);
+    int pool_index = cp_cache_entry_pool_index(cache_index);
+    Bytes::put_Java_u2(p, pool_index);
+  }
 }
 
 
-void Rewriter::rewrite_invokedynamic(address bcp, int offset) {
+void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   address p = bcp + offset;
-  assert(p[-1] == Bytecodes::_invokedynamic, "");
-  int cp_index = Bytes::get_Java_u2(p);
-  int cpc  = maybe_add_cp_cache_entry(cp_index);  // add lazily
-  int cpc2 = add_secondary_cp_cache_entry(cpc);
+  assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
+  if (!reverse) {
+    int cp_index = Bytes::get_Java_u2(p);
+    int cpc  = maybe_add_cp_cache_entry(cp_index);  // add lazily
+    int cpc2 = add_secondary_cp_cache_entry(cpc);
 
-  // Replace the trailing four bytes with a CPC index for the dynamic
-  // call site.  Unlike other CPC entries, there is one per bytecode,
-  // not just one per distinct CP entry.  In other words, the
-  // CPC-to-CP relation is many-to-one for invokedynamic entries.
-  // This means we must use a larger index size than u2 to address
-  // all these entries.  That is the main reason invokedynamic
-  // must have a five-byte instruction format.  (Of course, other JVM
-  // implementations can use the bytes for other purposes.)
-  Bytes::put_native_u4(p, constantPoolCacheOopDesc::encode_secondary_index(cpc2));
-  // Note: We use native_u4 format exclusively for 4-byte indexes.
+    // Replace the trailing four bytes with a CPC index for the dynamic
+    // call site.  Unlike other CPC entries, there is one per bytecode,
+    // not just one per distinct CP entry.  In other words, the
+    // CPC-to-CP relation is many-to-one for invokedynamic entries.
+    // This means we must use a larger index size than u2 to address
+    // all these entries.  That is the main reason invokedynamic
+    // must have a five-byte instruction format.  (Of course, other JVM
+    // implementations can use the bytes for other purposes.)
+    Bytes::put_native_u4(p, constantPoolCacheOopDesc::encode_secondary_index(cpc2));
+    // Note: We use native_u4 format exclusively for 4-byte indexes.
+  } else {
+    int cache_index = constantPoolCacheOopDesc::decode_secondary_index(
+                        Bytes::get_native_u4(p));
+    int secondary_index = cp_cache_secondary_entry_main_index(cache_index);
+    int pool_index = cp_cache_entry_pool_index(secondary_index);
+    assert(_pool->tag_at(pool_index).is_invoke_dynamic(), "wrong index");
+    // zero out 4 bytes
+    Bytes::put_Java_u4(p, 0);
+    Bytes::put_Java_u2(p, pool_index);
+  }
 }
 
 
 // Rewrite some ldc bytecodes to _fast_aldc
-void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide) {
-  assert((*bcp) == (is_wide ? Bytecodes::_ldc_w : Bytecodes::_ldc), "");
-  address p = bcp + offset;
-  int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
-  constantTag tag = _pool->tag_at(cp_index).value();
-  if (tag.is_method_handle() || tag.is_method_type()) {
-    int cache_index = cp_entry_to_cp_cache(cp_index);
-    if (is_wide) {
-      (*bcp) = Bytecodes::_fast_aldc_w;
-      assert(cache_index == (u2)cache_index, "");
-      Bytes::put_native_u2(p, cache_index);
-    } else {
-      (*bcp) = Bytecodes::_fast_aldc;
-      assert(cache_index == (u1)cache_index, "");
-      (*p) = (u1)cache_index;
+void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
+                                 bool reverse) {
+  if (!reverse) {
+    assert((*bcp) == (is_wide ? Bytecodes::_ldc_w : Bytecodes::_ldc), "not ldc bytecode");
+    address p = bcp + offset;
+    int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
+    constantTag tag = _pool->tag_at(cp_index).value();
+    if (tag.is_method_handle() || tag.is_method_type()) {
+      int cache_index = cp_entry_to_cp_cache(cp_index);
+      if (is_wide) {
+        (*bcp) = Bytecodes::_fast_aldc_w;
+        assert(cache_index == (u2)cache_index, "index overflow");
+        Bytes::put_native_u2(p, cache_index);
+      } else {
+        (*bcp) = Bytecodes::_fast_aldc;
+        assert(cache_index == (u1)cache_index, "index overflow");
+        (*p) = (u1)cache_index;
+      }
+    }
+  } else {
+    Bytecodes::Code rewritten_bc =
+              (is_wide ? Bytecodes::_fast_aldc_w : Bytecodes::_fast_aldc);
+    if ((*bcp) == rewritten_bc) {
+      address p = bcp + offset;
+      int cache_index = is_wide ? Bytes::get_native_u2(p) : (u1)(*p);
+      int pool_index = cp_cache_entry_pool_index(cache_index);
+      if (is_wide) {
+        (*bcp) = Bytecodes::_ldc_w;
+        assert(pool_index == (u2)pool_index, "index overflow");
+        Bytes::put_Java_u2(p, pool_index);
+      } else {
+        (*bcp) = Bytecodes::_ldc;
+        assert(pool_index == (u1)pool_index, "index overflow");
+        (*p) = (u1)pool_index;
+      }
     }
   }
 }
 
 
 // Rewrites a method given the index_map information
-void Rewriter::scan_method(methodOop method) {
+void Rewriter::scan_method(methodOop method, bool reverse) {
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
@@ -236,6 +282,13 @@ void Rewriter::scan_method(methodOop method) {
 #endif
           break;
         }
+        case Bytecodes::_fast_linearswitch:
+        case Bytecodes::_fast_binaryswitch: {
+#ifndef CC_INTERP
+          (*bcp) = Bytecodes::_lookupswitch;
+#endif
+          break;
+        }
         case Bytecodes::_getstatic      : // fall through
         case Bytecodes::_putstatic      : // fall through
         case Bytecodes::_getfield       : // fall through
@@ -244,16 +297,18 @@ void Rewriter::scan_method(methodOop method) {
         case Bytecodes::_invokespecial  : // fall through
         case Bytecodes::_invokestatic   :
         case Bytecodes::_invokeinterface:
-          rewrite_member_reference(bcp, prefix_length+1);
+          rewrite_member_reference(bcp, prefix_length+1, reverse);
           break;
         case Bytecodes::_invokedynamic:
-          rewrite_invokedynamic(bcp, prefix_length+1);
+          rewrite_invokedynamic(bcp, prefix_length+1, reverse);
           break;
         case Bytecodes::_ldc:
-          maybe_rewrite_ldc(bcp, prefix_length+1, false);
+        case Bytecodes::_fast_aldc:
+          maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
           break;
         case Bytecodes::_ldc_w:
-          maybe_rewrite_ldc(bcp, prefix_length+1, true);
+        case Bytecodes::_fast_aldc_w:
+          maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
           break;
         case Bytecodes::_jsr            : // fall through
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
@@ -273,12 +328,13 @@ void Rewriter::scan_method(methodOop method) {
   if (nof_jsrs > 0) {
     method->set_has_jsrs();
     // Second pass will revisit this method.
-    assert(method->has_jsrs(), "");
+    assert(method->has_jsrs(), "didn't we just set this?");
   }
 }
 
 // After constant pool is created, revisit methods containing jsrs.
 methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
+  ResourceMark rm(THREAD);
   ResolveOopMapConflicts romc(method);
   methodHandle original_method = method;
   method = romc.do_potential_rewrite(CHECK_(methodHandle()));
@@ -299,7 +355,6 @@ methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
 
   return method;
 }
-
 
 void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
   ResourceMark rm(THREAD);
@@ -343,34 +398,57 @@ Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArray
   }
 
   // rewrite methods, in two passes
-  int i, len = _methods->length();
+  int len = _methods->length();
 
-  for (i = len; --i >= 0; ) {
+  for (int i = len-1; i >= 0; i--) {
     methodOop method = (methodOop)_methods->obj_at(i);
     scan_method(method);
   }
 
   // allocate constant pool cache, now that we've seen all the bytecodes
-  make_constant_pool_cache(CHECK);
+  make_constant_pool_cache(THREAD);
 
-  for (i = len; --i >= 0; ) {
-    methodHandle m(THREAD, (methodOop)_methods->obj_at(i));
+  // Restore bytecodes to their unrewritten state if there are exceptions
+  // rewriting bytecodes or allocating the cpCache
+  if (HAS_PENDING_EXCEPTION) {
+    restore_bytecodes();
+    return;
+  }
+}
+
+// Relocate jsr/rets in a method.  This can't be done with the rewriter
+// stage because it can throw other exceptions, leaving the bytecodes
+// pointing at constant pool cache entries.
+// Link and check jvmti dependencies while we're iterating over the methods.
+// JSR292 code calls with a different set of methods, so two entry points.
+void Rewriter::relocate_and_link(instanceKlassHandle this_oop, TRAPS) {
+  objArrayHandle methods(THREAD, this_oop->methods());
+  relocate_and_link(this_oop, methods, THREAD);
+}
+
+void Rewriter::relocate_and_link(instanceKlassHandle this_oop,
+                                 objArrayHandle methods, TRAPS) {
+  int len = methods->length();
+  for (int i = len-1; i >= 0; i--) {
+    methodHandle m(THREAD, (methodOop)methods->obj_at(i));
 
     if (m->has_jsrs()) {
       m = rewrite_jsrs(m, CHECK);
       // Method might have gotten rewritten.
-      _methods->obj_at_put(i, m());
+      methods->obj_at_put(i, m());
     }
 
-    // Set up method entry points for compiler and interpreter.
+    // Set up method entry points for compiler and interpreter    .
     m->link_method(m, CHECK);
 
+    // This is for JVMTI and unrelated to relocator but the last thing we do
 #ifdef ASSERT
     if (StressMethodComparator) {
       static int nmc = 0;
       for (int j = i; j >= 0 && j >= i-4; j--) {
         if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
-        bool z = MethodComparator::methods_EMCP(m(), (methodOop)_methods->obj_at(j));
+        bool z = MethodComparator::methods_EMCP(m(),
+                   (methodOop)methods->obj_at(j));
         if (j == i && !z) {
           tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
           assert(z, "method must compare equal to itself");

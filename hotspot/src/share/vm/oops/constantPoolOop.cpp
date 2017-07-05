@@ -266,6 +266,29 @@ klassOop constantPoolOopDesc::klass_ref_at_if_loaded_check(constantPoolHandle th
 }
 
 
+methodOop constantPoolOopDesc::method_at_if_loaded(constantPoolHandle cpool,
+                                                   int which, Bytecodes::Code invoke_code) {
+  assert(!constantPoolCacheOopDesc::is_secondary_index(which), "no indy instruction here");
+  if (cpool->cache() == NULL)  return false;  // nothing to load yet
+  int cache_index = which - CPCACHE_INDEX_TAG;
+  if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
+    if (PrintMiscellaneous && (Verbose||WizardMode)) {
+      tty->print_cr("bad operand %d for %d in:", which, invoke_code); cpool->print();
+    }
+    return NULL;
+  }
+  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+  if (invoke_code != Bytecodes::_illegal)
+    return e->get_method_if_resolved(invoke_code, cpool);
+  Bytecodes::Code bc;
+  if ((bc = e->bytecode_1()) != (Bytecodes::Code)0)
+    return e->get_method_if_resolved(bc, cpool);
+  if ((bc = e->bytecode_2()) != (Bytecodes::Code)0)
+    return e->get_method_if_resolved(bc, cpool);
+  return NULL;
+}
+
+
 Symbol* constantPoolOopDesc::impl_name_ref_at(int which, bool uncached) {
   int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
   return symbol_at(name_index);

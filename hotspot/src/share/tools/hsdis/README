@@ -75,8 +75,16 @@ will build the Win32 cross compiled version of hsdis based on 2.19.1.
 * Installing
 
 Products are named like build/$OS-$LIBARCH/hsdis-$LIBARCH.so.  You can
-install them on your LD_LIBRARY_PATH, or inside of your JRE next to
-$LIBARCH/libjvm.so.
+install them on your LD_LIBRARY_PATH, or inside of your JRE/JDK.  The
+search path in the JVM is:
+
+1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so
+2. <home>/jre/lib/<arch>/<vm>/hsdis-<arch>.so
+3. <home>/jre/lib/<arch>/hsdis-<arch>.so
+4. hsdis-<arch>.so  (using LD_LIBRARY_PATH)
+
+Note that there's a bug in hotspot versions prior to hs22 that causes
+steps 2 and 3 to fail when used with JDK7.
 
 Now test:
 

@@ -33,12 +33,9 @@ import java.awt.event.ActionEvent;
 import javax.swing.plaf.basic.*;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
-
 public class XButtonPeer extends XComponentPeer implements ButtonPeer {
-
-    boolean pressed;
-    boolean armed;
-
+    private boolean pressed;
+    private boolean armed;
     private Insets focusInsets;
     private Insets borderInsets;
     private Insets contentAreaInsets;
@@ -86,11 +83,6 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         this.label = label;
         repaint();
     }
-
-    public void paint(Graphics g) {
-        paint(g,target);
-    }
-
     public void setBackground(Color c) {
         updateMotifColors(c);
         super.setBackground(c);
@@ -133,16 +125,10 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
           case  MouseEvent.MOUSE_ENTERED:
               if (pressed)
                   armed = true;
-//                 repaint();
-
               break;
-
           case MouseEvent.MOUSE_EXITED:
               armed = false;
-//                 repaint();
-
               break;
-
         }
     }
 
@@ -209,18 +195,14 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
     public Dimension minimumSize() {
         return getMinimumSize();
     }
-
-
-    /*
-       This method is called from Toolkit Thread and so it should not call any client code
-
-    */
-    public void paint(Graphics g, Component c)
-    {
-        if (!disposed && (g != null))
-        {
+    /**
+     * This method is called from Toolkit Thread and so it should not call any
+     * client code.
+     */
+    @Override
+    void paintPeer(final Graphics g) {
+        if (!disposed) {
             Dimension size = getPeerSize();
-
             g.setColor( getPeerBackground() );   /* erase the existing button remains */
             g.fillRect(0,0, size.width , size.height);
             paintBorder(g,borderInsets.left,
@@ -239,11 +221,9 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
 
             viewRect.width = size.width - (contentAreaInsets.left+contentAreaInsets.right);
             viewRect.height = size.height - (contentAreaInsets.top+contentAreaInsets.bottom);
-
             viewRect.x = contentAreaInsets.left;
-            viewRect.y = contentAreaInsets.right;
+            viewRect.y = contentAreaInsets.top;
             String llabel = (label != null) ? label : "";
-
             // layout the text and icon
             String text = SwingUtilities.layoutCompoundLabel(
                                                              fm, llabel, null,
@@ -309,10 +289,9 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
         else {
             /*** paint the text disabled ***/
             g.setColor(getPeerBackground().brighter());
-
             BasicGraphicsUtils.drawStringUnderlineCharAt(g,text, mnemonicIndex,
                                                          textRect.x, textRect.y + fm.getAscent());
-            g.setColor(c.getBackground().darker());
+            g.setColor(getPeerBackground().darker());
             BasicGraphicsUtils.drawStringUnderlineCharAt(g,text, mnemonicIndex,
                                                          textRect.x - 1, textRect.y + fm.getAscent() - 1);
         }

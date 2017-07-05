@@ -310,10 +310,14 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
     st->print(" - flags: 0x%x", cp->flags());
     if (cp->has_pseudo_string()) st->print(" has_pseudo_string");
     if (cp->has_invokedynamic()) st->print(" has_invokedynamic");
+    if (cp->has_preresolution()) st->print(" has_preresolution");
     st->cr();
   }
+  if (cp->pool_holder() != NULL) {
+    bool extra = (instanceKlass::cast(cp->pool_holder())->constants() != cp);
+    st->print_cr(" - holder: " INTPTR_FORMAT "%s", cp->pool_holder(), (extra? " (extra)" : ""));
+  }
   st->print_cr(" - cache: " INTPTR_FORMAT, cp->cache());
-
   for (int index = 1; index < cp->length(); index++) {      // Index 0 is unused
     st->print(" - %3d : ", index);
     cp->tag_at(index).print_on(st);
@@ -414,10 +418,15 @@ void constantPoolKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("constant pool [%d]", cp->length());
   if (cp->has_pseudo_string()) st->print("/pseudo_string");
   if (cp->has_invokedynamic()) st->print("/invokedynamic");
+  if (cp->has_preresolution()) st->print("/preresolution");
   if (cp->operands() != NULL)  st->print("/operands[%d]", cp->operands()->length());
   cp->print_address_on(st);
   st->print(" for ");
   cp->pool_holder()->print_value_on(st);
+  if (cp->pool_holder() != NULL) {
+    bool extra = (instanceKlass::cast(cp->pool_holder())->constants() != cp);
+    if (extra)  st->print(" (extra)");
+  }
   if (cp->cache() != NULL) {
     st->print(" cache=" PTR_FORMAT, cp->cache());
   }
