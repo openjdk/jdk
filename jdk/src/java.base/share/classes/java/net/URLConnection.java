@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,18 @@ import sun.security.action.GetPropertyAction;
  * read from and to write to the resource referenced by the URL. In
  * general, creating a connection to a URL is a multistep process:
  *
- * <div style="text-align:center"><table style="margin:0 auto" border=2 summary="Describes the process of creating a connection to a URL: openConnection() and connect() over time.">
+ * <div style="text-align:center"><table class="plain" style="margin:0 auto">
+ * <caption style="display:none">Describes the process of creating a connection to a URL: openConnection() and connect() over time.</caption>
+ * <thead>
  * <tr><th>{@code openConnection()}</th>
  *     <th>{@code connect()}</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>Manipulate parameters that affect the connection to the remote
  *         resource.</td>
  *     <td>Interact with the resource; query header fields and
  *         contents.</td></tr>
+ * </tbody>
  * </table>
  * ----------------------------&gt;
  * <br>time</div>

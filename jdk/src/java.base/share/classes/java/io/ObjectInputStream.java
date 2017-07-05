@@ -216,7 +216,8 @@ import sun.reflect.misc.ReflectUtil;
  * @see java.io.DataInput
  * @see java.io.ObjectOutputStream
  * @see java.io.Serializable
- * @see <a href="../../../platform/serialization/spec/input.html"> Object Serialization Specification, Section 3, Object Input Classes</a>
+ * @see <a href="{@docRoot}/../specs/serialization/input.html">
+ *     Object Serialization Specification, Section 3, Object Input Classes</a>
  * @since   1.1
  */
 public class ObjectInputStream

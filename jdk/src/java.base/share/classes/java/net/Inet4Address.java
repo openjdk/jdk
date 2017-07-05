@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ import java.io.ObjectStreamException;
  * Textual representation of IPv4 address used as input to methods
  * takes one of the following forms:
  *
- * <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- * <tr><td>{@code d.d.d.d}</td></tr>
- * <tr><td>{@code d.d.d}</td></tr>
- * <tr><td>{@code d.d}</td></tr>
- * <tr><td>{@code d}</td></tr>
- * </table></blockquote>
+ * <blockquote><ul style="list-style-type:none">
+ * <li>{@code d.d.d.d}</li>
+ * <li>{@code d.d.d}</li>
+ * <li>{@code d.d}</li>
+ * <li>{@code d}</li>
+ * </ul></blockquote>
  *
  * <p> When four parts are specified, each is interpreted as a byte of
  * data and assigned, from left to right, to the four bytes of an IPv4

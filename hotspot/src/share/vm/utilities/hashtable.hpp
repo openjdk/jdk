@@ -173,11 +173,11 @@ private:
   // Instance variables
   int               _table_size;
   HashtableBucket<F>*     _buckets;
-  BasicHashtableEntry<F>* _free_list;
+  BasicHashtableEntry<F>* volatile _free_list;
   char*             _first_free_entry;
   char*             _end_block;
   int               _entry_size;
-  int               _number_of_entries;
+  volatile int      _number_of_entries;
 
 protected:
 
@@ -225,6 +225,24 @@ protected:
   // Free the buckets in this hashtable
   void free_buckets();
 
+  // Helper data structure containing context for the bucket entry unlink process,
+  // storing the unlinked buckets in a linked list.
+  // Also avoids the need to pass around these four members as parameters everywhere.
+  struct BucketUnlinkContext {
+    int _num_processed;
+    int _num_removed;
+    // Head and tail pointers for the linked list of removed entries.
+    BasicHashtableEntry<F>* _removed_head;
+    BasicHashtableEntry<F>* _removed_tail;
+
+    BucketUnlinkContext() : _num_processed(0), _num_removed(0), _removed_head(NULL), _removed_tail(NULL) {
+    }
+
+    void free_entry(BasicHashtableEntry<F>* entry);
+  };
+  // Add of bucket entries linked together in the given context to the global free list. This method
+  // is mt-safe wrt. to other calls of this method.
+  void bulk_free_entries(BucketUnlinkContext* context);
 public:
   int table_size() { return _table_size; }
   void set_entry(int index, BasicHashtableEntry<F>* entry);

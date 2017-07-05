@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.incubator.http.internal.hpack;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -40,6 +42,7 @@ import static java.lang.String.format;
 //
 final class HeaderTable {
 
+    @Stable
     private static final HeaderField[] staticTable = {
             null, // To make index 1-based, instead of 0-based
             new HeaderField(":authority"),
@@ -110,7 +113,7 @@ final class HeaderTable {
     private static final Map<String, LinkedHashMap<String, Integer>> staticIndexes;
 
     static {
-        staticIndexes = new HashMap<>(STATIC_TABLE_LENGTH);
+        staticIndexes = new HashMap<>(STATIC_TABLE_LENGTH); // TODO: Map.of
         for (int i = 1; i <= STATIC_TABLE_LENGTH; i++) {
             HeaderField f = staticTable[i];
             Map<String, Integer> values = staticIndexes
