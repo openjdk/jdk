@@ -68,13 +68,13 @@ class KeyboardManager {
     /**
       * maps top-level containers to a sub-hashtable full of keystrokes
       */
-    Hashtable containerMap = new Hashtable();
+    Hashtable<Container, Hashtable> containerMap = new Hashtable<Container, Hashtable>();
 
     /**
       * Maps component/keystroke pairs to a topLevel container
       * This is mainly used for fast unregister operations
       */
-    Hashtable componentKeyStrokeMap = new Hashtable();
+    Hashtable<ComponentKeyStrokePair, Container> componentKeyStrokeMap = new Hashtable<ComponentKeyStrokePair, Container>();
 
     public static KeyboardManager getCurrentManager() {
         return currentManager;
@@ -95,7 +95,7 @@ class KeyboardManager {
          if (topContainer == null) {
              return;
          }
-         Hashtable keyMap = (Hashtable)containerMap.get(topContainer);
+         Hashtable keyMap = containerMap.get(topContainer);
 
          if (keyMap ==  null) {  // lazy evaluate one
              keyMap = registerNewTopContainer(topContainer);
@@ -114,8 +114,8 @@ class KeyboardManager {
            // Then add the old compoennt and the new compoent to the vector
            // then insert the vector in the table
            if (tmp != c) {  // this means this is already registered for this component, no need to dup
-               Vector v = new Vector();
-               v.addElement(tmp);
+               Vector<JComponent> v = new Vector<JComponent>();
+               v.addElement((JComponent) tmp);
                v.addElement(c);
                keyMap.put(k, v);
            }
@@ -154,13 +154,13 @@ class KeyboardManager {
 
          ComponentKeyStrokePair ckp = new ComponentKeyStrokePair(c,ks);
 
-         Object topContainer = componentKeyStrokeMap.get(ckp);
+         Container topContainer = componentKeyStrokeMap.get(ckp);
 
          if (topContainer == null) {  // never heard of this pairing, so bail
              return;
          }
 
-         Hashtable keyMap = (Hashtable)containerMap.get(topContainer);
+         Hashtable keyMap = containerMap.get(topContainer);
          if  (keyMap == null) { // this should never happen, but I'm being safe
              Thread.dumpStack();
              return;
@@ -221,7 +221,7 @@ class KeyboardManager {
                ks=KeyStroke.getKeyStroke(e.getKeyCode(), e.getModifiers(), !pressed);
          }
 
-         Hashtable keyMap = (Hashtable)containerMap.get(topAncestor);
+         Hashtable keyMap = containerMap.get(topAncestor);
          if (keyMap != null) { // this container isn't registered, so bail
 
              Object tmp = keyMap.get(ks);
@@ -293,7 +293,7 @@ class KeyboardManager {
         if (top == null) {
             return;
         }
-        Hashtable keyMap = (Hashtable)containerMap.get(top);
+        Hashtable keyMap = containerMap.get(top);
 
         if (keyMap ==  null) {  // lazy evaluate one
              keyMap = registerNewTopContainer(top);
@@ -314,11 +314,11 @@ class KeyboardManager {
 
 
     public void unregisterMenuBar(JMenuBar mb) {
-        Object topContainer = getTopAncestor(mb);
+        Container topContainer = getTopAncestor(mb);
         if (topContainer == null) {
             return;
         }
-        Hashtable keyMap = (Hashtable)containerMap.get(topContainer);
+        Hashtable keyMap = containerMap.get(topContainer);
         if (keyMap!=null) {
             Vector v = (Vector)keyMap.get(JMenuBar.class);
             if (v != null) {

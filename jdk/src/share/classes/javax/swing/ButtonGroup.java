@@ -68,7 +68,7 @@ import java.io.Serializable;
 public class ButtonGroup implements Serializable {
 
     // the list of buttons participating in this group
-    protected Vector<AbstractButton> buttons = new Vector();
+    protected Vector<AbstractButton> buttons = new Vector<AbstractButton>();
 
     /**
      * The current selection.

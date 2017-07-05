@@ -770,33 +770,56 @@ class Metacity implements SynthConstants {
             JComponent maximizeButton = findChild(titlePane, "InternalFrameTitlePane.maximizeButton");
             JComponent closeButton    = findChild(titlePane, "InternalFrameTitlePane.closeButton");
 
-            int buttonGap = 0;
-
             Insets button_border = (Insets)gm.get("button_border");
             Dimension buttonDim = calculateButtonSize(titlePane);
 
-            int x = getInt("left_titlebar_edge");
             int y = (button_border != null) ? button_border.top : 0;
+            if (titlePaneParent.getComponentOrientation().isLeftToRight()) {
+                int x = getInt("left_titlebar_edge");
 
-            menuButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                menuButton.setBounds(x, y, buttonDim.width, buttonDim.height);
 
-            x = w - buttonDim.width - getInt("right_titlebar_edge");
-            if (button_border != null) {
-                x -= button_border.right;
-            }
+                x = w - buttonDim.width - getInt("right_titlebar_edge");
+                if (button_border != null) {
+                    x -= button_border.right;
+                }
 
-            if (frame.isClosable()) {
-                closeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
-                x -= (buttonDim.width + buttonGap);
-            }
+                if (frame.isClosable()) {
+                    closeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                    x -= buttonDim.width;
+                }
 
-            if (frame.isMaximizable()) {
-                maximizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
-                x -= (buttonDim.width + buttonGap);
-            }
+                if (frame.isMaximizable()) {
+                    maximizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                    x -= buttonDim.width;
+                }
 
-            if (frame.isIconifiable()) {
-                minimizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                if (frame.isIconifiable()) {
+                    minimizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                }
+            } else {
+                int x = w - buttonDim.width - getInt("right_titlebar_edge");
+
+                menuButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+
+                x = getInt("left_titlebar_edge");
+                if (button_border != null) {
+                    x += button_border.left;
+                }
+
+                if (frame.isClosable()) {
+                    closeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                    x += buttonDim.width;
+                }
+
+                if (frame.isMaximizable()) {
+                    maximizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                    x += buttonDim.width;
+                }
+
+                if (frame.isIconifiable()) {
+                    minimizeButton.setBounds(x, y, buttonDim.width, buttonDim.height);
+                }
             }
         }
     } // end TitlePaneLayout
@@ -973,10 +996,8 @@ class Metacity implements SynthConstants {
         String title = jif.getTitle();
         if (title != null) {
             FontMetrics fm = SwingUtilities2.getFontMetrics(jif, g);
-            if (jif.getComponentOrientation().isLeftToRight()) {
-                title = SwingUtilities2.clipStringIfNecessary(jif, fm, title,
-                             calculateTitleTextWidth(g, jif));
-            }
+            title = SwingUtilities2.clipStringIfNecessary(jif, fm, title,
+                         calculateTitleArea(jif).width);
             g.setColor(color);
             SwingUtilities2.drawString(jif, g, title, x, y + fm.getAscent());
         }
@@ -1010,9 +1031,10 @@ class Metacity implements SynthConstants {
         JComponent titlePane = findChild(jif, "InternalFrame.northPane");
         Dimension buttonDim = calculateButtonSize(titlePane);
         Insets title_border = (Insets)frameGeometry.get("title_border");
-        Rectangle r = new Rectangle();
+        Insets button_border = (Insets)getFrameGeometry().get("button_border");
 
-        r.x = getInt("left_titlebar_edge") + buttonDim.width;
+        Rectangle r = new Rectangle();
+        r.x = getInt("left_titlebar_edge");
         r.y = 0;
         r.height = titlePane.getHeight();
         if (title_border != null) {
@@ -1021,15 +1043,36 @@ class Metacity implements SynthConstants {
             r.height -= (title_border.top + title_border.bottom);
         }
 
-        r.width = titlePane.getWidth() - r.x - getInt("right_titlebar_edge");
-        if (jif.isClosable()) {
-            r.width -= buttonDim.width;
-        }
-        if (jif.isMaximizable()) {
-            r.width -= buttonDim.width;
-        }
-        if (jif.isIconifiable()) {
-            r.width -= buttonDim.width;
+        if (titlePane.getParent().getComponentOrientation().isLeftToRight()) {
+            r.x += buttonDim.width;
+            if (button_border != null) {
+                r.x += button_border.left;
+            }
+            r.width = titlePane.getWidth() - r.x - getInt("right_titlebar_edge");
+            if (jif.isClosable()) {
+                r.width -= buttonDim.width;
+            }
+            if (jif.isMaximizable()) {
+                r.width -= buttonDim.width;
+            }
+            if (jif.isIconifiable()) {
+                r.width -= buttonDim.width;
+            }
+        } else {
+            if (jif.isClosable()) {
+                r.x += buttonDim.width;
+            }
+            if (jif.isMaximizable()) {
+                r.x += buttonDim.width;
+            }
+            if (jif.isIconifiable()) {
+                r.x += buttonDim.width;
+            }
+            r.width = titlePane.getWidth() - r.x - getInt("right_titlebar_edge")
+                    - buttonDim.width;
+            if (button_border != null) {
+                r.x -= button_border.right;
+            }
         }
         if (title_border != null) {
             r.width -= title_border.right;

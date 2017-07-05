@@ -299,8 +299,10 @@ public class BasicColorChooserUI extends ColorChooserUI
                         tabbedPane.addTab(name, centerWrapper);
                         if (mnemonic > 0) {
                             tabbedPane.setMnemonicAt(i, mnemonic);
-                            tabbedPane.setDisplayedMnemonicIndexAt(
-                                  i, newPanels[i].getDisplayedMnemonicIndex());
+                            int index = newPanels[i].getDisplayedMnemonicIndex();
+                            if (index >= 0) {
+                                tabbedPane.setDisplayedMnemonicIndexAt(i, index);
+                            }
                         }
                     }
                 }

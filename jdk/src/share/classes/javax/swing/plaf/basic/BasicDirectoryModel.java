@@ -43,10 +43,10 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
 
     private JFileChooser filechooser = null;
     // PENDING(jeff) pick the size more sensibly
-    private Vector fileCache = new Vector(50);
+    private Vector<File> fileCache = new Vector<File>(50);
     private LoadFilesThread loadThread = null;
-    private Vector files = null;
-    private Vector directories = null;
+    private Vector<File> files = null;
+    private Vector<File> directories = null;
     private int fetchID = 0;
 
     private PropertyChangeSupport changeSupport;
@@ -106,14 +106,14 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
             if (files != null) {
                 return files;
             }
-            files = new Vector();
-            directories = new Vector();
+            files = new Vector<File>();
+            directories = new Vector<File>();
             directories.addElement(filechooser.getFileSystemView().createFileObject(
                 filechooser.getCurrentDirectory(), "..")
             );
 
             for (int i = 0; i < getSize(); i++) {
-                File f = (File)fileCache.get(i);
+                File f = fileCache.get(i);
                 if (filechooser.isTraversable(f)) {
                     directories.add(f);
                 } else {
@@ -215,7 +215,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
     class LoadFilesThread extends Thread {
         File currentDirectory = null;
         int fid;
-        Vector runnables = new Vector(10);
+        Vector<DoChangeContents> runnables = new Vector<DoChangeContents>(10);
 
         public LoadFilesThread(File currentDirectory, int fid) {
             super("Basic L&F File Loading Thread");
@@ -223,7 +223,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
             this.fid = fid;
         }
 
-        private void invokeLater(Runnable runnable) {
+        private void invokeLater(DoChangeContents runnable) {
             runnables.addElement(runnable);
             SwingUtilities.invokeLater(runnable);
         }
@@ -245,9 +245,9 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
             }
 
             // run through the file list, add directories and selectable files to fileCache
-            for (int i = 0; i < list.length; i++) {
-                if(filechooser.accept(list[i])) {
-                    acceptsList.addElement(list[i]);
+            for (File file : list) {
+                if (filechooser.accept(file)) {
+                    acceptsList.addElement(file);
                 }
             }
 
@@ -258,11 +258,11 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
             // First sort alphabetically by filename
             sort(acceptsList);
 
-            Vector newDirectories = new Vector(50);
-            Vector newFiles = new Vector();
+            Vector<File> newDirectories = new Vector<File>(50);
+            Vector<File> newFiles = new Vector<File>();
             // run through list grabbing directories in chunks of ten
             for(int i = 0; i < acceptsList.size(); i++) {
-                File f = (File) acceptsList.elementAt(i);
+                File f = acceptsList.elementAt(i);
                 boolean isTraversable = filechooser.isTraversable(f);
                 if (isTraversable) {
                     newDirectories.addElement(f);
@@ -274,7 +274,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
                 }
             }
 
-            Vector newFileCache = new Vector(newDirectories);
+            Vector<File> newFileCache = new Vector<File>(newDirectories);
             newFileCache.addAll(newFiles);
 
             int newSize = newFileCache.size();
@@ -320,7 +320,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
                     if(isInterrupted()) {
                         return;
                     }
-                    invokeLater(new DoChangeContents(null, 0, new Vector(fileCache.subList(start, end)),
+                    invokeLater(new DoChangeContents(null, 0, new Vector<File>(fileCache.subList(start, end)),
                                                      start, fid));
                     newFileCache = null;
                 }
@@ -334,9 +334,9 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
         }
 
 
-        public void cancelRunnables(Vector runnables) {
-            for(int i = 0; i < runnables.size(); i++) {
-                ((DoChangeContents)runnables.elementAt(i)).cancel();
+        public void cancelRunnables(Vector<DoChangeContents> runnables) {
+            for (DoChangeContents runnable : runnables) {
+                runnable.cancel();
             }
         }
 
@@ -449,15 +449,14 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
 
 
     class DoChangeContents implements Runnable {
-        private List addFiles;
-        private List remFiles;
+        private List<File> addFiles;
+        private List<File> remFiles;
         private boolean doFire = true;
         private int fid;
         private int addStart = 0;
         private int remStart = 0;
-        private int change;
 
-        public DoChangeContents(List addFiles, int addStart, List remFiles, int remStart, int fid) {
+        public DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles, int remStart, int fid) {
             this.addFiles = addFiles;
             this.addStart = addStart;
             this.remFiles = remFiles;

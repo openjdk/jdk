@@ -48,7 +48,7 @@ import javax.swing.text.*;
      */
     public TableView(Element elem) {
         super(elem, View.Y_AXIS);
-        rows = new Vector();
+        rows = new Vector<RowView>();
         gridValid = false;
         captionIndex = -1;
         totalColumnRequirements = new SizeRequirements();
@@ -127,14 +127,14 @@ import javax.swing.text.*;
 
     RowView getRow(int row) {
         if (row < rows.size()) {
-            return (RowView) rows.elementAt(row);
+            return rows.elementAt(row);
         }
         return null;
     }
 
     protected View getViewAtPoint(int x, int y, Rectangle alloc) {
         int n = getViewCount();
-        View v = null;
+        View v;
         Rectangle allocation = new Rectangle();
         for (int i = 0; i < n; i++) {
             allocation.setBounds(alloc);
@@ -273,7 +273,7 @@ import javax.swing.text.*;
             for (int i = 0; i < n; i++) {
                 View v = getView(i);
                 if (v instanceof RowView) {
-                    rows.addElement(v);
+                    rows.addElement((RowView) v);
                     RowView rv = (RowView) v;
                     rv.clearFilledColumns();
                     rv.rowIndex = rows.size() - 1;
@@ -990,7 +990,7 @@ import javax.swing.text.*;
     RowIterator rowIterator = new RowIterator();
     ColumnIterator colIterator = new ColumnIterator();
 
-    Vector rows;
+    Vector<RowView> rows;
 
     // whether to display comments inside table or not.
     boolean skipComments = false;

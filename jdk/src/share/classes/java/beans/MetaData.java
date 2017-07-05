@@ -650,7 +650,7 @@ class java_util_Map_PersistenceDelegate extends DefaultPersistenceDelegate {
         // Remove the new elements.
         // Do this first otherwise we undo the adding work.
         if (newMap != null) {
-            for ( Object newKey : newMap.keySet() ) {
+            for (Object newKey : newMap.keySet().toArray()) {
                // PENDING: This "key" is not in the right environment.
                 if (!oldMap.containsKey(newKey)) {
                     invokeStatement(oldInstance, "remove", new Object[]{newKey}, out);
@@ -986,14 +986,20 @@ class java_awt_Component_PersistenceDelegate extends DefaultPersistenceDelegate 
         // null to defined values after the Windows are made visible -
         // special case them for now.
         if (!(oldInstance instanceof java.awt.Window)) {
-            String[] fieldNames = new String[]{"background", "foreground", "font"};
-            for(int i = 0; i < fieldNames.length; i++) {
-                String name = fieldNames[i];
-                Object oldValue = ReflectionUtils.getPrivateField(oldInstance, java.awt.Component.class, name, out.getExceptionListener());
-                Object newValue = (newInstance == null) ? null : ReflectionUtils.getPrivateField(newInstance, java.awt.Component.class, name, out.getExceptionListener());
-                if (oldValue != null && !oldValue.equals(newValue)) {
-                    invokeStatement(oldInstance, "set" + NameGenerator.capitalize(name), new Object[]{oldValue}, out);
-                }
+            Object oldBackground = c.isBackgroundSet() ? c.getBackground() : null;
+            Object newBackground = c2.isBackgroundSet() ? c2.getBackground() : null;
+            if (!MetaData.equals(oldBackground, newBackground)) {
+                invokeStatement(oldInstance, "setBackground", new Object[] { oldBackground }, out);
+            }
+            Object oldForeground = c.isForegroundSet() ? c.getForeground() : null;
+            Object newForeground = c2.isForegroundSet() ? c2.getForeground() : null;
+            if (!MetaData.equals(oldForeground, newForeground)) {
+                invokeStatement(oldInstance, "setForeground", new Object[] { oldForeground }, out);
+            }
+            Object oldFont = c.isFontSet() ? c.getFont() : null;
+            Object newFont = c2.isFontSet() ? c2.getFont() : null;
+            if (!MetaData.equals(oldFont, newFont)) {
+                invokeStatement(oldInstance, "setFont", new Object[] { oldFont }, out);
             }
         }
 
@@ -1104,26 +1110,30 @@ class java_awt_List_PersistenceDelegate extends DefaultPersistenceDelegate {
 
 // BorderLayout
 class java_awt_BorderLayout_PersistenceDelegate extends DefaultPersistenceDelegate {
+    private static final String[] CONSTRAINTS = {
+            BorderLayout.NORTH,
+            BorderLayout.SOUTH,
+            BorderLayout.EAST,
+            BorderLayout.WEST,
+            BorderLayout.CENTER,
+            BorderLayout.PAGE_START,
+            BorderLayout.PAGE_END,
+            BorderLayout.LINE_START,
+            BorderLayout.LINE_END,
+    };
+    @Override
     protected void initialize(Class<?> type, Object oldInstance,
                               Object newInstance, Encoder out) {
         super.initialize(type, oldInstance, newInstance, out);
-        String[] locations = {"north", "south", "east", "west", "center"};
-        String[] names = {java.awt.BorderLayout.NORTH, java.awt.BorderLayout.SOUTH,
-                          java.awt.BorderLayout.EAST, java.awt.BorderLayout.WEST,
-                          java.awt.BorderLayout.CENTER};
-        for(int i = 0; i < locations.length; i++) {
-            Object oldC = ReflectionUtils.getPrivateField(oldInstance,
-                                                          java.awt.BorderLayout.class,
-                                                          locations[i],
-                                                          out.getExceptionListener());
-            Object newC = ReflectionUtils.getPrivateField(newInstance,
-                                                          java.awt.BorderLayout.class,
-                                                          locations[i],
-                                                          out.getExceptionListener());
+        BorderLayout oldLayout = (BorderLayout) oldInstance;
+        BorderLayout newLayout = (BorderLayout) newInstance;
+        for (String constraints : CONSTRAINTS) {
+            Object oldC = oldLayout.getLayoutComponent(constraints);
+            Object newC = newLayout.getLayoutComponent(constraints);
             // Pending, assume any existing elements are OK.
             if (oldC != null && newC == null) {
                 invokeStatement(oldInstance, "addLayoutComponent",
-                                new Object[]{oldC, names[i]}, out);
+                                new Object[] { oldC, constraints }, out);
             }
         }
     }

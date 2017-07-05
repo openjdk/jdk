@@ -48,7 +48,7 @@ import java.lang.reflect.Type;
  * effect by defining {@code MyLinkedListMappingFactory} as follows:</p>
  *
  * <pre>
- * public class MyLinkedListMappingFactory implements MXBeanMappingFactory {
+ * public class MyLinkedListMappingFactory extends MXBeanMappingFactory {
  *     public MyLinkedListMappingFactory() {}
  *
  *     public MXBeanMapping mappingForType(Type t, MXBeanMappingFactory f)

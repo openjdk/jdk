@@ -64,7 +64,8 @@ AQ	-7824+10654	Antarctica/Vostok	Vostok Station, S Magnetic Pole
 AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
-AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, LP, MN, NQ, RN, SA, SE, SF, SL)
+AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, LP, MN, NQ, RN, SA, SE, SF)
+AR	-3319-06621	America/Argentina/San_Luis	San Luis (SL)
 AR	-2411-06518	America/Argentina/Jujuy	Jujuy (JY)
 AR	-2649-06513	America/Argentina/Tucuman	Tucuman (TM)
 AR	-2828-06547	America/Argentina/Catamarca	Catamarca (CT), Chubut (CH)
@@ -99,6 +100,7 @@ BG	+4241+02319	Europe/Sofia
 BH	+2623+05035	Asia/Bahrain
 BI	-0323+02922	Africa/Bujumbura
 BJ	+0629+00237	Africa/Porto-Novo
+BL	+1753-06251	America/St_Barthelemy
 BM	+3217-06446	Atlantic/Bermuda
 BN	+0456+11455	Asia/Brunei
 BO	-1630-06809	America/La_Paz
@@ -112,7 +114,8 @@ BR	-1259-03831	America/Bahia	Bahia
 BR	-2332-04637	America/Sao_Paulo	S & SE Brazil (GO, DF, MG, ES, RJ, SP, PR, SC, RS)
 BR	-2027-05437	America/Campo_Grande	Mato Grosso do Sul
 BR	-1535-05605	America/Cuiaba	Mato Grosso
-BR	-0846-06354	America/Porto_Velho	W Para, Rondonia
+BR	-0226-05452	America/Santarem	W Para
+BR	-0846-06354	America/Porto_Velho	Rondonia
 BR	+0249-06040	America/Boa_Vista	Roraima
 BR	-0308-06001	America/Manaus	E Amazonas
 BR	-0640-06952	America/Eirunepe	W Amazonas
@@ -230,7 +233,7 @@ ID	-0232+14042	Asia/Jayapura	Irian Jaya & the Moluccas
 IE	+5320-00615	Europe/Dublin
 IL	+3146+03514	Asia/Jerusalem
 IM	+5409-00428	Europe/Isle_of_Man
-IN	+2232+08822	Asia/Calcutta
+IN	+2232+08822	Asia/Kolkata
 IO	-0720+07225	Indian/Chagos
 IQ	+3321+04425	Asia/Baghdad
 IR	+3540+05126	Asia/Tehran
@@ -272,6 +275,7 @@ MA	+3339-00735	Africa/Casablanca
 MC	+4342+00723	Europe/Monaco
 MD	+4700+02850	Europe/Chisinau
 ME	+4226+01916	Europe/Podgorica
+MF	+1804-06305	America/Marigot
 MG	-1855+04731	Indian/Antananarivo
 MH	+0709+17112	Pacific/Majuro	most locations
 MH	+0905+16720	Pacific/Kwajalein	Kwajalein
@@ -361,8 +365,7 @@ SE	+5920+01803	Europe/Stockholm
 SG	+0117+10351	Asia/Singapore
 SH	-1555-00542	Atlantic/St_Helena
 SI	+4603+01431	Europe/Ljubljana
-SJ	+7800+01600	Arctic/Longyearbyen	Svalbard
-SJ	+7059-00805	Atlantic/Jan_Mayen	Jan Mayen
+SJ	+7800+01600	Arctic/Longyearbyen
 SK	+4809+01707	Europe/Bratislava
 SL	+0830-01315	Africa/Freetown
 SM	+4355+01228	Europe/San_Marino
@@ -432,7 +435,7 @@ VC	+1309-06114	America/St_Vincent
 VE	+1030-06656	America/Caracas
 VG	+1827-06437	America/Tortola
 VI	+1821-06456	America/St_Thomas
-VN	+1045+10640	Asia/Saigon
+VN	+1045+10640	Asia/Ho_Chi_Minh
 VU	-1740+16825	Pacific/Efate
 WF	-1318-17610	Pacific/Wallis
 WS	-1350-17144	Pacific/Apia

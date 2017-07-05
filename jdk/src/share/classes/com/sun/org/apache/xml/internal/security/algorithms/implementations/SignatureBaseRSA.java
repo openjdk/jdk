@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright  1999-2004 The Apache Software Foundation.
+ * Copyright  1999-2007 The Apache Software Foundation.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@
  *
  */
 package com.sun.org.apache.xml.internal.security.algorithms.implementations;
-
-
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -38,329 +36,344 @@ import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 
-
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public abstract class SignatureBaseRSA extends SignatureAlgorithmSpi {
 
-   /** {@link java.util.logging} logging facility */
+    /** {@link java.util.logging} logging facility */
     static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SignatureBaseRSA.class.getName());
+        java.util.logging.Logger.getLogger
+        (SignatureBaseRSA.class.getName());
 
     /** @inheritDoc */
-   public abstract String engineGetURI();
+    public abstract String engineGetURI();
 
-   /** Field algorithm */
-   private java.security.Signature _signatureAlgorithm = null;
+    /** Field algorithm */
+    private java.security.Signature _signatureAlgorithm = null;
 
-   /**
-    * Constructor SignatureRSA
-    *
-    * @throws XMLSignatureException
-    */
-   public SignatureBaseRSA() throws XMLSignatureException {
+    /**
+     * Constructor SignatureRSA
+     *
+     * @throws XMLSignatureException
+     */
+    public SignatureBaseRSA() throws XMLSignatureException {
 
-      String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
+        String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
 
-      if (true)
-        if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Created SignatureDSA using " + algorithmID);
-      String provider=JCEMapper.getProviderId();
-      try {
-         if (provider==null) {
+        if (log.isLoggable(java.util.logging.Level.FINE))
+            log.log(java.util.logging.Level.FINE, "Created SignatureRSA using " + algorithmID);
+        String provider=JCEMapper.getProviderId();
+        try {
+            if (provider==null) {
                 this._signatureAlgorithm = Signature.getInstance(algorithmID);
-         } else {
+            } else {
                 this._signatureAlgorithm = Signature.getInstance(algorithmID,provider);
-         }
-      } catch (java.security.NoSuchAlgorithmException ex) {
-         Object[] exArgs = { algorithmID,
-                             ex.getLocalizedMessage() };
+            }
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
 
-         throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
-      } catch (NoSuchProviderException ex) {
-         Object[] exArgs = { algorithmID,
-                                                 ex.getLocalizedMessage() };
+            throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
+        } catch (NoSuchProviderException ex) {
+            Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
 
-         throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
+            throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
         }
-   }
+    }
 
-   /** @inheritDoc */
-   protected void engineSetParameter(AlgorithmParameterSpec params)
-           throws XMLSignatureException {
+    /** @inheritDoc */
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+        throws XMLSignatureException {
 
-      try {
-         this._signatureAlgorithm.setParameter(params);
-      } catch (InvalidAlgorithmParameterException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+        try {
+            this._signatureAlgorithm.setParameter(params);
+        } catch (InvalidAlgorithmParameterException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-   /** @inheritDoc */
-   protected boolean engineVerify(byte[] signature)
-           throws XMLSignatureException {
+    /** @inheritDoc */
+    protected boolean engineVerify(byte[] signature)
+        throws XMLSignatureException {
 
-      try {
-         return this._signatureAlgorithm.verify(signature);
-      } catch (SignatureException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+        try {
+            return this._signatureAlgorithm.verify(signature);
+        } catch (SignatureException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-   /** @inheritDoc */
-   protected void engineInitVerify(Key publicKey) throws XMLSignatureException {
+    /** @inheritDoc */
+    protected void engineInitVerify(Key publicKey) throws XMLSignatureException {
 
-      if (!(publicKey instanceof PublicKey)) {
-         String supplied = publicKey.getClass().getName();
-         String needed = PublicKey.class.getName();
-         Object exArgs[] = { supplied, needed };
+        if (!(publicKey instanceof PublicKey)) {
+            String supplied = publicKey.getClass().getName();
+            String needed = PublicKey.class.getName();
+            Object exArgs[] = { supplied, needed };
 
-         throw new XMLSignatureException("algorithms.WrongKeyForThisOperation",
-                                         exArgs);
-      }
+            throw new XMLSignatureException
+                ("algorithms.WrongKeyForThisOperation", exArgs);
+        }
 
-      try {
-         this._signatureAlgorithm.initVerify((PublicKey) publicKey);
-      } catch (InvalidKeyException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+        try {
+            this._signatureAlgorithm.initVerify((PublicKey) publicKey);
+        } catch (InvalidKeyException ex) {
+            // reinstantiate Signature object to work around bug in JDK
+            // see: http://bugs.sun.com/view_bug.do?bug_id=4953555
+            Signature sig = this._signatureAlgorithm;
+            try {
+                this._signatureAlgorithm = Signature.getInstance
+                    (_signatureAlgorithm.getAlgorithm());
+            } catch (Exception e) {
+                // this shouldn't occur, but if it does, restore previous
+                // Signature
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Exception when reinstantiating Signature:" + e);
+                }
+                this._signatureAlgorithm = sig;
+            }
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-   /** @inheritDoc */
-   protected byte[] engineSign() throws XMLSignatureException {
+    /** @inheritDoc */
+    protected byte[] engineSign() throws XMLSignatureException {
+        try {
+            return this._signatureAlgorithm.sign();
+        } catch (SignatureException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-      try {
-         return this._signatureAlgorithm.sign();
-      } catch (SignatureException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected void engineInitSign(Key privateKey, SecureRandom secureRandom)
+        throws XMLSignatureException {
 
-   /** @inheritDoc */
-   protected void engineInitSign(Key privateKey, SecureRandom secureRandom)
-           throws XMLSignatureException {
+        if (!(privateKey instanceof PrivateKey)) {
+            String supplied = privateKey.getClass().getName();
+            String needed = PrivateKey.class.getName();
+            Object exArgs[] = { supplied, needed };
 
-      if (!(privateKey instanceof PrivateKey)) {
-         String supplied = privateKey.getClass().getName();
-         String needed = PrivateKey.class.getName();
-         Object exArgs[] = { supplied, needed };
+            throw new XMLSignatureException
+                ("algorithms.WrongKeyForThisOperation", exArgs);
+        }
 
-         throw new XMLSignatureException("algorithms.WrongKeyForThisOperation",
-                                         exArgs);
-      }
+        try {
+            this._signatureAlgorithm.initSign
+                ((PrivateKey) privateKey, secureRandom);
+        } catch (InvalidKeyException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-      try {
-         this._signatureAlgorithm.initSign((PrivateKey) privateKey,
-                                           secureRandom);
-      } catch (InvalidKeyException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected void engineInitSign(Key privateKey) throws XMLSignatureException {
 
-   /** @inheritDoc */
-   protected void engineInitSign(Key privateKey) throws XMLSignatureException {
+        if (!(privateKey instanceof PrivateKey)) {
+            String supplied = privateKey.getClass().getName();
+            String needed = PrivateKey.class.getName();
+            Object exArgs[] = { supplied, needed };
 
-      if (!(privateKey instanceof PrivateKey)) {
-         String supplied = privateKey.getClass().getName();
-         String needed = PrivateKey.class.getName();
-         Object exArgs[] = { supplied, needed };
+            throw new XMLSignatureException
+                ("algorithms.WrongKeyForThisOperation", exArgs);
+        }
 
-         throw new XMLSignatureException("algorithms.WrongKeyForThisOperation",
-                                         exArgs);
-      }
+        try {
+            this._signatureAlgorithm.initSign((PrivateKey) privateKey);
+        } catch (InvalidKeyException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-      try {
-         this._signatureAlgorithm.initSign((PrivateKey) privateKey);
-      } catch (InvalidKeyException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected void engineUpdate(byte[] input) throws XMLSignatureException {
+        try {
+            this._signatureAlgorithm.update(input);
+        } catch (SignatureException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-   /** @inheritDoc */
-   protected void engineUpdate(byte[] input) throws XMLSignatureException {
+    /** @inheritDoc */
+    protected void engineUpdate(byte input) throws XMLSignatureException {
+        try {
+            this._signatureAlgorithm.update(input);
+        } catch (SignatureException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-      try {
-         this._signatureAlgorithm.update(input);
-      } catch (SignatureException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected void engineUpdate(byte buf[], int offset, int len)
+        throws XMLSignatureException {
+        try {
+            this._signatureAlgorithm.update(buf, offset, len);
+        } catch (SignatureException ex) {
+            throw new XMLSignatureException("empty", ex);
+        }
+    }
 
-   /** @inheritDoc */
-   protected void engineUpdate(byte input) throws XMLSignatureException {
+    /** @inheritDoc */
+    protected String engineGetJCEAlgorithmString() {
+        return this._signatureAlgorithm.getAlgorithm();
+    }
 
-      try {
-         this._signatureAlgorithm.update(input);
-      } catch (SignatureException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected String engineGetJCEProviderName() {
+        return this._signatureAlgorithm.getProvider().getName();
+    }
 
-   /** @inheritDoc */
-   protected void engineUpdate(byte buf[], int offset, int len)
-           throws XMLSignatureException {
+    /** @inheritDoc */
+    protected void engineSetHMACOutputLength(int HMACOutputLength)
+        throws XMLSignatureException {
+        throw new XMLSignatureException
+            ("algorithms.HMACOutputLengthOnlyForHMAC");
+    }
 
-      try {
-         this._signatureAlgorithm.update(buf, offset, len);
-      } catch (SignatureException ex) {
-         throw new XMLSignatureException("empty", ex);
-      }
-   }
+    /** @inheritDoc */
+    protected void engineInitSign(
+        Key signingKey, AlgorithmParameterSpec algorithmParameterSpec)
+        throws XMLSignatureException {
+        throw new XMLSignatureException(
+            "algorithms.CannotUseAlgorithmParameterSpecOnRSA");
+    }
 
-   /** @inheritDoc */
-   protected String engineGetJCEAlgorithmString() {
-      return this._signatureAlgorithm.getAlgorithm();
-   }
+    /**
+     * Class SignatureRSASHA1
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSASHA1 extends SignatureBaseRSA {
 
-   /** @inheritDoc */
-   protected String engineGetJCEProviderName() {
-      return this._signatureAlgorithm.getProvider().getName();
-   }
+        /**
+         * Constructor SignatureRSASHA1
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSASHA1() throws XMLSignatureException {
+            super();
+        }
 
-   /** @inheritDoc */
-   protected void engineSetHMACOutputLength(int HMACOutputLength)
-           throws XMLSignatureException {
-      throw new XMLSignatureException("algorithms.HMACOutputLengthOnlyForHMAC");
-   }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1;
+        }
+    }
 
-   /** @inheritDoc */
-   protected void engineInitSign(
-           Key signingKey, AlgorithmParameterSpec algorithmParameterSpec)
-              throws XMLSignatureException {
-      throw new XMLSignatureException(
-         "algorithms.CannotUseAlgorithmParameterSpecOnRSA");
-   }
+    /**
+     * Class SignatureRSASHA256
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSASHA256 extends SignatureBaseRSA {
 
-   /**
-    * Class SignatureRSASHA1
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSASHA1 extends SignatureBaseRSA {
+        /**
+         * Constructor SignatureRSASHA256
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSASHA256() throws XMLSignatureException {
+            super();
+        }
 
-      /**
-       * Constructor SignatureRSASHA1
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSASHA1() throws XMLSignatureException {
-         super();
-      }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256;
+        }
+    }
 
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1;
-      }
-   }
+    /**
+     * Class SignatureRSASHA384
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSASHA384 extends SignatureBaseRSA {
 
-   /**
-    * Class SignatureRSASHA256
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSASHA256 extends SignatureBaseRSA {
+        /**
+         * Constructor SignatureRSASHA384
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSASHA384() throws XMLSignatureException {
+            super();
+        }
 
-      /**
-       * Constructor SignatureRSASHA256
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSASHA256() throws XMLSignatureException {
-         super();
-      }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384;
+        }
+    }
 
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256;
-      }
-   }
+    /**
+     * Class SignatureRSASHA512
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSASHA512 extends SignatureBaseRSA {
 
-   /**
-    * Class SignatureRSASHA384
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSASHA384 extends SignatureBaseRSA {
+        /**
+         * Constructor SignatureRSASHA512
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSASHA512() throws XMLSignatureException {
+            super();
+        }
 
-      /**
-       * Constructor SignatureRSASHA384
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSASHA384() throws XMLSignatureException {
-         super();
-      }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512;
+        }
+    }
 
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384;
-      }
-   }
+    /**
+     * Class SignatureRSARIPEMD160
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSARIPEMD160 extends SignatureBaseRSA {
 
-   /**
-    * Class SignatureRSASHA512
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSASHA512 extends SignatureBaseRSA {
+        /**
+         * Constructor SignatureRSARIPEMD160
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSARIPEMD160() throws XMLSignatureException {
+            super();
+        }
 
-      /**
-       * Constructor SignatureRSASHA512
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSASHA512() throws XMLSignatureException {
-         super();
-      }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_RSA_RIPEMD160;
+        }
+    }
 
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512;
-      }
-   }
+    /**
+     * Class SignatureRSAMD5
+     *
+     * @author $Author: mullan $
+     * @version $Revision: 1.5 $
+     */
+    public static class SignatureRSAMD5 extends SignatureBaseRSA {
 
-   /**
-    * Class SignatureRSARIPEMD160
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSARIPEMD160 extends SignatureBaseRSA {
+        /**
+         * Constructor SignatureRSAMD5
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureRSAMD5() throws XMLSignatureException {
+            super();
+        }
 
-      /**
-       * Constructor SignatureRSARIPEMD160
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSARIPEMD160() throws XMLSignatureException {
-         super();
-      }
-
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_RSA_RIPEMD160;
-      }
-   }
-
-   /**
-    * Class SignatureRSAMD5
-    *
-    * @author $Author: raul $
-    */
-   public static class SignatureRSAMD5 extends SignatureBaseRSA {
-
-      /**
-       * Constructor SignatureRSAMD5
-       *
-       * @throws XMLSignatureException
-       */
-      public SignatureRSAMD5() throws XMLSignatureException {
-         super();
-      }
-
-      /** @inheritDoc */
-      public String engineGetURI() {
-         return XMLSignature.ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5;
-      }
-   }
+        /** @inheritDoc */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5;
+        }
+    }
 }

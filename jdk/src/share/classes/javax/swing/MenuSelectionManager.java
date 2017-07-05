@@ -37,7 +37,7 @@ import sun.awt.AppContext;
  * @author Arnaud Weber
  */
 public class MenuSelectionManager {
-    private Vector selection = new Vector();
+    private Vector<MenuElement> selection = new Vector<MenuElement>();
 
     /* diagnostic aids -- should be false for production builds. */
     private static final boolean TRACE =   false; // trace creates and disposes
@@ -100,14 +100,14 @@ public class MenuSelectionManager {
         }
 
         for(i=0,c=path.length;i<c;i++) {
-            if(i < currentSelectionCount && (MenuElement)selection.elementAt(i) == path[i])
+            if (i < currentSelectionCount && selection.elementAt(i) == path[i])
                 firstDifference++;
             else
                 break;
         }
 
         for(i=currentSelectionCount - 1 ; i >= firstDifference ; i--) {
-            MenuElement me = (MenuElement)selection.elementAt(i);
+            MenuElement me = selection.elementAt(i);
             selection.removeElementAt(i);
             me.menuSelectionChanged(false);
         }
@@ -131,7 +131,7 @@ public class MenuSelectionManager {
         MenuElement res[] = new MenuElement[selection.size()];
         int i,c;
         for(i=0,c=selection.size();i<c;i++)
-            res[i] = (MenuElement) selection.elementAt(i);
+            res[i] = selection.elementAt(i);
         return res;
     }
 
@@ -172,8 +172,7 @@ public class MenuSelectionManager {
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
     /**
@@ -258,8 +257,8 @@ public class MenuSelectionManager {
                 if(!mc.isShowing())
                     continue;
                 if(mc instanceof JComponent) {
-                    cWidth  = ((JComponent)mc).getWidth();
-                    cHeight = ((JComponent)mc).getHeight();
+                    cWidth  = mc.getWidth();
+                    cHeight = mc.getHeight();
                 } else {
                     r2 = mc.getBounds();
                     cWidth  = r2.width;
@@ -338,7 +337,7 @@ public class MenuSelectionManager {
         for(i=0,j=path.length; i<j ;i++){
             for (int k=0; k<=i; k++)
                 System.out.print("  ");
-            MenuElement me = (MenuElement) path[i];
+            MenuElement me = path[i];
             if(me instanceof JMenuItem) {
                 System.out.println(((JMenuItem)me).getText() + ", ");
             } else if (me instanceof JMenuBar) {
@@ -399,8 +398,8 @@ public class MenuSelectionManager {
                 if(!mc.isShowing())
                     continue;
                 if(mc instanceof JComponent) {
-                    cWidth  = ((JComponent)mc).getWidth();
-                    cHeight = ((JComponent)mc).getHeight();
+                    cWidth  = mc.getWidth();
+                    cHeight = mc.getHeight();
                 } else {
                     r2 = mc.getBounds();
                     cWidth  = r2.width;
@@ -429,7 +428,7 @@ public class MenuSelectionManager {
      */
     public void processKeyEvent(KeyEvent e) {
         MenuElement[] sel2 = new MenuElement[0];
-        sel2 = (MenuElement[])selection.toArray(sel2);
+        sel2 = selection.toArray(sel2);
         int selSize = sel2.length;
         MenuElement[] path;
 
@@ -474,7 +473,7 @@ public class MenuSelectionManager {
      */
     public boolean isComponentPartOfCurrentMenu(Component c) {
         if(selection.size() > 0) {
-            MenuElement me = (MenuElement)selection.elementAt(0);
+            MenuElement me = selection.elementAt(0);
             return isComponentPartOfCurrentMenu(me,c);
         } else
             return false;

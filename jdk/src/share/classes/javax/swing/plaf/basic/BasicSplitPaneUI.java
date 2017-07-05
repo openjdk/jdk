@@ -106,13 +106,13 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusForwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusForwardTraversalKeys;
 
     /**
      * Keys to use for backward focus traversal when the JComponent is
      * managing focus.
      */
-    private static Set managingFocusBackwardTraversalKeys;
+    private static Set<KeyStroke> managingFocusBackwardTraversalKeys;
 
 
     /**
@@ -370,7 +370,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
         // focus forward traversal key
         if (managingFocusForwardTraversalKeys==null) {
-            managingFocusForwardTraversalKeys = new HashSet();
+            managingFocusForwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusForwardTraversalKeys.add(
                 KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0));
         }
@@ -378,7 +378,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
                                         managingFocusForwardTraversalKeys);
         // focus backward traversal key
         if (managingFocusBackwardTraversalKeys==null) {
-            managingFocusBackwardTraversalKeys = new HashSet();
+            managingFocusBackwardTraversalKeys = new HashSet<KeyStroke>();
             managingFocusBackwardTraversalKeys.add(
                 KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_MASK));
         }
@@ -2170,7 +2170,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
             Component focusOn = (direction > 0) ?
                 policy.getComponentAfter(rootAncestor, splitPane) :
                 policy.getComponentBefore(rootAncestor, splitPane);
-            HashSet focusFrom = new HashSet();
+            HashSet<Component> focusFrom = new HashSet<Component>();
             if (splitPane.isAncestorOf(focusOn)) {
                 do {
                     focusFrom.add(focusOn);
@@ -2212,7 +2212,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
         private Component getNextSide(JSplitPane splitPane, Component focus) {
             Component left = splitPane.getLeftComponent();
             Component right = splitPane.getRightComponent();
-            Component next = null;
+            Component next;
             if (focus!=null && SwingUtilities.isDescendingFrom(focus, left) &&
                 right!=null) {
                 next = getFirstAvailableComponent(right);

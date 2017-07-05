@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,13 @@ import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import javax.swing.JButton;
+import javax.swing.AbstractButton;
 import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
@@ -59,31 +58,41 @@ public class Test6524757 {
 
             "ColorChooser.swatchesNameText", // NON-NLS: string key from DefaultSwatchChooserPanel
             "ColorChooser.swatchesMnemonic", // NON-NLS: string key from DefaultSwatchChooserPanel:int
-            "ColorChooser.swatchesDisplayedMnemonicIndex", // NON-NLS: int key from DefaultSwatchChooserPanel
             "ColorChooser.swatchesSwatchSize", // NON-NLS: dimension key from DefaultSwatchChooserPanel
             "ColorChooser.swatchesRecentText", // NON-NLS: string key from DefaultSwatchChooserPanel
             "ColorChooser.swatchesRecentSwatchSize", // NON-NLS: dimension key from DefaultSwatchChooserPanel
 //NotAvail: "ColorChooser.swatchesDefaultRecentColor", // NON-NLS: color key from DefaultSwatchChooserPanel
 
-            "ColorChooser.hsbNameText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbMnemonic", // NON-NLS: int key from DefaultHSBChooserPanel
-            "ColorChooser.hsbDisplayedMnemonicIndex", // NON-NLS: int key from DefaultHSBChooserPanel
-            "ColorChooser.hsbHueText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbSaturationText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbBrightnessText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbRedText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbGreenText", // NON-NLS: string key from DefaultHSBChooserPanel
-            "ColorChooser.hsbBlueText", // NON-NLS: string key from DefaultHSBChooserPanel
+            "ColorChooser.hsvNameText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hsvMnemonic", // NON-NLS: int key from HSV ColorChooserPanel
+            "ColorChooser.hsvHueText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hsvSaturationText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hsvValueText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hsvTransparencyText", // NON-NLS: string key from HSV ColorChooserPanel
 
-            "ColorChooser.rgbNameText", // NON-NLS: string key from DefaultRGBChooserPanel
-            "ColorChooser.rgbMnemonic", // NON-NLS: int key from DefaultRGBChooserPanel
-            "ColorChooser.rgbDisplayedMnemonicIndex", // NON-NLS: int key from DefaultRGBChooserPanel
-            "ColorChooser.rgbRedText", // NON-NLS: string key from DefaultRGBChooserPanel
-            "ColorChooser.rgbGreenText", // NON-NLS: string key from DefaultRGBChooserPanel
-            "ColorChooser.rgbBlueText", // NON-NLS: string key from DefaultRGBChooserPanel
-            "ColorChooser.rgbRedMnemonic", // NON-NLS: int key from DefaultRGBChooserPanel
-            "ColorChooser.rgbGreenMnemonic", // NON-NLS: int key from DefaultRGBChooserPanel
-            "ColorChooser.rgbBlueMnemonic", // NON-NLS: int key from DefaultRGBChooserPanel
+            "ColorChooser.hslNameText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hslMnemonic", // NON-NLS: int key from HSV ColorChooserPanel
+            "ColorChooser.hslHueText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hslSaturationText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hslLightnessText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.hslTransparencyText", // NON-NLS: string key from HSV ColorChooserPanel
+
+            "ColorChooser.rgbNameText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbMnemonic", // NON-NLS: int key from HSV ColorChooserPanel
+            "ColorChooser.rgbRedText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbGreenText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbBlueText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbAlphaText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbHexCodeText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.rgbHexCodeMnemonic", // NON-NLS: int key from HSV ColorChooserPanel
+
+            "ColorChooser.cmykNameText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.cmykMnemonic", // NON-NLS: int key from HSV ColorChooserPanel
+            "ColorChooser.cmykCyanText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.cmykMagentaText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.cmykYellowText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.cmykBlackText", // NON-NLS: string key from HSV ColorChooserPanel
+            "ColorChooser.cmykAlphaText", // NON-NLS: string key from HSV ColorChooserPanel
     };
     private static final Object[] KOREAN = convert(Locale.KOREAN, KEYS);
     private static final Object[] FRENCH = convert(Locale.FRENCH, KEYS);
@@ -91,19 +100,15 @@ public class Test6524757 {
     public static void main(String[] args) {
         // it affects Swing because it is not initialized
         Locale.setDefault(Locale.KOREAN);
-        Object[] korean = create();
+        validate(KOREAN, create());
 
         // it does not affect Swing because it is initialized
         Locale.setDefault(Locale.CANADA);
-        Object[] canada = create();
+        validate(KOREAN, create());
 
         // it definitely should affect Swing
         JComponent.setDefaultLocale(Locale.FRENCH);
-        Object[] french = create();
-
-        validate(KOREAN, korean);
-        validate(KOREAN, canada);
-        validate(FRENCH, french);
+        validate(FRENCH, create());
     }
 
     private static void validate(Object[] expected, Object[] actual) {
@@ -153,10 +158,47 @@ public class Test6524757 {
 
         // process all values
         List<Object> list = new ArrayList<Object>(KEYS.length);
-        addMain(list, dialog);
-        addSwatch(list, chooser);
-        addHSB(list, chooser);
-        addRGB(list, chooser);
+
+        Component component = getC(getC(dialog.getLayeredPane(), 0), 1);
+        AbstractButton ok = (AbstractButton) getC(component, 0);
+        AbstractButton cancel = (AbstractButton) getC(component, 1);
+        AbstractButton reset = (AbstractButton) getC(component, 2);
+        list.add(ok.getText());
+        list.add(cancel.getText());
+        list.add(reset.getText());
+        list.add(Integer.valueOf(reset.getMnemonic()));
+
+        for (int i = 0; i < 5; i++) {
+            AbstractColorChooserPanel panel = (AbstractColorChooserPanel) getC(getC(getC(chooser, 0), i), 0);
+            list.add(panel.getDisplayName());
+            list.add(Integer.valueOf(panel.getMnemonic()));
+            if (i == 0) {
+                JLabel label = (JLabel) getC(getC(panel, 0), 1);
+                JPanel upper = (JPanel) getC(getC(getC(panel, 0), 0), 0);
+                JPanel lower = (JPanel) getC(getC(getC(panel, 0), 2), 0);
+                addSize(list, upper, 1, 1, 31, 9);
+                list.add(label.getText());
+                addSize(list, lower, 1, 1, 5, 7);
+            }
+            else {
+                Component container = getC(panel, 0);
+                for (int j = 0; j < 3; j++) {
+                    AbstractButton button = (AbstractButton) getC(container, j);
+                    list.add(button.getText());
+                }
+                JLabel label = (JLabel) getC(container, 3);
+                list.add(label.getText());
+                if (i == 4) {
+                    label = (JLabel) getC(container, 4);
+                    list.add(label.getText());
+                }
+                if (i == 3) {
+                    label = (JLabel) getC(panel, 1);
+                    list.add(label.getText());
+                    list.add(Integer.valueOf(label.getDisplayedMnemonic()));
+                }
+            }
+        }
 
         // close dialog
         dialog.setVisible(false);
@@ -169,69 +211,11 @@ public class Test6524757 {
         return list.toArray();
     }
 
-    private static void addMain(List<Object> list, JDialog dialog) {
-        Component component = getC(getC(dialog.getLayeredPane(), 0), 1);
-        JButton ok = (JButton) getC(component, 0);
-        JButton cancel = (JButton) getC(component, 1);
-        JButton reset = (JButton) getC(component, 2);
-        list.add(ok.getText());
-        list.add(cancel.getText());
-        list.add(reset.getText());
-        list.add(Integer.valueOf(reset.getMnemonic()));
-    }
-
-    private static void addSwatch(List<Object> list, JColorChooser chooser) {
-        Component component = addPanel(list, chooser, 0);
-        JLabel label = (JLabel) getC(getC(component, 0), 1);
-        JPanel upper = (JPanel) getC(getC(getC(component, 0), 0), 0);
-        JPanel lower = (JPanel) getC(getC(getC(component, 0), 2), 0);
-        addSize(list, upper, 1, 1, 31, 9);
-        list.add(label.getText());
-        addSize(list, lower, 1, 1, 5, 7);
-    }
-
-    private static void addHSB(List<Object> list, JColorChooser chooser) {
-        Component component = addPanel(list, chooser, 1);
-        JRadioButton h = (JRadioButton) getC(getC(getC(component, 1), 0), 0);
-        JRadioButton s = (JRadioButton) getC(getC(getC(component, 1), 0), 2);
-        JRadioButton b = (JRadioButton) getC(getC(getC(component, 1), 0), 4);
-        list.add(h.getText());
-        list.add(s.getText());
-        list.add(b.getText());
-        JLabel red = (JLabel) getC(getC(getC(component, 1), 2), 0);
-        JLabel green = (JLabel) getC(getC(getC(component, 1), 2), 2);
-        JLabel blue = (JLabel) getC(getC(getC(component, 1), 2), 4);
-        list.add(red.getText());
-        list.add(green.getText());
-        list.add(blue.getText());
-    }
-
-    private static void addRGB(List<Object> list, JColorChooser chooser) {
-        Component component = addPanel(list, chooser, 2);
-        JLabel red = (JLabel) getC(getC(component, 0), 0);
-        JLabel green = (JLabel) getC(getC(component, 0), 3);
-        JLabel blue = (JLabel) getC(getC(component, 0), 6);
-        list.add(red.getText());
-        list.add(green.getText());
-        list.add(blue.getText());
-        list.add(Integer.valueOf(red.getDisplayedMnemonic()));
-        list.add(Integer.valueOf(green.getDisplayedMnemonic()));
-        list.add(Integer.valueOf(blue.getDisplayedMnemonic()));
-    }
-
     private static void addSize(List<Object> list, Component component, int x, int y, int w, int h) {
         Dimension size = component.getPreferredSize();
         int width = (size.width + 1) / w - x;
         int height = (size.height + 1) / h - y;
         list.add(new Dimension(width, height));
-    }
-
-    private static Component addPanel(List<Object> list, JColorChooser chooser, int index) {
-        AbstractColorChooserPanel panel = (AbstractColorChooserPanel) getC(getC(getC(chooser, 0), index), 0);
-        list.add(panel.getDisplayName());
-        list.add(Integer.valueOf(panel.getMnemonic()));
-        list.add(Integer.valueOf(panel.getDisplayedMnemonicIndex()));
-        return panel;
     }
 
     private static Component getC(Component component, int index) {

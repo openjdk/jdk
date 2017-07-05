@@ -142,7 +142,7 @@ class LazyActionMap extends ActionMapUIResource {
             Object loader = _loader;
 
             _loader = null;
-            Class klass = (Class)loader;
+            Class<?> klass = (Class<?>)loader;
             try {
                 Method method = klass.getDeclaredMethod("loadActionMap",
                                       new Class[] { LazyActionMap.class });

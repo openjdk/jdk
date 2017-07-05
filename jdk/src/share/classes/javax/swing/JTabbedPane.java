@@ -313,8 +313,7 @@ public class JTabbedPane extends JComponent
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
     /**
@@ -2062,7 +2061,7 @@ public class JTabbedPane extends JComponent
                  * Accessibility classes unnecessarily.
                  */
                 AccessibleContext ac;
-                ac = ((Accessible) component).getAccessibleContext();
+                ac = component.getAccessibleContext();
                 if (ac != null) {
                     ac.setAccessibleParent(this);
                 }

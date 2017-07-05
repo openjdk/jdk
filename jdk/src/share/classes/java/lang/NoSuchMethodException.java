@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ package java.lang;
  */
 public
 class NoSuchMethodException extends Exception {
+    private static final long serialVersionUID = 5034388446362600923L;
+
     /**
      * Constructs a <code>NoSuchMethodException</code> without a detail message.
      */

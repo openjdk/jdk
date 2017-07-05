@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.content.keyvalues;
 
-
-
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -39,18 +37,12 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class RSAKeyValue extends SignatureElementProxy
         implements KeyValueContent {
-
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(
-                        RSAKeyValue.class.getName());
 
    /**
     * Constructor RSAKeyValue

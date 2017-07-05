@@ -39,7 +39,7 @@ import java.awt.Window;
  *
  * @author David Mendenhall
  */
-final class LayoutComparator implements Comparator, java.io.Serializable {
+final class LayoutComparator implements Comparator<Component>, java.io.Serializable {
 
     private static final int ROW_TOLERANCE = 10;
 
@@ -51,10 +51,7 @@ final class LayoutComparator implements Comparator, java.io.Serializable {
         leftToRight = orientation.isLeftToRight();
     }
 
-    public int compare(Object o1, Object o2) {
-        Component a = (Component)o1;
-        Component b = (Component)o2;
-
+    public int compare(Component a, Component b) {
         if (a == b) {
             return 0;
         }
@@ -65,9 +62,9 @@ final class LayoutComparator implements Comparator, java.io.Serializable {
         // each Component and then search from the Window down until the
         // hierarchy branches.
         if (a.getParent() != b.getParent()) {
-            LinkedList aAncestory, bAncestory;
+            LinkedList<Component> aAncestory = new LinkedList<Component>();
 
-            for(aAncestory = new LinkedList(); a != null; a = a.getParent()) {
+            for(; a != null; a = a.getParent()) {
                 aAncestory.add(a);
                 if (a instanceof Window) {
                     break;
@@ -78,7 +75,9 @@ final class LayoutComparator implements Comparator, java.io.Serializable {
                 throw new ClassCastException();
             }
 
-            for(bAncestory = new LinkedList(); b != null; b = b.getParent()) {
+            LinkedList<Component> bAncestory = new LinkedList<Component>();
+
+            for(; b != null; b = b.getParent()) {
                 bAncestory.add(b);
                 if (b instanceof Window) {
                     break;
@@ -89,18 +88,18 @@ final class LayoutComparator implements Comparator, java.io.Serializable {
                 throw new ClassCastException();
             }
 
-            for (ListIterator
+            for (ListIterator<Component>
                      aIter = aAncestory.listIterator(aAncestory.size()),
                      bIter = bAncestory.listIterator(bAncestory.size()); ;) {
                 if (aIter.hasPrevious()) {
-                    a = (Component)aIter.previous();
+                    a = aIter.previous();
                 } else {
                     // a is an ancestor of b
                     return -1;
                 }
 
                 if (bIter.hasPrevious()) {
-                    b = (Component)bIter.previous();
+                    b = bIter.previous();
                 } else {
                     // b is an ancestor of a
                     return 1;

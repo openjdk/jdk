@@ -103,7 +103,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      * constraints for each row.  This is called by a FlowView.layout
      * to update the child views in the flow.
      *
-     * @param v the view to reflow
+     * @param fv the view to reflow
      */
     public void layout(FlowView fv) {
         super.layout(fv);
@@ -485,9 +485,9 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
          * Returns a map with the attributes defined on the current
          * character.
          */
-        public Map getAttributes() {
+        public Map<Attribute, Object> getAttributes() {
             Object[] ka = keys.toArray();
-            Hashtable h = new Hashtable();
+            Hashtable<Attribute, Object> h = new Hashtable<Attribute, Object>();
             for (int i = 0; i < ka.length; i++) {
                 TextAttribute a = (TextAttribute) ka[i];
                 Object value = getAttribute(a);
@@ -520,16 +520,16 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
          * iterator's text range. The set is empty if no
          * attributes are defined.
          */
-        public Set getAllAttributeKeys() {
+        public Set<Attribute> getAllAttributeKeys() {
             return keys;
         }
 
         View v;
 
-        static Set keys;
+        static Set<Attribute> keys;
 
         static {
-            keys = new HashSet();
+            keys = new HashSet<Attribute>();
             keys.add(TextAttribute.FONT);
             keys.add(TextAttribute.RUN_DIRECTION);
         }

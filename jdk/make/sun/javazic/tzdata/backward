@@ -46,12 +46,15 @@ Link	America/St_Thomas	America/Virgin
 Link	Asia/Ashgabat		Asia/Ashkhabad
 Link	Asia/Chongqing		Asia/Chungking
 Link	Asia/Dhaka		Asia/Dacca
+Link	Asia/Kolkata		Asia/Calcutta
 Link	Asia/Macau		Asia/Macao
 Link	Asia/Jerusalem		Asia/Tel_Aviv
+Link	Asia/Ho_Chi_Minh	Asia/Saigon
 Link	Asia/Thimphu		Asia/Thimbu
 Link	Asia/Makassar		Asia/Ujung_Pandang
 Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
 Link	Atlantic/Faroe		Atlantic/Faeroe
+Link	Europe/Oslo		Atlantic/Jan_Mayen
 Link	Australia/Sydney	Australia/ACT
 Link	Australia/Sydney	Australia/Canberra
 Link	Australia/Lord_Howe	Australia/LHI
