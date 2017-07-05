@@ -36,6 +36,7 @@
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
@@ -99,12 +100,12 @@ int CMBitMapRO::heapWordDiffToOffsetDiff(size_t diff) const {
 }
 
 #ifndef PRODUCT
-bool CMBitMapRO::covers(ReservedSpace heap_rs) const {
+bool CMBitMapRO::covers(MemRegion heap_rs) const {
   // assert(_bm.map() == _virtual_space.low(), "map inconsistency");
   assert(((size_t)_bm.size() * ((size_t)1 << _shifter)) == _bmWordSize,
          "size inconsistency");
-  return _bmStartWord == (HeapWord*)(heap_rs.base()) &&
-         _bmWordSize  == heap_rs.size()>>LogHeapWordSize;
+  return _bmStartWord == (HeapWord*)(heap_rs.start()) &&
+         _bmWordSize  == heap_rs.word_size();
 }
 #endif
 
@@ -112,33 +113,73 @@ void CMBitMapRO::print_on_error(outputStream* st, const char* prefix) const {
   _bm.print_on_error(st, prefix);
 }
 
-bool CMBitMap::allocate(ReservedSpace heap_rs) {
-  _bmStartWord = (HeapWord*)(heap_rs.base());
-  _bmWordSize  = heap_rs.size()/HeapWordSize;    // heap_rs.size() is in bytes
-  ReservedSpace brs(ReservedSpace::allocation_align_size_up(
-                     (_bmWordSize >> (_shifter + LogBitsPerByte)) + 1));
-  if (!brs.is_reserved()) {
-    warning("ConcurrentMark marking bit map allocation failure");
-    return false;
-  }
-  MemTracker::record_virtual_memory_type((address)brs.base(), mtGC);
-  // For now we'll just commit all of the bit map up front.
-  // Later on we'll try to be more parsimonious with swap.
-  if (!_virtual_space.initialize(brs, brs.size())) {
-    warning("ConcurrentMark marking bit map backing store failure");
-    return false;
-  }
-  assert(_virtual_space.committed_size() == brs.size(),
-         "didn't reserve backing store for all of concurrent marking bit map?");
-  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
-  assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
-         _bmWordSize, "inconsistency in bit map sizing");
-  _bm.set_size(_bmWordSize >> _shifter);
-  return true;
+size_t CMBitMap::compute_size(size_t heap_size) {
+  return heap_size / mark_distance();
 }
 
+size_t CMBitMap::mark_distance() {
+  return MinObjAlignmentInBytes * BitsPerByte;
+}
+
+void CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
+  _bmStartWord = heap.start();
+  _bmWordSize = heap.word_size();
+
+  _bm.set_map((BitMap::bm_word_t*) storage->reserved().start());
+  _bm.set_size(_bmWordSize >> _shifter);
+
+  storage->set_mapping_changed_listener(&_listener);
+}
+
+void CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions) {
+  // We need to clear the bitmap on commit, removing any existing information.
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
+  _bm->clearRange(mr);
+}
+
+// Closure used for clearing the given mark bitmap.
+class ClearBitmapHRClosure : public HeapRegionClosure {
+ private:
+  ConcurrentMark* _cm;
+  CMBitMap* _bitmap;
+  bool _may_yield;      // The closure may yield during iteration. If yielded, abort the iteration.
+ public:
+  ClearBitmapHRClosure(ConcurrentMark* cm, CMBitMap* bitmap, bool may_yield) : HeapRegionClosure(), _cm(cm), _bitmap(bitmap), _may_yield(may_yield) {
+    assert(!may_yield || cm != NULL, "CM must be non-NULL if this closure is expected to yield.");
+  }
+
+  virtual bool doHeapRegion(HeapRegion* r) {
+    size_t const chunk_size_in_words = M / HeapWordSize;
+
+    HeapWord* cur = r->bottom();
+    HeapWord* const end = r->end();
+
+    while (cur < end) {
+      MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
+      _bitmap->clearRange(mr);
+
+      cur += chunk_size_in_words;
+
+      // Abort iteration if after yielding the marking has been aborted.
+      if (_may_yield && _cm->do_yield_check() && _cm->has_aborted()) {
+        return true;
+      }
+      // Repeat the asserts from before the start of the closure. We will do them
+      // as asserts here to minimize their overhead on the product. However, we
+      // will have them as guarantees at the beginning / end of the bitmap
+      // clearing to get some checking in the product.
+      assert(!_may_yield || _cm->cmThread()->during_cycle(), "invariant");
+      assert(!_may_yield || !G1CollectedHeap::heap()->mark_in_progress(), "invariant");
+    }
+
+    return false;
+  }
+};
+
 void CMBitMap::clearAll() {
-  _bm.clear();
+  ClearBitmapHRClosure cl(NULL, this, false /* may_yield */);
+  G1CollectedHeap::heap()->heap_region_iterate(&cl);
+  guarantee(cl.complete(), "Must have completed iteration.");
   return;
 }
 
@@ -483,10 +524,10 @@ uint ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
   return MAX2((n_par_threads + 2) / 4, 1U);
 }
 
-ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
+ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev_bitmap_storage, G1RegionToSpaceMapper* next_bitmap_storage) :
   _g1h(g1h),
-  _markBitMap1(log2_intptr(MinObjAlignment)),
-  _markBitMap2(log2_intptr(MinObjAlignment)),
+  _markBitMap1(),
+  _markBitMap2(),
   _parallel_marking_threads(0),
   _max_parallel_marking_threads(0),
   _sleep_factor(0.0),
@@ -495,7 +536,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _cleanup_task_overhead(1.0),
   _cleanup_list("Cleanup List"),
   _region_bm((BitMap::idx_t)(g1h->max_regions()), false /* in_resource_area*/),
-  _card_bm((heap_rs.size() + CardTableModRefBS::card_size - 1) >>
+  _card_bm((g1h->reserved_region().byte_size() + CardTableModRefBS::card_size - 1) >>
             CardTableModRefBS::card_shift,
             false /* in_resource_area*/),
 
@@ -545,14 +586,8 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
                            "heap end = " PTR_FORMAT, p2i(_heap_start), p2i(_heap_end));
   }
 
-  if (!_markBitMap1.allocate(heap_rs)) {
-    warning("Failed to allocate first CM bit map");
-    return;
-  }
-  if (!_markBitMap2.allocate(heap_rs)) {
-    warning("Failed to allocate second CM bit map");
-    return;
-  }
+  _markBitMap1.initialize(g1h->reserved_region(), prev_bitmap_storage);
+  _markBitMap2.initialize(g1h->reserved_region(), next_bitmap_storage);
 
   // Create & start a ConcurrentMark thread.
   _cmThread = new ConcurrentMarkThread(this);
@@ -563,8 +598,8 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   }
 
   assert(CGC_lock != NULL, "Where's the CGC_lock?");
-  assert(_markBitMap1.covers(heap_rs), "_markBitMap1 inconsistency");
-  assert(_markBitMap2.covers(heap_rs), "_markBitMap2 inconsistency");
+  assert(_markBitMap1.covers(g1h->reserved_region()), "_markBitMap1 inconsistency");
+  assert(_markBitMap2.covers(g1h->reserved_region()), "_markBitMap2 inconsistency");
 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
   satb_qs.set_buffer_size(G1SATBBufferSize);
@@ -724,38 +759,17 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   clear_all_count_data();
 
   // so that the call below can read a sensible value
-  _heap_start = (HeapWord*) heap_rs.base();
+  _heap_start = g1h->reserved_region().start();
   set_non_marking_state();
   _completed_initialization = true;
 }
 
-void ConcurrentMark::update_g1_committed(bool force) {
-  // If concurrent marking is not in progress, then we do not need to
-  // update _heap_end.
-  if (!concurrent_marking_in_progress() && !force) return;
-
-  MemRegion committed = _g1h->g1_committed();
-  assert(committed.start() == _heap_start, "start shouldn't change");
-  HeapWord* new_end = committed.end();
-  if (new_end > _heap_end) {
-    // The heap has been expanded.
-
-    _heap_end = new_end;
-  }
-  // Notice that the heap can also shrink. However, this only happens
-  // during a Full GC (at least currently) and the entire marking
-  // phase will bail out and the task will not be restarted. So, let's
-  // do nothing.
-}
-
 void ConcurrentMark::reset() {
   // Starting values for these two. This should be called in a STW
-  // phase. CM will be notified of any future g1_committed expansions
-  // will be at the end of evacuation pauses, when tasks are
-  // inactive.
-  MemRegion committed = _g1h->g1_committed();
-  _heap_start = committed.start();
-  _heap_end   = committed.end();
+  // phase.
+  MemRegion reserved = _g1h->g1_reserved();
+  _heap_start = reserved.start();
+  _heap_end   = reserved.end();
 
   // Separated the asserts so that we know which one fires.
   assert(_heap_start != NULL, "heap bounds should look ok");
@@ -827,7 +841,6 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     assert(out_of_regions(),
            err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
                    p2i(_finger), p2i(_heap_end)));
-    update_g1_committed(true);
   }
 }
 
@@ -846,7 +859,6 @@ ConcurrentMark::~ConcurrentMark() {
 
 void ConcurrentMark::clearNextBitmap() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
 
   // Make sure that the concurrent mark thread looks to still be in
   // the current cycle.
@@ -858,41 +870,36 @@ void ConcurrentMark::clearNextBitmap() {
   // is the case.
   guarantee(!g1h->mark_in_progress(), "invariant");
 
-  // clear the mark bitmap (no grey objects to start with).
-  // We need to do this in chunks and offer to yield in between
-  // each chunk.
-  HeapWord* start  = _nextMarkBitMap->startWord();
-  HeapWord* end    = _nextMarkBitMap->endWord();
-  HeapWord* cur    = start;
-  size_t chunkSize = M;
-  while (cur < end) {
-    HeapWord* next = cur + chunkSize;
-    if (next > end) {
-      next = end;
-    }
-    MemRegion mr(cur,next);
-    _nextMarkBitMap->clearRange(mr);
-    cur = next;
-    do_yield_check();
+  ClearBitmapHRClosure cl(this, _nextMarkBitMap, true /* may_yield */);
+  g1h->heap_region_iterate(&cl);
 
-    // Repeat the asserts from above. We'll do them as asserts here to
-    // minimize their overhead on the product. However, we'll have
-    // them as guarantees at the beginning / end of the bitmap
-    // clearing to get some checking in the product.
-    assert(cmThread()->during_cycle(), "invariant");
-    assert(!g1h->mark_in_progress(), "invariant");
+  // Clear the liveness counting data. If the marking has been aborted, the abort()
+  // call already did that.
+  if (cl.complete()) {
+    clear_all_count_data();
   }
-
-  // Clear the liveness counting data
-  clear_all_count_data();
 
   // Repeat the asserts from above.
   guarantee(cmThread()->during_cycle(), "invariant");
   guarantee(!g1h->mark_in_progress(), "invariant");
 }
 
+class CheckBitmapClearHRClosure : public HeapRegionClosure {
+  CMBitMap* _bitmap;
+  bool _error;
+ public:
+  CheckBitmapClearHRClosure(CMBitMap* bitmap) : _bitmap(bitmap) {
+  }
+
+  virtual bool doHeapRegion(HeapRegion* r) {
+    return _bitmap->getNextMarkedWordAddress(r->bottom(), r->end()) != r->end();
+  }
+};
+
 bool ConcurrentMark::nextMarkBitmapIsClear() {
-  return _nextMarkBitMap->getNextMarkedWordAddress(_heap_start, _heap_end) == _heap_end;
+  CheckBitmapClearHRClosure cl(_nextMarkBitMap);
+  _g1h->heap_region_iterate(&cl);
+  return cl.complete();
 }
 
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
@@ -2193,10 +2200,10 @@ void ConcurrentMark::completeCleanup() {
                            _cleanup_list.length());
   }
 
-  // Noone else should be accessing the _cleanup_list at this point,
-  // so it's not necessary to take any locks
+  // No one else should be accessing the _cleanup_list at this point,
+  // so it is not necessary to take any locks
   while (!_cleanup_list.is_empty()) {
-    HeapRegion* hr = _cleanup_list.remove_head();
+    HeapRegion* hr = _cleanup_list.remove_region(true /* from_head */);
     assert(hr != NULL, "Got NULL from a non-empty list");
     hr->par_clear();
     tmp_free_list.add_ordered(hr);
@@ -2980,22 +2987,25 @@ ConcurrentMark::claim_region(uint worker_id) {
     // claim_region() and a humongous object allocation might force us
     // to do a bit of unnecessary work (due to some unnecessary bitmap
     // iterations) but it should not introduce and correctness issues.
-    HeapRegion* curr_region   = _g1h->heap_region_containing_raw(finger);
-    HeapWord*   bottom        = curr_region->bottom();
-    HeapWord*   end           = curr_region->end();
-    HeapWord*   limit         = curr_region->next_top_at_mark_start();
+    HeapRegion* curr_region = _g1h->heap_region_containing_raw(finger);
 
-    if (verbose_low()) {
-      gclog_or_tty->print_cr("[%u] curr_region = "PTR_FORMAT" "
-                             "["PTR_FORMAT", "PTR_FORMAT"), "
-                             "limit = "PTR_FORMAT,
-                             worker_id, p2i(curr_region), p2i(bottom), p2i(end), p2i(limit));
-    }
+    // Above heap_region_containing_raw may return NULL as we always scan claim
+    // until the end of the heap. In this case, just jump to the next region.
+    HeapWord* end = curr_region != NULL ? curr_region->end() : finger + HeapRegion::GrainWords;
 
     // Is the gap between reading the finger and doing the CAS too long?
     HeapWord* res = (HeapWord*) Atomic::cmpxchg_ptr(end, &_finger, finger);
-    if (res == finger) {
+    if (res == finger && curr_region != NULL) {
       // we succeeded
+      HeapWord*   bottom        = curr_region->bottom();
+      HeapWord*   limit         = curr_region->next_top_at_mark_start();
+
+      if (verbose_low()) {
+        gclog_or_tty->print_cr("[%u] curr_region = "PTR_FORMAT" "
+                               "["PTR_FORMAT", "PTR_FORMAT"), "
+                               "limit = "PTR_FORMAT,
+                               worker_id, p2i(curr_region), p2i(bottom), p2i(end), p2i(limit));
+      }
 
       // notice that _finger == end cannot be guaranteed here since,
       // someone else might have moved the finger even further
@@ -3026,10 +3036,17 @@ ConcurrentMark::claim_region(uint worker_id) {
     } else {
       assert(_finger > finger, "the finger should have moved forward");
       if (verbose_low()) {
-        gclog_or_tty->print_cr("[%u] somebody else moved the finger, "
-                               "global finger = "PTR_FORMAT", "
-                               "our finger = "PTR_FORMAT,
-                               worker_id, p2i(_finger), p2i(finger));
+        if (curr_region == NULL) {
+          gclog_or_tty->print_cr("[%u] found uncommitted region, moving finger, "
+                                 "global finger = "PTR_FORMAT", "
+                                 "our finger = "PTR_FORMAT,
+                                 worker_id, p2i(_finger), p2i(finger));
+        } else {
+          gclog_or_tty->print_cr("[%u] somebody else moved the finger, "
+                                 "global finger = "PTR_FORMAT", "
+                                 "our finger = "PTR_FORMAT,
+                                 worker_id, p2i(_finger), p2i(finger));
+        }
       }
 
       // read it again
@@ -3144,8 +3161,10 @@ void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
       // happens, heap_region_containing() will return the bottom of the
       // corresponding starts humongous region and the check below will
       // not hold any more.
+      // Since we always iterate over all regions, we might get a NULL HeapRegion
+      // here.
       HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
-      guarantee(global_finger == global_hr->bottom(),
+      guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
                 err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
                         p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
     }
@@ -3158,7 +3177,7 @@ void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
       if (task_finger != NULL && task_finger < _heap_end) {
         // See above note on the global finger verification.
         HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
-        guarantee(task_finger == task_hr->bottom() ||
+        guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
                   !task_hr->in_collection_set(),
                   err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
                           p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
@@ -4674,7 +4693,6 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
     _hum_prev_live_bytes(0), _hum_next_live_bytes(0),
     _total_remset_bytes(0), _total_strong_code_roots_bytes(0) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  MemRegion g1_committed = g1h->g1_committed();
   MemRegion g1_reserved = g1h->g1_reserved();
   double now = os::elapsedTime();
 
@@ -4682,10 +4700,8 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
   _out->cr();
   _out->print_cr(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
   _out->print_cr(G1PPRL_LINE_PREFIX" HEAP"
-                 G1PPRL_SUM_ADDR_FORMAT("committed")
                  G1PPRL_SUM_ADDR_FORMAT("reserved")
                  G1PPRL_SUM_BYTE_FORMAT("region-size"),
-                 p2i(g1_committed.start()), p2i(g1_committed.end()),
                  p2i(g1_reserved.start()), p2i(g1_reserved.end()),
                  HeapRegion::GrainBytes);
   _out->print_cr(G1PPRL_LINE_PREFIX);

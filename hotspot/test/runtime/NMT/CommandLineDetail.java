@@ -26,7 +26,6 @@
  * @key nmt
  * @summary Running with NMT detail should not result in an error
  * @library /testlibrary
- * @ignore
  */
 
 import com.oracle.java.testlibrary.*;

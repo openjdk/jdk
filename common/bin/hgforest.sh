@@ -77,6 +77,11 @@ do
   shift
 done
 
+# debug mode
+if [ "${HGFOREST_DEBUG:-false}" = "true" ] ; then
+  global_opts="${global_opts} --debug"
+fi
+
 # silence standard output?
 if [ ${qflag} = "true" ] ; then
   global_opts="${global_opts} -q"
@@ -89,13 +94,25 @@ if [ ${vflag} = "true" ] ; then
 fi
 
 # Make sure we have a command.
-if [ $# -lt 1 -o -z "${1:-}" ] ; then
-  echo "ERROR: No command to hg supplied!"
-  usage
+if [ ${#} -lt 1 -o -z "${1:-}" ] ; then
+  echo "ERROR: No command to hg supplied!" > ${status_output}
+  usage > ${status_output}
 fi
 
-command="$1"; shift
+# grab command
+command="${1}"; shift
+
+if [ ${vflag} = "true" ] ; then
+  echo "# Mercurial command: ${command}" > ${status_output}
+fi
+
+
+# capture command options and arguments (if any)
 command_args="${@:-}"
+
+if [ ${vflag} = "true" ] ; then
+  echo "# Mercurial command arguments: ${command_args}" > ${status_output}
+fi
 
 # Clean out the temporary directory that stores the pid files.
 tmp=/tmp/forest.$$
@@ -104,7 +121,8 @@ mkdir -p ${tmp}
 
 
 if [ "${HGFOREST_DEBUG:-false}" = "true" ] ; then
-  echo "DEBUG: temp files are in: ${tmp}"
+  # ignores redirection.
+  echo "DEBUG: temp files are in: ${tmp}" >&2
 fi
 
 # Check if we can use fifos for monitoring sub-process completion.
@@ -377,21 +395,33 @@ else
       fi
     fi
   done
+
+  if [ ${have_fifos} = "true" ]; then
+    # done with the fifo
+    exec 3>&-
+  fi
 fi
 
 # Wait for all subprocesses to complete
 wait
 
 # Terminate with exit 0 only if all subprocesses were successful
+# Terminate with highest exit code of subprocesses
 ec=0
 if [ -d ${tmp} ]; then
   rcfiles="`(ls -a ${tmp}/*.pid.rc 2> /dev/null) || echo ''`"
   for rc in ${rcfiles} ; do
     exit_code=`cat ${rc} | tr -d ' \n\r'`
     if [ "${exit_code}" != "0" ] ; then
+      if [ ${exit_code} -gt 1 ]; then
+        # mercurial exit codes greater than "1" signal errors.
       repo="`echo ${rc} | sed -e 's@^'${tmp}'@@' -e 's@/*\([^/]*\)\.pid\.rc$@\1@' -e 's@_@/@g'`"
       echo "WARNING: ${repo} exited abnormally (${exit_code})" > ${status_output}
-      ec=1
+      fi
+      if [ ${exit_code} -gt ${ec} ]; then
+        # assume that larger exit codes are more significant
+        ec=${exit_code}
+      fi
     fi
   done
 fi

@@ -173,7 +173,7 @@ public:
 
   // Should be called when we want to release the active region which
   // is returned after it's been retired.
-  HeapRegion* release();
+  virtual HeapRegion* release();
 
 #if G1_ALLOC_REGION_TRACING
   void trace(const char* str, size_t word_size = 0, HeapWord* result = NULL);
