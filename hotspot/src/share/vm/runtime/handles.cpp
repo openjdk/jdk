@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,14 +129,6 @@ void HandleArea::oops_do(OopClosure* f) {
     k = k->next();
   }
 
-  // The thread local handle areas should not get very large
-  if (TraceHandleAllocation && (size_t)handles_visited > TotalHandleAllocationLimit) {
-#ifdef ASSERT
-    warning("%d: Visited in HandleMark : " SIZE_FORMAT, _nof_handlemarks, handles_visited);
-#else
-    warning("Visited in HandleMark : " SIZE_FORMAT, handles_visited);
-#endif
-  }
   if (_prev != NULL) _prev->oops_do(f);
 }
 
@@ -164,31 +156,6 @@ HandleMark::~HandleMark() {
   assert(area == _thread->handle_area(), "sanity check");
   assert(area->_handle_mark_nesting > 0, "must stack allocate HandleMarks" );
   debug_only(area->_handle_mark_nesting--);
-
-  // Debug code to trace the number of handles allocated per mark/
-#ifdef ASSERT
-  if (TraceHandleAllocation) {
-    size_t handles = 0;
-    Chunk *c = _chunk->next();
-    if (c == NULL) {
-      handles = area->_hwm - _hwm; // no new chunk allocated
-    } else {
-      handles = _max - _hwm;      // add rest in first chunk
-      while(c != NULL) {
-        handles += c->length();
-        c = c->next();
-      }
-      handles -= area->_max - area->_hwm; // adjust for last trunk not full
-    }
-    handles /= sizeof(void *); // Adjust for size of a handle
-    if (handles > HandleAllocationLimit) {
-      // Note: _nof_handlemarks is only set in debug mode
-      warning("%d: Allocated in HandleMark : " SIZE_FORMAT, _nof_handlemarks, handles);
-    }
-
-    tty->print_cr("Handles " SIZE_FORMAT, handles);
-  }
-#endif
 
   // Delete later chunks
   if( _chunk->next() ) {
