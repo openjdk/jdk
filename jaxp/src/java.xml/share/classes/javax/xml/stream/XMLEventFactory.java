@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * Copyright (c) 2009, 2015, by Oracle Corporation. All Rights Reserved.
  */
 
 package javax.xml.stream;
@@ -53,8 +50,7 @@ public abstract class XMLEventFactory {
     static final String JAXPFACTORYID = "javax.xml.stream.XMLEventFactory";
     static final String DEFAULIMPL = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
 
-
-  /**
+   /**
    * Creates a new instance of the {@code XMLEventFactory} builtin
    * system-default implementation.
    *
@@ -159,6 +155,7 @@ public abstract class XMLEventFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)}
    *              method defines no changes in behavior.
    */
+  @Deprecated(since="7")
   public static XMLEventFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
@@ -307,8 +304,8 @@ public abstract class XMLEventFactory {
    * @return an instance of the requested StartElement
    */
   public abstract StartElement createStartElement(QName name,
-                                                  Iterator attributes,
-                                                  Iterator namespaces);
+                                                  Iterator<? extends Attribute> attributes,
+                                                  Iterator<? extends Namespace> namespaces);
 
   /**
    * Create a new StartElement.  This defaults the NamespaceContext to
@@ -341,8 +338,8 @@ public abstract class XMLEventFactory {
   public abstract StartElement createStartElement(String prefix,
                                                   String namespaceUri,
                                                   String localName,
-                                                  Iterator attributes,
-                                                  Iterator namespaces
+                                                  Iterator<? extends Attribute> attributes,
+                                                  Iterator<? extends Namespace> namespaces
                                                   );
   /**
    * Create a new StartElement.  Namespaces can be added to this StartElement
@@ -363,8 +360,8 @@ public abstract class XMLEventFactory {
   public abstract StartElement createStartElement(String prefix,
                                                   String namespaceUri,
                                                   String localName,
-                                                  Iterator attributes,
-                                                  Iterator namespaces,
+                                                  Iterator<? extends Attribute> attributes,
+                                                  Iterator<? extends Namespace> namespaces,
                                                   NamespaceContext context
                                                   );
 
@@ -376,7 +373,7 @@ public abstract class XMLEventFactory {
    * @return an instance of the requested EndElement
    */
   public abstract EndElement createEndElement(QName name,
-                                              Iterator namespaces);
+                                              Iterator<? extends Namespace> namespaces);
 
   /**
    * Create a new EndElement
@@ -400,7 +397,7 @@ public abstract class XMLEventFactory {
   public abstract EndElement createEndElement(String prefix,
                                               String namespaceUri,
                                               String localName,
-                                              Iterator namespaces);
+                                              Iterator<? extends Namespace> namespaces);
 
   /**
    * Create a Characters event, this method does not check if the content

@@ -404,19 +404,14 @@ Java_sun_font_CFontManager_loadNativeDirFonts
 {
 JNF_COCOA_ENTER(env);
 
-    NSString *nsFilePath = JNFJavaToNSString(env, filename);
-
-    FSRef iFile;
-    OSStatus status = CreateFSRef(&iFile, nsFilePath);
-
-    if (status == noErr) {
-        ATSFontContainerRef oContainer;
-        status = ATSFontActivateFromFileReference(&iFile, kATSFontContextLocal,
-                                                  kATSFontFormatUnspecified,
-                                                  NULL, kNilOptions,
-                                                  &oContainer);
-    }
-
+    NSString *path = JNFJavaToNSString(env, filename);
+    NSURL *url = [NSURL fileURLWithPath:(NSString *)path];
+    bool res = CTFontManagerRegisterFontsForURL((CFURLRef)url, kCTFontManagerScopeProcess, nil);
+#ifdef DEBUG
+    NSLog(@"path is : %@", (NSString*)path);
+    NSLog(@"url is : %@", (NSString*)url);
+    printf("res is %d\n", res);
+#endif
 JNF_COCOA_EXIT(env);
 }
 

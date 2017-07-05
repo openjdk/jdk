@@ -36,6 +36,7 @@ import java.security.AlgorithmConstraints;
 import java.security.AccessControlContext;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.util.function.BiFunction;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -121,6 +122,14 @@ abstract class Handshaker {
 
     // Negotiated ALPN value
     String applicationProtocol = null;
+
+    // Application protocol callback function (for SSLEngine)
+    BiFunction<SSLEngine,List<String>,String>
+        appProtocolSelectorSSLEngine = null;
+
+    // Application protocol callback function (for SSLSocket)
+    BiFunction<SSLSocket,List<String>,String>
+        appProtocolSelectorSSLSocket = null;
 
     // The maximum expected network packet size for SSL/TLS/DTLS records.
     int                         maximumPacketSize = 0;
@@ -498,6 +507,22 @@ abstract class Handshaker {
      */
     String getHandshakeApplicationProtocol() {
         return applicationProtocol;
+    }
+
+    /**
+     * Sets the Application Protocol selector function for SSLEngine.
+     */
+    void setApplicationProtocolSelectorSSLEngine(
+        BiFunction<SSLEngine,List<String>,String> selector) {
+        this.appProtocolSelectorSSLEngine = selector;
+    }
+
+    /**
+     * Sets the Application Protocol selector function for SSLSocket.
+     */
+    void setApplicationProtocolSelectorSSLSocket(
+        BiFunction<SSLSocket,List<String>,String> selector) {
+        this.appProtocolSelectorSSLSocket = selector;
     }
 
     /**

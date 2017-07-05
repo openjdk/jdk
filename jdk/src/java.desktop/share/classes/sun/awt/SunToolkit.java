@@ -1857,6 +1857,9 @@ public abstract class SunToolkit extends Toolkit
         return time == null ? -1 : time;
     }
 
+    public void updateScreenMenuBarUI() {
+    }
+
     // Cosntant alpha
     public boolean isWindowOpacitySupported() {
         return false;

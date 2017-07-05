@@ -29,7 +29,7 @@
  * @library ..
  * @modules java.base/sun.security.internal.interfaces
  *          java.base/sun.security.internal.spec
- *          jdk.crypto.pkcs11
+ *          jdk.crypto.token
  * @run main/othervm TestMasterSecret
  * @run main/othervm TestMasterSecret sm TestMasterSecret.policy
  */

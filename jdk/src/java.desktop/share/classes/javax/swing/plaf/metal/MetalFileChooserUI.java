@@ -571,7 +571,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
     /**
      * Obsolete class, not used in this version.
+     * @deprecated As of JDK version 9. Obsolete class.
      */
+    @Deprecated(since = "9")
     protected class SingleClickListener extends MouseAdapter {
         /**
          * Constructs an instance of {@code SingleClickListener}.
@@ -584,7 +586,9 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
     /**
      * Obsolete class, not used in this version.
+     * @deprecated As of JDK version 9. Obsolete class.
      */
+    @Deprecated(since = "9")
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends DefaultListCellRenderer  {
     }

@@ -29,7 +29,7 @@
  * @requires vm.flavor == "server"
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.math:open
- * @library /test/lib
+ * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -42,6 +42,7 @@ package compiler.intrinsics.bigInteger;
 
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -56,9 +57,6 @@ import java.util.Random;
 public class MontgomeryMultiplyTest {
 
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
-
-    /* Compilation level corresponding to C2. */
-    private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
@@ -319,8 +317,8 @@ public class MontgomeryMultiplyTest {
         if (!Platform.isServer()) {
             throw new Error("TESTBUG: Not server VM");
         }
-        if (wb.isIntrinsicAvailable(getExecutable(true), COMP_LEVEL_FULL_OPTIMIZATION) &&
-                wb.isIntrinsicAvailable(getExecutable(false), COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (wb.isIntrinsicAvailable(getExecutable(true), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) &&
+                wb.isIntrinsicAvailable(getExecutable(false), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             try {
                 new MontgomeryMultiplyTest().testMontgomeryMultiplyChecks();
                 new MontgomeryMultiplyTest().testResultValues();

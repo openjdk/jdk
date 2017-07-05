@@ -160,9 +160,8 @@ public class Platform {
         return vmVersion;
     }
 
-    // Returns true for sparc and sparcv9.
-    public static boolean isSparc() {
-        return isArch("sparc.*");
+    public static boolean isAArch64() {
+        return isArch("aarch64");
     }
 
     public static boolean isARM() {
@@ -173,9 +172,14 @@ public class Platform {
         return isArch("ppc.*");
     }
 
-    public static boolean isX86() {
-        // On Linux it's 'i386', Windows 'x86' without '_64' suffix.
-        return isArch("(i386)|(x86(?!_64))");
+    // Returns true for IBM z System running linux.
+    public static boolean isS390x() {
+        return isArch("s390.*") || isArch("s/390.*") || isArch("zArch_64");
+    }
+
+    // Returns true for sparc and sparcv9.
+    public static boolean isSparc() {
+        return isArch("sparc.*");
     }
 
     public static boolean isX64() {
@@ -183,8 +187,9 @@ public class Platform {
         return isArch("(amd64)|(x86_64)");
     }
 
-    public static boolean isAArch64() {
-        return isArch("aarch64");
+    public static boolean isX86() {
+        // On Linux it's 'i386', Windows 'x86' without '_64' suffix.
+        return isArch("(i386)|(x86(?!_64))");
     }
 
     public static String getOsArch() {
@@ -200,6 +205,7 @@ public class Platform {
         if (isAix()) {
             return false;   // SA not implemented.
         } else if (isLinux()) {
+            if (isS390x()) { return false; }   // SA not implemented.
             return canPtraceAttachLinux();
         } else if (isOSX()) {
             return canAttachOSX();

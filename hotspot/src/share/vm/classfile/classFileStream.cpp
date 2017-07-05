@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -132,4 +134,13 @@ void ClassFileStream::skip_u4(int length, TRAPS) const {
     guarantee_more(length * 4, CHECK);
   }
   _current += length * 4;
+}
+
+uint64_t ClassFileStream::compute_fingerprint() const {
+  int classfile_size = length();
+  int classfile_crc = ClassLoader::crc32(0, (const char*)buffer(), length());
+  uint64_t fingerprint = (uint64_t(classfile_size) << 32) | uint64_t(uint32_t(classfile_crc));
+  assert(fingerprint != 0, "must not be zero");
+
+  return fingerprint;
 }

@@ -66,7 +66,6 @@ public class TestG1LoggingFailure {
         OutputAnalyzer out = ProcessTools.executeTestJvm(options.toArray(new String[options.size()]));
 
         out.shouldNotContain("pure virtual method called");
-        out.shouldContain("Exception: java.lang.OutOfMemoryError thrown from the UncaughtExceptionHandler in thread \"main\"");
 
         if (out.getExitValue() == 0) {
             System.out.println(out.getOutput());

@@ -24,7 +24,7 @@
  * @test
  * @bug 7003952 7191662
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @summary load DLLs and launch executables using fully qualified path
  */
 

@@ -96,7 +96,8 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         TraceMethodDataFilter(String.class, null,
                         "Enables tracing of profiling info when read by JVMCI.",
                         "Empty value: trace all methods",
-                        "Non-empty value: trace methods whose fully qualified name contains the value.");
+                        "Non-empty value: trace methods whose fully qualified name contains the value."),
+        UseProfilingInformation(Boolean.class, true, "");
         // @formatter:on
 
         /**

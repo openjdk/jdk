@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -127,14 +126,23 @@ const char* Abstract_VM_Version::vm_vendor() {
 
 
 const char* Abstract_VM_Version::vm_info_string() {
-  if (CodeCacheExtensions::use_pregenerated_interpreter()) {
-    return "interpreted mode, pregenerated";
-  }
   switch (Arguments::mode()) {
     case Arguments::_int:
       return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
-      return UseSharedSpaces ? "mixed mode, sharing"       :  "mixed mode";
+      if (UseSharedSpaces) {
+          if (UseAOT) {
+            return "mixed mode, aot, sharing";
+          } else {
+            return "mixed mode, sharing";
+          }
+      } else {
+        if (UseAOT) {
+          return "mixed mode, aot";
+        } else {
+          return "mixed mode";
+        }
+      }
     case Arguments::_comp:
       return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
   };

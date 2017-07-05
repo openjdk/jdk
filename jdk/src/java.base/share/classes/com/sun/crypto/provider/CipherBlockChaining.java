@@ -142,6 +142,9 @@ class CipherBlockChaining extends FeedbackCipher  {
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
                 byte[] cipher, int cipherOffset) {
+        if (plainLen <= 0) {
+            return plainLen;
+        }
         cryptBlockSizeCheck(plainLen);
         cryptNullAndBoundsCheck(plain, plainOffset, plainLen);
         cryptNullAndBoundsCheck(cipher, cipherOffset, plainLen);
@@ -190,6 +193,9 @@ class CipherBlockChaining extends FeedbackCipher  {
      */
     int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
                 byte[] plain, int plainOffset) {
+        if (cipherLen <= 0) {
+            return cipherLen;
+        }
         cryptBlockSizeCheck(cipherLen);
         cryptNullAndBoundsCheck(cipher, cipherOffset, cipherLen);
         cryptNullAndBoundsCheck(plain, plainOffset, cipherLen);
@@ -220,10 +226,6 @@ class CipherBlockChaining extends FeedbackCipher  {
     }
 
     private static void cryptNullAndBoundsCheck(byte[] array, int offset, int len) {
-        if (len <= 0) {
-            return; // not an error because cryptImpl/decryptImpl won't execute if len <= 0
-        }
-
         Objects.requireNonNull(array);
 
         if (offset < 0 || offset >= array.length) {

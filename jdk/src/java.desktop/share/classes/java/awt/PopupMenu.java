@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 package java.awt;
 
 import java.awt.peer.PopupMenuPeer;
-import javax.accessibility.*;
 
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 import sun.awt.AWTAccessor;
 
@@ -48,7 +49,7 @@ public class PopupMenu extends Menu {
     private static final String base = "popup";
     static int nameCounter = 0;
 
-    transient boolean isTrayIconPopup = false;
+    transient volatile boolean isTrayIconPopup;
 
     static {
         AWTAccessor.setPopupMenuAccessor(

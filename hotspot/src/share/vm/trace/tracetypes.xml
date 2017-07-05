@@ -68,21 +68,27 @@ Now we can use the content + data type in declaring event fields.
       <value type="THREADGROUP" field="group" label="Java Thread Group"/>
     </content_type>
 
-    <content_type id="ThreadGroup" hr_name="Thread group"
+    <content_type id="ThreadGroup" hr_name="Thread Group"
                   type="U8" jvm_type="THREADGROUP">
       <value type="THREADGROUP" field="parent" label="Parent"/>
       <value type="STRING" field="name" label="Name"/>
     </content_type>
 
-    <content_type id="Class" hr_name="Java class"
+    <content_type id="Class" hr_name="Java Class"
                   type="U8" builtin_type="CLASS">
-      <value type="CLASS" field="classLoaderType" label="Class Loader"/>
+      <value type="CLASSLOADER" field="classLoader" label="Class Loader"/>
       <value type="SYMBOL" field="name" label="Name"/>
       <value type="PACKAGE" field="package" label="Package"/>
       <value type="INTEGER" field="modifiers" label="Access Modifiers"/>
     </content_type>
 
-    <content_type id="Method" hr_name="Java method"
+    <content_type id="ClassLoader" hr_name="Java Class Loader"
+                  type="U8" jvm_type="CLASSLOADER">
+      <value type="CLASS" field="type" label="Type"/>
+      <value type="SYMBOL" field="name" label="Name"/>
+    </content_type>
+
+    <content_type id="Method" hr_name="Java Method"
                   type="U8" jvm_type="METHOD">
       <value type="CLASS" field="type" label="Type"/>
       <value type="SYMBOL" field="name" label="Name"/>
@@ -126,7 +132,7 @@ Now we can use the content + data type in declaring event fields.
       <value type="STRING" field="type" label="Type" />
     </content_type>
 
-    <content_type id="GCThresholdUpdater" hr_name="GC Treshold Updater"
+    <content_type id="GCThresholdUpdater" hr_name="GC Threshold Updater"
                   type="U8" jvm_type="GCTHRESHOLDUPDATER">
       <value type="STRING" field="updater" label="Updater" />
     </content_type>
@@ -146,7 +152,7 @@ Now we can use the content + data type in declaring event fields.
       <value type="STRING" field="type" label="Type" />
     </content_type>
 
-    <content_type id="NarrowOopMode" hr_name="Narrow oop Mode"
+    <content_type id="NarrowOopMode" hr_name="Narrow Oop Mode"
                   type="U8" jvm_type="NARROWOOPMODE">
       <value type="STRING" field="mode" label="Mode" />
     </content_type>
@@ -181,7 +187,7 @@ Now we can use the content + data type in declaring event fields.
       <value type="SYMBOL" field="name" label="Name"/>
       <value type="SYMBOL" field="version" label="Version"/>
       <value type="SYMBOL" field="location" label="Location"/>
-      <value type="CLASS" field="classLoader" label="Class Loader"/>
+      <value type="CLASSLOADER" field="classLoader" label="Class Loader"/>
     </content_type>
 
     <content_type id="Package" hr_name="Package"
@@ -302,6 +308,9 @@ Now we can use the content + data type in declaring event fields.
          eventually be written into the recording constant pool -->
     <primary_type symbol="CLASS" datatype="U8" contenttype="CLASS"
                   type="const Klass*" sizeop="sizeof(u8)"/>
+
+    <primary_type symbol="CLASSLOADER" datatype="U8" contenttype="CLASSLOADER"
+              type="const ClassLoaderData*" sizeop="sizeof(u8)"/>
 
     <primary_type symbol="MODULE" datatype="U8" contenttype="MODULE"
                   type="const ModuleEntry*" sizeop="sizeof(u8)"/>

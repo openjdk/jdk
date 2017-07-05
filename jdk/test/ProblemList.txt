@@ -205,6 +205,8 @@ sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-
 
 java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-all
 
+java/rmi/registry/readTest/readTest.sh                          7146543 generic-all
+
 ############################################################################
 
 # jdk_security
@@ -215,11 +217,11 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
-sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
-
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
 sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
+
+javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 
 ############################################################################
 
@@ -231,6 +233,8 @@ javax/sound/sampled/DataLine/LongFramePosition.java    8055097 generic-all
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
+
+javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
 
 ############################################################################
 
@@ -263,7 +267,8 @@ tools/jimage/JImageExtractTest.java                             8169713 generic-
 tools/jimage/JImageListTest.java                                8169713 generic-all
 tools/jimage/JImageVerifyTest.java                              8169713 generic-all
 
-tools/jlink/ModuleNamesOrderTest.java                           8171070 generic-all
+
+tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
 
 ############################################################################
 
@@ -286,8 +291,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 ############################################################################
 
 # jdk_util
-
-java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 

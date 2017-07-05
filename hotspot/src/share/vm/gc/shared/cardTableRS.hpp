@@ -159,8 +159,8 @@ public:
   void clear(MemRegion mr) { _ct_bs->clear(mr); }
   void clear_into_younger(Generation* old_gen);
 
-  void invalidate(MemRegion mr, bool whole_heap = false) {
-    _ct_bs->invalidate(mr, whole_heap);
+  void invalidate(MemRegion mr) {
+    _ct_bs->invalidate(mr);
   }
   void invalidate_or_clear(Generation* old_gen);
 

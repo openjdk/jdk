@@ -42,8 +42,9 @@ inline Register as_Register(int encoding) {
 class RegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
-    number_of_registers      = 32,
-    number_of_byte_registers = 32
+    number_of_registers         =   32,
+    number_of_byte_registers      = 32,
+    number_of_registers_for_jvmci = 34   // Including SP and ZR.
   };
 
   // derived registers, offsets, and addresses
@@ -103,6 +104,10 @@ CONSTANT_REGISTER_DECLARATION(Register, r28,  (28));
 CONSTANT_REGISTER_DECLARATION(Register, r29,  (29));
 CONSTANT_REGISTER_DECLARATION(Register, r30,  (30));
 
+
+// r31 is not a general purpose register, but represents either the
+// stack pointer or the zero/discard register depending on the
+// instruction.
 CONSTANT_REGISTER_DECLARATION(Register, r31_sp, (31));
 CONSTANT_REGISTER_DECLARATION(Register, zr,  (32));
 CONSTANT_REGISTER_DECLARATION(Register, sp,  (33));

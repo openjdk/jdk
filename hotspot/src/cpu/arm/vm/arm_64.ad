@@ -1,0 +1,998 @@
+//
+// Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+
+// ARM Architecture Description File
+
+//----------REGISTER DEFINITION BLOCK------------------------------------------
+// This information is used by the matcher and the register allocator to
+// describe individual registers and classes of registers within the target
+// archtecture.
+register %{
+//----------Architecture Description Register Definitions----------------------
+// General Registers
+// "reg_def"  name ( register save type, C convention save type,
+//                   ideal register type, encoding, vm name );
+// Register Save Types:
+//
+// NS  = No-Save:       The register allocator assumes that these registers
+//                      can be used without saving upon entry to the method, &
+//                      that they do not need to be saved at call sites.
+//
+// SOC = Save-On-Call:  The register allocator assumes that these registers
+//                      can be used without saving upon entry to the method,
+//                      but that they must be saved at call sites.
+//
+// SOE = Save-On-Entry: The register allocator assumes that these registers
+//                      must be saved before using them upon entry to the
+//                      method, but they do not need to be saved at call
+//                      sites.
+//
+// AS  = Always-Save:   The register allocator assumes that these registers
+//                      must be saved before using them upon entry to the
+//                      method, & that they must be saved at call sites.
+//
+// Ideal Register Type is used to determine how to save & restore a
+// register.  Op_RegI will get spilled with LoadI/StoreI, Op_RegP will get
+// spilled with LoadP/StoreP.  If the register supports both, use Op_RegI.
+// FIXME: above comment seems wrong.  Spill done through MachSpillCopyNode
+//
+// The encoding number is the actual bit-pattern placed into the opcodes.
+
+
+// ----------------------------
+// Integer/Long Registers
+// ----------------------------
+
+// TODO: would be nice to keep track of high-word state:
+// zeroRegI --> RegL
+// signedRegI --> RegL
+// junkRegI --> RegL
+// how to tell C2 to treak RegI as RegL, or RegL as RegI?
+reg_def R_R0  (SOC, SOC, Op_RegI,   0, R0->as_VMReg());
+reg_def R_R0x (SOC, SOC, Op_RegI, 255, R0->as_VMReg()->next());
+reg_def R_R1  (SOC, SOC, Op_RegI,   1, R1->as_VMReg());
+reg_def R_R1x (SOC, SOC, Op_RegI, 255, R1->as_VMReg()->next());
+reg_def R_R2  (SOC, SOC, Op_RegI,   2, R2->as_VMReg());
+reg_def R_R2x (SOC, SOC, Op_RegI, 255, R2->as_VMReg()->next());
+reg_def R_R3  (SOC, SOC, Op_RegI,   3, R3->as_VMReg());
+reg_def R_R3x (SOC, SOC, Op_RegI, 255, R3->as_VMReg()->next());
+reg_def R_R4  (SOC, SOC, Op_RegI,   4, R4->as_VMReg());
+reg_def R_R4x (SOC, SOC, Op_RegI, 255, R4->as_VMReg()->next());
+reg_def R_R5  (SOC, SOC, Op_RegI,   5, R5->as_VMReg());
+reg_def R_R5x (SOC, SOC, Op_RegI, 255, R5->as_VMReg()->next());
+reg_def R_R6  (SOC, SOC, Op_RegI,   6, R6->as_VMReg());
+reg_def R_R6x (SOC, SOC, Op_RegI, 255, R6->as_VMReg()->next());
+reg_def R_R7  (SOC, SOC, Op_RegI,   7, R7->as_VMReg());
+reg_def R_R7x (SOC, SOC, Op_RegI, 255, R7->as_VMReg()->next());
+
+reg_def R_R8  (SOC, SOC, Op_RegI,   8, R8->as_VMReg());
+reg_def R_R8x (SOC, SOC, Op_RegI, 255, R8->as_VMReg()->next());
+reg_def R_R9  (SOC, SOC, Op_RegI,   9, R9->as_VMReg());
+reg_def R_R9x (SOC, SOC, Op_RegI, 255, R9->as_VMReg()->next());
+reg_def R_R10 (SOC, SOC, Op_RegI,  10, R10->as_VMReg());
+reg_def R_R10x(SOC, SOC, Op_RegI, 255, R10->as_VMReg()->next());
+reg_def R_R11 (SOC, SOC, Op_RegI,  11, R11->as_VMReg());
+reg_def R_R11x(SOC, SOC, Op_RegI, 255, R11->as_VMReg()->next());
+reg_def R_R12 (SOC, SOC, Op_RegI,  12, R12->as_VMReg());
+reg_def R_R12x(SOC, SOC, Op_RegI, 255, R12->as_VMReg()->next());
+reg_def R_R13 (SOC, SOC, Op_RegI,  13, R13->as_VMReg());
+reg_def R_R13x(SOC, SOC, Op_RegI, 255, R13->as_VMReg()->next());
+reg_def R_R14 (SOC, SOC, Op_RegI,  14, R14->as_VMReg());
+reg_def R_R14x(SOC, SOC, Op_RegI, 255, R14->as_VMReg()->next());
+reg_def R_R15 (SOC, SOC, Op_RegI,  15, R15->as_VMReg());
+reg_def R_R15x(SOC, SOC, Op_RegI, 255, R15->as_VMReg()->next());
+
+reg_def R_R16 (SOC, SOC, Op_RegI,  16, R16->as_VMReg()); // IP0
+reg_def R_R16x(SOC, SOC, Op_RegI, 255, R16->as_VMReg()->next());
+reg_def R_R17 (SOC, SOC, Op_RegI,  17, R17->as_VMReg()); // IP1
+reg_def R_R17x(SOC, SOC, Op_RegI, 255, R17->as_VMReg()->next());
+reg_def R_R18 (SOC, SOC, Op_RegI,  18, R18->as_VMReg()); // Platform Register
+reg_def R_R18x(SOC, SOC, Op_RegI, 255, R18->as_VMReg()->next());
+
+reg_def R_R19 (SOC, SOE, Op_RegI,  19, R19->as_VMReg());
+reg_def R_R19x(SOC, SOE, Op_RegI, 255, R19->as_VMReg()->next());
+reg_def R_R20 (SOC, SOE, Op_RegI,  20, R20->as_VMReg());
+reg_def R_R20x(SOC, SOE, Op_RegI, 255, R20->as_VMReg()->next());
+reg_def R_R21 (SOC, SOE, Op_RegI,  21, R21->as_VMReg());
+reg_def R_R21x(SOC, SOE, Op_RegI, 255, R21->as_VMReg()->next());
+reg_def R_R22 (SOC, SOE, Op_RegI,  22, R22->as_VMReg());
+reg_def R_R22x(SOC, SOE, Op_RegI, 255, R22->as_VMReg()->next());
+reg_def R_R23 (SOC, SOE, Op_RegI,  23, R23->as_VMReg());
+reg_def R_R23x(SOC, SOE, Op_RegI, 255, R23->as_VMReg()->next());
+reg_def R_R24 (SOC, SOE, Op_RegI,  24, R24->as_VMReg());
+reg_def R_R24x(SOC, SOE, Op_RegI, 255, R24->as_VMReg()->next());
+reg_def R_R25 (SOC, SOE, Op_RegI,  25, R25->as_VMReg());
+reg_def R_R25x(SOC, SOE, Op_RegI, 255, R25->as_VMReg()->next());
+reg_def R_R26 (SOC, SOE, Op_RegI,  26, R26->as_VMReg());
+reg_def R_R26x(SOC, SOE, Op_RegI, 255, R26->as_VMReg()->next());
+reg_def R_R27 (SOC, SOE, Op_RegI,  27, R27->as_VMReg());         // Rheap_base
+reg_def R_R27x(SOC, SOE, Op_RegI, 255, R27->as_VMReg()->next()); // Rheap_base
+reg_def R_R28 ( NS, SOE, Op_RegI,  28, R28->as_VMReg());         // TLS
+reg_def R_R28x( NS, SOE, Op_RegI, 255, R28->as_VMReg()->next()); // TLS
+
+reg_def R_R29 ( NS, SOE, Op_RegI,  29, R29->as_VMReg());         // FP
+reg_def R_R29x( NS, SOE, Op_RegI, 255, R29->as_VMReg()->next()); // FP
+reg_def R_R30 (SOC, SOC, Op_RegI,  30, R30->as_VMReg());         // LR
+reg_def R_R30x(SOC, SOC, Op_RegI, 255, R30->as_VMReg()->next()); // LR
+
+reg_def R_ZR ( NS,  NS, Op_RegI,  31, ZR->as_VMReg());  // ZR
+reg_def R_ZRx( NS,  NS, Op_RegI, 255, ZR->as_VMReg()->next()); // ZR
+
+// FIXME
+//reg_def R_SP ( NS,  NS, Op_RegP,  32, SP->as_VMReg());
+reg_def R_SP ( NS,  NS, Op_RegI,  32, SP->as_VMReg());
+//reg_def R_SPx( NS, NS, Op_RegP, 255, SP->as_VMReg()->next());
+reg_def R_SPx( NS,  NS, Op_RegI, 255, SP->as_VMReg()->next());
+
+// ----------------------------
+// Float/Double/Vector Registers
+// ----------------------------
+
+reg_def  R_V0(SOC, SOC, Op_RegF,  0,  V0->as_VMReg());
+reg_def  R_V1(SOC, SOC, Op_RegF,  1,  V1->as_VMReg());
+reg_def  R_V2(SOC, SOC, Op_RegF,  2,  V2->as_VMReg());
+reg_def  R_V3(SOC, SOC, Op_RegF,  3,  V3->as_VMReg());
+reg_def  R_V4(SOC, SOC, Op_RegF,  4,  V4->as_VMReg());
+reg_def  R_V5(SOC, SOC, Op_RegF,  5,  V5->as_VMReg());
+reg_def  R_V6(SOC, SOC, Op_RegF,  6,  V6->as_VMReg());
+reg_def  R_V7(SOC, SOC, Op_RegF,  7,  V7->as_VMReg());
+reg_def  R_V8(SOC, SOC, Op_RegF,  8,  V8->as_VMReg());
+reg_def  R_V9(SOC, SOC, Op_RegF,  9,  V9->as_VMReg());
+reg_def R_V10(SOC, SOC, Op_RegF, 10, V10->as_VMReg());
+reg_def R_V11(SOC, SOC, Op_RegF, 11, V11->as_VMReg());
+reg_def R_V12(SOC, SOC, Op_RegF, 12, V12->as_VMReg());
+reg_def R_V13(SOC, SOC, Op_RegF, 13, V13->as_VMReg());
+reg_def R_V14(SOC, SOC, Op_RegF, 14, V14->as_VMReg());
+reg_def R_V15(SOC, SOC, Op_RegF, 15, V15->as_VMReg());
+reg_def R_V16(SOC, SOC, Op_RegF, 16, V16->as_VMReg());
+reg_def R_V17(SOC, SOC, Op_RegF, 17, V17->as_VMReg());
+reg_def R_V18(SOC, SOC, Op_RegF, 18, V18->as_VMReg());
+reg_def R_V19(SOC, SOC, Op_RegF, 19, V19->as_VMReg());
+reg_def R_V20(SOC, SOC, Op_RegF, 20, V20->as_VMReg());
+reg_def R_V21(SOC, SOC, Op_RegF, 21, V21->as_VMReg());
+reg_def R_V22(SOC, SOC, Op_RegF, 22, V22->as_VMReg());
+reg_def R_V23(SOC, SOC, Op_RegF, 23, V23->as_VMReg());
+reg_def R_V24(SOC, SOC, Op_RegF, 24, V24->as_VMReg());
+reg_def R_V25(SOC, SOC, Op_RegF, 25, V25->as_VMReg());
+reg_def R_V26(SOC, SOC, Op_RegF, 26, V26->as_VMReg());
+reg_def R_V27(SOC, SOC, Op_RegF, 27, V27->as_VMReg());
+reg_def R_V28(SOC, SOC, Op_RegF, 28, V28->as_VMReg());
+reg_def R_V29(SOC, SOC, Op_RegF, 29, V29->as_VMReg());
+reg_def R_V30(SOC, SOC, Op_RegF, 30, V30->as_VMReg());
+reg_def R_V31(SOC, SOC, Op_RegF, 31, V31->as_VMReg());
+
+reg_def  R_V0b(SOC, SOC, Op_RegF, 255, V0->as_VMReg()->next(1));
+reg_def  R_V1b(SOC, SOC, Op_RegF, 255, V1->as_VMReg()->next(1));
+reg_def  R_V2b(SOC, SOC, Op_RegF, 255, V2->as_VMReg()->next(1));
+reg_def  R_V3b(SOC, SOC, Op_RegF,  3,  V3->as_VMReg()->next(1));
+reg_def  R_V4b(SOC, SOC, Op_RegF,  4,  V4->as_VMReg()->next(1));
+reg_def  R_V5b(SOC, SOC, Op_RegF,  5,  V5->as_VMReg()->next(1));
+reg_def  R_V6b(SOC, SOC, Op_RegF,  6,  V6->as_VMReg()->next(1));
+reg_def  R_V7b(SOC, SOC, Op_RegF,  7,  V7->as_VMReg()->next(1));
+reg_def  R_V8b(SOC, SOC, Op_RegF, 255, V8->as_VMReg()->next(1));
+reg_def  R_V9b(SOC, SOC, Op_RegF,  9,  V9->as_VMReg()->next(1));
+reg_def R_V10b(SOC, SOC, Op_RegF, 10, V10->as_VMReg()->next(1));
+reg_def R_V11b(SOC, SOC, Op_RegF, 11, V11->as_VMReg()->next(1));
+reg_def R_V12b(SOC, SOC, Op_RegF, 12, V12->as_VMReg()->next(1));
+reg_def R_V13b(SOC, SOC, Op_RegF, 13, V13->as_VMReg()->next(1));
+reg_def R_V14b(SOC, SOC, Op_RegF, 14, V14->as_VMReg()->next(1));
+reg_def R_V15b(SOC, SOC, Op_RegF, 15, V15->as_VMReg()->next(1));
+reg_def R_V16b(SOC, SOC, Op_RegF, 16, V16->as_VMReg()->next(1));
+reg_def R_V17b(SOC, SOC, Op_RegF, 17, V17->as_VMReg()->next(1));
+reg_def R_V18b(SOC, SOC, Op_RegF, 18, V18->as_VMReg()->next(1));
+reg_def R_V19b(SOC, SOC, Op_RegF, 19, V19->as_VMReg()->next(1));
+reg_def R_V20b(SOC, SOC, Op_RegF, 20, V20->as_VMReg()->next(1));
+reg_def R_V21b(SOC, SOC, Op_RegF, 21, V21->as_VMReg()->next(1));
+reg_def R_V22b(SOC, SOC, Op_RegF, 22, V22->as_VMReg()->next(1));
+reg_def R_V23b(SOC, SOC, Op_RegF, 23, V23->as_VMReg()->next(1));
+reg_def R_V24b(SOC, SOC, Op_RegF, 24, V24->as_VMReg()->next(1));
+reg_def R_V25b(SOC, SOC, Op_RegF, 25, V25->as_VMReg()->next(1));
+reg_def R_V26b(SOC, SOC, Op_RegF, 26, V26->as_VMReg()->next(1));
+reg_def R_V27b(SOC, SOC, Op_RegF, 27, V27->as_VMReg()->next(1));
+reg_def R_V28b(SOC, SOC, Op_RegF, 28, V28->as_VMReg()->next(1));
+reg_def R_V29b(SOC, SOC, Op_RegF, 29, V29->as_VMReg()->next(1));
+reg_def R_V30b(SOC, SOC, Op_RegD, 30, V30->as_VMReg()->next(1));
+reg_def R_V31b(SOC, SOC, Op_RegF, 31, V31->as_VMReg()->next(1));
+
+reg_def  R_V0c(SOC, SOC, Op_RegF,  0,  V0->as_VMReg()->next(2));
+reg_def  R_V1c(SOC, SOC, Op_RegF,  1,  V1->as_VMReg()->next(2));
+reg_def  R_V2c(SOC, SOC, Op_RegF,  2,  V2->as_VMReg()->next(2));
+reg_def  R_V3c(SOC, SOC, Op_RegF,  3,  V3->as_VMReg()->next(2));
+reg_def  R_V4c(SOC, SOC, Op_RegF,  4,  V4->as_VMReg()->next(2));
+reg_def  R_V5c(SOC, SOC, Op_RegF,  5,  V5->as_VMReg()->next(2));
+reg_def  R_V6c(SOC, SOC, Op_RegF,  6,  V6->as_VMReg()->next(2));
+reg_def  R_V7c(SOC, SOC, Op_RegF,  7,  V7->as_VMReg()->next(2));
+reg_def  R_V8c(SOC, SOC, Op_RegF,  8,  V8->as_VMReg()->next(2));
+reg_def  R_V9c(SOC, SOC, Op_RegF,  9,  V9->as_VMReg()->next(2));
+reg_def R_V10c(SOC, SOC, Op_RegF, 10, V10->as_VMReg()->next(2));
+reg_def R_V11c(SOC, SOC, Op_RegF, 11, V11->as_VMReg()->next(2));
+reg_def R_V12c(SOC, SOC, Op_RegF, 12, V12->as_VMReg()->next(2));
+reg_def R_V13c(SOC, SOC, Op_RegF, 13, V13->as_VMReg()->next(2));
+reg_def R_V14c(SOC, SOC, Op_RegF, 14, V14->as_VMReg()->next(2));
+reg_def R_V15c(SOC, SOC, Op_RegF, 15, V15->as_VMReg()->next(2));
+reg_def R_V16c(SOC, SOC, Op_RegF, 16, V16->as_VMReg()->next(2));
+reg_def R_V17c(SOC, SOC, Op_RegF, 17, V17->as_VMReg()->next(2));
+reg_def R_V18c(SOC, SOC, Op_RegF, 18, V18->as_VMReg()->next(2));
+reg_def R_V19c(SOC, SOC, Op_RegF, 19, V19->as_VMReg()->next(2));
+reg_def R_V20c(SOC, SOC, Op_RegF, 20, V20->as_VMReg()->next(2));
+reg_def R_V21c(SOC, SOC, Op_RegF, 21, V21->as_VMReg()->next(2));
+reg_def R_V22c(SOC, SOC, Op_RegF, 22, V22->as_VMReg()->next(2));
+reg_def R_V23c(SOC, SOC, Op_RegF, 23, V23->as_VMReg()->next(2));
+reg_def R_V24c(SOC, SOC, Op_RegF, 24, V24->as_VMReg()->next(2));
+reg_def R_V25c(SOC, SOC, Op_RegF, 25, V25->as_VMReg()->next(2));
+reg_def R_V26c(SOC, SOC, Op_RegF, 26, V26->as_VMReg()->next(2));
+reg_def R_V27c(SOC, SOC, Op_RegF, 27, V27->as_VMReg()->next(2));
+reg_def R_V28c(SOC, SOC, Op_RegF, 28, V28->as_VMReg()->next(2));
+reg_def R_V29c(SOC, SOC, Op_RegF, 29, V29->as_VMReg()->next(2));
+reg_def R_V30c(SOC, SOC, Op_RegF, 30, V30->as_VMReg()->next(2));
+reg_def R_V31c(SOC, SOC, Op_RegF, 31, V31->as_VMReg()->next(2));
+
+reg_def  R_V0d(SOC, SOC, Op_RegF,  0,  V0->as_VMReg()->next(3));
+reg_def  R_V1d(SOC, SOC, Op_RegF,  1,  V1->as_VMReg()->next(3));
+reg_def  R_V2d(SOC, SOC, Op_RegF,  2,  V2->as_VMReg()->next(3));
+reg_def  R_V3d(SOC, SOC, Op_RegF,  3,  V3->as_VMReg()->next(3));
+reg_def  R_V4d(SOC, SOC, Op_RegF,  4,  V4->as_VMReg()->next(3));
+reg_def  R_V5d(SOC, SOC, Op_RegF,  5,  V5->as_VMReg()->next(3));
+reg_def  R_V6d(SOC, SOC, Op_RegF,  6,  V6->as_VMReg()->next(3));
+reg_def  R_V7d(SOC, SOC, Op_RegF,  7,  V7->as_VMReg()->next(3));
+reg_def  R_V8d(SOC, SOC, Op_RegF,  8,  V8->as_VMReg()->next(3));
+reg_def  R_V9d(SOC, SOC, Op_RegF,  9,  V9->as_VMReg()->next(3));
+reg_def R_V10d(SOC, SOC, Op_RegF, 10, V10->as_VMReg()->next(3));
+reg_def R_V11d(SOC, SOC, Op_RegF, 11, V11->as_VMReg()->next(3));
+reg_def R_V12d(SOC, SOC, Op_RegF, 12, V12->as_VMReg()->next(3));
+reg_def R_V13d(SOC, SOC, Op_RegF, 13, V13->as_VMReg()->next(3));
+reg_def R_V14d(SOC, SOC, Op_RegF, 14, V14->as_VMReg()->next(3));
+reg_def R_V15d(SOC, SOC, Op_RegF, 15, V15->as_VMReg()->next(3));
+reg_def R_V16d(SOC, SOC, Op_RegF, 16, V16->as_VMReg()->next(3));
+reg_def R_V17d(SOC, SOC, Op_RegF, 17, V17->as_VMReg()->next(3));
+reg_def R_V18d(SOC, SOC, Op_RegF, 18, V18->as_VMReg()->next(3));
+reg_def R_V19d(SOC, SOC, Op_RegF, 19, V19->as_VMReg()->next(3));
+reg_def R_V20d(SOC, SOC, Op_RegF, 20, V20->as_VMReg()->next(3));
+reg_def R_V21d(SOC, SOC, Op_RegF, 21, V21->as_VMReg()->next(3));
+reg_def R_V22d(SOC, SOC, Op_RegF, 22, V22->as_VMReg()->next(3));
+reg_def R_V23d(SOC, SOC, Op_RegF, 23, V23->as_VMReg()->next(3));
+reg_def R_V24d(SOC, SOC, Op_RegF, 24, V24->as_VMReg()->next(3));
+reg_def R_V25d(SOC, SOC, Op_RegF, 25, V25->as_VMReg()->next(3));
+reg_def R_V26d(SOC, SOC, Op_RegF, 26, V26->as_VMReg()->next(3));
+reg_def R_V27d(SOC, SOC, Op_RegF, 27, V27->as_VMReg()->next(3));
+reg_def R_V28d(SOC, SOC, Op_RegF, 28, V28->as_VMReg()->next(3));
+reg_def R_V29d(SOC, SOC, Op_RegF, 29, V29->as_VMReg()->next(3));
+reg_def R_V30d(SOC, SOC, Op_RegF, 30, V30->as_VMReg()->next(3));
+reg_def R_V31d(SOC, SOC, Op_RegF, 31, V31->as_VMReg()->next(3));
+
+// ----------------------------
+// Special Registers
+// Condition Codes Flag Registers
+reg_def APSR (SOC, SOC,  Op_RegFlags, 255, VMRegImpl::Bad());
+reg_def FPSCR(SOC, SOC,  Op_RegFlags, 255, VMRegImpl::Bad());
+
+// ----------------------------
+// Specify the enum values for the registers.  These enums are only used by the
+// OptoReg "class". We can convert these enum values at will to VMReg when needed
+// for visibility to the rest of the vm. The order of this enum influences the
+// register allocator so having the freedom to set this order and not be stuck
+// with the order that is natural for the rest of the vm is worth it.
+
+// Quad vector must be aligned here, so list them first.
+alloc_class fprs(
+    R_V8,  R_V8b,  R_V8c,  R_V8d,  R_V9,  R_V9b,  R_V9c,  R_V9d,
+    R_V10, R_V10b, R_V10c, R_V10d, R_V11, R_V11b, R_V11c, R_V11d,
+    R_V12, R_V12b, R_V12c, R_V12d, R_V13, R_V13b, R_V13c, R_V13d,
+    R_V14, R_V14b, R_V14c, R_V14d, R_V15, R_V15b, R_V15c, R_V15d,
+    R_V16, R_V16b, R_V16c, R_V16d, R_V17, R_V17b, R_V17c, R_V17d,
+    R_V18, R_V18b, R_V18c, R_V18d, R_V19, R_V19b, R_V19c, R_V19d,
+    R_V20, R_V20b, R_V20c, R_V20d, R_V21, R_V21b, R_V21c, R_V21d,
+    R_V22, R_V22b, R_V22c, R_V22d, R_V23, R_V23b, R_V23c, R_V23d,
+    R_V24, R_V24b, R_V24c, R_V24d, R_V25, R_V25b, R_V25c, R_V25d,
+    R_V26, R_V26b, R_V26c, R_V26d, R_V27, R_V27b, R_V27c, R_V27d,
+    R_V28, R_V28b, R_V28c, R_V28d, R_V29, R_V29b, R_V29c, R_V29d,
+    R_V30, R_V30b, R_V30c, R_V30d, R_V31, R_V31b, R_V31c, R_V31d,
+    R_V0,  R_V0b,  R_V0c,  R_V0d,  R_V1,  R_V1b,  R_V1c,  R_V1d,
+    R_V2,  R_V2b,  R_V2c,  R_V2d,  R_V3,  R_V3b,  R_V3c,  R_V3d,
+    R_V4,  R_V4b,  R_V4c,  R_V4d,  R_V5,  R_V5b,  R_V5c,  R_V5d,
+    R_V6,  R_V6b,  R_V6c,  R_V6d,  R_V7,  R_V7b,  R_V7c,  R_V7d
+);
+
+// Need double-register alignment here.
+// We are already quad-register aligned because of vectors above.
+alloc_class gprs(
+    R_R0,  R_R0x,  R_R1,  R_R1x,  R_R2,  R_R2x,  R_R3,  R_R3x,
+    R_R4,  R_R4x,  R_R5,  R_R5x,  R_R6,  R_R6x,  R_R7,  R_R7x,
+    R_R8,  R_R8x,  R_R9,  R_R9x,  R_R10, R_R10x, R_R11, R_R11x,
+    R_R12, R_R12x, R_R13, R_R13x, R_R14, R_R14x, R_R15, R_R15x,
+    R_R16, R_R16x, R_R17, R_R17x, R_R18, R_R18x, R_R19, R_R19x,
+    R_R20, R_R20x, R_R21, R_R21x, R_R22, R_R22x, R_R23, R_R23x,
+    R_R24, R_R24x, R_R25, R_R25x, R_R26, R_R26x, R_R27, R_R27x,
+    R_R28, R_R28x, R_R29, R_R29x, R_R30, R_R30x
+);
+// Continuing with double-reigister alignment...
+alloc_class chunk2(APSR, FPSCR);
+alloc_class chunk3(R_SP, R_SPx);
+alloc_class chunk4(R_ZR, R_ZRx);
+
+//----------Architecture Description Register Classes--------------------------
+// Several register classes are automatically defined based upon information in
+// this architecture description.
+// 1) reg_class inline_cache_reg           ( as defined in frame section )
+// 2) reg_class interpreter_method_oop_reg ( as defined in frame section )
+// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+//
+
+// ----------------------------
+// Integer Register Classes
+// ----------------------------
+reg_class int_reg_all(R_R0,  R_R1,  R_R2,  R_R3,  R_R4,  R_R5,  R_R6,  R_R7,
+                      R_R8,  R_R9,  R_R10, R_R11, R_R12, R_R13, R_R14, R_R15,
+                      R_R16, R_R17, R_R18, R_R19, R_R20, R_R21, R_R22, R_R23,
+                      R_R24, R_R25, R_R26, R_R27, R_R28, R_R29, R_R30
+);
+
+// Exclusions from i_reg:
+// SP (R31)
+// Rthread/R28: reserved by HotSpot to the TLS register (invariant within Java)
+reg_class int_reg %{
+    return _INT_REG_mask;
+%}
+reg_class ptr_reg %{
+    return _PTR_REG_mask;
+%}
+reg_class vectorx_reg %{
+    return _VECTORX_REG_mask;
+%}
+
+reg_class R0_regI(R_R0);
+reg_class R1_regI(R_R1);
+reg_class R2_regI(R_R2);
+reg_class R3_regI(R_R3);
+//reg_class R12_regI(R_R12);
+
+// ----------------------------
+// Pointer Register Classes
+// ----------------------------
+
+// Special class for storeP instructions, which can store SP or RPC to TLS.
+// It is also used for memory addressing, allowing direct TLS addressing.
+
+reg_class sp_ptr_reg %{
+    return _SP_PTR_REG_mask;
+%}
+
+reg_class store_reg %{
+    return _STR_REG_mask;
+%}
+
+reg_class store_ptr_reg %{
+    return _STR_PTR_REG_mask;
+%}
+
+reg_class spillP_reg %{
+    return _SPILLP_REG_mask;
+%}
+
+// Other special pointer regs
+reg_class R0_regP(R_R0, R_R0x);
+reg_class R1_regP(R_R1, R_R1x);
+reg_class R2_regP(R_R2, R_R2x);
+reg_class Rexception_regP(R_R19, R_R19x);
+reg_class Ricklass_regP(R_R8, R_R8x);
+reg_class Rmethod_regP(R_R27, R_R27x);
+
+reg_class Rthread_regP(R_R28, R_R28x);
+reg_class IP_regP(R_R16, R_R16x);
+#define RtempRegP IPRegP
+reg_class LR_regP(R_R30, R_R30x);
+
+reg_class SP_regP(R_SP,  R_SPx);
+reg_class FP_regP(R_R29, R_R29x);
+
+reg_class ZR_regP(R_ZR, R_ZRx);
+reg_class ZR_regI(R_ZR);
+
+// ----------------------------
+// Long Register Classes
+// ----------------------------
+reg_class long_reg %{ return _PTR_REG_mask; %}
+// for ldrexd, strexd: first reg of pair must be even
+reg_class long_reg_align %{ return LONG_REG_mask(); %}
+
+reg_class R0_regL(R_R0,R_R0x); // arg 1 or return value
+
+// ----------------------------
+// Special Class for Condition Code Flags Register
+reg_class int_flags(APSR);
+reg_class float_flags(FPSCR);
+
+
+// ----------------------------
+// Float Point Register Classes
+// ----------------------------
+reg_class sflt_reg_0(
+  R_V0,  R_V1,  R_V2,  R_V3,  R_V4,  R_V5,  R_V6,  R_V7,
+  R_V8,  R_V9,  R_V10, R_V11, R_V12, R_V13, R_V14, R_V15,
+  R_V16, R_V17, R_V18, R_V19, R_V20, R_V21, R_V22, R_V23,
+  R_V24, R_V25, R_V26, R_V27, R_V28, R_V29, R_V30, R_V31);
+
+reg_class sflt_reg %{
+    return _SFLT_REG_mask;
+%}
+
+reg_class dflt_low_reg %{
+    return _DFLT_REG_mask;
+%}
+
+reg_class actual_dflt_reg %{
+    return _DFLT_REG_mask;
+%}
+
+reg_class vectorx_reg_0(
+  R_V0,  R_V1,  R_V2,  R_V3,  R_V4,  R_V5, R_V6, R_V7,
+  R_V8,  R_V9,  R_V10, R_V11, R_V12, R_V13, R_V14, R_V15,
+  R_V16, R_V17, R_V18, R_V19, R_V20, R_V21, R_V22, R_V23,
+  R_V24, R_V25, R_V26, R_V27, R_V28, R_V29, R_V30, /*R_V31,*/
+  R_V0b,  R_V1b,  R_V2b,  R_V3b,  R_V4b,  R_V5b,  R_V6b,  R_V7b,
+  R_V8b,  R_V9b,  R_V10b, R_V11b, R_V12b, R_V13b, R_V14b, R_V15b,
+  R_V16b, R_V17b, R_V18b, R_V19b, R_V20b, R_V21b, R_V22b, R_V23b,
+  R_V24b, R_V25b, R_V26b, R_V27b, R_V28b, R_V29b, R_V30b, /*R_V31b,*/
+  R_V0c,  R_V1c,  R_V2c,  R_V3c,  R_V4c,  R_V5c,  R_V6c,  R_V7c,
+  R_V8c,  R_V9c,  R_V10c, R_V11c, R_V12c, R_V13c, R_V14c, R_V15c,
+  R_V16c, R_V17c, R_V18c, R_V19c, R_V20c, R_V21c, R_V22c, R_V23c,
+  R_V24c, R_V25c, R_V26c, R_V27c, R_V28c, R_V29c, R_V30c, /*R_V31c,*/
+  R_V0d,  R_V1d,  R_V2d,  R_V3d,  R_V4d,  R_V5d,  R_V6d,  R_V7d,
+  R_V8d,  R_V9d,  R_V10d, R_V11d, R_V12d, R_V13d, R_V14d, R_V15d,
+  R_V16d, R_V17d, R_V18d, R_V19d, R_V20d, R_V21d, R_V22d, R_V23d,
+  R_V24d, R_V25d, R_V26d, R_V27d, R_V28d, R_V29d, R_V30d, /*R_V31d*/);
+
+reg_class Rmemcopy_reg %{
+    return _RMEMCOPY_REG_mask;
+%}
+
+%}
+
+source_hpp %{
+
+const MachRegisterNumbers R_mem_copy_lo_num = R_V31_num;
+const MachRegisterNumbers R_mem_copy_hi_num = R_V31b_num;
+const FloatRegister Rmemcopy = V31;
+
+const MachRegisterNumbers R_hf_ret_lo_num = R_V0_num;
+const MachRegisterNumbers R_hf_ret_hi_num = R_V0b_num;
+const FloatRegister Rhfret = V0;
+
+extern OptoReg::Name R_Ricklass_num;
+extern OptoReg::Name R_Rmethod_num;
+extern OptoReg::Name R_tls_num;
+extern OptoReg::Name R_Rheap_base_num;
+
+extern RegMask _INT_REG_mask;
+extern RegMask _PTR_REG_mask;
+extern RegMask _SFLT_REG_mask;
+extern RegMask _DFLT_REG_mask;
+extern RegMask _VECTORX_REG_mask;
+extern RegMask _RMEMCOPY_REG_mask;
+extern RegMask _SP_PTR_REG_mask;
+extern RegMask _SPILLP_REG_mask;
+extern RegMask _STR_REG_mask;
+extern RegMask _STR_PTR_REG_mask;
+
+#define LDR_DOUBLE "LDR_D"
+#define LDR_FLOAT  "LDR_S"
+#define STR_DOUBLE "STR_D"
+#define STR_FLOAT  "STR_S"
+#define STR_64     "STR"
+#define LDR_64     "LDR"
+#define STR_32     "STR_W"
+#define LDR_32     "LDR_W"
+#define MOV_DOUBLE "FMOV_D"
+#define MOV_FLOAT  "FMOV_S"
+#define FMSR       "FMOV_SW"
+#define FMRS       "FMOV_WS"
+#define LDREX      "ldxr  "
+#define STREX      "stxr  "
+
+#define str_64     str
+#define ldr_64     ldr
+#define ldr_32     ldr_w
+#define ldrex      ldxr
+#define strex      stxr
+
+#define fmsr       fmov_sw
+#define fmrs       fmov_ws
+#define fconsts    fmov_s
+#define fconstd    fmov_d
+
+static inline bool is_uimm12(jlong imm, int shift) {
+  return Assembler::is_unsigned_imm_in_range(imm, 12, shift);
+}
+
+static inline bool is_memoryD(int offset) {
+  int scale = 3; // LogBytesPerDouble
+  return is_uimm12(offset, scale);
+}
+
+static inline bool is_memoryfp(int offset) {
+  int scale = LogBytesPerInt; // include 32-bit word accesses
+  return is_uimm12(offset, scale);
+}
+
+static inline bool is_memoryI(int offset) {
+  int scale = LogBytesPerInt;
+  return is_uimm12(offset, scale);
+}
+
+static inline bool is_memoryP(int offset) {
+  int scale = LogBytesPerWord;
+  return is_uimm12(offset, scale);
+}
+
+static inline bool is_memoryHD(int offset) {
+  int scale = LogBytesPerInt; // include 32-bit word accesses
+  return is_uimm12(offset, scale);
+}
+
+uintx limmL_low(uintx imm, int n);
+
+static inline bool Xis_aimm(int imm) {
+  return Assembler::ArithmeticImmediate(imm).is_encoded();
+}
+
+static inline bool is_aimm(intptr_t imm) {
+  return Assembler::ArithmeticImmediate(imm).is_encoded();
+}
+
+static inline bool is_limmL(uintptr_t imm) {
+  return Assembler::LogicalImmediate(imm).is_encoded();
+}
+
+static inline bool is_limmL_low(intptr_t imm, int n) {
+  return is_limmL(limmL_low(imm, n));
+}
+
+static inline bool is_limmI(jint imm) {
+  return Assembler::LogicalImmediate(imm, true).is_encoded();
+}
+
+static inline uintx limmI_low(jint imm, int n) {
+  return limmL_low(imm, n);
+}
+
+static inline bool is_limmI_low(jint imm, int n) {
+  return is_limmL_low(imm, n);
+}
+
+%}
+
+source %{
+
+// Given a register encoding, produce a Integer Register object
+static Register reg_to_register_object(int register_encoding) {
+  assert(R0->encoding() == R_R0_enc && R30->encoding() == R_R30_enc, "right coding");
+  assert(Rthread->encoding() == R_R28_enc, "right coding");
+  assert(SP->encoding() == R_SP_enc, "right coding");
+  return as_Register(register_encoding);
+}
+
+// Given a register encoding, produce a single-precision Float Register object
+static FloatRegister reg_to_FloatRegister_object(int register_encoding) {
+  assert(V0->encoding() == R_V0_enc && V31->encoding() == R_V31_enc, "right coding");
+  return as_FloatRegister(register_encoding);
+}
+
+RegMask _INT_REG_mask;
+RegMask _PTR_REG_mask;
+RegMask _SFLT_REG_mask;
+RegMask _DFLT_REG_mask;
+RegMask _VECTORX_REG_mask;
+RegMask _RMEMCOPY_REG_mask;
+RegMask _SP_PTR_REG_mask;
+RegMask _SPILLP_REG_mask;
+RegMask _STR_REG_mask;
+RegMask _STR_PTR_REG_mask;
+
+OptoReg::Name R_Ricklass_num = -1;
+OptoReg::Name R_Rmethod_num  = -1;
+OptoReg::Name R_tls_num      = -1;
+OptoReg::Name R_Rtemp_num    = -1;
+OptoReg::Name R_Rheap_base_num = -1;
+
+static int mov_oop_size = -1;
+
+#ifdef ASSERT
+static bool same_mask(const RegMask &a, const RegMask &b) {
+    RegMask a_sub_b = a; a_sub_b.SUBTRACT(b);
+    RegMask b_sub_a = b; b_sub_a.SUBTRACT(a);
+    return a_sub_b.Size() == 0 && b_sub_a.Size() == 0;
+}
+#endif
+
+void Compile::pd_compiler2_init() {
+
+    R_Ricklass_num = OptoReg::as_OptoReg(Ricklass->as_VMReg());
+    R_Rmethod_num  = OptoReg::as_OptoReg(Rmethod->as_VMReg());
+    R_tls_num      = OptoReg::as_OptoReg(Rthread->as_VMReg());
+    R_Rtemp_num    = OptoReg::as_OptoReg(Rtemp->as_VMReg());
+    R_Rheap_base_num = OptoReg::as_OptoReg(Rheap_base->as_VMReg());
+
+    _INT_REG_mask = _INT_REG_ALL_mask;
+    _INT_REG_mask.Remove(R_tls_num);
+    _INT_REG_mask.Remove(R_SP_num);
+    if (UseCompressedOops) {
+      _INT_REG_mask.Remove(R_Rheap_base_num);
+    }
+    // Remove Rtemp because safepoint poll can trash it
+    // (see SharedRuntime::generate_handler_blob)
+    _INT_REG_mask.Remove(R_Rtemp_num);
+
+    _PTR_REG_mask = _INT_REG_mask;
+    _PTR_REG_mask.smear_to_sets(2);
+
+    // STR_REG    = INT_REG+ZR
+    // SPILLP_REG = INT_REG+SP
+    // SP_PTR_REG = INT_REG+SP+TLS
+    _STR_REG_mask = _INT_REG_mask;
+    _SP_PTR_REG_mask = _STR_REG_mask;
+    _STR_REG_mask.Insert(R_ZR_num);
+    _SP_PTR_REG_mask.Insert(R_SP_num);
+    _SPILLP_REG_mask = _SP_PTR_REG_mask;
+    _SP_PTR_REG_mask.Insert(R_tls_num);
+    _STR_PTR_REG_mask = _STR_REG_mask;
+    _STR_PTR_REG_mask.smear_to_sets(2);
+    _SP_PTR_REG_mask.smear_to_sets(2);
+    _SPILLP_REG_mask.smear_to_sets(2);
+
+    _RMEMCOPY_REG_mask = RegMask(R_mem_copy_lo_num);
+assert(OptoReg::as_OptoReg(Rmemcopy->as_VMReg()) == R_mem_copy_lo_num, "!");
+
+    _SFLT_REG_mask = _SFLT_REG_0_mask;
+    _SFLT_REG_mask.SUBTRACT(_RMEMCOPY_REG_mask);
+    _DFLT_REG_mask = _SFLT_REG_mask;
+    _DFLT_REG_mask.smear_to_sets(2);
+    _VECTORX_REG_mask = _SFLT_REG_mask;
+    _VECTORX_REG_mask.smear_to_sets(4);
+    assert(same_mask(_VECTORX_REG_mask, _VECTORX_REG_0_mask), "!");
+
+#ifdef ASSERT
+    RegMask r((RegMask *)&SFLT_REG_mask());
+    r.smear_to_sets(2);
+    assert(same_mask(r, _DFLT_REG_mask), "!");
+#endif
+
+    if (VM_Version::prefer_moves_over_load_literal()) {
+      mov_oop_size = 4;
+    } else {
+      mov_oop_size = 1;
+    }
+
+    assert(Matcher::interpreter_method_oop_reg_encode() == Rmethod->encoding(), "should be");
+}
+
+uintx limmL_low(uintx imm, int n) {
+  // 1: try as is
+  if (is_limmL(imm)) {
+    return imm;
+  }
+  // 2: try low bits + all 0's
+  uintx imm0 = imm & right_n_bits(n);
+  if (is_limmL(imm0)) {
+    return imm0;
+  }
+  // 3: try low bits + all 1's
+  uintx imm1 = imm0 | left_n_bits(BitsPerWord - n);
+  if (is_limmL(imm1)) {
+    return imm1;
+  }
+#if 0
+  // 4: try low bits replicated
+  int field = 1 << log2_intptr(n + n - 1);
+  assert(field >= n, "!");
+  assert(field / n == 1, "!");
+  intptr_t immr = immx;
+  while (field < BitsPerWord) {
+    intrptr_t bits = immr & right_n_bits(field);
+    immr = bits | (bits << field);
+    field = field << 1;
+  }
+  // replicate at power-of-2 boundary
+  if (is_limmL(immr)) {
+    return immr;
+  }
+#endif
+  return imm;
+}
+
+// Convert the raw encoding form into the form expected by the
+// constructor for Address.
+Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
+  RelocationHolder rspec;
+  if (disp_reloc != relocInfo::none) {
+    rspec = Relocation::spec_simple(disp_reloc);
+  }
+
+  Register rbase = (base == 0xff) ? SP : as_Register(base);
+  if (index != 0xff) {
+    Register rindex = as_Register(index);
+    if (disp == 0x7fffffff) { // special value to indicate sign-extend
+      Address madr(rbase, rindex, ex_sxtw, scale);
+      madr._rspec = rspec;
+      return madr;
+    } else {
+      assert(disp == 0, "unsupported");
+      Address madr(rbase, rindex, ex_lsl, scale);
+      madr._rspec = rspec;
+      return madr;
+    }
+  } else {
+    assert(scale == 0, "not supported");
+    Address madr(rbase, disp);
+    madr._rspec = rspec;
+    return madr;
+  }
+}
+
+// Location of compiled Java return values.  Same as C
+OptoRegPair c2::return_value(int ideal_reg) {
+  assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
+  static int lo[Op_RegL+1] = { 0, 0, OptoReg::Bad, R_R0_num,     R_R0_num,  R_hf_ret_lo_num,  R_hf_ret_lo_num, R_R0_num };
+  static int hi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, R_R0x_num, OptoReg::Bad,     R_hf_ret_hi_num, R_R0x_num };
+  return OptoRegPair( hi[ideal_reg], lo[ideal_reg]);
+}
+
+// !!!!! Special hack to get all type of calls to specify the byte offset
+//       from the start of the call to the point where the return address
+//       will point.
+
+int MachCallStaticJavaNode::ret_addr_offset() {
+  bool far = (_method == NULL) ? maybe_far_call(this) : !cache_reachable();
+  bool patchable = _method != NULL;
+  int call_size = MacroAssembler::call_size(entry_point(), far, patchable);
+  return (call_size + (_method_handle_invoke ? 1 : 0)) * NativeInstruction::instruction_size;
+}
+
+int MachCallDynamicJavaNode::ret_addr_offset() {
+  bool far = !cache_reachable();
+  int call_size = MacroAssembler::call_size(entry_point(), far, true);
+  return (mov_oop_size + call_size) * NativeInstruction::instruction_size; 
+}
+
+int MachCallRuntimeNode::ret_addr_offset() {
+  int call_size = 0;
+  // TODO: check if Leaf nodes also need this
+  if (!is_MachCallLeaf()) {
+    // adr $temp, ret_addr
+    // str $temp, [SP + last_java_pc]
+    call_size += 2;
+  }
+  // bl or mov_slow; blr
+  bool far = maybe_far_call(this);
+  call_size += MacroAssembler::call_size(entry_point(), far, false);
+  return call_size * NativeInstruction::instruction_size;
+}
+
+%}
+
+// The intptr_t operand types, defined by textual substitution.
+// (Cf. opto/type.hpp.  This lets us avoid many, many other ifdefs.)
+#define immX      immL
+#define iRegX     iRegL
+#define aimmX     aimmL
+#define limmX     limmL
+#define immX9     immL9
+#define LShiftX   LShiftL
+#define shimmX    immU6
+
+#define store_RegLd store_RegL
+
+//----------ATTRIBUTES---------------------------------------------------------
+//----------Operand Attributes-------------------------------------------------
+op_attrib op_cost(1);          // Required cost attribute
+
+//----------OPERANDS-----------------------------------------------------------
+// Operand definitions must precede instruction definitions for correct parsing
+// in the ADLC because operands constitute user defined types which are used in
+// instruction definitions.
+
+//----------Simple Operands----------------------------------------------------
+// Immediate Operands
+
+// Integer Immediate: 9-bit (including sign bit), so same as immI8?
+// FIXME: simm9 allows -256, but immI8 doesn't...
+operand simm9() %{
+  predicate(Assembler::is_imm_in_range(n->get_int(), 9, 0));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+
+operand uimm12() %{
+  predicate(Assembler::is_unsigned_imm_in_range(n->get_int(), 12, 0));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand aimmP() %{
+  predicate(n->get_ptr() == 0 || (is_aimm(n->get_ptr()) && ((ConPNode*)n)->type()->reloc() == relocInfo::none));
+  match(ConP);
+
+  op_cost(0);
+  // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: 12-bit - for addressing mode
+operand immL12() %{
+  predicate((-4096 < n->get_long()) && (n->get_long() < 4096));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: 9-bit - for addressing mode
+operand immL9() %{
+  predicate((-256 <= n->get_long()) && (n->get_long() < 256));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIMov() %{
+  predicate(n->get_int() >> 16 == 0);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLMov() %{
+  predicate(n->get_long() >> 16 == 0);
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immUL12() %{
+  predicate(is_uimm12(n->get_long(), 0));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immUL12x2() %{
+  predicate(is_uimm12(n->get_long(), 1));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immUL12x4() %{
+  predicate(is_uimm12(n->get_long(), 2));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immUL12x8() %{
+  predicate(is_uimm12(n->get_long(), 3));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immUL12x16() %{
+  predicate(is_uimm12(n->get_long(), 4));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Used for long shift
+operand immU6() %{
+  predicate(0 <= n->get_int() && (n->get_int() <= 63));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Used for register extended shift
+operand immI_0_4() %{
+  predicate(0 <= n->get_int() && (n->get_int() <= 4));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Compressed Pointer Register
+operand iRegN() %{
+  constraint(ALLOC_IN_RC(int_reg));
+  match(RegN);
+  match(ZRRegN);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand SPRegP() %{
+  constraint(ALLOC_IN_RC(SP_regP));
+  match(RegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand ZRRegP() %{
+  constraint(ALLOC_IN_RC(ZR_regP));
+  match(RegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand ZRRegL() %{
+  constraint(ALLOC_IN_RC(ZR_regP));
+  match(RegL);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand ZRRegI() %{
+  constraint(ALLOC_IN_RC(ZR_regI));
+  match(RegI);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand ZRRegN() %{
+  constraint(ALLOC_IN_RC(ZR_regI));
+  match(RegN);
+
+  format %{ %}
+  interface(REG_INTER);
+%}

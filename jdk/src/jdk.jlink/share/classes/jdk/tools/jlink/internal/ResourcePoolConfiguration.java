@@ -28,6 +28,7 @@ package jdk.tools.jlink.internal;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -78,10 +79,12 @@ final class ResourcePoolConfiguration {
     }
 
     private static ModuleReference moduleReference(ModuleDescriptor desc) {
-        return new ModuleReference(desc, null, () -> {
-            IOException ioe = new IOException("<module reader unsupported>");
-            throw new UncheckedIOException(ioe);
-        });
+        return new ModuleReference(desc, null) {
+            @Override
+            public ModuleReader open() {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     private static Map<String, ModuleReference> allModRefs(ResourcePool pool) {

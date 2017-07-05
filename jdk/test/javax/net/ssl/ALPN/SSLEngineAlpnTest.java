@@ -26,22 +26,52 @@
 
 /*
  * @test
- * @bug 8051498 8145849
+ * @bug 8051498 8145849 8170282
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
  * @compile MyX509ExtendedKeyManager.java
- * @run main/othervm SSLEngineAlpnTest h2          h2          h2
- * @run main/othervm SSLEngineAlpnTest h2          h2,http/1.1 h2
- * @run main/othervm SSLEngineAlpnTest h2,http/1.1 h2,http/1.1 h2
- * @run main/othervm SSLEngineAlpnTest http/1.1,h2 h2,http/1.1 http/1.1
- * @run main/othervm SSLEngineAlpnTest h4,h3,h2    h1,h2       h2
- * @run main/othervm SSLEngineAlpnTest EMPTY       h2,http/1.1 NONE
- * @run main/othervm SSLEngineAlpnTest h2          EMPTY       NONE
- * @run main/othervm SSLEngineAlpnTest H2          h2          ERROR
- * @run main/othervm SSLEngineAlpnTest h2          http/1.1    ERROR
+ *
+ * @run main/othervm SSLEngineAlpnTest h2          UNUSED   h2          h2
+ * @run main/othervm SSLEngineAlpnTest h2          UNUSED   h2,http/1.1 h2
+ * @run main/othervm SSLEngineAlpnTest h2,http/1.1 UNUSED   h2,http/1.1 h2
+ * @run main/othervm SSLEngineAlpnTest http/1.1,h2 UNUSED   h2,http/1.1 http/1.1
+ * @run main/othervm SSLEngineAlpnTest h4,h3,h2    UNUSED   h1,h2       h2
+ * @run main/othervm SSLEngineAlpnTest EMPTY       UNUSED   h2,http/1.1 NONE
+ * @run main/othervm SSLEngineAlpnTest h2          UNUSED   EMPTY       NONE
+ * @run main/othervm SSLEngineAlpnTest H2          UNUSED   h2          ERROR
+ * @run main/othervm SSLEngineAlpnTest h2          UNUSED   http/1.1    ERROR
+ *
+ * @run main/othervm SSLEngineAlpnTest UNUSED      h2       h2          h2
+ * @run main/othervm SSLEngineAlpnTest UNUSED      h2       h2,http/1.1 h2
+ * @run main/othervm SSLEngineAlpnTest UNUSED      h2       http/1.1,h2 h2
+ * @run main/othervm SSLEngineAlpnTest UNUSED      http/1.1 h2,http/1.1 http/1.1
+ * @run main/othervm SSLEngineAlpnTest UNUSED      EMPTY    h2,http/1.1 NONE
+ * @run main/othervm SSLEngineAlpnTest UNUSED      h2       EMPTY       NONE
+ * @run main/othervm SSLEngineAlpnTest UNUSED      H2       h2          ERROR
+ * @run main/othervm SSLEngineAlpnTest UNUSED      h2       http/1.1    ERROR
+ *
+ * @run main/othervm SSLEngineAlpnTest h2          h2       h2          h2
+ * @run main/othervm SSLEngineAlpnTest H2          h2       h2,http/1.1 h2
+ * @run main/othervm SSLEngineAlpnTest h2,http/1.1 http/1.1 h2,http/1.1 http/1.1
+ * @run main/othervm SSLEngineAlpnTest http/1.1,h2 h2       h2,http/1.1 h2
+ * @run main/othervm SSLEngineAlpnTest EMPTY       h2       h2          h2
+ * @run main/othervm SSLEngineAlpnTest h2,http/1.1 EMPTY    http/1.1    NONE
+ * @run main/othervm SSLEngineAlpnTest h2,http/1.1 h2       EMPTY       NONE
+ * @run main/othervm SSLEngineAlpnTest UNUSED      UNUSED   http/1.1,h2 NONE
+ * @run main/othervm SSLEngineAlpnTest h2          h2       http/1.1    ERROR
+ * @run main/othervm SSLEngineAlpnTest h2,http/1.1 H2       http/1.1    ERROR
  */
 /**
  * A simple SSLEngine-based client/server that demonstrates the proposed API
  * changes for JEP 244 in support of the TLS ALPN extension (RFC 7301).
+ *
+ * Usage:
+ *     java SSLEngineAlpnTest <server-APs> <callback-AP> <client-APs> <result>
+ *
+ * where:
+ *      EMPTY  indicates that ALPN is disabled
+ *      UNUSED indicates that no ALPN values are supplied (server-side only)
+ *      ERROR  indicates that an exception is expected
+ *      NONE   indicates that no ALPN is expected
  *
  * This example is based on our standard SSLEngineTemplate.
  *
@@ -98,6 +128,7 @@ import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
 import java.security.*;
 import java.nio.*;
+import java.util.Arrays;
 
 public class SSLEngineAlpnTest {
 
@@ -116,6 +147,9 @@ public class SSLEngineAlpnTest {
      * after gaining some familiarity with this application.
      */
     private static final boolean debug = false;
+
+    private static boolean hasServerAPs; // whether server APs are present
+    private static boolean hasCallback; // whether a callback is present
 
     private final SSLContext sslc;
 
@@ -157,17 +191,21 @@ public class SSLEngineAlpnTest {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+        System.out.println("Test args: " + Arrays.toString(args));
 
         // Validate parameters
-        if (args.length != 3) {
+        if (args.length != 4) {
             throw new Exception("Invalid number of test parameters");
         }
 
-        SSLEngineAlpnTest test = new SSLEngineAlpnTest(args[2]);
+        hasServerAPs = !args[0].equals("UNUSED"); // are server APs being used?
+        hasCallback = !args[1].equals("UNUSED"); // is callback being used?
+
+        SSLEngineAlpnTest test = new SSLEngineAlpnTest(args[3]);
         try {
-            test.runTest(convert(args[0]), convert(args[1]), args[2]);
+            test.runTest(convert(args[0]), args[1], convert(args[2]), args[3]);
         } catch (SSLHandshakeException she) {
-            if (args[2].equals("ERROR")) {
+            if (args[3].equals("ERROR")) {
                 System.out.println("Caught the expected exception: " + she);
             } else {
                 throw she;
@@ -199,7 +237,8 @@ public class SSLEngineAlpnTest {
         }
 
         kms = new KeyManager[] { new MyX509ExtendedKeyManager(
-                (X509ExtendedKeyManager) kms[0], expectedAP) };
+                (X509ExtendedKeyManager) kms[0], expectedAP,
+                !hasCallback && hasServerAPs) };
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
@@ -215,12 +254,15 @@ public class SSLEngineAlpnTest {
      * Convert a comma-separated list into an array of strings.
      */
     private static String[] convert(String list) {
-        String[] strings = null;
+        if (list.equals("UNUSED")) {
+            return null;
+        }
 
         if (list.equals("EMPTY")) {
             return new String[0];
         }
 
+        String[] strings;
         if (list.indexOf(',') > 0) {
             strings = list.split(",");
         } else {
@@ -247,12 +289,12 @@ public class SSLEngineAlpnTest {
      * One could easily separate these phases into separate
      * sections of code.
      */
-    private void runTest(String[] serverAPs, String[] clientAPs,
-            String expectedAP) throws Exception {
+    private void runTest(String[] serverAPs, String callbackAP,
+            String[] clientAPs, String expectedAP) throws Exception {
 
         boolean dataDone = false;
 
-        createSSLEngines(serverAPs, clientAPs);
+        createSSLEngines(serverAPs, callbackAP, clientAPs);
         createBuffers();
 
         SSLEngineResult clientResult;   // results from client's last operation
@@ -364,8 +406,8 @@ public class SSLEngineAlpnTest {
      * Using the SSLContext created during object creation,
      * create/configure the SSLEngines we'll use for this test.
      */
-    private void createSSLEngines(String[] serverAPs, String[] clientAPs)
-        throws Exception {
+    private void createSSLEngines(String[] serverAPs, String callbackAP,
+            String[] clientAPs) throws Exception {
         /*
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.  Also, require SSL client authentication.
@@ -385,10 +427,32 @@ public class SSLEngineAlpnTest {
          */
         String[] suites = sslp.getCipherSuites();
         sslp.setCipherSuites(suites);
-        sslp.setApplicationProtocols(serverAPs);
+        if (serverAPs != null) {
+            sslp.setApplicationProtocols(serverAPs);
+        }
         sslp.setUseCipherSuitesOrder(true);  // Set server side order
 
         serverEngine.setSSLParameters(sslp);
+
+        // check that no callback has been registered
+        if (serverEngine.getHandshakeApplicationProtocolSelector() != null) {
+            throw new Exception("getHandshakeApplicationProtocolSelector() " +
+                "should return null");
+        }
+
+        if (hasCallback) {
+            serverEngine.setHandshakeApplicationProtocolSelector(
+                (sslEngine, clientProtocols) -> {
+                    return callbackAP.equals("EMPTY") ? "" : callbackAP;
+                });
+
+            // check that the callback can be retrieved
+            if (serverEngine.getHandshakeApplicationProtocolSelector()
+                    == null) {
+                throw new Exception("getHandshakeApplicationProtocolSelector()"
+                    + " should return non-null");
+            }
+        }
 
         /*
          * Similar to above, but using client mode instead.
@@ -396,7 +460,9 @@ public class SSLEngineAlpnTest {
         clientEngine = sslc.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
         sslp = clientEngine.getSSLParameters();
-        sslp.setApplicationProtocols(clientAPs);
+        if (clientAPs != null) {
+            sslp.setApplicationProtocols(clientAPs);
+        }
         clientEngine.setSSLParameters(sslp);
 
         if ((clientEngine.getHandshakeApplicationProtocol() != null) ||

@@ -24,7 +24,7 @@
 /**
  * @test
  * @library /lib/testlibrary
- * @modules java.desktop java.compact1 jdk.compiler
+ * @modules java.desktop java.logging jdk.compiler
  * @build LimitModsTest CompilerUtils jdk.testlibrary.*
  * @run testng LimitModsTest
  * @summary Basic tests for java --limit-modules
@@ -83,13 +83,12 @@ public class LimitModsTest {
         assertTrue(exitValue == 0);
 
 
-        // java --limit-modules java.compact1 --list-modules
-        exitValue = executeTestJava("--limit-modules", "java.compact1", "--list-modules")
+        // java --limit-modules java.logging --list-modules
+        exitValue = executeTestJava("--limit-modules", "java.logging", "--list-modules")
             .outputTo(System.out)
             .errorTo(System.out)
             .shouldContain("java.base")
             .shouldContain("java.logging")
-            .shouldContain("java.compact1")
             .shouldNotContain("java.xml")
             .getExitValue();
 

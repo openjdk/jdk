@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -368,8 +368,6 @@ final class DOM3TreeWalker {
     private final void dispatachChars(Node node)
         throws org.xml.sax.SAXException {
         if (fSerializer != null) {
-            this.fSerializer.characters(node);
-        } else {
             String data = ((Text) node).getData();
             this.fSerializer.characters(data.toCharArray(), 0, data.length());
         }
@@ -1066,7 +1064,9 @@ final class DOM3TreeWalker {
                 // should we pass entity reference nodes to the filter???
             }
 
-            if (fLexicalHandler != null) {
+            // if "entities" is true, or EntityReference node has no children,
+            // it will be serialized as the form "&entityName;" in the output.
+            if (fLexicalHandler != null && ((fFeatures & ENTITIES) != 0 || !node.hasChildNodes())) {
 
                 // startEntity outputs only Text but not Element, Attr, Comment
                 // and PI child nodes.  It does so by setting the m_inEntityRef

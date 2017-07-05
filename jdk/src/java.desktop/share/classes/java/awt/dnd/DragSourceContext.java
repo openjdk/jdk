@@ -279,7 +279,7 @@ public class DragSourceContext
     }
 
     /**
-     * Sets the cursor for this drag operation to the specified
+     * Sets the custom cursor for this drag operation to the specified
      * {@code Cursor}.  If the specified {@code Cursor}
      * is {@code null}, the default drag cursor behavior is
      * activated for this drag operation, otherwise it is deactivated.
@@ -298,9 +298,11 @@ public class DragSourceContext
     }
 
     /**
-     * Returns the current drag {@code Cursor}.
+     * Returns the current custom drag {@code Cursor}.
      *
-     * @return the current drag {@code Cursor}
+     * @return the current custom drag {@code Cursor}, if it was set
+     *         otherwise returns {@code null}.
+     * @see #setCursor
      */
 
     public Cursor getCursor() { return cursor; }
