@@ -1097,6 +1097,10 @@ public:
     _recorded_survivor_tail    = tail;
   }
 
+  size_t recorded_survivor_regions() {
+    return _recorded_survivor_regions;
+  }
+
   void record_thread_age_table(ageTable* age_table)
   {
     _survivors_age_table.merge_par(age_table);

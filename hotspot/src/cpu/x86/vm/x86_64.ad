@@ -6444,6 +6444,21 @@ instruct loadUB2L(rRegL dst, memory mem)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Unsigned Byte (8 bit UNsigned) with a 8-bit mask into Long Register
+instruct loadUB2L_immI8(rRegL dst, memory mem, immI8 mask, rFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadUB mem) mask)));
+  effect(KILL cr);
+
+  format %{ "movzbq  $dst, $mem\t# ubyte & 8-bit mask -> long\n\t"
+            "andl    $dst, $mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzbq(Rdst, $mem$$Address);
+    __ andl(Rdst, $mask$$constant);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Short (16 bit signed)
 instruct loadS(rRegI dst, memory mem)
 %{
@@ -6528,6 +6543,32 @@ instruct loadUS2L(rRegL dst, memory mem)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Unsigned Short/Char (16 bit UNsigned) with mask 0xFF into Long Register
+instruct loadUS2L_immI_255(rRegL dst, memory mem, immI_255 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+
+  format %{ "movzbq  $dst, $mem\t# ushort/char & 0xFF -> long" %}
+  ins_encode %{
+    __ movzbq($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Short/Char (16 bit UNsigned) with mask into Long Register
+instruct loadUS2L_immI16(rRegL dst, memory mem, immI16 mask, rFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  effect(KILL cr);
+
+  format %{ "movzwq  $dst, $mem\t# ushort/char & 16-bit mask -> long\n\t"
+            "andl    $dst, $mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzwq(Rdst, $mem$$Address);
+    __ andl(Rdst, $mask$$constant);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Integer
 instruct loadI(rRegI dst, memory mem)
 %{
@@ -6603,6 +6644,43 @@ instruct loadI2L(rRegL dst, memory mem)
     __ movslq($dst$$Register, $mem$$Address);
   %}
 
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer with mask 0xFF into Long Register
+instruct loadI2L_immI_255(rRegL dst, memory mem, immI_255 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+
+  format %{ "movzbq  $dst, $mem\t# int & 0xFF -> long" %}
+  ins_encode %{
+    __ movzbq($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer with mask 0xFFFF into Long Register
+instruct loadI2L_immI_65535(rRegL dst, memory mem, immI_65535 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+
+  format %{ "movzwq  $dst, $mem\t# int & 0xFFFF -> long" %}
+  ins_encode %{
+    __ movzwq($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer with a 32-bit mask into Long Register
+instruct loadI2L_immI(rRegL dst, memory mem, immI mask, rFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  effect(KILL cr);
+
+  format %{ "movl    $dst, $mem\t# int & 32-bit mask -> long\n\t"
+            "andl    $dst, $mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movl(Rdst, $mem$$Address);
+    __ andl(Rdst, $mask$$constant);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11673,8 +11751,9 @@ instruct convI2L_reg_reg(rRegL dst, rRegI src)
 
   ins_cost(125);
   format %{ "movslq  $dst, $src\t# i2l" %}
-  opcode(0x63); // needs REX.W
-  ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst,src));
+  ins_encode %{
+    __ movslq($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
