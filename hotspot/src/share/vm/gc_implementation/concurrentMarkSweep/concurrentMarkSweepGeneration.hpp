@@ -355,6 +355,11 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
                                              unsigned int new_duty_cycle);
   unsigned int icms_update_duty_cycle_impl();
 
+  // In support of adjusting of cms trigger ratios based on history
+  // of concurrent mode failure.
+  double cms_free_adjustment_factor(size_t free) const;
+  void   adjust_cms_free_adjustment_factor(bool fail, size_t free);
+
  public:
   CMSStats(ConcurrentMarkSweepGeneration* cms_gen,
            unsigned int alpha = CMSExpAvgFactor);
@@ -570,8 +575,11 @@ class CMSCollector: public CHeapObj {
   // appropriately.
   void check_gc_time_limit();
   // XXX Move these to CMSStats ??? FIX ME !!!
-  elapsedTimer _sweep_timer;
-  AdaptivePaddedAverage _sweep_estimate;
+  elapsedTimer _inter_sweep_timer;   // time between sweeps
+  elapsedTimer _intra_sweep_timer;   // time _in_ sweeps
+  // padded decaying average estimates of the above
+  AdaptivePaddedAverage _inter_sweep_estimate;
+  AdaptivePaddedAverage _intra_sweep_estimate;
 
  protected:
   ConcurrentMarkSweepGeneration* _cmsGen;  // old gen (CMS)
@@ -625,6 +633,7 @@ class CMSCollector: public CHeapObj {
   // . _collectorState <= Idling ==  post-sweep && pre-mark
   // . _collectorState in (Idling, Sweeping) == {initial,final}marking ||
   //                                            precleaning || abortablePrecleanb
+ public:
   enum CollectorState {
     Resizing            = 0,
     Resetting           = 1,
@@ -636,6 +645,7 @@ class CMSCollector: public CHeapObj {
     FinalMarking        = 7,
     Sweeping            = 8
   };
+ protected:
   static CollectorState _collectorState;
 
   // State related to prologue/epilogue invocation for my generations
@@ -655,7 +665,7 @@ class CMSCollector: public CHeapObj {
 
   int    _numYields;
   size_t _numDirtyCards;
-  uint   _sweepCount;
+  size_t _sweep_count;
   // number of full gc's since the last concurrent gc.
   uint   _full_gcs_since_conc_gc;
 
@@ -905,7 +915,7 @@ class CMSCollector: public CHeapObj {
 
   // Check that the currently executing thread is the expected
   // one (foreground collector or background collector).
-  void check_correct_thread_executing()        PRODUCT_RETURN;
+  static void check_correct_thread_executing() PRODUCT_RETURN;
   // XXXPERM void print_statistics()           PRODUCT_RETURN;
 
   bool is_cms_reachable(HeapWord* addr);
@@ -930,8 +940,8 @@ class CMSCollector: public CHeapObj {
   static void set_foregroundGCShouldWait(bool v) { _foregroundGCShouldWait = v; }
   static bool foregroundGCIsActive() { return _foregroundGCIsActive; }
   static void set_foregroundGCIsActive(bool v) { _foregroundGCIsActive = v; }
-  uint  sweepCount() const             { return _sweepCount; }
-  void incrementSweepCount()           { _sweepCount++; }
+  size_t sweep_count() const             { return _sweep_count; }
+  void   increment_sweep_count()         { _sweep_count++; }
 
   // Timers/stats for gc scheduling and incremental mode pacing.
   CMSStats& stats() { return _stats; }
@@ -1164,6 +1174,11 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
     bool younger_handles_promotion_failure) const;
+
+  // Inform this (non-young) generation that a promotion failure was
+  // encountered during a collection of a younger generation that
+  // promotes into this generation.
+  virtual void promotion_failure_occurred();
 
   bool should_collect(bool full, size_t size, bool tlab);
   virtual bool should_concurrent_collect() const;

@@ -55,6 +55,19 @@ public class FormatData_hr_HR extends ListResourceBundle {
                     "#,##0%" // percent pattern
                 }
             },
+            { "DateTimePatterns",
+                new String[] {
+                    "HH:mm:ss z", // full time pattern
+                    "HH:mm:ss z", // long time pattern
+                    "HH:mm:ss", // medium time pattern
+                    "HH:mm", // short time pattern
+                    "yyyy. MMMM dd", // full date pattern
+                    "yyyy. MMMM dd", // long date pattern
+                    "dd.MM.yyyy.", // medium date pattern
+                    "dd.MM.yy.", // short date pattern
+                    "{1} {0}" // date-time pattern
+                }
+            }
         };
     }
 }

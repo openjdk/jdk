@@ -802,7 +802,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
 #ifdef ASSERT
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
-  if (bc != Bytecodes::_invokestatic) {
+  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass (THREAD, receiver->klass());
     klassOop rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
@@ -860,7 +860,7 @@ methodHandle SharedRuntime::resolve_helper(JavaThread *thread,
   if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
     int retry_count = 0;
     while (!HAS_PENDING_EXCEPTION && callee_method->is_old() &&
-           callee_method->method_holder() != SystemDictionary::object_klass()) {
+           callee_method->method_holder() != SystemDictionary::Object_klass()) {
       // If has a pending exception then there is no need to re-try to
       // resolve this method.
       // If the method has been redefined, we need to try again.
@@ -1027,7 +1027,16 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
-  if (caller_frame.is_interpreted_frame() || caller_frame.is_entry_frame() ) {
+
+  // MethodHandle invokes don't have a CompiledIC and should always
+  // simply redispatch to the callee_target.
+  address   sender_pc = caller_frame.pc();
+  CodeBlob* sender_cb = caller_frame.cb();
+  nmethod*  sender_nm = sender_cb->as_nmethod_or_null();
+
+  if (caller_frame.is_interpreted_frame() ||
+      caller_frame.is_entry_frame() ||
+      (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc))) {
     methodOop callee = thread->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     thread->set_vm_result(callee);
@@ -1529,7 +1538,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
 oop SharedRuntime::wrong_method_type_is_for_single_argument(JavaThread* thr,
                                                             oopDesc* required) {
   if (required == NULL)  return NULL;
-  if (required->klass() == SystemDictionary::class_klass())
+  if (required->klass() == SystemDictionary::Class_klass())
     return required;
   if (required->is_klass())
     return Klass::cast(klassOop(required))->java_mirror();
@@ -2136,7 +2145,7 @@ VMReg SharedRuntime::name_for_receiver() {
   return regs.first();
 }
 
-VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool is_static, int* arg_size) {
+VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool has_receiver, int* arg_size) {
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();
@@ -2148,7 +2157,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool is_static, i
   BasicType *sig_bt = NEW_RESOURCE_ARRAY( BasicType, 256 );
   VMRegPair *regs = NEW_RESOURCE_ARRAY( VMRegPair, 256 );
   int cnt = 0;
-  if (!is_static) {
+  if (has_receiver) {
     sig_bt[cnt++] = T_OBJECT; // Receiver is argument 0; not in signature
   }
 

@@ -540,7 +540,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  klassOop k = SystemDictionary::stackTraceElement_klass();
+  klassOop k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
   instanceKlassHandle ik(THREAD, k);
 

@@ -137,7 +137,7 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
   }
 
   // Otherwise call static method findNative in ClassLoader
-  KlassHandle   klass (THREAD, SystemDictionary::classloader_klass());
+  KlassHandle   klass (THREAD, SystemDictionary::ClassLoader_klass());
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
   JavaValue result(T_LONG);

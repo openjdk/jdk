@@ -123,7 +123,7 @@ public abstract class Expression
 
   /**
    * Coerces a number to the target type of this expression.
-   * @parm  number  The number to coerce.
+   * @param  obj  The number to coerce.
    * @return  the value of number coerced to the (target) type of
    *  this expression.
    **/
@@ -142,7 +142,7 @@ public abstract class Expression
   /**
    * Coerces an integral value (BigInteger) to its corresponding unsigned
    * representation, if the target type of this expression is unsigned.
-   * @parm b The BigInteger to be coerced.
+   * @param b The BigInteger to be coerced.
    * @return the value of an integral type coerced to its corresponding
    *  unsigned integral type, if the target type of this expression is
    *  unsigned.
@@ -170,7 +170,7 @@ public abstract class Expression
   /**
    * Coerces an integral value (BigInteger) to its corresponding signed
    * representation, if the target type of this expression is signed.
-   * @parm  b  The BigInteger to be coerced.
+   * @param  b  The BigInteger to be coerced.
    * @return  the value of an integral type coerced to its corresponding
    *  signed integral type, if the target type of this expression is
    *  signed.

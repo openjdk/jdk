@@ -113,7 +113,7 @@ public class FormatData_lt extends ListResourceBundle {
             { "NumberElements",
                 new String[] {
                     ",", // decimal separator
-                    ".", // group (thousands) separator
+                    "\u00a0", // group (thousands) separator
                     ";", // list separator
                     "%", // percent sign
                     "0", // native 0 digit
@@ -133,7 +133,7 @@ public class FormatData_lt extends ListResourceBundle {
                     "HH.mm", // short time pattern
                     "EEEE, yyyy, MMMM d", // full date pattern
                     "EEEE, yyyy, MMMM d", // long date pattern
-                    "yyyy.M.d", // medium date pattern
+                    "yyyy-MM-dd", // medium date pattern
                     "yy.M.d", // short date pattern
                     "{1} {0}" // date-time pattern
                 }

@@ -63,7 +63,7 @@ public:
   void do_oop(oop* p) {
     if (p != NULL) {
       oop obj = *p;
-      if (obj->klass() == SystemDictionary::string_klass()) {
+      if (obj->klass() == SystemDictionary::String_klass()) {
 
         int hash;
         typeArrayOop value = java_lang_String::value(obj);
@@ -625,11 +625,11 @@ public:
 
     if (obj->is_klass() || obj->is_instance()) {
       if (obj->is_klass() ||
-          obj->is_a(SystemDictionary::class_klass()) ||
-          obj->is_a(SystemDictionary::throwable_klass())) {
+          obj->is_a(SystemDictionary::Class_klass()) ||
+          obj->is_a(SystemDictionary::Throwable_klass())) {
         // Do nothing
       }
-      else if (obj->is_a(SystemDictionary::string_klass())) {
+      else if (obj->is_a(SystemDictionary::String_klass())) {
         // immutable objects.
       } else {
         // someone added an object we hadn't accounted for.

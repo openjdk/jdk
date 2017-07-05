@@ -129,6 +129,8 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
   void verifyList()         const PRODUCT_RETURN;
   void mangleAllocated(size_t size) PRODUCT_RETURN;
   void mangleFreed(size_t size)     PRODUCT_RETURN;
+
+  void print_on(outputStream* st);
 };
 
 // Alignment helpers etc.
