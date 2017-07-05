@@ -525,11 +525,11 @@ public class DnsClient {
         }
         byte[] pkt;
         if ((pkt = (byte[]) resps.get(xid)) != null) {
+            checkResponseCode(new Header(pkt, pkt.length));
             synchronized (queuesLock) {
                 resps.remove(xid);
                 reqs.remove(xid);
             }
-            checkResponseCode(new Header(pkt, pkt.length));
 
             if (debug) {
                 dprint("FOUND (" + Thread.currentThread() +
@@ -562,12 +562,12 @@ public class DnsClient {
                 dprint("XID MATCH:" + xid);
             }
 
+            checkResponseCode(hdr);
             // remove the response for the xid if received by some other thread.
             synchronized (queuesLock) {
                 resps.remove(xid);
                 reqs.remove(xid);
             }
-            checkResponseCode(hdr);
             return true;
         }
 

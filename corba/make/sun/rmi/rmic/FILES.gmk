@@ -70,7 +70,4 @@ REQUIRED_Group = \
 	com/sun/corba/se/internal/util/IdentityHashtable.java \
 	com/sun/corba/se/internal/util/Utility.java \
 	com/sun/corba/se/internal/util/JDKBridge.java \
-	com/sun/corba/se/internal/io/LibraryManager.java \
-	com/sun/corba/se/internal/io/ObjectStreamClass.java \
-	com/sun/corba/se/internal/io/TypeMismatchException.java \
 	com/sun/corba/se/internal/util/RepositoryId.java

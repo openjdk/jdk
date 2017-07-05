@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,8 +403,11 @@ public class KDC {
      */
     private static char[] randomPassword() {
         char[] pass = new char[32];
-        for (int i=0; i<32; i++)
+        for (int i=0; i<31; i++)
             pass[i] = (char)secureRandom.nextInt();
+        // The last char cannot be a number, otherwise, keyForUser()
+        // believes it's a sign of kvno
+        pass[31] = 'Z';
         return pass;
     }
 
@@ -740,6 +743,9 @@ public class KDC {
             Field f = KDCReqBody.class.getDeclaredField("eType");
             f.setAccessible(true);
             eTypes = (int[])f.get(body);
+            if (eTypes.length < 2) {
+                throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
+            }
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
