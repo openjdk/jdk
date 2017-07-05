@@ -246,7 +246,6 @@ bool PICL::bind_library_functions() {
 bool PICL::open_library() {
   _dl_handle = dlopen("libpicl.so.1", RTLD_LAZY);
   if (_dl_handle == NULL) {
-    warning("PICL (libpicl.so.1) is missing. Performance will not be optimal.");
     return false;
   }
   if (!bind_library_functions()) {

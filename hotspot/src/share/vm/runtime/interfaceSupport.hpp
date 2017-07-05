@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,6 +417,14 @@ class RuntimeHistogramElement : public HistogramElement {
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
+#define VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)         \
+  TRACE_CALL(result_type, header)                                    \
+  debug_only(ResetNoHandleMark __rnhm;)                              \
+  HandleMarkCleaner __hm(thread);                                    \
+  Thread* THREAD = thread;                                           \
+  os::verify_stack_alignment();                                      \
+  /* begin of body */
+
 
 // ENTRY routines may lock, GC and throw exceptions
 
@@ -582,6 +590,14 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
     VM_LEAF_BASE(result_type, header)
+
+
+#define JVM_ENTRY_FROM_LEAF(env, result_type, header)                \
+  { {                                                                \
+    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
+    ThreadInVMfromNative __tiv(thread);                              \
+    debug_only(VMNativeEntryWrapper __vew;)                          \
+    VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 
 #define JVM_END } }

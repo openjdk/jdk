@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import java.lang.reflect.Array;
+import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -70,13 +71,13 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         } else if (x instanceof HotSpotObjectConstantImpl) {
             return y instanceof HotSpotObjectConstantImpl && ((HotSpotObjectConstantImpl) x).object() == ((HotSpotObjectConstantImpl) y).object();
         } else {
-            return x.equals(y);
+            return Objects.equals(x, y);
         }
     }
 
     @Override
     public Integer readArrayLength(JavaConstant array) {
-        if (array.getJavaKind() != JavaKind.Object || array.isNull()) {
+        if (array == null || array.getJavaKind() != JavaKind.Object || array.isNull()) {
             return null;
         }
 
@@ -133,12 +134,12 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public JavaConstant readArrayElement(JavaConstant array, int index) {
-        if (array.getJavaKind() != JavaKind.Object || array.isNull()) {
+        if (array == null || array.getJavaKind() != JavaKind.Object || array.isNull()) {
             return null;
         }
         Object a = ((HotSpotObjectConstantImpl) array).object();
 
-        if (index < 0 || index >= Array.getLength(a)) {
+        if (!a.getClass().isArray() || index < 0 || index >= Array.getLength(a)) {
             return null;
         }
 
@@ -184,7 +185,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public JavaConstant boxPrimitive(JavaConstant source) {
-        if (!source.getJavaKind().isPrimitive() || !isBoxCached(source)) {
+        if (source == null || !source.getJavaKind().isPrimitive() || !isBoxCached(source)) {
             return null;
         }
         return HotSpotObjectConstantImpl.forObject(source.asBoxedPrimitive());
@@ -192,7 +193,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     @Override
     public JavaConstant unboxPrimitive(JavaConstant source) {
-        if (!source.getJavaKind().isObject()) {
+        if (source == null || !source.getJavaKind().isObject()) {
             return null;
         }
         if (source.isNull()) {
