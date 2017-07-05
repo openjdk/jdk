@@ -27,6 +27,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
+include ProcessMarkdown.gmk
 include ZipArchive.gmk
 include $(JDK_TOPDIR)/make/Tools.gmk
 include $(JDK_TOPDIR)/make/ModuleTools.gmk
@@ -51,9 +52,12 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
 DOCROOTPARENT_FLAG ?= TRUE
 
 # URLs
-JAVADOC_BASE_URL := http://docs.oracle.com/javase/$(VERSION_SPECIFICATION)/docs
+JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
+LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
+REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
+
 
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
@@ -134,7 +138,10 @@ JAVADOC_BOTTOM := \
     the US and other countries.<br> \
     <a href="$(COPYRIGHT_URL)">Copyright</a> \
     &copy; 1993, $(COPYRIGHT_YEAR), $(FULL_COMPANY_NAME). \
-    $(COMPANY_ADDRESS). All rights reserved.$(DRAFT_MARKER_STR)</span>
+    $(COMPANY_ADDRESS). All rights reserved. \
+    Use is subject to <a href="$(LICENSE_URL)">license terms</a>. Also see the \
+    <a href="$(REDISTRIBUTION_URL)">documentation redistribution policy</a>. \
+    $(DRAFT_MARKER_STR)</span>
 
 JAVADOC_TOP := \
     <div style="background-color: $(HASH)EEEEEE"><div style="padding: 6px; \
@@ -356,7 +363,7 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # unmodified
 
 ALL_MODULES := $(call FindAllModules)
-COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib
+COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib %.css
 
 $(foreach m, $(ALL_MODULES), \
   $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -370,36 +377,35 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
+# Copy the global resources
+GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/specs
+$(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
+    SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
+    FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
+    DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+))
+JDK_SPECS_TARGETS += $(COPY_GLOBAL_RESOURCES)
+
 ifeq ($(ENABLE_FULL_DOCS), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html.
-  MARKDOWN_SPEC_FILTER := %.md
 
-  # Macro for SetupCopyFiles that converts from markdown to html using pandoc.
-  define markdown-to-html
-	$(call MakeDir, $(@D))
-	$(RM) $@
-	$(PANDOC) -t html -s -o $@ $<
-  endef
-
-  rename-md-to-html = \
-      $(patsubst %.md,%.html,$1)
+  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(JAVADOC_OUTPUTDIR)/specs/resources/jdk-default.css
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
-    $(if $(SPECS_$m), \
-      $(eval $(call SetupCopyFiles, CONVERT_MARKDOWN_$m, \
-          SRC := $(SPECS_$m), \
-          FILES := $(filter $(MARKDOWN_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
-          DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
-          MACRO := markdown-to-html, \
-          NAME_MACRO := rename-md-to-html, \
-          LOG_ACTION := Converting from markdown, \
-      )) \
-      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m)) \
+    $(foreach d, $(SPECS_$m), \
+      $(if $(filter %.md, $(call CacheFind, $d)), \
+        $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d), \
+            SRC := $d, \
+            FILES := $(filter %.md, $(call CacheFind, $d)), \
+            DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+            CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+        )) \
+      ) \
+      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d))) \
     ) \
   )
-
 endif
 
 # Special treatment for generated documentation
