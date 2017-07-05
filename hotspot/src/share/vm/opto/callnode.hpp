@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -546,6 +546,12 @@ public:
   // or result projection is there are several CheckCastPP
   // or returns NULL if there is no one.
   Node *result_cast();
+  // Does this node returns pointer?
+  bool returns_pointer() const {
+    const TypeTuple *r = tf()->range();
+    return (r->cnt() > TypeFunc::Parms &&
+            r->field_at(TypeFunc::Parms)->isa_ptr());
+  }
 
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion

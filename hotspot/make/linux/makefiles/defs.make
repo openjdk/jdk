@@ -38,7 +38,7 @@ else
 endif
 
 # zero
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   ifeq ($(ARCH_DATA_MODEL), 64)
     MAKE_ARGS      += LP64=1
   endif
@@ -112,6 +112,18 @@ ifeq ($(ARCH), ppc)
   PLATFORM         = linux-ppc
   VM_PLATFORM      = linux_ppc
   HS_ARCH          = ppc
+endif
+
+# On 32 bit linux we build server and client, on 64 bit just server.
+ifeq ($(JVM_VARIANTS),)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    JVM_VARIANTS:=client,server
+    JVM_VARIANT_CLIENT:=true
+    JVM_VARIANT_SERVER:=true
+  else
+    JVM_VARIANTS:=server
+    JVM_VARIANT_SERVER:=true
+  endif
 endif
 
 # determine if HotSpot is being built in JDK6 or earlier version
@@ -195,22 +207,20 @@ EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
-ifndef BUILD_CLIENT_ONLY
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
+ifeq ($(findstring true, $(JVM_VARIANT_SERVER) $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
   ifneq ($(OBJCOPY),)
     EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
   endif
 endif
 
-ifneq ($(ZERO_BUILD), true)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
-    ifneq ($(OBJCOPY),)
-      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
-    endif
-  endif
+ifeq ($(JVM_VARIANT_CLIENT),true)
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
+  ifneq ($(OBJCOPY),)
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+  endif 
 endif
 
 # Serviceability Binaries

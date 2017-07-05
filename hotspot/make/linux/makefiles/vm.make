@@ -42,7 +42,7 @@ DEP_DIR       = $(GENERATED)/dependencies
 -include $(DEP_DIR)/*.d
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   include $(MAKEFILES_DIR)/zeroshark.make
 else
   include $(MAKEFILES_DIR)/$(BUILDARCH).make
@@ -236,7 +236,7 @@ mapfile_reorder : mapfile $(REORDERFILE)
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
   STATIC_CXX = false
 else
   ifeq ($(ZERO_LIBARCH), ppc64)
@@ -268,12 +268,12 @@ else
 
   LIBS_VM                  += $(LIBS)
 endif
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(JVM_VARIANT_ZERO), true)
   LIBS_VM += $(LIBFFI_LIBS)
 endif
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+  LIBS_VM   += $(LIBFFI_LIBS) $(LLVM_LIBS)
   LFLAGS_VM += $(LLVM_LDFLAGS)
-  LIBS_VM   += $(LLVM_LIBS)
 endif
 
 LINK_VM = $(LINK_LIB.CC)
