@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,24 @@
  *
  */
 
-package com.sun.hotspot.tools.compiler;
-
-import java.io.PrintStream;
-
-/**
- * The interface of an event from a HotSpot compilation log. Events can have a
- * duration, e.g., a compiler {@link Phase} is an event, and so is an entire
- * {@link Compilation}.
+/*
+ * @test
+ * @bug 8130183
+ * @summary For InnerClasses attribute, VM permits inner_class_info_index value of zero
+ * @compile badEnclMthd.jcod
+ * @run main/othervm -Xverify:all EnclosingMethod
  */
-public interface LogEvent {
 
-    /**
-     * The event's start time.
-     */
-    public double getStart();
+// Test that an EnclosingMethod attribute with the value of 0 causes a ClassFormatError.
+public class EnclosingMethod {
+    public static void main(String args[]) throws Throwable {
 
-    /**
-     * The event's duration in milliseconds.
-     */
-    public double getElapsedTime();
-
-    /**
-     * The compilation during which this event was signalled.
-     */
-    public Compilation getCompilation();
-
-    /**
-     * Print the event to the given stream.
-     */
-    public void print(PrintStream stream, boolean printID);
+        System.out.println("Regression test for bug 8130183");
+        try {
+            Class newClass = Class.forName("badEnclMthd");
+            throw new RuntimeException("Expected ClassFormatError exception not thrown");
+        } catch (java.lang.ClassFormatError e) {
+            System.out.println("Test EnclosingMethod passed");
+        }
+    }
 }
