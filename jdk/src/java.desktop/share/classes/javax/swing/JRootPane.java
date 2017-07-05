@@ -320,28 +320,6 @@ public class JRootPane extends JComponent implements Accessible {
      * a UI-specific action like pressing the <b>Enter</b> key occurs.
      */
     protected JButton defaultButton;
-    /**
-     * As of Java 2 platform v1.3 this unusable field is no longer used.
-     * To override the default button you should replace the <code>Action</code>
-     * in the <code>JRootPane</code>'s <code>ActionMap</code>. Please refer to
-     * the key bindings specification for further details.
-     *
-     * @deprecated As of Java 2 platform v1.3.
-     *  @see #defaultButton
-     */
-    @Deprecated
-    protected DefaultAction defaultPressAction;
-    /**
-     * As of Java 2 platform v1.3 this unusable field is no longer used.
-     * To override the default button you should replace the <code>Action</code>
-     * in the <code>JRootPane</code>'s <code>ActionMap</code>. Please refer to
-     * the key bindings specification for further details.
-     *
-     * @deprecated As of Java 2 platform v1.3.
-     *  @see #defaultButton
-     */
-    @Deprecated
-    protected DefaultAction defaultReleaseAction;
 
     /**
      * Whether or not true double buffering should be used.  This is typically
@@ -828,35 +806,6 @@ public class JRootPane extends JComponent implements Accessible {
             }
         }
     }
-
-    @SuppressWarnings("serial")
-    static class DefaultAction extends AbstractAction {
-        JButton owner;
-        JRootPane root;
-        boolean press;
-        DefaultAction(JRootPane root, boolean press) {
-            this.root = root;
-            this.press = press;
-        }
-        public void setOwner(JButton owner) {
-            this.owner = owner;
-        }
-        public void actionPerformed(ActionEvent e) {
-            if (owner != null && SwingUtilities.getRootPane(owner) == root) {
-                ButtonModel model = owner.getModel();
-                if (press) {
-                    model.setArmed(true);
-                    model.setPressed(true);
-                } else {
-                    model.setPressed(false);
-                }
-            }
-        }
-        public boolean isEnabled() {
-            return owner.getModel().isEnabled();
-        }
-    }
-
 
     /**
      * Overridden to enforce the position of the glass component as

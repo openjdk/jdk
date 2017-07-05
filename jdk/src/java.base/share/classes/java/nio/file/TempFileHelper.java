@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@ class TempFileHelper {
     private static final SecureRandom random = new SecureRandom();
     private static Path generatePath(String prefix, String suffix, Path dir) {
         long n = random.nextLong();
-        n = (n == Long.MIN_VALUE) ? 0 : Math.abs(n);
-        Path name = dir.getFileSystem().getPath(prefix + Long.toString(n) + suffix);
+        String s = prefix + Long.toUnsignedString(n) + suffix;
+        Path name = dir.getFileSystem().getPath(s);
         // the generated name should be a simple file name
         if (name.getParent() != null)
             throw new IllegalArgumentException("Invalid prefix or suffix");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary JavaVM
+ * @build JavaVM
  * @run main/othervm NoConsoleOutput
  */
 
@@ -43,8 +43,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class NoConsoleOutput {
@@ -53,7 +51,7 @@ public class NoConsoleOutput {
         System.err.println("\nRegression test for bug 6409194\n");
 
         /*
-         * Exdecute a subprocess VM that does a bunch of RMI activity
+         * Execute a subprocess VM that does a bunch of RMI activity
          * with a logging configuration file that does not specify a
          * ConsoleHandler and with no legacy sun.rmi.*.logLevel system
          * properties set.
@@ -65,7 +63,7 @@ public class NoConsoleOutput {
         ByteArrayOutputStream err = new ByteArrayOutputStream();
 
         // We instantiate a JavaVM that should not produce any console output
-        // (neither on standard output, nor on standard err streams).
+        // on standard err streams, where RMI logging messages are sent to.
         JavaVM vm = new JavaVM(
                 DoRMIStuff.class.getName(),
                 "--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED"
@@ -77,8 +75,7 @@ public class NoConsoleOutput {
         vm.execute();
 
         /*
-         * Verify that the subprocess had no System.out or System.err
-         * output.
+         * Verify that the subprocess had no System.err output.
          */
         String outString = out.toString();
         String errString = err.toString();
@@ -89,7 +86,7 @@ public class NoConsoleOutput {
         System.err.print(err);
         System.err.println("---------------------------------------------");
 
-        if (outString.length() > 0 || errString.length() > 0) {
+        if (errString.length() > 0) {
             throw new Error("TEST FAILED: unexpected subprocess output");
         }
 
@@ -105,13 +102,8 @@ public class NoConsoleOutput {
             public Object echo(Object obj) { return obj; }
         }
         public static void main(String[] args) throws Exception {
-            Registry registry = TestLibrary.createRegistryOnUnusedPort();
-            int registryPort = TestLibrary.getRegistryPort(registry);
-            Registry reg = LocateRegistry.getRegistry("", registryPort);
             FooImpl fooimpl = new FooImpl();
-            UnicastRemoteObject.exportObject(fooimpl, 0);
-            reg.rebind("foo", fooimpl);
-            Foo foostub = (Foo) reg.lookup("foo");
+            Foo foostub = (Foo) UnicastRemoteObject.exportObject(fooimpl, 0);
             FooImpl fooimpl2 = new FooImpl();
             UnicastRemoteObject.exportObject(fooimpl2, 0);
             foostub.echo(fooimpl2);
