@@ -34,8 +34,8 @@
  * an appropriate error value.
  */
 
-Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value);
+Flag::Error AliasLevelConstraintFunc(intx value, bool verbose);
 
-Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value);
+Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose);
 
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP */

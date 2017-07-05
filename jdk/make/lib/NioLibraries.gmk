@@ -47,7 +47,7 @@ endif
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBNIO_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
   BUILD_LIBNIO_EXFILES += \
-      GnomeFileTypeDetector.c \
+      GioFileTypeDetector.c \
       #
 endif
 

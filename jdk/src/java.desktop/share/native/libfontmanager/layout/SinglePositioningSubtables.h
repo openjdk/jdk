@@ -71,5 +71,3 @@ LE_VAR_ARRAY(SinglePositioningFormat2Subtable, valueRecordArray)
 
 U_NAMESPACE_END
 #endif
-
-

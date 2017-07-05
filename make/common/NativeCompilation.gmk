@@ -201,23 +201,25 @@ define add_native_source
     $$($1_$2_OBJ) : $2 $$($1_COMPILE_VARDEPS_FILE) | $$($1_BUILD_INFO)
 	$(ECHO) $(LOG_INFO) "Compiling $$(notdir $2) (for $$(notdir $$($1_TARGET)))"
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
-          # The Solaris studio compiler doesn't output the full path to the object file in the
-          # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
           ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s,$2), solstudio)
-	    $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+            # The Solaris studio compiler doesn't output the full path to the object file in the
+            # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
+	    $(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
 	    $(SED) 's|^$$(@F):|$$@:|' $$($1_$2_DEP).tmp > $$($1_$2_DEP)
           else
-	    $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+	    $(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
           endif
-        endif
-        # The Visual Studio compiler lacks a feature for generating make dependencies, but by
-        # setting -showIncludes, all included files are printed. These are filtered out and
-        # parsed into make dependences.
-        ifeq ($(TOOLCHAIN_TYPE), microsoft)
-	  ($$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
-	      $(CC_OUT_OPTION)$$($1_$2_OBJ) $2 ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
+        else
+          # The Visual Studio compiler lacks a feature for generating make dependencies, but by
+          # setting -showIncludes, all included files are printed. These are filtered out and
+          # parsed into make dependences.
+	  ($(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	      $$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
+	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
 	      | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v -e "^Note: including file:" \
-	      -e "^$(notdir $2)$$$$" || test "$$$$?" = "1" ; \
+	          -e "^$(notdir $2)$$$$" || test "$$$$?" = "1" ; \
 	      exit `cat $$($1_$2_DEP).exitvalue`
 	  $(RM) $$($1_$2_DEP).exitvalue
 	  ($(ECHO) $$@: \\ \
@@ -694,10 +696,11 @@ define SetupNativeCompilationBody
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
         $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)"
-		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
+		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
-		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
 		$$($1_CREATE_DEBUGINFO_CMDS)
                 # Touch target to make sure it has a later time stamp than the debug
                 # symbol files to avoid unnecessary relinking on rebuild.
@@ -716,8 +719,9 @@ define SetupNativeCompilationBody
     # Generating a static library, ie object file archive.
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
 	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
-	$$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
-	    $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+	$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
+	        $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
   endif
 
   ifneq (,$$($1_PROGRAM))
@@ -733,10 +737,11 @@ define SetupNativeCompilationBody
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_DEBUGINFO_EXTRA_DEPS) $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
-		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		    $(EXE_OUT_OPTION)$$($1_TARGET) \
-		    $$($1_EXPECTED_OBJS) $$($1_RES) \
-		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
+		        $(EXE_OUT_OPTION)$$($1_TARGET) \
+		        $$($1_EXPECTED_OBJS) $$($1_RES) \
+		        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_PROGRAM).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1

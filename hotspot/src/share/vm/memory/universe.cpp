@@ -77,7 +77,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/cms/cmsCollectorPolicy.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy_ext.hpp"
+#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -694,13 +694,29 @@ jint universe_init() {
   return JNI_OK;
 }
 
-template <class Heap, class Policy>
-jint Universe::create_heap() {
+CollectedHeap* Universe::create_heap() {
   assert(_collectedHeap == NULL, "Heap already created");
-  Policy* policy = new Policy();
-  policy->initialize_all();
-  _collectedHeap = new Heap(policy);
-  return _collectedHeap->initialize();
+#if !INCLUDE_ALL_GCS
+  if (UseParallelGC) {
+    fatal("UseParallelGC not supported in this VM.");
+  } else if (UseG1GC) {
+    fatal("UseG1GC not supported in this VM.");
+  } else if (UseConcMarkSweepGC) {
+    fatal("UseConcMarkSweepGC not supported in this VM.");
+#else
+  if (UseParallelGC) {
+    return Universe::create_heap_with_policy<ParallelScavengeHeap, GenerationSizer>();
+  } else if (UseG1GC) {
+    return Universe::create_heap_with_policy<G1CollectedHeap, G1CollectorPolicy>();
+  } else if (UseConcMarkSweepGC) {
+    return Universe::create_heap_with_policy<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
+#endif
+  } else if (UseSerialGC) {
+    return Universe::create_heap_with_policy<GenCollectedHeap, MarkSweepPolicy>();
+  }
+
+  ShouldNotReachHere();
+  return NULL;
 }
 
 // Choose the heap base address and oop encoding mode
@@ -714,27 +730,12 @@ jint Universe::create_heap() {
 jint Universe::initialize_heap() {
   jint status = JNI_ERR;
 
-#if !INCLUDE_ALL_GCS
-  if (UseParallelGC) {
-    fatal("UseParallelGC not supported in this VM.");
-  } else if (UseG1GC) {
-    fatal("UseG1GC not supported in this VM.");
-  } else if (UseConcMarkSweepGC) {
-    fatal("UseConcMarkSweepGC not supported in this VM.");
-#else
-  if (UseParallelGC) {
-    status = Universe::create_heap<ParallelScavengeHeap, GenerationSizer>();
-  } else if (UseG1GC) {
-    status = Universe::create_heap<G1CollectedHeap, G1CollectorPolicyExt>();
-  } else if (UseConcMarkSweepGC) {
-    status = Universe::create_heap<GenCollectedHeap, ConcurrentMarkSweepPolicy>();
-#endif
-  } else if (UseSerialGC) {
-    status = Universe::create_heap<GenCollectedHeap, MarkSweepPolicy>();
-  } else {
-    ShouldNotReachHere();
+  _collectedHeap = create_heap_ext();
+  if (_collectedHeap == NULL) {
+    _collectedHeap = create_heap();
   }
 
+  status = _collectedHeap->initialize();
   if (status != JNI_OK) {
     return status;
   }

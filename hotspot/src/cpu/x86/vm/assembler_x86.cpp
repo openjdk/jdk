@@ -1674,6 +1674,13 @@ void Assembler::cvtsi2ssl(XMMRegister dst, Address src) {
   emit_simd_arith(0x2A, dst, src, VEX_SIMD_F3, true);
 }
 
+void Assembler::cvtsi2ssq(XMMRegister dst, Register src) {
+  NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  int encode = simd_prefix_and_encode_q(dst, dst, src, VEX_SIMD_F3, true);
+  emit_int8(0x2A);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith(0x5A, dst, src, VEX_SIMD_F3);
@@ -6602,13 +6609,6 @@ void Assembler::cvtsi2sdq(XMMRegister dst, Address src) {
   simd_prefix_q(dst, dst, src, VEX_SIMD_F2, true);
   emit_int8(0x2A);
   emit_operand(dst, src);
-}
-
-void Assembler::cvtsi2ssq(XMMRegister dst, Register src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  int encode = simd_prefix_and_encode_q(dst, dst, src, VEX_SIMD_F3, true);
-  emit_int8(0x2A);
-  emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::cvtsi2ssq(XMMRegister dst, Address src) {

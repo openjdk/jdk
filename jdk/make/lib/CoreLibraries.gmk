@@ -146,6 +146,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
+    DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -307,7 +308,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
-    DISABLED_WARNINGS_solstudio := E_ASM_DISABLES_OPTIMIZATION, \
+    DISABLED_WARNINGS_solstudio := \
+        E_ASM_DISABLES_OPTIMIZATION \
+        E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

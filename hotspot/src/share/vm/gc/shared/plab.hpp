@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward declarations.
@@ -75,6 +74,8 @@ public:
   PLAB(size_t word_sz);
   virtual ~PLAB() {}
 
+  static size_t size_required_for_allocation(size_t word_size) { return word_size + AlignmentReserve; }
+
   // Minimum PLAB size.
   static size_t min_size();
   // Maximum PLAB size.
@@ -95,7 +96,7 @@ public:
   }
 
   // Allocate the object aligned to "alignment_in_bytes".
-  HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
+  inline HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
 
   // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
@@ -108,13 +109,6 @@ public:
   size_t waste() { return _wasted; }
   size_t undo_waste() { return _undo_wasted; }
 
-  // Should only be done if we are about to reset with a new buffer of the
-  // given size.
-  void set_word_size(size_t new_word_sz) {
-    assert(new_word_sz > AlignmentReserve, "Too small");
-    _word_sz = new_word_sz;
-  }
-
   // The number of words of unallocated space remaining in the buffer.
   size_t words_remaining() {
     assert(_end >= _top, "Negative buffer");
@@ -126,7 +120,10 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  virtual void set_buf(HeapWord* buf) {
+  virtual void set_buf(HeapWord* buf, size_t new_word_sz) {
+    assert(new_word_sz > AlignmentReserve, "Too small");
+    _word_sz = new_word_sz;
+
     _bottom   = buf;
     _top      = _bottom;
     _hard_end = _bottom + word_sz();
@@ -149,7 +146,8 @@ public:
 };
 
 // PLAB book-keeping.
-class PLABStats VALUE_OBJ_CLASS_SPEC {
+class PLABStats : public CHeapObj<mtGC> {
+ protected:
   size_t _allocated;          // Total allocated
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
@@ -158,7 +156,7 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
   AdaptiveWeightedAverage
          _filter;             // Integrator with decay
 
-  void reset() {
+  virtual void reset() {
     _allocated   = 0;
     _wasted      = 0;
     _undo_wasted = 0;
@@ -174,6 +172,8 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
     _filter(wt)
   { }
 
+  virtual ~PLABStats() { }
+
   static const size_t min_size() {
     return PLAB::min_size();
   }
@@ -187,23 +187,15 @@ class PLABStats VALUE_OBJ_CLASS_SPEC {
 
   // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz();
+  virtual void adjust_desired_plab_sz();
 
-  void add_allocated(size_t v) {
-    Atomic::add_ptr(v, &_allocated);
-  }
+  inline void add_allocated(size_t v);
 
-  void add_unused(size_t v) {
-    Atomic::add_ptr(v, &_unused);
-  }
+  inline void add_unused(size_t v);
 
-  void add_wasted(size_t v) {
-    Atomic::add_ptr(v, &_wasted);
-  }
+  inline void add_wasted(size_t v);
 
-  void add_undo_wasted(size_t v) {
-    Atomic::add_ptr(v, &_undo_wasted);
-  }
+  inline void add_undo_wasted(size_t v);
 };
 
 #endif // SHARE_VM_GC_SHARED_PLAB_HPP

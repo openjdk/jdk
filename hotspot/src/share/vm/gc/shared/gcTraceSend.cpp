@@ -234,6 +234,37 @@ void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_in
     e.commit();
   }
 }
+
+static TraceStructG1EvacStats create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
+  TraceStructG1EvacStats s;
+  s.set_gcId(gcid);
+  s.set_allocated(summary.allocated() * HeapWordSize);
+  s.set_wasted(summary.wasted() * HeapWordSize);
+  s.set_used(summary.used() * HeapWordSize);
+  s.set_undoWaste(summary.undo_wasted() * HeapWordSize);
+  s.set_regionEndWaste(summary.region_end_waste() * HeapWordSize);
+  s.set_regionsRefilled(summary.regions_filled());
+  s.set_directAllocated(summary.direct_allocated() * HeapWordSize);
+  s.set_failureUsed(summary.failure_used() * HeapWordSize);
+  s.set_failureWaste(summary.failure_waste() * HeapWordSize);
+  return s;
+}
+
+void G1NewTracer::send_young_evacuation_statistics(const G1EvacSummary& summary) const {
+  EventGCG1EvacuationYoungStatistics surv_evt;
+  if (surv_evt.should_commit()) {
+    surv_evt.set_stats(create_g1_evacstats(_shared_gc_info.gc_id().id(), summary));
+    surv_evt.commit();
+  }
+}
+
+void G1NewTracer::send_old_evacuation_statistics(const G1EvacSummary& summary) const {
+  EventGCG1EvacuationOldStatistics old_evt;
+  if (old_evt.should_commit()) {
+    old_evt.set_stats(create_g1_evacstats(_shared_gc_info.gc_id().id(), summary));
+    old_evt.commit();
+  }
+}
 #endif
 
 static TraceStructVirtualSpace to_trace_struct(const VirtualSpaceSummary& summary) {

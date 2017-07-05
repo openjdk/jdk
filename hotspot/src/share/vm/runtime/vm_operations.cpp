@@ -109,8 +109,8 @@ void VM_Deoptimize::doit() {
   // Deoptimize all activations depending on marked nmethods
   Deoptimization::deoptimize_dependents();
 
-  // Make the dependent methods zombies
-  CodeCache::make_marked_nmethods_zombies();
+  // Make the dependent methods not entrant
+  CodeCache::make_marked_nmethods_not_entrant();
 }
 
 void VM_MarkActiveNMethods::doit() {
