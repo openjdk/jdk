@@ -30,6 +30,7 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/plab.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/padded.hpp"
 
@@ -65,6 +66,7 @@ class ParScanThreadState {
  private:
   ObjToScanQueue *_work_queue;
   Stack<oop, mtGC>* const _overflow_stack;
+  PreservedMarks* const _preserved_marks;
 
   PLAB _to_space_alloc_buffer;
 
@@ -128,6 +130,7 @@ class ParScanThreadState {
                      Generation* old_gen_, int thread_num_,
                      ObjToScanQueueSet* work_queue_set_,
                      Stack<oop, mtGC>* overflow_stacks_,
+                     PreservedMarks* preserved_marks_,
                      size_t desired_plab_sz_,
                      ParallelTaskTerminator& term_);
 
@@ -135,6 +138,8 @@ class ParScanThreadState {
   AgeTable* age_table() {return &_ageTable;}
 
   ObjToScanQueue* work_queue() { return _work_queue; }
+
+  PreservedMarks* preserved_marks() const { return _preserved_marks; }
 
   PLAB* to_space_alloc_buffer() {
     return &_to_space_alloc_buffer;
@@ -330,10 +335,6 @@ class ParNewGeneration: public DefNewGeneration {
 
   static oop real_forwardee_slow(oop obj);
   static void waste_some_time();
-
-  // Preserve the mark of "obj", if necessary, in preparation for its mark
-  // word being overwritten with a self-forwarding-pointer.
-  void preserve_mark_if_necessary(oop obj, markOop m);
 
   void handle_promotion_failed(GenCollectedHeap* gch, ParScanThreadStateSet& thread_state_set);
 

@@ -64,6 +64,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -626,7 +627,9 @@ jint universe_init() {
   guarantee(sizeof(oop) >= sizeof(HeapWord), "HeapWord larger than oop?");
   guarantee(sizeof(oop) % sizeof(HeapWord) == 0,
             "oop size is not not a multiple of HeapWord size");
-  TraceTime timer("Genesis", TraceStartupTime);
+
+  TraceStartupTime timer("Genesis");
+
   JavaClasses::compute_hard_coded_offsets();
 
   jint status = Universe::initialize_heap();

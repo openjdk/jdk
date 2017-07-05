@@ -174,6 +174,8 @@ const jlong max_jlong =         CONST64(0x7fffffffffffffff);
 #if _MSC_VER < 1800
 // Visual Studio 2013 introduced strtoull(); before, one has to use _strtoui64() instead.
 #define strtoull _strtoui64
+// Visual Studio prior to 2013 had no va_copy, but could safely copy va_list by assignement
+#define va_copy(dest, src) dest = src
 // Fixes some wrong warnings about 'this' : used in base member initializer list
 #pragma warning( disable : 4355 )
 #endif

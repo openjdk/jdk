@@ -26,6 +26,8 @@
  * @bug 8023524
  * @summary tests logging generated classes for lambda
  * @library /java/nio/file
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @run testng LogGeneratedClassesTest
  */
 import java.io.File;

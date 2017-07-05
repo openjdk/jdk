@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,37 +228,30 @@ BufferNode* DirtyCardQueueSet::get_completed_buffer(int stop_at) {
   return nd;
 }
 
-bool DirtyCardQueueSet::apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
-                                                                 uint worker_i,
-                                                                 BufferNode* nd) {
-  if (nd != NULL) {
-    void **buf = BufferNode::make_buffer_from_node(nd);
-    size_t index = nd->index();
-    bool b =
-      DirtyCardQueue::apply_closure_to_buffer(cl, buf,
-                                              index, _sz,
-                                              true, worker_i);
-    if (b) {
-      deallocate_buffer(buf);
-      return true;  // In normal case, go on to next buffer.
-    } else {
-      enqueue_complete_buffer(buf, index);
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
 bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
                                                           uint worker_i,
                                                           int stop_at,
                                                           bool during_pause) {
   assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
   BufferNode* nd = get_completed_buffer(stop_at);
-  bool res = apply_closure_to_completed_buffer_helper(cl, worker_i, nd);
-  if (res) Atomic::inc(&_processed_buffers_rs_thread);
-  return res;
+  if (nd == NULL) {
+    return false;
+  } else {
+    void** buf = BufferNode::make_buffer_from_node(nd);
+    size_t index = nd->index();
+    if (DirtyCardQueue::apply_closure_to_buffer(cl,
+                                                buf, index, _sz,
+                                                true, worker_i)) {
+      // Done with fully processed buffer.
+      deallocate_buffer(buf);
+      Atomic::inc(&_processed_buffers_rs_thread);
+      return true;
+    } else {
+      // Return partially processed buffer to the queue.
+      enqueue_complete_buffer(buf, index);
+      return false;
+    }
+  }
 }
 
 void DirtyCardQueueSet::apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
