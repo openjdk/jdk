@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3122,7 +3122,6 @@ const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculativ
   if (ftip != NULL && ktip != NULL &&
       ftip->is_loaded() &&  ftip->klass()->is_interface() &&
       ktip->is_loaded() && !ktip->klass()->is_interface()) {
-    // Happens in a CTW of rt.jar, 320-341, no extra flags
     assert(!ftip->klass_is_exact(), "interface could not be exact");
     return ktip->cast_to_ptr_type(ftip->ptr());
   }

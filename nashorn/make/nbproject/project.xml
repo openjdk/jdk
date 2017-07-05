@@ -160,16 +160,16 @@
                 <package-root>../test/src</package-root>
                 <unit-tests/>
                 <classpath mode="compile">../test/lib/testng.jar:../build/classes:../src/jdk.scripting.nashorn/share/classes</classpath>
-                <source-level>1.7</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>../buildtools/nasgen/src</package-root>
                 <classpath mode="compile">../build/classes:../src</classpath>
-                <source-level>1.7</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>../src/jdk.scripting.nashorn/share/classes</package-root>
-                <source-level>1.7</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
         </java-data>
     </configuration>

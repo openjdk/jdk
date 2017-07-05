@@ -31,6 +31,7 @@ class Charset {
     String   csName;
     String   hisName;
     String   type;
+    String   os;
     boolean  isASCII;
     int      b1Min;
     int      b1Max;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 
 package java.util.logging;
 
-import java.io.*;
 import java.nio.charset.Charset;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -40,11 +41,70 @@ import java.util.*;
  * but it is recommended that it normally be used with UTF-8.  The
  * character encoding can be set on the output Handler.
  *
+ * @implSpec Since JDK 1.9, instances of {@linkplain LogRecord} contain
+ * an {@link LogRecord#getInstant() Instant} which can have nanoseconds below
+ * the millisecond resolution.
+ * The DTD specification has been updated to allow for an optional
+ * {@code <nanos>} element. By default, the XMLFormatter will compute the
+ * nanosecond adjustment below the millisecond resolution (using
+ * {@code LogRecord.getInstant().getNano() % 1000_000}) - and if this is not 0,
+ * this adjustment value will be printed in the new {@code <nanos>} element.
+ * The event instant can then be reconstructed using
+ * {@code Instant.ofEpochSecond(millis/1000L, (millis % 1000L) * 1000_000L + nanos)}
+ * where {@code millis} and {@code nanos} represent the numbers serialized in
+ * the {@code <millis>} and {@code <nanos>} elements, respectively.
+ * <br>
+ * The {@code <date>} element will now contain the whole instant as formatted
+ * by the {@link DateTimeFormatter#ISO_INSTANT DateTimeFormatter.ISO_INSTANT}
+ * formatter.
+ * <p>
+ * For compatibility with old parsers, XMLFormatters can
+ * be configured to revert to the old format by specifying a
+ * {@code <xml-formatter-fully-qualified-class-name>.useInstant = false}
+ * {@linkplain LogManager#getProperty(java.lang.String) property} in the
+ * logging configuration. When {@code useInstant} is {@code false}, the old
+ * formatting will be preserved. When {@code useInstant} is {@code true}
+ * (the default), the {@code <nanos>} element will be printed and the
+ * {@code <date>} element will contain the {@linkplain
+ * DateTimeFormatter#ISO_INSTANT formatted} instant.
+ * <p>
+ * For instance, in order to configure plain instances of XMLFormatter to omit
+ * the new {@code <nano>} element,
+ * {@code java.util.logging.XMLFormatter.useInstant = false} can be specified
+ * in the logging configuration.
+ *
  * @since 1.4
  */
 
 public class XMLFormatter extends Formatter {
-    private LogManager manager = LogManager.getLogManager();
+    private final LogManager manager = LogManager.getLogManager();
+    private final boolean useInstant;
+
+    /**
+     * Creates a new instance of XMLFormatter.
+     *
+     * @implSpec
+     *    Since JDK 1.9, the XMLFormatter will print out the record {@linkplain
+     *    LogRecord#getInstant() event time} as an Instant. This instant
+     *    has the best resolution available on the system. The {@code <date>}
+     *    element will contain the instant as formatted by the {@link
+     *    DateTimeFormatter#ISO_INSTANT}.
+     *    In addition, an optional {@code <nanos>} element containing a
+     *    nanosecond adjustment will be printed if the instant contains some
+     *    nanoseconds below the millisecond resolution.
+     *    <p>
+     *    This new behavior can be turned off, and the old formatting restored,
+     *    by specifying a property in the {@linkplain
+     *    LogManager#getProperty(java.lang.String) logging configuration}.
+     *    If {@code LogManager.getLogManager().getProperty(
+     *    this.getClass().getName()+".useInstant")} is {@code "false"} or
+     *    {@code "0"}, the old formatting will be restored.
+     */
+    public XMLFormatter() {
+        useInstant = (manager == null)
+            || manager.getBooleanProperty(
+                    this.getClass().getName()+".useInstant", true);
+    }
 
     // Append a two digit number.
     private void a2(StringBuilder sb, int x) {
@@ -102,17 +162,34 @@ public class XMLFormatter extends Formatter {
      * @param record the log record to be formatted.
      * @return a formatted log record
      */
+    @Override
     public String format(LogRecord record) {
         StringBuilder sb = new StringBuilder(500);
         sb.append("<record>\n");
 
+        final Instant instant = record.getInstant();
+
         sb.append("  <date>");
-        appendISO8601(sb, record.getMillis());
+        if (useInstant) {
+            // If useInstant is true - we will print the instant in the
+            // date field, using the ISO_INSTANT formatter.
+            DateTimeFormatter.ISO_INSTANT.formatTo(instant, sb);
+        } else {
+            // If useInstant is false - we will keep the 'old' formating
+            appendISO8601(sb, instant.toEpochMilli());
+        }
         sb.append("</date>\n");
 
         sb.append("  <millis>");
-        sb.append(record.getMillis());
+        sb.append(instant.toEpochMilli());
         sb.append("</millis>\n");
+
+        final int nanoAdjustment = instant.getNano() % 1000_000;
+        if (useInstant && nanoAdjustment != 0) {
+            sb.append("  <nanos>");
+            sb.append(nanoAdjustment);
+            sb.append("</nanos>\n");
+        }
 
         sb.append("  <sequence>");
         sb.append(record.getSequenceNumber());
@@ -223,6 +300,7 @@ public class XMLFormatter extends Formatter {
      * @param   h  The target handler (can be null)
      * @return  a valid XML string
      */
+    @Override
     public String getHead(Handler h) {
         StringBuilder sb = new StringBuilder();
         String encoding;
@@ -251,6 +329,7 @@ public class XMLFormatter extends Formatter {
         sb.append(encoding);
         sb.append("\"");
         sb.append(" standalone=\"no\"?>\n");
+
         sb.append("<!DOCTYPE log SYSTEM \"logger.dtd\">\n");
         sb.append("<log>\n");
         return sb.toString();
@@ -262,6 +341,7 @@ public class XMLFormatter extends Formatter {
      * @param   h  The target handler (can be null)
      * @return  a valid XML string
      */
+    @Override
     public String getTail(Handler h) {
         return "</log>\n";
     }

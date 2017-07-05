@@ -186,6 +186,17 @@ public class ComHostnameVerifier {
         }
     }
 
+    private static class ComSunHTTPSHandlerFactory implements URLStreamHandlerFactory {
+        private static String SUPPORTED_PROTOCOL = "https";
+
+        public URLStreamHandler createURLStreamHandler(String protocol) {
+            if (!protocol.equalsIgnoreCase(SUPPORTED_PROTOCOL))
+                return null;
+
+            return new com.sun.net.ssl.internal.www.protocol.https.Handler();
+        }
+    }
+
     /*
      * Define the client side of the test.
      *
@@ -200,8 +211,7 @@ public class ComHostnameVerifier {
             Thread.sleep(50);
         }
 
-        System.setProperty("java.protocol.handler.pkgs",
-            "com.sun.net.ssl.internal.www.protocol");
+        URL.setURLStreamHandlerFactory(new ComSunHTTPSHandlerFactory());
 
         System.setProperty("https.cipherSuites",
                 "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA");

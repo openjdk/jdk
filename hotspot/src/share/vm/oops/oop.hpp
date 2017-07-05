@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class oopDesc {
   // to be able to figure out the size of an object knowing its klass.
   int size_given_klass(Klass* klass);
 
-  // type test operations (inlined in oop.inline.h)
+  // type test operations (inlined in oop.inline.hpp)
   bool is_instance()            const;
   bool is_instanceMirror()      const;
   bool is_instanceClassLoader() const;
@@ -116,6 +116,15 @@ class oopDesc {
   bool is_array()               const;
   bool is_objArray()            const;
   bool is_typeArray()           const;
+
+  // type test operations that don't require inclusion of oop.inline.hpp.
+  bool is_instance_noinline()          const;
+  bool is_instanceMirror_noinline()    const;
+  bool is_instanceClassLoader_noline() const;
+  bool is_instanceRef_noline()         const;
+  bool is_array_noinline()             const;
+  bool is_objArray_noinline()          const;
+  bool is_typeArray_noinline()         const;
 
  private:
   // field addresses in oop
@@ -370,10 +379,15 @@ class oopDesc {
   markOop  displaced_mark() const;
   void     set_displaced_mark(markOop m);
 
+  static bool has_klass_gap();
+
   // for code generation
-  static int mark_offset_in_bytes()    { return offset_of(oopDesc, _mark); }
-  static int klass_offset_in_bytes()   { return offset_of(oopDesc, _metadata._klass); }
-  static int klass_gap_offset_in_bytes();
+  static int mark_offset_in_bytes()      { return offset_of(oopDesc, _mark); }
+  static int klass_offset_in_bytes()     { return offset_of(oopDesc, _metadata._klass); }
+  static int klass_gap_offset_in_bytes() {
+    assert(has_klass_gap(), "only applicable to compressed klass pointers");
+    return klass_offset_in_bytes() + sizeof(narrowKlass);
+  }
 };
 
 #endif // SHARE_VM_OOPS_OOP_HPP
