@@ -175,6 +175,9 @@ const int MILLIUNITS    = 1000;         // milli units per base unit
 const int MICROUNITS    = 1000000;      // micro units per base unit
 const int NANOUNITS     = 1000000000;   // nano units per base unit
 
+const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
+const jint  NANOSECS_PER_MILLISEC = 1000000;
+
 inline const char* proper_unit_for_byte_size(size_t s) {
   if (s >= 10*M) {
     return "M";

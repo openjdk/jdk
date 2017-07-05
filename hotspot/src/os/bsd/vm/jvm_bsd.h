@@ -33,7 +33,6 @@
 // All local includes have been commented out.
 */
 
-
 #ifndef JVM_MD_H
 #define JVM_MD_H
 
@@ -59,6 +58,7 @@
 
 #include <dirent.h>             /* For DIR */
 #include <sys/param.h>          /* For MAXPATHLEN */
+#include <sys/socket.h>         /* For socklen_t */
 #include <unistd.h>             /* For F_OK, R_OK, W_OK */
 
 #define JNI_ONLOAD_SYMBOLS      {"JNI_OnLoad"}
@@ -127,9 +127,5 @@
 #endif
 #endif
 #endif /* JVM_MD_H */
-
-// Reconciliation History
-// jvm_solaris.h        1.6 99/06/22 16:38:47
-// End
 
 #endif // OS_BSD_VM_JVM_BSD_H

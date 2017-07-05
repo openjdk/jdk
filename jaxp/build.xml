@@ -43,14 +43,6 @@
       Run 'make help' for help using the Makefile.
     </description>
 
-    <!-- Mac is special, need to downgrade these before build.properties. -->
-    <condition property="javac.source" value="1.5">
-        <os family="mac"/>
-    </condition>
-    <condition property="javac.target" value="1.5">
-        <os family="mac"/>
-    </condition>
-
     <!-- Project build properties. -->
     <property file="build.properties"/>
 

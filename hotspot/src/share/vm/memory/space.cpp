@@ -304,11 +304,6 @@ void ContiguousSpace::clear(bool mangle_space) {
   CompactibleSpace::clear(mangle_space);
 }
 
-bool Space::is_in(const void* p) const {
-  HeapWord* b = block_start_const(p);
-  return b != NULL && block_is_obj(b);
-}
-
 bool ContiguousSpace::is_in(const void* p) const {
   return _bottom <= p && p < _top;
 }

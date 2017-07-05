@@ -744,7 +744,6 @@ public class RepaintManager
         int localBoundsY = 0;
         int localBoundsH;
         int localBoundsW;
-        Enumeration keys;
 
         roots = new ArrayList<Component>(count);
 
@@ -1073,9 +1072,9 @@ public class RepaintManager
             }
         }
         // Clear out the VolatileImages
-        Iterator gcs = volatileMap.keySet().iterator();
+        Iterator<GraphicsConfiguration> gcs = volatileMap.keySet().iterator();
         while (gcs.hasNext()) {
-            GraphicsConfiguration gc = (GraphicsConfiguration)gcs.next();
+            GraphicsConfiguration gc = gcs.next();
             VolatileImage image = volatileMap.get(gc);
             if (image.getWidth() > width || image.getHeight() > height) {
                 image.flush();

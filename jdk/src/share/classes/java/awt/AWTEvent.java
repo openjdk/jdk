@@ -278,9 +278,9 @@ public abstract class AWTEvent extends EventObject {
     private static synchronized Field get_InputEvent_CanAccessSystemClipboard() {
         if (inputEvent_CanAccessSystemClipboard_Field == null) {
             inputEvent_CanAccessSystemClipboard_Field =
-                (Field)java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                            public Object run() {
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Field>() {
+                            public Field run() {
                                 Field field = null;
                                 try {
                                     field = InputEvent.class.

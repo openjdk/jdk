@@ -136,6 +136,7 @@ public interface XMLSignature extends XMLStructure {
      * @return an unmodifiable list of <code>XMLObject</code>s (may be empty
      *    but never <code>null</code>)
      */
+    @SuppressWarnings("rawtypes")
     List getObjects();
 
     /**

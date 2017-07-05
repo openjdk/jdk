@@ -520,7 +520,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if (e == null || (ex = e.ex) == null)
             return null;
         if (e.thrower != Thread.currentThread().getId()) {
-            Class ec = ex.getClass();
+            Class<? extends Throwable> ec = ex.getClass();
             try {
                 Constructor<?> noArgCtor = null;
                 Constructor<?>[] cs = ec.getConstructors();// public ctors only
