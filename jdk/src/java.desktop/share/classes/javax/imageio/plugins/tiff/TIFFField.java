@@ -62,7 +62,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>BYTE</tt>
+ * {@code BYTE}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_BYTE}
@@ -77,7 +77,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>ASCII</tt>
+ * {@code ASCII}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_ASCII}
@@ -92,7 +92,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>SHORT</tt>
+ * {@code SHORT}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_SHORT}
@@ -107,7 +107,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>LONG</tt>
+ * {@code LONG}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_LONG}
@@ -122,7 +122,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>RATIONAL</tt>
+ * {@code RATIONAL}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_RATIONAL}
@@ -137,7 +137,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>SBYTE</tt>
+ * {@code SBYTE}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_SBYTE}
@@ -152,7 +152,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>UNDEFINED</tt>
+ * {@code UNDEFINED}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_UNDEFINED}
@@ -167,7 +167,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>SSHORT</tt>
+ * {@code SSHORT}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_SSHORT}
@@ -182,7 +182,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>SLONG</tt>
+ * {@code SLONG}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_SLONG}
@@ -197,7 +197,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>SRATIONAL</tt>
+ * {@code SRATIONAL}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_SRATIONAL}
@@ -212,7 +212,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>FLOAT</tt>
+ * {@code FLOAT}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_FLOAT}
@@ -227,7 +227,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>DOUBLE</tt>
+ * {@code DOUBLE}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_DOUBLE}
@@ -242,7 +242,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <tr>
  * <td>
- * <tt>IFD</tt>
+ * {@code IFD}
  * </td>
  * <td>
  * {@link TIFFTag#TIFF_IFD_POINTER}
@@ -941,14 +941,14 @@ public final class TIFFField implements Cloneable {
 
     /**
      * Returns the {@code TIFFField} as a node named either
-     * <tt>"TIFFField"</tt> or <tt>"TIFFIFD"</tt> as described in the
+     * {@code "TIFFField"} or {@code "TIFFIFD"} as described in the
      * TIFF native image metadata specification. The node will be named
-     * <tt>"TIFFIFD"</tt> if and only if {@link #hasDirectory()} returns
+     * {@code "TIFFIFD"} if and only if {@link #hasDirectory()} returns
      * {@code true} and the field's type is either {@link TIFFTag#TIFF_LONG}
      * or {@link TIFFTag#TIFF_IFD_POINTER}.
      *
-     * @return a {@code Node} named <tt>"TIFFField"</tt> or
-     * <tt>"TIFFIFD"</tt>.
+     * @return a {@code Node} named {@code "TIFFField"} or
+     * {@code "TIFFIFD"}.
      */
     public Node getAsNativeNode() {
         return new TIFFFieldNode(this);

@@ -39,6 +39,7 @@ SUNWprivate_1.1 {
             Java_sun_instrument_InstrumentationImpl_getObjectSize0;
 	    Java_sun_instrument_InstrumentationImpl_appendToClassLoaderSearch0;
 	    Java_sun_instrument_InstrumentationImpl_setNativeMethodPrefixes;
+            Java_sun_instrument_InstrumentationImpl_loadAgent0;
 	local:
 		*;
 };

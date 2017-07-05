@@ -62,8 +62,7 @@ public class Main {
         // parse module-info.class
         ClassReader cr = new ClassReader(in);
         cr.accept(cv, attrs, 0);
-        return modTargets[0] != null &&
-            (modTargets[0].osName() != null || modTargets[0].osArch() != null);
+        return modTargets[0] != null && modTargets[0].targetPlatform() != null;
     }
 
     public static void main(String... args) throws Exception {

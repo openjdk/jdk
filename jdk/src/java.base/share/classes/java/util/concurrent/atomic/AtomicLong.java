@@ -56,7 +56,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
 
     /**
      * Records whether the underlying JVM supports lockless
-     * compareAndSwap for longs. While the intrinsic compareAndSwapLong
+     * compareAndSet for longs. While the intrinsic compareAndSetLong
      * method works in either case, some constructions should be
      * handled at Java level to avoid locking user-visible locks.
      */
@@ -119,7 +119,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     public final void set(long newValue) {
         // Use putLongVolatile instead of ordinary volatile store when
-        // using compareAndSwapLong, for sake of some 32bit systems.
+        // using compareAndSetLong, for sake of some 32bit systems.
         U.putLongVolatile(this, VALUE, newValue);
     }
 
@@ -156,7 +156,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(long expectedValue, long newValue) {
-        return U.compareAndSwapLong(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLong(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -177,7 +177,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     @Deprecated(since="9")
     public final boolean weakCompareAndSet(long expectedValue, long newValue) {
-        return U.weakCompareAndSwapLong(this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetLongPlain(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -191,7 +191,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetPlain(long expectedValue, long newValue) {
-        return U.weakCompareAndSwapLong(this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetLongPlain(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -487,7 +487,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final long compareAndExchange(long expectedValue, long newValue) {
-        return U.compareAndExchangeLongVolatile(this, VALUE, expectedValue, newValue);
+        return U.compareAndExchangeLong(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -534,7 +534,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetVolatile(long expectedValue, long newValue) {
-        return U.weakCompareAndSwapLongVolatile(this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetLong(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -549,7 +549,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetAcquire(long expectedValue, long newValue) {
-        return U.weakCompareAndSwapLongAcquire(this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetLongAcquire(this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -564,7 +564,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetRelease(long expectedValue, long newValue) {
-        return U.weakCompareAndSwapLongRelease(this, VALUE, expectedValue, newValue);
+        return U.weakCompareAndSetLongRelease(this, VALUE, expectedValue, newValue);
     }
 
 }

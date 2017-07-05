@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.util.List;
  * Several mirror interfaces have locations. Each such mirror
  * extends a {@link Locatable} interface.
  * <p>
- * <a name="strata"><b>Strata</b></a>
+ * <a id="strata"><b>Strata</b></a>
  * <p>
  * The source information for a Location is dependent on the
  * <i>stratum</i> which is used. A stratum is a source code
