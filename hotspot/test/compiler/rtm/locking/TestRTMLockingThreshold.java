@@ -58,7 +58,7 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
      * interrupts, VMM calls, etc. during first lock attempt.
      *
      */
-    private static final int ABORT_THRESHOLD = 10;
+    private static final int MIN_ABORT_THRESHOLD = 10;
 
     @Override
     protected void runTestCases() throws Throwable {
@@ -75,6 +75,9 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
             boolean useStackLock) throws Throwable {
         CompilableTest test = new Test();
 
+        int abortThreshold = Math.max(lockingThreshold / 2,
+                TestRTMLockingThreshold.MIN_ABORT_THRESHOLD);
+
         OutputAnalyzer outputAnalyzer = RTMTestBase.executeRTMTest(
                 test,
                 "-XX:CompileThreshold=1",
@@ -84,7 +87,7 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
                 "-XX:RTMTotalCountIncrRate=1",
                 "-XX:RTMRetryCount=0",
                 CommandLineOptionTest.prepareNumericFlag("RTMAbortThreshold",
-                        TestRTMLockingThreshold.ABORT_THRESHOLD),
+                        abortThreshold),
                 CommandLineOptionTest.prepareNumericFlag("RTMLockingThreshold",
                         lockingThreshold),
                 "-XX:RTMAbortRatio=100",
@@ -103,16 +106,12 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
                 + "RTM locking statistics entries.");
 
         /**
-         * We force abort on each odd iteration, so if RTMLockingThreshold==0,
-         * then we have to make 1 call without abort to avoid rtm state
-         * transition to NoRTM (otherwise actual abort ratio will be 100%),
-         * and after that make 1 call with abort to force deoptimization.
-         * This leads us to two locks for threshold 0.
-         * For other threshold values we have to make RTMLockingThreshold + 1
-         * locks if locking threshold is even, or + 0 if odd.
+         * If RTMLockingThreshold==0, then we have to make at least 1 call.
          */
-        long expectedValue = lockingThreshold +
-                (lockingThreshold == 0L ? 2L : lockingThreshold % 2L);
+        long expectedValue = lockingThreshold;
+        if (expectedValue == 0) {
+            expectedValue++;
+        }
 
         RTMLockingStatistics statBeforeDeopt = null;
         for (RTMLockingStatistics s : statistics) {
@@ -159,15 +158,16 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
          * Test &lt;inflate monitor&gt;
          */
         public static void main(String args[]) throws Throwable {
-            Asserts.assertGTE(args.length, 1, "One argument required.");
+            Asserts.assertGTE(args.length, 2, "Two arguments required.");
             Test t = new Test();
             boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            int lockingThreshold = Integer.valueOf(args[1]);
             if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(t.monitor);
             }
             for (int i = 0; i < Test.TOTAL_ITERATIONS; i++) {
                 AbortProvoker.verifyMonitorState(t.monitor, shouldBeInflated);
-                t.lock(i % 2 == 1);
+                t.lock(i >= lockingThreshold / 2);
             }
         }
     }

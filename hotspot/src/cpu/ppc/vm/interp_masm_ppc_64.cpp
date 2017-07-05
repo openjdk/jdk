@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1712,7 +1712,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr
   andi_(R0, klass, TypeEntries::type_unknown);
   // Already unknown. Nothing to do anymore.
   //bne(CCR0, do_nothing);
-  crorc(/*CCR0 eq*/2, /*CCR1 eq*/4+2, /*CCR0 eq*/2); // cr0 eq = cr1 eq or cr0 ne
+  crorc(CCR0, Assembler::equal, CCR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne
   beq(CCR0, do_nothing);
 
   clrrdi_(R0, tmp, exact_log2(-TypeEntries::type_mask));
@@ -1826,9 +1826,9 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
       lbz(tmp2, Method::intrinsic_id_offset_in_bytes(), R19_method);
       cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
       cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
-      cror(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+      cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
       cmpwi(CCR1, tmp2, vmIntrinsics::_compiledLambdaForm);
-      cror(/*CR0 eq*/2, /*CR1 eq*/4+2, /*CR0 eq*/2);
+      cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
       bne(CCR0, profile_continue);
     }
 

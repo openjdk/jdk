@@ -25,7 +25,7 @@
  * @test
  * @bug 8032410
  * @summary Stack overflow at deoptimization doesn't release owned monitors
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestStackBangMonitorOwned::m1 -XX:CompileCommand=exclude,TestStackBangMonitorOwned::m2 -Xss256K -XX:-UseOnStackReplacement TestStackBangMonitorOwned
+ * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestStackBangMonitorOwned::m1 -XX:CompileCommand=exclude,TestStackBangMonitorOwned::m2 -Xss392K -XX:-UseOnStackReplacement TestStackBangMonitorOwned
  *
  */
 public class TestStackBangMonitorOwned {

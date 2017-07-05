@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,20 +547,16 @@ static void verify_memory(void* ptr) {
 // This function supports testing of the malloc out of memory
 // condition without really running the system out of memory.
 //
-static u_char* testMalloc(size_t alloc_size) {
-  assert(MallocMaxTestWords > 0, "sanity check");
+static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
+  if (MallocMaxTestWords > 0) {
+    jint words = (jint)(alloc_size / BytesPerWord);
 
-  if ((cur_malloc_words + (alloc_size / BytesPerWord)) > MallocMaxTestWords) {
-    return NULL;
+    if ((cur_malloc_words + words) > MallocMaxTestWords) {
+      return true;
+    }
+    Atomic::add(words, (volatile jint *)&cur_malloc_words);
   }
-
-  u_char* ptr = (u_char*)::malloc(alloc_size);
-
-  if (ptr != NULL) {
-    Atomic::add(((jint) (alloc_size / BytesPerWord)),
-                (volatile jint *) &cur_malloc_words);
-  }
-  return ptr;
+  return false;
 }
 
 void* os::malloc(size_t size, MEMFLAGS flags) {
@@ -608,12 +604,13 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
 
-  u_char* ptr;
-  if (MallocMaxTestWords > 0) {
-    ptr = testMalloc(alloc_size);
-  } else {
-    ptr = (u_char*)::malloc(alloc_size);
+  // For the test flag -XX:MallocMaxTestWords
+  if (has_reached_max_malloc_test_peak(size)) {
+    return NULL;
   }
+
+  u_char* ptr;
+  ptr = (u_char*)::malloc(alloc_size);
 
 #ifdef ASSERT
   if (ptr == NULL) {
@@ -641,6 +638,11 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+
+  // For the test flag -XX:MallocMaxTestWords
+  if (has_reached_max_malloc_test_peak(size)) {
+    return NULL;
+  }
 
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));

@@ -22,6 +22,7 @@
  *
  */
 
+#include <fcntl.h>
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -807,7 +808,8 @@ fdStream VMError::log; // error log used by VMError::report_and_die()
 static int expand_and_open(const char* pattern, char* buf, size_t buflen, size_t pos) {
   int fd = -1;
   if (Arguments::copy_expand_pid(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
-    fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, 0666);
+    // the O_EXCL flag will cause the open to fail if the file exists
+    fd = open(buf, O_RDWR | O_CREAT | O_EXCL, 0666);
   }
   return fd;
 }
