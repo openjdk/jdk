@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,6 @@ public final class AccessControlContext {
      * This constructor associates the provided
      * {@code DomainCombiner} with the provided
      * {@code AccessControlContext}.
-     *
-     * <p>
      *
      * @param acc the {@code AccessControlContext} associated
      *          with the provided {@code DomainCombiner}.
@@ -337,8 +335,6 @@ public final class AccessControlContext {
     /**
      * Get the {@code DomainCombiner} associated with this
      * {@code AccessControlContext}.
-     *
-     * <p>
      *
      * @return the {@code DomainCombiner} associated with this
      *          {@code AccessControlContext}, or {@code null}
@@ -738,12 +734,12 @@ public final class AccessControlContext {
 
     /**
      * Checks two AccessControlContext objects for equality.
-     * Checks that <i>obj</i> is
+     * Checks that {@code obj} is
      * an AccessControlContext and has the same set of ProtectionDomains
      * as this context.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
-     * @return true if <i>obj</i> is an AccessControlContext, and has the
+     * @return true if {@code obj} is an AccessControlContext, and has the
      * same set of ProtectionDomains as this context, false otherwise.
      */
     public boolean equals(Object obj) {

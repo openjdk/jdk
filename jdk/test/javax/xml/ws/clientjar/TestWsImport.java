@@ -55,9 +55,6 @@ public class TestWsImport {
     public static void main(String[] args) throws IOException {
 
         String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            javaHome = new File(javaHome).getParent();
-        }
         String wsimport = javaHome + File.separator + "bin" + File.separator + "wsimport";
         if (System.getProperty("os.name").startsWith("Windows")) {
             wsimport = wsimport.concat(".exe");

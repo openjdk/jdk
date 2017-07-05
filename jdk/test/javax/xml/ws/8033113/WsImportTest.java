@@ -140,9 +140,6 @@ public class WsImportTest {
 
     private static String getWsImport() {
         String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            javaHome = new File(javaHome).getParent();
-        }
         String wsimport = javaHome + File.separator + "bin" + File.separator + "wsimport";
         if (System.getProperty("os.name").startsWith("Windows")) {
             wsimport = wsimport.concat(".exe");
