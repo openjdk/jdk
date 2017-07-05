@@ -45,6 +45,10 @@ public class PStack extends Tool {
       this(true, true);
    }
 
+   public PStack(JVMDebugger d) {
+      super(d);
+   }
+
    public void run() {
       run(System.out);
    }

@@ -77,18 +77,18 @@ import java.lang.annotation.Annotation;
  * by the following formal grammar:
  * <blockquote>
  * <dl>
- * <dt><i>SpecificationVersion:
- * <dd>Digits RefinedVersion<sub>opt</sub></i>
+ * <dt><i>SpecificationVersion:</i>
+ * <dd><i>Digits RefinedVersion<sub>opt</sub></i>
 
- * <p><dt><i>RefinedVersion:</i>
+ * <dt><i>RefinedVersion:</i>
  * <dd>{@code .} <i>Digits</i>
  * <dd>{@code .} <i>Digits RefinedVersion</i>
  *
- * <p><dt><i>Digits:
- * <dd>Digit
- * <dd>Digits</i>
+ * <dt><i>Digits:</i>
+ * <dd><i>Digit</i>
+ * <dd><i>Digits</i>
  *
- * <p><dt><i>Digit:</i>
+ * <dt><i>Digit:</i>
  * <dd>any character for which {@link Character#isDigit} returns {@code true},
  * e.g. 0, 1, 2, ...
  * </dl>

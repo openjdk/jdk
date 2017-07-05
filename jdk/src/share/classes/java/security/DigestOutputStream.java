@@ -37,13 +37,13 @@ import java.io.ByteArrayOutputStream;
  * the bits going through the stream.
  *
  * <p>To complete the message digest computation, call one of the
- * <code>digest</code> methods on the associated message
+ * {@code digest} methods on the associated message
  * digest after your calls to one of this digest ouput stream's
  * {@link #write(int) write} methods.
  *
  * <p>It is possible to turn this stream on or off (see
  * {@link #on(boolean) on}). When it is on, a call to one of the
- * <code>write</code> methods results in
+ * {@code write} methods results in
  * an update on the message digest.  But when it is off, the message
  * digest is not updated. The default is for the stream to be on.
  *
@@ -99,8 +99,8 @@ public class DigestOutputStream extends FilterOutputStream {
      * the specified byte, and in any case writes the byte
      * to the output stream. That is, if the digest function is on
      * (see {@link #on(boolean) on}), this method calls
-     * <code>update</code> on the message digest associated with this
-     * stream, passing it the byte <code>b</code>. This method then
+     * {@code update} on the message digest associated with this
+     * stream, passing it the byte {@code b}. This method then
      * writes the byte to the output stream, blocking until the byte
      * is actually written.
      *
@@ -122,7 +122,7 @@ public class DigestOutputStream extends FilterOutputStream {
      * Updates the message digest (if the digest function is on) using
      * the specified subarray, and in any case writes the subarray to
      * the output stream. That is, if the digest function is on (see
-     * {@link #on(boolean) on}), this method calls <code>update</code>
+     * {@link #on(boolean) on}), this method calls {@code update}
      * on the message digest associated with this stream, passing it
      * the subarray specifications. This method then writes the subarray
      * bytes to the output stream, blocking until the bytes are actually
@@ -131,11 +131,11 @@ public class DigestOutputStream extends FilterOutputStream {
      * @param b the array containing the subarray to be used for updating
      * and writing to the output stream.
      *
-     * @param off the offset into <code>b</code> of the first byte to
+     * @param off the offset into {@code b} of the first byte to
      * be updated and written.
      *
      * @param len the number of bytes of data to be updated and written
-     * from <code>b</code>, starting at offset <code>off</code>.
+     * from {@code b}, starting at offset {@code off}.
      *
      * @exception IOException if an I/O error occurs.
      *
@@ -150,7 +150,7 @@ public class DigestOutputStream extends FilterOutputStream {
 
     /**
      * Turns the digest function on or off. The default is on.  When
-     * it is on, a call to one of the <code>write</code> methods results in an
+     * it is on, a call to one of the {@code write} methods results in an
      * update on the message digest.  But when it is off, the message
      * digest is not updated.
      *

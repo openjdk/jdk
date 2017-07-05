@@ -33,6 +33,14 @@ import java.io.PrintStream;
     an object histogram from a remote or crashed VM. */
 public class ObjectHistogram extends Tool {
 
+    public ObjectHistogram() {
+       super();
+    }
+
+    public ObjectHistogram(JVMDebugger d) {
+       super(d);
+    }
+
    public void run() {
       run(System.out, System.err);
    }

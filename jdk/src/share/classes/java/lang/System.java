@@ -634,6 +634,8 @@ public final class System {
      *
      * <p>On UNIX systems, it returns {@code "\n"}; on Microsoft
      * Windows systems it returns {@code "\r\n"}.
+     *
+     * @return the system-dependent line separator string
      * @since 1.7
      */
     public static String lineSeparator() {

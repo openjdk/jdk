@@ -152,12 +152,9 @@ uint G1CardCounts::add_card_count(jbyte* card_ptr) {
     if (card_num < _committed_max_card_num) {
       count = (uint) _card_counts[card_num];
       if (count < G1ConcRSHotCardLimit) {
-        _card_counts[card_num] += 1;
+        _card_counts[card_num] =
+          (jubyte)(MIN2((uintx)(_card_counts[card_num] + 1), G1ConcRSHotCardLimit));
       }
-      assert(_card_counts[card_num] <= G1ConcRSHotCardLimit,
-             err_msg("Refinement count overflow? "
-                     "new count: "UINT32_FORMAT,
-                     (uint) _card_counts[card_num]));
     }
   }
   return count;

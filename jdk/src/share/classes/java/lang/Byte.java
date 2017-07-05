@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,9 +398,9 @@ public final class Byte extends Number implements Comparable<Byte> {
      * Returns a hash code for a {@code byte} value; compatible with
      * {@code Byte.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code byte} value.
+     * @since 1.8
      */
     public static int hashCode(byte value) {
         return (int)value;

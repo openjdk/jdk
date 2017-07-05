@@ -112,7 +112,9 @@ import java.security.PrivilegedAction;
         implMethodDesc = implMethodType.toMethodDescriptorString();
         Type implMethodAsmType = Type.getMethodType(implMethodDesc);
         implMethodArgumentTypes = implMethodAsmType.getArgumentTypes();
-        implMethodReturnType = implMethodAsmType.getReturnType();
+        implMethodReturnType = (implKind == MethodHandleInfo.REF_newInvokeSpecial)
+                ? Type.getObjectType(implMethodClassName)
+                : implMethodAsmType.getReturnType();
         constructorType = invokedType.changeReturnType(Void.TYPE);
         constructorDesc = constructorType.toMethodDescriptorString();
         lambdaClassName = targetClass.getName().replace('.', '/') + "$$Lambda$" + counter.incrementAndGet();

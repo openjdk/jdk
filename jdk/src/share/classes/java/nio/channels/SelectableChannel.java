@@ -64,8 +64,8 @@ import java.nio.channels.spi.SelectorProvider;
  * threads. </p>
  *
  *
- * <a name="bm">
- * <h4>Blocking mode</h4>
+ * <a name="bm"></a>
+ * <h2>Blocking mode</h2>
  *
  * A selectable channel is either in <i>blocking</i> mode or in
  * <i>non-blocking</i> mode.  In blocking mode, every I/O operation invoked
@@ -141,6 +141,9 @@ public abstract class SelectableChannel
     /**
      * Retrieves the key representing the channel's registration with the given
      * selector.
+     *
+     * @param   sel
+     *          The selector
      *
      * @return  The key returned when this channel was last registered with the
      *          given selector, or <tt>null</tt> if this channel is not

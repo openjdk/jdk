@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode UP Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code UP} rounding
          *<tr align=right><td>5.5</td>  <td>6</td>
@@ -124,6 +125,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode DOWN Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code DOWN} rounding
          *<tr align=right><td>5.5</td>  <td>5</td>
@@ -148,6 +150,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode CEILING Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code CEILING} rounding
          *<tr align=right><td>5.5</td>  <td>6</td>
@@ -172,6 +175,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode FLOOR Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code FLOOR} rounding
          *<tr align=right><td>5.5</td>  <td>5</td>
@@ -198,6 +202,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode HALF_UP Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_UP} rounding
          *<tr align=right><td>5.5</td>  <td>6</td>
@@ -223,6 +228,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode HALF_DOWN Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_DOWN} rounding
          *<tr align=right><td>5.5</td>  <td>5</td>
@@ -255,6 +261,7 @@ public enum RoundingMode {
          *
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode HALF_EVEN Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_EVEN} rounding
          *<tr align=right><td>5.5</td>  <td>6</td>
@@ -278,6 +285,7 @@ public enum RoundingMode {
          * {@code ArithmeticException} is thrown.
          *<p>Example:
          *<table border>
+         * <caption><b>Rounding mode UNNECESSARY Examples</b></caption>
          *<tr valign=top><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code UNNECESSARY} rounding
          *<tr align=right><td>5.5</td>  <td>throw {@code ArithmeticException}</td>

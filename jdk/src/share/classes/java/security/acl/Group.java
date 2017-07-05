@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.security.Principal;
  * Note that Group extends Principal. Thus, either a Principal or a Group can
  * be passed as an argument to methods containing a Principal parameter. For
  * example, you can add either a Principal or a Group to a Group object by
- * calling the object's <code>addMember</code> method, passing it the
+ * calling the object's {@code addMember} method, passing it the
  * Principal or Group.
  *
  * @author      Satish Dharmaraj

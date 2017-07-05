@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ import sun.security.util.SecurityConstants;
  *
  * <p> There is only one Policy object installed in the runtime at any
  * given time.  A Policy object can be installed by calling the
- * <code>setPolicy</code> method.  The installed Policy object can be
- * obtained by calling the <code>getPolicy</code> method.
+ * {@code setPolicy} method.  The installed Policy object can be
+ * obtained by calling the {@code getPolicy} method.
  *
  * <p> If no Policy object has been installed in the runtime, a call to
- * <code>getPolicy</code> installs an instance of the default Policy
+ * {@code getPolicy} installs an instance of the default Policy
  * implementation (a default subclass implementation of this abstract class).
  * The default Policy implementation can be changed by setting the value
  * of the {@code policy.provider} security property to the fully qualified
@@ -53,26 +53,26 @@ import sun.security.util.SecurityConstants;
  *
  * <p> Application code can directly subclass Policy to provide a custom
  * implementation.  In addition, an instance of a Policy object can be
- * constructed by invoking one of the <code>getInstance</code> factory methods
+ * constructed by invoking one of the {@code getInstance} factory methods
  * with a standard type.  The default policy type is "JavaPolicy".
  *
  * <p> Once a Policy instance has been installed (either by default, or by
- * calling <code>setPolicy</code>), the Java runtime invokes its
- * <code>implies</code> method when it needs to
+ * calling {@code setPolicy}), the Java runtime invokes its
+ * {@code implies} method when it needs to
  * determine whether executing code (encapsulated in a ProtectionDomain)
  * can perform SecurityManager-protected operations.  How a Policy object
  * retrieves its policy data is up to the Policy implementation itself.
  * The policy data may be stored, for example, in a flat ASCII file,
  * in a serialized binary file of the Policy class, or in a database.
  *
- * <p> The <code>refresh</code> method causes the policy object to
+ * <p> The {@code refresh} method causes the policy object to
  * refresh/reload its data.  This operation is implementation-dependent.
  * For example, if the policy object stores its data in configuration files,
- * calling <code>refresh</code> will cause it to re-read the configuration
+ * calling {@code refresh} will cause it to re-read the configuration
  * policy files.  If a refresh operation is not supported, this method does
  * nothing.  Note that refreshed policy may not have an effect on classes
  * in a particular ProtectionDomain. This is dependent on the Policy
- * provider's implementation of the <code>implies</code>
+ * provider's implementation of the {@code implies}
  * method and its PermissionCollection caching strategy.
  *
  * @author Roland Schemers
@@ -130,17 +130,17 @@ public abstract class Policy {
 
     /**
      * Returns the installed Policy object. This value should not be cached,
-     * as it may be changed by a call to <code>setPolicy</code>.
+     * as it may be changed by a call to {@code setPolicy}.
      * This method first calls
-     * <code>SecurityManager.checkPermission</code> with a
-     * <code>SecurityPermission("getPolicy")</code> permission
+     * {@code SecurityManager.checkPermission} with a
+     * {@code SecurityPermission("getPolicy")} permission
      * to ensure it's ok to get the Policy object.
      *
      * @return the installed Policy.
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        getting the Policy object.
      *
      * @see SecurityManager#checkPermission(Permission)
@@ -246,15 +246,15 @@ public abstract class Policy {
 
     /**
      * Sets the system-wide Policy object. This method first calls
-     * <code>SecurityManager.checkPermission</code> with a
-     * <code>SecurityPermission("setPolicy")</code>
+     * {@code SecurityManager.checkPermission} with a
+     * {@code SecurityPermission("setPolicy")}
      * permission to ensure it's ok to set the Policy.
      *
      * @param p the new system Policy object.
      *
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow
+     *        {@code checkPermission} method doesn't allow
      *        setting the Policy.
      *
      * @see SecurityManager#checkPermission(Permission)
@@ -536,7 +536,7 @@ public abstract class Policy {
      * Return the Provider of this Policy.
      *
      * <p> This Policy instance will only have a Provider if it
-     * was obtained via a call to <code>Policy.getInstance</code>.
+     * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns null.
      *
      * @return the Provider of this Policy, or null.
@@ -551,7 +551,7 @@ public abstract class Policy {
      * Return the type of this Policy.
      *
      * <p> This Policy instance will only have a type if it
-     * was obtained via a call to <code>Policy.getInstance</code>.
+     * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns null.
      *
      * @return the type of this Policy, or null.
@@ -566,7 +566,7 @@ public abstract class Policy {
      * Return Policy parameters.
      *
      * <p> This Policy instance will only have parameters if it
-     * was obtained via a call to <code>Policy.getInstance</code>.
+     * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns null.
      *
      * @return Policy parameters, or null.
@@ -583,10 +583,10 @@ public abstract class Policy {
      *
      * <p> Applications are discouraged from calling this method
      * since this operation may not be supported by all policy implementations.
-     * Applications should solely rely on the <code>implies</code> method
+     * Applications should solely rely on the {@code implies} method
      * to perform policy checks.  If an application absolutely must call
      * a getPermissions method, it should call
-     * <code>getPermissions(ProtectionDomain)</code>.
+     * {@code getPermissions(ProtectionDomain)}.
      *
      * <p> The default implementation of this method returns
      * Policy.UNSUPPORTED_EMPTY_COLLECTION.  This method can be
@@ -613,15 +613,15 @@ public abstract class Policy {
      *
      * <p> Applications are discouraged from calling this method
      * since this operation may not be supported by all policy implementations.
-     * Applications should rely on the <code>implies</code> method
+     * Applications should rely on the {@code implies} method
      * to perform policy checks.
      *
      * <p> The default implementation of this method first retrieves
-     * the permissions returned via <code>getPermissions(CodeSource)</code>
+     * the permissions returned via {@code getPermissions(CodeSource)}
      * (the CodeSource is taken from the specified ProtectionDomain),
      * as well as the permissions located inside the specified ProtectionDomain.
      * All of these permissions are then combined and returned in a new
-     * PermissionCollection object.  If <code>getPermissions(CodeSource)</code>
+     * PermissionCollection object.  If {@code getPermissions(CodeSource)}
      * returns Policy.UNSUPPORTED_EMPTY_COLLECTION, then this method
      * returns the permissions contained inside the specified ProtectionDomain
      * in a new PermissionCollection object.
@@ -733,7 +733,7 @@ public abstract class Policy {
 
     /**
      * Refreshes/reloads the policy configuration. The behavior of this method
-     * depends on the implementation. For example, calling <code>refresh</code>
+     * depends on the implementation. For example, calling {@code refresh}
      * on a file-based policy will cause the file to be re-read.
      *
      * <p> The default implementation of this method does nothing.
@@ -794,8 +794,8 @@ public abstract class Policy {
 
     /**
      * This class represents a read-only empty PermissionCollection object that
-     * is returned from the <code>getPermissions(CodeSource)</code> and
-     * <code>getPermissions(ProtectionDomain)</code>
+     * is returned from the {@code getPermissions(CodeSource)} and
+     * {@code getPermissions(ProtectionDomain)}
      * methods in the Policy class when those operations are not
      * supported by the Policy implementation.
      */

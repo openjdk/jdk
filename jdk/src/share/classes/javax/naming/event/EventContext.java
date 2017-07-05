@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.naming.NamingException;
  * Contains methods for registering/deregistering listeners to be notified of
  * events fired when objects named in a context changes.
  *<p>
- *<h4>Target</h4>
+ *<h1>Target</h1>
  * The name parameter in the <tt>addNamingListener()</tt> methods is referred
  * to as the <em>target</em>. The target, along with the scope, identify
  * the object(s) that the listener is interested in.
@@ -59,7 +59,7 @@ import javax.naming.NamingException;
  * whether a <tt>EventContext</tt> supports registration
  * of nonexistent targets.
  *<p>
- *<h4>Event Source</h4>
+ *<h1>Event Source</h1>
  * The <tt>EventContext</tt> instance on which you invoke the
  * registration methods is the <em>event source</em> of the events that are
  * (potentially) generated.
@@ -93,7 +93,7 @@ import javax.naming.NamingException;
  * it needs to keep a reference to the listener in order to remove it
  * later). It cannot expect to do a <tt>lookup()</tt> and get another instance of
  * a <tt>EventContext</tt> on which to perform the deregistration.
- *<h4>Lifetime of Registration</h4>
+ *<h1>Lifetime of Registration</h1>
  * A registered listener becomes deregistered when:
  *<ul>
  *<li>It is removed using <tt>removeNamingListener()</tt>.
@@ -105,7 +105,7 @@ import javax.naming.NamingException;
  * Until that point, a <tt>EventContext</tt> instance that has outstanding
  * listeners will continue to exist and be maintained by the service provider.
  *
- *<h4>Listener Implementations</h4>
+ *<h1>Listener Implementations</h1>
  * The registration/deregistration methods accept an instance of
  * <tt>NamingListener</tt>. There are subinterfaces of <tt>NamingListener</tt>
  * for different of event types of <tt>NamingEvent</tt>.
@@ -118,7 +118,7 @@ import javax.naming.NamingException;
  * of the listeners, this allows some service providers to optimize the
  * registration.
  *
- *<h4>Threading Issues</h4>
+ *<h1>Threading Issues</h1>
  *
  * Like <tt>Context</tt> instances in general, instances of
  * <tt>EventContext</tt> are not guaranteed to be thread-safe.

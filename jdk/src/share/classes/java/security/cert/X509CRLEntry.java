@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ import sun.security.x509.X509CRLEntryImpl;
  *     crlEntryExtensions Extensions OPTIONAL
  *                        -- if present, must be v2
  * }  OPTIONAL
- *<p>
+ *
  * CertificateSerialNumber  ::=  INTEGER
- *<p>
+ *
  * Extensions  ::=  SEQUENCE SIZE (1..MAX) OF Extension
- *<p>
+ *
  * Extension  ::=  SEQUENCE  {
  *     extnId        OBJECT IDENTIFIER,
  *     critical      BOOLEAN DEFAULT FALSE,
@@ -68,8 +68,8 @@ public abstract class X509CRLEntry implements X509Extension {
 
     /**
      * Compares this CRL entry for equality with the given
-     * object. If the <code>other</code> object is an
-     * <code>instanceof</code> <code>X509CRLEntry</code>, then
+     * object. If the {@code other} object is an
+     * {@code instanceof} {@code X509CRLEntry}, then
      * its encoded form (the inner SEQUENCE) is retrieved and compared
      * with the encoded form of this CRL entry.
      *
@@ -178,7 +178,7 @@ public abstract class X509CRLEntry implements X509Extension {
      * in the Reason Code extension of this CRL entry.
      *
      * @return the reason the certificate has been revoked, or
-     *    <code>null</code> if this CRL entry does not have
+     *    {@code null} if this CRL entry does not have
      *    a Reason Code extension
      * @since 1.7
      */

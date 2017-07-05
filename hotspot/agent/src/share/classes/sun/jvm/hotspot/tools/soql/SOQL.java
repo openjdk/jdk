@@ -44,6 +44,14 @@ public class SOQL extends Tool {
       soql.stop();
    }
 
+   public SOQL() {
+      super();
+   }
+
+   public SOQL(JVMDebugger d) {
+      super(d);
+   }
+
    protected SOQLEngine soqlEngine;
    protected BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
    protected PrintStream out       = System.out;

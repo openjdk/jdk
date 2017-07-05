@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8001667 8010279
+ * @summary Comparator default method tests
  * @run testng BasicTest
  */
 
+import java.util.TreeMap;
 import java.util.Comparator;
-import java.util.Comparators;
-import java.util.AbstractMap;
-import java.util.Map;
 import org.testng.annotations.Test;
 
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -41,12 +38,8 @@ import java.util.function.ToDoubleFunction;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertSame;
 import static org.testng.Assert.fail;
 
-/**
- * Unit tests for helper methods in Comparators
- */
 @Test(groups = "unit")
 public class BasicTest {
     private static class Thing {
@@ -97,7 +90,7 @@ public class BasicTest {
         Thing[] things = new Thing[intValues.length];
         for (int i=0; i<intValues.length; i++)
             things[i] = new Thing(intValues[i], 0L, 0.0, null);
-        Comparator<Thing> comp = Comparators.comparing(new ToIntFunction<BasicTest.Thing>() {
+        Comparator<Thing> comp = Comparator.comparing(new ToIntFunction<Thing>() {
             @Override
             public int applyAsInt(Thing thing) {
                 return thing.getIntField();
@@ -111,7 +104,7 @@ public class BasicTest {
         Thing[] things = new Thing[longValues.length];
         for (int i=0; i<longValues.length; i++)
             things[i] = new Thing(0, longValues[i], 0.0, null);
-        Comparator<Thing> comp = Comparators.comparing(new ToLongFunction<BasicTest.Thing>() {
+        Comparator<Thing> comp = Comparator.comparing(new ToLongFunction<Thing>() {
             @Override
             public long applyAsLong(Thing thing) {
                 return thing.getLongField();
@@ -125,7 +118,7 @@ public class BasicTest {
         Thing[] things = new Thing[doubleValues.length];
         for (int i=0; i<doubleValues.length; i++)
             things[i] = new Thing(0, 0L, doubleValues[i], null);
-        Comparator<Thing> comp = Comparators.comparing(new ToDoubleFunction<BasicTest.Thing>() {
+        Comparator<Thing> comp = Comparator.comparing(new ToDoubleFunction<Thing>() {
             @Override
             public double applyAsDouble(Thing thing) {
                 return thing.getDoubleField();
@@ -139,7 +132,7 @@ public class BasicTest {
         Thing[] things = new Thing[doubleValues.length];
         for (int i=0; i<doubleValues.length; i++)
             things[i] = new Thing(0, 0L, 0.0, stringValues[i]);
-        Comparator<Thing> comp = Comparators.comparing(new Function<Thing, String>() {
+        Comparator<Thing> comp = Comparator.comparing(new Function<Thing, String>() {
             @Override
             public String apply(Thing thing) {
                 return thing.getStringField();
@@ -150,16 +143,16 @@ public class BasicTest {
     }
 
     public void testNaturalOrderComparator() {
-        Comparator<String> comp = Comparators.naturalOrder();
+        Comparator<String> comp = Comparator.naturalOrder();
 
         assertComparisons(stringValues, comp, comparisons);
     }
 
     public void testReverseComparator() {
-        Comparator<String> cmpr = Comparators.reverseOrder();
-        Comparator<String> cmp = cmpr.reverseOrder();
+        Comparator<String> cmpr = Comparator.reverseOrder();
+        Comparator<String> cmp = cmpr.reversed();
 
-        assertEquals(cmp.reverseOrder(), cmpr);
+        assertEquals(cmp.reversed(), cmpr);
         assertEquals(0, cmp.compare("a", "a"));
         assertEquals(0, cmpr.compare("a", "a"));
         assertTrue(cmp.compare("a", "b") < 0);
@@ -170,9 +163,9 @@ public class BasicTest {
 
     public void testReverseComparator2() {
         Comparator<String> cmp = (s1, s2) -> s1.length() - s2.length();
-        Comparator<String> cmpr = cmp.reverseOrder();
+        Comparator<String> cmpr = cmp.reversed();
 
-        assertEquals(cmpr.reverseOrder(), cmp);
+        assertEquals(cmpr.reversed(), cmp);
         assertEquals(0, cmp.compare("abc", "def"));
         assertEquals(0, cmpr.compare("abc", "def"));
         assertTrue(cmp.compare("abcd", "def") > 0);
@@ -181,71 +174,11 @@ public class BasicTest {
         assertTrue(cmpr.compare("abc", "defg") > 0);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
-    public void testReverseComparatorNPE() {
-        Comparator<String> cmp = Comparators.reverseOrder(null);
-    }
-
-    public void testComposeComparator() {
-        // Longer string in front
-        Comparator<String> first = (s1, s2) -> s2.length() - s1.length();
-        Comparator<String> second = Comparators.naturalOrder();
-        Comparator<String> composed = Comparators.compose(first, second);
-
-        assertTrue(composed.compare("abcdefg", "abcdef") < 0);
-        assertTrue(composed.compare("abcdef", "abcdefg") > 0);
-        assertTrue(composed.compare("abcdef", "abcdef") == 0);
-        assertTrue(composed.compare("abcdef", "ghijkl") < 0);
-        assertTrue(composed.compare("ghijkl", "abcdefg") > 0);
-    }
-
-    private <K, V> void assertPairComparison(K k1, V v1, K k2, V v2,
-                                        Comparator<Map.Entry<K, V>> ck,
-                                        Comparator<Map.Entry<K, V>> cv) {
-        final Map.Entry<K, V> p11 = new AbstractMap.SimpleImmutableEntry<>(k1, v1);
-        final Map.Entry<K, V> p12 = new AbstractMap.SimpleImmutableEntry<>(k1, v2);
-        final Map.Entry<K, V> p21 = new AbstractMap.SimpleImmutableEntry<>(k2, v1);
-        final Map.Entry<K, V> p22 = new AbstractMap.SimpleImmutableEntry<>(k2, v2);
-
-        assertTrue(ck.compare(p11, p11) == 0);
-        assertTrue(ck.compare(p12, p11) == 0);
-        assertTrue(ck.compare(p11, p12) == 0);
-        assertTrue(ck.compare(p12, p22) < 0);
-        assertTrue(ck.compare(p12, p21) < 0);
-        assertTrue(ck.compare(p21, p11) > 0);
-        assertTrue(ck.compare(p21, p12) > 0);
-
-        assertTrue(cv.compare(p11, p11) == 0);
-        assertTrue(cv.compare(p12, p11) > 0);
-        assertTrue(cv.compare(p11, p12) < 0);
-        assertTrue(cv.compare(p12, p22) == 0);
-        assertTrue(cv.compare(p12, p21) > 0);
-        assertTrue(cv.compare(p21, p11) == 0);
-        assertTrue(cv.compare(p21, p12) < 0);
-
-        Comparator<Map.Entry<K, V>> cmp = Comparators.compose(ck, cv);
-        assertTrue(cmp.compare(p11, p11) == 0);
-        assertTrue(cmp.compare(p12, p11) > 0);
-        assertTrue(cmp.compare(p11, p12) < 0);
-        assertTrue(cmp.compare(p12, p22) < 0);
-        assertTrue(cmp.compare(p12, p21) < 0);
-        assertTrue(cmp.compare(p21, p11) > 0);
-        assertTrue(cmp.compare(p21, p12) > 0);
-
-        cmp = Comparators.compose(cv, ck);
-        assertTrue(cmp.compare(p11, p11) == 0);
-        assertTrue(cmp.compare(p12, p11) > 0);
-        assertTrue(cmp.compare(p11, p12) < 0);
-        assertTrue(cmp.compare(p12, p22) < 0);
-        assertTrue(cmp.compare(p12, p21) > 0);
-        assertTrue(cmp.compare(p21, p11) > 0);
-        assertTrue(cmp.compare(p21, p12) < 0);
-    }
-
-    public void testKVComparatorable() {
-        assertPairComparison(1, "ABC", 2, "XYZ",
-                         Comparators.<Integer, String>naturalOrderKeys(),
-                         Comparators.<Integer, String>naturalOrderValues());
+    private <T> void assertComparison(Comparator<T> cmp, T less, T greater) {
+        assertTrue(cmp.compare(less, greater) < 0, "less");
+        assertTrue(cmp.compare(less, less) == 0, "equal");
+        assertTrue(cmp.compare(greater, greater) == 0, "equal");
+        assertTrue(cmp.compare(greater, less) > 0, "greater");
     }
 
     private static class People {
@@ -273,33 +206,15 @@ public class BasicTest {
         new People("Jonah", "Doe", 10),
         new People("John", "Cook", 54),
         new People("Mary", "Cook", 50),
+        new People("Mary", null, 25),
+        new People("John", null, 27)
     };
 
-    public void testKVComparators() {
-        // Comparator<People> cmp = Comparators.naturalOrder(); // Should fail to compiler as People is not comparable
-        // We can use simple comparator, but those have been tested above.
-        // Thus choose to do compose for some level of interation.
-        Comparator<People> cmp1 = Comparators.comparing((Function<People, String>) People::getFirstName);
-        Comparator<People> cmp2 = Comparators.comparing((Function<People, String>) People::getLastName);
-        Comparator<People> cmp = Comparators.compose(cmp1, cmp2);
-
-        assertPairComparison(people[0], people[0], people[1], people[1],
-                         Comparators.<People, People>byKey(cmp),
-                         Comparators.<People, People>byValue(cmp));
-
-    }
-
-    private <T> void assertComparison(Comparator<T> cmp, T less, T greater) {
-        assertTrue(cmp.compare(less, greater) < 0, "less");
-        assertTrue(cmp.compare(less, less) == 0, "equal");
-        assertTrue(cmp.compare(greater, less) > 0, "greater");
-    }
-
     public void testComparatorDefaultMethods() {
-        Comparator<People> cmp = Comparators.comparing((Function<People, String>) People::getFirstName);
-        Comparator<People> cmp2 = Comparators.comparing((Function<People, String>) People::getLastName);
+        Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName);
+        Comparator<People> cmp2 = Comparator.comparing((Function<People, String>) People::getLastName);
         // reverseOrder
-        assertComparison(cmp.reverseOrder(), people[1], people[0]);
+        assertComparison(cmp.reversed(), people[1], people[0]);
         // thenComparing(Comparator)
         assertComparison(cmp.thenComparing(cmp2), people[0], people[1]);
         assertComparison(cmp.thenComparing(cmp2), people[4], people[0]);
@@ -317,96 +232,138 @@ public class BasicTest {
         assertComparison(cmp.thenComparing(People::getAgeAsDouble), people[1], people[5]);
     }
 
-    public void testGreaterOf() {
-        // lesser
-        assertSame(Comparators.greaterOf(Comparators.comparing(
-                                    (Function<People, String>) People::getFirstName))
-                              .apply(people[0], people[1]),
-                   people[1]);
-        // euqal
-        assertSame(Comparators.greaterOf(Comparators.comparing(
-                                    (Function<People, String>) People::getLastName))
-                              .apply(people[0], people[1]),
-                   people[0]);
-        // greater
-        assertSame(Comparators.greaterOf(Comparators.comparing(
-                                    (ToIntFunction<People>) People::getAge))
-                              .apply(people[0], people[1]),
-                   people[0]);
+
+    public void testNullsFirst() {
+        Comparator<String> strcmp = Comparator.nullsFirst(Comparator.naturalOrder());
+        Comparator<People> cmp = Comparator.<People, String>comparing(People::getLastName, strcmp)
+                                           .thenComparing(People::getFirstName, strcmp);
+        // Mary.null vs Mary.Cook - solve by last name
+        assertComparison(cmp, people[6], people[5]);
+        // John.null vs Mary.null - solve by first name
+        assertComparison(cmp, people[7], people[6]);
+
+        // More than one thenComparing
+        strcmp = Comparator.nullsFirst(Comparator.comparing((ToIntFunction<String>) String::length)
+                                                 .thenComparing(String.CASE_INSENSITIVE_ORDER));
+        assertComparison(strcmp, null, "abc");
+        assertComparison(strcmp, "ab", "abc");
+        assertComparison(strcmp, "abc", "def");
+        assertEquals(0, strcmp.compare("abc", "ABC"));
+
+        // Ensure reverse still handle null properly
+        Comparator<String> strcmp2 = strcmp.reversed().thenComparing(Comparator.naturalOrder());
+        assertComparison(strcmp2, "abc", null);
+        assertComparison(strcmp2, "abc", "ab");
+        assertComparison(strcmp2, "def", "abc");
+        assertComparison(strcmp2, "ABC", "abc");
+
+        // Considering non-null values to be equal
+        Comparator<String> blind = Comparator.nullsFirst(null);
+        assertComparison(blind, null, "abc");
+        assertEquals(0, blind.compare("abc", "def"));
+        // reverse still consider non-null values to be equal
+        strcmp = blind.reversed();
+        assertComparison(strcmp, "abc", null);
+        assertEquals(0, strcmp.compare("abc", "def"));
+        // chain with another comparator to compare non-nulls
+        strcmp = blind.thenComparing(Comparator.naturalOrder());
+        assertComparison(strcmp, null, "abc");
+        assertComparison(strcmp, "abc", "def");
     }
 
-    public void testLesserOf() {
-        // lesser
-        assertSame(Comparators.lesserOf(Comparators.comparing(
-                                    (Function<People, String>) People::getFirstName))
-                              .apply(people[0], people[1]),
-                   people[0]);
-        // euqal
-        assertSame(Comparators.lesserOf(Comparators.comparing(
-                                    (Function<People, String>) People::getLastName))
-                              .apply(people[0], people[1]),
-                   people[0]);
-        // greater
-        assertSame(Comparators.lesserOf(Comparators.comparing(
-                                    (ToIntFunction<People>) People::getAge))
-                              .apply(people[0], people[1]),
-                   people[1]);
+    public void testNullsLast() {
+        Comparator<String> strcmp = Comparator.nullsLast(Comparator.naturalOrder());
+        Comparator<People> cmp = Comparator.<People, String>comparing(People::getLastName, strcmp)
+                                           .thenComparing(People::getFirstName, strcmp);
+        // Mary.null vs Mary.Cook - solve by last name
+        assertComparison(cmp, people[5], people[6]);
+        // John.null vs Mary.null - solve by first name
+        assertComparison(cmp, people[7], people[6]);
+
+        // More than one thenComparing
+        strcmp = Comparator.nullsLast(Comparator.comparing((ToIntFunction<String>) String::length)
+                                                .thenComparing(String.CASE_INSENSITIVE_ORDER));
+        assertComparison(strcmp, "abc", null);
+        assertComparison(strcmp, "ab", "abc");
+        assertComparison(strcmp, "abc", "def");
+
+        // Ensure reverse still handle null properly
+        Comparator<String> strcmp2 = strcmp.reversed().thenComparing(Comparator.naturalOrder());
+        assertComparison(strcmp2, null, "abc");
+        assertComparison(strcmp2, "abc", "ab");
+        assertComparison(strcmp2, "def", "abc");
+        assertComparison(strcmp2, "ABC", "abc");
+
+        // Considering non-null values to be equal
+        Comparator<String> blind = Comparator.nullsLast(null);
+        assertComparison(blind, "abc", null);
+        assertEquals(0, blind.compare("abc", "def"));
+        // reverse still consider non-null values to be equal
+        strcmp = blind.reversed();
+        assertComparison(strcmp, null, "abc");
+        assertEquals(0, strcmp.compare("abc", "def"));
+        // chain with another comparator to compare non-nulls
+        strcmp = blind.thenComparing(Comparator.naturalOrder());
+        assertComparison(strcmp, "abc", null);
+        assertComparison(strcmp, "abc", "def");
+    }
+
+    public void testComposeComparator() {
+        // Longer string in front
+        Comparator<String> first = (s1, s2) -> s2.length() - s1.length();
+        Comparator<String> second = Comparator.naturalOrder();
+        Comparator<String> composed = first.thenComparing(second);
+
+        assertTrue(composed.compare("abcdefg", "abcdef") < 0);
+        assertTrue(composed.compare("abcdef", "abcdefg") > 0);
+        assertTrue(composed.compare("abcdef", "abcdef") == 0);
+        assertTrue(composed.compare("abcdef", "ghijkl") < 0);
+        assertTrue(composed.compare("ghijkl", "abcdefg") > 0);
     }
 
     public void testNulls() {
         try {
-            Comparators.<String>naturalOrder().compare("abc", (String) null);
+            Comparator.<String>naturalOrder().compare("abc", (String) null);
             fail("expected NPE with naturalOrder");
         } catch (NullPointerException npe) {}
         try {
-            Comparators.<String>naturalOrder().compare((String) null, "abc");
-            fail("expected NPE with naturalOrder");
-        } catch (NullPointerException npe) {}
-
-        try {
-            Comparators.<String>reverseOrder().compare("abc", (String) null);
-            fail("expected NPE with naturalOrder");
-        } catch (NullPointerException npe) {}
-        try {
-            Comparators.<String>reverseOrder().compare((String) null, "abc");
+            Comparator.<String>naturalOrder().compare((String) null, "abc");
             fail("expected NPE with naturalOrder");
         } catch (NullPointerException npe) {}
 
         try {
-            Comparator<Map.Entry<String, String>> cmp = Comparators.byKey(null);
-            fail("byKey(null) should throw NPE");
+            Comparator.<String>reverseOrder().compare("abc", (String) null);
+            fail("expected NPE with naturalOrder");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparator.<String>reverseOrder().compare((String) null, "abc");
+            fail("expected NPE with naturalOrder");
         } catch (NullPointerException npe) {}
 
         try {
-            Comparator<Map.Entry<String, String>> cmp = Comparators.byValue(null);
-            fail("byValue(null) should throw NPE");
+            Comparator<People> cmp = Comparator.comparing((Function<People, String>) null, Comparator.<String>naturalOrder());
+            fail("comparing(null, cmp) should throw NPE");
+        } catch (NullPointerException npe) {}
+        try {
+            Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName, null);
+            fail("comparing(f, null) should throw NPE");
         } catch (NullPointerException npe) {}
 
         try {
-            Comparator<People> cmp = Comparators.comparing((Function<People, String>) null);
+            Comparator<People> cmp = Comparator.comparing((Function<People, String>) null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparators.comparing((ToIntFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparing((ToIntFunction<People>) null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparators.comparing((ToLongFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparing((ToLongFunction<People>) null);
             fail("comparing(null) should throw NPE");
         } catch (NullPointerException npe) {}
         try {
-            Comparator<People> cmp = Comparators.comparing((ToDoubleFunction<People>) null);
+            Comparator<People> cmp = Comparator.comparing((ToDoubleFunction<People>) null);
             fail("comparing(null) should throw NPE");
-        } catch (NullPointerException npe) {}
-
-        try {
-            BinaryOperator<String> op = Comparators.lesserOf(null);
-            fail("lesserOf(null) should throw NPE");
-        } catch (NullPointerException npe) {}
-
-        try {
-            BinaryOperator<String> op = Comparators.greaterOf(null);
-            fail("lesserOf(null) should throw NPE");
         } catch (NullPointerException npe) {}
     }
 }
