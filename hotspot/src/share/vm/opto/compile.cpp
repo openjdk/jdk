@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1707,7 +1707,6 @@ void Compile::Optimize() {
       if (major_progress()) print_method("PhaseIdealLoop before EA", 2);
       if (failing())  return;
     }
-    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
     ConnectionGraph::do_analysis(this, &igvn);
 
     if (failing())  return;
@@ -1719,6 +1718,7 @@ void Compile::Optimize() {
     if (failing())  return;
 
     if (congraph() != NULL && macro_count() > 0) {
+      NOT_PRODUCT( TracePhase t2("macroEliminate", &_t_macroEliminate, TimeCompiler); )
       PhaseMacroExpand mexp(igvn);
       mexp.eliminate_macro_nodes();
       igvn.set_delay_transform(false);
@@ -1875,10 +1875,10 @@ void Compile::Code_Gen() {
 
     cfg.Estimate_Block_Frequency();
     cfg.GlobalCodeMotion(m,unique(),proj_list);
+    if (failing())  return;
 
     print_method("Global code motion", 2);
 
-    if (failing())  return;
     NOT_PRODUCT( verify_graph_edges(); )
 
     debug_only( cfg.verify(); )
