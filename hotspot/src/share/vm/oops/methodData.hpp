@@ -2095,10 +2095,6 @@ private:
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
   short             _num_blocks;
-  // Highest compile level this method has ever seen.
-  u1                _highest_comp_level;
-  // Same for OSR level
-  u1                _highest_osr_comp_level;
   // Does this method contain anything worth profiling?
   bool              _would_profile;
 
@@ -2276,11 +2272,6 @@ public:
 
   void set_would_profile(bool p)              { _would_profile = p;    }
   bool would_profile() const                  { return _would_profile; }
-
-  int highest_comp_level() const              { return _highest_comp_level;      }
-  void set_highest_comp_level(int level)      { _highest_comp_level = level;     }
-  int highest_osr_comp_level() const          { return _highest_osr_comp_level;  }
-  void set_highest_osr_comp_level(int level)  { _highest_osr_comp_level = level; }
 
   int num_loops() const                       { return _num_loops;  }
   void set_num_loops(int n)                   { _num_loops = n;     }

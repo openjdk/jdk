@@ -1261,19 +1261,20 @@ class MutableBigInteger {
             int sigma = (int) Math.max(0, n32 - b.bitLength());   // step 3: sigma = max{T | (2^T)*B < beta^n}
             MutableBigInteger bShifted = new MutableBigInteger(b);
             bShifted.safeLeftShift(sigma);   // step 4a: shift b so its length is a multiple of n
-            safeLeftShift(sigma);     // step 4b: shift this by the same amount
+            MutableBigInteger aShifted = new MutableBigInteger (this);
+            aShifted.safeLeftShift(sigma);     // step 4b: shift a by the same amount
 
-            // step 5: t is the number of blocks needed to accommodate this plus one additional bit
-            int t = (int) ((bitLength()+n32) / n32);
+            // step 5: t is the number of blocks needed to accommodate a plus one additional bit
+            int t = (int) ((aShifted.bitLength()+n32) / n32);
             if (t < 2) {
                 t = 2;
             }
 
-            // step 6: conceptually split this into blocks a[t-1], ..., a[0]
-            MutableBigInteger a1 = getBlock(t-1, t, n);   // the most significant block of this
+            // step 6: conceptually split a into blocks a[t-1], ..., a[0]
+            MutableBigInteger a1 = aShifted.getBlock(t-1, t, n);   // the most significant block of a
 
             // step 7: z[t-2] = [a[t-1], a[t-2]]
-            MutableBigInteger z = getBlock(t-2, t, n);    // the second to most significant block
+            MutableBigInteger z = aShifted.getBlock(t-2, t, n);    // the second to most significant block
             z.addDisjoint(a1, n);   // z[t-2]
 
             // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
@@ -1284,7 +1285,7 @@ class MutableBigInteger {
                 ri = z.divide2n1n(bShifted, qi);
 
                 // step 8b: z = [ri, a[i-1]]
-                z = getBlock(i-1, t, n);   // a[i-1]
+                z = aShifted.getBlock(i-1, t, n);   // a[i-1]
                 z.addDisjoint(ri, n);
                 quotient.addShifted(qi, i*n);   // update q (part of step 9)
             }
@@ -1292,7 +1293,7 @@ class MutableBigInteger {
             ri = z.divide2n1n(bShifted, qi);
             quotient.add(qi);
 
-            ri.rightShift(sigma);   // step 9: this and b were shifted, so shift back
+            ri.rightShift(sigma);   // step 9: a and b were shifted, so shift back
             return ri;
         }
     }

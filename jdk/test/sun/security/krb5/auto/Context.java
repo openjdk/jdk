@@ -22,15 +22,14 @@
  */
 
 import com.sun.security.auth.module.Krb5LoginModule;
-import java.security.Key;
+
+import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
@@ -41,10 +40,6 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.Oid;
-import com.sun.security.jgss.ExtendedGSSContext;
-import com.sun.security.jgss.InquireType;
-import com.sun.security.jgss.AuthorizationDataEntry;
-import com.sun.security.jgss.ExtendedGSSCredential;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.Principal;
@@ -78,7 +73,7 @@ import java.security.Principal;
 public class Context {
 
     private Subject s;
-    private ExtendedGSSContext x;
+    private GSSContext x;
     private String name;
     private GSSCredential cred;     // see static method delegated().
 
@@ -143,7 +138,6 @@ public class Context {
     /**
      * Logins with username/password as an existing Subject. The
      * same subject can be used multiple times to simulate multiple logins.
-     * @param s existing subject
      */
     public static Context fromUserPass(Subject s,
             String user, char[] pass, boolean storeKey) throws Exception {
@@ -222,7 +216,7 @@ public class Context {
             @Override
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 GSSManager m = GSSManager.getInstance();
-                me.x = (ExtendedGSSContext)m.createContext(
+                me.x = m.createContext(
                           target.indexOf('@') < 0 ?
                             m.createName(target, null) :
                             m.createName(target, GSSName.NT_HOSTBASED_SERVICE),
@@ -267,7 +261,7 @@ public class Context {
                         asInitiator?
                                 GSSCredential.INITIATE_AND_ACCEPT:
                                 GSSCredential.ACCEPT_ONLY);
-                me.x = (ExtendedGSSContext)m.createContext(me.cred);
+                me.x = m.createContext(me.cred);
                 return null;
             }
         }, null);
@@ -285,7 +279,7 @@ public class Context {
      *
      * @return the GSSContext object
      */
-    public ExtendedGSSContext x() {
+    public GSSContext x() {
         return x;
     }
 
@@ -339,7 +333,7 @@ public class Context {
      */
     public void status() throws Exception {
         System.out.println("STATUS OF " + name.toUpperCase());
-        try {
+        if (x != null) {
             StringBuffer sb = new StringBuffer();
             if (x.getAnonymityState()) {
                 sb.append("anon, ");
@@ -362,19 +356,15 @@ public class Context {
             if (x.getSequenceDetState()) {
                 sb.append("seq det, ");
             }
-            if (x instanceof ExtendedGSSContext) {
-                if (((ExtendedGSSContext)x).getDelegPolicyState()) {
-                    sb.append("deleg policy, ");
-                }
+            System.out.println("   Context status of " + name + ": " + sb.toString());
+            if (x.isProtReady() || x.isEstablished()) {
+                System.out.println("   " + x.getSrcName() + " -> " + x.getTargName());
             }
-            System.out.println("Context status of " + name + ": " + sb.toString());
-            System.out.println(x.getSrcName() + " -> " + x.getTargName());
-        } catch (Exception e) {
-            ;// Don't care
         }
+        xstatus();
         if (s != null) {
             System.out.println("====== START SUBJECT CONTENT =====");
-            for (Principal p: s.getPrincipals()) {
+            for (Principal p : s.getPrincipals()) {
                 System.out.println("    Principal: " + p);
             }
             for (Object o : s.getPublicCredentials()) {
@@ -405,51 +395,42 @@ public class Context {
             }
             System.out.println("====== END SUBJECT CONTENT =====");
         }
-        if (x != null && x instanceof ExtendedGSSContext) {
-            if (x.isEstablished()) {
-                ExtendedGSSContext ex = (ExtendedGSSContext)x;
-                Key k = (Key)ex.inquireSecContext(
-                        InquireType.KRB5_GET_SESSION_KEY);
-                if (k == null) {
-                    throw new Exception("(Old) Session key cannot be null");
-                }
-                System.out.println("(Old) Session key is: " + k);
-                Key k2 = (Key)ex.inquireSecContext(
-                        InquireType.KRB5_GET_SESSION_KEY_EX);
-                if (k2 == null) {
-                    throw new Exception("Session key cannot be null");
-                }
-                System.out.println("Session key is: " + k);
-                boolean[] flags = (boolean[])ex.inquireSecContext(
-                        InquireType.KRB5_GET_TKT_FLAGS);
-                if (flags == null) {
-                    throw new Exception("Ticket flags cannot be null");
-                }
-                System.out.println("Ticket flags is: " + Arrays.toString(flags));
-                String authTime = (String)ex.inquireSecContext(
-                        InquireType.KRB5_GET_AUTHTIME);
-                if (authTime == null) {
-                    throw new Exception("Auth time cannot be null");
-                }
-                System.out.println("AuthTime is: " + authTime);
-                if (!x.isInitiator()) {
-                    AuthorizationDataEntry[] ad = (AuthorizationDataEntry[])ex.inquireSecContext(
-                            InquireType.KRB5_GET_AUTHZ_DATA);
-                    System.out.println("AuthzData is: " + Arrays.toString(ad));
-                }
-                try {
-                    KerberosCredMessage tok = (KerberosCredMessage)ex.inquireSecContext(
-                            InquireType.KRB5_GET_KRB_CRED);
-                    System.out.println("KRB_CRED is " +
-                            (tok == null?"not ":"") + "available");
-                    if (tok != null) {
-                        System.out.println("From " + tok.getSender() + " to "
-                                + tok.getRecipient());
-                        System.out.println(Base64.getEncoder().encodeToString(tok.getEncoded()));
+    }
+
+    public void xstatus() throws Exception {
+        System.out.println("   Extended context status:");
+        if (x != null) {
+            try {
+                Class<?> clazz = Class.forName("com.sun.security.jgss.ExtendedGSSContext");
+                if (clazz.isAssignableFrom(x.getClass())) {
+                    if (clazz.getMethod("getDelegPolicyState").invoke(x) == Boolean.TRUE) {
+                        System.out.println("   deleg policy");
                     }
-                } catch (Exception e) {
-                    System.out.println("KRB_CRED is not available: " + e);
+                    if (x.isEstablished()) {
+                        Class<?> inqType = Class.forName("com.sun.security.jgss.InquireType");
+                        Method inqMethod = clazz.getMethod("inquireSecContext", inqType);
+                        for (Object o : inqType.getEnumConstants()) {
+                            System.out.println("   " + o + ":");
+                            try {
+                                System.out.println("      " + inqMethod.invoke(x, o));
+                            } catch (Exception e) {
+                                System.out.println(e.getCause());
+                            }
+                        }
+                    }
                 }
+            } catch (ClassNotFoundException cnfe) {
+                System.out.println("   -- ExtendedGSSContext not available");
+            }
+        }
+        if (cred != null) {
+            try {
+                Class<?> clazz2 = Class.forName("com.sun.security.jgss.ExtendedGSSCredential");
+                if (!clazz2.isAssignableFrom(cred.getClass())) {
+                    throw new Exception("cred is not extended");
+                }
+            } catch (ClassNotFoundException cnfe) {
+                System.out.println("   -- ExtendedGSSCredential not available");
             }
         }
     }
@@ -591,7 +572,10 @@ public class Context {
                     if (Context.this.cred == null) {
                         Context.this.cred = m.createCredential(GSSCredential.INITIATE_ONLY);
                     }
-                    return ((ExtendedGSSCredential)Context.this.cred).impersonate(other);
+                    return (GSSCredential)
+                            Class.forName("com.sun.security.jgss.ExtendedGSSCredential")
+                            .getMethod("impersonate", GSSName.class)
+                            .invoke(Context.this.cred, other);
                 }
             });
             Context out = new Context();

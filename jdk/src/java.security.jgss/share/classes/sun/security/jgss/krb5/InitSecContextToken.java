@@ -25,7 +25,6 @@
 
 package sun.security.jgss.krb5;
 
-import com.sun.security.jgss.AuthorizationDataEntry;
 import org.ietf.jgss.*;
 import java.io.InputStream;
 import java.io.IOException;
@@ -152,17 +151,7 @@ class InitSecContextToken extends InitialToken {
                 new KerberosTime(apReq.getCreds().getAuthTime()).toString());
         context.setTktFlags(apReq.getCreds().getFlags());
         AuthorizationData ad = apReq.getCreds().getAuthzData();
-        if (ad == null) {
-            context.setAuthzData(null);
-        } else {
-            AuthorizationDataEntry[] authzData =
-                    new AuthorizationDataEntry[ad.count()];
-            for (int i=0; i<ad.count(); i++) {
-                authzData[i] = new AuthorizationDataEntry(
-                        ad.item(i).adType, ad.item(i).adData);
-            }
-            context.setAuthzData(authzData);
-        }
+        context.setAuthzData(ad);
     }
 
     public final KrbApReq getKrbApReq() {

@@ -172,7 +172,7 @@ all:  $(SUBMAKE_DIRS)
 # Run make in each subdirectory recursively.
 $(SUBMAKE_DIRS): $(SIMPLE_DIRS) FORCE
 	$(QUIETLY) [ -d $@ ] || { mkdir -p $@; }
-	$(QUIETLY) cd $@ && $(BUILDTREE) TARGET=$(@F)
+	+$(QUIETLY) cd $@ && $(BUILDTREE) TARGET=$(@F)
 	$(QUIETLY) touch $@
 
 $(SIMPLE_DIRS):
@@ -377,3 +377,5 @@ dtrace.make: $(BUILDTREE_MAKE)
 FORCE:
 
 .PHONY:  all FORCE
+
+.NOTPARALLEL:
