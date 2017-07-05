@@ -116,9 +116,9 @@ public:
 
   // For now.  Could "expand" some tables in the future, so that this made
   // sense.
-  void add_reference(oop* from, int tid);
+  void add_reference(OopOrNarrowOopStar from, int tid);
 
-  void add_reference(oop* from) {
+  void add_reference(OopOrNarrowOopStar from) {
     return add_reference(from, 0);
   }
 
@@ -140,8 +140,8 @@ public:
   static size_t static_mem_size();
   static size_t fl_mem_size();
 
-  bool contains_reference(oop* from) const;
-  bool contains_reference_locked(oop* from) const;
+  bool contains_reference(OopOrNarrowOopStar from) const;
+  bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
   void clear();
 
@@ -192,10 +192,10 @@ private:
   // Unused unless G1RecordHRRSOops is true.
 
   static const int MaxRecorded = 1000000;
-  static oop**        _recorded_oops;
-  static HeapWord**   _recorded_cards;
-  static HeapRegion** _recorded_regions;
-  static int          _n_recorded;
+  static OopOrNarrowOopStar* _recorded_oops;
+  static HeapWord**          _recorded_cards;
+  static HeapRegion**        _recorded_regions;
+  static int                 _n_recorded;
 
   static const int MaxRecordedEvents = 1000;
   static Event*       _recorded_events;
@@ -231,13 +231,13 @@ public:
 
   /* Used in the sequential case.  Returns "true" iff this addition causes
      the size limit to be reached. */
-  void add_reference(oop* from) {
+  void add_reference(OopOrNarrowOopStar from) {
     _other_regions.add_reference(from);
   }
 
   /* Used in the parallel case.  Returns "true" iff this addition causes
      the size limit to be reached. */
-  void add_reference(oop* from, int tid) {
+  void add_reference(OopOrNarrowOopStar from, int tid) {
     _other_regions.add_reference(from, tid);
   }
 
@@ -301,7 +301,7 @@ public:
     return OtherRegionsTable::fl_mem_size();
   }
 
-  bool contains_reference(oop* from) const {
+  bool contains_reference(OopOrNarrowOopStar from) const {
     return _other_regions.contains_reference(from);
   }
   void print() const;
@@ -329,7 +329,7 @@ public:
   }
 #endif
 
-  static void record(HeapRegion* hr, oop* f);
+  static void record(HeapRegion* hr, OopOrNarrowOopStar f);
   static void print_recorded();
   static void record_event(Event evnt);
 

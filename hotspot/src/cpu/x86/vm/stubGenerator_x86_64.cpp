@@ -1207,9 +1207,9 @@ class StubGenerator: public StubCodeGenerator {
           __ pusha();                      // push registers (overkill)
           // must compute element count unless barrier set interface is changed (other platforms supply count)
           assert_different_registers(start, end, scratch);
-          __ lea(scratch, Address(end, wordSize));
-          __ subptr(scratch, start);
-          __ shrptr(scratch, LogBytesPerWord);
+          __ lea(scratch, Address(end, BytesPerHeapOop));
+          __ subptr(scratch, start);               // subtract start to get #bytes
+          __ shrptr(scratch, LogBytesPerHeapOop);  // convert to element count
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
@@ -1225,6 +1225,7 @@ class StubGenerator: public StubCodeGenerator {
           Label L_loop;
 
            __ shrptr(start, CardTableModRefBS::card_shift);
+           __ addptr(end, BytesPerHeapOop);
            __ shrptr(end, CardTableModRefBS::card_shift);
            __ subptr(end, start); // number of bytes to copy
 
@@ -2251,6 +2252,7 @@ class StubGenerator: public StubCodeGenerator {
     // and report their number to the caller.
     assert_different_registers(rax, r14_length, count, to, end_to, rcx);
     __ lea(end_to, to_element_addr);
+    __ addptr(end_to, -heapOopSize);      // make an inclusive end pointer
     gen_write_ref_array_post_barrier(to, end_to, rscratch1);
     __ movptr(rax, r14_length);           // original oops
     __ addptr(rax, count);                // K = (original - remaining) oops
@@ -2259,7 +2261,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Come here on success only.
     __ BIND(L_do_card_marks);
-    __ addptr(end_to, -wordSize);         // make an inclusive end pointer
+    __ addptr(end_to, -heapOopSize);         // make an inclusive end pointer
     gen_write_ref_array_post_barrier(to, end_to, rscratch1);
     __ xorptr(rax, rax);                  // return 0 on success
 

@@ -962,25 +962,38 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   return newm;
 }
 
-vmIntrinsics::ID methodOopDesc::compute_intrinsic_id() const {
-  assert(vmIntrinsics::_none == 0, "correct coding of default case");
-  const uintptr_t max_cache_uint = right_n_bits((int)(sizeof(_intrinsic_id_cache) * BitsPerByte));
-  assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_cache_uint, "else fix cache size");
+vmSymbols::SID methodOopDesc::klass_id_for_intrinsics(klassOop holder) {
   // if loader is not the default loader (i.e., != NULL), we can't know the intrinsics
   // because we are not loading from core libraries
-  if (instanceKlass::cast(method_holder())->class_loader() != NULL) return vmIntrinsics::_none;
+  if (instanceKlass::cast(holder)->class_loader() != NULL)
+    return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
 
   // see if the klass name is well-known:
-  symbolOop klass_name    = instanceKlass::cast(method_holder())->name();
-  vmSymbols::SID klass_id = vmSymbols::find_sid(klass_name);
-  if (klass_id == vmSymbols::NO_SID)  return vmIntrinsics::_none;
+  symbolOop klass_name = instanceKlass::cast(holder)->name();
+  return vmSymbols::find_sid(klass_name);
+}
+
+void methodOopDesc::init_intrinsic_id() {
+  assert(_intrinsic_id == vmIntrinsics::_none, "do this just once");
+  const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
+  assert((uintptr_t)vmIntrinsics::ID_LIMIT <= max_id_uint, "else fix size");
+
+  // the klass name is well-known:
+  vmSymbols::SID klass_id = klass_id_for_intrinsics(method_holder());
+  assert(klass_id != vmSymbols::NO_SID, "caller responsibility");
 
   // ditto for method and signature:
   vmSymbols::SID  name_id = vmSymbols::find_sid(name());
-  if (name_id  == vmSymbols::NO_SID)  return vmIntrinsics::_none;
+  if (name_id  == vmSymbols::NO_SID)  return;
   vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
-  if (sig_id   == vmSymbols::NO_SID)  return vmIntrinsics::_none;
+  if (sig_id   == vmSymbols::NO_SID)  return;
   jshort flags = access_flags().as_short();
+
+  vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
+  if (id != vmIntrinsics::_none) {
+    set_intrinsic_id(id);
+    return;
+  }
 
   // A few slightly irregular cases:
   switch (klass_id) {
@@ -992,14 +1005,17 @@ vmIntrinsics::ID methodOopDesc::compute_intrinsic_id() const {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(sqrt_name):
       // pretend it is the corresponding method in the non-strict class:
       klass_id = vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_Math);
+      id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
       break;
     }
   }
 
-  // return intrinsic id if any
-  return vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
+  if (id != vmIntrinsics::_none) {
+    // Set up its iid.  It is an alias method.
+    set_intrinsic_id(id);
+    return;
+  }
 }
-
 
 // These two methods are static since a GC may move the methodOopDesc
 bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
