@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6239117 6470320
+ * @bug 6239117 6470320 8168851
  * @summary test if transmitControlCommand() works
  * @author Andreas Sterbenz
  * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestControl
+ * @run main/othervm/manual/java.security.policy==test.policy TestControl
  */
 
 // This test requires special hardware.

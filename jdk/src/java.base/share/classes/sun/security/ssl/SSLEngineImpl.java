@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -994,7 +994,22 @@ public final class SSLEngineImpl extends SSLEngine {
 
         // plainText should never be null for TLS protocols
         HandshakeStatus hsStatus = null;
-        if (!isDTLS || plainText != null) {
+        if (plainText == Plaintext.PLAINTEXT_NULL) {
+            // Only happens for DTLS protocols.
+            //
+            // Received a retransmitted flight, and need to retransmit the
+            // previous delivered handshake flight messages.
+            if (enableRetransmissions) {
+                if (debug != null && Debug.isOn("verbose")) {
+                    Debug.log(
+                        "Retransmit the previous handshake flight messages.");
+                }
+
+                synchronized (this) {
+                    outputRecord.launchRetransmission();
+                }
+            }   // Otherwise, discard the retransmitted flight.
+        } else if (!isDTLS || plainText != null) {
             hsStatus = processInputRecord(plainText, appData, offset, length);
         }
 
@@ -1003,7 +1018,7 @@ public final class SSLEngineImpl extends SSLEngine {
         }
 
         if (plainText == null) {
-            plainText = new Plaintext();
+            plainText = Plaintext.PLAINTEXT_NULL;
         }
         plainText.handshakeStatus = hsStatus;
 
@@ -1378,7 +1393,8 @@ public final class SSLEngineImpl extends SSLEngine {
             // Acquire the buffered to-be-delivered records or retransmissions.
             //
             // May have buffered records, or need retransmission if handshaking.
-            if (!outputRecord.isEmpty() || (handshaker != null)) {
+            if (!outputRecord.isEmpty() ||
+                    (enableRetransmissions && handshaker != null)) {
                 ciphertext = outputRecord.acquireCiphertext(netData);
             }
 
@@ -1403,13 +1419,36 @@ public final class SSLEngineImpl extends SSLEngine {
 
         HandshakeStatus hsStatus = null;
         Ciphertext.RecordType recordType = ciphertext.recordType;
-        if ((handshaker != null) &&
-                (recordType.contentType == Record.ct_handshake) &&
-                (recordType.handshakeType == HandshakeMessage.ht_finished) &&
-                handshaker.isDone() && outputRecord.isEmpty()) {
+        if ((recordType.contentType == Record.ct_handshake) &&
+            (recordType.handshakeType == HandshakeMessage.ht_finished) &&
+            outputRecord.isEmpty()) {
 
-            hsStatus = finishHandshake();
-            connectionState = cs_DATA;
+            if (handshaker == null) {
+                hsStatus = HandshakeStatus.FINISHED;
+            } else if (handshaker.isDone()) {
+                hsStatus = finishHandshake();
+                connectionState = cs_DATA;
+
+                // Retransmit the last flight twice.
+                //
+                // The application data transactions may begin immediately
+                // after the last flight.  If the last flight get lost, the
+                // application data may be discarded accordingly.  As could
+                // be an issue for some applications.  This impact can be
+                // mitigated by sending the last fligth twice.
+                if (isDTLS && enableRetransmissions) {
+                    if (debug != null && Debug.isOn("verbose")) {
+                        Debug.log(
+                            "Retransmit the last flight messages.");
+                    }
+
+                    synchronized (this) {
+                        outputRecord.launchRetransmission();
+                    }
+
+                    hsStatus = HandshakeStatus.NEED_WRAP;
+                }
+            }
         }   // Otherwise, the followed call to getHSStatus() will help.
 
         /*

@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.util.Arrays;
 import java.awt.*;
 import java.awt.font.TextAttribute;
+import java.awt.geom.Rectangle2D;
 import javax.swing.event.*;
 import javax.swing.SizeRequirements;
 
@@ -888,10 +889,9 @@ public class ParagraphView extends FlowView implements TabExpander {
             int height = r.height;
             int y = r.y;
             Shape loc = super.modelToView(pos, a, b);
-            r = loc.getBounds();
-            r.height = height;
-            r.y = y;
-            return r;
+            Rectangle2D bounds = loc.getBounds2D();
+            bounds.setRect(bounds.getX(), y, bounds.getWidth(), height);
+            return bounds;
         }
 
         /**

@@ -26,7 +26,8 @@
  * @summary Test the recording and checking of module hashes
  * @author Andrei Eremeev
  * @library /lib/testlibrary
- * @modules java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.module
  *          jdk.jlink
  *          jdk.compiler
  * @build CompilerUtils
@@ -39,7 +40,6 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Method;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,8 +55,10 @@ import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 
-import jdk.internal.module.ConfigurableModuleFinder;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.module.ModuleHashes;
+
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -74,7 +76,6 @@ public class HashesTest {
     private final Path jmods = Paths.get("jmods");
     private final String[] modules = new String[] { "m1", "m2", "m3"};
 
-    private static Method hashesMethod;
     @BeforeTest
     private void setup() throws Exception {
         if (Files.exists(jmods)) {
@@ -97,13 +98,6 @@ public class HashesTest {
         // compile org.bar and org.foo
         compileModule("org.bar", modSrc);
         compileModule("org.foo", modSrc);
-
-        try {
-            hashesMethod = ModuleDescriptor.class.getDeclaredMethod("hashes");
-            hashesMethod.setAccessible(true);
-        } catch (ReflectiveOperationException x) {
-            throw new InternalError(x);
-        }
     }
 
     @Test
@@ -143,17 +137,14 @@ public class HashesTest {
     }
 
     private Optional<ModuleHashes> hashes(String name) throws Exception {
-        ModuleFinder finder = ModuleFinder.of(jmods.resolve(name + ".jmod"));
-        if (finder instanceof ConfigurableModuleFinder) {
-            ((ConfigurableModuleFinder) finder)
-                .configurePhase(ConfigurableModuleFinder.Phase.LINK_TIME);
-        }
+        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
+            .newModulePath(Runtime.version(), true, jmods.resolve(name + ".jmod"));
         ModuleReference mref = finder.find(name).orElseThrow(RuntimeException::new);
         ModuleReader reader = mref.open();
         try (InputStream in = reader.open("module-info.class").get()) {
             ModuleDescriptor md = ModuleDescriptor.read(in);
-            Optional<ModuleHashes> hashes =
-                (Optional<ModuleHashes>) hashesMethod.invoke(md);
+            JavaLangModuleAccess jmla = SharedSecrets.getJavaLangModuleAccess();
+            Optional<ModuleHashes> hashes = jmla.hashes(md);
             System.out.format("hashes in module %s %s%n", name,
                               hashes.isPresent() ? "present" : "absent");
             if (hashes.isPresent()) {

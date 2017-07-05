@@ -1970,6 +1970,11 @@ public class Activation implements Serializable {
                 AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Void>() {
                         public Void run() throws IOException {
+                            boolean disable = Boolean.getBoolean(
+                                    "sun.rmi.server.activation.disableErrRedirect");
+                            if (disable)
+                                return null;
+
                             File file =
                                 Files.createTempFile("rmid-err", null).toFile();
                             PrintStream errStream =

@@ -759,6 +759,10 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
         ;;
+      s390 )
+        $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer -mbackchain -march=z10"
+        $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
+        ;;
       * )
         $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
@@ -940,6 +944,10 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mcpu=power7 -mtune=power8"
     fi
+  elif test "x$OPENJDK_$1_CPU" = xs390x; then
+    if test "x$OPENJDK_$1_OS" = xlinux; then
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -mbackchain -march=z10"
+    fi
   fi
 
   if test "x$OPENJDK_$1_CPU_ENDIAN" = xlittle; then
@@ -999,6 +1007,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
 
   # Setup some hard coded includes
   $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_$1_OS/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/include \

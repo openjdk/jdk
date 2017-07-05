@@ -38,4 +38,6 @@ grant {
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
 
   permission java.lang.RuntimePermission "getClassLoader";
+  permission java.lang.RuntimePermission "selectorProvider";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
 };

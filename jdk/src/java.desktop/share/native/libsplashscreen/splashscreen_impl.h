@@ -150,7 +150,9 @@ void SplashUpdateScreenData(Splash * splash);
 void SplashCleanup(Splash * splash);
 void SplashSetScaleFactor(float scaleFactor);
 int  SplashGetScaledImgNameMaxPstfixLen(const char *fileName);
-
+void cleanUp(char *fName, char *xName, char *pctName, float *scaleFactor);
+jboolean GetScaledImageName(const char *fileName, char *scaledImgName,
+                  float *scaleFactor, const size_t scaledImageLength);
 typedef struct SplashStream {
     int (*read)(void* pStream, void* pData, int nBytes);
     int (*peek)(void* pStream);
