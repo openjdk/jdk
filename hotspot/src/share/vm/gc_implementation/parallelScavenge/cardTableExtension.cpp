@@ -42,7 +42,7 @@ class CheckForUnmarkedOops : public OopClosure {
 
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = oopDesc::load_decode_heap_oop(p);
     if (_young_gen->is_in_reserved(obj) &&
         !_card_table->addr_is_marked_imprecise(p)) {
       // Don't overwrite the first missing card mark

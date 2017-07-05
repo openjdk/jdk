@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ class OSThread: public CHeapObj {
 
   // For java intrinsics:
   static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }
+  static ByteSize thread_id_offset()              { return byte_offset_of(OSThread, _thread_id); }
 
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux

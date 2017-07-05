@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ typedef void* HANDLE;
   HANDLE interrupt_event() const                   { return _interrupt_event; }
   void set_interrupt_event(HANDLE interrupt_event) { _interrupt_event = interrupt_event; }
 
+
+  static size_t thread_id_size()                   { return sizeof(unsigned long); }
   unsigned long thread_id() const                  { return _thread_id; }
 #ifndef PRODUCT
   // Used for debugging, return a unique integer for each thread.

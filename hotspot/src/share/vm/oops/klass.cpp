@@ -581,14 +581,6 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
-
-void Klass::oop_verify_old_oop(oop obj, oop* p, bool allow_dirty) {
-  /* $$$ I think this functionality should be handled by verification of
-  RememberedSet::verify_old_oop(obj, p, allow_dirty, false);
-  the card table. */
-}
-void Klass::oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty) { }
-
 #ifndef PRODUCT
 
 void Klass::verify_vtable_index(int i) {

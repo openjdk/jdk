@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 #ifndef MACOSX
-#include <link.h>
+#include <dlfcn.h>
 #endif
 #include "jvm_md.h"
 #include "J2D_GL/glx.h"

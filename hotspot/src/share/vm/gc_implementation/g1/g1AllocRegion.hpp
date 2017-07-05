@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ private:
   // the region that is re-used using the set() method. This count can
   // be used in any heuristics that might want to bound how many
   // distinct regions this object can used during an active interval.
-  size_t _count;
+  uint _count;
 
   // When we set up a new active region we save its used bytes in this
   // field so that, when we retire it, we can calculate how much space
@@ -136,7 +136,7 @@ public:
     return (_alloc_region == _dummy_region) ? NULL : _alloc_region;
   }
 
-  size_t count() { return _count; }
+  uint count() { return _count; }
 
   // The following two are the building blocks for the allocation method.
 
