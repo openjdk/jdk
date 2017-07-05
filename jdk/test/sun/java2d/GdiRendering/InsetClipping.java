@@ -85,6 +85,9 @@ public class InsetClipping extends Frame {
             } catch (Exception e) {}
         }
         try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {}
+        try {
             Robot robot = new Robot();
             Point clientLoc = clipTest.getLocationOnScreen();
             Insets insets = clipTest.getInsets();

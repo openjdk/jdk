@@ -120,6 +120,9 @@ public class SharedMemoryPixmapsTest {
         }
 
         private boolean testRendering() throws RuntimeException {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {}
             Robot r = null;
             try {
                 r = new Robot();

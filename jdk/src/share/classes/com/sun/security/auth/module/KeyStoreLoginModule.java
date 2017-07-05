@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class KeyStoreLoginModule implements LoginModule {
     private static final TextOutputCallback bannerCallback =
                 new TextOutputCallback
                         (TextOutputCallback.INFORMATION,
-                        rb.getString("Please enter keystore information"));
+                        rb.getString("Please.enter.keystore.information"));
     private final ConfirmationCallback confirmationCallback =
                 new ConfirmationCallback
                         (ConfirmationCallback.INFORMATION,
@@ -364,10 +364,10 @@ public class KeyStoreLoginModule implements LoginModule {
             NameCallback aliasCallback;
             if (keyStoreAlias == null || keyStoreAlias.length() == 0) {
                 aliasCallback = new NameCallback(
-                                        rb.getString("Keystore alias: "));
+                                        rb.getString("Keystore.alias."));
             } else {
                 aliasCallback =
-                    new NameCallback(rb.getString("Keystore alias: "),
+                    new NameCallback(rb.getString("Keystore.alias."),
                                      keyStoreAlias);
             }
 
@@ -379,11 +379,11 @@ public class KeyStoreLoginModule implements LoginModule {
                 break;
             case NORMAL:
                 keyPassCallback = new PasswordCallback
-                    (rb.getString("Private key password (optional): "), false);
+                    (rb.getString("Private.key.password.optional."), false);
                 // fall thru
             case TOKEN:
                 storePassCallback = new PasswordCallback
-                    (rb.getString("Keystore password: "), false);
+                    (rb.getString("Keystore.password."), false);
                 break;
             }
             prompt(aliasCallback, storePassCallback, keyPassCallback);

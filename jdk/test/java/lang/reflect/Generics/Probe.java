@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,6 @@ import static java.util.Arrays.*;
           "java.util.WeakHashMap$EntryIterator",
           "java.util.WeakHashMap$KeyIterator",
           "java.util.WeakHashMap$ValueIterator",
-          "java.util.TreeMap$EntryIterator",
-          "java.util.TreeMap$KeyIterator",
-          "java.util.TreeMap$ValueIterator",
           "java.util.HashMap$EntryIterator",
           "java.util.HashMap$KeyIterator",
           "java.util.HashMap$ValueIterator",
