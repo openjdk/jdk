@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.tools.jlink.plugin.Plugin;
 import java.io.File;
 import java.io.IOException;
 import java.lang.module.ModuleFinder;
+import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,9 +94,12 @@ public final class AppRuntimeImageBuilder {
 
     public void build() throws IOException {
         // jlink main arguments
-        Jlink.JlinkConfiguration jlinkConfig = new Jlink.JlinkConfiguration(
-            new File("").toPath(), // Unused
-            modulePath, addModules, limitModules);
+        Jlink.JlinkConfiguration jlinkConfig =
+            new Jlink.JlinkConfiguration(new File("").toPath(), // Unused
+                                         modulePath,
+                                         addModules,
+                                         limitModules,
+                                         ByteOrder.nativeOrder());
 
         // plugin configuration
         List<Plugin> plugins = new ArrayList<Plugin>();

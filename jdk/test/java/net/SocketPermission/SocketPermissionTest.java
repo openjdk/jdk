@@ -25,13 +25,17 @@
  * @test
  * @bug 8047031
  * @summary SocketPermission tests for legacy socket types
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.NetworkConfiguration
  * @run testng/othervm SocketPermissionTest
  */
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketPermission;
@@ -44,11 +48,14 @@ import java.security.Permissions;
 import java.security.Policy;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.util.Optional;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
 import static org.testng.Assert.*;
 
+import static jdk.testlibrary.NetworkConfiguration.probe;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SocketPermissionTest {
@@ -210,12 +217,17 @@ public class SocketPermissionTest {
                     new SocketPermission(addr, "listen,resolve"),
                     new SocketPermission("229.227.226.221", "connect,accept"));
 
-            // Positive
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                s.joinGroup(group);
-                s.leaveGroup(group);
-                return null;
-            }, acc);
+            // Positive ( requires a functional network interface )
+            Optional<NetworkInterface> onif = probe().ip4MulticastInterfaces().findFirst();
+            if (!onif.isPresent()) {
+                s.setNetworkInterface(onif.get());
+
+                AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                    s.joinGroup(group);
+                    s.leaveGroup(group);
+                    return null;
+                }, acc);
+            }
 
             // Negative
             try {

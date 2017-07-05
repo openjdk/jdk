@@ -28,8 +28,8 @@ package java.awt.desktop;
 /**
  * Event sent when the system enters and exits power save sleep.
  *
- * @see SystemSleepListener#systemAboutToSleep(AppEvent.SystemSleepEvent)
- * @see SystemSleepListener#systemAwoke(AppEvent.SystemSleepEvent)
+ * @see SystemSleepListener#systemAboutToSleep(SystemSleepEvent)
+ * @see SystemSleepListener#systemAwoke(SystemSleepEvent)
  *
  * @since 9
  */
