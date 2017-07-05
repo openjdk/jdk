@@ -24,7 +24,8 @@
  */
 package javax.swing.text;
 
-import sun.reflect.misc.ConstructorUtil;
+import sun.reflect.misc.ReflectUtil;
+import sun.swing.SwingUtilities2;
 
 import java.io.Serializable;
 import java.lang.reflect.*;
@@ -247,7 +248,9 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
             Constructor cons;
 
             try {
-                cons = ConstructorUtil.getConstructor(vc, new Class[]{String.class});
+                ReflectUtil.checkPackageAccess(vc);
+                SwingUtilities2.checkAccess(vc.getModifiers());
+                cons = vc.getConstructor(new Class[]{String.class});
 
             } catch (NoSuchMethodException nsme) {
                 cons = null;
@@ -255,6 +258,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
 
             if (cons != null) {
                 try {
+                    SwingUtilities2.checkAccess(cons.getModifiers());
                     return cons.newInstance(new Object[] { string });
                 } catch (Throwable ex) {
                     throw new ParseException("Error creating instance", 0);

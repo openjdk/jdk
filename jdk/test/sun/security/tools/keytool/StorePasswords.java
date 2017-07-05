@@ -77,6 +77,8 @@ public class StorePasswords {
         }
         System.out.println("\nStored " + storeCount + " user passwords, " +
             "recovered " + recoverCount + " user passwords");
+
+        new File(KEYSTORE).delete();
     }
 
     private static int store() throws Exception {
@@ -144,7 +146,9 @@ public class StorePasswords {
 
         // Store the PKCS#12 keystore
         System.out.println("Storing PKCS#12 keystore to: " + KEYSTORE);
-        keystore.store(new FileOutputStream(KEYSTORE), KEYSTORE_PWD);
+        try (FileOutputStream out = new FileOutputStream(KEYSTORE)) {
+            keystore.store(out, KEYSTORE_PWD);
+        }
 
         return count;
     }
@@ -154,7 +158,9 @@ public class StorePasswords {
         // Load the PKCS#12 keystore
         KeyStore keystore = KeyStore.getInstance("PKCS12");
         System.out.println("\nLoading PKCS#12 keystore from: " + KEYSTORE);
-        keystore.load(new FileInputStream(KEYSTORE), KEYSTORE_PWD);
+        try (FileInputStream in = new FileInputStream(KEYSTORE)) {
+            keystore.load(in, KEYSTORE_PWD);
+        }
 
         SecretKey key;
         SecretKeyFactory factory;

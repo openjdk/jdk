@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # macosx universal builds
@@ -35,15 +35,15 @@ universal_debug:
 all_product_universal:
 #	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_PRODUCT_TARGETS)
 	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_PRODUCT_TARGETS)
-	$(QUIETLY) $(MAKE) EXPORT_SUBDIR= universalize
+	$(QUIETLY) $(MAKE) BUILD_FLAVOR=product EXPORT_SUBDIR= universalize
 all_fastdebug_universal:
 #	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_FASTDEBUG_TARGETS)
 	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_FASTDEBUG_TARGETS)
-	$(QUIETLY) $(MAKE) EXPORT_SUBDIR=/fastdebug universalize
+	$(QUIETLY) $(MAKE) BUILD_FLAVOR=fastdebug EXPORT_SUBDIR=/fastdebug universalize
 all_debug_universal:
 #	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_DEBUG_TARGETS)
 	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_DEBUG_TARGETS)
-	$(QUIETLY) $(MAKE) EXPORT_SUBDIR=/debug universalize
+	$(QUIETLY) $(MAKE) BUILD_FLAVOR=debug EXPORT_SUBDIR=/debug universalize
 
 
 # Consolidate architecture builds into a single Universal binary
@@ -57,18 +57,18 @@ $(UNIVERSAL_LIPO_LIST):
 	if [ -n "$${BUILT_LIPO_FILES}" ]; then \
 	  $(MKDIR) -p $(shell dirname $@); \
 	  lipo -create -output $@ $${BUILT_LIPO_FILES}; \
-	fi	
+	fi
 
 
 # Copy built non-universal binaries in place
+# - copies directories; including empty dirs
+# - copies files, symlinks, other non-directory files
 $(UNIVERSAL_COPY_LIST):
-	BUILT_COPY_FILES="`find $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) 2>/dev/null`"; \
+	BUILT_COPY_FILES="`find $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) -prune 2>/dev/null`"; \
 	if [ -n "$${BUILT_COPY_FILES}" ]; then \
 	  for i in $${BUILT_COPY_FILES}; do \
-	    if [ -f $${i} ]; then \
-	      $(MKDIR) -p $(shell dirname $@); \
-	      $(CP) $${i} $@; \
-	    fi; \
+	    $(MKDIR) -p $(shell dirname $@); \
+	    $(CP) -R $${i} $@; \
 	  done; \
 	fi
 

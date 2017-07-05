@@ -277,24 +277,17 @@ abstract class InitialToken extends Krb5Token {
                 byte[] credBytes = new byte[credLen];
                 System.arraycopy(checksumBytes, 28, credBytes, 0, credLen);
 
-                CipherHelper cipherHelper = context.getCipherHelper(key);
-                if (useNullKey(cipherHelper)) {
-                    delegCreds =
-                        new KrbCred(credBytes, EncryptionKey.NULL_KEY).
-                        getDelegatedCreds()[0];
-                } else {
-                    KrbCred cred;
-                    try {
-                        cred = new KrbCred(credBytes, key);
-                    } catch (KrbException e) {
-                        if (subKey != null) {
-                            cred = new KrbCred(credBytes, subKey);
-                        } else {
-                            throw e;
-                        }
+                KrbCred cred;
+                try {
+                    cred = new KrbCred(credBytes, key);
+                } catch (KrbException ke) {
+                    if (subKey != null) {
+                        cred = new KrbCred(credBytes, subKey);
+                    } else {
+                        throw ke;
                     }
-                    delegCreds = cred.getDelegatedCreds()[0];
                 }
+                delegCreds = cred.getDelegatedCreds()[0];
             }
         }
 

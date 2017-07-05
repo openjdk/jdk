@@ -857,7 +857,6 @@ static Method* new_method(
   m->set_max_locals(params);
   m->constMethod()->set_stackmap_data(NULL);
   m->set_code(code_start);
-  m->set_force_inline(true);
 
   return m;
 }

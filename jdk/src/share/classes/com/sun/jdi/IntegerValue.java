@@ -34,8 +34,9 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface IntegerValue extends PrimitiveValue, Comparable<IntegerValue>
-{
+@jdk.Exported
+public interface IntegerValue extends PrimitiveValue, Comparable<IntegerValue> {
+
     /**
      * Returns this IntegerValue as an int.
      *

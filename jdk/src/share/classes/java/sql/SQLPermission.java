@@ -56,7 +56,7 @@ import java.security.*;
  * The following table lists all the possible <code>SQLPermission</code> target names.
  * The table gives a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
- * <P>
+ *
  *
  * <table border=1 cellpadding=5 summary="permission target name, what the permission allows, and associated risks">
  * <tr>

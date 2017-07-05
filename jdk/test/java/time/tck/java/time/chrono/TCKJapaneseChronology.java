@@ -92,10 +92,9 @@ import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.ValueRange;
 
 import java.util.HashMap;
@@ -229,7 +228,7 @@ public class TCKJapaneseChronology {
     @Test(dataProvider="createByEra")
     public void test_createByEra_query(JapaneseEra era, int yoe, int moy, int dom, int doy, LocalDate iso) {
         JapaneseDate test = JapaneseDate.of(era, yoe, moy, dom);
-        assertEquals(test.query(TemporalQuery.localDate()), iso);
+        assertEquals(test.query(TemporalQueries.localDate()), iso);
     }
 
     @Test(dataProvider="createByEra")
@@ -297,7 +296,7 @@ public class TCKJapaneseChronology {
     @Test(dataProvider="createByProleptic")
     public void test_createByProleptic_query(int y, int moy, int dom, int doy, LocalDate iso) {
         JapaneseDate test = JapaneseDate.of(y, moy, dom);
-        assertEquals(test.query(TemporalQuery.localDate()), iso);
+        assertEquals(test.query(TemporalQueries.localDate()), iso);
     }
 
     @Test(dataProvider="createByProleptic")
@@ -495,14 +494,14 @@ public class TCKJapaneseChronology {
     @Test
     public void test_adjust1() {
         JapaneseDate base = JapaneseChronology.INSTANCE.date(1928, 10, 29);
-        JapaneseDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        JapaneseDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, JapaneseChronology.INSTANCE.date(1928, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
         JapaneseDate base = JapaneseChronology.INSTANCE.date(1928, 12, 2);
-        JapaneseDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        JapaneseDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, JapaneseChronology.INSTANCE.date(1928, 12, 31));
     }
 

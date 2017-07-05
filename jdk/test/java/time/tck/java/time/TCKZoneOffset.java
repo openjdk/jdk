@@ -81,6 +81,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -523,13 +524,13 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {ZoneOffset.UTC, TemporalQuery.chronology(), null},
-                {ZoneOffset.UTC, TemporalQuery.zoneId(), null},
-                {ZoneOffset.UTC, TemporalQuery.precision(), null},
-                {ZoneOffset.UTC, TemporalQuery.zone(), ZoneOffset.UTC},
-                {ZoneOffset.UTC, TemporalQuery.offset(), ZoneOffset.UTC},
-                {ZoneOffset.UTC, TemporalQuery.localDate(), null},
-                {ZoneOffset.UTC, TemporalQuery.localTime(), null},
+                {ZoneOffset.UTC, TemporalQueries.chronology(), null},
+                {ZoneOffset.UTC, TemporalQueries.zoneId(), null},
+                {ZoneOffset.UTC, TemporalQueries.precision(), null},
+                {ZoneOffset.UTC, TemporalQueries.zone(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, TemporalQueries.offset(), ZoneOffset.UTC},
+                {ZoneOffset.UTC, TemporalQueries.localDate(), null},
+                {ZoneOffset.UTC, TemporalQueries.localTime(), null},
         };
     }
 

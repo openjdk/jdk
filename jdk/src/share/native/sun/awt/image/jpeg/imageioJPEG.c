@@ -2706,6 +2706,15 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
     bandSize = (*env)->GetIntArrayElements(env, bandSizes, NULL);
 
     for (i = 0; i < numBands; i++) {
+        if (bandSize[i] <= 0 || bandSize[i] > JPEG_BAND_SIZE) {
+            (*env)->ReleaseIntArrayElements(env, bandSizes,
+                                            bandSize, JNI_ABORT);
+            JNU_ThrowByName(env, "javax/imageio/IIOException", "Invalid Image");
+            return JNI_FALSE;;
+        }
+    }
+
+    for (i = 0; i < numBands; i++) {
         if (bandSize[i] != JPEG_BAND_SIZE) {
             if (scale == NULL) {
                 scale = (UINT8**) calloc(numBands, sizeof(UINT8*));

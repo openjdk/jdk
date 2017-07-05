@@ -349,32 +349,21 @@ abstract class LongPipeline<E_IN>
 
     // Stateful intermediate ops from LongStream
 
-    private LongStream slice(long skip, long limit) {
-        return SliceOps.makeLong(this, skip, limit);
-    }
-
     @Override
     public final LongStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return slice(0, maxSize);
+        return SliceOps.makeLong(this, 0, maxSize);
     }
 
     @Override
-    public final LongStream substream(long startingOffset) {
-        if (startingOffset < 0)
-            throw new IllegalArgumentException(Long.toString(startingOffset));
-        if (startingOffset == 0)
+    public final LongStream skip(long n) {
+        if (n < 0)
+            throw new IllegalArgumentException(Long.toString(n));
+        if (n == 0)
             return this;
         else
-            return slice(startingOffset, -1);
-    }
-
-    @Override
-    public final LongStream substream(long startingOffset, long endingOffset) {
-        if (startingOffset < 0 || endingOffset < startingOffset)
-            throw new IllegalArgumentException(String.format("substream(%d, %d)", startingOffset, endingOffset));
-        return slice(startingOffset, endingOffset - startingOffset);
+            return SliceOps.makeLong(this, n, -1);
     }
 
     @Override

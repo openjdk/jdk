@@ -30,11 +30,9 @@
 // There is one instance of the Compiler per CompilerThread.
 
 class Compiler: public AbstractCompiler {
-
  private:
-
- // Tracks whether runtime has been initialized
- static volatile int _runtimes;
+  static void init_c1_runtime();
+  BufferBlob* init_buffer_blob();
 
  public:
   // Creation
@@ -46,19 +44,12 @@ class Compiler: public AbstractCompiler {
 
   virtual bool is_c1()                           { return true; };
 
-  BufferBlob* get_buffer_blob(ciEnv* env);
-
   // Missing feature tests
   virtual bool supports_native()                 { return true; }
   virtual bool supports_osr   ()                 { return true; }
 
-  // Customization
-  virtual bool needs_adapters         ()         { return false; }
-  virtual bool needs_stubs            ()         { return false; }
-
   // Initialization
   virtual void initialize();
-  static  void initialize_all();
 
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci);

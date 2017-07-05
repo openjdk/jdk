@@ -24,41 +24,42 @@
 
 #include "precompiled.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compileBroker.hpp"
 #include "runtime/mutexLocker.hpp"
-void AbstractCompiler::initialize_runtimes(initializer f, volatile int* state) {
-  if (*state != initialized) {
 
-    // We are thread in native here...
-    CompilerThread* thread = CompilerThread::current();
-    bool do_initialization = false;
-    {
-      ThreadInVMfromNative tv(thread);
-      ResetNoHandleMark rnhm;
-      MutexLocker only_one(CompileThread_lock, thread);
-      if ( *state == uninitialized) {
-        do_initialization = true;
-        *state = initializing;
-      } else {
-        while (*state == initializing ) {
-          CompileThread_lock->wait();
-        }
+bool AbstractCompiler::should_perform_init() {
+  if (_compiler_state != initialized) {
+    MutexLocker only_one(CompileThread_lock);
+
+    if (_compiler_state == uninitialized) {
+      _compiler_state = initializing;
+      return true;
+    } else {
+      while (_compiler_state == initializing) {
+        CompileThread_lock->wait();
       }
     }
-    if (do_initialization) {
-      // We can not hold any locks here since JVMTI events may call agents
-
-      // Compiler(s) run as native
-
-      (*f)();
-
-      // To in_vm so we can use the lock
-
-      ThreadInVMfromNative tv(thread);
-      ResetNoHandleMark rnhm;
-      MutexLocker only_one(CompileThread_lock, thread);
-      assert(*state == initializing, "wrong state");
-      *state = initialized;
-      CompileThread_lock->notify_all();
-    }
   }
+  return false;
+}
+
+bool AbstractCompiler::should_perform_shutdown() {
+  // Since this method can be called by multiple threads, the lock ensures atomicity of
+  // decrementing '_num_compiler_threads' and the following operations.
+  MutexLocker only_one(CompileThread_lock);
+  _num_compiler_threads--;
+  assert (CompileBroker::is_compilation_disabled_forever(), "Must be set, otherwise thread waits forever");
+
+  // Only the last thread will perform shutdown operations
+  if (_num_compiler_threads == 0) {
+    return true;
+  }
+  return false;
+}
+
+void AbstractCompiler::set_state(int state) {
+  // Ensure that ste is only set by one thread at a time
+  MutexLocker only_one(CompileThread_lock);
+  _compiler_state =  state;
+  CompileThread_lock->notify_all();
 }

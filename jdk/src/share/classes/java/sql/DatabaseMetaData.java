@@ -67,7 +67,7 @@ package java.sql;
  * entries matching the search pattern are returned. If a search pattern
  * argument is set to <code>null</code>, that argument's criterion will
  * be dropped from the search.
- * <P>
+ *
  */
 public interface DatabaseMetaData extends Wrapper {
 
@@ -3271,7 +3271,7 @@ public interface DatabaseMetaData extends Wrapper {
         /**
          * Retrieves a list of the client info properties
          * that the driver supports.  The result set contains the following columns
-         * <p>
+         *
          * <ol>
          * <li><b>NAME</b> String{@code =>} The name of the client info property<br>
          * <li><b>MAX_LEN</b> int{@code =>} The maximum length of the value for the property<br>

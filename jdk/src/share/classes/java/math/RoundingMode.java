@@ -51,7 +51,6 @@ package java.math;
  * proper {@code MathContext}.  A summary table showing the results
  * of these rounding operations for all rounding modes appears below.
  *
- *<p>
  *<table border>
  * <caption><b>Summary of Rounding Operations Under Different Rounding Modes</b></caption>
  * <tr><th></th><th colspan=8>Result of rounding input to one digit with the given
