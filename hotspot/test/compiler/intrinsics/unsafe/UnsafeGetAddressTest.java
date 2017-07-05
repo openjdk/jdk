@@ -26,12 +26,15 @@
  * @bug 6653795
  * @summary C2 intrinsic for Unsafe.getAddress performs pointer sign extension on 32-bit systems
  * @modules java.base/jdk.internal.misc
- * @run main UnsafeGetAddressTest
  *
+ * @run main compiler.intrinsics.unsafe.UnsafeGetAddressTest
  */
 
+package compiler.intrinsics.unsafe;
+
 import jdk.internal.misc.Unsafe;
-import java.lang.reflect.*;
+
+import java.lang.reflect.Field;
 
 public class UnsafeGetAddressTest {
     private static Unsafe unsafe;

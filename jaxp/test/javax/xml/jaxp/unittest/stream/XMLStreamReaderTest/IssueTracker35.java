@@ -30,11 +30,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.IssueTracker35
+ * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker35
  * @summary Test StAX parse xsd document including external DTD.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class IssueTracker35 {
 
     @Test
@@ -53,3 +59,4 @@ public class IssueTracker35 {
         }
     }
 }
+

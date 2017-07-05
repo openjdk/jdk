@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8015926
  * @summary Tests that there are no NPE during painting
  * @author Sergey Malenkov

@@ -30,18 +30,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "mutex_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "mutex_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "mutex_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "mutex_bsd.inline.hpp"
-#endif
+#include "utilities/macros.hpp"
 
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
 //

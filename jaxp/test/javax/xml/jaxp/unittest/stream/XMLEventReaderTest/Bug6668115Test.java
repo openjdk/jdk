@@ -30,12 +30,18 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6668115
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6668115Test
+ * @run testng/othervm stream.XMLEventReaderTest.Bug6668115Test
  * @summary Test XMLEventReader.getElementText() shall update last event even if no peek.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6668115Test {
 
     public java.io.File input;
@@ -94,3 +100,4 @@ public class Bug6668115Test {
     }
 
 }
+

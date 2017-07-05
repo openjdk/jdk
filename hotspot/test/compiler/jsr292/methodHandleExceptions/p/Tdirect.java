@@ -28,7 +28,7 @@ package p;
  * Invokes I.m directly using invokeInterface bytecodes.
  */
 public class Tdirect {
-     public static int test(p.I i) {
+     public static int test(I i) {
          int accum = 0;
          for (int j = 0; j < 100000; j++) {
              accum += i.m();
@@ -36,7 +36,7 @@ public class Tdirect {
         return accum;
     }
 
-     public static int test(p.I ii, byte b, char c, short s, int i, long l,
+     public static int test(I ii, byte b, char c, short s, int i, long l,
              Object o1, Object o2, Object o3, Object o4, Object o5, Object o6) {
          int accum = 0;
          for (int j = 0; j < 100000; j++) {

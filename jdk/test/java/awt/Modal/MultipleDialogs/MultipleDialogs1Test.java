@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8054358
  * @summary Check whether a set of dialogs created with a toolkit excluded Frame
  *          parent has a proper modal blocking behavior. Also show a document modal

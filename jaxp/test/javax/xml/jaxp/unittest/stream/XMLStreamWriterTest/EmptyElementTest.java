@@ -29,11 +29,17 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.EmptyElementTest
+ * @run testng/othervm stream.XMLStreamWriterTest.EmptyElementTest
  * @summary Test XMLStreamWriter writes namespace and attribute after writeEmptyElement.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class EmptyElementTest {
 
     // expected output
@@ -79,3 +85,4 @@ public class EmptyElementTest {
         }
     }
 }
+

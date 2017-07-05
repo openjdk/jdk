@@ -24,34 +24,42 @@
 /*
  * @test TestIntegerComparison
  * @bug 8043284 8042786
- * @summary "Tests optimizations of signed and unsigned integer comparison."
- * @run main/othervm -Xcomp -XX:CompileOnly=TestIntegerComparison::testSigned,TestIntegerComparison::testUnsigned TestIntegerComparison
+ * @summary Tests optimizations of signed and unsigned integer comparison.
+ *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.integerArithmetic.TestIntegerComparison::testSigned
+ *      -XX:CompileCommand=compileonly,compiler.integerArithmetic.TestIntegerComparison::testUnsigned
+ *      compiler.integerArithmetic.TestIntegerComparison
  */
-public class TestIntegerComparison {
-  /**
-   * Tests optimization of signed integer comparison (see BoolNode::Ideal).
-   * The body of the if statement is unreachable and should not be compiled.
-   * @param c Character (value in the integer range [0, 65535])
-   */
-  public static void testSigned(char c) {
-    // The following addition may overflow. The result is in one
-    // of the two ranges [IntMax] and [IntMin, IntMin + CharMax - 1].
-    int result = c + Integer.MAX_VALUE;
-    // CmpINode has to consider both result ranges instead of only
-    // the general [IntMin, IntMax] range to be able to prove that
-    // result is always unequal to CharMax.
-    if (result == Character.MAX_VALUE) {
-      // Unreachable
-      throw new RuntimeException("Should not reach here!");
-    }
-  }
+package compiler.integerArithmetic;
 
-  /**
-   * Tests optimization of unsigned integer comparison (see CmpUNode::Value).
-   * The body of the if statement is unreachable and should not be compiled.
-   * @param c Character (value in the integer range [0, 65535])
-   */
-  public static void testUnsigned(char c) {
+public class TestIntegerComparison {
+    /**
+     * Tests optimization of signed integer comparison (see BoolNode::Ideal).
+     * The body of the if statement is unreachable and should not be compiled.
+     *
+     * @param c Character (value in the integer range [0, 65535])
+     */
+    public static void testSigned(char c) {
+        // The following addition may overflow. The result is in one
+        // of the two ranges [IntMax] and [IntMin, IntMin + CharMax - 1].
+        int result = c + Integer.MAX_VALUE;
+        // CmpINode has to consider both result ranges instead of only
+        // the general [IntMin, IntMax] range to be able to prove that
+        // result is always unequal to CharMax.
+        if (result == Character.MAX_VALUE) {
+            // Unreachable
+            throw new RuntimeException("Should not reach here!");
+        }
+    }
+
+    /**
+     * Tests optimization of unsigned integer comparison (see CmpUNode::Value).
+     * The body of the if statement is unreachable and should not be compiled.
+     *
+     * @param c Character (value in the integer range [0, 65535])
+     */
+    public static void testUnsigned(char c) {
     /*
      * The following if statement consisting of two CmpIs is replaced
      * by a CmpU during optimization (see 'IfNode::fold_compares').
@@ -72,21 +80,21 @@ public class TestIntegerComparison {
      * that due to the overflow the signed comparison result < 98 is
      * always false.
      */
-    int result = c - (Character.MAX_VALUE - Integer.MIN_VALUE) + 2;
-    if (1 < result && result < 100) {
-      // Unreachable
-      throw new RuntimeException("Should not reach here!");
+        int result = c - (Character.MAX_VALUE - Integer.MIN_VALUE) + 2;
+        if (1 < result && result < 100) {
+            // Unreachable
+            throw new RuntimeException("Should not reach here!");
+        }
     }
-  }
 
-  /**
-   * Tests optimizations of signed and unsigned integer comparison.
-   */
-  public static void main(String[] args) {
-    // We use characters to get a limited integer range for free
-    for (int i = Character.MIN_VALUE; i <= Character.MAX_VALUE; ++i) {
-      testSigned((char) i);
-      testUnsigned((char) i);
+    /**
+     * Tests optimizations of signed and unsigned integer comparison.
+     */
+    public static void main(String[] args) {
+        // We use characters to get a limited integer range for free
+        for (int i = Character.MIN_VALUE; i <= Character.MAX_VALUE; ++i) {
+            testSigned((char) i);
+            testUnsigned((char) i);
+        }
     }
-  }
 }

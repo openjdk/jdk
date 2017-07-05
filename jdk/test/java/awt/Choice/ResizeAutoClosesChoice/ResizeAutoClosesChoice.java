@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 6399679
   @summary Choice is not invalidated when the frame gets resized programmatically when the drop-down is visible
   @author andrei.dmitriev area=awt.choice

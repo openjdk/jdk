@@ -383,23 +383,20 @@ AixAttachOperation* AixAttachListener::dequeue() {
     struct peercred_struct cred_info;
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
-      int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     }
     uid_t euid = geteuid();
     gid_t egid = getegid();
 
     if (cred_info.euid != euid || cred_info.egid != egid) {
-      int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     }
 
     // peer credential look okay so we read the request
     AixAttachOperation* op = read_request(s);
     if (op == NULL) {
-      int res;
       ::close(s);
       continue;
     } else {

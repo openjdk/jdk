@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,8 @@ module jdk.hotspot.agent {
     requires java.desktop;
     requires java.rmi;
     requires java.scripting;
-    requires jdk.jdi;
 
     // RMI needs to serialize types in this package
     exports sun.jvm.hotspot.debugger.remote to java.rmi;
-    provides com.sun.jdi.connect.Connector with sun.jvm.hotspot.jdi.SACoreAttachingConnector;
-    provides com.sun.jdi.connect.Connector with sun.jvm.hotspot.jdi.SADebugServerAttachingConnector;
-    provides com.sun.jdi.connect.Connector with sun.jvm.hotspot.jdi.SAPIDAttachingConnector;
 
 }

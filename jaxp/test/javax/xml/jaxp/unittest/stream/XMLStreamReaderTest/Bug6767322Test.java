@@ -29,12 +29,18 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6767322
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6767322Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Bug6767322Test
  * @summary Test XMLStreamReader.getVersion() returns null if a version isn't declared.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6767322Test {
     private static final String INPUT_FILE = "Bug6767322.xml";
 
@@ -70,3 +76,4 @@ public class Bug6767322Test {
         }
     }
 }
+

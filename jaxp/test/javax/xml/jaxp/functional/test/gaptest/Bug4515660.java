@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 package test.gaptest;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+
 import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
@@ -39,21 +42,25 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
-import jaxp.library.JAXPBaseTest;
-
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 /*
+ * @test
  * @bug 4515660
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4515660
+ * @run testng/othervm test.gaptest.Bug4515660
  * @summary verify property org.xml.sax.driver is used by SAXTransformerFactory
  */
 @Test(singleThreaded = true)
-public class Bug4515660 extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class Bug4515660 {
 
     @BeforeClass
     public void setSaxDrier() {
@@ -62,7 +69,7 @@ public class Bug4515660 extends JAXPBaseTest {
 
     @AfterClass
     public void clearSaxDrier() {
-        setSystemProperty("org.xml.sax.driver", null);
+        clearSystemProperty("org.xml.sax.driver");
     }
 
     @Test
@@ -121,3 +128,4 @@ public class Bug4515660 extends JAXPBaseTest {
     }
 
 }
+

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test Jan 16, 2003
+/*
+ * @test
+ * @key headful
  * @bug 4278839
  * @summary Incorrect cursor movement between words at the end of line
  * @author Anton Nashatyrev

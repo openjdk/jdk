@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import static catalog.CatalogTestUtils.DEFER_TRUE;
 import static catalog.CatalogTestUtils.getCatalogPath;
 import static javax.xml.catalog.CatalogFeatures.Feature.DEFER;
 import static javax.xml.catalog.CatalogManager.catalog;
+import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+import static jaxp.library.JAXPTestUtilities.tryRunWithAllPerm;
 
 import java.lang.reflect.Method;
 
@@ -36,16 +38,20 @@ import javax.xml.catalog.CatalogFeatures;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.DeferFeatureTest
+ * @run testng/othervm catalog.DeferFeatureTest
  * @summary This case tests whether the catalogs specified in delegateSystem,
  *          delegatePublic, delegateURI and nextCatalog entries are used lazily
  *          in resolution via defer feature.
- * @compile ../../libs/catalog/CatalogTestUtils.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class DeferFeatureTest {
 
     @Test(dataProvider = "catalog-countOfLoadedCatalogFile")
@@ -55,7 +61,7 @@ public class DeferFeatureTest {
     }
 
     @DataProvider(name = "catalog-countOfLoadedCatalogFile")
-    private Object[][] data() {
+    public Object[][] data() {
         return new Object[][]{
             // By default, alternative catalogs are not loaded.
             {createCatalog(CatalogFeatures.defaults()), 0},
@@ -75,9 +81,9 @@ public class DeferFeatureTest {
     }
 
     private int loadedCatalogCount(Catalog catalog) throws Exception {
-        Method method = catalog.getClass().getDeclaredMethod(
-                "loadedCatalogCount");
-        method.setAccessible(true);
+        Method method = tryRunWithAllPerm(() -> catalog.getClass().getDeclaredMethod("loadedCatalogCount"));
+        runWithAllPerm(() -> method.setAccessible(true));
         return (int) method.invoke(catalog);
     }
 }
+

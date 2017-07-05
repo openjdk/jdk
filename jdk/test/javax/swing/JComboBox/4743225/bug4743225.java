@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 4743225
  * @summary Size of JComboBox list is wrong when list is populated via PopupMenuListener
  * @author Alexander Potochkin

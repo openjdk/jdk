@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 7193219
-   @summary JComboBox serialization fails in JDK 1.7
-   @author Anton Litvinov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7193219
+ * @summary JComboBox serialization fails in JDK 1.7
+ * @author Anton Litvinov
+ */
 
 import java.io.*;
 

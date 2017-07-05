@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,21 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
 /*
+ * @test
  * @bug 4997818
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug4997818
+ * @run testng/othervm validation.Bug4997818
  * @summary Test SchemaFactory.newSchema(...) throws an exception, which is thrown from LSResourceResolver.
  */
 
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4997818 {
 
     @Test
@@ -75,3 +81,4 @@ public class Bug4997818 {
         }
     }
 }
+

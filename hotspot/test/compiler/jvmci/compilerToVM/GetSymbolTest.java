@@ -41,9 +41,13 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SingleImplementer;
+import jdk.test.lib.Utils;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.ConstantPool;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -52,9 +56,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.test.lib.Utils;
 
 public class GetSymbolTest {
     private static final int CONSTANT_POOL_UTF8_TAG = 1; // see jvms, section 4.4

@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 7138665
-   @summary JOptionPane.getValue() unexpected change between JRE 1.6 and JRE 1.7
-   @author Pavel Porvatov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7138665
+ * @summary JOptionPane.getValue() unexpected change between JRE 1.6 and JRE 1.7
+ * @author Pavel Porvatov
+ */
 
 import javax.swing.*;
 import java.awt.*;

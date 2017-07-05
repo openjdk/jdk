@@ -28,12 +28,15 @@
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Xbatch UnsafeRaw
+ * @run main/othervm -Xbatch compiler.unsafe.UnsafeRaw
  */
 
-import jdk.test.lib.Utils;
-import java.util.Random;
+package compiler.unsafe;
+
 import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Utils;
+
+import java.util.Random;
 
 public class UnsafeRaw {
   public static class Tests {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,19 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 6883209
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.OpenJDK100017Test
+ * @run testng/othervm transform.OpenJDK100017Test
  * @summary Test XSLT won't cause StackOverflow when it handle many characters.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class OpenJDK100017Test {
 
     @Test
@@ -60,3 +66,4 @@ public class OpenJDK100017Test {
         }
     }
 }
+

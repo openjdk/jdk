@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8044371
  * @summary setOneTouchExpandable functionality of JSplitPane will reduce vertical Scrollbar
  * @author Anton Nashatyrev

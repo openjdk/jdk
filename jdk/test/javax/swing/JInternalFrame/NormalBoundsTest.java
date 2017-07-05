@@ -23,6 +23,7 @@
 
  /*
  @test
+ @key headful
  @bug 7126823
  @summary Verify NormalBounds upon iconify/deiconify sequence
  @run main NormalBoundsTest

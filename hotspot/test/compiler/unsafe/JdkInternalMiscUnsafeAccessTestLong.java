@@ -25,12 +25,15 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for long
+ *
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Diters=100   -Xint                   JdkInternalMiscUnsafeAccessTestLong
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 JdkInternalMiscUnsafeAccessTestLong
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  JdkInternalMiscUnsafeAccessTestLong
- * @run testng/othervm -Diters=20000                         JdkInternalMiscUnsafeAccessTestLong
+ * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
+ * @run testng/othervm -Diters=20000                         compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
  */
+
+package compiler.unsafe;
 
 import org.testng.annotations.Test;
 

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug       7154072 7161320
   @summary   Tests that key events with modifiers are not swallowed.
   @author    anton.tarasov: area=awt.focus

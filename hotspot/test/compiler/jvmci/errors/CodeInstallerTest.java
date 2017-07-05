@@ -23,8 +23,6 @@
 
 package compiler.jvmci.errors;
 
-import java.lang.reflect.Method;
-
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
@@ -41,8 +39,9 @@ import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
-
 import org.junit.Assert;
+
+import java.lang.reflect.Method;
 
 public class CodeInstallerTest {
 

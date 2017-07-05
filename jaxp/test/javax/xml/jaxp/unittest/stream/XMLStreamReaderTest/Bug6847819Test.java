@@ -23,6 +23,7 @@
 
 package stream.XMLStreamReaderTest;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import java.io.StringReader;
@@ -31,9 +32,14 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
 /*
+ * @test
  * @bug 6847819
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6847819Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Bug6847819Test
  * @summary Test StAX parser shall throw XMLStreamException for illegal xml declaration.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6847819Test {
 
     @Test
@@ -63,3 +69,4 @@ public class Bug6847819Test {
     }
 
 }
+

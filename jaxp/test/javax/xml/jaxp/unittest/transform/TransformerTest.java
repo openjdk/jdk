@@ -23,8 +23,7 @@
 
 package transform;
 
-import com.sun.org.apache.xml.internal.serialize.OutputFormat;
-import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,6 +44,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
 import org.testng.AssertJUnit;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -60,10 +60,18 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.AttributesImpl;
 
+import com.sun.org.apache.xml.internal.serialize.OutputFormat;
+import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
+
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.TransformerTest
+ * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
  * @bug 6272879 6305029 6505031 8150704 8162598
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class TransformerTest {
     private Transformer createTransformer() throws TransformerException {
         return TransformerFactory.newInstance().newTransformer();
@@ -245,7 +253,7 @@ public class TransformerTest {
      */
     @Test
     public final void testBug6272879() throws IOException, TransformerException {
-        final String LINE_SEPARATOR = System.getProperty("line.separator");
+        final String LINE_SEPARATOR = getSystemProperty("line.separator");
 
         final String xsl =
                 "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" + LINE_SEPARATOR +
@@ -380,7 +388,7 @@ public class TransformerTest {
      */
     @Test
     public final void testBug8162598() throws IOException, TransformerException {
-        final String LINE_SEPARATOR = System.getProperty("line.separator");
+        final String LINE_SEPARATOR = getSystemProperty("line.separator");
 
         final String xsl =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + LINE_SEPARATOR +
@@ -431,3 +439,4 @@ public class TransformerTest {
         Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
     }
 }
+

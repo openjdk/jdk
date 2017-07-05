@@ -30,6 +30,7 @@ import java.util.Vector;
 
 /*
  * @test
+ * @key headful
  * @summary Verify that disposed frames are collected with GC
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary

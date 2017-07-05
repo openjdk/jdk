@@ -21,21 +21,24 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /*
  * @test DeoptimizeMethodTest
  * @bug 8006683 8007288 8022832
+ * @summary testing of WB::deoptimizeMethod()
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build DeoptimizeMethodTest
+ *          java.management
+ * @build compiler.whitebox.DeoptimizeMethodTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::* DeoptimizeMethodTest
- * @summary testing of WB::deoptimizeMethod()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-UseCounterDecay
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   compiler.whitebox.DeoptimizeMethodTest
  */
+
+package compiler.whitebox;
+
 public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {

@@ -252,7 +252,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int universeBaseVtableSize = getFieldValue("CompilerToVM::Data::Universe_base_vtable_size", Integer.class, "int");
 
     final int baseVtableLength() {
-        return universeBaseVtableSize / vtableEntrySize;
+        return universeBaseVtableSize / (vtableEntrySize / heapWordSize);
     }
 
     final int klassOffset = getFieldValue("java_lang_Class::_klass_offset", Integer.class, "int");

@@ -59,3 +59,4 @@ public class XMLSchemaValidator {
         validator.validate(new DOMSource(node));
     }
 }
+

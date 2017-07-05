@@ -24,6 +24,7 @@
 
 /*
   @test
+  @key headful
   @bug 4718897
   @summary tests that a Unicode string can be transferred between JVMs.
   @author das@sparc.spb.su area=datatransfer

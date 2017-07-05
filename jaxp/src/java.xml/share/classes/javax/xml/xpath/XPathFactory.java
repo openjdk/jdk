@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,14 +93,14 @@ public abstract class XPathFactory {
     public static XPathFactory newInstance() {
 
         try {
-                return newInstance(DEFAULT_OBJECT_MODEL_URI);
-        } catch (XPathFactoryConfigurationException xpathFactoryConfigurationException) {
-                throw new RuntimeException(
-                        "XPathFactory#newInstance() failed to create an XPathFactory for the default object model: "
-                        + DEFAULT_OBJECT_MODEL_URI
-                        + " with the XPathFactoryConfigurationException: "
-                        + xpathFactoryConfigurationException.toString()
-                );
+            return newInstance(DEFAULT_OBJECT_MODEL_URI);
+        } catch (XPathFactoryConfigurationException e) {
+            throw new RuntimeException(
+                    "XPathFactory#newInstance() failed to create an XPathFactory for the default object model: "
+                    + DEFAULT_OBJECT_MODEL_URI
+                    + " with the XPathFactoryConfigurationException: "
+                    + e.getMessage(), e
+            );
         }
     }
 

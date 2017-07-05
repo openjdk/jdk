@@ -23,6 +23,7 @@
 
  /*
  @test
+ @key headful
  @bug 8062946
  @summary Verify Transparency upon iconify/deiconify sequence
  @run main TransparencyTest

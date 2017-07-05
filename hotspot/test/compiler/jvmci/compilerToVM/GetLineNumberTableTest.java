@@ -44,9 +44,9 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.TestCase;
+import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.test.lib.Asserts;
 
 import java.lang.reflect.Executable;
 import java.util.Arrays;

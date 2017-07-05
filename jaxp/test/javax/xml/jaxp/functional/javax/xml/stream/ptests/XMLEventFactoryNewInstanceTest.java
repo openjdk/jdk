@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,28 @@
 
 package javax.xml.stream.ptests;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+
 import static org.testng.Assert.assertNotNull;
 
 import javax.xml.stream.XMLEventFactory;
 
 import jaxp.library.JAXPDataProvider;
-import jaxp.library.JAXPBaseTest;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.stream.ptests.XMLEventFactoryNewInstanceTest
+ * @run testng/othervm javax.xml.stream.ptests.XMLEventFactoryNewInstanceTest
  * @summary Tests for XMLEventFactory.newFactory(factoryId , classLoader)
  */
-public class XMLEventFactoryNewInstanceTest extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class XMLEventFactoryNewInstanceTest {
 
     private static final String XMLEVENT_FACTORY_CLASSNAME = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
     private static final String XMLEVENT_FACRORY_ID = "javax.xml.stream.XMLEventFactory";
@@ -59,7 +67,7 @@ public class XMLEventFactoryNewInstanceTest extends JAXPBaseTest {
             XMLEventFactory xef = XMLEventFactory.newFactory(factoryId, classLoader);
             assertNotNull(xef);
         } finally {
-            setSystemProperty(XMLEVENT_FACRORY_ID, null);
+            clearSystemProperty(XMLEVENT_FACRORY_ID);
         }
     }
 
@@ -74,3 +82,4 @@ public class XMLEventFactoryNewInstanceTest extends JAXPBaseTest {
     }
 
 }
+

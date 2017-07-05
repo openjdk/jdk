@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,18 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6577667
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.CR6577667Test
+ * @run testng/othervm transform.CR6577667Test
  * @summary Test XSLT can parse statement "not(preceding-sibling::* or following-sibling::*)" in stylesheet file.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CR6577667Test {
 
     @Test
@@ -53,3 +59,4 @@ public class CR6577667Test {
 
     }
 }
+

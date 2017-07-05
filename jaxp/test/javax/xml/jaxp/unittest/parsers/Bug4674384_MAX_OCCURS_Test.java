@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,19 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
  * @bug 4674384
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug4674384_MAX_OCCURS_Test
+ * @run testng/othervm parsers.Bug4674384_MAX_OCCURS_Test
  * @summary Test large maxOccurs.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4674384_MAX_OCCURS_Test {
 
     @Test
@@ -64,3 +70,4 @@ public class Bug4674384_MAX_OCCURS_Test {
         System.out.println("Success: File " + XML_FILE_NAME + " was parsed with a large value of maxOccurs.");
     }
 }
+

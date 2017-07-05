@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ public interface ValidationEvent {
      * Retrieve the severity code for this warning/error.
      *
      * <p>
-     * Must be one of {@code ValidationError.WARNING},
-     * {@code ValidationError.ERROR}, or {@code ValidationError.FATAL_ERROR}.
+     * Must be one of {@code ValidationEvent.WARNING},
+     * {@code ValidationEvent.ERROR}, or {@code ValidationEvent.FATAL_ERROR}.
      *
      * @return the severity code for this warning/error
      */

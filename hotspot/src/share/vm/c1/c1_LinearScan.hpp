@@ -31,6 +31,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "utilities/macros.hpp"
 
 class DebugInfoCache;
 class FpuStackAllocator;
@@ -959,23 +960,7 @@ class LinearScanTimers : public StackObj {
 
 #endif // ifndef PRODUCT
 
-
 // Pick up platform-dependent implementation details
-#ifdef TARGET_ARCH_x86
-# include "c1_LinearScan_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "c1_LinearScan_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "c1_LinearScan_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "c1_LinearScan_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "c1_LinearScan_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(c1_LinearScan)
 
 #endif // SHARE_VM_C1_C1_LINEARSCAN_HPP

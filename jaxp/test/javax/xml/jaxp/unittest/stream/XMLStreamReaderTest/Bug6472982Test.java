@@ -30,12 +30,18 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6472982
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6472982Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Bug6472982Test
  * @summary Test XMLStreamReader.getNamespaceContext().getPrefix("") won't throw IllegalArgumentException.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6472982Test {
     String namespaceURI = "foobar.com";
     String rootElement = "foo";
@@ -73,3 +79,4 @@ public class Bug6472982Test {
         return sbuffer.toString();
     }
 }
+

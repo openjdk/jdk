@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8080729
  * @summary Dialogs on multiscreen jump to parent frame on focus gain
  * @author Dmitry Markov

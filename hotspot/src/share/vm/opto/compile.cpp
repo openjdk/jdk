@@ -3814,6 +3814,7 @@ bool Compile::Constant::operator==(const Constant& other) {
   if (can_be_reused() != other.can_be_reused())  return false;
   // For floating point values we compare the bit pattern.
   switch (type()) {
+  case T_INT:
   case T_FLOAT:   return (_v._value.i == other._v._value.i);
   case T_LONG:
   case T_DOUBLE:  return (_v._value.j == other._v._value.j);
@@ -3828,6 +3829,7 @@ bool Compile::Constant::operator==(const Constant& other) {
 
 static int type_to_size_in_bytes(BasicType t) {
   switch (t) {
+  case T_INT:     return sizeof(jint   );
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );
   case T_DOUBLE:  return sizeof(jdouble);
@@ -3896,6 +3898,7 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
     Constant con = _constants.at(i);
     address constant_addr = NULL;
     switch (con.type()) {
+    case T_INT:    constant_addr = _masm.int_constant(   con.get_jint()   ); break;
     case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
     case T_FLOAT:  constant_addr = _masm.float_constant( con.get_jfloat() ); break;
     case T_DOUBLE: constant_addr = _masm.double_constant(con.get_jdouble()); break;

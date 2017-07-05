@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,46 @@
 
 package parsers;
 
+import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+import static org.testng.Assert.assertTrue;
+
 import java.io.StringReader;
 import java.util.Locale;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import javax.xml.parsers.DocumentBuilder;
-import org.xml.sax.SAXException;
-import org.xml.sax.InputSource;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
+ * @test
  * @bug 8073385
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug8073385
+ * @run testng/othervm parsers.Bug8073385
  * @summary test that invalid XML character exception string contains
  *     information about character value, element and attribute names
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug8073385 {
 
     private Locale defLoc;
 
     @BeforeClass
-    private void setup() {
+    public void setup() {
         defLoc = Locale.getDefault();
-        Locale.setDefault(Locale.ENGLISH);
+        runWithAllPerm(() -> Locale.setDefault(Locale.ENGLISH));
     }
 
     @AfterClass
-    private void cleanup() {
-        Locale.setDefault(defLoc);
+    public void cleanup() {
+        runWithAllPerm(() -> Locale.setDefault(defLoc));
     }
 
     @DataProvider(name = "illegalCharactersData")
@@ -91,3 +100,4 @@ public class Bug8073385 {
         assertTrue(exceptionText.contains("Unicode: " + hexString));
     }
 }
+

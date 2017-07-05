@@ -27,12 +27,18 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6631262
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Issue44Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Issue44Test
  * @summary Test XMLStreamReader.getName() shall throw IllegalStateException if current event is not start/end element.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Issue44Test {
 
     @Test
@@ -53,3 +59,4 @@ public class Issue44Test {
         }
     }
 }
+

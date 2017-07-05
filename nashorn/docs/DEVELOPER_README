@@ -302,6 +302,16 @@ Nashorn provides a fixed sized runtime event queue for debugging purposes.
 See -Dnashorn.debug for methods to access the event queue.
 The default value is 1024.
 
+SYSTEM PROPERTY: -Dnashorn.anonymous.classes.threshold=<value>
+
+Nashorn can use anonymous classes for loading compiled scripts, depending
+on the --anonymous-classes=[auto|true|false] option. Anonymous classes load
+faster, but the loaded classes get less optimization applied to them and
+therefore usually run slower. In the default "auto" setting, scripts are
+loaded as anonymous classes if the script size does not exceed 512 bytes.
+The above system property allows to set this threshold to a user defined
+value.
+
 ===============
 2. The loggers.
 ===============

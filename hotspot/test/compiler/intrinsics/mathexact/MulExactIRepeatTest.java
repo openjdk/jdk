@@ -25,15 +25,17 @@
  * @test
  * @bug 8026844
  * @summary Test repeating multiplyExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile MulExactIRepeatTest.java Verify.java
- * @run main MulExactIRepeatTest
  *
+ * @run main compiler.intrinsics.mathexact.MulExactIRepeatTest
  */
 
+package compiler.intrinsics.mathexact;
+
 import jdk.test.lib.Utils;
+
 import java.util.Random;
 
 public class MulExactIRepeatTest {

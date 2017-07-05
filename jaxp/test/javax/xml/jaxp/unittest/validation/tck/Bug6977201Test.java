@@ -30,12 +30,18 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6977201
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6977201Test
+ * @run testng/othervm validation.tck.Bug6977201Test
  * @summary Test Validator interprets regex "" correctly.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6977201Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -65,3 +71,4 @@ public class Bug6977201Test {
     }
 
 }
+

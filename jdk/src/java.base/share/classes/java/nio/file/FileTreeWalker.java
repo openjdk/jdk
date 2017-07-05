@@ -168,7 +168,7 @@ class FileTreeWalker implements Closeable {
      * @throws  IllegalArgumentException
      *          if {@code maxDepth} is negative
      * @throws  ClassCastException
-     *          if (@code options} contains an element that is not a
+     *          if {@code options} contains an element that is not a
      *          {@code FileVisitOption}
      * @throws  NullPointerException
      *          if {@code options} is {@ocde null} or the options

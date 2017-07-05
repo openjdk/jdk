@@ -38,9 +38,14 @@ import javax.xml.stream.events.EntityReference;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.SupportDTDTest
+ * @run testng/othervm stream.XMLStreamReaderTest.SupportDTDTest
  * @summary Test SUPPORT_DTD and IS_REPLACING_ENTITY_REFERENCES.
  */
 
@@ -72,6 +77,7 @@ import org.testng.annotations.Test;
 *       The current jaxp implementation actually throws a nullpointexception. A better error message could be used.
 *
 */
+@Listeners({jaxp.library.FilePolicy.class})
 public class SupportDTDTest {
     final boolean DEBUG = false;
     final String _file = "ExternalDTD.xml";
@@ -282,3 +288,4 @@ public class SupportDTDTest {
     }
 
 }
+

@@ -42,6 +42,7 @@ import static javax.swing.SwingUtilities.invokeAndWait;
 
 /*
  * @test
+ * @key headful
  * @bug 6968363
  * @summary Ensures that a custom document may not extend AbstractDocument
  * @author Sergey Malenkov

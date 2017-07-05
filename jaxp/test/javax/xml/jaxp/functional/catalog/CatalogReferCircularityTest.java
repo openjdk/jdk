@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,21 @@ import static catalog.CatalogTestUtils.catalogResolver;
 import javax.xml.catalog.CatalogException;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.CatalogReferCircularityTest
+ * @run testng/othervm catalog.CatalogReferCircularityTest
  * @summary Via nextCatalog entry, the catalog reference chain may be
  *          a (partial) closed circuit. For instance, a catalog may use itself
  *          as an additional catalog specified in its own nextCatalog entry.
  *          This case tests if the implementation handles this issue.
- * @compile ../../libs/catalog/CatalogTestUtils.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class CatalogReferCircularityTest {
 
     @Test(dataProvider = "catalogName",
@@ -49,7 +53,7 @@ public class CatalogReferCircularityTest {
     }
 
     @DataProvider(name = "catalogName")
-    private Object[][] catalogName() {
+    public Object[][] catalogName() {
         return new Object[][] {
                 // This catalog defines itself as next catalog.
                 { "catalogReferCircle-itself.xml" },
@@ -60,3 +64,4 @@ public class CatalogReferCircularityTest {
                 { "catalogReferCircle-left.xml" } };
     }
 }
+

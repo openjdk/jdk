@@ -25,8 +25,11 @@
  * @test
  * @bug 8020215
  * @summary Different execution plan when using JIT vs interpreter
- * @run main Test8020215
+ *
+ * @run main compiler.escapeAnalysis.Test8020215
  */
+
+package compiler.escapeAnalysis;
 
 import java.util.ArrayList;
 import java.util.List;

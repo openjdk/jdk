@@ -27,9 +27,14 @@
  * @bug 8139771
  * @summary Eliminating CastPP nodes at Phis when they all come from a unique input may cause crash
  * @requires vm.gc=="Serial" | vm.gc=="Parallel"
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM TestEliminatedCastPPAtPhi
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM
+ *      compiler.controldependency.TestEliminatedCastPPAtPhi
  *
  */
+
+package compiler.controldependency;
 
 public class TestEliminatedCastPPAtPhi {
 

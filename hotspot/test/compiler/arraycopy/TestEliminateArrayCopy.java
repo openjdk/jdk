@@ -25,10 +25,15 @@
  * @test
  * @bug 8076188
  * @summary arraycopy to non escaping destination may be eliminated
- * @compile TestEliminateArrayCopy.java TestArrayCopyUtils.java
- * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestEliminateArrayCopy*::m* TestEliminateArrayCopy
+ * @library /
+ *
+ * @run main/othervm -ea -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestEliminateArrayCopy*::m*
+ *                   compiler.arraycopy.TestEliminateArrayCopy
  *
  */
+
+package compiler.arraycopy;
 
 public class TestEliminateArrayCopy {
 

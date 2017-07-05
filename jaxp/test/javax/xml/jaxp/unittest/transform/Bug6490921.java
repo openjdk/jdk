@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -37,15 +39,21 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 /*
+ * @test
  * @bug 6490921
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.Bug6490921
+ * @run testng/othervm transform.Bug6490921
  * @summary Test property org.xml.sax.driver is always applied in transformer API.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6490921 {
 
     public static class ReaderStub extends XMLFilterImpl {
@@ -71,7 +79,7 @@ public class Bug6490921 {
     public void test01() {
         String xml = "<?xml version='1.0'?><root/>";
         ReaderStub.used = false;
-        System.setProperty("org.xml.sax.driver", "");
+        setSystemProperty("org.xml.sax.driver", "");
 
         // Don't set 'org.xml.sax.driver' here, just use default
         try {
@@ -91,7 +99,7 @@ public class Bug6490921 {
     public void test02() {
         String xml = "<?xml version='1.0'?><root/>";
         ReaderStub.used = false;
-        System.setProperty("org.xml.sax.driver", ReaderStub.class.getName());
+        setSystemProperty("org.xml.sax.driver", ReaderStub.class.getName());
         try {
             TransformerFactory transFactory = TransformerFactory.newInstance();
             Transformer transformer = transFactory.newTransformer();
@@ -111,7 +119,7 @@ public class Bug6490921 {
                 + "   <xsl:template match='/'>Hello World!</xsl:template>\n" + "</xsl:stylesheet>\n";
 
         ReaderStub.used = false;
-        System.setProperty("org.xml.sax.driver", ReaderStub.class.getName());
+        setSystemProperty("org.xml.sax.driver", ReaderStub.class.getName());
         try {
             TransformerFactory transFactory = TransformerFactory.newInstance();
             if (transFactory.getFeature(SAXTransformerFactory.FEATURE) == false) {
@@ -137,3 +145,4 @@ public class Bug6490921 {
         }
     }
 }
+

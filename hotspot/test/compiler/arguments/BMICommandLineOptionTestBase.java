@@ -21,7 +21,10 @@
  * questions.
  */
 
-import jdk.test.lib.cli.*;
+package compiler.arguments;
+
+import jdk.test.lib.cli.CPUSpecificCommandLineOptionTest;
+import jdk.test.lib.cli.CommandLineOptionTest;
 
 /**
  * Base class for all X86 bit manipulation related command line options.

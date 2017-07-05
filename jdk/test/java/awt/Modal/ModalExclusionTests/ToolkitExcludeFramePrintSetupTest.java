@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 7125054 8044429
  * @summary Check whether a printDialog blocks a toolkit modality excluded Frame
  *          (it shouldn't). Checks also whether setting a parent frame to be

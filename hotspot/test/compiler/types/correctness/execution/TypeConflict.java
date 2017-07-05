@@ -21,10 +21,10 @@
  * questions.
  */
 
-package execution;
+package compiler.types.correctness.execution;
 
-import hierarchies.TypeHierarchy;
-import scenarios.Scenario;
+import compiler.types.correctness.hierarchies.TypeHierarchy;
+import compiler.types.correctness.scenarios.Scenario;
 
 /**
  *  Type profiling conflict execution scenario. The main goal is

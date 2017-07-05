@@ -33,6 +33,7 @@ import javax.swing.plaf.ColorUIResource;
 
 /**
  * @test
+ * @key headful
  * @bug 8033786
  * @summary JDialog should update background color of the native peer.
  * @author Sergey Bylokhov

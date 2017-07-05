@@ -68,3 +68,4 @@ public class DOMUtil extends TransformerUtil {
         Assert.assertTrue(version.equals(resultVersion), "Expected XML Version is 1.1, but actual version " + resultVersion);
     }
 }
+

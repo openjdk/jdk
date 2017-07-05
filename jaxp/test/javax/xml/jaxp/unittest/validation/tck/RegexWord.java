@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,21 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 8142900
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.tck.RegexWord
+ * @run testng/othervm validation.tck.RegexWord
  * @summary Verifies that all characters except the set of "punctuation",
  * "separator" and "other" characters are accepted by \w [#x0000-#x10FFFF]-[\p{P}\p{Z}\p{C}]
  * @author Joe Wang
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class RegexWord {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -57,3 +63,4 @@ public class RegexWord {
         validator.validate(new StreamSource(RegexWord.class.getResourceAsStream("reZ003vExc23082309.xml")));
     }
 }
+

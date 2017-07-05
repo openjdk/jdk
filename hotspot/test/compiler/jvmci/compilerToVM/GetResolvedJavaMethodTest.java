@@ -29,12 +29,12 @@
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  *        jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  * @build compiler.jvmci.compilerToVM.GetResolvedJavaMethodTest
- * @run main ClassFileInstaller
- *      sun.hotspot.WhiteBox
- *      sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -43,13 +43,13 @@
 
 package compiler.jvmci.compilerToVM;
 
+import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
-import jdk.internal.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
