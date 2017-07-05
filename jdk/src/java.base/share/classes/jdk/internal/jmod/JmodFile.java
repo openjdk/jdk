@@ -71,7 +71,9 @@ public class JmodFile implements AutoCloseable {
         NATIVE_LIBS("native"),
         NATIVE_CMDS("bin"),
         CLASSES("classes"),
-        CONFIG("conf");
+        CONFIG("conf"),
+        HEADER_FILES("include"),
+        MAN_PAGES("man");
 
         private final String jmodDir;
         private Section(String jmodDir) {
@@ -151,6 +153,10 @@ public class JmodFile implements AutoCloseable {
                     return Section.CLASSES;
                 case "conf":
                     return Section.CONFIG;
+                case "include":
+                    return Section.HEADER_FILES;
+                case "man":
+                    return Section.MAN_PAGES;
                 default:
                     throw new IllegalArgumentException("invalid section: " + s);
             }

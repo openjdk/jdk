@@ -67,9 +67,8 @@ void LigatureSubstitutionProcessor::beginStateTable()
     m = -1;
 }
 
-ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index, LEErrorCode &success)
 {
-  LEErrorCode success = LE_NO_ERROR;
   const LigatureSubstitutionStateEntry *entry = entryTable.getAlias(index, success);
   if (LE_FAILURE(success)) {
       currGlyph++;
