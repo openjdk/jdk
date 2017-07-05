@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,7 +525,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * adding 'TAB' and 'SHIFT-TAB' to traversalKeysSet in case
      * editor is non editable
      */
-
+    @SuppressWarnings("deprecation")
     void updateFocusTraversalKeys() {
         /*
          * Fix for 4514331 Non-editable JTextArea and similar
@@ -1783,7 +1783,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *
          * @param axis may be either X_AXIS or Y_AXIS
          * @param len specifies where a break is desired in the span
-         * @param the current allocation of the view
+         * @param a the current allocation of the view
          * @return the fragment of the view that represents the given span
          *   if the view can be broken, otherwise null
          */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,21 @@
  */
 package java.awt.peer;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
 import java.awt.Desktop.Action;
 import java.awt.desktop.AboutHandler;
-import java.awt.desktop.SystemEventListener;
 import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIEvent;
 import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesEvent;
 import java.awt.desktop.PreferencesHandler;
 import java.awt.desktop.PrintFilesHandler;
 import java.awt.desktop.QuitHandler;
 import java.awt.desktop.QuitStrategy;
+import java.awt.desktop.SystemEventListener;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+
 import javax.swing.JMenuBar;
 
 /**
@@ -162,7 +165,7 @@ public interface DesktopPeer {
      * the default behavior
      *
      * @param preferencesHandler the handler to respond to the
-     * {@link java.awt.desktop.PreferencesHandler#handlePreferences(java.awt.PreferencesEvent) }
+     * {@link java.awt.desktop.PreferencesHandler#handlePreferences(PreferencesEvent) }
      */
     default void setPreferencesHandler(final PreferencesHandler preferencesHandler) {
     }
@@ -191,7 +194,7 @@ public interface DesktopPeer {
      * open a URL.
      *
      * Setting the handler to {@code null} causes all
-     * {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be
+     * {@link OpenURIHandler#openURI(OpenURIEvent)} requests to be
      * enqueued until another handler is set.
      *
      * @param openURIHandler handler

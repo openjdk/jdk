@@ -1,0 +1,106 @@
+#
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+################################################################################
+# This makefile updates the generated build html documentation.
+#
+################################################################################
+
+ifeq ($(PANDOC), )
+  $(info No pandoc executable was detected by configure)
+  $(error Cannot continue)
+endif
+
+################################################################################
+# Setup make rules for converting a markdown file to html.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   SOURCE_FILE  The markdown source file
+#   TARGET_DIR   The directory where to store the generated html file
+#   OPTIONS      Additional options to pandoc
+#
+SetupMarkdownToHtml = $(NamedParamsMacroTemplate)
+define SetupMarkdownToHtmlBody
+  ifeq ($$($1_SOURCE_FILE), )
+    $$(error SOURCE_FILE is missing in SetupMarkdownToHtml $1)
+  endif
+
+  ifeq ($$($1_TARGET_DIR), )
+    $$(error TARGET_DIR is missing in SetupMarkdownToHtml $1)
+  endif
+
+  $1_BASENAME := $$(notdir $$(basename $$($1_SOURCE_FILE)))
+  $1_OUTPUT_FILE := $$($1_TARGET_DIR)/$$($1_BASENAME).html
+
+$$($1_OUTPUT_FILE): $$($1_SOURCE_FILE)
+	$$(call LogInfo, Converting $$(notdir $1) to html)
+	$$(call MakeDir, $$($1_TARGET_DIR) $$(MAKESUPPORT_OUTPUTDIR)/markdown)
+	$$(call ExecuteWithLog, $$(MAKESUPPORT_OUTPUTDIR)/markdown/$1, \
+	    $$(PANDOC) $$($1_OPTIONS) -f markdown -t html --standalone \
+	    --css 'http://openjdk.java.net/page.css' '$$<' -o '$$@')
+	TOO_LONG_LINES=`$$(GREP) -E -e '^.{80}.+$$$$' $$<` || true ; \
+	if [ "x$$$$TOO_LONG_LINES" != x ]; then \
+	  $$(ECHO) "Warning: Unsuitable markdown in $$<:" ; \
+	  $$(ECHO) "The following lines are longer than 80 characters:" ; \
+	  $$(GREP) -E -n -e '^.{80}.+$$$$' $$< || true ; \
+	fi
+
+  $1 := $$($1_OUTPUT_FILE)
+
+  TARGETS += $$($1)
+endef
+
+################################################################################
+
+DOCS_DIR := $(TOPDIR)/common/doc
+
+$(eval $(call SetupMarkdownToHtml, building, \
+  SOURCE_FILE := $(DOCS_DIR)/building.md, \
+  TARGET_DIR := $(DOCS_DIR), \
+))
+
+$(eval $(call SetupMarkdownToHtml, testing, \
+  SOURCE_FILE := $(DOCS_DIR)/testing.md, \
+  TARGET_DIR := $(DOCS_DIR), \
+  OPTIONS := --toc, \
+))
+
+################################################################################
+
+$(eval $(call IncludeCustomExtension, , UpdateBuildDocs.gmk))
+
+################################################################################
+
+all: $(TARGETS)
+
+.PHONY: all default
