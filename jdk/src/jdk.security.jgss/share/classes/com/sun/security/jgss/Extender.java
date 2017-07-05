@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,34 @@
  * questions.
  */
 
+package com.sun.security.jgss;
 
-package sun.awt.windows;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import sun.security.jgss.GSSContextImpl;
+import sun.security.jgss.GSSCredentialImpl;
+import sun.security.jgss.JgssExtender;
 
-import java.awt.Image;
-import java.awt.Component;
-
-/**
- * This sun-private class exists solely to get a handle to
- * the back buffer associated with a Component.  If that
- * Component has a BufferStrategy with >1 buffer, then the
- * Image subclass associated with that buffer will be returned.
- * Note: the class is used by the JAWT3d.
- */
-public final class WBufferStrategy {
-
-    private static native void initIDs(Class <?> componentClass);
+// The com.sun.security.jgss extension to JGSS-API
+class Extender extends JgssExtender {
 
     static {
-        initIDs(Component.class);
+        JgssExtender.setExtender(new Extender());
     }
 
-    public static native Image getDrawBuffer(Component comp);
+    public GSSCredential wrap(GSSCredential cred) {
+        if (cred instanceof ExtendedGSSCredential.ExtendedGSSCredentialImpl) {
+            return cred;
+        } else {
+            return new ExtendedGSSCredential.ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
+        }
+    }
 
+    public GSSContext wrap(GSSContext ctxt) {
+        if (ctxt instanceof ExtendedGSSContext.ExtendedGSSContextImpl) {
+            return ctxt;
+        } else {
+            return new ExtendedGSSContext.ExtendedGSSContextImpl((GSSContextImpl)ctxt);
+        }
+    }
 }

@@ -29,14 +29,13 @@ include GensrcCommon.gmk
 include GensrcProperties.gmk
 GENSRC_JAVA_BASE += $(GENSRC_PROPERTIES)
 
-include GensrcLocaleDataMetaInfo.gmk
+include GensrcLocaleData.gmk
 include GensrcCharacterData.gmk
 include GensrcMisc.gmk
 include GensrcCharsetMapping.gmk
 include GensrcCharsetCoder.gmk
 include GensrcBuffer.gmk
 include GensrcExceptions.gmk
-include GensrcCLDR.gmk
 
 java.base: $(GENSRC_JAVA_BASE)
 
