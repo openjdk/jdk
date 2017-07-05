@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,29 @@
  * questions.
  */
 
-package sun.lwawt.macosx;
+package jdk.internal.editor.spi;
 
+import java.util.function.Consumer;
 
-import java.io.*;
-import javax.print.attribute.*;
+/**
+ * Defines the provider of a built-in editor.
+ */
+public interface BuildInEditorProvider {
 
-@SuppressWarnings("serial") // JDK implementation class
-public final class NSPrintInfo implements PrintJobAttribute, PrintRequestAttribute, Serializable, Cloneable {
+    /**
+     * @return the rank of a provider, greater is better.
+     */
+    int rank();
 
-    private long fNSPrintInfo;
-
-    public NSPrintInfo(long nsPrintInfo) {
-        fNSPrintInfo = nsPrintInfo;
-    }
-
-    public long getValue() {
-        return fNSPrintInfo;
-    }
-
-    public boolean equals(Object object) {
-        return (object != null && object instanceof NSPrintInfo && fNSPrintInfo == ((NSPrintInfo)object).fNSPrintInfo);
-    }
-
-    public int hashCode() {
-        return (int)fNSPrintInfo;
-    }
-
-    public String toString() {
-        return "" + fNSPrintInfo;
-    }
-
-    public Class<? extends Attribute> getCategory() {
-        return NSPrintInfo.class;
-    }
-
-    public String getName() {
-        return "nsPrintInfo";
-    }
+    /**
+     * Create a simple built-in editor.
+     *
+     * @param windowLabel the label string for the Edit Pad window, or null,
+     * for default window label
+     * @param initialText the source to load in the Edit Pad
+     * @param saveHandler a handler for changed source (can be sent the full source)
+     * @param errorHandler a handler for unexpected errors
+     */
+    void edit(String windowLabel, String initialText,
+            Consumer<String> saveHandler, Consumer<String> errorHandler);
 }

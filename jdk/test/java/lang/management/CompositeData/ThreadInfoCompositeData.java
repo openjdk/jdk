@@ -337,9 +337,10 @@ public class ThreadInfoCompositeData {
     };
 
     private static final String[] steItemNames = {
-        "className",
+        "classLoaderName",
         "moduleName",
         "moduleVersion",
+        "className",
         "methodName",
         "fileName",
         "lineNumber",
@@ -362,9 +363,10 @@ public class ThreadInfoCompositeData {
             validItemTypes[STACK_TRACE] = new ArrayType(1, steCType);
 
             final Object[] steValue = {
-                ste[0].getClassName(),
+                ste[0].getClassLoaderName(),
                 ste[0].getModuleName(),
                 ste[0].getModuleVersion(),
+                ste[0].getClassName(),
                 ste[0].getMethodName(),
                 ste[0].getFileName(),
                 new Integer(ste[0].getLineNumber()),

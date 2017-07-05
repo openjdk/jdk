@@ -36,8 +36,8 @@ class NullFontScaler extends FontScaler {
         boolean supportsCJK, int filesize) {}
 
     StrikeMetrics getFontMetrics(long pScalerContext) {
-        return new StrikeMetrics(0xf0,0xf0,0xf0,0xf0,0xf0,0xf0,
-        0xf0,0xf0,0xf0,0xf0);
+        return new StrikeMetrics(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     float getGlyphAdvance(long pScalerContext, int glyphCode) {
@@ -71,7 +71,7 @@ class NullFontScaler extends FontScaler {
         return getNullScalerContext();
     }
 
-    void invalidateScalerContext(long ppScalerContext) {
+    void invalidateScalerContext(long pScalerContext) {
         //nothing to do
     }
 

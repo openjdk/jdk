@@ -21,9 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test @bug 8087112
  * @modules java.httpclient
+ *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
  * @compile ../../../com/sun/net/httpserver/LogFilter.java

@@ -359,9 +359,9 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                ClassReader cr =new ClassReader(bytes);
+                ClassReader cr = new ClassReader(bytes);
                 ClassNode cn = new ClassNode();
-                cr.accept(cn, ClassReader.EXPAND_FRAMES);
+                cr.accept(cn, 0);
             } catch (Exception ex) {
                 log.println("Error(s) in Class: " + name);
             }
