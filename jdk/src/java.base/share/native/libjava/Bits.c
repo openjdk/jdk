@@ -31,24 +31,6 @@
 #include "jlong.h"
 #include <string.h>
 
-/*
- * WARNING:
- *
- * Do not replace instances of:
- *
- *   if (length > MBYTE)
- *     size = MBYTE;
- *   else
- *     size = length;
- *
- * with
- *
- *   size = (length > MBYTE ? MBYTE : length);
- *
- * This expression causes a c compiler assertion failure when compiling on
- * 32-bit sparc.
- */
-
 #define MBYTE 1048576
 
 #define GETCRITICAL_OR_RETURN(bytes, env, obj) { \
@@ -71,7 +53,7 @@
                               ((jlong)SWAPINT((jint)((x) >> 32)) & 0xffffffff)))
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
+Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jclass clazz, jobject src,
                                       jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
@@ -82,11 +64,7 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
     dstShort = (jshort *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
-        /* do not change this if-else statement, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, src);
 
@@ -100,13 +78,12 @@ Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
         RELEASECRITICAL(bytes, env, src, JNI_ABORT);
 
         length -= size;
-        dstAddr += size;
         srcPos += size;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
+Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jclass clazz, jlong srcAddr,
                                     jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
@@ -117,11 +94,7 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
     srcShort = (jshort *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
-        /* do not change this if-else statement, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, dst);
 
@@ -135,13 +108,12 @@ Java_java_nio_Bits_copyToShortArray(JNIEnv *env, jobject this, jlong srcAddr,
         RELEASECRITICAL(bytes, env, dst, 0);
 
         length -= size;
-        srcAddr += size;
         dstPos += size;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
+Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jclass clazz, jobject src,
                                     jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
@@ -152,11 +124,7 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
     dstInt = (jint *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
-        /* do not change this code, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, src);
 
@@ -170,13 +138,12 @@ Java_java_nio_Bits_copyFromIntArray(JNIEnv *env, jobject this, jobject src,
         RELEASECRITICAL(bytes, env, src, JNI_ABORT);
 
         length -= size;
-        dstAddr += size;
         srcPos += size;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
+Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jclass clazz, jlong srcAddr,
                                   jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
@@ -187,11 +154,7 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
     srcInt = (jint *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
-        /* do not change this code, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, dst);
 
@@ -205,13 +168,12 @@ Java_java_nio_Bits_copyToIntArray(JNIEnv *env, jobject this, jlong srcAddr,
         RELEASECRITICAL(bytes, env, dst, 0);
 
         length -= size;
-        srcAddr += size;
         dstPos += size;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
+Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jclass clazz, jobject src,
                                      jlong srcPos, jlong dstAddr, jlong length)
 {
     jbyte *bytes;
@@ -222,11 +184,7 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
     dstLong = (jlong *)jlong_to_ptr(dstAddr);
 
     while (length > 0) {
-        /* do not change this code, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, src);
 
@@ -240,13 +198,12 @@ Java_java_nio_Bits_copyFromLongArray(JNIEnv *env, jobject this, jobject src,
         RELEASECRITICAL(bytes, env, src, JNI_ABORT);
 
         length -= size;
-        dstAddr += size;
         srcPos += size;
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
+Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jclass clazz, jlong srcAddr,
                                    jobject dst, jlong dstPos, jlong length)
 {
     jbyte *bytes;
@@ -257,11 +214,7 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
     srcLong = (jlong *)jlong_to_ptr(srcAddr);
 
     while (length > 0) {
-        /* do not change this code, see WARNING above */
-        if (length > MBYTE)
-            size = MBYTE;
-        else
-            size = (size_t)length;
+        size = (length < MBYTE) ? (size_t)length : (size_t)MBYTE;
 
         GETCRITICAL_OR_RETURN(bytes, env, dst);
 
@@ -275,7 +228,6 @@ Java_java_nio_Bits_copyToLongArray(JNIEnv *env, jobject this, jlong srcAddr,
         RELEASECRITICAL(bytes, env, dst, 0);
 
         length -= size;
-        srcAddr += size;
         dstPos += size;
     }
 }

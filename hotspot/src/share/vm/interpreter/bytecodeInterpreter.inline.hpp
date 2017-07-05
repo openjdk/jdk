@@ -58,6 +58,9 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytecodeInterpreter_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytecodeInterpreter_aarch64.inline.hpp"
+#endif
 
 #endif // CC_INTERP
 

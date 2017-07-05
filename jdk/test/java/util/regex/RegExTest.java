@@ -35,6 +35,7 @@
  * 8027645 8035076 8039124 8035975
  */
 
+import java.util.function.Function;
 import java.util.regex.*;
 import java.util.Random;
 import java.io.*;
@@ -291,24 +292,26 @@ public class RegExTest {
     }
 
     private static void nullArgumentTest() {
-        check(new Runnable() { public void run() { Pattern.compile(null); }});
-        check(new Runnable() { public void run() { Pattern.matches(null, null); }});
-        check(new Runnable() { public void run() { Pattern.matches("xyz", null);}});
-        check(new Runnable() { public void run() { Pattern.quote(null);}});
-        check(new Runnable() { public void run() { Pattern.compile("xyz").split(null);}});
-        check(new Runnable() { public void run() { Pattern.compile("xyz").matcher(null);}});
+        check(() -> Pattern.compile(null));
+        check(() -> Pattern.matches(null, null));
+        check(() -> Pattern.matches("xyz", null));
+        check(() -> Pattern.quote(null));
+        check(() -> Pattern.compile("xyz").split(null));
+        check(() -> Pattern.compile("xyz").matcher(null));
 
         final Matcher m = Pattern.compile("xyz").matcher("xyz");
         m.matches();
-        check(new Runnable() { public void run() { m.appendTail((StringBuffer)null);}});
-        check(new Runnable() { public void run() { m.appendTail((StringBuilder)null);}});
-        check(new Runnable() { public void run() { m.replaceAll(null);}});
-        check(new Runnable() { public void run() { m.replaceFirst(null);}});
-        check(new Runnable() { public void run() { m.appendReplacement((StringBuffer)null, null);}});
-        check(new Runnable() { public void run() { m.appendReplacement((StringBuilder)null, null);}});
-        check(new Runnable() { public void run() { m.reset(null);}});
-        check(new Runnable() { public void run() { Matcher.quoteReplacement(null);}});
-        //check(new Runnable() { public void run() { m.usePattern(null);}});
+        check(() -> m.appendTail((StringBuffer) null));
+        check(() -> m.appendTail((StringBuilder)null));
+        check(() -> m.replaceAll((String) null));
+        check(() -> m.replaceAll((Function<MatchResult, String>)null));
+        check(() -> m.replaceFirst((String)null));
+        check(() -> m.replaceFirst((Function<MatchResult, String>) null));
+        check(() -> m.appendReplacement((StringBuffer)null, null));
+        check(() -> m.appendReplacement((StringBuilder)null, null));
+        check(() -> m.reset(null));
+        check(() -> Matcher.quoteReplacement(null));
+        //check(() -> m.usePattern(null));
 
         report("Null Argument");
     }

@@ -42,5 +42,8 @@
 #ifdef TARGET_ARCH_ppc
 # include "macroAssembler_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "macroAssembler_aarch64.hpp"
+#endif
 
 #endif // SHARE_VM_ASM_MACROASSEMBLER_HPP

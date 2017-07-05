@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,7 +383,7 @@ void DefNewGeneration::compute_new_size() {
   assert(next_level < gch->_n_gens,
          "DefNewGeneration cannot be an oldest gen");
 
-  Generation* next_gen = gch->_gens[next_level];
+  Generation* next_gen = gch->get_gen(next_level);
   size_t old_size = next_gen->capacity();
   size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = spec()->init_size();

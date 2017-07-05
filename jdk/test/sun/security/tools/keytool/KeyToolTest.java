@@ -1612,7 +1612,7 @@ public class KeyToolTest {
 
         // 8073181: keytool -ext honored not working correctly
         testOK("", simple+"-gencert -alias ca -infile test.req -ext " +
-                "honored=1.2.3,1.2.4:critical " +
+                "honored=1.2.3,KU,1.2.4:critical " +
                 "-debug -rfc -outfile test2.cert");
         testOK("", simple+"-importcert -file test2.cert -alias b");
         ks = loadStore("x.jks", "changeit", "JKS");
