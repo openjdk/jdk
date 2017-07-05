@@ -27,7 +27,7 @@
  * @summary Creates several threads with different java priorities and checks
  *      whether jstack reports correct priorities for them.
  *
- * @run main T7194254
+ * @run main Test7194254
  */
 
 import java.io.BufferedReader;

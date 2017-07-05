@@ -1096,7 +1096,7 @@ class VtableStats : AllStatic {
     SystemDictionary::classes_do(do_class);
     fixed  = no_klasses * oopSize;      // vtable length
     // filler size is a conservative approximation
-    filler = oopSize * (no_klasses - no_instance_klasses) * (sizeof(InstanceKlass) - sizeof(arrayKlass) - 1);
+    filler = oopSize * (no_klasses - no_instance_klasses) * (sizeof(InstanceKlass) - sizeof(ArrayKlass) - 1);
     entries = sizeof(vtableEntry) * sum_of_vtable_len;
     array_entries = sizeof(vtableEntry) * sum_of_array_vtable_len;
   }

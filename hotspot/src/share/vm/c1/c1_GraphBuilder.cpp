@@ -1682,6 +1682,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   ciInstanceKlass* callee_holder = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   ciInstanceKlass* actual_recv = callee_holder;
 
+  CompileLog* log = compilation()->log();
+  if (log != NULL)
+      log->elem("call method='%d' instr='%s'",
+                log->identify(target),
+                Bytecodes::name(code));
+
   // Some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
@@ -1826,6 +1832,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     }
     code = Bytecodes::_invokespecial;
   }
+
   // check if we could do inlining
   if (!PatchALot && Inline && klass->is_loaded() &&
       (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
@@ -2448,6 +2455,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
 #endif
   _skip_block = false;
   assert(state() != NULL, "ValueStack missing!");
+  CompileLog* log = compilation()->log();
   ciBytecodeStream s(method());
   s.reset_to_bci(bci);
   int prev_bci = bci;
@@ -2465,6 +2473,9 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
          (code = stream()->next()) != ciBytecodeStream::EOBC() &&
          (block_at(s.cur_bci()) == NULL || block_at(s.cur_bci()) == block())) {
     assert(state()->kind() == ValueStack::Parsing, "invalid state kind");
+
+    if (log != NULL)
+      log->set_context("bc code='%d' bci='%d'", (int)code, s.cur_bci());
 
     // Check for active jsr during OSR compilation
     if (compilation()->is_osr_compile()
@@ -2686,8 +2697,13 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_breakpoint     : BAILOUT_("concurrent setting of breakpoint", NULL);
       default                         : ShouldNotReachHere(); break;
     }
+
+    if (log != NULL)
+      log->clear_context(); // skip marker if nothing was printed
+
     // save current bci to setup Goto at the end
     prev_bci = s.cur_bci();
+
   }
   CHECK_BAILOUT_(NULL);
   // stop processing of this block (see try_inline_full)
@@ -3667,7 +3683,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
       INLINE_BAILOUT("total inlining greater than DesiredMethodLimit");
     }
     // printing
-    print_inlining(callee, "");
+    print_inlining(callee);
   }
 
   // NOTE: Bailouts from this point on, which occur at the
@@ -4133,8 +4149,19 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
 
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
+  CompileLog* log = compilation()->log();
+  if (log != NULL) {
+    if (success) {
+      if (msg != NULL)
+        log->inline_success(msg);
+      else
+        log->inline_success("receiver is statically known");
+    } else {
+      log->inline_fail(msg);
+    }
+  }
+
   if (!PrintInlining)  return;
-  assert(msg != NULL, "must be");
   CompileTask::print_inlining(callee, scope()->level(), bci(), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();

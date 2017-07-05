@@ -290,7 +290,7 @@ checkArray(JavaThread* thr, jarray jArray, int elementType)
 
   if (elementType != -1) {
     if (aOop->is_typeArray()) {
-      BasicType array_type = typeArrayKlass::cast(aOop->klass())->element_type();
+      BasicType array_type = TypeArrayKlass::cast(aOop->klass())->element_type();
       if (array_type != elementType)
         ReportJNIFatalError(thr, fatal_element_type_mismatch);
       } else if (aOop->is_objArray()) {

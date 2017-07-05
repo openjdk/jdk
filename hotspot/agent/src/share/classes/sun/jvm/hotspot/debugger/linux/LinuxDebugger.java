@@ -46,6 +46,7 @@ public interface LinuxDebugger extends JVMDebugger {
     throws DebuggerException;
   public LinuxAddress readAddress(long address) throws DebuggerException;
   public LinuxAddress readCompOopAddress(long address) throws DebuggerException;
+  public LinuxAddress readCompKlassAddress(long address) throws DebuggerException;
   public LinuxOopHandle readOopHandle(long address) throws DebuggerException;
   public LinuxOopHandle readCompOopHandle(long address) throws DebuggerException;
   public long[]       getThreadIntegerRegisterSet(int lwp_id) throws DebuggerException;
