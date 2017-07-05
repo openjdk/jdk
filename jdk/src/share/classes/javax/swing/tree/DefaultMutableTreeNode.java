@@ -84,7 +84,7 @@ import java.util.*;
  *
  * @author Rob Davis
  */
-public class DefaultMutableTreeNode extends Object implements Cloneable,
+public class DefaultMutableTreeNode implements Cloneable,
        MutableTreeNode, Serializable
 {
     private static final long serialVersionUID = -4298474751201349152L;
@@ -1251,7 +1251,7 @@ public class DefaultMutableTreeNode extends Object implements Cloneable,
      * @return  a copy of this node
      */
     public Object clone() {
-        DefaultMutableTreeNode newNode = null;
+        DefaultMutableTreeNode newNode;
 
         try {
             newNode = (DefaultMutableTreeNode)super.clone();
@@ -1297,24 +1297,22 @@ public class DefaultMutableTreeNode extends Object implements Cloneable,
             userObject = tValues[1];
     }
 
-    final class PreorderEnumeration implements Enumeration<TreeNode> {
-        protected Stack stack;
+    private final class PreorderEnumeration implements Enumeration<TreeNode> {
+        private final Stack<Enumeration> stack = new Stack<Enumeration>();
 
         public PreorderEnumeration(TreeNode rootNode) {
             super();
-            Vector v = new Vector(1);
+            Vector<TreeNode> v = new Vector<TreeNode>(1);
             v.addElement(rootNode);     // PENDING: don't really need a vector
-            stack = new Stack();
             stack.push(v.elements());
         }
 
         public boolean hasMoreElements() {
-            return (!stack.empty() &&
-                    ((Enumeration)stack.peek()).hasMoreElements());
+            return (!stack.empty() && stack.peek().hasMoreElements());
         }
 
         public TreeNode nextElement() {
-            Enumeration enumer = (Enumeration)stack.peek();
+            Enumeration enumer = stack.peek();
             TreeNode    node = (TreeNode)enumer.nextElement();
             Enumeration children = node.children();
 
@@ -1353,8 +1351,7 @@ public class DefaultMutableTreeNode extends Object implements Cloneable,
             if (subtree.hasMoreElements()) {
                 retval = subtree.nextElement();
             } else if (children.hasMoreElements()) {
-                subtree = new PostorderEnumeration(
-                                (TreeNode)children.nextElement());
+                subtree = new PostorderEnumeration(children.nextElement());
                 retval = subtree.nextElement();
             } else {
                 retval = root;
@@ -1373,7 +1370,7 @@ public class DefaultMutableTreeNode extends Object implements Cloneable,
 
         public BreadthFirstEnumeration(TreeNode rootNode) {
             super();
-            Vector v = new Vector(1);
+            Vector<TreeNode> v = new Vector<TreeNode>(1);
             v.addElement(rootNode);     // PENDING: don't really need a vector
             queue = new Queue();
             queue.enqueue(v.elements());

@@ -86,7 +86,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     static {
         component = new Component() {};
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 try {
                     // 6482575 - clear the appContext field so as not to leak it

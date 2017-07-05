@@ -799,9 +799,9 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
             Graphics g = triangleImage.getGraphics();
             g.setColor(new Color(0, 0, 0, 0));
             g.fillRect(0, 0, a, a);
-            g.translate((int)(a / 2), 0);
+            g.translate(a / 2, 0);
             paintTriangle(g, triangleSize, getColor());
-            g.translate((int)(-a / 2), 0);
+            g.translate(-a / 2, 0);
             g.dispose();
 
             g = wheelImage.getGraphics();
@@ -897,7 +897,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                 return false;
             }
             // Rotate to origin and and verify x is valid.
-            int triangleSize = (int)innerR * 3 / 2;
+            int triangleSize = innerR * 3 / 2;
             double x1 = Math.cos(angle) * x - Math.sin(angle) * y;
             double y1 = Math.sin(angle) * x + Math.cos(angle) * y;
             if (x1 < -(innerR / 2)) {
@@ -960,7 +960,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
          */
         private void setSaturationAndBrightness(float s, float b) {
             int innerR = getTriangleCircumscribedRadius();
-            int triangleSize = (int)innerR * 3 / 2;
+            int triangleSize = innerR * 3 / 2;
             double x = b * triangleSize;
             double maxY = x * Math.tan(Math.toRadians(30.0));
             double y = 2 * maxY * s - maxY;
@@ -1156,7 +1156,7 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
          * @param x X location to get color for
          * @param y Y location to get color for
          * @param rad Radius from center of color wheel
-         * @param integer with red, green and blue components
+         * @return integer with red, green and blue components
          */
         private int colorWheelLocationToRGB(int x, int y, double rad) {
             double angle = Math.acos((double)x / rad);
@@ -1165,12 +1165,12 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
             if (angle < PI_3) {
                 if (y < 0) {
                     // FFFF00 - FF0000
-                    rgb = 0xFF0000 | (int)Math.min(255,
+                    rgb = 0xFF0000 | Math.min(255,
                                            (int)(255 * angle / PI_3)) << 8;
                 }
                 else {
                     // FF0000 - FF00FF
-                    rgb = 0xFF0000 | (int)Math.min(255,
+                    rgb = 0xFF0000 | Math.min(255,
                                            (int)(255 * angle / PI_3));
                 }
             }
@@ -1178,12 +1178,12 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                 angle -= PI_3;
                 if (y < 0) {
                     // 00FF00 - FFFF00
-                    rgb = 0x00FF00 | (int)Math.max(0, 255 -
+                    rgb = 0x00FF00 | Math.max(0, 255 -
                                            (int)(255 * angle / PI_3)) << 16;
                 }
                 else {
                     // FF00FF - 0000FF
-                    rgb = 0x0000FF | (int)Math.max(0, 255 -
+                    rgb = 0x0000FF | Math.max(0, 255 -
                                            (int)(255 * angle / PI_3)) << 16;
                 }
             }
@@ -1191,12 +1191,12 @@ class GTKColorChooserPanel extends AbstractColorChooserPanel implements
                 angle -= 2 * PI_3;
                 if (y < 0) {
                     // 00FFFF - 00FF00
-                    rgb = 0x00FF00 | (int)Math.min(255,
+                    rgb = 0x00FF00 | Math.min(255,
                                            (int)(255 * angle / PI_3));
                 }
                 else {
                     // 0000FF - 00FFFF
-                    rgb = 0x0000FF | (int)Math.min(255,
+                    rgb = 0x0000FF | Math.min(255,
                                            (int)(255 * angle / PI_3)) << 8;
                 }
             }

@@ -394,7 +394,12 @@ class DirectAudioDevice extends AbstractMixer {
         private float leftGain, rightGain;
         protected volatile boolean noService = false; // do not run the nService method
 
+        // Guards all native calls.
         protected Object lockNative = new Object();
+        // Guards the lastOpened static variable in implOpen and implClose.
+        protected static Object lockLast = new Object();
+        // Keeps track of last opened line, see implOpen "trick".
+        protected static DirectDL lastOpened;
 
         // CONSTRUCTOR
         protected DirectDL(DataLine.Info info,
@@ -496,20 +501,50 @@ class DirectAudioDevice extends AbstractMixer {
             // align buffer to full frames
             bufferSize = ((int) bufferSize / format.getFrameSize()) * format.getFrameSize();
 
-            id = nOpen(mixerIndex, deviceID, isSource,
-                       encoding,
-                       hardwareFormat.getSampleRate(),
-                       hardwareFormat.getSampleSizeInBits(),
-                       hardwareFormat.getFrameSize(),
-                       hardwareFormat.getChannels(),
-                       hardwareFormat.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED),
-                       hardwareFormat.isBigEndian(),
-                       bufferSize);
+            synchronized(lockLast) {
+                id = nOpen(mixerIndex, deviceID, isSource,
+                        encoding,
+                        hardwareFormat.getSampleRate(),
+                        hardwareFormat.getSampleSizeInBits(),
+                        hardwareFormat.getFrameSize(),
+                        hardwareFormat.getChannels(),
+                        hardwareFormat.getEncoding().equals(
+                            AudioFormat.Encoding.PCM_SIGNED),
+                        hardwareFormat.isBigEndian(),
+                        bufferSize);
 
-            if (id == 0) {
-                // TODO: nicer error messages...
-                throw new LineUnavailableException("line with format "+format+" not supported.");
+                if (id == 0) {
+                    // Bah... Dirty trick. The most likely cause is an application
+                    // already having a line open for this particular hardware
+                    // format and forgetting about it. If so, silently close that
+                    // implementation and try again. Unfortuantely we can only
+                    // open one line per hardware format currently.
+                    if (lastOpened != null
+                            && hardwareFormat.matches(lastOpened.hardwareFormat)) {
+                        lastOpened.implClose();
+                        lastOpened = null;
+
+                        id = nOpen(mixerIndex, deviceID, isSource,
+                                encoding,
+                                hardwareFormat.getSampleRate(),
+                                hardwareFormat.getSampleSizeInBits(),
+                                hardwareFormat.getFrameSize(),
+                                hardwareFormat.getChannels(),
+                                hardwareFormat.getEncoding().equals(
+                                    AudioFormat.Encoding.PCM_SIGNED),
+                                hardwareFormat.isBigEndian(),
+                                bufferSize);
+                    }
+
+                    if (id == 0) {
+                        // TODO: nicer error messages...
+                        throw new LineUnavailableException(
+                            "line with format "+format+" not supported.");
+                    }
+                }
+                lastOpened = this;
             }
+
             this.bufferSize = nGetBufferSize(id, isSource);
             if (this.bufferSize < 1) {
                 // this is an error!
@@ -580,12 +615,12 @@ class DirectAudioDevice extends AbstractMixer {
             }
             synchronized (lockNative) {
                 nStop(id, isSource);
-            }
 
-            // need to set doIO to false before notifying the
-            // read/write thread, that's why isStartedRunning()
-            // cannot be used
-            doIO = false;
+                // need to set doIO to false before notifying the
+                // read/write thread, that's why isStartedRunning()
+                // cannot be used
+                doIO = false;
+            }
             // wake up any waiting threads
             synchronized(lock) {
                 lock.notifyAll();
@@ -614,8 +649,12 @@ class DirectAudioDevice extends AbstractMixer {
             doIO = false;
             long oldID = id;
             id = 0;
-            synchronized (lockNative) {
-                nClose(oldID, isSource);
+            synchronized (lockLast) {
+                synchronized (lockNative) {
+                    nClose(oldID, isSource);
+                    if (lastOpened == this)
+                      lastOpened = null;
+                }
             }
             bytePosition = 0;
             softwareConversionSize = 0;
@@ -630,7 +669,8 @@ class DirectAudioDevice extends AbstractMixer {
             }
             int a = 0;
             synchronized (lockNative) {
-                a = nAvailable(id, isSource);
+                if (doIO)
+                    a = nAvailable(id, isSource);
             }
             return a;
         }
@@ -644,9 +684,9 @@ class DirectAudioDevice extends AbstractMixer {
             int counter = 0;
             long startPos = getLongFramePosition();
             boolean posChanged = false;
-            while (!drained && doIO) {
+            while (!drained) {
                 synchronized (lockNative) {
-                    if ((id == 0) || !nIsStillDraining(id, isSource))
+                    if ((id == 0) || (!doIO) || !nIsStillDraining(id, isSource))
                         break;
                 }
                 // check every now and then for a new position
@@ -686,7 +726,7 @@ class DirectAudioDevice extends AbstractMixer {
                     lock.notifyAll();
                 }
                 synchronized (lockNative) {
-                    if (id != 0) {
+                    if (id != 0 && doIO) {
                         // then flush native buffers
                         nFlush(id, isSource);
                     }
@@ -697,9 +737,10 @@ class DirectAudioDevice extends AbstractMixer {
 
         // replacement for getFramePosition (see AbstractDataLine)
         public long getLongFramePosition() {
-            long pos;
+            long pos = 0;
             synchronized (lockNative) {
-                pos = nGetBytePosition(id, isSource, bytePosition);
+                if (doIO)
+                    pos = nGetBytePosition(id, isSource, bytePosition);
             }
             // hack because ALSA sometimes reports wrong framepos
             if (pos < 0) {
@@ -745,11 +786,12 @@ class DirectAudioDevice extends AbstractMixer {
             }
             int written = 0;
             while (!flushing) {
-                int thisWritten;
+                int thisWritten = 0;
                 synchronized (lockNative) {
-                    thisWritten = nWrite(id, b, off, len,
-                            softwareConversionSize,
-                            leftGain, rightGain);
+                    if (doIO)
+                        thisWritten = nWrite(id, b, off, len,
+                                softwareConversionSize,
+                                leftGain, rightGain);
                     if (thisWritten < 0) {
                         // error in native layer
                         break;
@@ -972,9 +1014,10 @@ class DirectAudioDevice extends AbstractMixer {
             }
             int read = 0;
             while (doIO && !flushing) {
-                int thisRead;
+                int thisRead = 0;
                 synchronized (lockNative) {
-                    thisRead = nRead(id, b, off, len, softwareConversionSize);
+                    if (doIO)
+                        thisRead = nRead(id, b, off, len, softwareConversionSize);
                     if (thisRead < 0) {
                         // error in native layer
                         break;
@@ -1209,7 +1252,8 @@ class DirectAudioDevice extends AbstractMixer {
             // set new native position (if necessary)
             // this must come after the flush!
             synchronized (lockNative) {
-                nSetBytePosition(id, isSource, frames * frameSize);
+                if (doIO)
+                    nSetBytePosition(id, isSource, frames * frameSize);
             }
 
             if (Printer.debug) Printer.debug("  DirectClip.setFramePosition: "

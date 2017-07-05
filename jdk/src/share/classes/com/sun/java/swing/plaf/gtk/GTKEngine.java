@@ -112,7 +112,7 @@ class GTKEngine {
     }
 
 
-    private static HashMap regionToWidgetTypeMap;
+    private static HashMap<Region, Object> regionToWidgetTypeMap;
     private ImageCache cache = new ImageCache(CACHE_SIZE);
     private int x0, y0, w0, h0;
     private Graphics graphics;
@@ -178,7 +178,7 @@ class GTKEngine {
         Toolkit.getDefaultToolkit();
 
         // Initialize regionToWidgetTypeMap
-        regionToWidgetTypeMap = new HashMap(50);
+        regionToWidgetTypeMap = new HashMap<Region, Object>(50);
         regionToWidgetTypeMap.put(Region.ARROW_BUTTON, new WidgetType[] {
             WidgetType.SPINNER_ARROW_BUTTON,
             WidgetType.COMBO_BOX_ARROW_BUTTON,
