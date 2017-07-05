@@ -40,12 +40,12 @@ import sun.misc.Contended;
 
 /*
  * @test
- * @bug     8003985
- * @summary Support Contended Annotation - JEP 142
+ * @bug     8012939
+ * @summary \@Contended doesn't work correctly with inheritance
  *
- * @run main/othervm -XX:-RestrictContended Test8003985
+ * @run main/othervm -XX:-RestrictContended Inheritance1
  */
-public class Test8003985 {
+public class Inheritance1 {
 
     private static final Unsafe U;
     private static int ADDRESS_SIZE;
@@ -80,12 +80,8 @@ public class Test8003985 {
     }
 
     public static boolean arePaddedPairwise(Class klass, String field1, String field2) throws Exception {
-        Field f1 = klass.getDeclaredField(field1);
-        Field f2 = klass.getDeclaredField(field2);
-
-        if (isStatic(f1) != isStatic(f2)) {
-            return true; // these guys are in naturally disjoint locations
-        }
+        Field f1 = klass.getField(field1);
+        Field f2 = klass.getField(field2);
 
         int diff = offset(f1) - offset(f2);
         if (diff < 0) {
@@ -95,16 +91,6 @@ public class Test8003985 {
             // f2 is first
             return (offset(f1) - (offset(f2) + getSize(f2))) > 64;
         }
-    }
-
-    public static boolean isPadded(Class klass, String field1) throws Exception {
-        Field f1 = klass.getDeclaredField(field1);
-
-        if (isStatic(f1)) {
-            return offset(f1) > 128 + 64;
-        }
-
-        return offset(f1) > 64;
     }
 
     public static boolean sameLayout(Class klass1, Class klass2) throws Exception {
@@ -155,81 +141,43 @@ public class Test8003985 {
 
         // --------------- INSTANCE FIELDS ---------------------
 
-        if (arePaddedPairwise(Test1.class, "int1", "int2") ||
-                isPadded(Test1.class, "int1") ||
-                isPadded(Test1.class, "int2")) {
-            System.err.println("Test1 failed");
+        if (!arePaddedPairwise(A2_R1.class, "int1", "int2")) {
+            System.err.println("A2_R1 failed");
             endResult &= false;
         }
 
-        if (!arePaddedPairwise(Test2.class, "int1", "int2") ||
-                !isPadded(Test2.class, "int1") ||
-                isPadded(Test2.class, "int2")) {
-            System.err.println("Test2 failed");
+        if (!arePaddedPairwise(A3_R1.class, "int1", "int2")) {
+            System.err.println("A3_R1 failed");
             endResult &= false;
         }
 
-        if (!arePaddedPairwise(Test3.class, "int1", "int2") ||
-                !isPadded(Test3.class, "int1") ||
-                !isPadded(Test3.class, "int2")) {
-            System.err.println("Test3 failed");
+        if (!arePaddedPairwise(A1_R2.class, "int1", "int2")) {
+            System.err.println("A1_R2 failed");
             endResult &= false;
         }
 
-        if (arePaddedPairwise(Test4.class, "int1", "int2") ||
-                !isPadded(Test4.class, "int1") ||
-                !isPadded(Test4.class, "int2")) {
-            System.err.println("Test4 failed");
+        if (!arePaddedPairwise(A2_R2.class, "int1", "int2")) {
+            System.err.println("A2_R2 failed");
             endResult &= false;
         }
 
-        if (!arePaddedPairwise(Test5.class, "int1", "int2") ||
-                !isPadded(Test5.class, "int1") ||
-                !isPadded(Test5.class, "int2")) {
-            System.err.println("Test5 failed");
+        if (!arePaddedPairwise(A3_R2.class, "int1", "int2")) {
+            System.err.println("A3_R2 failed");
             endResult &= false;
         }
 
-        if (!arePaddedPairwise(Test6.class, "int1", "int2") ||
-                !isPadded(Test6.class, "int1") ||
-                !isPadded(Test6.class, "int2")) {
-            System.err.println("Test6 failed");
+        if (!arePaddedPairwise(A1_R3.class, "int1", "int2")) {
+            System.err.println("A1_R3 failed");
             endResult &= false;
         }
 
-        if (arePaddedPairwise(Test7.class, "int1", "int2") ||
-                !isPadded(Test7.class, "int1") ||
-                !isPadded(Test7.class, "int2")) {
-            System.err.println("Test7 failed");
+        if (!arePaddedPairwise(A2_R3.class, "int1", "int2")) {
+            System.err.println("A2_R3 failed");
             endResult &= false;
         }
 
-        if (!arePaddedPairwise(Test8.class, "int1", "int2") ||
-                !isPadded(Test8.class, "int1") ||
-                !isPadded(Test8.class, "int2")) {
-            System.err.println("Test8 failed");
-            endResult &= false;
-        }
-
-        if (!arePaddedPairwise(Test9.class, "int1", "int2") ||
-                !isPadded(Test9.class, "int1") ||
-                !isPadded(Test9.class, "int2")) {
-            System.err.println("Test9 failed");
-            endResult &= false;
-        }
-
-        if (!sameLayout(Test4.class, Test7.class)) {
-            System.err.println("Test4 and Test7 have different layouts");
-            endResult &= false;
-        }
-
-        if (!sameLayout(Test5.class, Test6.class)) {
-            System.err.println("Test5 and Test6 have different layouts");
-            endResult &= false;
-        }
-
-        if (!sameLayout(Test8.class, Test9.class)) {
-            System.err.println("Test8 and Test9 have different layouts");
+        if (!arePaddedPairwise(A3_R3.class, "int1", "int2")) {
+            System.err.println("A3_R3 failed");
             endResult &= false;
         }
 
@@ -239,64 +187,62 @@ public class Test8003985 {
         }
     }
 
-    // ----------------------------------- INSTANCE FIELDS -----------------------------------------
-
-    // naturally packed
-    public static class Test1 {
-                                 private int int1;
-                                 private int int2;
+    public static class R1 {
+        public int int1;
     }
 
-    // int1 is padded
-    public static class Test2 {
-        @Contended               private int int1;
-                                 private int int2;
+    public static class R2 {
+        @Contended
+        public int int1;
     }
 
-    // both fields are padded
-    public static class Test3 {
-        @Contended               private int int1;
-        @Contended               private int int2;
-    }
-
-    // fields are padded in the singular group
-    public static class Test4 {
-        @Contended("sameGroup")  private int int1;
-        @Contended("sameGroup")  private int int2;
-    }
-
-    // fields are padded in disjoint groups
-    public static class Test5 {
-        @Contended("diffGroup1") private int int1;
-        @Contended("diffGroup2") private int int2;
-    }
-
-    // fields are padded in disjoint groups
-    public static class Test6 {
-        @Contended               private int int1;
-        @Contended("diffGroup2") private int int2;
-    }
-
-    // fields are padded in the singular group
     @Contended
-    public static class Test7 {
-                                 private int int1;
-                                 private int int2;
+    public static class R3 {
+        public int int1;
     }
 
-    // all fields are padded as the group, and one field is padded specifically
-    @Contended
-    public static class Test8 {
-        @Contended               private int int1;
-                                 private int int2;
+    public static class A1_R1 extends R1 {
+        public int int2;
     }
 
-    // all fields are padded as the group, and one field is padded specifically
-    @Contended
-    public static class Test9 {
-        @Contended("group")      private int int1;
-                                 private int int2;
+    public static class A2_R1 extends R1 {
+        @Contended
+        public int int2;
     }
+
+    @Contended
+    public static class A3_R1 extends R1 {
+        public int int2;
+    }
+
+    public static class A1_R2 extends R2 {
+        public int int2;
+    }
+
+    public static class A2_R2 extends R2 {
+        @Contended
+        public int int2;
+    }
+
+    @Contended
+    public static class A3_R2 extends R2 {
+        public int int2;
+    }
+
+    public static class A1_R3 extends R3 {
+        public int int2;
+    }
+
+    public static class A2_R3 extends R3 {
+        @Contended
+        public int int2;
+    }
+
+    @Contended
+    public static class A3_R3 extends R3 {
+        public int int2;
+    }
+
 
 }
 

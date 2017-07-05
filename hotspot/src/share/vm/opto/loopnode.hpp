@@ -965,7 +965,7 @@ public:
   // Has use internal to the vector set (ie. not in a phi at the loop head)
   bool has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoopTree *loop );
   // clone "n" for uses that are outside of loop
-  void clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist );
+  int  clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist );
   // clone "n" for special uses that are in the not_peeled region
   void clone_for_special_use_inside_loop( IdealLoopTree *loop, Node* n,
                                           VectorSet& not_peel, Node_List& sink_list, Node_List& worklist );

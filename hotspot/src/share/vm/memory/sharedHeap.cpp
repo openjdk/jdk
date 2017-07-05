@@ -212,7 +212,6 @@ void SharedHeap::process_strong_roots(bool activate_scope,
 
 class AlwaysTrueClosure: public BoolObjectClosure {
 public:
-  void do_object(oop p) { ShouldNotReachHere(); }
   bool do_object_b(oop p) { return true; }
 };
 static AlwaysTrueClosure always_true;

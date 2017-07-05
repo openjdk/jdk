@@ -20,31 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test ConfigFileParsing
+ * @bug 7158804
+ * @summary Improve config file parsing
+ * @library /testlibrary
+ */
+
 import java.io.PrintWriter;
 import com.oracle.java.testlibrary.*;
 
-/*
- * Test to redefine java/lang/Object and verify that it doesn't crash on vtable
- * call on basic array type.
- *
- * @test
- * @bug 8005056
- * @library /testlibrary
- * @build Agent
- * @run main ClassFileInstaller Agent
- * @run main TestRedefineObject
- * @run main/othervm -javaagent:agent.jar Agent
- */
-public class TestRedefineObject {
-    public static void main(String[] args) throws Exception  {
+public class ConfigFileParsing {
+  public static void main(String[] args) throws Exception {
+    String testFileName = ".hotspotrc";
 
-      PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Premain-Class: Agent");
-      pw.println("Can-Retransform-Classes: true");
-      pw.close();
+    // Create really long invalid option
+    String reallyLongInvalidOption = "";
+    for (int i=0; i<5000; i++)
+      reallyLongInvalidOption+='a';
 
-      ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "Agent.class"});
-      pb.start().waitFor();
-    }
+    // Populate the options file with really long string
+    PrintWriter pw = new PrintWriter(testFileName);
+    pw.println("-XX:+" + reallyLongInvalidOption);
+    pw.close();
+
+    // start VM
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:+IgnoreUnrecognizedVMOptions", "-XX:Flags=.hotspotrc", "-version");
+
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
+  }
 }
