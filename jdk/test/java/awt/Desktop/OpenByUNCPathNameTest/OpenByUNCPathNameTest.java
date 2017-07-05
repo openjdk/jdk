@@ -45,6 +45,10 @@ public class OpenByUNCPathNameTest {
             System.out.println("java.awt.Desktop is not supported on this platform.");
         } else {
             Desktop desktop = Desktop.getDesktop();
+            if (!desktop.isSupported(Desktop.Action.OPEN)) {
+                System.out.println("Action.OPEN is not supported on this platform.");
+                return;
+            }
             File file = File.createTempFile("Read Me File", ".txt");
             try {
                 // Test opening of the file with Windows local file path.

@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import jdk.nashorn.internal.objects.Global;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
-import jdk.nashorn.internal.runtime.GlobalObject;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 
 /**
@@ -44,7 +44,7 @@ final class FrozenArrayFilter extends SealedArrayFilter {
     }
 
     @Override
-    public PropertyDescriptor getDescriptor(final GlobalObject global, final int index) {
+    public PropertyDescriptor getDescriptor(final Global global, final int index) {
         return global.newDataDescriptor(getObject(index), false, true, false);
     }
 

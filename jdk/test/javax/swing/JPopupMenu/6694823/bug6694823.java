@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.swing.*;
 import java.awt.*;
 import sun.awt.SunToolkit;
 import java.security.Permission;
-import sun.security.util.SecurityConstants;
+import sun.awt.AWTPermissions;
 
 public class bug6694823 {
     private static JFrame frame;
@@ -61,7 +61,8 @@ public class bug6694823 {
 
         System.setSecurityManager(new SecurityManager(){
 
-            private String allowsAlwaysOnTopPermission = SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION.getName();
+            private String allowsAlwaysOnTopPermission =
+                AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION.getName();
 
             @Override
             public void checkPermission(Permission perm) {

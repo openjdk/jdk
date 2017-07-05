@@ -56,7 +56,6 @@ import sun.rmi.runtime.Log;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.Target;
 import sun.rmi.transport.tcp.TCPTransport;
-import sun.security.action.GetBooleanAction;
 
 /**
  * UnicastServerRef implements the remote reference layer server-side
@@ -73,7 +72,7 @@ public class UnicastServerRef extends UnicastRef
 {
     /** value of server call log property */
     public static final boolean logCalls = AccessController.doPrivileged(
-        new GetBooleanAction("java.rmi.server.logCalls"));
+        (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("java.rmi.server.logCalls"));
 
     /** server call log */
     public static final Log callLog =
@@ -84,8 +83,8 @@ public class UnicastServerRef extends UnicastRef
 
     /** flag to enable writing exceptions to System.err */
     private static final boolean wantExceptionLog =
-        AccessController.doPrivileged(
-            new GetBooleanAction("sun.rmi.server.exceptionTrace"));
+        AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+            Boolean.getBoolean("sun.rmi.server.exceptionTrace"));
 
     private boolean forceStubUse = false;
 
@@ -94,9 +93,8 @@ public class UnicastServerRef extends UnicastRef
      * exceptions thrown by remote invocations to this VM
      */
     private static final boolean suppressStackTraces =
-        AccessController.doPrivileged(
-            new GetBooleanAction(
-                "sun.rmi.server.suppressStackTraces"));
+        AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+            Boolean.getBoolean("sun.rmi.server.suppressStackTraces"));
 
     /**
      * skeleton to dispatch remote calls through, for 1.1 stub protocol

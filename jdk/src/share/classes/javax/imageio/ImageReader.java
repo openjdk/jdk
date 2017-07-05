@@ -291,7 +291,7 @@ public abstract class ImageReader {
         if (input != null) {
             boolean found = false;
             if (originatingProvider != null) {
-                Class[] classes = originatingProvider.getInputTypes();
+                Class<?>[] classes = originatingProvider.getInputTypes();
                 for (int i = 0; i < classes.length; i++) {
                     if (classes[i].isInstance(input)) {
                         found = true;
@@ -793,7 +793,7 @@ public abstract class ImageReader {
     }
 
     private IIOMetadata getMetadata(String formatName,
-                                    Set nodeNames,
+                                    Set<String> nodeNames,
                                     boolean wantStream,
                                     int imageIndex) throws IOException {
         if (formatName == null) {
@@ -1065,10 +1065,10 @@ public abstract class ImageReader {
 
         BufferedImage im = read(imageIndex, param);
 
-        ArrayList thumbnails = null;
+        ArrayList<BufferedImage> thumbnails = null;
         int numThumbnails = getNumThumbnails(imageIndex);
         if (numThumbnails > 0) {
-            thumbnails = new ArrayList();
+            thumbnails = new ArrayList<>();
             for (int j = 0; j < numThumbnails; j++) {
                 thumbnails.add(readThumbnail(imageIndex, j));
             }
@@ -1156,7 +1156,7 @@ public abstract class ImageReader {
         readAll(Iterator<? extends ImageReadParam> params)
         throws IOException
     {
-        List output = new ArrayList();
+        List<IIOImage> output = new ArrayList<>();
 
         int imageIndex = getMinIndex();
 
@@ -1187,10 +1187,10 @@ public abstract class ImageReader {
                 break;
             }
 
-            ArrayList thumbnails = null;
+            ArrayList<BufferedImage> thumbnails = null;
             int numThumbnails = getNumThumbnails(imageIndex);
             if (numThumbnails > 0) {
-                thumbnails = new ArrayList();
+                thumbnails = new ArrayList<>();
                 for (int j = 0; j < numThumbnails; j++) {
                     thumbnails.add(readThumbnail(imageIndex, j));
                 }
@@ -1797,9 +1797,9 @@ public abstract class ImageReader {
 
     // Add an element to a list, creating a new list if the
     // existing list is null, and return the list.
-    static List addToList(List l, Object elt) {
+    static <T> List<T> addToList(List<T> l, T elt) {
         if (l == null) {
-            l = new ArrayList();
+            l = new ArrayList<>();
         }
         l.add(elt);
         return l;
@@ -1808,7 +1808,7 @@ public abstract class ImageReader {
 
     // Remove an element from a list, discarding the list if the
     // resulting list is empty, and return the list or null.
-    static List removeFromList(List l, Object elt) {
+    static <T> List<T> removeFromList(List<T> l, T elt) {
         if (l == null) {
             return l;
         }
@@ -2461,10 +2461,10 @@ public abstract class ImageReader {
              * If that throws MissingResourceException, then try the
              * system class loader.
              */
-            ClassLoader loader = (ClassLoader)
+            ClassLoader loader =
                 java.security.AccessController.doPrivileged(
-                   new java.security.PrivilegedAction() {
-                      public Object run() {
+                   new java.security.PrivilegedAction<ClassLoader>() {
+                      public ClassLoader run() {
                         return Thread.currentThread().getContextClassLoader();
                       }
                 });

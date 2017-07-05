@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public final class GlyphLayout {
     private ScriptRun _scriptRuns;     // iterator over script runs
     private FontRunIterator _fontRuns; // iterator over physical fonts in a composite
     private int _ercount;
-    private ArrayList _erecords;
+    private ArrayList<EngineRecord> _erecords;
     private Point2D.Float _pt;
     private FontStrikeDesc _sd;
     private float[] _mat;
@@ -457,7 +457,7 @@ public final class GlyphLayout {
         //        _sd.init(dtx, gtx, font.getStyle(), frc.isAntiAliased(), frc.usesFractionalMetrics());
         _sd = txinfo.sd;
         for (;ix != stop; ix += dir) {
-            EngineRecord er = (EngineRecord)_erecords.get(ix);
+            EngineRecord er = _erecords.get(ix);
             for (;;) {
                 try {
                     er.layout();
@@ -505,7 +505,7 @@ public final class GlyphLayout {
         this._textRecord = new TextRecord();
         this._scriptRuns = new ScriptRun();
         this._fontRuns = new FontRunIterator();
-        this._erecords = new ArrayList(10);
+        this._erecords = new ArrayList<>(10);
         this._pt = new Point2D.Float();
         this._sd = new FontStrikeDesc();
         this._mat = new float[4];
@@ -523,7 +523,7 @@ public final class GlyphLayout {
             er = new EngineRecord();
             _erecords.add(er);
         } else {
-            er = (EngineRecord)_erecords.get(_ercount);
+            er = _erecords.get(_ercount);
         }
         er.init(start, limit, font, script, lang, gmask);
         ++_ercount;

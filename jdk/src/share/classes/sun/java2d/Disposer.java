@@ -47,8 +47,9 @@ import java.util.Hashtable;
  * @see DisposerRecord
  */
 public class Disposer implements Runnable {
-    private static final ReferenceQueue queue = new ReferenceQueue();
-    private static final Hashtable records = new Hashtable();
+    private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
+    private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =
+        new Hashtable<>();
 
     private static Disposer disposerInstance;
     public static final int WEAK = 0;
@@ -77,7 +78,7 @@ public class Disposer implements Runnable {
         }
         disposerInstance = new Disposer();
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     /* The thread must be a member of a thread group
                      * which will not get GCed before VM exit.
@@ -135,11 +136,11 @@ public class Disposer implements Runnable {
         if (target instanceof DisposerTarget) {
             target = ((DisposerTarget)target).getDisposerReferent();
         }
-        java.lang.ref.Reference ref;
+        java.lang.ref.Reference<Object> ref;
         if (refType == PHANTOM) {
-            ref = new PhantomReference(target, queue);
+            ref = new PhantomReference<>(target, queue);
         } else {
-            ref = new WeakReference(target, queue);
+            ref = new WeakReference<>(target, queue);
         }
         records.put(ref, rec);
     }
@@ -149,7 +150,7 @@ public class Disposer implements Runnable {
             try {
                 Object obj = queue.remove();
                 ((Reference)obj).clear();
-                DisposerRecord rec = (DisposerRecord)records.remove(obj);
+                DisposerRecord rec = records.remove(obj);
                 rec.dispose();
                 obj = null;
                 rec = null;
@@ -214,7 +215,7 @@ public class Disposer implements Runnable {
                    && freed < 10000 && deferred < 100) {
                 freed++;
                 ((Reference)obj).clear();
-                DisposerRecord rec = (DisposerRecord)records.remove(obj);
+                DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
                     rec.dispose();
                     obj = null;
@@ -247,17 +248,18 @@ public class Disposer implements Runnable {
      * so will clutter the records hashmap and no one will be cleaning up
      * the reference queue.
      */
-    public static void addReference(Reference ref, DisposerRecord rec) {
+    @SuppressWarnings("unchecked")
+    public static void addReference(Reference<Object> ref, DisposerRecord rec) {
         records.put(ref, rec);
     }
 
     public static void addObjectRecord(Object obj, DisposerRecord rec) {
-        records.put(new WeakReference(obj, queue) , rec);
+        records.put(new WeakReference<>(obj, queue) , rec);
     }
 
     /* This is intended for use in conjunction with addReference(..)
      */
-    public static ReferenceQueue getQueue() {
+    public static ReferenceQueue<Object> getQueue() {
         return queue;
     }
 

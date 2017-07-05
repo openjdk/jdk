@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,14 @@ import java.awt.event.ItemEvent;
 
 final class WListPeer extends WComponentPeer implements ListPeer {
 
+    @Override
     public boolean isFocusable() {
         return true;
     }
 
     // ListPeer implementation
 
+    @Override
     public int[] getSelectedIndexes() {
         List l = (List)target;
         int len = l.countItems();
@@ -53,26 +55,31 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     }
 
     /* New method name for 1.1 */
+    @Override
     public void add(String item, int index) {
         addItem(item, index);
     }
 
     /* New method name for 1.1 */
+    @Override
     public void removeAll() {
         clear();
     }
 
     /* New method name for 1.1 */
+    @Override
     public void setMultipleMode (boolean b) {
         setMultipleSelections(b);
     }
 
     /* New method name for 1.1 */
+    @Override
     public Dimension getPreferredSize(int rows) {
         return preferredSize(rows);
     }
 
     /* New method name for 1.1 */
+    @Override
     public Dimension getMinimumSize(int rows) {
         return minimumSize(rows);
     }
@@ -83,13 +90,17 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     }
     native void addItems(String[] items, int index, int width);
 
+    @Override
     public native void delItems(int start, int end);
     public void clear() {
         List l = (List)target;
         delItems(0, l.countItems());
     }
+    @Override
     public native void select(int index);
+    @Override
     public native void deselect(int index);
+    @Override
     public native void makeVisible(int index);
     public native void setMultipleSelections(boolean v);
     public native int  getMaxWidth();
@@ -114,8 +125,10 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer parent);
 
+    @Override
     void initialize() {
         List li = (List)target;
 
@@ -169,6 +182,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         super.initialize();
     }
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }
@@ -178,7 +192,8 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     /*public*/ native boolean isSelected(int index);
 
     // update the fontmetrics when the font changes
-    public synchronized void _setFont(Font f)
+    @Override
+    synchronized void _setFont(Font f)
     {
         super._setFont( f );
             fm = getFontMetrics( ((List)target).getFont() );
@@ -190,6 +205,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     void handleAction(final int index, final long when, final int modifiers) {
         final List l = (List)target;
         WToolkit.executeOnEventHandlerThread(l, new Runnable() {
+            @Override
             public void run() {
                 l.select(index);
                 postEvent(new ActionEvent(target, ActionEvent.ACTION_PERFORMED,
@@ -201,6 +217,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     void handleListChanged(final int index) {
         final List l = (List)target;
         WToolkit.executeOnEventHandlerThread(l, new Runnable() {
+            @Override
             public void run() {
                 postEvent(new ItemEvent(l, ItemEvent.ITEM_STATE_CHANGED,
                                 Integer.valueOf(index),

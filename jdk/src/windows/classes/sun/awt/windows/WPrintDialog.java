@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.awt.peer.*;
 
 import java.awt.print.PrinterJob;
 
-public class WPrintDialog extends Dialog {
+import sun.awt.AWTAccessor;
+
+class WPrintDialog extends Dialog {
     static {
         initIDs();
     }
@@ -38,21 +40,23 @@ public class WPrintDialog extends Dialog {
     protected PrintJob job;
     protected PrinterJob pjob;
 
-    public WPrintDialog(Frame parent, PrinterJob control) {
+    WPrintDialog(Frame parent, PrinterJob control) {
         super(parent, true);
         this.pjob = control;
         setLayout(null);
     }
 
-    public WPrintDialog(Dialog parent, PrinterJob control) {
+    WPrintDialog(Dialog parent, PrinterJob control) {
         super(parent, "", true);
         this.pjob = control;
         setLayout(null);
     }
 
-    // Use native code to circumvent access restrictions on Component.peer
-    protected native void setPeer(ComponentPeer peer);
+    final void setPeer(final ComponentPeer p){
+        AWTAccessor.getComponentAccessor().setPeer(this, p);
+    }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized(getTreeLock()) {
@@ -72,11 +76,11 @@ public class WPrintDialog extends Dialog {
 
     private boolean retval = false;
 
-    public void setRetVal(boolean ret) {
+    final void setRetVal(boolean ret) {
         retval = ret;
     }
 
-    public boolean getRetVal() {
+    final boolean getRetVal() {
         return retval;
     }
 

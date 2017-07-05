@@ -74,7 +74,7 @@ import sun.font.TrueTypeFont;
 import sun.print.PathGraphics;
 import sun.print.ProxyGraphics2D;
 
-class WPathGraphics extends PathGraphics {
+final class WPathGraphics extends PathGraphics {
 
     /**
      * For a drawing application the initial user space
@@ -896,6 +896,7 @@ class WPathGraphics extends PathGraphics {
      * @param   handlingTransparency if being recursively called to
      *                    print opaque region of transparent image
      */
+    @Override
     protected boolean drawImageToPlatform(Image image, AffineTransform xform,
                                           Color bgcolor,
                                           int srcX, int srcY,
@@ -1335,6 +1336,7 @@ class WPathGraphics extends PathGraphics {
      * Have the printing application redraw everything that falls
      * within the page bounds defined by <code>region</code>.
      */
+    @Override
     public void redrawRegion(Rectangle2D region, double scaleX, double scaleY,
                              Shape savedClip, AffineTransform savedTransform)
             throws PrinterException {
@@ -1434,6 +1436,7 @@ class WPathGraphics extends PathGraphics {
      * with the specified color.
      * The path is provided in device coordinates.
      */
+    @Override
     protected void deviceFill(PathIterator pathIter, Color color) {
 
         WPrinterJob wPrinterJob = (WPrinterJob) getPrinterJob();
@@ -1448,6 +1451,7 @@ class WPathGraphics extends PathGraphics {
      * path defined by <code>pathIter</code>
      * The path is provided in device coordinates.
      */
+    @Override
     protected void deviceClip(PathIterator pathIter) {
 
         WPrinterJob wPrinterJob = (WPrinterJob) getPrinterJob();
@@ -1459,6 +1463,7 @@ class WPathGraphics extends PathGraphics {
     /**
      * Draw the bounding rectangle using transformed coordinates.
      */
+     @Override
      protected void deviceFrameRect(int x, int y, int width, int height,
                                      Color color) {
 
@@ -1548,6 +1553,7 @@ class WPathGraphics extends PathGraphics {
       * GDI fillRect function.
       * Boundaries are determined by the given coordinates.
       */
+    @Override
     protected void deviceFillRect(int x, int y, int width, int height,
                                   Color color) {
         /*
@@ -1584,6 +1590,7 @@ class WPathGraphics extends PathGraphics {
      * Draw a line using a pen created using the specified color
      * and current stroke properties.
      */
+    @Override
     protected void deviceDrawLine(int xBegin, int yBegin, int xEnd, int yEnd,
                                   Color color) {
         Stroke stroke = getStroke();
