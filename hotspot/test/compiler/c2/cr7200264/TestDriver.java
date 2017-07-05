@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package compiler.c2.cr7200264;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -45,7 +44,7 @@ public class TestDriver {
     }
 
     private List<String> executeApplication() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvmAllArgs(
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
             "-Xbatch",
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",

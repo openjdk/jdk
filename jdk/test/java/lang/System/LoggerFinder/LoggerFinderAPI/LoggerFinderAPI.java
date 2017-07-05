@@ -28,7 +28,6 @@ import java.io.PrintStream;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.lang.System.LoggerFinder;
-import java.lang.reflect.Module;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Objects;

@@ -135,9 +135,9 @@ import sun.rmi.transport.LiveRef;
  * remote object's class.
  *
  * <li>Each remote interface must either be public and reside in a package that is
- * {@linkplain java.lang.reflect.Module#isExported(String,java.lang.reflect.Module) exported}
+ * {@linkplain Module#isExported(String,Module) exported}
  * to at least the {@code java.rmi} module, or it must reside in a package that is
- * {@linkplain java.lang.reflect.Module#isOpen(String,java.lang.reflect.Module) open}
+ * {@linkplain Module#isOpen(String,Module) open}
  * to at least the {@code java.rmi} module.
  *
  * <li>The proxy's invocation handler is a {@link

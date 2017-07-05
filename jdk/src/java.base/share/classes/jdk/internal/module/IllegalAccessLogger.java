@@ -27,7 +27,6 @@ package jdk.internal.module;
 
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.CodeSource;

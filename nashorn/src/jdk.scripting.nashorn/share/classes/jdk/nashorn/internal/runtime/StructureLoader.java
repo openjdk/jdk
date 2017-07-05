@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_SINGLE_FI
 
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Modifier;
-import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 import java.util.Set;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;

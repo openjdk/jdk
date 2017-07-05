@@ -64,11 +64,11 @@ import java.util.stream.Stream;
  * with the receiver as the parent configuration. The static methods are for
  * more advanced cases where there can be more than one parent configuration. </p>
  *
- * <p> Each {@link java.lang.reflect.Layer layer} of modules in the Java virtual
+ * <p> Each {@link java.lang.ModuleLayer layer} of modules in the Java virtual
  * machine is created from a configuration. The configuration for the {@link
- * java.lang.reflect.Layer#boot() boot} layer is obtained by invoking {@code
- * Layer.boot().configuration()}. The configuration for the boot layer will
- * often be the parent when creating new configurations. </p>
+ * java.lang.ModuleLayer#boot() boot} layer is obtained by invoking {@code
+ * ModuleLayer.boot().configuration()}. The configuration for the boot layer
+ * will often be the parent when creating new configurations. </p>
  *
  * <h3> Example </h3>
  *
@@ -81,7 +81,7 @@ import java.util.stream.Stream;
  * <pre>{@code
  *    ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
  *
- *    Configuration parent = Layer.boot().configuration();
+ *    Configuration parent = ModuleLayer.boot().configuration();
  *
  *    Configuration cf = parent.resolve(finder, ModuleFinder.of(), Set.of("myapp"));
  *    cf.modules().forEach(m -> {
@@ -95,7 +95,7 @@ import java.util.stream.Stream;
  *
  * @since 9
  * @spec JPMS
- * @see java.lang.reflect.Layer
+ * @see java.lang.ModuleLayer
  */
 public final class Configuration {
 
