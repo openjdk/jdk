@@ -51,7 +51,7 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
  * An AccessorProperty is the most generic property type. An AccessorProperty is
  * represented as fields in a ScriptObject class.
  */
-public class AccessorProperty extends Property {
+public final class AccessorProperty extends Property {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private static final MethodHandle REPLACE_MAP = findOwnMH("replaceMap", Object.class, Object.class, PropertyMap.class, String.class, Class.class, Class.class);
 
@@ -149,7 +149,7 @@ public class AccessorProperty extends Property {
      * @param property  accessor property to rebind
      * @param delegate  delegate object to rebind receiver to
      */
-    public AccessorProperty(final AccessorProperty property, final Object delegate) {
+    AccessorProperty(final AccessorProperty property, final Object delegate) {
         super(property);
 
         this.primitiveGetter = bindTo(property.primitiveGetter, delegate);
@@ -185,7 +185,7 @@ public class AccessorProperty extends Property {
      * @param getter the property getter
      * @param setter the property setter or null if non writable, non configurable
      */
-    public AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
+    AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
         super(key, flags, slot);
 
         // we don't need to prep the setters these will never be invalidated as this is a nasgen

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,10 @@ public abstract class ResponseCache {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("getResponseCache")</tt>
+     * {@link NetPermission}{@code ("getResponseCache")}
      *
      * @see #setDefault(ResponseCache)
-     * @return the system-wide <code>ResponseCache</code>
+     * @return the system-wide {@code ResponseCache}
      * @since 1.5
      */
     public synchronized  static ResponseCache getDefault() {
@@ -94,11 +94,11 @@ public abstract class ResponseCache {
      * Note: non-standard procotol handlers may ignore this setting.
      *
      * @param responseCache The response cache, or
-     *          <code>null</code> to unset the cache.
+     *          {@code null} to unset the cache.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     * {@link NetPermission}<tt>("setResponseCache")</tt>
+     * {@link NetPermission}{@code ("setResponseCache")}
      *
      * @see #getDefault()
      * @since 1.5
@@ -118,14 +118,14 @@ public abstract class ResponseCache {
      * to get the network resource. If a cached response is returned,
      * that resource is used instead.
      *
-     * @param uri a <code>URI</code> used to reference the requested
+     * @param uri a {@code URI} used to reference the requested
      *            network resource
-     * @param rqstMethod a <code>String</code> representing the request
+     * @param rqstMethod a {@code String} representing the request
      *            method
      * @param rqstHeaders - a Map from request header
      *            field names to lists of field values representing
      *            the current request headers
-     * @return a <code>CacheResponse</code> instance if available
+     * @return a {@code CacheResponse} instance if available
      *          from cache, or null otherwise
      * @throws  IOException if an I/O error occurs
      * @throws  IllegalArgumentException if any one of the arguments is null
@@ -148,11 +148,11 @@ public abstract class ResponseCache {
      * use to write the resource into the cache. If the resource is
      * not to be cached, then put must return null.
      *
-     * @param uri a <code>URI</code> used to reference the requested
+     * @param uri a {@code URI} used to reference the requested
      *            network resource
      * @param conn - a URLConnection instance that is used to fetch
      *            the response to be cached
-     * @return a <code>CacheRequest</code> for recording the
+     * @return a {@code CacheRequest} for recording the
      *            response to be cached. Null return indicates that
      *            the caller does not intend to cache the response.
      * @throws IOException if an I/O error occurs

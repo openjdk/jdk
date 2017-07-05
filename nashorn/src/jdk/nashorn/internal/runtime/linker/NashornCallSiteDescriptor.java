@@ -39,7 +39,7 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
  * we can have a more compact representation, as we know that we're always only using {@code "dyn:*"} operations; also
  * we're storing flags in an additional primitive field.
  */
-public class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
+public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
     public static final int CALLSITE_SCOPE                = 0x01;

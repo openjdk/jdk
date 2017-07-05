@@ -63,7 +63,11 @@ package java.time.temporal;
 
 import java.time.DateTimeException;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
 
 /**
  * A unit of date-time, such as Days or Hours.
@@ -91,15 +95,6 @@ import java.time.Period;
  * @since 1.8
  */
 public interface TemporalUnit {
-
-    /**
-     * Gets a descriptive name for the unit.
-     * <p>
-     * This should be in the plural and upper-first camel case, such as 'Days' or 'Minutes'.
-     *
-     * @return the name, not null
-     */
-    String getName();
 
     /**
      * Gets the duration of this unit, which may be an estimate.
@@ -132,6 +127,33 @@ public interface TemporalUnit {
 
     //-----------------------------------------------------------------------
     /**
+     * Checks if this unit represents a component of a date.
+     * <p>
+     * A date is time-based if it can be used to imply meaning from a date.
+     * It must have a {@linkplain #getDuration() duration} that is an integral
+     * multiple of the length of a standard day.
+     * Note that it is valid for both {@code isDateBased()} and {@code isTimeBased()}
+     * to return false, such as when representing a unit like 36 hours.
+     *
+     * @return true if this unit is a component of a date
+     */
+    boolean isDateBased();
+
+    /**
+     * Checks if this unit represents a component of a time.
+     * <p>
+     * A unit is time-based if it can be used to imply meaning from a time.
+     * It must have a {@linkplain #getDuration() duration} that divides into
+     * the length of a standard day without remainder.
+     * Note that it is valid for both {@code isDateBased()} and {@code isTimeBased()}
+     * to return false, such as when representing a unit like 36 hours.
+     *
+     * @return true if this unit is a component of a time
+     */
+    boolean isTimeBased();
+
+    //-----------------------------------------------------------------------
+    /**
      * Checks if this unit is supported by the specified temporal object.
      * <p>
      * This checks that the implementing date-time can add/subtract this unit.
@@ -144,6 +166,15 @@ public interface TemporalUnit {
      * @return true if the unit is supported
      */
     default boolean isSupportedBy(Temporal temporal) {
+        if (temporal instanceof LocalTime) {
+            return isTimeBased();
+        }
+        if (temporal instanceof ChronoLocalDate) {
+            return isDateBased();
+        }
+        if (temporal instanceof ChronoLocalDateTime || temporal instanceof ChronoZonedDateTime) {
+            return true;
+        }
         try {
             temporal.plus(1, this);
             return true;
@@ -212,11 +243,11 @@ public interface TemporalUnit {
      * <p>
      * There are two equivalent ways of using this method.
      * The first is to invoke this method directly.
-     * The second is to use {@link Temporal#periodUntil(Temporal, TemporalUnit)}:
+     * The second is to use {@link Temporal#until(Temporal, TemporalUnit)}:
      * <pre>
      *   // these two lines are equivalent
      *   between = thisUnit.between(start, end);
-     *   between = start.periodUntil(end, thisUnit);
+     *   between = start.until(end, thisUnit);
      * </pre>
      * The choice should be made based on which makes the code more readable.
      * <p>
@@ -225,7 +256,7 @@ public interface TemporalUnit {
      * <pre>
      *  long daysBetween = DAYS.between(start, end);
      *  // or alternatively
-     *  long daysBetween = start.periodUntil(end, DAYS);
+     *  long daysBetween = start.until(end, DAYS);
      * </pre>
      * <p>
      * Implementations should perform any queries or calculations using the units
@@ -245,7 +276,9 @@ public interface TemporalUnit {
 
     //-----------------------------------------------------------------------
     /**
-     * Outputs this unit as a {@code String} using the name.
+     * Gets a descriptive name for the unit.
+     * <p>
+     * This should be in the plural and upper-first camel case, such as 'Days' or 'Minutes'.
      *
      * @return the name of this unit, not null
      */

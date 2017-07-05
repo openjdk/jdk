@@ -89,7 +89,7 @@ public final class MockFieldValue implements TemporalAccessor {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }

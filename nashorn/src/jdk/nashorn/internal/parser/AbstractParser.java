@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.parser;
 
+import static jdk.nashorn.internal.parser.TokenType.COMMENT;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
@@ -135,14 +136,27 @@ public abstract class AbstractParser {
     }
 
     /**
-     * Seek next token that is not an EOL.
+     * Seek next token that is not an EOL or comment.
      *
      * @return tokenType of next token.
      */
     protected final TokenType next() {
         do {
             nextOrEOL();
-        } while (type == EOL);
+        } while (type == EOL || type == COMMENT);
+
+        return type;
+    }
+
+    /**
+     * Seek next token or EOL (skipping comments.)
+     *
+     * @return tokenType of next token.
+     */
+    protected final TokenType nextOrEOL() {
+        do {
+            nextToken();
+        } while (type == COMMENT);
 
         return type;
     }
@@ -152,7 +166,7 @@ public abstract class AbstractParser {
      *
      * @return tokenType of next token.
      */
-    protected final TokenType nextOrEOL() {
+    private final TokenType nextToken() {
         // Capture last token tokenType.
         last = type;
         if (type != EOF) {

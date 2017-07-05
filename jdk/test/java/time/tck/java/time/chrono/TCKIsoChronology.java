@@ -278,91 +278,88 @@ public class TCKIsoChronology {
     @DataProvider(name = "resolve_yearOfEra")
     Object[][] data_resolve_yearOfEra() {
         return new Object[][] {
-                {-1, 2012, null, null, false, false},
-                {0, 2012, null, -2011, true, true},
-                {1, 2012, null, 2012, true, true},
-                {2, 2012, null, null, false, false},
+                // era only
+                {ResolverStyle.STRICT, -1, null, null, null, null},
+                {ResolverStyle.SMART, -1, null, null, null, null},
+                {ResolverStyle.LENIENT, -1, null, null, null, null},
 
-                {null, 2012, null, 2012, true, null},
-                {null, 2012, 2012, 2012, true, true},
-                {null, 2012, -2011, -2011, true, true},
-                {null, 2012, 2013, null, false, false},
-                {null, 2012, -2013, null, false, false},
+                {ResolverStyle.STRICT, 0, null, null, ChronoField.ERA, 0},
+                {ResolverStyle.SMART, 0, null, null, ChronoField.ERA, 0},
+                {ResolverStyle.LENIENT, 0, null, null, ChronoField.ERA, 0},
+
+                {ResolverStyle.STRICT, 1, null, null, ChronoField.ERA, 1},
+                {ResolverStyle.SMART, 1, null, null, ChronoField.ERA, 1},
+                {ResolverStyle.LENIENT, 1, null, null, ChronoField.ERA, 1},
+
+                {ResolverStyle.STRICT, 2, null, null, null, null},
+                {ResolverStyle.SMART, 2, null, null, null, null},
+                {ResolverStyle.LENIENT, 2, null, null, null, null},
+
+                // era and year-of-era
+                {ResolverStyle.STRICT, -1, 2012, null, null, null},
+                {ResolverStyle.SMART, -1, 2012, null, null, null},
+                {ResolverStyle.LENIENT, -1, 2012, null, null, null},
+
+                {ResolverStyle.STRICT, 0, 2012, null, ChronoField.YEAR, -2011},
+                {ResolverStyle.SMART, 0, 2012, null, ChronoField.YEAR, -2011},
+                {ResolverStyle.LENIENT, 0, 2012, null, ChronoField.YEAR, -2011},
+
+                {ResolverStyle.STRICT, 1, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.SMART, 1, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, 1, 2012, null, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, 2, 2012, null, null, null},
+                {ResolverStyle.SMART, 2, 2012, null, null, null},
+                {ResolverStyle.LENIENT, 2, 2012, null, null, null},
+
+                // year-of-era only
+                {ResolverStyle.STRICT, null, 2012, null, ChronoField.YEAR_OF_ERA, 2012},
+                {ResolverStyle.SMART, null, 2012, null, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, null, 2012, null, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, null, Integer.MAX_VALUE, null, null, null},
+                {ResolverStyle.SMART, null, Integer.MAX_VALUE, null, null, null},
+                {ResolverStyle.LENIENT, null, Integer.MAX_VALUE, null, ChronoField.YEAR, Integer.MAX_VALUE},
+
+                // year-of-era and year
+                {ResolverStyle.STRICT, null, 2012, 2012, ChronoField.YEAR, 2012},
+                {ResolverStyle.SMART, null, 2012, 2012, ChronoField.YEAR, 2012},
+                {ResolverStyle.LENIENT, null, 2012, 2012, ChronoField.YEAR, 2012},
+
+                {ResolverStyle.STRICT, null, 2012, -2011, ChronoField.YEAR, -2011},
+                {ResolverStyle.SMART, null, 2012, -2011, ChronoField.YEAR, -2011},
+                {ResolverStyle.LENIENT, null, 2012, -2011, ChronoField.YEAR, -2011},
+
+                {ResolverStyle.STRICT, null, 2012, 2013, null, null},
+                {ResolverStyle.SMART, null, 2012, 2013, null, null},
+                {ResolverStyle.LENIENT, null, 2012, 2013, null, null},
+
+                {ResolverStyle.STRICT, null, 2012, -2013, null, null},
+                {ResolverStyle.SMART, null, 2012, -2013, null, null},
+                {ResolverStyle.LENIENT, null, 2012, -2013, null, null},
         };
     }
 
     @Test(dataProvider = "resolve_yearOfEra")
-    public void test_resolve_yearOfEra_lenient(Integer e, int yoe, Integer y, Integer expected, boolean smart, Boolean strict) {
+    public void test_resolve_yearOfEra(ResolverStyle style, Integer e, Integer yoe, Integer y, ChronoField field, Integer expected) {
         Map<TemporalField, Long> fieldValues = new HashMap<>();
         if (e != null) {
             fieldValues.put(ChronoField.ERA, (long) e);
         }
-        fieldValues.put(ChronoField.YEAR_OF_ERA, (long) yoe);
+        if (yoe != null) {
+            fieldValues.put(ChronoField.YEAR_OF_ERA, (long) yoe);
+        }
         if (y != null) {
             fieldValues.put(ChronoField.YEAR, (long) y);
         }
-        if (smart) {
-            LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
+        if (field != null) {
+            LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, style);
             assertEquals(date, null);
-            assertEquals(fieldValues.get(ChronoField.YEAR), (Long) (long) expected);
+            assertEquals(fieldValues.get(field), (Long) expected.longValue());
             assertEquals(fieldValues.size(), 1);
         } else {
             try {
-                IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.LENIENT);
-                fail("Should have failed");
-            } catch (DateTimeException ex) {
-                // expected
-            }
-        }
-    }
-
-    @Test(dataProvider = "resolve_yearOfEra")
-    public void test_resolve_yearOfEra_smart(Integer e, int yoe, Integer y, Integer expected, boolean smart, Boolean strict) {
-        Map<TemporalField, Long> fieldValues = new HashMap<>();
-        if (e != null) {
-            fieldValues.put(ChronoField.ERA, (long) e);
-        }
-        fieldValues.put(ChronoField.YEAR_OF_ERA, (long) yoe);
-        if (y != null) {
-            fieldValues.put(ChronoField.YEAR, (long) y);
-        }
-        if (smart) {
-            LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(ChronoField.YEAR), (Long) (long) expected);
-            assertEquals(fieldValues.size(), 1);
-        } else {
-            try {
-                IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.SMART);
-                fail("Should have failed");
-            } catch (DateTimeException ex) {
-                // expected
-            }
-        }
-    }
-
-    @Test(dataProvider = "resolve_yearOfEra")
-    public void test_resolve_yearOfEra_strict(Integer e, int yoe, Integer y, Integer expected, boolean smart, Boolean strict) {
-        Map<TemporalField, Long> fieldValues = new HashMap<>();
-        if (e != null) {
-            fieldValues.put(ChronoField.ERA, (long) e);
-        }
-        fieldValues.put(ChronoField.YEAR_OF_ERA, (long) yoe);
-        if (y != null) {
-            fieldValues.put(ChronoField.YEAR, (long) y);
-        }
-        if (strict == null) {
-            LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(ChronoField.YEAR_OF_ERA), (Long) (long) yoe);
-        } else if (strict) {
-            LocalDate date = IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
-            assertEquals(date, null);
-            assertEquals(fieldValues.get(ChronoField.YEAR), (Long) (long) expected);
-            assertEquals(fieldValues.size(), 1);
-        } else {
-            try {
-                IsoChronology.INSTANCE.resolveDate(fieldValues, ResolverStyle.STRICT);
+                IsoChronology.INSTANCE.resolveDate(fieldValues, style);
                 fail("Should have failed");
             } catch (DateTimeException ex) {
                 // expected
@@ -381,6 +378,11 @@ public class TCKIsoChronology {
                 {2012, 1, -30, date(2011, 12, 1), false, false},
                 {2012, 1, -12, date(2011, 12, 19), false, false},
                 {2012, 1, 1, date(2012, 1, 1), true, true},
+                {2012, 1, 27, date(2012, 1, 27), true, true},
+                {2012, 1, 28, date(2012, 1, 28), true, true},
+                {2012, 1, 29, date(2012, 1, 29), true, true},
+                {2012, 1, 30, date(2012, 1, 30), true, true},
+                {2012, 1, 31, date(2012, 1, 31), true, true},
                 {2012, 1, 59, date(2012, 2, 28), false, false},
                 {2012, 1, 60, date(2012, 2, 29), false, false},
                 {2012, 1, 61, date(2012, 3, 1), false, false},

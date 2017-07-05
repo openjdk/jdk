@@ -136,21 +136,30 @@ public final class DOMRetrievalMethod extends DOMStructure
         List<Transform> transforms = new ArrayList<Transform>();
         Element transformsElem = DOMUtils.getFirstChildElement(rmElem);
 
-        int transformCount = 0;
         if (transformsElem != null) {
+            String localName = transformsElem.getLocalName();
+            if (!localName.equals("Transforms")) {
+                throw new MarshalException("Invalid element name: " +
+                                           localName + ", expected Transforms");
+            }
             Element transformElem =
-                DOMUtils.getFirstChildElement(transformsElem);
+                DOMUtils.getFirstChildElement(transformsElem, "Transform");
+            transforms.add(new DOMTransform(transformElem, context, provider));
+            transformElem = DOMUtils.getNextSiblingElement(transformElem);
             while (transformElem != null) {
+                String name = transformElem.getLocalName();
+                if (!name.equals("Transform")) {
+                    throw new MarshalException("Invalid element name: " +
+                                               name + ", expected Transform");
+                }
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
-                transformElem = DOMUtils.getNextSiblingElement(transformElem);
-
-                transformCount++;
-                if (secVal && (transformCount > DOMReference.MAXIMUM_TRANSFORM_COUNT)) {
+                if (secVal && (transforms.size() > DOMReference.MAXIMUM_TRANSFORM_COUNT)) {
                     String error = "A maxiumum of " + DOMReference.MAXIMUM_TRANSFORM_COUNT + " "
                         + "transforms per Reference are allowed with secure validation";
                     throw new MarshalException(error);
                 }
+                transformElem = DOMUtils.getNextSiblingElement(transformElem);
             }
         }
         if (transforms.isEmpty()) {

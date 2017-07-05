@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ class ParseException extends Exception {
      * Constructs a ParseException with the specified detail message and
      * offset.
      * A detail message is a String that describes this particular exception.
+     *
      * @param s the detail message
      * @param errorOffset the position where the error is found while parsing.
      */
@@ -65,6 +66,8 @@ class ParseException extends Exception {
 
     /**
      * Returns the position where the error was found.
+     *
+     * @return the position where the error was found
      */
     public int getErrorOffset () {
         return errorOffset;

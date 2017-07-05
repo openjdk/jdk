@@ -477,6 +477,7 @@ public class LinkerCallSite extends ChainedCallSite {
         /**
          * Tracer function that logs a callsite miss
          *
+         * @param desc callsite descriptor string
          * @param args arguments to function
          *
          * @throws Throwable if invocation failes or throws exception/error

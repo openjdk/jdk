@@ -459,9 +459,9 @@ public final class Duration
      */
     public static Duration between(Temporal startInclusive, Temporal endExclusive) {
         try {
-            return ofNanos(startInclusive.periodUntil(endExclusive, NANOS));
+            return ofNanos(startInclusive.until(endExclusive, NANOS));
         } catch (DateTimeException | ArithmeticException ex) {
-            long secs = startInclusive.periodUntil(endExclusive, SECONDS);
+            long secs = startInclusive.until(endExclusive, SECONDS);
             long nanos;
             try {
                 nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
@@ -523,7 +523,7 @@ public final class Duration
         } else if (unit == NANOS) {
             return nanos;
         } else {
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
     }
 

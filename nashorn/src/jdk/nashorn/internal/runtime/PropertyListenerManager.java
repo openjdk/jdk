@@ -32,6 +32,7 @@ import java.util.WeakHashMap;
  * Helper class to manage property listeners and notification.
  */
 public class PropertyListenerManager implements PropertyListener {
+    PropertyListenerManager() {}
 
     /** property listeners for this object. */
     private Map<PropertyListener,Boolean> listeners;

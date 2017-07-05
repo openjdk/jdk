@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public final class StreamSupport {
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
      * more details.
      *
+     * @param <T> the type of stream elements
      * @param supplier a {@code Supplier} of a {@code Spliterator}
      * @param characteristics Spliterator characteristics of the supplied
      *        {@code Spliterator}.  The characteristics must be equal to

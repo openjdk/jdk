@@ -332,7 +332,7 @@ function streamClose(stream) {
  * @param str input from which script is loaded and evaluated
  */
 if (typeof(load) == 'undefined') {
-    var load = function(str) {
+    this.load = function(str) {
         var stream = inStream(str);
         var bstream = new BufferedInputStream(stream);
         var reader = new BufferedReader(new InputStreamReader(bstream));
@@ -712,7 +712,7 @@ if (typeof(exit) == 'undefined') {
      * @param exitCode integer code returned to OS shell.
      * optional, defaults to 0
      */
-    var exit = function (code) {
+    this.exit = function (code) {
         if (code) {
             java.lang.System.exit(code + 0);
         } else {
@@ -725,7 +725,7 @@ if (typeof(quit) == 'undefined') {
     /**
      * synonym for exit
      */
-    var quit = function (code) {
+    this.quit = function (code) {
         exit(code);
     }
 }
@@ -881,7 +881,7 @@ if (typeof(printf) == 'undefined') {
      * @param format string to format the rest of the print items
      * @param args variadic argument list
      */
-    var printf = function (format, args/*, more args*/) {  
+    this.printf = function (format, args/*, more args*/) {  
         var array = java.lang.reflect.Array.newInstance(java.lang.Object, 
                     arguments.length - 1);
         for (var i = 0; i < array.length; i++) {
@@ -921,25 +921,7 @@ function read(prompt, multiline) {
 }
 
 if (typeof(println) == 'undefined') {
-    var print = function(str, newline) {
-        if (typeof(str) == 'undefined') {
-            str = 'undefined';
-        } else if (str == null) {
-            str = 'null';
-        }
-
-        if (!(out instanceof java.io.PrintWriter)) {
-            out = new java.io.PrintWriter(out);
-        }
-
-        out.print(String(str));
-        if (newline) {
-            out.print('\n');
-        }
-        out.flush();
-    }
-
-    var println = function(str) {
-        print(str, true);
-    };
+    // just synonym to print
+    this.println = print;
 }
+

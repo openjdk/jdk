@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public interface SocketOptions {
      * }
      * </PRE>
      *
-     * @param optID an <code>int</code> identifying the option to fetch
+     * @param optID an {@code int} identifying the option to fetch
      * @return the value of the option
      * @throws SocketException if the socket is closed
      * @throws SocketException if <I>optID</I> is unknown along the

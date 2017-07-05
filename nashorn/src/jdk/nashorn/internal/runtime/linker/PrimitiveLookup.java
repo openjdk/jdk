@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import jdk.nashorn.internal.lookup.Lookup;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
@@ -35,6 +34,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
@@ -42,7 +42,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * numbers). This class is only public so it can be accessed by classes in the {@code jdk.nashorn.internal.objects}
  * package.
  */
-public class PrimitiveLookup {
+public final class PrimitiveLookup {
 
     private PrimitiveLookup() {
     }

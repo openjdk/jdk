@@ -25,24 +25,26 @@
 package java.util.function;
 
 /**
- * An operation on two {@code int} operands yielding an {@code int} result.
- * This is the primitive type specialization of {@link BinaryOperator} for
- * {@code int}.
+ * Represents an operation upon two {@code int}-valued operands and producing an
+ * {@code int}-valued result.   This is the primitive type specialization of
+ * {@link BinaryOperator} for {@code int}.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #applyAsInt(int, int)}.
  *
  * @see BinaryOperator
+ * @see IntUnaryOperator
  * @since 1.8
  */
 @FunctionalInterface
 public interface IntBinaryOperator {
 
     /**
-     * Returns the {@code int} result of the operation upon the {@code int}
-     * operands. The parameters are named {@code left} and {@code right} for
-     * operations where the order of parameters matters.
+     * Applies this operator to the given operands.
      *
-     * @param left the left operand value
-     * @param right  the right operand value
-     * @return the result of the operation
+     * @param left the first operand
+     * @param right the second operand
+     * @return the operator result
      */
     int applyAsInt(int left, int right);
 }

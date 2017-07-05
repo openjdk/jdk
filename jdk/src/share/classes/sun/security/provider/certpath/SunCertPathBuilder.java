@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,7 +422,6 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                                         buildParams.anyPolicyInhibited(),
                                         buildParams.policyQualifiersRejected(),
                                         rootNode);
-
                 checkers.add(policyChecker);
 
                 // add the algorithm checker
@@ -455,11 +454,16 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 List<PKIXCertPathChecker> ckrs = buildParams.certPathCheckers();
                 for (PKIXCertPathChecker ckr : ckrs) {
                     if (ckr instanceof PKIXRevocationChecker) {
+                        if (revCheckerAdded) {
+                            throw new CertPathValidatorException(
+                                "Only one PKIXRevocationChecker can be specified");
+                        }
                         revCheckerAdded = true;
                         // if it's our own, initialize it
-                        if (ckr instanceof RevocationChecker)
+                        if (ckr instanceof RevocationChecker) {
                             ((RevocationChecker)ckr).init(builder.trustAnchor,
                                                           buildParams);
+                        }
                     }
                 }
                 // only add a RevocationChecker if revocation is enabled and
