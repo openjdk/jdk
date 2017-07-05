@@ -37,21 +37,22 @@ import java.util.concurrent.CyclicBarrier;
 
 public class SiblingIOEHandle {
     private static enum APP {
-        B, C;
+        A, B, C;
     }
+
     private static File stopC = new File(".\\StopCs.txt");
     private static String SIGNAL = "B child reported.";
     private static String JAVA_EXE = System.getProperty("java.home")
-        + File.separator + "bin"
-        + File.separator + "java";
+            + File.separator + "bin"
+            + File.separator + "java";
 
     private static String[] getCommandArray(String processName) {
         String[] cmdArray = {
-            JAVA_EXE,
-            "-cp",
-            System.getProperty("java.class.path"),
-            SiblingIOEHandle.class.getName(),
-            processName
+                JAVA_EXE,
+                "-cp",
+                System.getProperty("java.class.path"),
+                SiblingIOEHandle.class.getName(),
+                processName
         };
         return cmdArray;
     }
@@ -61,20 +62,19 @@ public class SiblingIOEHandle {
             return;
         }
 
-        if (args.length > 0) {
-            APP app = APP.valueOf(args[0]);
-            switch (app) {
+        APP app = (args.length > 0) ? APP.valueOf(args[0]) : APP.A;
+        switch (app) {
+            case A:
+                performA(true);
+                performA(false);
+                break;
             case B:
                 performB();
                 break;
             case C:
                 performC();
                 break;
-            }
-            return;
         }
-        performA(true);
-        performA(false);
     }
 
     static boolean procClaunched = false;
@@ -86,6 +86,7 @@ public class SiblingIOEHandle {
             // that was long enough
         }
     }
+
     private static boolean waitBarrier(CyclicBarrier barrier) {
         while (true) try {
             barrier.await();
@@ -95,6 +96,36 @@ public class SiblingIOEHandle {
         } catch (BrokenBarrierException ex) {
             ex.printStackTrace();
             return false;
+        }
+    }
+
+    private static class ProcessC implements Runnable {
+        private CyclicBarrier barrier;
+        private Process processC;
+
+        public ProcessC(CyclicBarrier barrier) {
+            this.barrier = barrier;
+        }
+
+        @Override
+        public void run() {
+            try {
+                if (waitBarrier(barrier)) {
+                    waitAbit();
+                    // Run process C next to B ASAP to make an attempt
+                    // to capture the B-process IOE handles in C process.
+                    ProcessBuilder builderC = new ProcessBuilder(
+                            getCommandArray(APP.C.name()));
+                    processC = builderC.start();
+                    procClaunched = true;
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void waitFor() throws InterruptedException {
+            processC.waitFor();
         }
     }
 
@@ -112,26 +143,13 @@ public class SiblingIOEHandle {
             builderB.redirectErrorStream(true);
 
             final CyclicBarrier barrier = new CyclicBarrier(2);
-            Thread procCRunner = new Thread(new Runnable() {
-                @Override public void run() {
-                    try {
-                        if (waitBarrier(barrier)) {
-                            waitAbit();
-                            // Run process C next to B ASAP to make an attempt
-                            // to capture the B-process IOE handles in C process.
-                            Runtime.getRuntime().exec(getCommandArray(APP.C.name()));
-                            procClaunched = true;
-                        }
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            });
+            //Create process C in a new thread
+            ProcessC processC = new ProcessC(barrier);
+            Thread procCRunner = new Thread(processC);
             procCRunner.start();
 
-
             if (!waitBarrier(barrier)) {
-                throw new Error("Catastrophe in process A! Synchronization failed.");
+                throw new RuntimeException("Catastrophe in process A! Synchronization failed.");
             }
             // Run process B first.
             Process processB = builderB.start();
@@ -144,7 +162,7 @@ public class SiblingIOEHandle {
             }
 
             if (!procClaunched) {
-                throw new Error("Catastrophe in process A! C was not launched.");
+                throw new RuntimeException("Catastrophe in process A! C was not launched.");
             }
 
             processB.getOutputStream().close();
@@ -154,24 +172,29 @@ public class SiblingIOEHandle {
                 try {
                     processB.waitFor();
                 } catch (InterruptedException ex) {
-                    throw new Error("Catastrophe in process B! B hung up.");
+                    throw new RuntimeException("Catastrophe in process B! B hung up.");
                 }
                 System.err.println("Trying to delete [outB.txt].");
                 if (!outB.delete()) {
-                    throw new Error("Greedy brother C deadlock! File share.");
+                    throw new RuntimeException("Greedy brother C deadlock! File share.");
                 }
                 System.err.println("Succeeded in delete [outB.txt].");
             } else {
                 System.err.println("Read stream start.");
-                try (BufferedReader in = new BufferedReader( new InputStreamReader(
-                             processB.getInputStream(), "utf-8")))
-                {
+                boolean isSignalReceived = false;
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                        processB.getInputStream(), "utf-8"))) {
                     String result;
                     while ((result = in.readLine()) != null) {
-                        if (!SIGNAL.equals(result)) {
-                            throw new Error("Catastrophe in process B! Bad output.");
+                        if (SIGNAL.equals(result)) {
+                            isSignalReceived = true;
+                        } else {
+                            throw new RuntimeException("Catastrophe in process B! Bad output.");
                         }
                     }
+                }
+                if (!isSignalReceived) {
+                    throw new RuntimeException("Signal from B was not received");
                 }
                 System.err.println("Read stream finished.");
             }
@@ -180,8 +203,11 @@ public class SiblingIOEHandle {
 
             // write signal file to stop C process.
             stopC.createNewFile();
+            processC.waitFor();
         } catch (IOException ex) {
-            throw new Error("Catastrophe in process A!", ex);
+            throw new RuntimeException("Catastrophe in process A!", ex);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("Process A was interrupted while waiting for C", ex);
         }
     }
 
@@ -191,7 +217,7 @@ public class SiblingIOEHandle {
 
     private static void performC() {
         // If JDK-7147084 is not fixed the loop is 5min long.
-        for (int i = 0; i < 5*60; ++i) {
+        for (int i = 0; i < 5 * 60; ++i) {
             try {
                 Thread.sleep(1000);
                 // check for sucess

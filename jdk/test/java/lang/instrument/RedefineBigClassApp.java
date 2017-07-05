@@ -26,16 +26,23 @@ import java.io.*;
 public class RedefineBigClassApp {
     /**
      * Memory leak is assumed, if application consumes more than specified amount of memory during its execution.
-     * The number is given in Kb.
+     * The number is given in KB.
      */
-    private static final long MEM_LEAK_THRESHOLD = 32 * 1024; // 32Mb
+    private static final long MEM_LEAK_THRESHOLD = 32 * 1024; // 32MB
 
     public static void main(String[] args) throws Exception {
         System.out.println("Creating instance of " +
             RedefineBigClassAgent.clz);
         RedefineBigClassAgent.clz.newInstance();
 
-        long vMemBefore = getVMemSize();
+        // Do a short warmup before creating the NMT baseline
+        try {
+            Thread.sleep(5 * 1000);
+        } catch (InterruptedException ie) {
+        }
+
+        NMTHelper.baseline();
+
         int count = 0;
         while (!RedefineBigClassAgent.doneRedefining) {
             System.out.println("App loop count: " + ++count);
@@ -46,39 +53,12 @@ public class RedefineBigClassApp {
         }
         System.out.println("App looped  " + count + " times.");
 
-        long vMemAfter = getVMemSize();
-        if (vMemBefore == 0 || vMemAfter == 0) {
-            System.err.println("WARNING: Cannot perform memory leak detection on this OS");
-        } else {
-            long vMemDelta = vMemAfter - vMemBefore;
-            if (vMemDelta > MEM_LEAK_THRESHOLD) {
-                System.err.println("FAIL: Virtual memory usage increased by " + vMemDelta + "Kb " +
-                        "(greater than " + MEM_LEAK_THRESHOLD + "Kb)");
-                System.exit(1);
-            }
-            System.err.println("PASS: Virtual memory usage increased by " + vMemDelta + "Kb " +
-                    "(not greater than " + MEM_LEAK_THRESHOLD + "Kb)");
+        long committedDiff = NMTHelper.committedDiff();
+        if (committedDiff > MEM_LEAK_THRESHOLD) {
+            throw new Exception("FAIL: Committed memory usage increased by " + committedDiff + "KB " +
+                               "(greater than " + MEM_LEAK_THRESHOLD + "KB)");
         }
-        System.exit(0);
-    }
-
-    /**
-     * Return size of virtual memory allocated to the process in Kb.
-     * Linux specific. On other platforms and in case of any errors return 0.
-     */
-    private static long getVMemSize() {
-
-        // Refer to the Linux proc(5) man page for details about /proc/self/stat file
-        //
-        // In short, this file contains status information about the current process
-        // written in one line. The fields are separated with spaces.
-        // The 23rd field is defined as 'vsize %lu   Virtual memory size in bytes'
-
-        try (FileReader fileReader = new FileReader("/proc/self/stat");
-             BufferedReader bufferedReader = new BufferedReader(fileReader)) {
-            String line = bufferedReader.readLine();
-            return Long.parseLong(line.split(" ")[22]) / 1024;
-        } catch (Exception ex) {}
-        return 0;
+        System.err.println("PASS: Committed memory usage increased by " + committedDiff + "KB " +
+                           "(not greater than " + MEM_LEAK_THRESHOLD + "KB)");
     }
 }

@@ -77,13 +77,13 @@ import sun.security.jca.GetInstance.Instance;
  *     (see {@link #initSign(PrivateKey)}
  *     and {@link #initSign(PrivateKey, SecureRandom)}).
  *
- *     </ul><p>
+ *     </ul>
  *
- * <li>Updating<p>
+ * <li>Updating
  *
  * <p>Depending on the type of initialization, this will update the
  * bytes to be signed or verified. See the
- * {@link #update(byte) update} methods.<p>
+ * {@link #update(byte) update} methods.
  *
  * <li>Signing or Verifying a signature on all updated bytes. See the
  * {@link #sign() sign} methods and the {@link #verify(byte[]) verify}

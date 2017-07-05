@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8026844
+ * @bug 8027353
  * @summary Test constant subtractExact
  * @compile SubExactLConstantTest.java Verify.java
  * @run main SubExactLConstantTest

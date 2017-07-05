@@ -35,11 +35,8 @@ if (typeof (5).x !== 'number') {
     fail("typeof(5).x is not 'number'");
 }
 
-// It is function because PrintStream implements Closeable, which is
-// marked with @FunctionalInterface. Yes, this means calling a stream
-// like "stream()" closes it.
-if (typeof (java.lang.System.out) != 'function') {
-    fail("typeof java.lang.System.out is not 'object'");
+if (typeof (java.net.Proxy.NO_PROXY) != 'object') {
+    fail("typeof java.net.Proxy.NO_PROXY is not 'object'");
 }
 
 if (typeof (java.lang.Math.PI) != 'number') {

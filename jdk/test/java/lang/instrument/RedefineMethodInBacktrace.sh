@@ -62,6 +62,10 @@ cp "${TESTSRC}"/RedefineMethodInBacktraceTarget_2.java \
     RedefineMethodInBacktraceTarget.java
 "${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . RedefineMethodInBacktraceTarget.java
 
+cp "${TESTSRC}"/RedefineMethodInBacktraceTargetB_2.java \
+    RedefineMethodInBacktraceTargetB.java
+"${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . RedefineMethodInBacktraceTargetB.java
+
 "${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodInBacktraceAgent.jar \
     -classpath "${TESTCLASSES}" RedefineMethodInBacktraceApp > output.log 2>&1
 RUN_RESULT=$?

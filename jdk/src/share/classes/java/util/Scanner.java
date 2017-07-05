@@ -216,7 +216,6 @@ import sun.misc.LRUCache;
  * are specified in terms of the following regular-expression grammar, where
  * Rmax is the highest digit in the radix being used (for example, Rmax is 9 in base 10).
  *
- * <p>
  * <dl>
  *   <dt><i>NonAsciiDigit</i>:
  *       <dd>A non-ASCII character c for which

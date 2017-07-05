@@ -150,7 +150,7 @@ public class PopupMenu extends Menu {
      * @exception IllegalArgumentException  if this <code>PopupMenu</code>
      *                has a non-<code>Component</code> parent
      * @exception IllegalArgumentException if the origin is not in the
-     *                parent's heirarchy
+     *                parent's hierarchy
      * @exception RuntimeException if the parent is not showing on screen
      */
     public void show(Component origin, int x, int y) {

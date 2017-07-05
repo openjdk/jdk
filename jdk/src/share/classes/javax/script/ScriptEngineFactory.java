@@ -142,7 +142,7 @@ public interface ScriptEngineFactory {
 
     /**
      * Returns a String which can be used to invoke a method of a  Java object using the syntax
-     * of the supported scripting language.  For instance, an implementaton for a Javascript
+     * of the supported scripting language.  For instance, an implementation for a Javascript
      * engine might be;
      * <p>
      * <pre>{@code
@@ -178,7 +178,7 @@ public interface ScriptEngineFactory {
 
     /**
      * Returns a String that can be used as a statement to display the specified String  using
-     * the syntax of the supported scripting language.  For instance, the implementaton for a Perl
+     * the syntax of the supported scripting language.  For instance, the implementation for a Perl
      * engine might be;
      * <p>
      * <pre><code>
@@ -196,7 +196,7 @@ public interface ScriptEngineFactory {
 
 
     /**
-     * Returns a valid scripting language executable progam with given statements.
+     * Returns a valid scripting language executable program with given statements.
      * For instance an implementation for a PHP engine might be:
      * <p>
      * <pre>{@code

@@ -183,7 +183,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * into a <tt>BeanContext</tt>.
      * </p>
      * <p>
-     * The semantics of the beanName parameter are defined by java.beans.Beans.instantate.
+     * The semantics of the beanName parameter are defined by java.beans.Beans.instantiate.
      * </p>
      *
      * @param beanName the name of the Bean to instantiate within this BeanContext

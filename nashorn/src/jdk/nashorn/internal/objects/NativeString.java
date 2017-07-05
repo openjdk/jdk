@@ -505,7 +505,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object charAt(final Object self, final Object pos) {
-        return charAt(self, JSType.toInteger(pos));
+        return charAtImpl(checkObjectToString(self), JSType.toInteger(pos));
     }
 
     /**
@@ -527,7 +527,10 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedFunction
     public static String charAt(final Object self, final int pos) {
-        final String str = checkObjectToString(self);
+        return charAtImpl(checkObjectToString(self), pos);
+    }
+
+    private static String charAtImpl(final String str, final int pos) {
         return (pos < 0 || pos >= str.length()) ? "" : String.valueOf(str.charAt(pos));
     }
 
@@ -539,7 +542,7 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object charCodeAt(final Object self, final Object pos) {
-        return charCodeAt(self, JSType.toInteger(pos));
+        return charCodeAtImpl(checkObjectToString(self), JSType.toInteger(pos));
     }
 
     /**
@@ -561,7 +564,10 @@ public final class NativeString extends ScriptObject {
      */
     @SpecializedFunction
     public static double charCodeAt(final Object self, final int pos) {
-        final String str = checkObjectToString(self);
+        return charCodeAtImpl(checkObjectToString(self), pos);
+    }
+
+    private static double charCodeAtImpl(final String str, final int pos) {
         return (pos < 0 || pos >= str.length()) ? Double.NaN :  str.charAt(pos);
     }
 

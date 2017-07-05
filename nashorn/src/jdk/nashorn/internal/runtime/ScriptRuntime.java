@@ -47,6 +47,7 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -258,6 +259,11 @@ public final class ScriptRuntime {
             return ((Map<?,?>)obj).keySet().iterator();
         }
 
+        final Object wrapped = Global.instance().wrapAsObject(obj);
+        if (wrapped instanceof ScriptObject) {
+            return ((ScriptObject)wrapped).propertyIterator();
+        }
+
         return Collections.emptyIterator();
     }
 
@@ -334,6 +340,11 @@ public final class ScriptRuntime {
 
         if (obj instanceof Iterable) {
             return ((Iterable<?>)obj).iterator();
+        }
+
+        final Object wrapped = Global.instance().wrapAsObject(obj);
+        if (wrapped instanceof ScriptObject) {
+            return ((ScriptObject)wrapped).valueIterator();
         }
 
         return Collections.emptyIterator();

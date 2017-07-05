@@ -401,7 +401,7 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
     numControls = 0;
     elem = portMixer->elems[portIndex];
     if (snd_mixer_selem_has_playback_volume(elem) || snd_mixer_selem_has_capture_volume(elem)) {
-        /* Since we've splitted/duplicated elements with both playback and capture on the recovery
+        /* Since we've split/duplicated elements with both playback and capture on the recovery
            of elements, we now can assume that we handle only to deal with either playback or
            capture. */
         isPlayback = isPlaybackFunction(portMixer->types[portIndex]);

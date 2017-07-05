@@ -109,6 +109,13 @@ public final class TernaryNode extends Expression {
         }
     }
 
+    @Override
+    public boolean isLocal() {
+        return getTest().isLocal()
+                && getTrueExpression().isLocal()
+                && getFalseExpression().isLocal();
+    }
+
     /**
      * Get the test expression for this ternary expression, i.e. "x" in x ? y : z
      * @return the test expression

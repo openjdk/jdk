@@ -828,7 +828,7 @@ public class JSplitPane extends JComponent implements Accessible
      * Returns the last value passed to <code>setDividerLocation</code>.
      * The value returned from this method may differ from the actual
      * divider location (if <code>setDividerLocation</code> was passed a
-     * value bigger than the curent size).
+     * value bigger than the current size).
      *
      * @return an integer specifying the location of the divider
      */

@@ -1560,6 +1560,10 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * location that one might place a caret.  Some views may not be visible,
          * they might not be in the same order found in the model, or they just
          * might not allow access to some of the locations in the model.
+         * This method enables specifying a position to convert
+         * within the range of &gt;=0.  If the value is -1, a position
+         * will be calculated automatically.  If the value &lt; -1,
+         * the {@code BadLocationException} will be thrown.
          *
          * @param pos the position to convert &gt;= 0
          * @param a the allocated region to render into
@@ -1569,13 +1573,17 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *  SwingConstants.NORTH, or SwingConstants.SOUTH.
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException
+         * @exception BadLocationException the given position is not a valid
+         *                                 position within the document
          * @exception IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                              int direction,
                                              Position.Bias[] biasRet)
             throws BadLocationException {
+            if (pos < -1) {
+                throw new BadLocationException("invalid position", pos);
+            }
             if( view != null ) {
                 int nextPos = view.getNextVisualPositionFrom(pos, b, a,
                                                      direction, biasRet);

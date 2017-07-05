@@ -378,7 +378,7 @@ final class DirectAudioDevice extends AbstractMixer {
         protected final boolean isSource;         // true for SourceDataLine, false for TargetDataLine
         protected volatile long bytePosition;
         protected volatile boolean doIO = false;     // true in between start() and stop() calls
-        protected volatile boolean stoppedWritten = false; // true if a write occured in stopped state
+        protected volatile boolean stoppedWritten = false; // true if a write occurred in stopped state
         protected volatile boolean drained = false; // set to true when drain function returns, set to false in write()
         protected boolean monitoring = false;
 
@@ -642,7 +642,7 @@ final class DirectAudioDevice extends AbstractMixer {
         public void drain() {
             noService = true;
             // additional safeguard against draining forever
-            // this occured on Solaris 8 x86, probably due to a bug
+            // this occurred on Solaris 8 x86, probably due to a bug
             // in the audio driver
             int counter = 0;
             long startPos = getLongFramePosition();

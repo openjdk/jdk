@@ -2012,7 +2012,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * results.
      * </p>
      *
-     * @param component Component the error occured in, may be
+     * @param component Component the error occurred in, may be
      *                  null indicating the error condition is
      *                  not directly associated with a
      *                  <code>Component</code>.

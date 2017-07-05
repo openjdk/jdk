@@ -237,8 +237,9 @@ public class CUPSPrinter  {
 
     /**
      * Get CUPS default printer using IPP.
+     * Returns 2 values - index 0 is printer name, index 1 is the uri.
      */
-    public static String getDefaultPrinter() {
+    static String[] getDefaultPrinter() {
         try {
             URL url = new URL("http", getServer(), getPort(), "");
             final HttpURLConnection urlConnection =
@@ -264,8 +265,8 @@ public class CUPSPrinter  {
                     AttributeClass.ATTRIBUTES_CHARSET,
                     AttributeClass.ATTRIBUTES_NATURAL_LANGUAGE,
                     new AttributeClass("requested-attributes",
-                                       AttributeClass.TAG_KEYWORD,
-                                       "printer-name")
+                                       AttributeClass.TAG_URI,
+                                       "printer-uri")
                 };
 
                 if (IPPPrintService.writeIPPRequest(os,
@@ -273,6 +274,7 @@ public class CUPSPrinter  {
                                         attCl)) {
 
                     HashMap defaultMap = null;
+                    String[] printerInfo = new String[2];
                     InputStream is = urlConnection.getInputStream();
                     HashMap[] responseMap = IPPPrintService.readIPPResponse(
                                          is);
@@ -293,21 +295,30 @@ public class CUPSPrinter  {
                          * special behaviour for this built in.
                          */
                          if (UnixPrintServiceLookup.isMac()) {
-                             return UnixPrintServiceLookup.
+                             printerInfo[0] = UnixPrintServiceLookup.
                                                    getDefaultPrinterNameSysV();
+                             printerInfo[1] = null;
+                             return (String[])printerInfo.clone();
                          } else {
                              return null;
                          }
                     }
 
+
                     AttributeClass attribClass = (AttributeClass)
                         defaultMap.get("printer-name");
 
                     if (attribClass != null) {
-                        String nameStr = attribClass.getStringValue();
+                        printerInfo[0] = attribClass.getStringValue();
+                        attribClass = (AttributeClass)defaultMap.get("device-uri");
+                        if (attribClass != null) {
+                            printerInfo[1] = attribClass.getStringValue();
+                        } else {
+                            printerInfo[1] = null;
+                        }
                         os.close();
                         urlConnection.disconnect();
-                        return nameStr;
+                        return (String [])printerInfo.clone();
                     }
                 }
                 os.close();
@@ -322,7 +333,7 @@ public class CUPSPrinter  {
     /**
      * Get list of all CUPS printers using IPP.
      */
-    public static String[] getAllPrinters() {
+    static String[] getAllPrinters() {
         try {
             URL url = new URL("http", getServer(), getPort(), "");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  *
  *
- * A test "management tool" used by unit test LocalManagementTest.sh.
+ * A test "management tool" used by unit tests -
+ *   LocalManagementTest.java, CustomLauncherTest.java
  *
  * Usage:    java TestManager <pid> <port>
  *
@@ -32,8 +33,6 @@
  * TCP port is used to shutdown the application.
  */
 import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.ObjectName;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnector;
@@ -43,7 +42,6 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.io.File;
 import java.io.IOException;
-import java.util.Properties;
 
 // Sun specific
 import com.sun.tools.attach.VirtualMachine;
@@ -111,6 +109,8 @@ public class TestManager {
         "com.sun.management.jmxremote.localConnectorAddress";
     public static void main(String[] args) throws Exception {
         String pid = args[0]; // pid as a string
+        System.out.println("Starting TestManager for PID = " + pid);
+        System.out.flush();
         VirtualMachine vm = VirtualMachine.attach(pid);
 
         String agentPropLocalConnectorAddress = (String)
@@ -139,7 +139,6 @@ public class TestManager {
         // Test address obtained from jvmstat buffer
         System.out.println("Testing the connector address from jvmstat buffer");
         connect(pid, jvmstatLocalConnectorAddress);
-
 
         // Shutdown application
         int port = Integer.parseInt(args[1]);

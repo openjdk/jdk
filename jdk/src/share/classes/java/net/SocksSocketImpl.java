@@ -437,7 +437,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             }
         }
 
-        // cmdIn & cmdOut were intialized during the privilegedConnect() call
+        // cmdIn & cmdOut were initialized during the privilegedConnect() call
         BufferedOutputStream out = new BufferedOutputStream(cmdOut, 512);
         InputStream in = cmdIn;
 

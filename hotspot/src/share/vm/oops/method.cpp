@@ -1515,7 +1515,10 @@ Bytecodes::Code Method::orig_bytecode_at(int bci) const {
       return bp->orig_bytecode();
     }
   }
-  ShouldNotReachHere();
+  {
+    ResourceMark rm;
+    fatal(err_msg("no original bytecode found in %s at bci %d", name_and_sig_as_C_string(), bci));
+  }
   return Bytecodes::_shouldnotreachhere;
 }
 

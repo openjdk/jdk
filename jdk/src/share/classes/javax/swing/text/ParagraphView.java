@@ -567,7 +567,7 @@ public class ParagraphView extends FlowView implements TabExpander {
 
     /**
      * Renders using the given rendering surface and area on that
-     * surface.  This is implemented to delgate to the superclass
+     * surface.  This is implemented to delegate to the superclass
      * after stashing the base coordinate for tab calculations.
      *
      * @param g the rendering surface to use
@@ -931,7 +931,7 @@ public class ParagraphView extends FlowView implements TabExpander {
 
         /**
          * Perform layout for the minor axis of the box (i.e. the
-         * axis orthoginal to the axis that it represents).  The results
+         * axis orthogonal to the axis that it represents).  The results
          * of the layout should be placed in the given arrays which represent
          * the allocations to the children along the minor axis.
          * <p>
@@ -939,7 +939,7 @@ public class ParagraphView extends FlowView implements TabExpander {
          * by calling BoxView.baselineLayout.
          *
          * @param targetSpan the total span given to the view, which
-         *  whould be used to layout the children.
+         *  would be used to layout the children.
          * @param axis the axis being layed out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is

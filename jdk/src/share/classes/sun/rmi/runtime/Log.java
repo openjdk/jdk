@@ -379,7 +379,7 @@ public abstract class Log {
 
         private LogStreamLog(LogStream stream, Level level) {
             if ((stream != null) && (level != null)) {
-                /* if the stream or level is null, dont log any
+                /* if the stream or level is null, don't log any
                  * messages
                  */
                 levelValue = level.intValue();

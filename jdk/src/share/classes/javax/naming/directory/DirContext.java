@@ -31,7 +31,7 @@ import javax.naming.*;
  * The directory service interface, containing
  * methods for examining and updating attributes
  * associated with objects, and for searching the directory.
- * <p>
+ *
  * <h1>Names</h1>
  * Each name passed as an argument to a <tt>DirContext</tt> method is relative
  * to that context.  The empty name is used to name the context itself.
@@ -50,7 +50,7 @@ import javax.naming.*;
  * See <tt>Context</tt> for a discussion on the interpretation of the
  * name argument to the <tt>Context</tt> methods. These same rules
  * apply to the name argument to the <tt>DirContext</tt> methods.
- * <p>
+ *
  * <h1>Attribute Models</h1>
  * There are two basic models of what attributes should be
  * associated with.  First, attributes may be directly associated with a
@@ -80,7 +80,7 @@ import javax.naming.*;
  * JNDI clients are safest when they do not make assumptions about
  * whether an object's attributes are stored as part of the object, or stored
  * within the parent object and associated with the object's name.
- * <p>
+ *
  * <h1>Attribute Type Names</h1>
  * In the <tt>getAttributes()</tt> and <tt>search()</tt> methods,
  * you can supply the attributes to return by supplying a list of
@@ -112,7 +112,7 @@ import javax.naming.*;
  * <li>description;lang-fr
  * </ul>
  *
- * <p>
+ *
  *<h1>Operational Attributes</h1>
  *<p>
  * Some directories have the notion of "operational attributes" which are
@@ -126,7 +126,7 @@ import javax.naming.*;
  * The attributes returned do <em>not</em> include operational attributes.
  * In order to retrieve operational attributes, you must name them explicitly.
  *
- * <p>
+ *
  * <h1>Named Context</h1>
  * <p>
  * There are certain methods in which the name must resolve to a context
@@ -137,7 +137,7 @@ import javax.naming.*;
  * <code>NotContextException</code> is thrown.
  * Aside from these methods, there is no requirement that the
  * <em>named object</em> be a DirContext.
- *<p>
+ *
  *<h1>Parameters</h1>
  *<p>
  * An <tt>Attributes</tt>, <tt>SearchControls</tt>, or array object
@@ -149,7 +149,7 @@ import javax.naming.*;
  * An <tt>Attributes</tt> object returned by any method is owned by
  * the caller.  The caller may subsequently modify it; the service
  * provider will not.
- *<p>
+ *
  *<h1>Exceptions</h1>
  *<p>
  * All the methods in this interface can throw a NamingException or

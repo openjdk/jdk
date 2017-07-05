@@ -1023,7 +1023,7 @@ public class ZipFileSystem extends FileSystem {
     }
 
     // Reads zip file central directory. Returns the file position of first
-    // CEN header, otherwise returns -1 if an error occured. If zip->msg != NULL
+    // CEN header, otherwise returns -1 if an error occurred. If zip->msg != NULL
     // then the error was a zip format error and zip->msg has the error text.
     // Always pass in -1 for knownTotal; it's used for a recursive call.
     private byte[] initCEN() throws IOException {
@@ -1740,7 +1740,7 @@ public class ZipFileSystem extends FileSystem {
     static class IndexNode {
         byte[] name;
         int    hashcode;  // node is hashable/hashed by its name
-        int    pos = -1;  // postion in cen table, -1 menas the
+        int    pos = -1;  // position in cen table, -1 menas the
                           // entry does not exists in zip file
         IndexNode(byte[] name, int pos) {
             name(name);

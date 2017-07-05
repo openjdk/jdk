@@ -899,7 +899,7 @@ public final class ZoneRules implements Serializable {
                     return transArray[i];
                 }
             }
-            // use last from preceeding year
+            // use last from preceding year
             int lastHistoricYear = findYear(lastHistoric, lastHistoricOffset);
             if (--year > lastHistoricYear) {
                 transArray = findTransitionArray(year);

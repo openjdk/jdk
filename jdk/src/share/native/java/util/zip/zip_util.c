@@ -536,7 +536,7 @@ if (1) { zip->msg = message; goto Catch; } else ((void)0)
 
 /*
  * Reads zip file central directory. Returns the file position of first
- * CEN header, otherwise returns -1 if an error occured. If zip->msg != NULL
+ * CEN header, otherwise returns -1 if an error occurred. If zip->msg != NULL
  * then the error was a zip format error and zip->msg has the error text.
  * Always pass in -1 for knownTotal; it's used for a recursive call.
  */

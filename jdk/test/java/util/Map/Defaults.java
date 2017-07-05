@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8010122 8004518 8024331
+ * @bug 8010122 8004518 8024331 8024688
  * @summary Test Map default methods
  * @author Mike Duigou
  * @run testng Defaults
@@ -36,8 +36,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -288,19 +288,11 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfAbsentNPEHashMap() {
-        Object value = new HashMap().computeIfAbsent(KEYS[1], null);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfAbsentNPEHashtable() {
-        Object value = new Hashtable().computeIfAbsent(KEYS[1], null);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfAbsentNPETreeMap() {
-        Object value = new TreeMap().computeIfAbsent(KEYS[1], null);
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeIfAbsentNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.computeIfAbsent(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
@@ -343,22 +335,14 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), null);
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfPresentNPEHashMap() {
-        Object value = new HashMap().computeIfPresent(KEYS[1], null);
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeIfPresentNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.computeIfPresent(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfPresentNPEHashtable() {
-        Object value = new Hashtable().computeIfPresent(KEYS[1], null);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeIfPresentNPETreeMap() {
-        Object value = new TreeMap().computeIfPresent(KEYS[1], null);
-    }
-
-    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
+     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
     public void testComputeNulls(String description, Map<IntegerEnum, String> map) {
         assertTrue(map.containsKey(null), "null key absent");
         assertNull(map.get(null), "value not null");
@@ -444,78 +428,86 @@ public class Defaults {
         assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeNPEHashMap() {
-        Object value = new HashMap().compute(KEYS[1], null);
+    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
+    public void testComputeNullFunction(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.compute(KEYS[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeNPEHashtable() {
-        Object value = new Hashtable().compute(KEYS[1], null);
-    }
+    @Test(dataProvider = "MergeCases")
+    private void testMerge(String description, Map<IntegerEnum, String> map, Merging.Value oldValue, Merging.Value newValue, Merging.Merger merger, Merging.Value put, Merging.Value result) {
+            // add and check initial conditions.
+            switch(oldValue) {
+                case ABSENT :
+                    map.remove(EXTRA_KEY);
+                    assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
+                    break;
+                case NULL :
+                    map.put(EXTRA_KEY, null);
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertNull(map.get(EXTRA_KEY), "wrong value");
+                    break;
+                case OLDVALUE :
+                    map.put(EXTRA_KEY, VALUES[1]);
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[1], "wrong value");
+                    break;
+                default:
+                    fail("unexpected old value");
+            }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testComputeNPETreeMap() {
-        Object value = new TreeMap().compute(KEYS[1], null);
-    }
+            String returned = map.merge(EXTRA_KEY,
+                newValue == Merging.Value.NULL ? (String) null : VALUES[2],
+                merger
+                );
 
-    @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=withNull values=withNull")
-    public void testMergeNulls(String description, Map<IntegerEnum, String> map) {
-        assertTrue(map.containsKey(null), "null key absent");
-        assertNull(map.get(null), "value not null");
-        assertSame(map.merge(null, EXTRA_VALUE, (v, vv) -> {
-            assertNull(v);
-            assertSame(vv, EXTRA_VALUE);
-            return vv;
-        }), EXTRA_VALUE, description);
-        assertTrue(map.containsKey(null));
-        assertSame(map.get(null), EXTRA_VALUE, description);
+            // check result
+
+            switch(result) {
+                case NULL :
+                    assertNull(returned, "wrong value");
+                    break;
+                case NEWVALUE :
+                    assertSame(returned, VALUES[2], "wrong value");
+                    break;
+                case RESULT :
+                    assertSame(returned, VALUES[3], "wrong value");
+                    break;
+                default:
+                    fail("unexpected new value");
+            }
+
+            // check map
+            switch(put) {
+                case ABSENT :
+                    assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
+                    break;
+                case NULL :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertNull(map.get(EXTRA_KEY), "wrong value");
+                    break;
+                case NEWVALUE :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[2], "wrong value");
+                    break;
+                case RESULT :
+                    assertTrue(map.containsKey(EXTRA_KEY), "key absent");
+                    assertSame(map.get(EXTRA_KEY), VALUES[3], "wrong value");
+                    break;
+                default:
+                    fail("unexpected new value");
+            }
     }
 
     @Test(dataProvider = "Map<IntegerEnum,String> rw=true keys=all values=all")
-    public void testMerge(String description, Map<IntegerEnum, String> map) {
-        assertTrue(map.containsKey(KEYS[1]));
-        Object value = map.get(KEYS[1]);
-        assertTrue(null == value || value == VALUES[1], description + String.valueOf(value));
-        assertSame(map.merge(KEYS[1], EXTRA_VALUE, (v, vv) -> {
-            assertSame(v, value);
-            assertSame(vv, EXTRA_VALUE);
-            return vv;
-        }), EXTRA_VALUE, description);
-        assertSame(map.get(KEYS[1]), EXTRA_VALUE, description);
-        assertNull(map.merge(KEYS[1], EXTRA_VALUE, (v, vv) -> {
-            assertSame(v, EXTRA_VALUE);
-            assertSame(vv, EXTRA_VALUE);
-            return null;
-        }), description);
-        assertFalse(map.containsKey(KEYS[1]));
-
-        assertFalse(map.containsKey(EXTRA_KEY));
-        assertSame(map.merge(EXTRA_KEY, EXTRA_VALUE, (v, vv) -> {
-            assertNull(v);
-            assertSame(vv, EXTRA_VALUE);
-            return EXTRA_VALUE;
-        }), EXTRA_VALUE);
-        assertTrue(map.containsKey(EXTRA_KEY));
-        assertSame(map.get(EXTRA_KEY), EXTRA_VALUE);
+    public void testMergeNullMerger(String description, Map<IntegerEnum, String> map) {
+        assertThrows( () -> { map.merge(KEYS[1], VALUES[1], null);},
+                NullPointerException.class,
+                "Should throw NPE");
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testMergeNPEHashMap() {
-        Object value = new HashMap().merge(KEYS[1], VALUES[1], null);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testMergeNPEHashtable() {
-        Object value = new Hashtable().merge(KEYS[1], VALUES[1], null);
-    }
-
-    @Test(expectedExceptions = {NullPointerException.class})
-    public void testMergeNPETreeMap() {
-        Object value = new TreeMap().merge(KEYS[1], VALUES[1], null);
-    }
-
-    enum IntegerEnum {
+    public enum IntegerEnum {
 
         e0, e1, e2, e3, e4, e5, e6, e7, e8, e9,
         e10, e11, e12, e13, e14, e15, e16, e17, e18, e19,
@@ -713,6 +705,89 @@ public class Defaults {
         }
 
         return result;
+    }
+
+    static class Merging {
+        public enum Value {
+            ABSENT,
+            NULL,
+            OLDVALUE,
+            NEWVALUE,
+            RESULT
+        }
+
+        public enum Merger implements BiFunction<String,String,String> {
+            UNUSED {
+                public String apply(String oldValue, String newValue) {
+                    fail("should not be called");
+                    return null;
+                }
+            },
+            NULL {
+                public String apply(String oldValue, String newValue) {
+                    return null;
+                }
+            },
+            RESULT {
+                public String apply(String oldValue, String newValue) {
+                    return VALUES[3];
+                }
+            },
+        }
+    }
+
+    @DataProvider(name = "MergeCases", parallel = true)
+    public Iterator<Object[]> mergeCasesProvider() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        cases.addAll(makeMergeTestCases());
+        cases.addAll(makeMergeNullValueTestCases());
+
+        return cases.iterator();
+    }
+
+    static Collection<Object[]> makeMergeTestCases() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
+        }
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMaps() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
+        }
+
+        return cases;
+    }
+
+    static Collection<Object[]> makeMergeNullValueTestCases() {
+        Collection<Object[]> cases = new ArrayList<>();
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NULL, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NULL, Merging.Merger.UNUSED, Merging.Value.ABSENT, Merging.Value.NULL });
+        }
+
+        for( Object[] mapParams : makeAllRWMapsWithNulls() ) {
+            cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.NULL, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
+        }
+
+        return cases;
     }
 
     public interface Thrower<T extends Throwable> {

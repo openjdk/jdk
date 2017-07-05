@@ -620,7 +620,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
         /**
          * subclasses can override this method to create new subclasses of
-         * BCSSServiceProvider without having to overrride addService() in
+         * BCSSServiceProvider without having to override addService() in
          * order to instantiate.
          * @param sc the class
          * @param bcsp the service provider

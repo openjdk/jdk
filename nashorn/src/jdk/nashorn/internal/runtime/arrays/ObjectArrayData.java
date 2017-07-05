@@ -206,4 +206,32 @@ final class ObjectArrayData extends ArrayData {
         final long newLength = to - start;
         return new ObjectArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
     }
+
+    @Override
+    public ArrayData fastSplice(final int start, final int removed, final int added) throws UnsupportedOperationException {
+        final long oldLength = length();
+        final long newLength = oldLength - removed + added;
+        if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
+            throw new UnsupportedOperationException();
+        }
+        final ArrayData returnValue = (removed == 0) ?
+                EMPTY_ARRAY : new ObjectArrayData(Arrays.copyOfRange(array, start, start + removed), removed);
+
+        if (newLength != oldLength) {
+            final Object[] newArray;
+
+            if (newLength > array.length) {
+                newArray = new Object[ArrayData.nextSize((int)newLength)];
+                System.arraycopy(array, 0, newArray, 0, start);
+            } else {
+                newArray = array;
+            }
+
+            System.arraycopy(array, start + removed, newArray, start + added, (int)(oldLength - start - removed));
+            array = newArray;
+            setLength(newLength);
+        }
+
+        return returnValue;
+    }
 }

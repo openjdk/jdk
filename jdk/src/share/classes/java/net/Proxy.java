@@ -66,8 +66,8 @@ public class Proxy {
      * Used, for instance, to create sockets bypassing any other global
      * proxy settings (like SOCKS):
      * <P>
-     * {@code Socket s = new Socket(Proxy.NO_PROXY);}<br>
-     * <P>
+     * {@code Socket s = new Socket(Proxy.NO_PROXY);}
+     *
      */
     public final static Proxy NO_PROXY = new Proxy();
 

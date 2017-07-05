@@ -130,7 +130,7 @@ public class SnmpString extends SnmpValue {
      * @return The value.
      */
     public byte[] byteValue() {
-        return value ;
+        return value.clone() ;
     }
 
     /**

@@ -915,7 +915,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             return removeNode(hash(key), key, null, false, true) != null;
         }
         public final Spliterator<K> spliterator() {
-            return new KeySpliterator<K,V>(HashMap.this, 0, -1, 0, 0);
+            return new KeySpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
         public final void forEach(Consumer<? super K> action) {
             Node<K,V>[] tab;
@@ -959,7 +959,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final Iterator<V> iterator()     { return new ValueIterator(); }
         public final boolean contains(Object o) { return containsValue(o); }
         public final Spliterator<V> spliterator() {
-            return new ValueSpliterator<K,V>(HashMap.this, 0, -1, 0, 0);
+            return new ValueSpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
         public final void forEach(Consumer<? super V> action) {
             Node<K,V>[] tab;
@@ -1022,7 +1022,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             return false;
         }
         public final Spliterator<Map.Entry<K,V>> spliterator() {
-            return new EntrySpliterator<K,V>(HashMap.this, 0, -1, 0, 0);
+            return new EntrySpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
         public final void forEach(Consumer<? super Map.Entry<K,V>> action) {
             Node<K,V>[] tab;
@@ -1042,19 +1042,23 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     // Overrides of JDK8 Map extension methods
 
+    @Override
     public V getOrDefault(Object key, V defaultValue) {
         Node<K,V> e;
         return (e = getNode(hash(key), key)) == null ? defaultValue : e.value;
     }
 
+    @Override
     public V putIfAbsent(K key, V value) {
         return putVal(hash(key), key, value, true, true);
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
         return removeNode(hash(key), key, value, true, true) != null;
     }
 
+    @Override
     public boolean replace(K key, V oldValue, V newValue) {
         Node<K,V> e; V v;
         if ((e = getNode(hash(key), key)) != null &&
@@ -1066,6 +1070,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return false;
     }
 
+    @Override
     public V replace(K key, V value) {
         Node<K,V> e;
         if ((e = getNode(hash(key), key)) != null) {
@@ -1077,6 +1082,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
+    @Override
     public V computeIfAbsent(K key,
                              Function<? super K, ? extends V> mappingFunction) {
         if (mappingFunction == null)
@@ -1150,6 +1156,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
+    @Override
     public V compute(K key,
                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (remappingFunction == null)
@@ -1202,6 +1209,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return v;
     }
 
+    @Override
     public V merge(K key, V value,
                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         if (remappingFunction == null)
@@ -1230,7 +1238,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
         if (old != null) {
-            V v = remappingFunction.apply(old.value, value);
+            V v;
+            if (old.value != null)
+                v = remappingFunction.apply(old.value, value);
+            else
+                v = value;
             if (v != null) {
                 old.value = v;
                 afterNodeAccess(old);
@@ -1254,6 +1266,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return value;
     }
 
+    @Override
     public void forEach(BiConsumer<? super K, ? super V> action) {
         Node<K,V>[] tab;
         if (action == null)
@@ -1269,6 +1282,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
     }
 
+    @Override
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Node<K,V>[] tab;
         if (function == null)
@@ -1295,6 +1309,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return a shallow copy of this map
      */
     @SuppressWarnings("unchecked")
+    @Override
     public Object clone() {
         HashMap<K,V> result;
         try {
@@ -1496,7 +1511,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public KeySpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid || current != null) ? null :
-                new KeySpliterator<K,V>(map, lo, index = mid, est >>>= 1,
+                new KeySpliterator<>(map, lo, index = mid, est >>>= 1,
                                         expectedModCount);
         }
 
@@ -1568,7 +1583,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public ValueSpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid || current != null) ? null :
-                new ValueSpliterator<K,V>(map, lo, index = mid, est >>>= 1,
+                new ValueSpliterator<>(map, lo, index = mid, est >>>= 1,
                                           expectedModCount);
         }
 
@@ -1639,7 +1654,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public EntrySpliterator<K,V> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid || current != null) ? null :
-                new EntrySpliterator<K,V>(map, lo, index = mid, est >>>= 1,
+                new EntrySpliterator<>(map, lo, index = mid, est >>>= 1,
                                           expectedModCount);
         }
 
@@ -1714,22 +1729,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     // Create a regular (non-tree) node
     Node<K,V> newNode(int hash, K key, V value, Node<K,V> next) {
-        return new Node<K,V>(hash, key, value, next);
+        return new Node<>(hash, key, value, next);
     }
 
     // For conversion from TreeNodes to plain nodes
     Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
-        return new Node<K,V>(p.hash, p.key, p.value, next);
+        return new Node<>(p.hash, p.key, p.value, next);
     }
 
     // Create a tree bin node
     TreeNode<K,V> newTreeNode(int hash, K key, V value, Node<K,V> next) {
-        return new TreeNode<K,V>(hash, key, value, next);
+        return new TreeNode<>(hash, key, value, next);
     }
 
     // For treeifyBin
     TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
-        return new TreeNode<K,V>(p.hash, p.key, p.value, next);
+        return new TreeNode<>(p.hash, p.key, p.value, next);
     }
 
     /**

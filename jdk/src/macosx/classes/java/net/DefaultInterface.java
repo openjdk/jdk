@@ -26,7 +26,7 @@
 package java.net;
 
 /**
- * Choose a network inteface to be the default for
+ * Choose a network interface to be the default for
  * outgoing IPv6 traffic that does not specify a scope_id (and which needs one).
  * We choose the first interface that is up and is (in order of preference):
  * 1. neither loopback nor point to point

@@ -51,7 +51,7 @@ class LinuxDosFileAttributeView
     private static final String HIDDEN_NAME = "hidden";
 
     private static final String DOS_XATTR_NAME = "user.DOSATTRIB";
-    private static final byte[] DOS_XATTR_NAME_AS_BYTES = DOS_XATTR_NAME.getBytes();
+    private static final byte[] DOS_XATTR_NAME_AS_BYTES = Util.toBytes(DOS_XATTR_NAME);
 
     private static final int DOS_XATTR_READONLY = 0x01;
     private static final int DOS_XATTR_HIDDEN   = 0x02;
@@ -225,7 +225,7 @@ class LinuxDosFileAttributeView
                 byte[] buf = new byte[len];
                 unsafe.copyMemory(null, buffer.address(), buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
-                String value = new String(buf); // platform encoding
+                String value = Util.toString(buf);
 
                 // should be something like 0x20
                 if (value.length() >= 3 && value.startsWith("0x")) {
@@ -263,7 +263,7 @@ class LinuxDosFileAttributeView
                 newValue &= ~flag;
             }
             if (newValue != oldValue) {
-                byte[] value = ("0x" + Integer.toHexString(newValue)).getBytes();
+                byte[] value = Util.toBytes("0x" + Integer.toHexString(newValue));
                 NativeBuffer buffer = NativeBuffers.asNativeBuffer(value);
                 try {
                     LinuxNativeDispatcher.fsetxattr(fd, DOS_XATTR_NAME_AS_BYTES,
