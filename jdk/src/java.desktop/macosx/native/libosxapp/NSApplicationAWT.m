@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,13 @@ static QueuingApplicationDelegate * qad = nil;
 
 // Flag used to indicate to the Plugin2 event synthesis code to do a postEvent instead of sendEvent
 BOOL postEventDuringEventSynthesis = NO;
+
+/**
+ * Subtypes of NSApplicationDefined, which are used for custom events.
+ */
+enum {
+    ExecuteBlockEvent, NativeSyncQueueEvent
+};
 
 @implementation NSApplicationAWT
 
@@ -262,7 +269,7 @@ AWT_ASSERT_APPKIT_THREAD;
     NSImage* iconImage = nil;
     if (theIconPath != nil) {
         iconImage = [[NSImage alloc] initWithContentsOfFile:theIconPath];
-    } 
+    }
 
     // If no icon file was specified or we failed to get the icon image
     // and there is no bundle's icon, then use the default icon
@@ -337,10 +344,12 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void)sendEvent:(NSEvent *)event
 {
-    if ([event type] == NSApplicationDefined && TS_EQUAL([event timestamp], dummyEventTimestamp) && [event subtype] == 0) {
+    if ([event type] == NSApplicationDefined
+            && TS_EQUAL([event timestamp], dummyEventTimestamp)
+            && [event subtype] == NativeSyncQueueEvent) {
         [seenDummyEventLock lockWhenCondition:NO];
         [seenDummyEventLock unlockWithCondition:YES];
-    } else if ([event type] == NSApplicationDefined && [event subtype] == 777) {
+    } else if ([event type] == NSApplicationDefined && [event subtype] == ExecuteBlockEvent) {
         void (^block)() = (void (^)()) [event data1];
         block();
         [block release];
@@ -354,23 +363,23 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 /*
- * Posts the block to the AppKit event queue which will be executed 
- * on the main AppKit loop. 
- * While running nested loops this event will be ignored. 
+ * Posts the block to the AppKit event queue which will be executed
+ * on the main AppKit loop.
+ * While running nested loops this event will be ignored.
  */
-- (void)postRunnableEvent:(void (^)())block 
+- (void)postRunnableEvent:(void (^)())block
 {
     void (^copy)() = [block copy];
     NSInteger encode = (NSInteger) copy;
     [copy retain];
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];    
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
                                         location: NSMakePoint(0,0)
                                    modifierFlags: 0
                                        timestamp: 0
                                     windowNumber: 0
                                          context: nil
-                                         subtype: 777
+                                         subtype: ExecuteBlockEvent
                                            data1: encode
                                            data2: 0];
 
@@ -383,15 +392,15 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void)postDummyEvent {
     seenDummyEventLock = [[NSConditionLock alloc] initWithCondition:NO];
     dummyEventTimestamp = [NSProcessInfo processInfo].systemUptime;
-    
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];    
+
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
                                         location: NSMakePoint(0,0)
                                    modifierFlags: 0
                                        timestamp: dummyEventTimestamp
                                     windowNumber: 0
                                          context: nil
-                                         subtype: 0
+                                         subtype: NativeSyncQueueEvent
                                            data1: 0
                                            data2: 0];
     [NSApp postEvent: event atStart: NO];

@@ -181,6 +181,17 @@ public:
     return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbol::target_name()));
   }
 
+  bool is_autobox_cache() {
+    ciSymbol* klass_name = holder()->name();
+    return (name() == ciSymbol::cache_field_name() &&
+            holder()->uses_default_loader() &&
+            (klass_name == ciSymbol::java_lang_Character_CharacterCache() ||
+             klass_name == ciSymbol::java_lang_Byte_ByteCache() ||
+             klass_name == ciSymbol::java_lang_Short_ShortCache() ||
+             klass_name == ciSymbol::java_lang_Integer_IntegerCache() ||
+             klass_name == ciSymbol::java_lang_Long_LongCache()));
+  }
+
   // Debugging output
   void print();
   void print_name_on(outputStream* st);

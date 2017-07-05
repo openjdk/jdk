@@ -539,10 +539,6 @@ class Parse : public GraphKit {
   void do_get_xxx(Node* obj, ciField* field, bool is_field);
   void do_put_xxx(Node* obj, ciField* field, bool is_field);
 
-  // loading from a constant field or the constant pool
-  // returns false if push failed (non-perm field constants only, not ldcs)
-  bool push_constant(ciConstant con, bool require_constant = false, bool is_autobox_cache = false, const Type* basic_type = NULL);
-
   // implementation of object creation bytecodes
   void emit_guard_for_new(ciInstanceKlass* klass);
   void do_new();

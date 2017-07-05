@@ -332,7 +332,7 @@ class ObjectMonitor {
  private:
   void      AddWaiter(ObjectWaiter * waiter);
   static    void DeferredInitialize();
-
+  void      INotify(Thread * Self);
   ObjectWaiter * DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter * waiter);
   void      EnterI(TRAPS);
