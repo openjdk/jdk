@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CODE_ICBUFFER_HPP
 #define SHARE_VM_CODE_ICBUFFER_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
@@ -48,7 +49,8 @@ class ICStub: public Stub {
  protected:
   friend class ICStubInterface;
   // This will be called only by ICStubInterface
-  void    initialize(int size) { _size = size; _ic_site = NULL; }
+  void    initialize(int size,
+                     CodeComments comments)      { _size = size; _ic_site = NULL; }
   void    finalize(); // called when a method is removed
 
   // General info

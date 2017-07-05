@@ -387,7 +387,7 @@ class os: AllStatic {
   static void pd_start_thread(Thread* thread);
   static void start_thread(Thread* thread);
 
-  static void initialize_thread();
+  static void initialize_thread(Thread* thr);
   static void free_thread(OSThread* osthread);
 
   // thread id on Linux/64bit is 64bit, on Windows and Solaris, it's 32bit

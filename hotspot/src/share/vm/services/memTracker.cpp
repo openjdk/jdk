@@ -71,8 +71,13 @@ void MemTracker::init_tracking_options(const char* option_line) {
   _tracking_level = NMT_off;
   if (strncmp(option_line, "=summary", 8) == 0) {
     _tracking_level = NMT_summary;
-  } else if (strncmp(option_line, "=detail", 8) == 0) {
+  } else if (strncmp(option_line, "=detail", 7) == 0) {
     _tracking_level = NMT_detail;
+  } else {
+    char msg[255];
+    //+1 to remove the '=' character
+    jio_snprintf(msg, 255, "Unknown option given to XX:NativeMemoryTracking: %s", option_line+1);
+    vm_exit_during_initialization(msg, NULL);
   }
 }
 
@@ -341,6 +346,7 @@ void MemTracker::release_thread_recorder(MemRecorder* rec) {
  */
 void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
     size_t size, address pc, Thread* thread) {
+  assert(addr != NULL, "Sanity check");
   if (!shutdown_in_progress()) {
     // single thread, we just write records direct to global recorder,'
     // with any lock

@@ -3496,6 +3496,33 @@ void Assembler::vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0x01);
 }
 
+void Assembler::vinsertf128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x18);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextractf128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x19);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
+  emit_byte(0x01);
+}
+
 void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
   assert(VM_Version::supports_avx2(), "");
   bool vector256 = true;
@@ -3504,6 +3531,33 @@ void Assembler::vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) 
   emit_byte(0xC0 | encode);
   // 0x00 - insert into lower 128 bits
   // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vinserti128h(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(dst != xnoreg, "sanity");
+  int dst_enc = dst->encoding();
+  // swap src<->dst for encoding
+  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x38);
+  emit_operand(dst, src);
+  // 0x01 - insert into upper 128 bits
+  emit_byte(0x01);
+}
+
+void Assembler::vextracti128h(Address dst, XMMRegister src) {
+  assert(VM_Version::supports_avx2(), "");
+  InstructionMark im(this);
+  bool vector256 = true;
+  assert(src != xnoreg, "sanity");
+  int src_enc = src->encoding();
+  vex_prefix(dst, 0, src_enc, VEX_SIMD_66, VEX_OPCODE_0F_3A, false, vector256);
+  emit_byte(0x39);
+  emit_operand(src, dst);
+  // 0x01 - extract from upper 128 bits
   emit_byte(0x01);
 }
 
@@ -8907,11 +8961,9 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
   pusha();
 
   // if we are coming from c1, xmm registers may be live
-  if (UseSSE >= 1) {
-    subptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
-  }
   int off = 0;
   if (UseSSE == 1)  {
+    subptr(rsp, sizeof(jdouble)*8);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm0);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm1);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm2);
@@ -8921,23 +8973,50 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm6);
     movflt(Address(rsp,off++*sizeof(jdouble)),xmm7);
   } else if (UseSSE >= 2)  {
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm0);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm1);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm2);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm3);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm4);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm5);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm6);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm7);
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      assert(UseAVX > 0, "256bit vectors are supported only with AVX");
+      // Save upper half of YMM registes
+      subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+      vextractf128h(Address(rsp,  0),xmm0);
+      vextractf128h(Address(rsp, 16),xmm1);
+      vextractf128h(Address(rsp, 32),xmm2);
+      vextractf128h(Address(rsp, 48),xmm3);
+      vextractf128h(Address(rsp, 64),xmm4);
+      vextractf128h(Address(rsp, 80),xmm5);
+      vextractf128h(Address(rsp, 96),xmm6);
+      vextractf128h(Address(rsp,112),xmm7);
 #ifdef _LP64
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm8);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm9);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm10);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm11);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm12);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm13);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm14);
-    movdbl(Address(rsp,off++*sizeof(jdouble)),xmm15);
+      vextractf128h(Address(rsp,128),xmm8);
+      vextractf128h(Address(rsp,144),xmm9);
+      vextractf128h(Address(rsp,160),xmm10);
+      vextractf128h(Address(rsp,176),xmm11);
+      vextractf128h(Address(rsp,192),xmm12);
+      vextractf128h(Address(rsp,208),xmm13);
+      vextractf128h(Address(rsp,224),xmm14);
+      vextractf128h(Address(rsp,240),xmm15);
+#endif
+    }
+#endif
+    // Save whole 128bit (16 bytes) XMM regiters
+    subptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    movdqu(Address(rsp,off++*16),xmm0);
+    movdqu(Address(rsp,off++*16),xmm1);
+    movdqu(Address(rsp,off++*16),xmm2);
+    movdqu(Address(rsp,off++*16),xmm3);
+    movdqu(Address(rsp,off++*16),xmm4);
+    movdqu(Address(rsp,off++*16),xmm5);
+    movdqu(Address(rsp,off++*16),xmm6);
+    movdqu(Address(rsp,off++*16),xmm7);
+#ifdef _LP64
+    movdqu(Address(rsp,off++*16),xmm8);
+    movdqu(Address(rsp,off++*16),xmm9);
+    movdqu(Address(rsp,off++*16),xmm10);
+    movdqu(Address(rsp,off++*16),xmm11);
+    movdqu(Address(rsp,off++*16),xmm12);
+    movdqu(Address(rsp,off++*16),xmm13);
+    movdqu(Address(rsp,off++*16),xmm14);
+    movdqu(Address(rsp,off++*16),xmm15);
 #endif
   }
 
@@ -9015,28 +9094,52 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     movflt(xmm5, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm6, Address(rsp,off++*sizeof(jdouble)));
     movflt(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    addptr(rsp, sizeof(jdouble)*8);
   } else if (UseSSE >= 2)  {
-    movdbl(xmm0, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm1, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm2, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm3, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm4, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm5, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm6, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm7, Address(rsp,off++*sizeof(jdouble)));
+    // Restore whole 128bit (16 bytes) XMM regiters
+    movdqu(xmm0, Address(rsp,off++*16));
+    movdqu(xmm1, Address(rsp,off++*16));
+    movdqu(xmm2, Address(rsp,off++*16));
+    movdqu(xmm3, Address(rsp,off++*16));
+    movdqu(xmm4, Address(rsp,off++*16));
+    movdqu(xmm5, Address(rsp,off++*16));
+    movdqu(xmm6, Address(rsp,off++*16));
+    movdqu(xmm7, Address(rsp,off++*16));
 #ifdef _LP64
-    movdbl(xmm8, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm9, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm10, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm11, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm12, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm13, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm14, Address(rsp,off++*sizeof(jdouble)));
-    movdbl(xmm15, Address(rsp,off++*sizeof(jdouble)));
+    movdqu(xmm8, Address(rsp,off++*16));
+    movdqu(xmm9, Address(rsp,off++*16));
+    movdqu(xmm10, Address(rsp,off++*16));
+    movdqu(xmm11, Address(rsp,off++*16));
+    movdqu(xmm12, Address(rsp,off++*16));
+    movdqu(xmm13, Address(rsp,off++*16));
+    movdqu(xmm14, Address(rsp,off++*16));
+    movdqu(xmm15, Address(rsp,off++*16));
 #endif
-  }
-  if (UseSSE >= 1) {
-    addptr(rsp, sizeof(jdouble)* LP64_ONLY(16) NOT_LP64(8));
+    addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+#ifdef COMPILER2
+    if (MaxVectorSize > 16) {
+      // Restore upper half of YMM registes.
+      vinsertf128h(xmm0, Address(rsp,  0));
+      vinsertf128h(xmm1, Address(rsp, 16));
+      vinsertf128h(xmm2, Address(rsp, 32));
+      vinsertf128h(xmm3, Address(rsp, 48));
+      vinsertf128h(xmm4, Address(rsp, 64));
+      vinsertf128h(xmm5, Address(rsp, 80));
+      vinsertf128h(xmm6, Address(rsp, 96));
+      vinsertf128h(xmm7, Address(rsp,112));
+#ifdef _LP64
+      vinsertf128h(xmm8, Address(rsp,128));
+      vinsertf128h(xmm9, Address(rsp,144));
+      vinsertf128h(xmm10, Address(rsp,160));
+      vinsertf128h(xmm11, Address(rsp,176));
+      vinsertf128h(xmm12, Address(rsp,192));
+      vinsertf128h(xmm13, Address(rsp,208));
+      vinsertf128h(xmm14, Address(rsp,224));
+      vinsertf128h(xmm15, Address(rsp,240));
+#endif
+      addptr(rsp, 16 * LP64_ONLY(16) NOT_LP64(8));
+    }
+#endif
   }
   popa();
 }

@@ -291,7 +291,7 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   bool purged_class = SystemDictionary::do_unloading(&is_alive);
 
   // Follow code cache roots
-  CodeCache::do_unloading(&is_alive, &keep_alive, purged_class);
+  CodeCache::do_unloading(&is_alive, purged_class);
   follow_stack(); // Flush marking stack
 
   // Update subklass/sibling/implementor links of live klasses

@@ -264,6 +264,7 @@ void LIR_Op2::verify() const {
 #ifdef ASSERT
   switch (code()) {
     case lir_cmove:
+    case lir_xchg:
       break;
 
     default:
@@ -630,6 +631,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_shl:
     case lir_shr:
     case lir_ushr:
+    case lir_xadd:
+    case lir_xchg:
     {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
@@ -641,6 +644,13 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (op2->_opr2->is_valid())         do_input(op2->_opr2);
       if (op2->_tmp1->is_valid())         do_temp(op2->_tmp1);
       if (op2->_result->is_valid())       do_output(op2->_result);
+      if (op->code() == lir_xchg || op->code() == lir_xadd) {
+        // on ARM and PPC, return value is loaded first so could
+        // destroy inputs. On other platforms that implement those
+        // (x86, sparc), the extra constrainsts are harmless.
+        if (op2->_opr1->is_valid())       do_temp(op2->_opr1);
+        if (op2->_opr2->is_valid())       do_temp(op2->_opr2);
+      }
 
       break;
     }
@@ -1733,6 +1743,8 @@ const char * LIR_Op::name() const {
      case lir_shr:                   s = "shift_right";   break;
      case lir_ushr:                  s = "ushift_right";  break;
      case lir_alloc_array:           s = "alloc_array";   break;
+     case lir_xadd:                  s = "xadd";          break;
+     case lir_xchg:                  s = "xchg";          break;
      // LIR_Op3
      case lir_idiv:                  s = "idiv";          break;
      case lir_irem:                  s = "irem";          break;

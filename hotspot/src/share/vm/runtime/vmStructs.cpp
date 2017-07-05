@@ -1905,6 +1905,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(SubVLNode, VectorNode)                                  \
   declare_c2_type(SubVFNode, VectorNode)                                  \
   declare_c2_type(SubVDNode, VectorNode)                                  \
+  declare_c2_type(MulVSNode, VectorNode)                                  \
+  declare_c2_type(MulVINode, VectorNode)                                  \
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulVDNode, VectorNode)                                  \
   declare_c2_type(DivVFNode, VectorNode)                                  \
@@ -1912,9 +1914,15 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(LShiftVBNode, VectorNode)                               \
   declare_c2_type(LShiftVSNode, VectorNode)                               \
   declare_c2_type(LShiftVINode, VectorNode)                               \
+  declare_c2_type(LShiftVLNode, VectorNode)                               \
   declare_c2_type(RShiftVBNode, VectorNode)                               \
   declare_c2_type(RShiftVSNode, VectorNode)                               \
   declare_c2_type(RShiftVINode, VectorNode)                               \
+  declare_c2_type(RShiftVLNode, VectorNode)                               \
+  declare_c2_type(URShiftVBNode, VectorNode)                              \
+  declare_c2_type(URShiftVSNode, VectorNode)                              \
+  declare_c2_type(URShiftVINode, VectorNode)                              \
+  declare_c2_type(URShiftVLNode, VectorNode)                              \
   declare_c2_type(AndVNode, VectorNode)                                   \
   declare_c2_type(OrVNode, VectorNode)                                    \
   declare_c2_type(XorVNode, VectorNode)                                   \
@@ -1937,6 +1945,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_c2_type(Pack2DNode, PackNode)                                   \
   declare_c2_type(ExtractNode, Node)                                      \
   declare_c2_type(ExtractBNode, ExtractNode)                              \
+  declare_c2_type(ExtractUBNode, ExtractNode)                             \
+  declare_c2_type(ExtractCNode, ExtractNode)                              \
   declare_c2_type(ExtractSNode, ExtractNode)                              \
   declare_c2_type(ExtractINode, ExtractNode)                              \
   declare_c2_type(ExtractLNode, ExtractNode)                              \
@@ -2182,7 +2192,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(JVM_ACC_HAS_LOOPS)                                     \
   declare_constant(JVM_ACC_LOOPS_FLAG_INIT)                               \
   declare_constant(JVM_ACC_QUEUED)                                        \
-  declare_constant(JVM_ACC_NOT_OSR_COMPILABLE)                            \
+  declare_constant(JVM_ACC_NOT_C2_OSR_COMPILABLE)                         \
   declare_constant(JVM_ACC_HAS_LINE_NUMBER_TABLE)                         \
   declare_constant(JVM_ACC_HAS_CHECKED_EXCEPTIONS)                        \
   declare_constant(JVM_ACC_HAS_JSRS)                                      \

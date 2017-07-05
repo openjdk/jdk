@@ -3412,7 +3412,6 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   st->cr();
   _cm->print_worker_threads_on(st);
   _cg1r->print_worker_threads_on(st);
-  st->cr();
 }
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
