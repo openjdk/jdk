@@ -27,7 +27,7 @@
  * @summary Test that a custom ModelMBean implementation can have custom
  * targetType values in its ModelMBeanOperationInfo descriptors.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ExoticTargetTypeTest
  * @run build ExoticTargetTypeTest
  * @run main ExoticTargetTypeTest

@@ -63,6 +63,7 @@ class Example implements Comparable<Example> {
         procFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
         moduleSourcePathFiles = new ArrayList<File>();
+        patchModulePathFiles = new ArrayList<File>();
         modulePathFiles = new ArrayList<File>();
         classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
@@ -88,6 +89,9 @@ class Example implements Comparable<Example> {
                 } else if (files == srcFiles && c.getName().equals("modulesourcepath")) {
                     moduleSourcePathDir = c;
                     findFiles(c, moduleSourcePathFiles);
+                } else if (files == srcFiles && c.getName().equals("patchmodule")) {
+                    patchModulePathDir = c;
+                    findFiles(c, patchModulePathFiles);
                 } else if (files == srcFiles && c.getName().equals("additional")) {
                     additionalFilesDir = c;
                     findFiles(c, additionalFiles);
@@ -272,6 +276,16 @@ class Example implements Comparable<Example> {
             files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
         }
 
+        if (patchModulePathDir != null) {
+            for (File mod : patchModulePathDir.listFiles()) {
+                opts.add("--patch-module");
+                opts.add(mod.getName() + "=" + mod.getPath());
+            }
+            files = new ArrayList<>();
+            files.addAll(patchModulePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
+        }
+
         if (additionalFiles.size() > 0) {
             List<String> sOpts = Arrays.asList("-d", classesDir.getPath());
             new Jsr199Compiler(verbose).run(null, null, false, sOpts, additionalFiles);
@@ -343,9 +357,11 @@ class Example implements Comparable<Example> {
     List<File> procFiles;
     File srcPathDir;
     File moduleSourcePathDir;
+    File patchModulePathDir;
     File additionalFilesDir;
     List<File> srcPathFiles;
     List<File> moduleSourcePathFiles;
+    List<File> patchModulePathFiles;
     List<File> modulePathFiles;
     List<File> classPathFiles;
     List<File> additionalFiles;

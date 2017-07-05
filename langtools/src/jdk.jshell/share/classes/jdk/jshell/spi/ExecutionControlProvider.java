@@ -33,7 +33,9 @@ import java.util.Map;
  * evaluate Snippets.  Alternate execution engines can be created by
  * implementing this interface, then configuring JShell with the provider or
  * the providers name and parameter specifier.
+ *
  * @author Robert Field
+ * @since 9
  */
 public interface ExecutionControlProvider {
 
