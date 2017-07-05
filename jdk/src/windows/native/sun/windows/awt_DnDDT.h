@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #define AWT_DND_DT_H
 
 #include <Ole2.h>
-
+#include <shlobj.h>
 #include <jni.h>
 #include <jni_util.h>
 
@@ -106,6 +106,11 @@ class AwtDropTarget : virtual public IDropTarget {
 
         virtual void UnloadCache();
 
+        virtual HRESULT ExtractNativeData(jlong fmt, LONG lIndex, STGMEDIUM *pmedium);
+        virtual HRESULT SaveIndexToFile(LPCTSTR pFileName, UINT lIndex);
+        virtual jobject ConvertNativeData(JNIEnv* env, jlong fmt, STGMEDIUM *pmedium);
+        virtual jobject ConvertMemoryMappedData(JNIEnv* env, jlong fmt, STGMEDIUM *pmedium);
+
     private:
         typedef struct _RegisterTargetRec {
             AwtDropTarget*      dropTarget;
@@ -152,11 +157,12 @@ class AwtDropTarget : virtual public IDropTarget {
 
         // external COM references
 
-        IDataObject    __RPC_FAR *m_dataObject;
+        IDataObject              *m_dataObject;
+        IDropTargetHelper        *m_pIDropTargetHelper;
 
         // static members
 
-        static IDataObject __RPC_FAR *sm_pCurrentDnDDataObject;
+        static IDataObject       *sm_pCurrentDnDDataObject;
 
         // method references
 

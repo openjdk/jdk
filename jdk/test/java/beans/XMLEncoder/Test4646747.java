@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4646747
  * @summary Tests that persistence delegate is correct after memory stress
  * @author Mark Davidson
+ * @run main/othervm -ms16m -mx16m Test4646747
  */
 
 import java.beans.DefaultPersistenceDelegate;
@@ -41,11 +42,14 @@ public class Test4646747 {
         encoder.setPersistenceDelegate(Test4646747.class, new MyPersistenceDelegate());
         // WARNING: This can eat up a lot of memory
         Object[] obs = new Object[10000];
-        for (int i = 0; i < obs.length; i++) {
-            obs[i] = new int[1000];
+        while (obs != null) {
+            try {
+                obs = new Object[obs.length + obs.length / 3];
+            }
+            catch (OutOfMemoryError error) {
+                obs = null;
+            }
         }
-        System.gc();
-        System.gc();
         PersistenceDelegate pd = encoder.getPersistenceDelegate(Test4646747.class);
         if (!(pd instanceof MyPersistenceDelegate))
             throw new Error("persistence delegate has been lost");
