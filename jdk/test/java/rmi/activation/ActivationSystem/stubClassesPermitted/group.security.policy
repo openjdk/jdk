@@ -1,13 +1,11 @@
 /*
- * security policy used by activation groups.
+ * security policy used by activation groups
  */
 
 grant {
   permission java.io.FilePermission "..${/}..${/}test.props", "read";
-
-  // give the group permission to create a class that the main test process can not create
-  permission java.lang.RuntimePermission "accessClassInPackage.sun.security.provider";
-
-  // test needs to communicate with the activation system
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+  permission java.util.PropertyPermission "test.*", "read";
+
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.security.provider";
 };

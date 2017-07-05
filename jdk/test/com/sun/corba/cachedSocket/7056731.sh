@@ -55,8 +55,8 @@ PORT=1052
 cp -r ${TESTSRC}${FS}*.java  ${TESTSRC}${FS}Hello.idl .
 echo "Testing...please wait"
 
-${TESTJAVA}${FS}bin${FS}idlj -fall Hello.idl
-${TESTJAVA}${FS}bin${FS}javac *.java HelloApp/*.java
+${COMPILEJAVA}${FS}bin${FS}idlj -fall Hello.idl
+${COMPILEJAVA}${FS}bin${FS}javac *.java HelloApp/*.java
 
 echo "starting orbd"
 ${TESTJAVA}${FS}bin${FS}orbd -ORBInitialPort $PORT -ORBInitialHost localhost &

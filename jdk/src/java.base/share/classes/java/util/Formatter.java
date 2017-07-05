@@ -3727,29 +3727,29 @@ public final class Formatter implements Closeable, Flushable {
                             exp = new StringBuilder("+00");
                         }
                     }
-                    return;
-                }
-                long adjusted = -(long) scale + (len - 1);
-                if (form == BigDecimalLayoutForm.DECIMAL_FLOAT) {
+                } else if (form == BigDecimalLayoutForm.DECIMAL_FLOAT) {
                     // count of padding zeros
-                    int pad = scale - len;
-                    if (pad >= 0) {
+
+                    if (scale >= len) {
                         // 0.xxx form
                         mant.append("0.");
                         dot = true;
-                        trailingZeros(mant, pad);
+                        trailingZeros(mant, scale - len);
                         mant.append(coeff);
                     } else {
-                        if (-pad < len) {
+                        if (scale > 0) {
                             // xx.xx form
-                            mant.append(coeff, 0, -pad);
+                            int pad = len - scale;
+                            mant.append(coeff, 0, pad);
                             mant.append('.');
                             dot = true;
-                            mant.append(coeff, -pad, -pad + scale);
-                        } else {
+                            mant.append(coeff, pad, len);
+                        } else { // scale < 0
                             // xx form
                             mant.append(coeff, 0, len);
-                            trailingZeros(mant, -scale);
+                            if (intVal.signum() != 0) {
+                                trailingZeros(mant, -scale);
+                            }
                             this.scale = 0;
                         }
                     }
@@ -3762,6 +3762,7 @@ public final class Formatter implements Closeable, Flushable {
                         mant.append(coeff, 1, len);
                     }
                     exp = new StringBuilder();
+                    long adjusted = -(long) scale + (len - 1);
                     if (adjusted != 0) {
                         long abs = Math.abs(adjusted);
                         // require sign

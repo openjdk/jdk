@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946
+ * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465
  * @summary tests methods in BigInteger
  * @run main/timeout=400 BigIntegerTest
  * @author madbot
@@ -88,6 +88,120 @@ public class BigIntegerTest {
 
     static Random rnd = new Random();
     static boolean failure = false;
+
+    public static void constructor() {
+        int failCount = 0;
+
+        // --- guard condition tests for array indexing ---
+
+        int arrayLength = 23;
+        int halfLength = arrayLength/2;
+        byte[] array = new byte[arrayLength];
+        rnd.nextBytes(array);
+
+        int[][] offLen = new int[][] { // offset, length, num exceptions
+            {-1, arrayLength, 1},                         // negative offset
+            {0, arrayLength, 0},                          // OK
+            {1, arrayLength, 1},                          // length overflow
+            {arrayLength - 1, 1, 0},                      // OK
+            {arrayLength, 1, 1},                          // offset overflow
+            {0, -1, 1},                                   // negative length
+            {halfLength, arrayLength - halfLength + 1, 1} // length overflow
+        };
+
+        // two's complement
+        for (int[] ol : offLen) {
+            int numExceptions = 0;
+            try {
+                BigInteger bi = new BigInteger(array, ol[0], ol[1]);
+            } catch (IndexOutOfBoundsException e) {
+                numExceptions++;
+            }
+            if (numExceptions != ol[2]) {
+                System.err.println("IndexOutOfBoundsException did not occur for "
+                    + " two's complement constructor with parameters offset "
+                    + ol[0] + " and length " + ol[1]);
+                failCount++;
+            }
+        }
+
+        // sign-magnitude
+        for (int[] ol : offLen) {
+            int numExceptions = 0;
+            try {
+                BigInteger bi = new BigInteger(1, array, ol[0], ol[1]);
+            } catch (IndexOutOfBoundsException e) {
+                numExceptions++;
+            }
+            if (numExceptions != ol[2]) {
+                System.err.println("IndexOutOfBoundsException did not occur for "
+                    + " sign-magnitude constructor with parameters offset "
+                    + ol[0] + " and length " + ol[1]);
+                failCount++;
+            }
+        }
+
+        // --- tests for creation of zero-valued BigIntegers ---
+
+        byte[] magZeroLength = new byte[0];
+        for (int signum = -1; signum <= 1; signum++) {
+            BigInteger bi = new BigInteger(signum, magZeroLength);
+            if (bi.compareTo(BigInteger.ZERO) != 0) {
+                System.err.println("A: Zero length BigInteger != 0 for signum " + signum);
+                failCount++;
+            }
+        }
+
+        for (int signum = -1; signum <= 1; signum++) {
+            BigInteger bi = new BigInteger(signum, magZeroLength, 0, 0);
+            if (bi.compareTo(BigInteger.ZERO) != 0) {
+                System.err.println("B: Zero length BigInteger != 0 for signum " + signum);
+                failCount++;
+            }
+        }
+
+        byte[] magNonZeroLength = new byte[42];
+        rnd.nextBytes(magNonZeroLength);
+        for (int signum = -1; signum <= 1; signum++) {
+            BigInteger bi = new BigInteger(signum, magNonZeroLength, 0, 0);
+            if (bi.compareTo(BigInteger.ZERO) != 0) {
+                System.err.println("C: Zero length BigInteger != 0 for signum " + signum);
+                failCount++;
+            }
+        }
+
+        // --- tests for accurate creation of non-zero BigIntegers ---
+
+        for (int i = 0; i < SIZE; i++) {
+            // create reference value via a different code path from those tested
+            BigInteger reference = new BigInteger(2 + rnd.nextInt(336), 4, rnd);
+
+            byte[] refArray = reference.toByteArray();
+            int refLen = refArray.length;
+            int factor = rnd.nextInt(5);
+            int objLen = refArray.length + factor*rnd.nextInt(refArray.length) + 1;
+            int offset = rnd.nextInt(objLen - refLen);
+            byte[] objArray = new byte[objLen];
+            System.arraycopy(refArray, 0, objArray, offset, refLen);
+
+            BigInteger twosComp = new BigInteger(objArray, offset, refLen);
+            if (twosComp.compareTo(reference) != 0) {
+                System.err.println("Two's-complement BigInteger not equal for offset " +
+                        offset + " and length " + refLen);
+                failCount++;
+            }
+
+            boolean isNegative = rnd.nextBoolean();
+            BigInteger signMag = new BigInteger(isNegative ? -1 : 1, objArray, offset, refLen);
+            if (signMag.compareTo(isNegative ? reference.negate() : reference) != 0) {
+                System.err.println("Sign-magnitude BigInteger not equal for offset " +
+                        offset + " and length " + refLen);
+                failCount++;
+            }
+        }
+
+        report("Constructor", failCount);
+    }
 
     public static void pow(int order) {
         int failCount1 = 0;
@@ -960,6 +1074,8 @@ public class BigIntegerTest {
             order3 = (int)((Integer.parseInt(args[2]))* 3.333);
         if (args.length >3)
             order4 = (int)((Integer.parseInt(args[3]))* 3.333);
+
+        constructor();
 
         prime();
         nextProbablePrime();
