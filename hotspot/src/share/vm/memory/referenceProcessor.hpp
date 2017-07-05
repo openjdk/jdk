@@ -23,7 +23,7 @@
  */
 
 // ReferenceProcessor class encapsulates the per-"collector" processing
-// of "weak" references for GC. The interface is useful for supporting
+// of java.lang.Reference objects for GC. The interface is useful for supporting
 // a generational abstraction, in particular when there are multiple
 // generations that are being independently collected -- possibly
 // concurrently and/or incrementally.  Note, however, that the
@@ -75,6 +75,14 @@ class ReferenceProcessor : public CHeapObj {
   // all collectors but the CMS collector).
   BoolObjectClosure* _is_alive_non_header;
 
+  // Soft ref clearing policies
+  // . the default policy
+  static ReferencePolicy*   _default_soft_ref_policy;
+  // . the "clear all" policy
+  static ReferencePolicy*   _always_clear_soft_ref_policy;
+  // . the current policy below is either one of the above
+  ReferencePolicy*          _current_soft_ref_policy;
+
   // The discovered ref lists themselves
 
   // The MT'ness degree of the queues below
@@ -90,6 +98,12 @@ class ReferenceProcessor : public CHeapObj {
   DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
   static oop  sentinel_ref()             { return _sentinelRef; }
   static oop* adr_sentinel_ref()         { return &_sentinelRef; }
+  ReferencePolicy* setup_policy(bool always_clear) {
+    _current_soft_ref_policy = always_clear ?
+      _always_clear_soft_ref_policy : _default_soft_ref_policy;
+    _current_soft_ref_policy->setup();   // snapshot the policy threshold
+    return _current_soft_ref_policy;
+  }
 
  public:
   // Process references with a certain reachability level.
@@ -297,8 +311,7 @@ class ReferenceProcessor : public CHeapObj {
   bool discover_reference(oop obj, ReferenceType rt);
 
   // Process references found during GC (called by the garbage collector)
-  void process_discovered_references(ReferencePolicy*             policy,
-                                     BoolObjectClosure*           is_alive,
+  void process_discovered_references(BoolObjectClosure*           is_alive,
                                      OopClosure*                  keep_alive,
                                      VoidClosure*                 complete_gc,
                                      AbstractRefProcTaskExecutor* task_executor);

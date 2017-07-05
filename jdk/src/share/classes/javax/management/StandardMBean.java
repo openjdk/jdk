@@ -1058,10 +1058,6 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
         cachedMBeanInfo = info;
     }
 
-    private boolean isMXBean() {
-        return mbean.isMXBean();
-    }
-
     private static <T> boolean identicalArrays(T[] a, T[] b) {
         if (a == b)
             return true;
@@ -1466,7 +1462,7 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             // Check for "MBeanNotificationInfo[] getNotificationInfo()"
             // method.
             //
-            // This method is only taken into account for the MBeanInfo
+            // This method is taken into account for the MBeanInfo
             // immutability checks if and only if the given subclass is
             // StandardEmitterMBean itself or can be assigned to
             // StandardEmitterMBean.

@@ -770,6 +770,7 @@ public class ExtendedCharsets
                 new String[] {
                     "cp834",
                     "ibm834",
+                    "834",
                     "ibm-834"
         });
 
