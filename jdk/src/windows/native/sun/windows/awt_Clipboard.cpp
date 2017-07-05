@@ -294,7 +294,7 @@ Java_sun_awt_windows_WClipboard_publishClipboardData(JNIEnv *env,
     if (format == CF_HDROP) {
         DROPFILES *dropfiles = (DROPFILES *)dataout;
         dropfiles->pFiles = sizeof(DROPFILES);
-        dropfiles->fWide = FALSE; // good guess!
+        dropfiles->fWide = TRUE; // we publish only Unicode
         dataout += sizeof(DROPFILES);
     }
 

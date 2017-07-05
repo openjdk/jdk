@@ -27,6 +27,8 @@ package com.sun.tools.example.debug.bdi;
 
 public class MethodNotFoundException extends Exception
 {
+    private static final long serialVersionUID = -2064968107599632609L;
+
     public MethodNotFoundException()
     {
         super();

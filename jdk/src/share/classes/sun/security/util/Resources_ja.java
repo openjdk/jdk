@@ -47,7 +47,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [\u30AA\u30D7\u30B7\u30E7\u30F3]..."},
         {"Options.", "\u30AA\u30D7\u30B7\u30E7\u30F3:"},
         {"Use.keytool.help.for.all.available.commands",
                  "\u4F7F\u7528\u53EF\u80FD\u306A\u3059\u3079\u3066\u306E\u30B3\u30DE\u30F3\u30C9\u306B\u3064\u3044\u3066\u306F\"keytool -help\"\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044"},
@@ -67,6 +68,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u8A3C\u660E\u66F8\u3092\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u3057\u307E\u3059"}, //-exportcert
         {"Generates.a.key.pair",
                 "\u9375\u30DA\u30A2\u3092\u751F\u6210\u3057\u307E\u3059"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "\u79D8\u5BC6\u9375\u3092\u751F\u6210\u3057\u307E\u3059"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -304,8 +306,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u306E\u9577\u3055: "},
         {"Certificate.i.1.", "\u8A3C\u660E\u66F8[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "\u8A3C\u660E\u66F8\u306E\u30D5\u30A3\u30F3\u30AC\u30D7\u30EA\u30F3\u30C8(SHA1): "},
-        {"Entry.type.trustedCertEntry.", "\u30A8\u30F3\u30C8\u30EA\u306E\u30BF\u30A4\u30D7: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30BF\u30A4\u30D7: "},
         {"Keystore.provider.", "\u30AD\u30FC\u30B9\u30C8\u30A2\u30FB\u30D7\u30ED\u30D0\u30A4\u30C0: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -368,7 +368,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
                  "\u5225\u540D<{0}>\u304C\u53C2\u7167\u3057\u3066\u3044\u308B\u30A8\u30F3\u30C8\u30EA\u30FB\u30BF\u30A4\u30D7\u306F\u79D8\u5BC6\u9375\u30A8\u30F3\u30C8\u30EA\u3067\u306F\u3042\u308A\u307E\u305B\u3093\u3002-keyclone\u30B3\u30DE\u30F3\u30C9\u306F\u79D8\u5BC6\u9375\u30A8\u30F3\u30C8\u30EA\u306E\u30AF\u30ED\u30FC\u30F3\u4F5C\u6210\u306E\u307F\u3092\u30B5\u30DD\u30FC\u30C8\u3057\u307E\u3059"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************\u8B66\u544A \u8B66\u544A \u8B66\u544A*****************"},
         {"Signer.d.", "\u7F72\u540D\u8005\u756A\u53F7%d:"},
         {"Timestamp.", "\u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7:"},
         {"Signature.", "\u7F72\u540D:"},
@@ -378,20 +378,10 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "SSL\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u306E\u8A3C\u660E\u66F8\u304C\u3042\u308A\u307E\u305B\u3093"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* \u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u4FDD\u5B58\u3055\u308C\u305F\u60C5\u5831\u306E\u6574\u5408\u6027 *"},
+            "*\u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u4FDD\u5B58\u3055\u308C\u305F\u60C5\u5831\u306E\u6574\u5408\u6027\u306F*\n*\u691C\u8A3C\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u6574\u5408\u6027\u3092\u691C\u8A3C\u3059\u308B\u306B\u306F*\n*\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002*"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* \u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u4FDD\u5B58\u3055\u308C\u305F\u60C5\u5831\u306E\u5B8C\u5168\u6027 *"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* \u691C\u8A3C\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u6574\u5408\u6027\u3092\u691C\u8A3C\u3059\u308B\u306B\u306F  *"},
-        {".you.must.provide.your.keystore.password.",
-            "* \u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002        *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* \u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002          *"},
-
+            "*\u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u306B\u4FDD\u5B58\u3055\u308C\u305F\u60C5\u5831\u306E\u6574\u5408\u6027\u306F*\n*\u691C\u8A3C\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u6574\u5408\u6027\u3092\u691C\u8A3C\u3059\u308B\u306B\u306F*\n*\u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002*"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "\u8A3C\u660E\u66F8\u5FDC\u7B54\u306B\u306F\u3001<{0}>\u306E\u516C\u958B\u9375\u306F\u542B\u307E\u308C\u307E\u305B\u3093"},

@@ -70,11 +70,11 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
         {"Configuration.Error.Can.not.specify.multiple.entries.for.appName",
             "Konfigurationsfel:\n\tKan inte ange flera poster f\u00F6r {0}"},
         {"Configuration.Error.expected.expect.read.end.of.file.",
-                "Konfigurationsfel:\n\tf\u00F6rv\u00E4ntade [{0}], l\u00E4ste [end of file]"},
+                "Konfigurationsfel:\n\tf\u00F6rv\u00E4ntade [{0}], l\u00E4ste [filslut]"},
         {"Configuration.Error.Line.line.expected.expect.found.value.",
-            "Konfigurationsfel:\n\tLine {0}: f\u00F6rv\u00E4ntade [{1}], hittade [{2}]"},
+            "Konfigurationsfel:\n\tRad {0}: f\u00F6rv\u00E4ntade [{1}], hittade [{2}]"},
         {"Configuration.Error.Line.line.expected.expect.",
-            "Konfigurationsfel:\n\tLine {0}: f\u00F6rv\u00E4ntade [{1}]"},
+            "Konfigurationsfel:\n\tRad {0}: f\u00F6rv\u00E4ntade [{1}]"},
         {"Configuration.Error.Line.line.system.property.value.expanded.to.empty.value",
             "Konfigurationsfel:\n\tRad {0}: systemegenskapen [{1}] ut\u00F6kad till tomt v\u00E4rde"},
 
@@ -111,17 +111,15 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "f\u00F6rv\u00E4ntad nyckellagertyp"},
-        {"can.not.specify.Principal.with.a.",
-                "kan inte ange identitetshavare med "},
-        {"wildcard.class.without.a.wildcard.name",
-                "jokerteckenklass utan jokerteckennamn"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "kan inte ange identitetshavare med en jokerteckenklass utan ett jokerteckennamn"},
         {"expected.codeBase.or.SignedBy", "f\u00F6rv\u00E4ntade codeBase eller SignedBy"},
         {"only.Principal.based.grant.entries.permitted",
                 "endast identitetshavarbaserade poster till\u00E5ts"},
         {"expected.permission.entry", "f\u00F6rv\u00E4ntade beh\u00F6righetspost"},
         {"number.", "antal "},
-        {"expected.", "f\u00F6rv\u00E4ntade "},
-        {".read.end.of.file", ", l\u00E4ste filslut"},
+        {"expected.expect.read.end.of.file.",
+                "f\u00F6rv\u00E4ntade {0}, l\u00E4ste filslut"},
         {"expected.read.end.of.file", "f\u00F6rv\u00E4ntade ';', l\u00E4ste filslut"},
         {"line.", "rad "},
         {".expected.", ": f\u00F6rv\u00E4ntade '"},
@@ -136,6 +134,9 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "angav null-namn"}
 
     };

@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javac 1 "14 Apr 2011"
+.TH javac 1 "07 May 2011"
 
 .LP
 .SH "名前"
@@ -136,10 +136,6 @@ o
 \f3\-sourcepath\fP オプションが指定されていない場合は、ソースファイルもユーザークラスパスから検索されます。 
 .LP
 \f3\-processorpath\fP オプションが指定されていない場合は、注釈プロセッサもユーザークラスパスから検索されます。  
-.LP
-便宜上、 \f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます。 
-.LP
-たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。 \f2*\fP だけから成るクラスパスエントリは、現在のディレクトリ内のすべての JAR ファイルのリストに展開されます。 \f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。\f3注:\fP コマンド行環境の構成によっては、 \f2javac \-cp "*.jar" MyClass.java\fP などのように、ワイルドカード文字を引用符で囲むことが必要な場合もあります。  
 .TP 3
 \-Djava.ext.dirs=directories 
 インストール型拡張機能の位置をオーバーライドします。 
@@ -315,7 +311,7 @@ o
 推奨されるすべての警告を有効にします。このリリースでは、利用可能なすべての警告を有効にすることが推奨されています。 
 .TP 3
 \-Xlint:none 
-Java 言語仕様では指定されていないすべての警告を無効にします。 
+すべての警告を無効にします。 
 .TP 3
 \-Xlint:name 
 警告 \f2name\fP を有効にします。このオプションで有効にできる警告のリストについては、「\-Xlint オプションを使って有効または無効にできる警告」を参照してください。 
@@ -617,7 +613,7 @@ warning: [processing] No processor claimed any of these annotations: Anno
 この問題を解決するには、クラス \f2AnnosWithoutProcessors\fP で定義および使用される注釈の名前を \f2Anno\fP から \f2NotAnno\fP に変更します。  
 .TP 3
 rawtypes 
-raw 型に対する未検査操作について警告します。特にこのオプションは、型引数を持たないパラメータ化された型を使用するユーザーに対して警告します。次の文では、 \f2rawtypes\fP 警告が生成されます。 
+raw 型に対する未検査操作について警告します。次の文では、 \f2rawtypes\fP 警告が生成されます。 
 .nf
 \f3
 .fl

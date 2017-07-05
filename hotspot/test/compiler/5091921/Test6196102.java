@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
+/**
  * @test
- * @bug 6708550
- * @summary Tests File encoding
- * @author Sergey Malenkov
+ * @bug 6196102
+ * @summary Integer seems to be greater than Integer.MAX_VALUE
+ *
+ * @run main Test6196102
  */
 
-import java.io.File;
+public class Test6196102 {
+    static public void main(String[] args) {
+        int i1 = 0;
+        int i2 = Integer.MAX_VALUE;
 
-public final class java_io_File extends AbstractTest<File> {
-    public static void main(String[] args) {
-        new java_io_File().test(true);
-    }
-
-    @Override
-    protected File getObject() {
-        return new File("test.txt"); // NON-NLS: local file
-    }
-
-    @Override
-    protected File getAnotherObject() {
-        return new File("/pub/demo/"); // NON-NLS: path
+        while (i1 >= 0) {
+            i1++;
+            if (i1 > i2) {
+                System.out.println("E R R O R: " + i1);
+                System.exit(97);
+            }
+        }
     }
 }
+

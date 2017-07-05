@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH pack200 1 "02 Jun 2010"
+.TH pack200 1 "10 May 2011"
 
 .LP
 .SH "Name"
@@ -27,16 +27,11 @@ pack200 \- JAR Packing tool
 .LP
 .SH "SYNOPSIS"
 .LP
-
-.LP
 .LP
 \f4pack200\fP\f2 [ \fP\f2options\fP ] \f2output\-file\fP \f2JAR\-file\fP
 .LP
 .LP
 Options may be in any order. The last option on the command line or in a properties file supersedes all previously specified options.
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -51,10 +46,7 @@ Name of the input file.
 .RE
 
 .LP
-.RE
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f2pack200\fP tool is a Java application that transforms a JAR file into a compressed \f2pack200\fP file using the Java \f2gzip\fP compressor. The \f2pack200\fP files are highly compressed files that can be directly deployed, saving bandwidth and reducing download time.
@@ -65,31 +57,19 @@ The \f2pack200\fP tool uses several options to fine\-tune and set the compressio
 .SS 
 Typical usage:
 .LP
-.RS 3
-
-.LP
 .LP
 \f2% pack200 myarchive.pack.gz myarchive.jar\fP
 .LP
-.RE
 .LP
 In this example, \f2myarchive.pack.gz\fP is produced using the default \f2pack200\fP settings.
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .LP
 \f4\-r \-\-repack\fP
 .LP
-.RS 3
-
-.LP
 .LP
 Produces a JAR file by packing the file \f2myarchive.jar\fP and unpacking it. The resulting file can be used as an input to the \f2jarsigner(1)\fP tool.
-.LP
-.RS 3
-
 .LP
 .LP
 \f2% pack200 \-\-repack myarchive\-packer.jar myarchive.jar\fP
@@ -97,50 +77,35 @@ Produces a JAR file by packing the file \f2myarchive.jar\fP and unpacking it. Th
 .LP
 \f2% pack200 \-\-repack myarchive.jar\fP
 .LP
-.RE
-.RE
 .LP
 \f4\-g \-\-no\-gzip\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Produces a \f2pack200\fP file. With this option a suitable compressor must be used, and the target system must use a corresponding decompresser.
 .LP
-.RS 3
-
-.LP
 .LP
 \f2% pack200 \-\-no\-gzip myarchive.pack myarchive.jar\fP
 .LP
-.RE
-.RE
 .LP
 \f4\-G \-\-strip\-debug\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Strips attributes used for debugging from the output. These include \f2SourceFile\fP, \f2LineNumberTable\fP, \f2LocalVariableTable\fP and \f2LocalVariableTypeTable\fP. Removing these attributes reduces the size of both downloads and installations but reduces the usefulness of debuggers.
 .LP
-.RE
+.LP
+\f4\-\-keep\-file\-order\fP
+.LP
+.LP
+Preserve the order of files in the input file; this is the default behavior.
+.LP
 .LP
 \f4\-O \-\-no\-keep\-file\-order\fP
-.LP
-.RS 3
-
 .LP
 .LP
 The packer will reorder and transmit all elements. Additionally, the packer may remove JAR directory names. This will reduce the download size; however, certain JAR file optimizations, such as indexing, may not work correctly.
 .LP
-.RE
 .LP
 \f4\-Svalue \-\-segment\-limit=\fP\f2value\fP
-.LP
-.RS 3
-
 .LP
 .LP
 The value is the estimated target size N (in bytes) of each archive segment. If a single input file requires
@@ -151,17 +116,13 @@ more than N bytes, it will be given its own archive segment. As a special case, 
 The size of each segment is estimated by counting the size of each input file to be transmitted in the segment, along with the size of its name and other transmitted properties.
 .LP
 .LP
-The default is \f21000000\fP (a million bytes). This allows input JAR files of moderate size to be transmitted in one segment. It also puts a limit on memory requirements for packers and unpackers.
+The default is \-1, which means the packer will always create a single segment output file. In cases where extremely large output files are generated, users are strongly encouraged to use segmenting or break up the input file into smaller JARs.
 .LP
 .LP
 A 10MB JAR packed without this limit will typically pack about 10% smaller, but the packer may require a larger Java heap (about ten times the segment limit).
 .LP
-.RE
 .LP
 \f4\-Evalue \-\-effort=\fP\f2value\fP
-.LP
-.RS 3
-
 .LP
 .LP
 If the value is set to a single decimal digit, the packer will use the indicated amount of effort in compressing the archive. Level \f21\fP may produce somewhat larger size and faster compression speed, while level \f29\fP will take much longer but may produce better compression. The special value \f20\fP instructs the packer to copy through the original JAR file directly with no compression. The JSR 200 standard requires any unpacker to understand this special case as a pass\-through of the entire archive.
@@ -169,12 +130,8 @@ If the value is set to a single decimal digit, the packer will use the indicated
 .LP
 The default is \f25\fP, investing a modest amount of time to produce reasonable compression.
 .LP
-.RE
 .LP
 \f4\-Hvalue \-\-deflate\-hint=\fP\f2value\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Overrides the default, which preserves the input information, but may cause the transmitted archive to be larger. The possible values are:
@@ -195,12 +152,8 @@ Preserve deflation hints observed in the input JAR. (This is the default.)
 .RE
 
 .LP
-.RE
 .LP
 \f4\-mvalue \-\-modification\-time=\fP\f2value\fP
-.LP
-.RS 3
-
 .LP
 .LP
 The possible values are:
@@ -215,22 +168,14 @@ Preserves modification times observed in the input JAR. (This is the default.)
 .RE
 
 .LP
-.RE
 .LP
 \f4\-Pfile \-\-pass\-file=\fP\f2file\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Indicates that a file should be passed through bytewise with no compression. By repeating the option, multiple files may be specified. There is no pathname transformation, except that the system file separator is replaced by the JAR file separator "\f2/\fP". The resulting file names must match exactly as strings with their occurrences in the JAR file. If file is a directory name, all files under that directory will be passed.
 .LP
-.RE
 .LP
 \f4\-Uaction \-\-unknown\-attribute=\fP\f2action\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Overrides the default behavior; i.e., the classfile containing the unknown attribute will be passed through with the specified action. The possible values for actions are:
@@ -248,7 +193,6 @@ Upon encountering this attribute, the entire class will be transmitted as though
 .RE
 
 .LP
-.RE
 .LP
 \f4\-Cattribute\-name=\fP\f2layout\fP \f3\-\-class\-attribute=\fP\f2attribute\-name=action\fP
 .br
@@ -257,9 +201,6 @@ Upon encountering this attribute, the entire class will be transmitted as though
 \f4\-Mattribute\-name=\fP\f2layout\fP \f3\-\-method\-attribute=\fP\f2attribute\-name=action\fP
 .br
 \f4\-Dattribute\-name=\fP\f2layout\fP \f3\-\-code\-attribute=\fP\f2attribute\-name=action\fP
-.LP
-.RS 3
-
 .LP
 .LP
 With the above four options, the attribute layout can be specified for a class entity, such as Class attribute, Field attribute, Method attribute, and Code attribute. The attribute\-name is the name of the attribute for which the layout or action is being defined. The possible values for action are:
@@ -282,18 +223,11 @@ Upon encountering this attribute, the attribute will be removed from the output.
 .LP
 Example: \f2\-\-class\-attribute=CompilationID=pass\fP will cause the class file containing this attribute to be passed through without further action by the packer.
 .LP
-.RE
 .LP
 \f4\-f\fP\f2 \fP\f2pack.properties\fP \f3\-\-config\-file=\fP\f2pack.properties\fP
 .LP
-.RS 3
-
-.LP
 .LP
 A configuration file, containing Java properties to initialize the packer, may be specified on the command line.
-.LP
-.RS 3
-
 .LP
 .LP
 \f2% pack200 \-f pack.properties myarchive.pack.gz myarchive.jar\fP
@@ -318,61 +252,46 @@ A configuration file, containing Java properties to initialize the packer, may b
 .br
 \f2segment.limit=\-1\fP
 .LP
-.RE
-.RE
-.RS 3
-
-.LP
 .LP
 \f4\-v \-\-verbose\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Outputs minimal messages. Multiple specification of this option will output more verbose messages.
 .LP
-.RE
 .LP
 \f4\-q \-\-quiet\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Specifies quiet operation with no messages.
 .LP
-.RE
 .LP
 \f4\-lfilename \-\-log\-file=\fP\f2filename\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Specifies a log file to output messages.
 .LP
-.RE
 .LP
-\f4\-Joption\fP
-.LP
-.RS 3
-
+\f4\-? \-h \-\-help\fP
 .LP
 .LP
-Passes option to the Java launcher called by \f2pack200\fP. For example, \f2\-J\-Xms48m\fP sets the startup memory to 48 megabytes. Although it does not begin with \f2\-X\fP, it is not a standard option of \f2pack200\fP. It is a common convention for \f2\-J\fP to pass options to the underlying VM executing applications written in Java.
+Prints help information about this command.
 .LP
-.RE
-.RE
+.LP
+\f4\-V \-\-version\fP
+.LP
+.LP
+Prints version information about this command.
+.LP
+.LP
+\f4\-J\fP\f2option\fP
+.LP
+.LP
+Passes \f2option\fP to the Java launcher called by \f2pack200\fP. For example, \f2\-J\-Xms48m\fP sets the startup memory to 48 megabytes. Although it does not begin with \f2\-X\fP, it is not a standard option of \f2pack200\fP. It is a common convention for \f2\-J\fP to pass options to the underlying VM executing applications written in Java.
+.LP
 .SH "EXIT STATUS"
-.LP
-
 .LP
 .LP
 The following exit values are returned:
-.LP
-.RS 3
-
 .LP
 .LP
 \f2\ 0\fP for successful completion;
@@ -380,7 +299,6 @@ The following exit values are returned:
 .LP
 \f2>0\fP if an error occurs.
 .LP
-.RE
 .SH "SEE ALSO"
 .LP
 .RS 3
@@ -392,13 +310,13 @@ o
 .na
 \f2Java SE Documentation\fP @
 .fi
-http://java.sun.com/javase/6/docs/index.html 
+http://download.oracle.com/javase/7/docs/index.html 
 .TP 2
 o
 .na
 \f2Java Deployment Guide \- Pack200\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/pack200.html 
+http://download.oracle.com/javase/7/docs/technotes/guides/deployment/deployment\-guide/pack200.html 
 .TP 2
 o
 jar(1) \- Java Archive Tool 
@@ -412,8 +330,6 @@ o
 
 .LP
 .SH "NOTES"
-.LP
-
 .LP
 .LP
 This command should not be confused with \f2pack(1)\fP. They are distinctly separate products.

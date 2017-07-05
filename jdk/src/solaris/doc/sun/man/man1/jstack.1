@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jstack 1 "02 Jun 2010"
+.TH jstack 1 "10 May 2011"
 
 .LP
 .SH "Name"
@@ -28,8 +28,6 @@ jstack \- Stack Trace
 
 .LP
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -44,8 +42,6 @@ jstack \- Stack Trace
 
 .LP
 .SH "PARAMETERS"
-.LP
-
 .LP
 .LP
 Options are mutually exclusive. Option, if used, should follow immediately after the command name. See OPTIONS.
@@ -78,14 +74,9 @@ optional unique id, if multiple debug servers are running on the same remote hos
 .LP
 .SH "DESCRIPTION"
 .LP
-
-.LP
 .LP
 \f3jstack\fP prints Java stack traces of Java threads for a given Java process or core file or a remote debug server. For each Java frame, the full class name, method name, 'bci' (byte code index) and line number, if available, are printed. With the \-m option, jstack prints both Java and native frames of all threads along with the 'pc' (program counter). For each native frame, the closest native symbol to 'pc', if available, is printed. C++ mangled names are not demangled. To demangle C++ names, the output of this command may be piped to \f3c++filt\fP. If the given process is running on a 64\-bit VM, you may need to specify the \f2\-J\-d64\fP option, e.g.:
 .br
-
-.LP
-.RS 3
 
 .LP
 .nf
@@ -95,7 +86,6 @@ jstack \-J\-d64 \-m pid
 .fl
 \fP
 .fi
-.RE
 
 .LP
 .LP
@@ -105,8 +95,6 @@ jstack \-J\-d64 \-m pid
 For example, \f2set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
 .LP
 .SH "OPTIONS"
-.LP
-
 .LP
 .RS 3
 .TP 3
@@ -118,7 +106,7 @@ Long listing. Prints additional information about locks such as list of owned ja
 .na
 \f2ownable synchronizers\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/util/concurrent/locks/AbstractOwnableSynchronizer.html. 
+http://download.oracle.com/javase/7/docs/api/java/util/concurrent/locks/AbstractOwnableSynchronizer.html. 
 .TP 3
 \-m 
 prints mixed mode (both Java and native C/C++ frames) stack trace. 
@@ -153,8 +141,6 @@ jsadebugd(1)
 
 .LP
 .SH "KNOWN BUGS"
-.LP
-
 .LP
 .LP
 Mixed mode stack trace, the \-m option, does not work with the remote debug server.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,12 +123,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Helpers for swap and dup
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
-
-  // Super call_VM calls - correspond to MacroAssembler::call_VM(_leaf) calls
-  void super_call_VM_leaf(address entry_point);
-  void super_call_VM_leaf(address entry_point, Register arg_1);
-  void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
-  void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.  EAX holds the super_klass.  Blows ECX

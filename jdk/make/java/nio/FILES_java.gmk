@@ -71,6 +71,7 @@ FILES_src = \
 	java/nio/charset/CoderMalfunctionError.java \
 	java/nio/charset/CodingErrorAction.java \
 	java/nio/charset/MalformedInputException.java \
+	java/nio/charset/StandardCharset.java \
 	java/nio/charset/UnmappableCharacterException.java \
 	\
 	java/nio/charset/spi/CharsetProvider.java \
