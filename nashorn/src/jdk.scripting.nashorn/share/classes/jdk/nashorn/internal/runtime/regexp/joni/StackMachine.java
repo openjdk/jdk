@@ -19,7 +19,6 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
-import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAt;
 import java.lang.ref.WeakReference;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackPopLevel;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackType;
@@ -369,118 +368,9 @@ abstract class StackMachine extends Matcher implements StackType {
         }
     }
 
-    protected final int nullCheckRec(final int id, final int s) {
-        int level = 0;
-        int k = stk;
-        while (true) {
-            k--;
-            final StackEntry e = stack[k];
-
-            if (e.type == NULL_CHECK_START) {
-                if (e.getNullCheckNum() == id) {
-                    if (level == 0) {
-                        return e.getNullCheckPStr() == s ? 1 : 0;
-                    }
-                    level--;
-                }
-            } else if (e.type == NULL_CHECK_END) {
-                level++;
-            }
-        }
-    }
-
     protected final int nullCheckMemSt(final int id, final int s) {
-        int k = stk;
-        int isNull;
-        while (true) {
-            k--;
-            StackEntry e = stack[k];
-
-            if (e.type == NULL_CHECK_START) {
-                if (e.getNullCheckNum() == id) {
-                    if (e.getNullCheckPStr() != s) {
-                        isNull = 0;
-                        break;
-                    }
-                    int endp;
-                    isNull = 1;
-                    while (k < stk) {
-                        if (e.type == MEM_START) {
-                            if (e.getMemEnd() == INVALID_INDEX) {
-                                isNull = 0;
-                                break;
-                            }
-                            if (bsAt(regex.btMemEnd, e.getMemNum())) {
-                                endp = stack[e.getMemEnd()].getMemPStr();
-                            } else {
-                                endp = e.getMemEnd();
-                            }
-                            if (stack[e.getMemStart()].getMemPStr() != endp) {
-                                isNull = 0;
-                                break;
-                            } else if (endp != s) {
-                                isNull = -1; /* empty, but position changed */
-                            }
-                        }
-                        k++;
-                        e = stack[k]; // !!
-                    }
-                    break;
-                }
-            }
-        }
-        return isNull;
-    }
-
-    protected final int nullCheckMemStRec(final int id, final int s) {
-        int level = 0;
-        int k = stk;
-        int isNull;
-        while (true) {
-            k--;
-            StackEntry e = stack[k];
-
-            if (e.type == NULL_CHECK_START) {
-                if (e.getNullCheckNum() == id) {
-                    if (level == 0) {
-                        if (e.getNullCheckPStr() != s) {
-                            isNull = 0;
-                            break;
-                        }
-                        int endp;
-                        isNull = 1;
-                        while (k < stk) {
-                            if (e.type == MEM_START) {
-                                if (e.getMemEnd() == INVALID_INDEX) {
-                                    isNull = 0;
-                                    break;
-                                }
-                                if (bsAt(regex.btMemEnd, e.getMemNum())) {
-                                    endp = stack[e.getMemEnd()].getMemPStr();
-                                } else {
-                                    endp = e.getMemEnd();
-                                }
-                                if (stack[e.getMemStart()].getMemPStr() != endp) {
-                                    isNull = 0;
-                                    break;
-                                } else if (endp != s) {
-                                    isNull = -1; /* empty, but position changed */
-                                }
-                            }
-                            k++;
-                            e = stack[k];
-                        }
-                        break;
-                    }
-                    level--;
-                }
-            } else if (e.type == NULL_CHECK_END) {
-                if (e.getNullCheckNum() == id) {
-                    level++;
-                }
-            }
-        }
-        return isNull;
+        // Return -1 here to cause operation to fail
+        return -nullCheck(id, s);
     }
 
     protected final int getRepeat(final int id) {

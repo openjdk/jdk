@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1BiasedArray.hpp"
 #include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
+#include "services/memoryUsage.hpp"
 
 class HeapRegion;
 class HeapRegionClosure;
@@ -195,6 +196,8 @@ public:
 
   // Return the maximum number of regions in the heap.
   uint max_length() const { return (uint)_regions.length(); }
+
+  MemoryUsage get_auxiliary_data_memory_usage() const;
 
   MemRegion reserved() const { return MemRegion(heap_bottom(), heap_end()); }
 

@@ -114,12 +114,11 @@ public final class NativeFloat32Array extends ArrayBufferView {
 
         private void setElem(final int index, final double elem) {
             try {
-                nb.put(index, (float)elem);
-            } catch (final IndexOutOfBoundsException e) {
-                //swallow valid array indexes. it's ok.
-                if (index < 0) {
-                    throw new ClassCastException();
+                if (index < nb.limit()) {
+                    nb.put(index, (float) elem);
                 }
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException();
             }
         }
 

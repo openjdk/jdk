@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -150,7 +150,6 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(val == noreg || val == r0, "parameter is just for looks");
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       {
         // flatten object address if needed

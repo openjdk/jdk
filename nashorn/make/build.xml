@@ -281,12 +281,12 @@
        <fileset dir="${test.src.dir}/META-INF/services/"/>
     </copy>
 
-    <copy todir="${build.test.classes.dir}/jdk/nashorn/internal/runtime/resources">
-       <fileset dir="${test.src.dir}/jdk/nashorn/internal/runtime/resources"/>
+    <copy todir="${build.test.classes.dir}/jdk/nashorn/internal/runtime/test/resources">
+       <fileset dir="${test.src.dir}/jdk/nashorn/internal/runtime/test/resources"/>
     </copy>
 
-    <copy todir="${build.test.classes.dir}/jdk/nashorn/api/scripting/resources">
-       <fileset dir="${test.src.dir}/jdk/nashorn/api/scripting/resources"/>
+    <copy todir="${build.test.classes.dir}/jdk/nashorn/api/scripting/test/resources">
+       <fileset dir="${test.src.dir}/jdk/nashorn/api/scripting/test/resources"/>
     </copy>
 
     <!-- tests that check nashorn internals and internal API -->

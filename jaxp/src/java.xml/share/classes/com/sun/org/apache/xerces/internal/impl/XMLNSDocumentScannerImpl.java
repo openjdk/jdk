@@ -437,7 +437,7 @@ public class XMLNSDocumentScannerImpl
         XMLString tmpStr = getString();
         scanAttributeValue(tmpStr, fTempString2,
                 fAttributeQName.rawname, attributes,
-                attrIndex, isVC);
+                attrIndex, isVC, fCurrentElement.rawname);
 
         String value = null;
         //fTempString.toString();

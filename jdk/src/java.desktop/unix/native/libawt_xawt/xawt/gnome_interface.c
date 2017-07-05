@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ gboolean gnome_load() {
          // we are trying to load the library without a version suffix
          vfs_handle = dlopen(JNI_LIB_NAME("gnomevfs-2"), RTLD_LAZY);
          if (vfs_handle == NULL) {
- #ifdef INTERNAL_BUILD
+ #ifdef DEBUG
              fprintf(stderr, "can not load libgnomevfs-2.so\n");
  #endif
              return FALSE;
@@ -51,13 +51,13 @@ gboolean gnome_load() {
      dlerror(); /* Clear errors */
      gnome_vfs_init = (GNOME_VFS_INIT_TYPE*)dlsym(vfs_handle, "gnome_vfs_init");
      if (gnome_vfs_init == NULL){
- #ifdef INTERNAL_BUILD
+ #ifdef DEBUG
          fprintf(stderr, "dlsym( gnome_vfs_init) returned NULL\n");
  #endif
          return FALSE;
      }
      if ((errmsg = dlerror()) != NULL) {
- #ifdef INTERNAL_BUILD
+ #ifdef DEBUG
          fprintf(stderr, "can not find symbol gnome_vfs_init %s \n", errmsg);
  #endif
          return FALSE;
@@ -69,7 +69,7 @@ gboolean gnome_load() {
      if (gnome_handle == NULL) {
          gnome_handle = dlopen(JNI_LIB_NAME("gnome-2"), RTLD_LAZY);
          if (gnome_handle == NULL) {
- #ifdef INTERNAL_BUILD
+ #ifdef DEBUG
              fprintf(stderr, "can not load libgnome-2.so\n");
  #endif
              return FALSE;
@@ -78,7 +78,7 @@ gboolean gnome_load() {
      dlerror(); /* Clear errors */
      gnome_url_show = (GNOME_URL_SHOW_TYPE*)dlsym(gnome_handle, "gnome_url_show");
      if ((errmsg = dlerror()) != NULL) {
- #ifdef INTERNAL_BUILD
+ #ifdef DEBUG
          fprintf(stderr, "can not find symble gnome_url_show\n");
  #endif
          return FALSE;

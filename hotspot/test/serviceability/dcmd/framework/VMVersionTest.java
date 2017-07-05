@@ -34,6 +34,10 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @ignore 8072440
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*

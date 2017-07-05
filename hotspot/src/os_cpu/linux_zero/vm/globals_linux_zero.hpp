@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,9 +39,9 @@ define_pd_global(intx,  VMThreadStackSize,       1024);
 define_pd_global(intx,  VMThreadStackSize,       512);
 #endif // _LP64
 define_pd_global(intx,  CompilerThreadStackSize, 0);
-define_pd_global(uintx, JVMInvokeMethodSlack,    8192);
+define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 
 // Used on 64 bit platforms for UseCompressedOops base address
-define_pd_global(uintx, HeapBaseMinAddress,      2*G);
+define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 
 #endif // OS_CPU_LINUX_ZERO_VM_GLOBALS_LINUX_ZERO_HPP

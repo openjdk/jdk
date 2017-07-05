@@ -106,18 +106,18 @@ size_t HeapRegion::max_region_size() {
 }
 
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
-  uintx region_size = G1HeapRegionSize;
+  size_t region_size = G1HeapRegionSize;
   if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
     size_t average_heap_size = (initial_heap_size + max_heap_size) / 2;
     region_size = MAX2(average_heap_size / HeapRegionBounds::target_number(),
-                       (uintx) HeapRegionBounds::min_size());
+                       HeapRegionBounds::min_size());
   }
 
   int region_size_log = log2_long((jlong) region_size);
   // Recalculate the region size to make sure it's a power of
   // 2. This means that region_size is the largest power of 2 that's
   // <= what we've calculated so far.
-  region_size = ((uintx)1 << region_size_log);
+  region_size = ((size_t)1 << region_size_log);
 
   // Now make sure that we don't go over or under our limits.
   if (region_size < HeapRegionBounds::min_size()) {
@@ -139,7 +139,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
-  GrainBytes = (size_t)region_size;
+  GrainBytes = region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
@@ -932,6 +932,16 @@ void G1OffsetTableContigSpace::set_end(HeapWord* new_end) {
   Space::set_end(new_end);
   _offsets.resize(new_end - bottom());
 }
+
+#ifndef PRODUCT
+void G1OffsetTableContigSpace::mangle_unused_area() {
+  mangle_unused_area_complete();
+}
+
+void G1OffsetTableContigSpace::mangle_unused_area_complete() {
+  SpaceMangler::mangle_region(MemRegion(top(), end()));
+}
+#endif
 
 void G1OffsetTableContigSpace::print() const {
   print_short();
