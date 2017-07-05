@@ -242,6 +242,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
   { "MaxLiveObjectEvacuationRatio",
                            JDK_Version::jdk_update(6,24), JDK_Version::jdk(8) },
+  { "ForceSharedSpaces",   JDK_Version::jdk_update(6,25), JDK_Version::jdk(8) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1003,31 +1004,10 @@ static void no_shared_spaces() {
   }
 }
 
-void Arguments::check_compressed_oops_compat() {
-#ifdef _LP64
-  assert(UseCompressedOops, "Precondition");
-  // Is it on by default or set on ergonomically
-  bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
-
-  // If dumping an archive or forcing its use, disable compressed oops if possible
-  if (DumpSharedSpaces || RequireSharedSpaces) {
-    if (is_on_by_default) {
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      return;
-    } else {
-      vm_exit_during_initialization(
-        "Class Data Sharing is not supported with compressed oops yet", NULL);
-    }
-  } else if (UseSharedSpaces) {
-    // UseSharedSpaces is on by default. With compressed oops, we turn it off.
-    FLAG_SET_DEFAULT(UseSharedSpaces, false);
-  }
-#endif
-}
-
 void Arguments::set_tiered_flags() {
+  // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
-    FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
+    FLAG_SET_DEFAULT(CompilationPolicyChoice, 3);
   }
   if (CompilationPolicyChoice < 2) {
     vm_exit_during_initialization(
@@ -1122,40 +1102,28 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     set_parnew_gc_flags();
   }
 
-  // Now make adjustments for CMS
-  size_t young_gen_per_worker;
-  intx new_ratio;
-  size_t min_new_default;
-  intx tenuring_default;
-  if (CMSUseOldDefaults) {  // old defaults: "old" as of 6.0
-    if FLAG_IS_DEFAULT(CMSYoungGenPerWorker) {
-      FLAG_SET_ERGO(intx, CMSYoungGenPerWorker, 4*M);
-    }
-    young_gen_per_worker = 4*M;
-    new_ratio = (intx)15;
-    min_new_default = 4*M;
-    tenuring_default = (intx)0;
-  } else { // new defaults: "new" as of 6.0
-    young_gen_per_worker = CMSYoungGenPerWorker;
-    new_ratio = (intx)7;
-    min_new_default = 16*M;
-    tenuring_default = (intx)4;
-  }
+  // MaxHeapSize is aligned down in collectorPolicy
+  size_t max_heap = align_size_down(MaxHeapSize,
+                                    CardTableRS::ct_max_alignment_constraint());
 
-  // Preferred young gen size for "short" pauses
+  // Now make adjustments for CMS
+  intx   tenuring_default = (intx)6;
+  size_t young_gen_per_worker = CMSYoungGenPerWorker;
+
+  // Preferred young gen size for "short" pauses:
+  // upper bound depends on # of threads and NewRatio.
   const uintx parallel_gc_threads =
     (ParallelGCThreads == 0 ? 1 : ParallelGCThreads);
   const size_t preferred_max_new_size_unaligned =
-    ScaleForWordSize(young_gen_per_worker * parallel_gc_threads);
-  const size_t preferred_max_new_size =
+    MIN2(max_heap/(NewRatio+1), ScaleForWordSize(young_gen_per_worker * parallel_gc_threads));
+  size_t preferred_max_new_size =
     align_size_up(preferred_max_new_size_unaligned, os::vm_page_size());
 
   // Unless explicitly requested otherwise, size young gen
-  // for "short" pauses ~ 4M*ParallelGCThreads
+  // for "short" pauses ~ CMSYoungGenPerWorker*ParallelGCThreads
 
   // If either MaxNewSize or NewRatio is set on the command line,
   // assume the user is trying to set the size of the young gen.
-
   if (FLAG_IS_DEFAULT(MaxNewSize) && FLAG_IS_DEFAULT(NewRatio)) {
 
     // Set MaxNewSize to our calculated preferred_max_new_size unless
@@ -1168,49 +1136,13 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     }
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
-      tty->print_cr("Ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
+      tty->print_cr("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
     }
-
-    // Unless explicitly requested otherwise, prefer a large
-    // Old to Young gen size so as to shift the collection load
-    // to the old generation concurrent collector
-
-    // If this is only guarded by FLAG_IS_DEFAULT(NewRatio)
-    // then NewSize and OldSize may be calculated.  That would
-    // generally lead to some differences with ParNewGC for which
-    // there was no obvious reason.  Also limit to the case where
-    // MaxNewSize has not been set.
-
-    FLAG_SET_ERGO(intx, NewRatio, MAX2(NewRatio, new_ratio));
 
     // Code along this path potentially sets NewSize and OldSize
 
-    // Calculate the desired minimum size of the young gen but if
-    // NewSize has been set on the command line, use it here since
-    // it should be the final value.
-    size_t min_new;
-    if (FLAG_IS_DEFAULT(NewSize)) {
-      min_new = align_size_up(ScaleForWordSize(min_new_default),
-                              os::vm_page_size());
-    } else {
-      min_new = NewSize;
-    }
-    size_t prev_initial_size = InitialHeapSize;
-    if (prev_initial_size != 0 && prev_initial_size < min_new + OldSize) {
-      FLAG_SET_ERGO(uintx, InitialHeapSize, min_new + OldSize);
-      // Currently minimum size and the initial heap sizes are the same.
-      set_min_heap_size(InitialHeapSize);
-      if (PrintGCDetails && Verbose) {
-        warning("Initial heap size increased to " SIZE_FORMAT " M from "
-                SIZE_FORMAT " M; use -XX:NewSize=... for finer control.",
-                InitialHeapSize/M, prev_initial_size/M);
-      }
-    }
-
-    // MaxHeapSize is aligned down in collectorPolicy
-    size_t max_heap =
-      align_size_down(MaxHeapSize,
-                      CardTableRS::ct_max_alignment_constraint());
+    assert(max_heap >= InitialHeapSize, "Error");
+    assert(max_heap >= NewSize, "Error");
 
     if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
@@ -1219,7 +1151,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
            " max_heap: " SIZE_FORMAT,
            min_heap_size(), InitialHeapSize, max_heap);
     }
-    if (max_heap > min_new) {
+    size_t min_new = preferred_max_new_size;
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      min_new = NewSize;
+    }
+    if (max_heap > min_new && min_heap_size() > min_new) {
       // Unless explicitly requested otherwise, make young gen
       // at least min_new, and at most preferred_max_new_size.
       if (FLAG_IS_DEFAULT(NewSize)) {
@@ -1227,18 +1163,17 @@ void Arguments::set_cms_and_parnew_gc_flags() {
         FLAG_SET_ERGO(uintx, NewSize, MIN2(preferred_max_new_size, NewSize));
         if (PrintGCDetails && Verbose) {
           // Too early to use gclog_or_tty
-          tty->print_cr("Ergo set NewSize: " SIZE_FORMAT, NewSize);
+          tty->print_cr("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
         }
       }
       // Unless explicitly requested otherwise, size old gen
-      // so that it's at least 3X of NewSize to begin with;
-      // later NewRatio will decide how it grows; see above.
+      // so it's NewRatio x of NewSize.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_ERGO(uintx, OldSize, MIN2(3*NewSize, max_heap - NewSize));
+          FLAG_SET_ERGO(uintx, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
           if (PrintGCDetails && Verbose) {
             // Too early to use gclog_or_tty
-            tty->print_cr("Ergo set OldSize: " SIZE_FORMAT, OldSize);
+            tty->print_cr("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
           }
         }
       }
@@ -1382,7 +1317,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
 void Arguments::set_ergonomics_flags() {
   // Parallel GC is not compatible with sharing. If one specifies
   // that they want sharing explicitly, do not set ergonomics flags.
-  if (DumpSharedSpaces || ForceSharedSpaces) {
+  if (DumpSharedSpaces || RequireSharedSpaces) {
     return;
   }
 
@@ -1689,13 +1624,13 @@ bool Arguments::verify_interval(uintx val, uintx min,
 }
 
 bool Arguments::verify_min_value(intx val, intx min, const char* name) {
-  // Returns true if given value is greater than specified min threshold
+  // Returns true if given value is at least specified min threshold
   // false, otherwise.
   if (val >= min ) {
       return true;
   }
   jio_fprintf(defaultStream::error_stream(),
-              "%s of " INTX_FORMAT " is invalid; must be greater than " INTX_FORMAT "\n",
+              "%s of " INTX_FORMAT " is invalid; must be at least " INTX_FORMAT "\n",
               name, val, min);
   return false;
 }
@@ -1845,33 +1780,6 @@ bool Arguments::check_vm_args_consistency() {
 
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
-  // Check whether user-specified sharing option conflicts with GC or page size.
-  // Both sharing and large pages are enabled by default on some platforms;
-  // large pages override sharing only if explicitly set on the command line.
-  const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
-          UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
-          UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
-  if (cannot_share) {
-    // Either force sharing on by forcing the other options off, or
-    // force sharing off.
-    if (DumpSharedSpaces || ForceSharedSpaces) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Using Serial GC and default page size because of %s\n",
-                  ForceSharedSpaces ? "-Xshare:on" : "-Xshare:dump");
-      force_serial_gc();
-      FLAG_SET_DEFAULT(UseLargePages, false);
-    } else {
-      if (UseSharedSpaces && Verbose) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Turning off use of shared archive because of "
-                    "choice of garbage collector or large pages\n");
-      }
-      no_shared_spaces();
-    }
-  } else if (UseLargePages && (UseSharedSpaces || DumpSharedSpaces)) {
-    FLAG_SET_DEFAULT(UseLargePages, false);
-  }
-
   status = status && check_gc_consistency();
   status = status && check_stack_pages();
 
@@ -1948,6 +1856,8 @@ bool Arguments::check_vm_args_consistency() {
                 " with -UseAsyncConcMarkSweepGC");
     status = false;
   }
+
+  status = status && verify_min_value(ParGCArrayScanChunk, 1, "ParGCArrayScanChunk");
 
 #ifndef SERIALGC
   if (UseG1GC) {
@@ -2412,9 +2322,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xshare:on", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
       FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true);
-#ifdef TIERED
-      FLAG_SET_CMDLINE(bool, ForceSharedSpaces, true);
-#endif // TIERED
     // -Xshare:auto
     } else if (match_option(option, "-Xshare:auto", &tail)) {
       FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
@@ -2911,6 +2818,36 @@ jint Arguments::parse_options_environment_variable(const char* name, SysClassPat
   return JNI_OK;
 }
 
+void Arguments::set_shared_spaces_flags() {
+  // Check whether class data sharing settings conflict with GC, compressed oops
+  // or page size, and fix them up.  Explicit sharing options override other
+  // settings.
+  const bool cannot_share = UseConcMarkSweepGC || CMSIncrementalMode ||
+    UseG1GC || UseParNewGC || UseParallelGC || UseParallelOldGC ||
+    UseCompressedOops || UseLargePages && FLAG_IS_CMDLINE(UseLargePages);
+  const bool must_share = DumpSharedSpaces || RequireSharedSpaces;
+  const bool might_share = must_share || UseSharedSpaces;
+  if (cannot_share) {
+    if (must_share) {
+      warning("selecting serial gc and disabling large pages %s"
+              "because of %s", "" LP64_ONLY("and compressed oops "),
+              DumpSharedSpaces ? "-Xshare:dump" : "-Xshare:on");
+      force_serial_gc();
+      FLAG_SET_CMDLINE(bool, UseLargePages, false);
+      LP64_ONLY(FLAG_SET_CMDLINE(bool, UseCompressedOops, false));
+    } else {
+      if (UseSharedSpaces && Verbose) {
+        warning("turning off use of shared archive because of "
+                "choice of garbage collector or large pages");
+      }
+      no_shared_spaces();
+    }
+  } else if (UseLargePages && might_share) {
+    // Disable large pages to allow shared spaces.  This is sub-optimal, since
+    // there may not even be a shared archive to use.
+    FLAG_SET_DEFAULT(UseLargePages, false);
+  }
+}
 
 // Parse entry point called from JNI_CreateJavaVM
 
@@ -3058,9 +2995,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
-  if (UseCompressedOops) {
-    check_compressed_oops_compat();
-  }
+  set_shared_spaces_flags();
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {
@@ -3078,22 +3013,17 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
 #ifndef KERNEL
-  if (UseConcMarkSweepGC) {
-    // Set flags for CMS and ParNew.  Check UseConcMarkSweep first
-    // to ensure that when both UseConcMarkSweepGC and UseParNewGC
-    // are true, we don't call set_parnew_gc_flags() as well.
+  // Set heap size based on available physical memory
+  set_heap_size();
+  // Set per-collector flags
+  if (UseParallelGC || UseParallelOldGC) {
+    set_parallel_gc_flags();
+  } else if (UseConcMarkSweepGC) { // should be done before ParNew check below
     set_cms_and_parnew_gc_flags();
-  } else {
-    // Set heap size based on available physical memory
-    set_heap_size();
-    // Set per-collector flags
-    if (UseParallelGC || UseParallelOldGC) {
-      set_parallel_gc_flags();
-    } else if (UseParNewGC) {
-      set_parnew_gc_flags();
-    } else if (UseG1GC) {
-      set_g1_gc_flags();
-    }
+  } else if (UseParNewGC) {  // skipped if CMS is set above
+    set_parnew_gc_flags();
+  } else if (UseG1GC) {
+    set_g1_gc_flags();
   }
 #endif // KERNEL
 
@@ -3110,7 +3040,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Turn off biased locking for locking debug mode flags,
   // which are subtlely different from each other but neither works with
   // biased locking.
-  if (!UseFastLocking || UseHeavyMonitors) {
+  if (UseHeavyMonitors
+#ifdef COMPILER1
+      || !UseFastLocking
+#endif // COMPILER1
+    ) {
     if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
       // flag set to true on command line; warn the user that they
       // can't enable biased locking here

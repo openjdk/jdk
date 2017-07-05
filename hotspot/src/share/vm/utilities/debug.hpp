@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_DEBUG_HPP
 #define SHARE_VM_UTILITIES_DEBUG_HPP
 
+#include "prims/jvm.h"
 #include "utilities/globalDefinitions.hpp"
 
 #include <stdarg.h>
@@ -48,7 +49,7 @@ template <size_t bufsz>
 FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) {
   va_list argp;
   va_start(argp, format);
-  vsnprintf(_buf, bufsz, format, argp);
+  jio_vsnprintf(_buf, bufsz, format, argp);
   va_end(argp);
 }
 
@@ -61,7 +62,7 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
 
   va_list argp;
   va_start(argp, format);
-  vsnprintf(buf_end, bufsz - len, format, argp);
+  jio_vsnprintf(buf_end, bufsz - len, format, argp);
   va_end(argp);
 }
 

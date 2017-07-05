@@ -53,8 +53,8 @@ class HeapRegion;
 class HeapRegionSetBase;
 
 #define HR_FORMAT "%d:["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
-#define HR_FORMAT_PARAMS(__hr) (__hr)->hrs_index(), (__hr)->bottom(), \
-                               (__hr)->top(), (__hr)->end()
+#define HR_FORMAT_PARAMS(_hr_) (_hr_)->hrs_index(), (_hr_)->bottom(), \
+                               (_hr_)->top(), (_hr_)->end()
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -518,13 +518,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
                    containing_set, _containing_set));
 
     _containing_set = containing_set;
-}
+  }
 
   HeapRegionSetBase* containing_set() { return _containing_set; }
 #else // ASSERT
   void set_containing_set(HeapRegionSetBase* containing_set) { }
 
-  // containing_set() is only used in asserts so there's not reason
+  // containing_set() is only used in asserts so there's no reason
   // to provide a dummy version of it.
 #endif // ASSERT
 
@@ -535,14 +535,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool pending_removal() { return _pending_removal; }
 
   void set_pending_removal(bool pending_removal) {
-    // We can only set pending_removal to true, if it's false and the
-    // region belongs to a set.
-    assert(!pending_removal ||
-           (!_pending_removal && containing_set() != NULL), "pre-condition");
-    // We can only set pending_removal to false, if it's true and the
-    // region does not belong to a set.
-    assert( pending_removal ||
-           ( _pending_removal && containing_set() == NULL), "pre-condition");
+    if (pending_removal) {
+      assert(!_pending_removal && containing_set() != NULL,
+             "can only set pending removal to true if it's false and "
+             "the region belongs to a region set");
+    } else {
+      assert( _pending_removal && containing_set() == NULL,
+              "can only set pending removal to false if it's true and "
+              "the region does not belong to a region set");
+    }
 
     _pending_removal = pending_removal;
   }
