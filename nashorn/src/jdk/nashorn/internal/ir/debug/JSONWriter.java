@@ -27,18 +27,18 @@ package jdk.nashorn.internal.ir.debug;
 
 import java.util.Arrays;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
-import jdk.nashorn.internal.ir.ExecuteNode;
+import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
@@ -298,14 +298,27 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterExecuteNode(final ExecuteNode executeNode) {
-        enterDefault(executeNode);
+    public boolean enterExpressionStatement(final ExpressionStatement expressionStatement) {
+        enterDefault(expressionStatement);
 
         type("ExpressionStatement");
         comma();
 
         property("expression");
-        executeNode.getExpression().accept(this);
+        expressionStatement.getExpression().accept(this);
+
+        return leave();
+    }
+
+    @Override
+    public boolean enterBlockStatement(BlockStatement blockStatement) {
+        enterDefault(blockStatement);
+
+        type("BlockStatement");
+        comma();
+
+        property("block");
+        blockStatement.getBlock().accept(this);
 
         return leave();
     }
@@ -514,7 +527,7 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
             type("ArrayExpression");
             comma();
 
-            final Node[] value = (Node[])literalNode.getValue();
+            final Node[] value = literalNode.getArray();
             array("elements", Arrays.asList(value));
         } else {
             type("Literal");
@@ -680,15 +693,15 @@ public final class JSONWriter extends NodeVisitor<LexicalContext> {
         comma();
 
         property("test");
-        ternaryNode.lhs().accept(this);
+        ternaryNode.getTest().accept(this);
         comma();
 
         property("consequent");
-        ternaryNode.rhs().accept(this);
+        ternaryNode.getTrueExpression().accept(this);
         comma();
 
         property("alternate");
-        ternaryNode.third().accept(this);
+        ternaryNode.getFalseExpression().accept(this);
 
         return leave();
     }

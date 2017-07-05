@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,20 +51,63 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssVersionCheck
     return (res == 0) ? JNI_FALSE : JNI_TRUE;
 }
 
-JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInit
-  (JNIEnv *env, jclass thisClass, jstring jFunctionName, jlong jHandle, jstring jConfigDir)
+/*
+ * Initializes NSS.
+ * The NSS_INIT_OPTIMIZESPACE flag is supplied by the caller.
+ * The NSS_Init* functions are mapped to the NSS_Initialize function.
+ */
+JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
+  (JNIEnv *env, jclass thisClass, jstring jFunctionName, jlong jHandle, jstring jConfigDir, jboolean jNssOptimizeSpace)
 {
-    const char *functionName = (*env)->GetStringUTFChars(env, jFunctionName, NULL);
-    const char *configDir = (jConfigDir == NULL) ? NULL : (*env)->GetStringUTFChars(env, jConfigDir, NULL);
-    FPTR_Init init = (FPTR_Init)findFunction(env, jHandle, functionName);
-    int res;
+    const char *functionName =
+        (*env)->GetStringUTFChars(env, jFunctionName, NULL);
+    const char *configDir = (jConfigDir == NULL)
+        ? NULL : (*env)->GetStringUTFChars(env, jConfigDir, NULL);
+    FPTR_Initialize initialize =
+        (FPTR_Initialize)findFunction(env, jHandle, "NSS_Initialize");
+    int res = 0;
+    unsigned int flags = 0x00;
 
-    (*env)->ReleaseStringUTFChars(env, jFunctionName, functionName);
-    if (init == NULL) {
-        return JNI_FALSE;
+    if (jNssOptimizeSpace == JNI_TRUE) {
+        flags = 0x20; // NSS_INIT_OPTIMIZESPACE flag
     }
 
-    res = init(configDir);
+    if (initialize != NULL) {
+        /*
+         * If the NSS_Init function is requested then call NSS_Initialize to
+         * open the Cert, Key and Security Module databases, read only.
+         */
+        if (strcmp("NSS_Init", functionName) == 0) {
+            flags = flags | 0x01; // NSS_INIT_READONLY flag
+            res = initialize(configDir, "", "", "secmod.db", flags);
+
+        /*
+         * If the NSS_InitReadWrite function is requested then call
+         * NSS_Initialize to open the Cert, Key and Security Module databases,
+         * read/write.
+         */
+        } else if (strcmp("NSS_InitReadWrite", functionName) == 0) {
+            res = initialize(configDir, "", "", "secmod.db", flags);
+
+        /*
+         * If the NSS_NoDB_Init function is requested then call
+         * NSS_Initialize without creating Cert, Key or Security Module
+         * databases.
+         */
+        } else if (strcmp("NSS_NoDB_Init", functionName) == 0) {
+            flags = flags | 0x02  // NSS_INIT_NOCERTDB flag
+                          | 0x04  // NSS_INIT_NOMODDB flag
+                          | 0x08  // NSS_INIT_FORCEOPEN flag
+                          | 0x10; // NSS_INIT_NOROOTINIT flag
+            res = initialize("", "", "", "", flags);
+
+        } else {
+            res = 2;
+        }
+    } else {
+        res = 1;
+    }
+    (*env)->ReleaseStringUTFChars(env, jFunctionName, functionName);
     if (configDir != NULL) {
         (*env)->ReleaseStringUTFChars(env, jConfigDir, configDir);
     }

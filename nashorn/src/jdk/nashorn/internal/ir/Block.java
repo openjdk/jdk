@@ -38,11 +38,10 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 /**
- * IR representation for a list of statements and functions. All provides the
- * basis for script body.
+ * IR representation for a list of statements.
  */
 @Immutable
-public class Block extends BreakableNode implements Flags<Block> {
+public class Block extends Node implements BreakableNode, Flags<Block> {
     /** List of statements */
     protected final List<Statement> statements;
 
@@ -51,6 +50,9 @@ public class Block extends BreakableNode implements Flags<Block> {
 
     /** Entry label. */
     protected final Label entryLabel;
+
+    /** Break label. */
+    private final Label breakLabel;
 
     /** Does the block/function need a new scope? */
     protected final int flags;
@@ -76,17 +78,17 @@ public class Block extends BreakableNode implements Flags<Block> {
     /**
      * Constructor
      *
-     * @param lineNumber line number
      * @param token      token
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final int lineNumber, final long token, final int finish, final Statement... statements) {
-        super(lineNumber, token, finish, new Label("block_break"));
+    public Block(final long token, final int finish, final Statement... statements) {
+        super(token, finish);
 
         this.statements = Arrays.asList(statements);
         this.symbols    = new LinkedHashMap<>();
         this.entryLabel = new Label("block_entry");
+        this.breakLabel = new Label("block_break");
         this.flags     =  0;
     }
 
@@ -98,8 +100,8 @@ public class Block extends BreakableNode implements Flags<Block> {
      * @param finish     finish
      * @param statements statements
      */
-    public Block(final int lineNumber, final long token, final int finish, final List<Statement> statements) {
-        this(lineNumber, token, finish, statements.toArray(new Statement[statements.size()]));
+    public Block(final long token, final int finish, final List<Statement> statements) {
+        this(token, finish, statements.toArray(new Statement[statements.size()]));
     }
 
     private Block(final Block block, final int finish, final List<Statement> statements, final int flags, final Map<String, Symbol> symbols) {
@@ -108,6 +110,7 @@ public class Block extends BreakableNode implements Flags<Block> {
         this.flags      = flags;
         this.symbols    = new LinkedHashMap<>(symbols); //todo - symbols have no dependencies on any IR node and can as far as we understand it be shallow copied now
         this.entryLabel = new Label(block.entryLabel);
+        this.breakLabel = new Label(block.breakLabel);
         this.finish     = finish;
     }
 
@@ -223,6 +226,11 @@ public class Block extends BreakableNode implements Flags<Block> {
         return entryLabel;
     }
 
+    @Override
+    public Label getBreakLabel() {
+        return breakLabel;
+    }
+
     /**
      * Get the list of statements in this block
      *
@@ -322,7 +330,17 @@ public class Block extends BreakableNode implements Flags<Block> {
     }
 
     @Override
-    protected boolean isBreakableWithoutLabel() {
+    public boolean isBreakableWithoutLabel() {
         return false;
+    }
+
+    @Override
+    public List<Label> getLabels() {
+        return Collections.singletonList(breakLabel);
+    }
+
+    @Override
+    public Node accept(NodeVisitor<? extends LexicalContext> visitor) {
+        return Acceptor.accept(this, visitor);
     }
 }

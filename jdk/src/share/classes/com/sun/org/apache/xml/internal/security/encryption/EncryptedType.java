@@ -2,27 +2,27 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
-
 import com.sun.org.apache.xml.internal.security.keys.KeyInfo;
-
 
 /**
  * EncryptedType is the abstract type from which <code>EncryptedData</code> and
@@ -50,6 +50,7 @@ import com.sun.org.apache.xml.internal.security.keys.KeyInfo;
  * @author Axl Mattheus
  */
 public interface EncryptedType {
+
     /**
      * Returns a <code>String</code> providing for the standard method of
      * assigning an id to the element within the document context.
@@ -61,7 +62,7 @@ public interface EncryptedType {
     /**
      * Sets the id.
      *
-     * @param id.
+     * @param id
      */
     void setId(String id);
 
@@ -117,7 +118,7 @@ public interface EncryptedType {
     void setMimeType(String type);
 
     /**
-     * Retusn an <code>URI</code> representing the encoding of the
+     * Return an <code>URI</code> representing the encoding of the
      * <code>EncryptedType</code>.
      *
      * @return the encoding of this <code>EncryptedType</code>.
@@ -128,7 +129,7 @@ public interface EncryptedType {
      * Sets the <code>URI</code> representing the encoding of the
      * <code>EncryptedType</code>.
      *
-     * @param encoding.
+     * @param encoding
      */
     void setEncoding(String encoding);
 
@@ -189,7 +190,8 @@ public interface EncryptedType {
      * Sets the <code>EncryptionProperties</code> that supplies additional
      * information about the generation of the <code>EncryptedType</code>.
      *
-     * @param properties.
+     * @param properties
      */
     void setEncryptionProperties(EncryptionProperties properties);
 }
+

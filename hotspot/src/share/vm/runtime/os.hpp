@@ -915,8 +915,6 @@ class os: AllStatic {
 // of the global SpinPause() with C linkage.
 // It'd also be eligible for inlining on many platforms.
 
-extern "C" int SpinPause () ;
-extern "C" int SafeFetch32 (int * adr, int errValue) ;
-extern "C" intptr_t SafeFetchN (intptr_t * adr, intptr_t errValue) ;
+extern "C" int SpinPause();
 
 #endif // SHARE_VM_RUNTIME_OS_HPP

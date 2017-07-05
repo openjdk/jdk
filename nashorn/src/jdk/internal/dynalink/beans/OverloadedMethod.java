@@ -135,7 +135,7 @@ class OverloadedMethod {
         varArgMethods.trimToSize();
 
         final MethodHandle bound = SELECT_METHOD.bindTo(this);
-        final MethodHandle collecting = SimpleDynamicMethod.collectArguments(bound, argNum).asType(
+        final MethodHandle collecting = SingleDynamicMethod.collectArguments(bound, argNum).asType(
                 callSiteType.changeReturnType(MethodHandle.class));
         invoker = MethodHandles.foldArguments(MethodHandles.exactInvoker(callSiteType), collecting);
     }
@@ -167,7 +167,7 @@ class OverloadedMethod {
                     break;
                 }
                 case 1: {
-                    method = new SimpleDynamicMethod(methods.get(0)).getInvocation(callSiteType, linkerServices);
+                    method = SingleDynamicMethod.getInvocation(methods.get(0), callSiteType, linkerServices);
                     break;
                 }
                 default: {

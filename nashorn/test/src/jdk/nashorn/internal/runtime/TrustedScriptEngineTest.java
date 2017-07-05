@@ -145,4 +145,55 @@ public class TrustedScriptEngineTest {
 
         fail("Cannot find nashorn factory!");
     }
+
+    @Test
+    /**
+     * Test repeated evals with --loader-per-compile=false
+     * We used to get "class redefinition error".
+     */
+    public void noLoaderPerCompilerTest() {
+        final ScriptEngineManager sm = new ScriptEngineManager();
+        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+            if (fac instanceof NashornScriptEngineFactory) {
+                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
+                final String[] options = new String[] { "--loader-per-compile=false" };
+                final ScriptEngine e = nfac.getScriptEngine(options);
+                try {
+                    e.eval("2 + 3");
+                    e.eval("4 + 4");
+                } catch (final ScriptException se) {
+                    se.printStackTrace();
+                    fail(se.getMessage());
+                }
+                return;
+            }
+        }
+        fail("Cannot find nashorn factory!");
+    }
+
+    @Test
+    /**
+     * Test that we can use same script name in repeated evals with --loader-per-compile=false
+     * We used to get "class redefinition error" as name was derived from script name.
+     */
+    public void noLoaderPerCompilerWithSameNameTest() {
+        final ScriptEngineManager sm = new ScriptEngineManager();
+        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+            if (fac instanceof NashornScriptEngineFactory) {
+                final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
+                final String[] options = new String[] { "--loader-per-compile=false" };
+                final ScriptEngine e = nfac.getScriptEngine(options);
+                e.put(ScriptEngine.FILENAME, "test.js");
+                try {
+                    e.eval("2 + 3");
+                    e.eval("4 + 4");
+                } catch (final ScriptException se) {
+                    se.printStackTrace();
+                    fail(se.getMessage());
+                }
+                return;
+            }
+        }
+        fail("Cannot find nashorn factory!");
+    }
 }

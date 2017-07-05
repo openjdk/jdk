@@ -57,6 +57,7 @@ package java.util;
  * @author  Josh Bloch
  * @see     Collection
  * @see     Iterator
+ * @see     Spliterator
  * @see     ListIterator
  * @see     Vector
  * @see     LinkedList

@@ -71,6 +71,14 @@ public class MOAT {
         testCollection(new LinkedList<Integer>());
         testCollection(new LinkedList<Integer>().subList(0,0));
         testCollection(new TreeSet<Integer>());
+        testCollection(Collections.checkedList(new ArrayList<Integer>(), Integer.class));
+        testCollection(Collections.synchronizedList(new ArrayList<Integer>()));
+        testCollection(Collections.checkedSet(new HashSet<Integer>(), Integer.class));
+        testCollection(Collections.checkedSortedSet(new TreeSet<Integer>(), Integer.class));
+        testCollection(Collections.checkedNavigableSet(new TreeSet<Integer>(), Integer.class));
+        testCollection(Collections.synchronizedSet(new HashSet<Integer>()));
+        testCollection(Collections.synchronizedSortedSet(new TreeSet<Integer>()));
+        testCollection(Collections.synchronizedNavigableSet(new TreeSet<Integer>()));
 
         testCollection(new CopyOnWriteArrayList<Integer>());
         testCollection(new CopyOnWriteArrayList<Integer>().subList(0,0));
@@ -98,6 +106,12 @@ public class MOAT {
         testMap(new Hashtable<Integer,Integer>());
         testMap(new ConcurrentHashMap<Integer,Integer>(10, 0.5f));
         testMap(new ConcurrentSkipListMap<Integer,Integer>());
+        testMap(Collections.checkedMap(new HashMap<Integer,Integer>(), Integer.class, Integer.class));
+        testMap(Collections.checkedSortedMap(new TreeMap<Integer,Integer>(), Integer.class, Integer.class));
+        testMap(Collections.checkedNavigableMap(new TreeMap<Integer,Integer>(), Integer.class, Integer.class));
+        testMap(Collections.synchronizedMap(new HashMap<Integer,Integer>()));
+        testMap(Collections.synchronizedSortedMap(new TreeMap<Integer,Integer>()));
+        testMap(Collections.synchronizedNavigableMap(new TreeMap<Integer,Integer>()));
 
         // Empty collections
         final List<Integer> emptyArray = Arrays.asList(new Integer[]{});
@@ -117,19 +131,29 @@ public class MOAT {
         testCollection(emptySet);
         testEmptySet(emptySet);
         testEmptySet(EMPTY_SET);
+        testEmptySet(Collections.emptySet());
+        testEmptySet(Collections.emptySortedSet());
+        testEmptySet(Collections.emptyNavigableSet());
         testImmutableSet(emptySet);
 
         List<Integer> emptyList = emptyList();
         testCollection(emptyList);
         testEmptyList(emptyList);
         testEmptyList(EMPTY_LIST);
+        testEmptyList(Collections.emptyList());
         testImmutableList(emptyList);
 
         Map<Integer,Integer> emptyMap = emptyMap();
         testMap(emptyMap);
         testEmptyMap(emptyMap);
         testEmptyMap(EMPTY_MAP);
+        testEmptyMap(Collections.emptyMap());
+        testEmptyMap(Collections.emptySortedMap());
+        testEmptyMap(Collections.emptyNavigableMap());
         testImmutableMap(emptyMap);
+        testImmutableMap(Collections.emptyMap());
+        testImmutableMap(Collections.emptySortedMap());
+        testImmutableMap(Collections.emptyNavigableMap());
 
         // Singleton collections
         Set<Integer> singletonSet = singleton(1);

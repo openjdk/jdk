@@ -32,3 +32,23 @@ function toto() {
     var friends = 1;
     (joe = friends) == null;
 } 
+
+//JDK-8019476 duplicate case of this
+Function("with(\nnull == (this % {}))( /x/g );"); 
+
+function f() {
+    with(null == (this % {}))(/x/g);
+}
+
+Function("return (null != [,,] <= this);"); 
+
+function f2() {
+    return (null != [,,] <= this);
+}
+
+Function("/*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }"); 
+
+function f3() {
+    /*infloop*/L:for(var x; ([+(function (window)[,,])(function(q) { return q; }, -0)].some(new Function)); [11,12,13,14].some) {/*infloop*/do {;return this; } while(x); }
+}
+

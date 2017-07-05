@@ -326,8 +326,12 @@ public abstract class Executable extends AccessibleObject
             tmp = getParameters0();
 
             // If we get back nothing, then synthesize parameters
-            if (tmp == null)
+            if (tmp == null) {
+                hasRealParameterData = false;
                 tmp = synthesizeAllParams();
+            } else {
+                hasRealParameterData = true;
+            }
 
             parameters = tmp;
         }
@@ -335,6 +339,16 @@ public abstract class Executable extends AccessibleObject
         return tmp;
     }
 
+    boolean hasRealParameterData() {
+        // If this somehow gets called before parameters gets
+        // initialized, force it into existence.
+        if (parameters == null) {
+            privateGetParameters();
+        }
+        return hasRealParameterData;
+    }
+
+    private transient volatile boolean hasRealParameterData;
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();

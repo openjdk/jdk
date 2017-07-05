@@ -252,13 +252,12 @@ public abstract class AbstractSaslImpl {
 
 
     /**
-     * Outputs a byte array and converts
+     * Outputs a byte array. Can be null.
      */
     protected static final void traceOutput(String srcClass, String srcMethod,
         String traceTag, byte[] output) {
-        if (output != null) {
-            traceOutput(srcClass, srcMethod, traceTag, output, 0, output.length);
-        }
+        traceOutput(srcClass, srcMethod, traceTag, output, 0,
+                output == null ? 0 : output.length);
     }
 
     protected static final void traceOutput(String srcClass, String srcMethod,
@@ -274,13 +273,20 @@ public abstract class AbstractSaslImpl {
                 lev = Level.FINEST;
             }
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream(len);
-            new HexDumpEncoder().encodeBuffer(
-                new ByteArrayInputStream(output, offset, len), out);
+            String content;
+
+            if (output != null) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream(len);
+                new HexDumpEncoder().encodeBuffer(
+                    new ByteArrayInputStream(output, offset, len), out);
+                content = out.toString();
+            } else {
+                content = "NULL";
+            }
 
             // Message id supplied by caller as part of traceTag
             logger.logp(lev, srcClass, srcMethod, "{0} ( {1} ): {2}",
-                new Object[] {traceTag, new Integer(origlen), out.toString()});
+                new Object[] {traceTag, new Integer(origlen), content});
         } catch (Exception e) {
             logger.logp(Level.WARNING, srcClass, srcMethod,
                 "SASLIMPL09:Error generating trace output: {0}", e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.security.sasl;
 import javax.security.auth.callback.Callback;
 
 /**
-  * This callback is used by <tt>SaslServer</tt> to determine whether
+  * This callback is used by {@code SaslServer} to determine whether
   * one entity (identified by an authenticated authentication id)
   * can act on
   * behalf of another entity (identified by an authorization id).
@@ -66,7 +66,7 @@ public class AuthorizeCallback implements Callback, java.io.Serializable {
     private boolean authorized;
 
     /**
-     * Constructs an instance of <tt>AuthorizeCallback</tt>.
+     * Constructs an instance of {@code AuthorizeCallback}.
      *
      * @param authnID   The (authenticated) authentication id.
      * @param authzID   The authorization id.
@@ -96,7 +96,7 @@ public class AuthorizeCallback implements Callback, java.io.Serializable {
      * Determines whether the authentication id is allowed to
      * act on behalf of the authorization id.
      *
-     * @return <tt>true</tt> if authorization is allowed; <tt>false</tt> otherwise
+     * @return {@code true} if authorization is allowed; {@code false} otherwise
      * @see #setAuthorized(boolean)
      * @see #getAuthorizedID()
      */
@@ -106,7 +106,7 @@ public class AuthorizeCallback implements Callback, java.io.Serializable {
 
     /**
      * Sets whether the authorization is allowed.
-     * @param ok <tt>true</tt> if authorization is allowed; <tt>false</tt> otherwise
+     * @param ok {@code true} if authorization is allowed; {@code false} otherwise
      * @see #isAuthorized
      * @see #setAuthorizedID(java.lang.String)
      */
@@ -116,7 +116,7 @@ public class AuthorizeCallback implements Callback, java.io.Serializable {
 
     /**
      * Returns the id of the authorized user.
-     * @return The id of the authorized user. <tt>null</tt> means the
+     * @return The id of the authorized user. {@code null} means the
      * authorization failed.
      * @see #setAuthorized(boolean)
      * @see #setAuthorizedID(java.lang.String)

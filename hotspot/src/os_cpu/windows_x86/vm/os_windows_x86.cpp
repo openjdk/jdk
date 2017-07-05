@@ -518,24 +518,6 @@ void os::print_register_info(outputStream *st, void *context) {
   st->cr();
 }
 
-extern "C" int SafeFetch32 (int * adr, int Err) {
-   int rv = Err ;
-   _try {
-       rv = *((volatile int *) adr) ;
-   } __except(EXCEPTION_EXECUTE_HANDLER) {
-   }
-   return rv ;
-}
-
-extern "C" intptr_t SafeFetchN (intptr_t * adr, intptr_t Err) {
-   intptr_t rv = Err ;
-   _try {
-       rv = *((volatile intptr_t *) adr) ;
-   } __except(EXCEPTION_EXECUTE_HANDLER) {
-   }
-   return rv ;
-}
-
 extern "C" int SpinPause () {
 #ifdef AMD64
    return 0 ;

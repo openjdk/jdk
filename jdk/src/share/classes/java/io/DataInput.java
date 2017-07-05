@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ package java.io;
  *          summary="Bit values and bytes">
  *     <tr>
  *       <td></td>
- *       <th id="bit">Bit Values</th>
+ *       <th id="bit_a">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1">Byte 1</th>
+ *       <th id="byte1_a">Byte 1</th>
  *       <td>
  *         <table border="1" cellspacing="0" width="100%">
  *           <tr>
@@ -92,10 +92,10 @@ package java.io;
  *          summary="Bit values and bytes">
  *     <tr>
  *       <td></td>
- *       <th id="bit">Bit Values</th>
+ *       <th id="bit_b">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1">Byte 1</th>
+ *       <th id="byte1_b">Byte 1</th>
  *       <td>
  *         <table border="1" cellspacing="0" width="100%">
  *           <tr>
@@ -108,7 +108,7 @@ package java.io;
  *       </td>
  *     </tr>
  *     <tr>
- *       <th id="byte2">Byte 2</th>
+ *       <th id="byte2_a">Byte 2</th>
  *       <td>
  *         <table border="1" cellspacing="0" width="100%">
  *           <tr>
@@ -131,10 +131,10 @@ package java.io;
  *          summary="Bit values and bytes">
  *     <tr>
  *       <td></td>
- *       <th id="bit">Bit Values</th>
+ *       <th id="bit_c">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1">Byte 1</th>
+ *       <th id="byte1_c">Byte 1</th>
  *       <td>
  *         <table border="1" cellspacing="0" width="100%">
  *           <tr>
@@ -148,7 +148,7 @@ package java.io;
  *       </td>
  *     </tr>
  *     <tr>
- *       <th id="byte2">Byte 2</th>
+ *       <th id="byte2_b">Byte 2</th>
  *       <td>
  *         <table border="1" cellspacing="0" width="100%">
  *           <tr>

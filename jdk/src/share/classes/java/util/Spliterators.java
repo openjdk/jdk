@@ -1314,12 +1314,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                Object[] a;
-                try {
-                    a = new Object[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                Object[] a = new Object[n];
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
@@ -1429,12 +1424,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                int[] a;
-                try {
-                    a = new int[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                int[] a = new int[n];
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
@@ -1544,12 +1534,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                long[] a;
-                try {
-                    a = new long[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                long[] a = new long[n];
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
@@ -1659,12 +1644,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                double[] a;
-                try {
-                    a = new double[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                double[] a = new double[n];
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
@@ -1795,12 +1775,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                Object[] a;
-                try {
-                    a = new Object[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                Object[] a = new Object[n];
                 int j = 0;
                 do { a[j] = i.next(); } while (++j < n && i.hasNext());
                 batch = j;
@@ -1910,12 +1885,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                int[] a;
-                try {
-                    a = new int[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                int[] a = new int[n];
                 int j = 0;
                 do { a[j] = i.nextInt(); } while (++j < n && i.hasNext());
                 batch = j;
@@ -2007,12 +1977,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                long[] a;
-                try {
-                    a = new long[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                long[] a = new long[n];
                 int j = 0;
                 do { a[j] = i.nextLong(); } while (++j < n && i.hasNext());
                 batch = j;
@@ -2104,12 +2069,7 @@ public final class Spliterators {
                     n = (int) s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                double[] a;
-                try {
-                    a = new double[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                double[] a = new double[n];
                 int j = 0;
                 do { a[j] = i.nextDouble(); } while (++j < n && i.hasNext());
                 batch = j;
