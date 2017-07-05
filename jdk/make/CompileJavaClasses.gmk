@@ -84,8 +84,6 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
       SolarisUserDefinedFileAttributeView.java \
       SolarisWatchService.java \
       SolarisAclFileAttributeView.java \
-      SolarisLoginModule.java \
-      SolarisSystem.java \
       sun/nio/ch/DevPollArrayWrapper.java \
       sun/nio/ch/DevPollSelectorImpl.java \
       sun/nio/ch/DevPollSelectorProvider.java \
@@ -98,15 +96,6 @@ ifneq ($(OPENJDK_TARGET_OS), solaris)
       sun/tools/attach/SolarisVirtualMachine.java
 
   EXCLUDES += com/oracle/security
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), windows)
-  # Exclude Window security related files in src/share/classes
-  EXFILES += NTLoginModule.java \
-      NTSystem.java
-else
-  EXFILES += UnixLoginModule.java \
-      UnixSystem.java
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)

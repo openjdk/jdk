@@ -704,21 +704,10 @@ public abstract class URLConnection {
      *     handler for that content type.
      * <li>If no content handler factory has yet been set up, or if the
      *     factory's {@code createContentHandler} method returns
-     *     {@code null}, then the application loads the class named:
-     *     <blockquote><pre>
-     *         sun.net.www.content.&lt;<i>contentType</i>&gt;
-     *     </pre></blockquote>
-     *     where &lt;<i>contentType</i>&gt; is formed by taking the
-     *     content-type string, replacing all slash characters with a
-     *     {@code period} ('.'), and all other non-alphanumeric characters
-     *     with the underscore character '{@code _}'. The alphanumeric
-     *     characters are specifically the 26 uppercase ASCII letters
-     *     '{@code A}' through '{@code Z}', the 26 lowercase ASCII
-     *     letters '{@code a}' through '{@code z}', and the 10 ASCII
-     *     digits '{@code 0}' through '{@code 9}'. If the specified
-     *     class does not exist, or is not a subclass of
-     *     {@code ContentHandler}, then an
-     *     {@code UnknownServiceException} is thrown.
+     *     {@code null}, then this method tries to load a content handler
+     *     class as defined by {@link java.net.ContentHandler ContentHandler}.
+     *     If the class does not exist, or is not a subclass of {@code
+     *     ContentHandler}, then an {@code UnknownServiceException} is thrown.
      * </ol>
      *
      * @return     the object fetched. The {@code instanceof} operator

@@ -111,7 +111,7 @@ public enum TokenType {
     CATCH          (KEYWORD,  "catch"),
 //  CHAR           (FUTURE,   "char"),
     CLASS          (FUTURE,   "class"),
-    CONST          (FUTURE,  "const"),
+    CONST          (KEYWORD,  "const"),
     CONTINUE       (KEYWORD,  "continue"),
     DEBUGGER       (KEYWORD,  "debugger"),
     DEFAULT        (KEYWORD,  "default"),

@@ -453,7 +453,7 @@ public class Shell {
             }
         } finally {
             if (globalChanged) {
-                Context.setGlobal(global);
+                Context.setGlobal(oldGlobal);
             }
         }
 
