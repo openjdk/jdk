@@ -4306,7 +4306,6 @@ encode %{
     int disp = $mem$$disp;
     if (index == -1) {
       __ prfm(Address(base, disp), PSTL1KEEP);
-      __ nop();
     } else {
       Register index_reg = as_Register(index);
       if (disp == 0) {
@@ -13844,6 +13843,139 @@ instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl
   ins_pipe(pipe_cmp_branch);
 %}
 
+// Test bit and Branch
+
+instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::LT)
+      __ tbnz($op1$$Register, 63, *L);
+    else
+      __ tbz($op1$$Register, 63, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::LT)
+      __ tbnz($op1$$Register, 31, *L);
+    else
+      __ tbz($op1$$Register, 31, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpL (AndL op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_long()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    if (cond == Assembler::EQ)
+      __ tbz($op1$$Register, bit, *L);
+    else
+      __ tbnz($op1$$Register, bit, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpI (AndI op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_int()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    if (cond == Assembler::EQ)
+      __ tbz($op1$$Register, bit, *L);
+    else
+      __ tbnz($op1$$Register, bit, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+// Test bits
+
+instruct cmpL_and(cmpOp cmp, iRegL op1, immL op2, immL0 op3, rFlagsReg cr) %{
+  match(Set cr (CmpL (AndL op1 op2) op3));
+  predicate(Assembler::operand_valid_for_logical_immediate
+            (/*is_32*/false, n->in(1)->in(2)->get_long()));
+
+  ins_cost(INSN_COST);
+  format %{ "tst $op1, $op2 # long" %}
+  ins_encode %{
+    __ tst($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct cmpI_and(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, rFlagsReg cr) %{
+  match(Set cr (CmpI (AndI op1 op2) op3));
+  predicate(Assembler::operand_valid_for_logical_immediate
+            (/*is_32*/true, n->in(1)->in(2)->get_int()));
+
+  ins_cost(INSN_COST);
+  format %{ "tst $op1, $op2 # int" %}
+  ins_encode %{
+    __ tstw($op1$$Register, $op2$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct cmpL_and_reg(cmpOp cmp, iRegL op1, iRegL op2, immL0 op3, rFlagsReg cr) %{
+  match(Set cr (CmpL (AndL op1 op2) op3));
+
+  ins_cost(INSN_COST);
+  format %{ "tst $op1, $op2 # long" %}
+  ins_encode %{
+    __ tst($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct cmpI_and_reg(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2, immI0 op3, rFlagsReg cr) %{
+  match(Set cr (CmpI (AndI op1 op2) op3));
+
+  ins_cost(INSN_COST);
+  format %{ "tstw $op1, $op2 # int" %}
+  ins_encode %{
+    __ tstw($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
 // Conditional Far Branch
 // Conditional Far Branch Unsigned
 // TODO: fixme
@@ -14167,6 +14299,9 @@ instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cn
 
   format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
   ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ asrw($cnt1$$Register, $cnt1$$Register, 1);
+    __ asrw($cnt2$$Register, $cnt2$$Register, 1);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register);
@@ -14223,6 +14358,8 @@ instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp" %}
   ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ asrw($cnt$$Register, $cnt$$Register, 1);
     __ string_equals($str1$$Register, $str2$$Register,
                       $cnt$$Register, $result$$Register,
                       $tmp$$Register);
