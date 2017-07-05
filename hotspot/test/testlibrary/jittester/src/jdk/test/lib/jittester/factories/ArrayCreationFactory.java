@@ -29,15 +29,14 @@ import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.VariableDeclaration;
 import jdk.test.lib.jittester.arrays.ArrayCreation;
 import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeByte;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class ArrayCreationFactory extends SafeFactory {
+class ArrayCreationFactory extends SafeFactory<ArrayCreation> {
     private final long complexityLimit;
     private final int operatorLimit;
     private final Type resultType;
@@ -56,16 +55,16 @@ class ArrayCreationFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected ArrayCreation sproduce() throws ProductionFailedException {
         if (resultType instanceof TypeArray) {
             TypeArray arrayResultType = (TypeArray) resultType;
-            if (arrayResultType.type.equals(new TypeVoid())) {
+            if (arrayResultType.type.equals(TypeList.VOID)) {
                 arrayResultType = arrayResultType.produce();
             }
             IRNodeBuilder builder = new IRNodeBuilder()
                     .setComplexityLimit(complexityLimit)
                     .setOwnerKlass(ownerClass)
-                    .setResultType(new TypeByte())
+                    .setResultType(TypeList.BYTE)
                     .setExceptionSafe(exceptionSafe)
                     .setNoConsts(noconsts);
             double chanceExpression = ProductionParams.chanceExpressionIndex.value() / 100;
@@ -77,14 +76,14 @@ class ArrayCreationFactory extends SafeFactory {
                             .getExpressionFactory()
                             .produce());
                 } else {
-                    Literal dimension = (Literal)builder.getLiteralFactory().produce();
+                    Literal dimension = builder.getLiteralFactory().produce();
                     while (Integer.valueOf(dimension.getValue().toString()) < 1) {
-                        dimension = (Literal)builder.getLiteralFactory().produce();
+                        dimension = builder.getLiteralFactory().produce();
                     }
                     dims.add(dimension);
                 }
             }
-            VariableDeclaration var =  (VariableDeclaration) builder
+            VariableDeclaration var = builder
                     .setOwnerKlass(ownerClass)
                     .setResultType(arrayResultType)
                     .setIsLocal(true)

@@ -1336,12 +1336,10 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  assert((thread->stack_base() - thread->stack_size()) +
-         (JavaThread::stack_guard_zone_size() +
-          JavaThread::stack_shadow_zone_size() + framesize_in_bytes) ==
-         ((JavaThread*)thread)->stack_overflow_limit() + framesize_in_bytes, "sanity");
+  address limit = ((JavaThread*)thread)->stack_end() +
+                  (JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size());
 
-  return (sp > ((JavaThread*)thread)->stack_overflow_limit() + framesize_in_bytes);
+  return sp > (limit + framesize_in_bytes);
 }
 
 size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned) {

@@ -57,6 +57,8 @@ public class CLICompatibility {
     static final Path TEST_CLASSES = Paths.get(System.getProperty("test.classes", "."));
     static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
 
+    static final String TOOL_VM_OPTIONS = System.getProperty("test.tool.vm.opts", "");
+
     final boolean legacyOnly;  // for running on older JDK's ( test validation )
 
     // Resources we know to exist, that can be used for creating jar files.
@@ -501,6 +503,9 @@ public class CLICompatibility {
         String jar = getJDKTool("jar");
         List<String> commands = new ArrayList<>();
         commands.add(jar);
+        if (!TOOL_VM_OPTIONS.isEmpty()) {
+            commands.addAll(Arrays.asList(TOOL_VM_OPTIONS.split("\\s+", -1)));
+        }
         Stream.of(args).map(s -> s.split(" "))
                        .flatMap(Arrays::stream)
                        .forEach(x -> commands.add(x));

@@ -258,31 +258,13 @@
     <property name="compile.suppress.jar" value="defined"/>
   </target>
 
-  <!-- generate javadoc for all Nashorn and ASM classes -->
+  <!-- generate javadoc for Nashorn classes -->
   <target name="javadoc" depends="jar">
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
         windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
-      <arg value="${javadoc.option}"/>
-      <classpath>
-        <pathelement location="${build.classes.dir}"/>
-      </classpath>
-      <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
-      <fileset dir="${nashorn.shell.module.src.dir}" includes="**/*.java"/>
-      <fileset dir="${jdk.asm.src.dir}" includes="**/*.java"/>
-      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
-      <!-- The following tags are used only in ASM sources - just ignore these -->
-      <tag name="label" description="label tag in ASM sources" enabled="false"/>
-      <tag name="linked" description="linked tag in ASM sources" enabled="false"/>
-      <tag name="associates" description="associates tag in ASM sources" enabled="false"/>
-    </javadoc>
-  </target>
-
-  <!-- generate javadoc for Nashorn classes -->
-  <target name="javadocnh" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
-        windowtitle="${nashorn.product.name} ${nashorn.version}"
-        additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <arg value="-modulesourcepath"/>
+      <arg value="${basedir}/src/*/share/classes"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -295,10 +277,13 @@
   </target>
 
   <!-- generate javadoc only for nashorn extension api classes -->
-  <target name="javadocapi" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
+  <target name="nashornapi" depends="jar">
+    <mkdir dir="${dist.nashornapi.javadoc.dir}"/>
+    <javadoc destdir="${dist.nashornapi.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
         extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <arg value="-modulesourcepath"/>
+      <arg value="${basedir}/src/*/share/classes"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -310,9 +295,12 @@
 
   <!-- generate javadoc only for Dynalink API classes -->
   <target name="dynalinkapi" depends="jar">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes"
+    <mkdir dir="${dist.dynalinkapi.javadoc.dir}"/>
+    <javadoc destdir="${dist.dynalinkapi.javadoc.dir}" use="yes"
         windowtitle="Dynalink"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <arg value="-modulesourcepath"/>
+      <arg value="${basedir}/src/*/share/classes"/>
       <arg value="${javadoc.option}"/>
       <classpath>
         <pathelement location="${build.classes.dir}"/>
@@ -321,6 +309,8 @@
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
   </target>
+
+  <target name="javadocapi" depends="nashornapi, dynalinkapi"/>
 
   <!-- generate shell.html for shell tool documentation -->
   <target name="shelldoc" depends="jar">
@@ -502,6 +492,10 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     permission java.io.FilePermission "${basedir}/test/script/external/showdown/-", "read";
 };
 
+grant codeBase "file:/${basedir}/test/script/basic/JDK-8158467.js" {
+    permission java.lang.RuntimePermission "nashorn.setConfig";
+};
+
     </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
@@ -595,7 +589,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="prepare, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="prepare, javadoc, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>

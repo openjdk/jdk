@@ -30,6 +30,7 @@ public class Return extends IRNode {
     private final IRNode returnExpression;
 
     public Return(IRNode returnExpression) {
+        super(returnExpression.getResultType());
         this.returnExpression = returnExpression;
         addChild(returnExpression);
     }

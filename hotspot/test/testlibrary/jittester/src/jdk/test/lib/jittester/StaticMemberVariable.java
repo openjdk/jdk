@@ -26,17 +26,11 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.visitors.Visitor;
 
-public class StaticMemberVariable extends IRNode implements VariableBase {
-    private final VariableInfo varInfo;
+public class StaticMemberVariable extends VariableBase {
 
     public StaticMemberVariable(TypeKlass owner, VariableInfo varInfo) {
-        setKlass(owner);
-        this.varInfo = varInfo;
-    }
-
-    @Override
-    public VariableInfo get() {
-        return varInfo;
+        super(varInfo);
+        setOwner(owner);
     }
 
     @Override

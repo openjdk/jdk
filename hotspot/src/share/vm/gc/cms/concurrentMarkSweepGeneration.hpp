@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1501,6 +1501,7 @@ class ScanMarkedObjectsAgainCarefullyClosure: public ObjectClosureCareful {
   CMSBitMap*                     _bitMap;
   CMSMarkStack*                  _markStack;
   MarkRefsIntoAndScanClosure*    _scanningClosure;
+  DEBUG_ONLY(HeapWord*           _last_scanned_object;)
 
  public:
   ScanMarkedObjectsAgainCarefullyClosure(CMSCollector* collector,
@@ -1514,8 +1515,9 @@ class ScanMarkedObjectsAgainCarefullyClosure: public ObjectClosureCareful {
     _yield(should_yield),
     _bitMap(bitMap),
     _markStack(markStack),
-    _scanningClosure(cl) {
-  }
+    _scanningClosure(cl)
+    DEBUG_ONLY(COMMA _last_scanned_object(NULL))
+  { }
 
   void do_object(oop p) {
     guarantee(false, "call do_object_careful instead");

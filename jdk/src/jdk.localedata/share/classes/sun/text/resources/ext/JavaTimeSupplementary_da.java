@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -112,23 +112,29 @@ public class JavaTimeSupplementary_da extends OpenListResourceBundle {
             { "field.dayperiod",
                 "AM/PM" },
             { "field.era",
-                "\u00c6ra" },
+                "\u00e6ra" },
             { "field.hour",
-                "Time" },
+                "time" },
             { "field.minute",
-                "Minut" },
+                "minut" },
             { "field.month",
-                "M\u00e5ned" },
+                "m\u00e5ned" },
             { "field.second",
-                "Sekund" },
+                "sekund" },
             { "field.week",
-                "Uge" },
+                "uge" },
             { "field.weekday",
-                "Ugedag" },
+                "ugedag" },
             { "field.year",
-                "\u00c5r" },
+                "\u00e5r" },
             { "field.zone",
-                "Tidszone" },
+                "tidszone" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE d. MMMM y GGGG",
@@ -214,6 +220,12 @@ public class JavaTimeSupplementary_da extends OpenListResourceBundle {
                     "AH",
                 }
             },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
+                }
+            },
             { "islamic.narrow.Eras",
                 new String[] {
                     "",
@@ -274,6 +286,12 @@ public class JavaTimeSupplementary_da extends OpenListResourceBundle {
             },
             { "java.time.short.Eras",
                 javatimelongEras },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "roc.DatePatterns",
                 new String[] {
                     "EEEE d. MMMM y GGGG",
@@ -400,6 +418,12 @@ public class JavaTimeSupplementary_da extends OpenListResourceBundle {
                 new String[] {
                     "Before R.O.C.",
                     "Minguo",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

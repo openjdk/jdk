@@ -2563,14 +2563,20 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
 
   if (is_64bit) {
     __ cmpxchgd(BOOL_RESULT, /*current_value=*/R0, cmp_value, new_value, addr,
-                MacroAssembler::MemBarFenceAfter,
+                MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, NULL, /*check without ldarx first*/true);
   } else {
     __ cmpxchgw(BOOL_RESULT, /*current_value=*/R0, cmp_value, new_value, addr,
-                MacroAssembler::MemBarFenceAfter,
+                MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, /*check without ldarx first*/true);
+  }
+
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ isync();
+  } else {
+    __ sync();
   }
 }
 

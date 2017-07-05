@@ -26,6 +26,10 @@ import java.util.Objects;
 
 import jdk.vm.ci.meta.VMConstant;
 
+/**
+ * Represents an embedded {@link VMConstant} in the code or data section that needs to be
+ * {@link DataPatch patched} by the VM (e.g. an embedded pointer to a Java object).
+ */
 public final class ConstantReference extends Reference {
 
     private final VMConstant constant;

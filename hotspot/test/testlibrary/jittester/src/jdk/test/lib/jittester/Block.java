@@ -28,17 +28,12 @@ import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Block extends IRNode {
-    private final Type returnType;
 
-    public Block(TypeKlass klass, Type returnType, List<IRNode> content, int level) {
-        setKlass(klass);
+    public Block(TypeKlass owner, Type returnType, List<? extends IRNode> content, int level) {
+        super(returnType);
+        setOwner(owner);
         addChildren(content);
         this.level = level;
-        this.returnType = returnType;
-    }
-
-    public Type getReturnType() {
-        return returnType;
     }
 
     protected int size() {

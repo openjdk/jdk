@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -266,7 +266,7 @@ public class JavaTimeSupplementary_zh_TW extends OpenListResourceBundle {
                 javatimelongEras },
             { "java.time.roc.DatePatterns",
                 new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
+                    "Gy\u5e74M\u6708d\u65e5 EEEE",
                     "Gy\u5e74M\u6708d\u65e5",
                     "Gy\u5e74M\u6708d\u65e5",
                     "Gy/M/d",
@@ -276,7 +276,7 @@ public class JavaTimeSupplementary_zh_TW extends OpenListResourceBundle {
                 javatimelongEras },
             { "roc.DatePatterns",
                 new String[] {
-                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
+                    "GGGGy\u5e74M\u6708d\u65e5 EEEE",
                     "GGGGy\u5e74M\u6708d\u65e5",
                     "GGGGy\u5e74M\u6708d\u65e5",
                     "GGGGy/M/d",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -106,7 +106,7 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
             { "calendarname.roc",
                 "kalendar minguo (kinez)" },
             { "field.dayperiod",
-                "periudh\u00eb e dit\u00ebs" },
+                "paradite/pasdite" },
             { "field.era",
                 "er\u00eb" },
             { "field.hour",
@@ -127,8 +127,8 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
                 "brezi orar" },
             { "islamic.AmPmMarkers",
                 new String[] {
-                    "paradite",
-                    "pasdite",
+                    "e paradites",
+                    "e pasdites",
                 }
             },
             { "islamic.DatePatterns",
@@ -198,16 +198,22 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
             },
             { "islamic.TimePatterns",
                 new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
+                    "h:mm:ss a, zzzz",
+                    "h:mm:ss a, z",
+                    "h:mm:ss a",
+                    "h:mm a",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "e paradites",
+                    "e pasdites",
                 }
             },
             { "islamic.narrow.AmPmMarkers",
                 new String[] {
-                    "AM",
-                    "PM",
+                    "e paradites",
+                    "e pasdites",
                 }
             },
             { "java.time.buddhist.DatePatterns",
@@ -256,8 +262,8 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
             },
             { "roc.AmPmMarkers",
                 new String[] {
-                    "paradite",
-                    "pasdite",
+                    "e paradites",
+                    "e pasdites",
                 }
             },
             { "roc.DatePatterns",
@@ -370,16 +376,22 @@ public class JavaTimeSupplementary_sq extends OpenListResourceBundle {
             },
             { "roc.TimePatterns",
                 new String[] {
-                    "HH:mm:ss zzzz",
-                    "HH:mm:ss z",
-                    "HH:mm:ss",
-                    "HH:mm",
+                    "h:mm:ss a, zzzz",
+                    "h:mm:ss a, z",
+                    "h:mm:ss a",
+                    "h:mm a",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "e paradites",
+                    "e pasdites",
                 }
             },
             { "roc.narrow.AmPmMarkers",
                 new String[] {
-                    "AM",
-                    "PM",
+                    "e paradites",
+                    "e pasdites",
                 }
             },
         };

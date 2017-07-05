@@ -39,6 +39,4 @@ public interface HotSpotMemoryAccessProvider extends MemoryAccessProvider {
     Constant readNarrowKlassPointerConstant(Constant base, long displacement, CompressEncoding encoding);
 
     Constant readMethodPointerConstant(Constant base, long displacement);
-
-    Constant readSymbolConstant(Constant base, long displacement);
 }

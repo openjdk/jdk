@@ -25,16 +25,9 @@ package jdk.test.lib.jittester;
 
 import jdk.test.lib.jittester.visitors.Visitor;
 
-public class LocalVariable extends IRNode implements VariableBase {
-    private VariableInfo value = new VariableInfo();
-
+public class LocalVariable extends VariableBase {
     public LocalVariable(VariableInfo value) {
-        this.value = value;
-    }
-
-    @Override
-    public VariableInfo get() {
-        return value;
+        super(value);
     }
 
     @Override

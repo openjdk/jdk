@@ -37,7 +37,6 @@ import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
 
 public class AMD64TestAssembler extends TestAssembler {
@@ -64,7 +63,7 @@ public class AMD64TestAssembler extends TestAssembler {
         emitFatNop();
         code.emitByte(0x50 | AMD64.rbp.encoding);  // PUSH rbp
         emitMove(true, AMD64.rbp, AMD64.rsp);      // MOV rbp, rsp
-        setDeoptRescueSlot(newStackSlot(LIRKind.value(AMD64Kind.QWORD)));
+        setDeoptRescueSlot(newStackSlot(AMD64Kind.QWORD));
     }
 
     @Override
@@ -193,7 +192,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitIntToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(AMD64Kind.DWORD));
+        StackSlot ret = newStackSlot(AMD64Kind.DWORD);
         // MOV r/m32,r32
         emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
         return ret;
@@ -201,7 +200,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitLongToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(AMD64Kind.QWORD));
+        StackSlot ret = newStackSlot(AMD64Kind.QWORD);
         // MOV r/m64,r64
         emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
         return ret;
@@ -209,7 +208,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitFloatToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.value(AMD64Kind.SINGLE));
+        StackSlot ret = newStackSlot(AMD64Kind.SINGLE);
         emitREX(false, a.encoding, 0, 0);
         code.emitByte(0xF3);
         code.emitByte(0x0F);
@@ -221,7 +220,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitPointerToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.reference(AMD64Kind.QWORD));
+        StackSlot ret = newStackSlot(AMD64Kind.QWORD);
         // MOV r/m64,r64
         emitModRMMemory(true, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
         return ret;
@@ -229,7 +228,7 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public StackSlot emitNarrowPointerToStack(Register a) {
-        StackSlot ret = newStackSlot(LIRKind.reference(AMD64Kind.DWORD));
+        StackSlot ret = newStackSlot(AMD64Kind.DWORD);
         // MOV r/m32,r32
         emitModRMMemory(false, 0x89, a.encoding, AMD64.rbp.encoding, ret.getRawOffset() + 16);
         return ret;

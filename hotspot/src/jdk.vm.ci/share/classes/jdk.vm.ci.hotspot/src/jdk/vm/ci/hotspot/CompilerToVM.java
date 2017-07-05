@@ -23,8 +23,8 @@
 
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.inittimer.InitTimer.timer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -33,9 +33,9 @@ import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
-import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -79,7 +79,7 @@ final class CompilerToVM {
     native byte[] getBytecode(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Gets the number of entries in {@code method}'s exception handler table or 0 if it has not
+     * Gets the number of entries in {@code method}'s exception handler table or 0 if it has no
      * exception handler table.
      */
     native int getExceptionTableLength(HotSpotResolvedJavaMethodImpl method);
@@ -246,8 +246,8 @@ final class CompilerToVM {
     native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
-     * Ensures that the type referenced by the entry for a <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
+     * Ensures that the type referenced by the entry for a
+     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
      * polymorphic</a> method at index {@code cpi} in {@code constantPool} is loaded and
      * initialized.
      *
@@ -315,6 +315,21 @@ final class CompilerToVM {
      */
     native int installCode(TargetDescription target, HotSpotCompiledCode compiledCode, InstalledCode code, HotSpotSpeculationLog speculationLog);
 
+    /**
+     * Generates the VM metadata for some compiled code and copies them into {@code metaData}. This
+     * method does not install anything into the code cache.
+     *
+     * @param target the target where this code would be installed
+     * @param compiledCode the result of a compilation
+     * @param metaData the metadata is written to this object
+     * @return the outcome of the installation which will be one of
+     *         {@link HotSpotVMConfig#codeInstallResultOk},
+     *         {@link HotSpotVMConfig#codeInstallResultCacheFull},
+     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge},
+     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed} or
+     *         {@link HotSpotVMConfig#codeInstallResultDependenciesInvalid}.
+     * @throws JVMCIError if there is something wrong with the compiled code or the metadata
+     */
     public native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
     /**
@@ -423,20 +438,6 @@ final class CompilerToVM {
     native long getLocalVariableTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Reads an object pointer within a VM data structure. That is, any {@link HotSpotVMField} whose
-     * {@link HotSpotVMField#type() type} is {@code "oop"} (e.g.,
-     * {@code ArrayKlass::_component_mirror}, {@code Klass::_java_mirror},
-     * {@code JavaThread::_threadObj}).
-     *
-     * Note that {@link Unsafe#getObject(Object, long)} cannot be used for this since it does a
-     * {@code narrowOop} read if the VM is using compressed oops whereas oops within VM data
-     * structures are (currently) always uncompressed.
-     *
-     * @param address address of an oop field within a VM data structure
-     */
-    native Object readUncompressedOop(long address);
-
-    /**
      * Determines if {@code method} should not be inlined or compiled.
      */
     native void doNotInlineOrCompile(HotSpotResolvedJavaMethodImpl method);
@@ -480,11 +481,6 @@ final class CompilerToVM {
     native String getSymbol(long metaspaceSymbol);
 
     /**
-     * Lookup a VMSymbol from a String.
-     */
-    native long lookupSymbol(String symbol);
-
-    /**
      * Looks for the next Java stack frame matching an entry in {@code methods}.
      *
      * @param frame the starting point of the search, where {@code null} refers to the topmost frame
@@ -494,10 +490,10 @@ final class CompilerToVM {
     native HotSpotStackFrameReference getNextStackFrame(HotSpotStackFrameReference frame, ResolvedJavaMethod[] methods, int initialSkip);
 
     /**
-     * Materializes all virtual objects within {@code stackFrame} updates its locals.
+     * Materializes all virtual objects within {@code stackFrame} and updates its locals.
      *
      * @param invalidate if {@code true}, the compiled method for the stack frame will be
-     *            invalidated.
+     *            invalidated
      */
     native void materializeVirtualObjects(HotSpotStackFrameReference stackFrame, boolean invalidate);
 
@@ -514,7 +510,6 @@ final class CompilerToVM {
     /**
      * Determines if debug info should also be emitted at non-safepoint locations.
      */
-
     native boolean shouldDebugNonSafepoints();
 
     /**

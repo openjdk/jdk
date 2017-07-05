@@ -36,7 +36,8 @@ public class Function extends IRNode {
     private FunctionInfo functionInfo = new FunctionInfo();
 
     public Function(TypeKlass ownerClass, FunctionInfo functionInfo, List<IRNode> args) {
-        setKlass(ownerClass);
+        super(functionInfo.type);
+        setOwner(ownerClass);
         this.functionInfo = functionInfo;
         addChildren(args);
     }
@@ -48,14 +49,14 @@ public class Function extends IRNode {
             argsComplexity += child.complexity();
         }
         long funcComplexity = functionInfo.complexity;
-        TypeKlass typeKlass = (TypeKlass) this.klass;
+        TypeKlass typeKlass = this.owner;
         if (functionInfo.isConstructor()) {
             // Sum complexities of all default constructors of parent classes
             for (TypeKlass parent : typeKlass.getAllParents()) {
                 Collection<Symbol> parentFuncs = SymbolTable.getAllCombined(parent, FunctionInfo.class);
                 for (Symbol f : parentFuncs) {
                     FunctionInfo c = (FunctionInfo) f;
-                    if (c.name.equals(c.klass.getName()) && c.argTypes.isEmpty()) {
+                    if (c.name.equals(c.owner.getName()) && c.argTypes.isEmpty()) {
                         funcComplexity += c.complexity;
                     }
                 }
@@ -66,7 +67,7 @@ public class Function extends IRNode {
             for (TypeKlass child : typeKlass.getAllChildren()) {
                 Collection<Symbol> childFuncs = SymbolTable.getAllCombined(child, FunctionInfo.class);
                 for (Symbol childFunc : childFuncs) {
-                    if (((FunctionInfo) childFunc).equals(functionInfo)) {
+                    if (childFunc.equals(functionInfo)) {
                         funcComplexity = Math.max(funcComplexity, ((FunctionInfo) childFunc).complexity);
                     }
                 }

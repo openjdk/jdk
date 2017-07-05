@@ -27,19 +27,31 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
-import jdk.test.lib.jittester.types.TypeArray;
+
 import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.types.TypeByte;
 import jdk.test.lib.jittester.types.TypeChar;
 import jdk.test.lib.jittester.types.TypeDouble;
 import jdk.test.lib.jittester.types.TypeFloat;
 import jdk.test.lib.jittester.types.TypeInt;
+import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.types.TypeLong;
 import jdk.test.lib.jittester.types.TypeShort;
 import jdk.test.lib.jittester.types.TypeVoid;
 
 public class TypeList {
-    private static final TypeVoid TYPE_VOID = new TypeVoid();
+    public static final TypeVoid VOID = new TypeVoid();
+    public static final TypeBoolean BOOLEAN = new TypeBoolean();
+    public static final TypeByte BYTE = new TypeByte();
+    public static final TypeChar CHAR = new TypeChar();
+    public static final TypeShort SHORT = new TypeShort();
+    public static final TypeInt INT = new TypeInt();
+    public static final TypeLong LONG = new TypeLong();
+    public static final TypeFloat FLOAT = new TypeFloat();
+    public static final TypeDouble DOUBLE = new TypeDouble();
+    public static final TypeKlass OBJECT = new TypeKlass("java.lang.Object");
+    public static final TypeKlass STRING = new TypeKlass("java.lang.String", TypeKlass.FINAL);
+
     private static final List<Type> TYPES = new ArrayList<>();
     private static final List<Type> BUILTIN_TYPES = new ArrayList<>();
     private static final List<Type> BUILTIN_INT_TYPES = new ArrayList<>();
@@ -47,14 +59,14 @@ public class TypeList {
     private static final List<Type> REFERENCE_TYPES = new ArrayList<>();
 
     static {
-        BUILTIN_INT_TYPES.add(new TypeBoolean());
-        BUILTIN_INT_TYPES.add(new TypeByte());
-        BUILTIN_INT_TYPES.add(new TypeChar());
-        BUILTIN_INT_TYPES.add(new TypeShort());
-        BUILTIN_INT_TYPES.add(new TypeInt());
-        BUILTIN_INT_TYPES.add(new TypeLong());
-        BUILTIN_FP_TYPES.add(new TypeFloat());
-        BUILTIN_FP_TYPES.add(new TypeDouble());
+        BUILTIN_INT_TYPES.add(BOOLEAN);
+        BUILTIN_INT_TYPES.add(BYTE);
+        BUILTIN_INT_TYPES.add(CHAR);
+        BUILTIN_INT_TYPES.add(SHORT);
+        BUILTIN_INT_TYPES.add(INT);
+        BUILTIN_INT_TYPES.add(LONG);
+        BUILTIN_FP_TYPES.add(FLOAT);
+        BUILTIN_FP_TYPES.add(DOUBLE);
 
         BUILTIN_TYPES.addAll(BUILTIN_INT_TYPES);
         BUILTIN_TYPES.addAll(BUILTIN_FP_TYPES);
@@ -62,13 +74,13 @@ public class TypeList {
         TYPES.addAll(BUILTIN_TYPES);
 
         if (!ProductionParams.disableArrays.value()) {
-            REFERENCE_TYPES.add(new TypeArray().produce());
             TYPES.addAll(REFERENCE_TYPES);
         }
-    }
 
-    public static TypeVoid getVoid() {
-        return TYPE_VOID;
+        STRING.addParent(OBJECT.getName());
+        STRING.setParent(OBJECT);
+        add(STRING);
+        add(OBJECT);
     }
 
     public static Collection<Type> getAll() {
@@ -100,14 +112,14 @@ public class TypeList {
     }
 
     public static boolean isBuiltIn(Type t) {
-        return isBuiltInInt(t) || isBuiltInFP(t);
+        return isBuiltInInt(t) || isBuiltInFP(t) || t.equals(VOID);
     }
 
     protected static boolean isIn(Type t) {
         return TYPES.contains(t);
     }
 
-    protected static boolean isReferenceType(Type t) {
+    public static boolean isReferenceType(Type t) {
         return REFERENCE_TYPES.contains(t);
     }
 

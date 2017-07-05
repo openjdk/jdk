@@ -1430,7 +1430,7 @@ void PhaseBlockLayout::find_edges() {
       if (n->num_preds() != 1) break;
 
       i++;
-      assert(n = _cfg.get_block(i), "expecting next block");
+      assert(n == _cfg.get_block(i), "expecting next block");
       tr->append(n);
       uf->map(n->_pre_order, tr->id());
       traces[n->_pre_order] = NULL;
