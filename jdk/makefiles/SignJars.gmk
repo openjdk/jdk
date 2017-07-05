@@ -78,7 +78,7 @@ check-keystore:
 	  exit 2; \
 	fi
 
-$(JCE_OUTPUTDIR)/%: $(IMAGES_OUTPUTDIR)/unsigned/%
+$(JCE_OUTPUTDIR)/%: $(JDK_OUTPUTDIR)/unsigned/%
 	$(call install-file)
 	$(JARSIGNER) -keystore $(SIGNING_KEYSTORE) \
 	    $@ $(SIGNING_ALIAS) < $(SIGNING_PASSPHRASE)

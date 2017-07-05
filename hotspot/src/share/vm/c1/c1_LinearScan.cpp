@@ -75,9 +75,9 @@
 
 // Map BasicType to spill size in 32-bit words, matching VMReg's notion of words
 #ifdef _LP64
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 2,  1, 2, 1, -1};
 #else
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1, 1, 1, -1};
 #endif
 
 

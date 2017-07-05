@@ -116,6 +116,8 @@ typedef struct {
     char *gopherPort;
 
     char *exceptionList;
+
+    char *awt_headless  /* java.awt.headless setting, if NULL (default) will not be set */
 #endif
 
 } java_props_t;
