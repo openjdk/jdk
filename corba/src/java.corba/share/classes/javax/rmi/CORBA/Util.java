@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,6 +232,8 @@ Tie#deactivate}
      * and <tt>loader</tt> is non-null, then call <tt>loader.loadClass(className)</tt>.
      * <LI>If a class was successfully loaded by step 1, 2, 3, or 4, then
      *  return the loaded class, else throw <tt>ClassNotFoundException</tt>.
+     * </UL>
+     *
      * @param className the name of the class.
      * @param remoteCodebase a space-separated list of URLs at which
      * the class might be found. May be null.

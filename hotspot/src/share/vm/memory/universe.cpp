@@ -84,8 +84,6 @@
 #include "classfile/sharedClassUtil.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Known objects
 Klass* Universe::_boolArrayKlassObj                 = NULL;
 Klass* Universe::_byteArrayKlassObj                 = NULL;
@@ -792,12 +790,12 @@ jint Universe::initialize_heap() {
 void Universe::print_compressed_oops_mode() {
   tty->cr();
   tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
-              Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
+              p2i(Universe::heap()->base()), Universe::heap()->reserved_region().byte_size()/M);
 
   tty->print(", Compressed Oops mode: %s", narrow_oop_mode_to_string(narrow_oop_mode()));
 
   if (Universe::narrow_oop_base() != 0) {
-    tty->print(": " PTR_FORMAT, Universe::narrow_oop_base());
+    tty->print(": " PTR_FORMAT, p2i(Universe::narrow_oop_base()));
   }
 
   if (Universe::narrow_oop_shift() != 0) {

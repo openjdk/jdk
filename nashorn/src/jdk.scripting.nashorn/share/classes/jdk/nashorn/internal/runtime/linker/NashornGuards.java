@@ -33,7 +33,6 @@ import java.lang.ref.WeakReference;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.JSObject;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -123,7 +122,7 @@ public final class NashornGuards {
      */
     static boolean needsGuard(final Property property, final CallSiteDescriptor desc) {
         return property == null || property.isConfigurable()
-                || property.isBound() || !ObjectClassGenerator.OBJECT_FIELDS_ONLY
+                || property.isBound() || property.hasDualFields()
                 || !NashornCallSiteDescriptor.isFastScope(desc) || property.canChangeType();
     }
 

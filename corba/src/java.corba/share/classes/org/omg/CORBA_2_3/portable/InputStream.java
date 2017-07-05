@@ -77,7 +77,7 @@ public abstract class InputStream extends org.omg.CORBA.portable.InputStream {
      *
      * throw SecurityException if SecurityManager is installed and
      * enableSubclassImplementation SerializablePermission
-     * is not granted or jdk.corba.allowOutputStreamSubclass system
+     * is not granted or jdk.corba.allowInputStreamSubclass system
      * property is either not set or is set to 'false'
      */
     public InputStream() {

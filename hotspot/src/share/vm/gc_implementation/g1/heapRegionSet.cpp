@@ -27,8 +27,6 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 uint FreeRegionList::_unrealistically_long_length = 0;
 
 void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {
@@ -84,7 +82,7 @@ void HeapRegionSetBase::verify_end() {
 
 void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->cr();
-  out->print_cr("Set: %s ("PTR_FORMAT")", name(), this);
+  out->print_cr("Set: %s ("PTR_FORMAT")", name(), p2i(this));
   out->print_cr("  Region Assumptions");
   out->print_cr("    humongous         : %s", BOOL_TO_STR(regions_humongous()));
   out->print_cr("    free              : %s", BOOL_TO_STR(regions_free()));
@@ -106,7 +104,7 @@ void FreeRegionList::set_unrealistically_long_length(uint len) {
 }
 
 void FreeRegionList::fill_in_ext_msg_extra(hrs_ext_msg* msg) {
-  msg->append(" hd: "PTR_FORMAT" tl: "PTR_FORMAT, _head, _tail);
+  msg->append(" hd: "PTR_FORMAT" tl: "PTR_FORMAT, p2i(_head), p2i(_tail));
 }
 
 void FreeRegionList::remove_all() {
@@ -277,8 +275,8 @@ void FreeRegionList::clear() {
 void FreeRegionList::print_on(outputStream* out, bool print_contents) {
   HeapRegionSetBase::print_on(out, print_contents);
   out->print_cr("  Linking");
-  out->print_cr("    head              : "PTR_FORMAT, _head);
-  out->print_cr("    tail              : "PTR_FORMAT, _tail);
+  out->print_cr("    head              : "PTR_FORMAT, p2i(_head));
+  out->print_cr("    tail              : "PTR_FORMAT, p2i(_tail));
 
   if (print_contents) {
     out->print_cr("  Contents");
@@ -306,7 +304,8 @@ void FreeRegionList::verify_list() {
 
     count++;
     guarantee(count < _unrealistically_long_length,
-        hrs_err_msg("[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: "PTR_FORMAT" prev0: "PTR_FORMAT" " "prev1: "PTR_FORMAT" length: %u", name(), count, curr, prev0, prev1, length()));
+        hrs_err_msg("[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: "PTR_FORMAT" prev0: "PTR_FORMAT" " "prev1: "PTR_FORMAT" length: %u",
+            name(), count, p2i(curr), p2i(prev0), p2i(prev1), length()));
 
     if (curr->next() != NULL) {
       guarantee(curr->next()->prev() == curr, "Next or prev pointers messed up");

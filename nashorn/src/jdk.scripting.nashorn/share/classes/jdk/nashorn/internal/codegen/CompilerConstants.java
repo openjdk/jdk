@@ -149,8 +149,11 @@ public enum CompilerConstants {
     /** Arguments parameter in scope object constructors; in slot 3 when present */
     INIT_ARGUMENTS(null, 3),
 
-    /** prefix for all ScriptObject subclasses with fields, @see ObjectGenerator */
-    JS_OBJECT_PREFIX("JO"),
+    /** prefix for all ScriptObject subclasses with dual object/primitive fields, see {@link ObjectClassGenerator} */
+    JS_OBJECT_DUAL_FIELD_PREFIX("JD"),
+
+    /** prefix for all ScriptObject subclasses with object fields only, see {@link ObjectClassGenerator} */
+    JS_OBJECT_SINGLE_FIELD_PREFIX("JO"),
 
     /** name for allocate method in JO objects */
     ALLOCATE("allocate"),

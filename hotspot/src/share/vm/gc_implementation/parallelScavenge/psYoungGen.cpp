@@ -33,8 +33,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 PSYoungGen::PSYoungGen(size_t        initial_size,
                        size_t        min_size,
                        size_t        max_size) :
@@ -419,20 +417,22 @@ void PSYoungGen::mangle_survivors(MutableSpace* s1,
     // s1
     gclog_or_tty->print_cr("Current region: [" PTR_FORMAT ", " PTR_FORMAT ") "
       "New region: [" PTR_FORMAT ", " PTR_FORMAT ")",
-      s1->bottom(), s1->end(), s1MR.start(), s1MR.end());
+      p2i(s1->bottom()), p2i(s1->end()),
+      p2i(s1MR.start()), p2i(s1MR.end()));
     gclog_or_tty->print_cr("    Mangle before: [" PTR_FORMAT ", "
       PTR_FORMAT ")  Mangle after: [" PTR_FORMAT ", " PTR_FORMAT ")",
-      delta1_left.start(), delta1_left.end(), delta1_right.start(),
-      delta1_right.end());
+      p2i(delta1_left.start()), p2i(delta1_left.end()),
+      p2i(delta1_right.start()), p2i(delta1_right.end()));
 
     // s2
     gclog_or_tty->print_cr("Current region: [" PTR_FORMAT ", " PTR_FORMAT ") "
       "New region: [" PTR_FORMAT ", " PTR_FORMAT ")",
-      s2->bottom(), s2->end(), s2MR.start(), s2MR.end());
+      p2i(s2->bottom()), p2i(s2->end()),
+      p2i(s2MR.start()), p2i(s2MR.end()));
     gclog_or_tty->print_cr("    Mangle before: [" PTR_FORMAT ", "
       PTR_FORMAT ")  Mangle after: [" PTR_FORMAT ", " PTR_FORMAT ")",
-      delta2_left.start(), delta2_left.end(), delta2_right.start(),
-      delta2_right.end());
+      p2i(delta2_left.start()), p2i(delta2_left.end()),
+      p2i(delta2_right.start()), p2i(delta2_right.end()));
   }
 
 }
@@ -456,22 +456,22 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
                   requested_eden_size, requested_survivor_size);
     gclog_or_tty->print_cr("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  eden_space()->bottom(),
-                  eden_space()->end(),
+                  p2i(eden_space()->bottom()),
+                  p2i(eden_space()->end()),
                   pointer_delta(eden_space()->end(),
                                 eden_space()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("    from: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  from_space()->bottom(),
-                  from_space()->end(),
+                  p2i(from_space()->bottom()),
+                  p2i(from_space()->end()),
                   pointer_delta(from_space()->end(),
                                 from_space()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("      to: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  to_space()->bottom(),
-                  to_space()->end(),
+                  p2i(to_space()->bottom()),
+                  p2i(to_space()->end()),
                   pointer_delta(  to_space()->end(),
                                   to_space()->bottom(),
                                   sizeof(char)));
@@ -572,18 +572,18 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
     }
   } else {
@@ -629,18 +629,18 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
     }
   }

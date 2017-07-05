@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_FIELD_TYPE;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createGetter;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.createSetter;
@@ -98,7 +97,7 @@ public class AccessorProperty extends Property {
                 objectSetters[i] = MH.asType(MH.setter(LOOKUP, structure, fieldName, typeClass), Lookup.SET_OBJECT_TYPE);
             }
 
-            if (!OBJECT_FIELDS_ONLY) {
+            if (!StructureLoader.isSingleFieldStructure(structure.getName())) {
                 for (int i = 0; i < fieldCount; i++) {
                     final String fieldNamePrimitive = getFieldName(i, PRIMITIVE_FIELD_TYPE);
                     final Class<?> typeClass = PRIMITIVE_FIELD_TYPE.getTypeClass();
@@ -211,7 +210,7 @@ public class AccessorProperty extends Property {
      * @param setter the property setter or null if non writable, non configurable
      */
     private AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
-        super(key, flags | IS_BUILTIN | (getter.type().returnType().isPrimitive() ? IS_NASGEN_PRIMITIVE : 0), slot);
+        super(key, flags | IS_BUILTIN | DUAL_FIELDS | (getter.type().returnType().isPrimitive() ? IS_NASGEN_PRIMITIVE : 0), slot);
         assert !isSpill();
 
         // we don't need to prep the setters these will never be invalidated as this is a nasgen
@@ -221,18 +220,15 @@ public class AccessorProperty extends Property {
         final Class<?> setterType = setter == null ? null : setter.type().parameterType(1);
 
         assert setterType == null || setterType == getterType;
-        if (OBJECT_FIELDS_ONLY) {
-            primitiveGetter = primitiveSetter = null;
+
+        if (getterType == int.class || getterType == long.class) {
+            primitiveGetter = MH.asType(getter, Lookup.GET_PRIMITIVE_TYPE);
+            primitiveSetter = setter == null ? null : MH.asType(setter, Lookup.SET_PRIMITIVE_TYPE);
+        } else if (getterType == double.class) {
+            primitiveGetter = MH.asType(MH.filterReturnValue(getter, ObjectClassGenerator.PACK_DOUBLE), Lookup.GET_PRIMITIVE_TYPE);
+            primitiveSetter = setter == null ? null : MH.asType(MH.filterArguments(setter, 1, ObjectClassGenerator.UNPACK_DOUBLE), Lookup.SET_PRIMITIVE_TYPE);
         } else {
-            if (getterType == int.class || getterType == long.class) {
-                primitiveGetter = MH.asType(getter, Lookup.GET_PRIMITIVE_TYPE);
-                primitiveSetter = setter == null ? null : MH.asType(setter, Lookup.SET_PRIMITIVE_TYPE);
-            } else if (getterType == double.class) {
-                primitiveGetter = MH.asType(MH.filterReturnValue(getter, ObjectClassGenerator.PACK_DOUBLE), Lookup.GET_PRIMITIVE_TYPE);
-                primitiveSetter = setter == null ? null : MH.asType(MH.filterArguments(setter, 1, ObjectClassGenerator.UNPACK_DOUBLE), Lookup.SET_PRIMITIVE_TYPE);
-            } else {
-                primitiveGetter = primitiveSetter = null;
-            }
+            primitiveGetter = primitiveSetter = null;
         }
 
         assert primitiveGetter == null || primitiveGetter.type() == Lookup.GET_PRIMITIVE_TYPE : primitiveGetter + "!=" + Lookup.GET_PRIMITIVE_TYPE;
@@ -241,7 +237,7 @@ public class AccessorProperty extends Property {
         objectGetter  = getter.type() != Lookup.GET_OBJECT_TYPE ? MH.asType(getter, Lookup.GET_OBJECT_TYPE) : getter;
         objectSetter  = setter != null && setter.type() != Lookup.SET_OBJECT_TYPE ? MH.asType(setter, Lookup.SET_OBJECT_TYPE) : setter;
 
-        setType(OBJECT_FIELDS_ONLY ? Object.class : getterType);
+        setType(getterType);
     }
 
     /**
@@ -282,6 +278,9 @@ public class AccessorProperty extends Property {
             objectSetter    = gs.objectSetters[slot];
             primitiveSetter = gs.primitiveSetters[slot];
         }
+
+        // Always use dual fields except for single field structures
+        assert hasDualFields() != StructureLoader.isSingleFieldStructure(structure.getName());
     }
 
     /**
@@ -310,7 +309,7 @@ public class AccessorProperty extends Property {
      */
     public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot, final Class<?> initialType) {
         this(key, flags, structure, slot);
-        setType(OBJECT_FIELDS_ONLY ? Object.class : initialType);
+        setType(hasDualFields() ? initialType : Object.class);
     }
 
     /**
@@ -347,7 +346,7 @@ public class AccessorProperty extends Property {
      * @param initialValue initial value
      */
     protected final void setInitialValue(final ScriptObject owner, final Object initialValue) {
-        setType(JSType.unboxedFieldType(initialValue));
+        setType(hasDualFields() ? JSType.unboxedFieldType(initialValue) : Object.class);
         if (initialValue instanceof Integer) {
             invokeSetter(owner, ((Integer)initialValue).intValue());
         } else if (initialValue instanceof Long) {
@@ -363,7 +362,7 @@ public class AccessorProperty extends Property {
      * Initialize the type of a property
      */
     protected final void initializeType() {
-        setType(OBJECT_FIELDS_ONLY ? Object.class : null);
+        setType(!hasDualFields() ? Object.class : null);
     }
 
     private void readObject(final ObjectInputStream s) throws IOException, ClassNotFoundException {
@@ -670,7 +669,7 @@ public class AccessorProperty extends Property {
 
     @Override
     public final boolean canChangeType() {
-        if (OBJECT_FIELDS_ONLY) {
+        if (!hasDualFields()) {
             return false;
         }
         // Return true for currently undefined even if non-writable/configurable to allow initialization of ES6 CONST.

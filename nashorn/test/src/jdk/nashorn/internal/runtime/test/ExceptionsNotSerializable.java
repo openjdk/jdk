@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * JDK-8044518: Ensure exceptions related to optimistic recompilation are not serializable
  *
  * @test
- * @run testng jdk.nashorn.internal.runtime.ExceptionsNotSerializable
+ * @run testng jdk.nashorn.internal.runtime.test.ExceptionsNotSerializable
  */
 @SuppressWarnings("javadoc")
 public class ExceptionsNotSerializable {

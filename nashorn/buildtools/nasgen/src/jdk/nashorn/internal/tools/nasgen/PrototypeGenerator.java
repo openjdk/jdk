@@ -124,8 +124,6 @@ public class PrototypeGenerator extends ClassGenerator {
         if (memberCount > 0) {
             // call "super(map$)"
             mi.getStatic(className, PROPERTYMAP_FIELD_NAME, PROPERTYMAP_DESC);
-            // make sure we use duplicated PropertyMap so that original map
-            // stays intact and so can be used for many global.
             mi.invokeSpecial(PROTOTYPEOBJECT_TYPE, INIT, SCRIPTOBJECT_INIT_DESC);
             // initialize Function type fields
             initFunctionFields(mi);

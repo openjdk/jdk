@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,6 @@ package org.omg.CORBA;
  * Note also that you can add any number of
  * <code>NamedValue</code> objects to this list regardless of
  * its original length.
- * <P>
  * <LI><code>org.omg.CORBA.ORB.create_operation_list</code>
  * <PRE>
  *    org.omg.CORBA.NVList nv = orb.create_operation_list(myOperationDef);
