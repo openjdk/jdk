@@ -91,7 +91,7 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(OPENJDK_TARGET_CPU), x86_64)
     SA_CXXFLAGS += -DWIN64
   else
-    SA_CXXFLAGS += -RTC1 -ZI
+    SA_CXXFLAGS += -RTC1
     SA_LDFLAGS += -SAFESEH
   endif
 endif

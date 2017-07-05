@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,8 @@ LD:=@HOTSPOT_LD@
 MT:=@HOTSPOT_MT@
 RC:=@HOTSPOT_RC@
 
-EXTRA_CFLAGS=@LEGACY_EXTRA_CFLAGS@ $(CFLAGS_CCACHE)
+EXTRA_CFLAGS=@LEGACY_EXTRA_CFLAGS@ $(CFLAGS_CCACHE) $(NO_NULL_POINTER_CHECK_FLAG) \
+				   $(NO_LIFETIME_DSE_CFLAG) $(CXXSTD_CXXFLAG)
 EXTRA_CXXFLAGS=@LEGACY_EXTRA_CXXFLAGS@ $(CFLAGS_CCACHE)
 EXTRA_LDFLAGS=@LEGACY_EXTRA_LDFLAGS@
 

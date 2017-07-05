@@ -61,7 +61,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestStableFloat {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
-    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
     public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
@@ -182,10 +181,10 @@ public class TestStableFloat {
                 c.v = new float[1]; c.v[0] = 1.0F; float val1 = get();
                 c.v[0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1]; c.v[0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 3.0F));
             }
 
@@ -193,10 +192,10 @@ public class TestStableFloat {
                 c.v = new float[20]; c.v[10] = 1.0F; float val1 = get1();
                 c.v[10] = 2.0F; float val2 = get1();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[20]; c.v[10] = 3.0F; float val3 = get1();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 3.0F));
             }
 
@@ -222,21 +221,21 @@ public class TestStableFloat {
                 c.v = new float[1][1]; c.v[0][0] = 1.0F; float val1 = get();
                 c.v[0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1]; c.v[0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 3.0F));
 
                 c.v[0] = new float[1]; c.v[0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 4.0F));
             }
 
             {
                 c.v = new float[1][1]; float[] val1 = get1();
                 c.v[0] = new float[1]; float[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -262,31 +261,31 @@ public class TestStableFloat {
                 c.v = new float[1][1][1]; c.v[0][0][0] = 1.0F; float val1 = get();
                 c.v[0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1]; c.v[0][0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 3.0F));
 
                 c.v[0] = new float[1][1]; c.v[0][0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 4.0F));
 
                 c.v[0][0] = new float[1]; c.v[0][0][0] = 5.0F; float val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 5.0F));
             }
 
             {
                 c.v = new float[1][1][1]; float[] val1 = get1();
                 c.v[0][0] = new float[1]; float[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1]; float[][] val1 = get2();
                 c.v[0] = new float[1][1]; float[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -313,41 +312,41 @@ public class TestStableFloat {
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 1.0F; float val1 = get();
                 c.v[0][0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 3.0F));
 
                 c.v[0] = new float[1][1][1]; c.v[0][0][0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 4.0F));
 
                 c.v[0][0] = new float[1][1]; c.v[0][0][0][0] = 5.0F; float val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 5.0F));
 
                 c.v[0][0][0] = new float[1]; c.v[0][0][0][0] = 6.0F; float val6 = get();
-                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
                         : 6.0F));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[] val1 = get1();
                 c.v[0][0][0] = new float[1]; float[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[][] val1 = get2();
                 c.v[0][0] = new float[1][1]; float[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[][][] val1 = get3();
                 c.v[0] = new float[1][1][1]; float[][][] val2 = get3();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -407,7 +406,7 @@ public class TestStableFloat {
                 c.v = new float[1][1]; c.v[0] = new float[0]; float[] val1 = get1();
                 c.v[0] = new float[0]; float[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -443,14 +442,14 @@ public class TestStableFloat {
                 c.v = new float[1][1][1]; c.v[0][0] = new float[0]; float[] val1 = get1();
                 c.v[0][0] = new float[0]; float[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1]; c.v[0] = new float[0][0]; float[][] val1 = get2();
                 c.v[0] = new float[0][0]; float[][] val2 = get2();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -585,7 +584,7 @@ public class TestStableFloat {
                 elem.a = 2.0F; float val3 = get(); float val4 = get1();
 
                 assertEquals(val1, 1.0F);
-                assertEquals(val3, (isServerWithStable ? 1.0F : 2.0F));
+                assertEquals(val3, (isStableEnabled ? 1.0F : 2.0F));
 
                 assertEquals(val2, 1.0F);
                 assertEquals(val4, 2.0F);

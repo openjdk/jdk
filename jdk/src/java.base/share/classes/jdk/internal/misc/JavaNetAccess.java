@@ -26,7 +26,7 @@
 package jdk.internal.misc;
 
 import java.net.URLClassLoader;
-import sun.misc.URLClassPath;
+import jdk.internal.loader.URLClassPath;
 
 public interface JavaNetAccess {
     /**

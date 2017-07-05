@@ -62,6 +62,8 @@ Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose
 
 Flag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose);
 
+Flag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose);
+
 #ifdef COMPILER2
 Flag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose);
 
