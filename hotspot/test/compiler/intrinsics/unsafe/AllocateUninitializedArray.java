@@ -25,7 +25,7 @@
  * @test
  * @bug 8150465
  * @summary Unsafe methods to produce uninitialized arrays
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -ea -Diters=200   -Xint
  *      compiler.intrinsics.unsafe.AllocateUninitializedArray
