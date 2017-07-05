@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,19 @@ class VM_GC_Operation: public VM_Operation {
     if (full) {
       _full_gc_count_before = full_gc_count_before;
     }
+    // In ParallelScavengeHeap::mem_allocate() collections can be
+    // executed within a loop and _all_soft_refs_clear can be set
+    // true after they have been cleared by a collection and another
+    // collection started so that _all_soft_refs_clear can be true
+    // when this collection is started.  Don't assert that
+    // _all_soft_refs_clear have to be false here even though
+    // mutators have run.  Soft refs will be cleared again in this
+    // collection.
   }
-  ~VM_GC_Operation() {}
+  ~VM_GC_Operation() {
+    CollectedHeap* ch = Universe::heap();
+    ch->collector_policy()->set_all_soft_refs_clear(false);
+  }
 
   // Acquire the reference synchronization lock
   virtual bool doit_prologue();

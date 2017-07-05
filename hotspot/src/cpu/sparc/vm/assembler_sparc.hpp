@@ -661,9 +661,6 @@ class Assembler : public AbstractAssembler  {
     stx_op3      = 0x0e,
     swap_op3     = 0x0f,
 
-    lduwa_op3    = 0x10,
-    ldxa_op3     = 0x1b,
-
     stwa_op3     = 0x14,
     stxa_op3     = 0x1e,
 
