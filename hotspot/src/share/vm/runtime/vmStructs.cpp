@@ -263,7 +263,9 @@ static inline uint64_t cast_uint64_t(size_t x)
      static_field(Universe,                    _bootstrapping,                                bool)                                  \
      static_field(Universe,                    _fully_initialized,                            bool)                                  \
      static_field(Universe,                    _verify_count,                                 int)                                   \
-     static_field(Universe,                    _heap_base,                                    address)                                   \
+     static_field(Universe,                    _narrow_oop._base,                             address)                               \
+     static_field(Universe,                    _narrow_oop._shift,                            int)                                   \
+     static_field(Universe,                    _narrow_oop._use_implicit_null_checks,         bool)                                  \
                                                                                                                                      \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \

@@ -146,13 +146,17 @@ struct jvm_agent {
   uint64_t BufferBlob_vtbl;
   uint64_t RuntimeStub_vtbl;
 
+  uint64_t Use_Compressed_Oops_address;
   uint64_t Universe_methodKlassObj_address;
+  uint64_t Universe_narrow_oop_base_address;
+  uint64_t Universe_narrow_oop_shift_address;
   uint64_t CodeCache_heap_address;
-  uint64_t Universe_heap_base_address;
 
   /* Volatiles */
+  uint8_t  Use_Compressed_Oops;
   uint64_t Universe_methodKlassObj;
-  uint64_t Universe_heap_base;
+  uint64_t Universe_narrow_oop_base;
+  uint32_t Universe_narrow_oop_shift;
   uint64_t CodeCache_low;
   uint64_t CodeCache_high;
   uint64_t CodeCache_segmap_low;
@@ -279,8 +283,11 @@ static int parse_vmstructs(jvm_agent_t* J) {
       if (strcmp("_methodKlassObj", vmp->fieldName) == 0) {
         J->Universe_methodKlassObj_address = vmp->address;
       }
-      if (strcmp("_heap_base", vmp->fieldName) == 0) {
-        J->Universe_heap_base_address = vmp->address;
+      if (strcmp("_narrow_oop._base", vmp->fieldName) == 0) {
+        J->Universe_narrow_oop_base_address = vmp->address;
+      }
+      if (strcmp("_narrow_oop._shift", vmp->fieldName) == 0) {
+        J->Universe_narrow_oop_shift_address = vmp->address;
       }
     }
     CHECK_FAIL(err);
@@ -298,14 +305,39 @@ static int parse_vmstructs(jvm_agent_t* J) {
   return -1;
 }
 
+static int find_symbol(jvm_agent_t* J, const char *name, uint64_t* valuep) {
+  psaddr_t sym_addr;
+  int err;
+
+  err = ps_pglobal_lookup(J->P, LIBJVM_SO, name, &sym_addr);
+  if (err != PS_OK) goto fail;
+  *valuep = sym_addr;
+  return PS_OK;
+
+ fail:
+  return err;
+}
+
 static int read_volatiles(jvm_agent_t* J) {
   uint64_t ptr;
   int err;
 
+  err = find_symbol(J, "UseCompressedOops", &J->Use_Compressed_Oops_address);
+  if (err == PS_OK) {
+    err = ps_pread(J->P,  J->Use_Compressed_Oops_address, &J->Use_Compressed_Oops, sizeof(uint8_t));
+    CHECK_FAIL(err);
+  } else {
+    J->Use_Compressed_Oops = 0;
+  }
+
   err = read_pointer(J, J->Universe_methodKlassObj_address, &J->Universe_methodKlassObj);
   CHECK_FAIL(err);
-  err = read_pointer(J, J->Universe_heap_base_address, &J->Universe_heap_base);
+
+  err = read_pointer(J, J->Universe_narrow_oop_base_address, &J->Universe_narrow_oop_base);
   CHECK_FAIL(err);
+  err = ps_pread(J->P,  J->Universe_narrow_oop_shift_address, &J->Universe_narrow_oop_shift, sizeof(uint32_t));
+  CHECK_FAIL(err);
+
   err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_memory +
                      OFFSET_VirtualSpace_low, &J->CodeCache_low);
   CHECK_FAIL(err);
@@ -372,19 +404,6 @@ static int find_start(jvm_agent_t* J, uint64_t ptr, uint64_t *startp) {
 
  fail:
   return -1;
-}
-
-static int find_symbol(jvm_agent_t* J, const char *name, uint64_t* valuep) {
-  psaddr_t sym_addr;
-  int err;
-
-  err = ps_pglobal_lookup(J->P, LIBJVM_SO, name, &sym_addr);
-  if (err != PS_OK) goto fail;
-  *valuep = sym_addr;
-  return PS_OK;
-
- fail:
-  return err;
 }
 
 static int find_jlong_constant(jvm_agent_t* J, const char *name, uint64_t* valuep) {
@@ -458,14 +477,14 @@ void Jagent_destroy(jvm_agent_t *J) {
 static int is_methodOop(jvm_agent_t* J, uint64_t methodOopPtr) {
   uint64_t klass;
   int err;
-  // If heap_base is nonnull, this was a compressed oop.
-  if (J->Universe_heap_base != NULL) {
+  // If UseCompressedOops, this was a compressed oop.
+  if (J->Use_Compressed_Oops != 0) {
     uint32_t cklass;
     err = read_compressed_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata,
           &cklass);
     // decode heap oop, same as oop.inline.hpp
-    klass = (uint64_t)((uintptr_t)J->Universe_heap_base +
-            ((uintptr_t)cklass << 3));
+    klass = (uint64_t)((uintptr_t)J->Universe_narrow_oop_base +
+            ((uintptr_t)cklass << J->Universe_narrow_oop_shift));
   } else {
     err = read_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata, &klass);
   }

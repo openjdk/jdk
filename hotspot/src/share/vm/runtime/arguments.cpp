@@ -1211,7 +1211,9 @@ void Arguments::set_ergonomics_flags() {
     if (UseLargePages && UseCompressedOops) {
       // Cannot allocate guard pages for implicit checks in indexed addressing
       // mode, when large pages are specified on windows.
-      FLAG_SET_DEFAULT(UseImplicitNullCheckForNarrowOop, false);
+      // This flag could be switched ON if narrow oop base address is set to 0,
+      // see code in Universe::initialize_heap().
+      Universe::set_narrow_oop_use_implicit_null_checks(false);
     }
 #endif //  _WIN64
   } else {
