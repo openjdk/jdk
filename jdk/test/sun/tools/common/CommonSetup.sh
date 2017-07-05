@@ -34,6 +34,7 @@
 #   JMAP        - jmap utility
 #   JPS         - jps utility
 #   JSTACK      - jstack utility
+#   JCMD        - jcmd utility
 #   OS          - operating system name
 #   PATTERN_EOL - grep or sed end-of-line pattern
 #   PATTERN_WS  - grep or sed whitespace pattern
@@ -72,6 +73,7 @@ JINFO="${TESTJAVA}/bin/jinfo"
 JMAP="${TESTJAVA}/bin/jmap"
 JPS="${TESTJAVA}/bin/jps"
 JSTACK="${TESTJAVA}/bin/jstack"
+JCMD="${TESTJAVA}/bin/jcmd"
 
 isCygwin=false
 isMKS=false

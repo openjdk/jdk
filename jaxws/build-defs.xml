@@ -96,6 +96,10 @@
         </replaceregexp>
 
         <mkdir dir="${build.classes.dir}/META-INF/services"/>
+        <copy todir="${build.classes.dir}/META-INF"
+              file="${secondary.src.dir}/META-INF/mailcap.default"/>
+        <copy todir="${build.classes.dir}/META-INF"
+              file="${secondary.src.dir}/META-INF/mimetypes.default"/>
         <copy todir="${build.classes.dir}/META-INF/services"
               file="${primary.src.dir}/com/sun/tools/etc/META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory"/>
         <copy todir="${build.classes.dir}/META-INF/services"
@@ -118,6 +122,7 @@
     <!-- Set up source to use drop.dir. -->
     <target name="-use-drop" depends="-set-props">
         <property name="primary.src.dir" value="${jaxws_src.src.dir}"/>
+        <property name="secondary.src.dir" value="${jaf_src.src.dir}"/>
         <path id="src.dir.id">
             <pathelement path="${primary.src.dir}"/>
             <pathelement path="${jaf_src.src.dir}"/>

@@ -48,7 +48,8 @@ enum {
   JMM_VERSION_1_0 = 0x20010000,
   JMM_VERSION_1_1 = 0x20010100, // JDK 6
   JMM_VERSION_1_2 = 0x20010200, // JDK 7
-  JMM_VERSION     = 0x20010201
+  JMM_VERSION_1_2_1 = 0x20010201, // JDK 7 GA
+  JMM_VERSION     = 0x20010202
 };
 
 typedef struct {
@@ -188,6 +189,24 @@ typedef struct {
                                                /* -1 indicates gc_ext_attribute_values is not big enough */
 } jmmGCStat;
 
+typedef struct {
+  const char* name;
+  const char* description;
+  const char* impact;
+  int         num_arguments;
+  jboolean    enabled;
+} dcmdInfo;
+
+typedef struct {
+  const char* name;
+  const char* description;
+  const char* type;
+  const char* default_string;
+  jboolean    mandatory;
+  jboolean    option;
+  int         position;
+} dcmdArgInfo;
+
 typedef struct jmmInterface_1_ {
   void*        reserved1;
   void*        reserved2;
@@ -293,9 +312,21 @@ typedef struct jmmInterface_1_ {
                                                   jlongArray ids,
                                                   jboolean lockedMonitors,
                                                   jboolean lockedSynchronizers);
-   void         (JNICALL *SetGCNotificationEnabled) (JNIEnv *env,
-                                                  jobject mgr,
-                                                  jboolean enabled);
+  void         (JNICALL *SetGCNotificationEnabled) (JNIEnv *env,
+                                                    jobject mgr,
+                                                    jboolean enabled);
+  jobjectArray (JNICALL *GetDiagnosticCommands)  (JNIEnv *env);
+  void         (JNICALL *GetDiagnosticCommandInfo)
+                                                 (JNIEnv *env,
+                                                  jobjectArray cmds,
+                                                  dcmdInfo *infoArray);
+  void         (JNICALL *GetDiagnosticCommandArgumentsInfo)
+                                                 (JNIEnv *env,
+                                                  jstring commandName,
+                                                  dcmdArgInfo *infoArray);
+  jstring      (JNICALL *ExecuteDiagnosticCommand)
+                                                 (JNIEnv *env,
+                                                  jstring command);
 } JmmInterface;
 
 #ifdef __cplusplus
