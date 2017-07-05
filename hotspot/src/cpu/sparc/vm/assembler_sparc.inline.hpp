@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,10 +588,13 @@ inline void MacroAssembler::fbp( Condition c, bool a, CC cc, Predict p, Label& L
 inline void MacroAssembler::jmp( Register s1, Register s2 ) { jmpl( s1, s2, G0 ); }
 inline void MacroAssembler::jmp( Register s1, int simm13a, RelocationHolder const& rspec ) { jmpl( s1, simm13a, G0, rspec); }
 
+inline bool MacroAssembler::is_far_target(address d) {
+  return !is_in_wdisp30_range(d, CodeCache::low_bound()) || !is_in_wdisp30_range(d, CodeCache::high_bound());
+}
+
 // Call with a check to see if we need to deal with the added
 // expense of relocation and if we overflow the displacement
-// of the quick call instruction./
-// Check to see if we have to deal with relocations
+// of the quick call instruction.
 inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
 #ifdef _LP64
   intptr_t disp;
@@ -603,14 +606,12 @@ inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
 
   // Is this address within range of the call instruction?
   // If not, use the expensive instruction sequence
-  disp = (intptr_t)d - (intptr_t)pc();
-  if ( disp != (intptr_t)(int32_t)disp ) {
+  if (is_far_target(d)) {
     relocate(rt);
     AddressLiteral dest(d);
     jumpl_to(dest, O7, O7);
-  }
-  else {
-    Assembler::call( d, rt );
+  } else {
+    Assembler::call(d, rt);
   }
 #else
   Assembler::call( d, rt );
