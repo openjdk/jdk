@@ -185,11 +185,11 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
 
 void ReplacedNodes::dump(outputStream *st) const {
   if (!is_empty()) {
-    tty->print("replaced nodes: ");
+    st->print("replaced nodes: ");
     for (int i = 0; i < _replaced_nodes->length(); i++) {
-      tty->print("%d->%d", _replaced_nodes->at(i).initial()->_idx, _replaced_nodes->at(i).improved()->_idx);
+      st->print("%d->%d", _replaced_nodes->at(i).initial()->_idx, _replaced_nodes->at(i).improved()->_idx);
       if (i < _replaced_nodes->length()-1) {
-        tty->print(",");
+        st->print(",");
       }
     }
   }
