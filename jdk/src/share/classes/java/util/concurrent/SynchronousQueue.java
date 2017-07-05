@@ -279,12 +279,22 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             }
 
             // Unsafe mechanics
-            private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-            private static final long nextOffset =
-                objectFieldOffset(UNSAFE, "next", SNode.class);
-            private static final long matchOffset =
-                objectFieldOffset(UNSAFE, "match", SNode.class);
+            private static final sun.misc.Unsafe UNSAFE;
+            private static final long matchOffset;
+            private static final long nextOffset;
 
+            static {
+                try {
+                    UNSAFE = sun.misc.Unsafe.getUnsafe();
+                    Class k = SNode.class;
+                    matchOffset = UNSAFE.objectFieldOffset
+                        (k.getDeclaredField("match"));
+                    nextOffset = UNSAFE.objectFieldOffset
+                        (k.getDeclaredField("next"));
+                } catch (Exception e) {
+                    throw new Error(e);
+                }
+            }
         }
 
         /** The head (top) of the stack */
@@ -498,10 +508,18 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         }
 
         // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-        private static final long headOffset =
-            objectFieldOffset(UNSAFE, "head", TransferStack.class);
-
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long headOffset;
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                Class k = TransferStack.class;
+                headOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("head"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
     }
 
     /** Dual Queue */
@@ -558,11 +576,22 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             }
 
             // Unsafe mechanics
-            private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-            private static final long nextOffset =
-                objectFieldOffset(UNSAFE, "next", QNode.class);
-            private static final long itemOffset =
-                objectFieldOffset(UNSAFE, "item", QNode.class);
+            private static final sun.misc.Unsafe UNSAFE;
+            private static final long itemOffset;
+            private static final long nextOffset;
+
+            static {
+                try {
+                    UNSAFE = sun.misc.Unsafe.getUnsafe();
+                    Class k = QNode.class;
+                    itemOffset = UNSAFE.objectFieldOffset
+                        (k.getDeclaredField("item"));
+                    nextOffset = UNSAFE.objectFieldOffset
+                        (k.getDeclaredField("next"));
+                } catch (Exception e) {
+                    throw new Error(e);
+                }
+            }
         }
 
         /** Head of queue */
@@ -791,15 +820,24 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             }
         }
 
-        // unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-        private static final long headOffset =
-            objectFieldOffset(UNSAFE, "head", TransferQueue.class);
-        private static final long tailOffset =
-            objectFieldOffset(UNSAFE, "tail", TransferQueue.class);
-        private static final long cleanMeOffset =
-            objectFieldOffset(UNSAFE, "cleanMe", TransferQueue.class);
-
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long headOffset;
+        private static final long tailOffset;
+        private static final long cleanMeOffset;
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                Class k = TransferQueue.class;
+                headOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("head"));
+                tailOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("tail"));
+                cleanMeOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("cleanMe"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
     }
 
     /**

@@ -37,6 +37,7 @@ DEMO_TOPFILES   = ./README.txt
 DEMO_MAINCLASS  = $(DEMONAME)
 DEMO_MANIFEST_ATTR = SplashScreen-Image: resources/images/splash.png
 DEMO_DESTDIR    = $(DEMODIR)/jfc/$(DEMONAME)
+DEMO_INCL_SRC   = true
 
 #
 # Demo jar building rules.

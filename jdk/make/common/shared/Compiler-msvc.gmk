@@ -153,6 +153,9 @@ ifeq ($(PLATFORM), windows)
   ifndef COMPILER_VERSION
     COMPILER_VERSION := $(error COMPILER_VERSION cannot be empty here)
   endif
+  ifneq ($(COMPILER_VERSION),VS2010)
+    COMPILER_VERSION := $(error COMPILER_VERSION must be VS2010)
+  endif
   
   # Shared library generation flag
   SHARED_LIBRARY_FLAG = -LD

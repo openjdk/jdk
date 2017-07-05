@@ -339,8 +339,9 @@ abstract public class TimeZone implements Serializable, Cloneable {
     /**
      * Returns a name in the specified {@code style} of this {@code TimeZone}
      * suitable for presentation to the user in the default locale. If the
-     * specified {@code daylight} is {@code true}, a daylight saving time name
-     * is returned. Otherwise, a standard time name is returned.
+     * specified {@code daylight} is {@code true}, a Daylight Saving Time name
+     * is returned (even if this {@code TimeZone} doesn't observe Daylight Saving
+     * Time). Otherwise, a Standard Time name is returned.
      *
      * <p>This method is equivalent to:
      * <pre><blockquote>
@@ -348,7 +349,8 @@ abstract public class TimeZone implements Serializable, Cloneable {
      *                Locale.getDefault({@link Locale.Category#DISPLAY}))
      * </blockquote></pre>
      *
-     * @param daylight if {@code true}, return the daylight saving time name.
+     * @param daylight {@code true} specifying a Daylight Saving Time name, or
+     *                 {@code false} specifying a Standard Time name
      * @param style either {@link #LONG} or {@link #SHORT}
      * @return the human-readable name of this time zone in the default locale.
      * @exception IllegalArgumentException if {@code style} is invalid.
@@ -356,6 +358,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @see #getDisplayName(boolean, int, Locale)
      * @see Locale#getDefault(Locale.Category)
      * @see Locale.Category
+     * @see java.text.DateFormatSymbols#getZoneStrings()
      */
     public final String getDisplayName(boolean daylight, int style) {
         return getDisplayName(daylight, style,
@@ -365,8 +368,9 @@ abstract public class TimeZone implements Serializable, Cloneable {
     /**
      * Returns a name in the specified {@code style} of this {@code TimeZone}
      * suitable for presentation to the user in the specified {@code
-     * locale}. If the specified {@code daylight} is {@code true}, a daylight
-     * saving time name is returned. Otherwise, a standard time name is
+     * locale}. If the specified {@code daylight} is {@code true}, a Daylight
+     * Saving Time name is returned (even if this {@code TimeZone} doesn't
+     * observe Daylight Saving Time). Otherwise, a Standard Time name is
      * returned.
      *
      * <p>When looking up a time zone name, the {@linkplain
@@ -379,13 +383,15 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * found, the name is returned. Otherwise, a string in the
      * <a href="#NormalizedCustomID">normalized custom ID format</a> is returned.
      *
-     * @param daylight if {@code true}, return the daylight saving time name.
+     * @param daylight {@code true} specifying a Daylight Saving Time name, or
+     *                 {@code false} specifying a Standard Time name
      * @param style either {@link #LONG} or {@link #SHORT}
-     * @param locale the locale in which to supply the display name.
+     * @param locale   the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
      * @exception IllegalArgumentException if {@code style} is invalid.
      * @exception NullPointerException if {@code locale} is {@code null}.
      * @since 1.2
+     * @see java.text.DateFormatSymbols#getZoneStrings()
      */
     public String getDisplayName(boolean daylight, int style, Locale locale) {
         if (style != SHORT && style != LONG) {
@@ -526,10 +532,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
 
     /**
      * Queries if the given {@code date} is in Daylight Saving Time in
-     * this {@code TimeZone}.
+     * this time zone.
      *
-     * @param date the given {@code Date}.
-     * @return {@code true} if the given {@code date} is in Daylight Saving Time,
+     * @param date the given Date.
+     * @return {@code true} if the given date is in Daylight Saving Time,
      *         {@code false}, otherwise.
      */
     abstract public boolean inDaylightTime(Date date);
@@ -566,7 +572,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * @param rawOffset the given time zone GMT offset in milliseconds.
      * @return an array of IDs, where the time zone for that ID has
      * the specified GMT offset. For example, "America/Phoenix" and "America/Denver"
-     * both have GMT-07:00, but differ in daylight savings behavior.
+     * both have GMT-07:00, but differ in daylight saving behavior.
      * @see #getRawOffset()
      */
     public static synchronized String[] getAvailableIDs(int rawOffset) {

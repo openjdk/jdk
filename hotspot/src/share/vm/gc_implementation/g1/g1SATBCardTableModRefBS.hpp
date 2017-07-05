@@ -83,11 +83,15 @@ public:
   }
 
   template <class T> void write_ref_array_pre_work(T* dst, int count);
-  virtual void write_ref_array_pre(oop* dst, int count) {
-    write_ref_array_pre_work(dst, count);
+  virtual void write_ref_array_pre(oop* dst, int count, bool dest_uninitialized) {
+    if (!dest_uninitialized) {
+      write_ref_array_pre_work(dst, count);
+    }
   }
-  virtual void write_ref_array_pre(narrowOop* dst, int count) {
-    write_ref_array_pre_work(dst, count);
+  virtual void write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
+    if (!dest_uninitialized) {
+      write_ref_array_pre_work(dst, count);
+    }
   }
 };
 
