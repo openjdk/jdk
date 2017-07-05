@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+ifeq ($(ENABLE_INTREE_EC), yes)
+
+  LIBSUNEC_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ec/share/native/libsunec
+  BUILD_LIBSUNEC_FLAGS := $(addprefix -I, $(SUNEC_SRC))
+
+  #
+  # On sol-sparc...all libraries are compiled with -xregs=no%appl
+  # (set in CFLAGS_REQUIRED_sparc)
+  #
+  # except!!! libsunec.so
+  #
+  ECC_JNI_SOLSPARC_FILTER :=
+  ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+    ECC_JNI_SOLSPARC_FILTER := -xregs=no%appl
+  endif
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBSUNEC, \
+      LIBRARY := sunec, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBSUNEC_SRC), \
+      LANG := C++, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(filter-out $(ECC_JNI_SOLSPARC_FILTER), $(CFLAGS_JDKLIB)) \
+          $(BUILD_LIBSUNEC_FLAGS) \
+          -DMP_API_COMPATIBLE -DNSS_ECC_MORE_THAN_SUITE_B, \
+      CXXFLAGS := $(filter-out $(ECC_JNI_SOLSPARC_FILTER), $(CXXFLAGS_JDKLIB)) \
+          $(BUILD_LIBSUNEC_FLAGS), \
+      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
+      LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX := $(LIBCXX), \
+      LDFLAGS_SUFFIX_linux := -lc, \
+      LDFLAGS_SUFFIX_solaris := -lc, \
+      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+      RC_FLAGS := $(RC_FLAGS) \
+          -D "JDK_FNAME=sunec.dll" \
+          -D "JDK_INTERNAL_NAME=sunec" \
+          -D "JDK_FTYPE=0x2L", \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsunec, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  SECURITY_SUNEC_LIBRARIES += $(BUILD_LIBSUNEC)
+endif
+
+################################################################################
+
+jdk.crypto.ec: $(SECURITY_SUNEC_LIBRARIES)
+
+all: jdk.crypto.ec
+
+.PHONY: all jdk.crypto.ec

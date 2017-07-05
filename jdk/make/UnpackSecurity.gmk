@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+################################################################################
+# Unpack the binary distributions of the crypto classes if they exist.
+SEC_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-bin.zip
+SEC_FILES_WIN_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-windows-bin.zip
+JGSS_WIN32_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-i586-bin.zip
+JGSS_WIN64_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
+
+define unzip-sec-file
+	$(ECHO) Unzipping $(<F)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) -q -o $< > $@.tmp)
+	$(MV) $@.tmp $@
+endef
+
+$(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped: $(SEC_FILES_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped: $(SEC_FILES_WIN_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped: $(JGSS_WIN32_FILES_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped: $(JGSS_WIN64_FILES_ZIP)
+	$(call unzip-sec-file)
+
+ifneq ($(wildcard $(SEC_FILES_ZIP)), )
+  IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped
+    ifeq ($(OPENJDK_TARGET_CPU), x86)
+      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped
+    endif
+    ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped
+    endif
+  endif
+endif
+
+################################################################################
+
+sec: $(IMPORT_TARGET_FILES)
+
+all: sec
+
+.PHONY: sec all

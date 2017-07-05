@@ -1,0 +1,76 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS_API), posix)
+
+  ifeq (, $(filter $(OPENJDK_TARGET_OS), macosx aix))
+
+    # Suppress unused parameters required by exported JNI functions.
+    SCTP_WERROR := -Werror -Wno-error=unused-parameter
+    ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
+      SCTP_WERROR :=
+    endif
+
+    $(eval $(call SetupNativeCompilation,BUILD_LIBSCTP, \
+        LIBRARY := sctp, \
+        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+        SRC := $(JDK_TOPDIR)/src/jdk.sctp/$(OPENJDK_TARGET_OS_API_DIR)/native/libsctp, \
+        LANG := C, \
+        OPTIMIZATION := LOW, \
+        CFLAGS := $(CFLAGS_JDKLIB) \
+            -I $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnio/ch \
+            -I $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
+            $(addprefix -I, $(call FindSrcDirsForLib, java.base, net)) \
+            $(LIBJAVA_HEADER_FLAGS) \
+            -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.sctp \
+            -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base, \
+        CFLAGS_linux := $(SCTP_WERROR), \
+        MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsctp/mapfile-vers, \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            $(call SET_SHARED_LIBRARY_ORIGIN), \
+        LDFLAGS_SUFFIX_linux := -lpthread $(LIBDL) -ljava -ljvm, \
+        LDFLAGS_SUFFIX_posix := -lnio -lnet, \
+        LDFLAGS_SUFFIX_solaris := -lsocket -ljava -ljvm -lc, \
+        LDFLAGS_SUFFIX_macosx := -ljava -ljvm, \
+        OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsctp, \
+        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+    SCTP_LIBRARIES += $(BUILD_LIBSCTP)
+
+    $(BUILD_LIBSCTP): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)nio$(SHARED_LIBRARY_SUFFIX)
+  endif
+endif
+
+################################################################################
+
+jdk.sctp: $(SCTP_LIBRARIES)
+
+all: jdk.sctp
+
+.PHONY: all jdk.sctp
