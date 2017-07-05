@@ -451,6 +451,8 @@ class Klass : public Metadata {
 
   oop class_loader() const;
 
+  virtual oop klass_holder() const      { return class_loader(); }
+
  protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
   virtual Klass* array_klass_impl(bool or_null, TRAPS);

@@ -313,10 +313,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 #endif
   } else {
     // make a copy the code which is going to be patched.
-    for ( int i = 0; i < _bytes_to_copy; i++) {
+    for (int i = 0; i < _bytes_to_copy; i++) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
-      __ a_byte (a_byte);
+      __ emit_int8(a_byte);
       *ptr = 0x90; // make the site look like a nop
     }
   }
@@ -363,11 +363,11 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   // emit the offsets needed to find the code to patch
   int being_initialized_entry_offset = __ pc() - being_initialized_entry + sizeof_patch_record;
 
-  __ a_byte(0xB8);
-  __ a_byte(0);
-  __ a_byte(being_initialized_entry_offset);
-  __ a_byte(bytes_to_skip);
-  __ a_byte(_bytes_to_copy);
+  __ emit_int8((unsigned char)0xB8);
+  __ emit_int8(0);
+  __ emit_int8(being_initialized_entry_offset);
+  __ emit_int8(bytes_to_skip);
+  __ emit_int8(_bytes_to_copy);
   address patch_info_pc = __ pc();
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 

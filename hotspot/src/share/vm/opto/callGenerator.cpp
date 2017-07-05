@@ -274,6 +274,9 @@ class LateInlineCallGenerator : public DirectCallGenerator {
   virtual void do_late_inline();
 
   virtual JVMState* generate(JVMState* jvms) {
+    Compile *C = Compile::current();
+    C->print_inlining_skip(this);
+
     // Record that this call site should be revisited once the main
     // parse is finished.
     Compile::current()->add_late_inline(this);
@@ -284,7 +287,6 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     // as is done for allocations and macro expansion.
     return DirectCallGenerator::generate(jvms);
   }
-
 };
 
 
@@ -307,7 +309,9 @@ void LateInlineCallGenerator::do_late_inline() {
 
   // Make sure the state is a MergeMem for parsing.
   if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
-    map->set_req(TypeFunc::Memory, MergeMemNode::make(C, map->in(TypeFunc::Memory)));
+    Node* mem = MergeMemNode::make(C, map->in(TypeFunc::Memory));
+    C->initial_gvn()->set_type_bottom(mem);
+    map->set_req(TypeFunc::Memory, mem);
   }
 
   // Make enough space for the expression stack and transfer the incoming arguments
@@ -319,6 +323,8 @@ void LateInlineCallGenerator::do_late_inline() {
       map->set_req(i1 + jvms->argoff(), call->in(TypeFunc::Parms + i1));
     }
   }
+
+  C->print_inlining_insert(this);
 
   CompileLog* log = C->log();
   if (log != NULL) {
@@ -608,7 +614,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         if (cg != NULL && cg->is_inline())
           return cg;
       } else {
-        if (PrintInlining)  CompileTask::print_inlining(callee, jvms->depth() - 1, jvms->bci(), "receiver not constant");
+        if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), "receiver not constant");
       }
     }
     break;

@@ -1566,6 +1566,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* n = in(j);            // Get the input
     if (rc == NULL || phase->type(rc) == Type::TOP) {
       if (n != top) {           // Not already top?
+        PhaseIterGVN *igvn = phase->is_IterGVN();
+        if (can_reshape && igvn != NULL) {
+          igvn->_worklist.push(r);
+        }
         set_req(j, top);        // Nuke it down
         progress = this;        // Record progress
       }
