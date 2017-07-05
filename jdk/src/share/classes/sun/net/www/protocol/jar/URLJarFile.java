@@ -55,7 +55,7 @@ public class URLJarFile extends JarFile {
 
     private Manifest superMan;
     private Attributes superAttr;
-    private Map superEntries;
+    private Map<String, Attributes> superEntries;
 
     static JarFile getJarFile(URL url) throws IOException {
         return getJarFile(url, null);
@@ -146,12 +146,10 @@ public class URLJarFile extends JarFile {
 
         // now deep copy the manifest entries
         if (superEntries != null) {
-            Map entries = man.getEntries();
-            Iterator it = superEntries.keySet().iterator();
-            while (it.hasNext()) {
-                Object key = it.next();
-                Attributes at = (Attributes)superEntries.get(key);
-                entries.put(key, at.clone());
+            Map<String, Attributes> entries = man.getEntries();
+            for (String key : superEntries.keySet()) {
+                Attributes at = superEntries.get(key);
+                entries.put(key, (Attributes) at.clone());
             }
         }
 
@@ -213,9 +211,9 @@ public class URLJarFile extends JarFile {
             final InputStream in =  url.openConnection().getInputStream();
 
             try {
-                result = (JarFile)
-                    AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                        public Object run() throws IOException {
+                result = AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<JarFile>() {
+                        public JarFile run() throws IOException {
                             OutputStream out = null;
                             File tmpFile = null;
                             try {
@@ -273,9 +271,9 @@ public class URLJarFile extends JarFile {
 
         public Attributes getAttributes() throws IOException {
             if (URLJarFile.this.isSuperMan()) {
-                Map e = URLJarFile.this.superEntries;
+                Map<String, Attributes> e = URLJarFile.this.superEntries;
                 if (e != null) {
-                    Attributes a = (Attributes)e.get(getName());
+                    Attributes a = e.get(getName());
                     if (a != null)
                         return  (Attributes)a.clone();
                 }

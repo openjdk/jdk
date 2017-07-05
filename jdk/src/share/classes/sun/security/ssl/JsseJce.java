@@ -343,8 +343,7 @@ final class JsseJce {
         }
         try {
             KeyFactory factory = JsseJce.getKeyFactory("RSA");
-            return (RSAPublicKeySpec)factory.getKeySpec
-                                                (key, RSAPublicKeySpec.class);
+            return factory.getKeySpec(key, RSAPublicKeySpec.class);
         } catch (Exception e) {
             throw (RuntimeException)new RuntimeException().initCause(e);
         }

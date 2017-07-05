@@ -832,16 +832,8 @@ public class Container extends Component {
                 }
                 if (!comp.isLightweight() && isLightweight()) {
                     // If component is heavyweight and one of the containers is lightweight
-                    // some NativeInLightFixer activity should be performed
-                    if (!curParent.isLightweight()) {
-                        // Moving from heavyweight container to lightweight container - should create NativeInLightFixer
-                        // since addNotify does this
-                        comp.nativeInLightFixer = new NativeInLightFixer();
-                    } else {
-                        // Component already has NativeInLightFixer - just reinstall it
-                        // because hierarchy changed and he needs to rebuild list of parents to listen.
-                        comp.nativeInLightFixer.install(this);
-                    }
+                    // the location of the component should be fixed.
+                    comp.relocateComponent();
                 }
             }
         }
@@ -2267,53 +2259,56 @@ public class Container extends Component {
                                          EventTargetFilter filter,
                                          boolean searchHeavyweightChildren,
                                          boolean searchHeavyweightDescendants) {
-        int ncomponents = this.ncomponents;
-        Component component[] = this.component;
+        synchronized (getTreeLock()) {
+            int ncomponents = this.ncomponents;
+            Component component[] = this.component;
 
-        for (int i = 0 ; i < ncomponents ; i++) {
-            Component comp = component[i];
-            if (comp != null && comp.visible &&
-                ((!searchHeavyweightChildren &&
-                  comp.peer instanceof LightweightPeer) ||
-                 (searchHeavyweightChildren &&
-                  !(comp.peer instanceof LightweightPeer))) &&
-                comp.contains(x - comp.x, y - comp.y)) {
+            for (int i = 0 ; i < ncomponents ; i++) {
+                Component comp = component[i];
+                if (comp != null && comp.visible &&
+                    ((!searchHeavyweightChildren &&
+                      comp.peer instanceof LightweightPeer) ||
+                     (searchHeavyweightChildren &&
+                      !(comp.peer instanceof LightweightPeer))) &&
+                    comp.contains(x - comp.x, y - comp.y)) {
 
-                // found a component that intersects the point, see if there is
-                // a deeper possibility.
-                if (comp instanceof Container) {
-                    Container child = (Container) comp;
-                    Component deeper = child.getMouseEventTarget(x - child.x,
-                                                                 y - child.y,
-                                                                 includeSelf,
-                                                                 filter,
-                                                                 searchHeavyweightDescendants);
-                    if (deeper != null) {
-                        return deeper;
-                    }
-                } else {
-                    if (filter.accept(comp)) {
-                        // there isn't a deeper target, but this component is a
-                        // target
-                        return comp;
+                    // found a component that intersects the point, see if there
+                    // is a deeper possibility.
+                    if (comp instanceof Container) {
+                        Container child = (Container) comp;
+                        Component deeper = child.getMouseEventTarget(
+                                x - child.x,
+                                y - child.y,
+                                includeSelf,
+                                filter,
+                                searchHeavyweightDescendants);
+                        if (deeper != null) {
+                            return deeper;
+                        }
+                    } else {
+                        if (filter.accept(comp)) {
+                            // there isn't a deeper target, but this component
+                            // is a target
+                            return comp;
+                        }
                     }
                 }
             }
+
+            boolean isPeerOK;
+            boolean isMouseOverMe;
+
+            isPeerOK = (peer instanceof LightweightPeer) || includeSelf;
+            isMouseOverMe = contains(x,y);
+
+            // didn't find a child target, return this component if it's
+            // a possible target
+            if (isMouseOverMe && isPeerOK && filter.accept(this)) {
+                return this;
+            }
+            // no possible target
+            return null;
         }
-
-        boolean isPeerOK;
-        boolean isMouseOverMe;
-
-        isPeerOK = (peer instanceof LightweightPeer) || includeSelf;
-        isMouseOverMe = contains(x,y);
-
-        // didn't find a child target, return this component if it's a possible
-        // target
-        if (isMouseOverMe && isPeerOK && filter.accept(this)) {
-            return this;
-        }
-        // no possible target
-        return null;
     }
 
     static interface EventTargetFilter {
@@ -3950,6 +3945,83 @@ public class Container extends Component {
         }
     }
 
+    private void recursiveShowHeavyweightChildren() {
+        if (!hasHeavyweightDescendants() || !isVisible()) {
+            return;
+        }
+        for (int index = 0; index < getComponentCount(); index++) {
+            Component comp = getComponent(index);
+            if (comp.isLightweight()) {
+                if  (comp instanceof Container) {
+                    ((Container)comp).recursiveShowHeavyweightChildren();
+                }
+            } else {
+                if (comp.isVisible()) {
+                    ComponentPeer peer = comp.getPeer();
+                    if (peer != null) {
+                        peer.show();
+                    }
+                }
+            }
+        }
+    }
+
+    private void recursiveHideHeavyweightChildren() {
+        if (!hasHeavyweightDescendants()) {
+            return;
+        }
+        for (int index = 0; index < getComponentCount(); index++) {
+            Component comp = getComponent(index);
+            if (comp.isLightweight()) {
+                if  (comp instanceof Container) {
+                    ((Container)comp).recursiveHideHeavyweightChildren();
+                }
+            } else {
+                if (comp.isVisible()) {
+                    ComponentPeer peer = comp.getPeer();
+                    if (peer != null) {
+                        peer.hide();
+                    }
+                }
+            }
+        }
+    }
+
+    private void recursiveRelocateHeavyweightChildren(Point origin) {
+        for (int index = 0; index < getComponentCount(); index++) {
+            Component comp = getComponent(index);
+            if (comp.isLightweight()) {
+                if  (comp instanceof Container &&
+                        ((Container)comp).hasHeavyweightDescendants())
+                {
+                    final Point newOrigin = new Point(origin);
+                    newOrigin.translate(comp.getX(), comp.getY());
+                    ((Container)comp).recursiveRelocateHeavyweightChildren(newOrigin);
+                }
+            } else {
+                ComponentPeer peer = comp.getPeer();
+                if (peer != null) {
+                    peer.setBounds(origin.x + comp.getX(), origin.y + comp.getY(),
+                            comp.getWidth(), comp.getHeight(),
+                            ComponentPeer.SET_LOCATION);
+                }
+            }
+        }
+    }
+
+    /*
+     * Consider the heavyweight container hides or shows the HW descendants
+     * automatically. Therefore we care of LW containers' visibility only.
+     */
+    private boolean isRecursivelyVisibleUpToHeavyweightContainer() {
+        if (!isLightweight()) {
+            return true;
+        }
+        return isVisible() && (getContainer() == null ||
+             getContainer().isRecursivelyVisibleUpToHeavyweightContainer());
+    }
+
+    @Override
     void mixOnShowing() {
         synchronized (getTreeLock()) {
             if (mixingLog.isLoggable(Level.FINE)) {
@@ -3957,6 +4029,10 @@ public class Container extends Component {
             }
 
             boolean isLightweight = isLightweight();
+
+            if (isLightweight && isRecursivelyVisibleUpToHeavyweightContainer()) {
+                recursiveShowHeavyweightChildren();
+            }
 
             if (!isLightweight || (isLightweight && hasHeavyweightDescendants())) {
                 recursiveApplyCurrentShape();
@@ -3966,6 +4042,42 @@ public class Container extends Component {
         }
     }
 
+    @Override
+    void mixOnHiding(boolean isLightweight) {
+        synchronized (getTreeLock()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this +
+                        "; isLightweight=" + isLightweight);
+            }
+            if (isLightweight) {
+                recursiveHideHeavyweightChildren();
+            }
+            super.mixOnHiding(isLightweight);
+        }
+    }
+
+    @Override
+    void mixOnReshaping() {
+        synchronized (getTreeLock()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this);
+            }
+            if (isLightweight() && hasHeavyweightDescendants()) {
+                final Point origin = new Point(getX(), getY());
+                for (Container cont = getContainer();
+                        cont != null && cont.isLightweight();
+                        cont = cont.getContainer())
+                {
+                    origin.translate(cont.getX(), cont.getY());
+                }
+
+                recursiveRelocateHeavyweightChildren(origin);
+            }
+            super.mixOnReshaping();
+        }
+    }
+
+    @Override
     void mixOnZOrderChanging(int oldZorder, int newZorder) {
         synchronized (getTreeLock()) {
             if (mixingLog.isLoggable(Level.FINE)) {
@@ -4431,7 +4543,8 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                                        e.isPopupTrigger(),
                                        ((MouseWheelEvent)e).getScrollType(),
                                        ((MouseWheelEvent)e).getScrollAmount(),
-                                       ((MouseWheelEvent)e).getWheelRotation());
+                                       ((MouseWheelEvent)e).getWheelRotation(),
+                                       ((MouseWheelEvent)e).getPreciseWheelRotation());
             }
             else {
                 retargeted = new MouseEvent(target,

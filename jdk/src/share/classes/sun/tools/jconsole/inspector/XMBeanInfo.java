@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,7 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
 import javax.swing.table.*;
-import javax.swing.tree.*;
-import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.Resources;
-import sun.tools.jconsole.inspector.XNodeInfo.Type;
 
 import static sun.tools.jconsole.Utilities.*;
 
@@ -46,21 +43,20 @@ import static sun.tools.jconsole.Utilities.*;
 public class XMBeanInfo extends JPanel {
 
     private static final Color lightYellow = new Color(255, 255, 128);
-
     private final int NAME_COLUMN = 0;
     private final int VALUE_COLUMN = 1;
-
     private final String[] columnNames = {
         Resources.getText("Name"),
         Resources.getText("Value")
     };
-
     private JTable infoTable = new JTable();
     private JTable descTable = new JTable();
     private JPanel infoBorderPanel = new JPanel(new BorderLayout());
     private JPanel descBorderPanel = new JPanel(new BorderLayout());
 
     private static class ReadOnlyDefaultTableModel extends DefaultTableModel {
+
+        @Override
         public void setValueAt(Object value, int row, int col) {
         }
     }
@@ -73,17 +69,18 @@ public class XMBeanInfo extends JPanel {
             this.tableRowDividerText = tableRowDividerText;
         }
 
+        @Override
         public String toString() {
             return tableRowDividerText;
         }
     }
-
     private static MBeanInfoTableCellRenderer renderer =
             new MBeanInfoTableCellRenderer();
 
     private static class MBeanInfoTableCellRenderer
             extends DefaultTableCellRenderer {
 
+        @Override
         public Component getTableCellRendererComponent(
                 JTable table, Object value, boolean isSelected,
                 boolean hasFocus, int row, int column) {
@@ -92,22 +89,24 @@ public class XMBeanInfo extends JPanel {
             if (value instanceof TableRowDivider) {
                 JLabel label = new JLabel(value.toString());
                 label.setBackground(ensureContrast(lightYellow,
-                                                   label.getForeground()));
+                        label.getForeground()));
                 label.setOpaque(true);
                 return label;
             }
             return comp;
         }
     }
-
     private static TableCellEditor editor =
             new MBeanInfoTableCellEditor(new JTextField());
 
     private static class MBeanInfoTableCellEditor
             extends Utils.ReadOnlyTableCellEditor {
+
         public MBeanInfoTableCellEditor(JTextField tf) {
             super(tf);
         }
+
+        @Override
         public Component getTableCellEditorComponent(
                 JTable table, Object value, boolean isSelected,
                 int row, int column) {
@@ -116,7 +115,7 @@ public class XMBeanInfo extends JPanel {
             if (value instanceof TableRowDivider) {
                 JLabel label = new JLabel(value.toString());
                 label.setBackground(ensureContrast(lightYellow,
-                                                   label.getForeground()));
+                        label.getForeground()));
                 label.setOpaque(true);
                 return label;
             }
@@ -172,6 +171,7 @@ public class XMBeanInfo extends JPanel {
         add(descBorderPanel);
     }
 
+    // Call on EDT
     public void emptyInfoTable() {
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         while (tableModel.getRowCount() > 0) {
@@ -179,6 +179,7 @@ public class XMBeanInfo extends JPanel {
         }
     }
 
+    // Call on EDT
     public void emptyDescTable() {
         DefaultTableModel tableModel = (DefaultTableModel) descTable.getModel();
         while (tableModel.getRowCount() > 0) {
@@ -186,6 +187,7 @@ public class XMBeanInfo extends JPanel {
         }
     }
 
+    // Call on EDT
     private void addDescriptor(Descriptor desc, String text) {
         if (desc != null && desc.getFieldNames().length > 0) {
             DefaultTableModel tableModel = (DefaultTableModel) descTable.getModel();
@@ -223,6 +225,7 @@ public class XMBeanInfo extends JPanel {
         }
     }
 
+    // Call on EDT
     public void addMBeanInfo(XMBean mbean, MBeanInfo mbeanInfo) {
         emptyInfoTable();
         emptyDescTable();
@@ -263,6 +266,7 @@ public class XMBeanInfo extends JPanel {
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
 
+    // Call on EDT
     public void addMBeanAttributeInfo(MBeanAttributeInfo mbai) {
         emptyInfoTable();
         emptyDescTable();
@@ -296,6 +300,7 @@ public class XMBeanInfo extends JPanel {
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
 
+    // Call on EDT
     public void addMBeanOperationInfo(MBeanOperationInfo mboi) {
         emptyInfoTable();
         emptyDescTable();
@@ -343,6 +348,7 @@ public class XMBeanInfo extends JPanel {
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
 
+    // Call on EDT
     public void addMBeanNotificationInfo(MBeanNotificationInfo mbni) {
         emptyInfoTable();
         emptyDescTable();
@@ -367,6 +373,7 @@ public class XMBeanInfo extends JPanel {
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
 
+    // Call on EDT
     private void addMBeanConstructorInfo(MBeanConstructorInfo mbci, String text) {
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
@@ -383,6 +390,7 @@ public class XMBeanInfo extends JPanel {
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
 
+    // Call on EDT
     private void addMBeanParameterInfo(MBeanParameterInfo mbpi, String text) {
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
@@ -400,92 +408,5 @@ public class XMBeanInfo extends JPanel {
         tableModel.addRow(rowData);
         addDescriptor(mbpi.getDescriptor(), text);
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
-    }
-
-    public static void loadInfo(DefaultMutableTreeNode root) {
-        // Retrieve XMBean from XNodeInfo
-        //
-        XMBean mbean = (XMBean) ((XNodeInfo) root.getUserObject()).getData();
-        // Initialize MBean*Info
-        //
-        final MBeanInfo mbeanInfo;
-        try {
-            mbeanInfo = mbean.getMBeanInfo();
-        } catch (Exception e) {
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
-            }
-            return;
-        }
-        MBeanAttributeInfo[] ai = mbeanInfo.getAttributes();
-        MBeanOperationInfo[] oi = mbeanInfo.getOperations();
-        MBeanNotificationInfo[] ni = mbeanInfo.getNotifications();
-        // MBeanAttributeInfo node
-        //
-        if (ai != null && ai.length > 0) {
-            DefaultMutableTreeNode attributes = new DefaultMutableTreeNode();
-            XNodeInfo attributesUO = new XNodeInfo(Type.ATTRIBUTES, mbean,
-                    Resources.getText("Attributes"), null);
-            attributes.setUserObject(attributesUO);
-            root.add(attributes);
-            for (MBeanAttributeInfo mbai : ai) {
-                DefaultMutableTreeNode attribute = new DefaultMutableTreeNode();
-                XNodeInfo attributeUO = new XNodeInfo(Type.ATTRIBUTE,
-                        new Object[] {mbean, mbai}, mbai.getName(), null);
-                attribute.setUserObject(attributeUO);
-                attributes.add(attribute);
-            }
-        }
-        // MBeanOperationInfo node
-        //
-        if (oi != null && oi.length > 0) {
-            DefaultMutableTreeNode operations = new DefaultMutableTreeNode();
-            XNodeInfo operationsUO = new XNodeInfo(Type.OPERATIONS, mbean,
-                    Resources.getText("Operations"), null);
-            operations.setUserObject(operationsUO);
-            root.add(operations);
-            for (MBeanOperationInfo mboi : oi) {
-                // Compute the operation's tool tip text:
-                // "operationname(param1type,param2type,...)"
-                //
-                StringBuilder sb = new StringBuilder();
-                for (MBeanParameterInfo mbpi : mboi.getSignature()) {
-                    sb.append(mbpi.getType() + ",");
-                }
-                String signature = sb.toString();
-                if (signature.length() > 0) {
-                    // Remove the trailing ','
-                    //
-                    signature = signature.substring(0, signature.length() - 1);
-                }
-                String toolTipText = mboi.getName() + "(" + signature + ")";
-                // Create operation node
-                //
-                DefaultMutableTreeNode operation = new DefaultMutableTreeNode();
-                XNodeInfo operationUO = new XNodeInfo(Type.OPERATION,
-                        new Object[] {mbean, mboi}, mboi.getName(), toolTipText);
-                operation.setUserObject(operationUO);
-                operations.add(operation);
-            }
-        }
-        // MBeanNotificationInfo node
-        //
-        if (mbean.isBroadcaster()) {
-            DefaultMutableTreeNode notifications = new DefaultMutableTreeNode();
-            XNodeInfo notificationsUO = new XNodeInfo(Type.NOTIFICATIONS, mbean,
-                    Resources.getText("Notifications"), null);
-            notifications.setUserObject(notificationsUO);
-            root.add(notifications);
-            if (ni != null && ni.length > 0) {
-                for (MBeanNotificationInfo mbni : ni) {
-                    DefaultMutableTreeNode notification =
-                            new DefaultMutableTreeNode();
-                    XNodeInfo notificationUO = new XNodeInfo(Type.NOTIFICATION,
-                            mbni, mbni.getName(), null);
-                    notification.setUserObject(notificationUO);
-                    notifications.add(notification);
-                }
-            }
-        }
     }
 }

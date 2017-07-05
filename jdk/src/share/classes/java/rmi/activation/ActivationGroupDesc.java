@@ -263,7 +263,7 @@ public final class ActivationGroupDesc implements Serializable {
          * @since 1.2
          */
         public String[] getCommandOptions() {
-            return (String[]) options.clone();
+            return options.clone();
         }
 
         /**

@@ -191,11 +191,12 @@ abstract class LValue {
         return field;
     }
 
-    static List methodsByName(ReferenceType refType, String name, int kind) {
-        List list = refType.methodsByName(name);
-        Iterator iter = list.iterator();
+    static List<Method> methodsByName(ReferenceType refType,
+                                      String name, int kind) {
+        List<Method> list = refType.methodsByName(name);
+        Iterator<Method> iter = list.iterator();
         while (iter.hasNext()) {
-            Method method = (Method)iter.next();
+            Method method = iter.next();
             boolean isStatic = method.isStatic();
             if (((kind == STATIC) && !isStatic) ||
                 ((kind == INSTANCE) && isStatic)) {
@@ -231,21 +232,21 @@ abstract class LValue {
      * argType is not assignable from the type of the argument value.
      * IE, one is an Apple and the other is an Orange.
      */
-    static int argumentsMatch(List argTypes, List arguments) {
+    static int argumentsMatch(List<Type> argTypes, List<Value> arguments) {
         if (argTypes.size() != arguments.size()) {
             return DIFFERENT;
         }
 
-        Iterator typeIter = argTypes.iterator();
-        Iterator valIter = arguments.iterator();
+        Iterator<Type> typeIter = argTypes.iterator();
+        Iterator<Value> valIter = arguments.iterator();
         int result = SAME;
 
         // If any pair aren't the same, change the
         // result to ASSIGNABLE.  If any pair aren't
         // assignable, return DIFFERENT
         while (typeIter.hasNext()) {
-            Type argType = (Type)typeIter.next();
-            Value value = (Value)valIter.next();
+            Type argType = typeIter.next();
+            Value value = valIter.next();
             if (value == null) {
                 // Null values can be passed to any non-primitive argument
                 if (primitiveTypeNames.contains(argType.name())) {
@@ -333,7 +334,7 @@ abstract class LValue {
         if (fromType instanceof ArrayType) {
             return isArrayAssignableTo((ArrayType)fromType, toType);
         }
-        List interfaces;
+        List<InterfaceType> interfaces;
         if (fromType instanceof ClassType) {
             ClassType superclazz = ((ClassType)fromType).superclass();
             if ((superclazz != null) && isAssignableTo(superclazz, toType)) {
@@ -344,9 +345,7 @@ abstract class LValue {
             // fromType must be an InterfaceType
             interfaces = ((InterfaceType)fromType).superinterfaces();
         }
-        Iterator iter = interfaces.iterator();
-        while (iter.hasNext()) {
-            InterfaceType interfaze = (InterfaceType)iter.next();
+        for (InterfaceType interfaze : interfaces) {
             if (isAssignableTo(interfaze, toType)) {
                 return true;
             }
@@ -354,7 +353,8 @@ abstract class LValue {
         return false;
     }
 
-    static Method resolveOverload(List overloads, List arguments)
+    static Method resolveOverload(List<Method> overloads,
+                                  List<Value> arguments)
                                        throws ParseException {
 
         // If there is only one method to call, we'll just choose
@@ -362,7 +362,7 @@ abstract class LValue {
         // the invoke will return a better error message than we
         // could generate here.
         if (overloads.size() == 1) {
-            return (Method)overloads.get(0);
+            return overloads.get(0);
         }
 
         // Resolving overloads is beyond the scope of this exercise.
@@ -374,12 +374,10 @@ abstract class LValue {
         // methods to call. And, since casts aren't implemented,
         // the user can't use them to pick a particular overload to call.
         // IE, the user is out of luck in this case.
-        Iterator iter = overloads.iterator();
         Method retVal = null;
         int assignableCount = 0;
-        while (iter.hasNext()) {
-            Method mm = (Method)iter.next();
-            List argTypes;
+        for (Method mm : overloads) {
+            List<Type> argTypes;
             try {
                 argTypes = mm.argumentTypes();
             } catch (ClassNotLoadedException ee) {
@@ -443,7 +441,7 @@ abstract class LValue {
         final ObjectReference obj;
         final ThreadReference thread;
         final Field matchingField;
-        final List overloads;
+        final List<Method> overloads;
         Method matchingMethod = null;
         List<Value> methodArguments = null;
 
@@ -510,7 +508,7 @@ abstract class LValue {
         final ReferenceType refType;
         final ThreadReference thread;
         final Field matchingField;
-        final List overloads;
+        final List<Method> overloads;
         Method matchingMethod = null;
         List<Value> methodArguments = null;
 
@@ -765,7 +763,7 @@ abstract class LValue {
     static LValue makeNewObject(VirtualMachine vm,
                                  ExpressionParser.GetFrame frameGetter,
                                 String className, List<Value> arguments) throws ParseException {
-        List classes = vm.classesByName(className);
+        List<ReferenceType> classes = vm.classesByName(className);
         if (classes.size() == 0) {
             throw new ParseException("No class named: " + className);
         }
@@ -774,7 +772,7 @@ abstract class LValue {
             throw new ParseException("More than one class named: " +
                                      className);
         }
-        ReferenceType refType = (ReferenceType)classes.get(0);
+        ReferenceType refType = classes.get(0);
 
 
         if (!(refType instanceof ClassType)) {
@@ -784,9 +782,9 @@ abstract class LValue {
 
         ClassType classType = (ClassType)refType;
         List<Method> methods = new ArrayList<Method>(classType.methods()); // writable
-        Iterator iter = methods.iterator();
+        Iterator<Method> iter = methods.iterator();
         while (iter.hasNext()) {
-            Method method = (Method)iter.next();
+            Method method = iter.next();
             if (!method.isConstructor()) {
                 iter.remove();
             }
@@ -858,13 +856,13 @@ abstract class LValue {
                 }
                 // check for class name
                 while (izer.hasMoreTokens()) {
-                    List classes = vm.classesByName(first);
+                    List<ReferenceType> classes = vm.classesByName(first);
                     if (classes.size() > 0) {
                         if (classes.size() > 1) {
                             throw new ParseException("More than one class named: " +
                                                      first);
                         } else {
-                            ReferenceType refType = (ReferenceType)classes.get(0);
+                            ReferenceType refType = classes.get(0);
                             LValue lval = new LValueStaticMember(refType,
                                                             izer.nextToken(), thread);
                             return nFields(lval, izer, thread);

@@ -46,8 +46,10 @@ public abstract class ClassFileTransformer
 {
     // Singleton of ClassFileTransformer
     //
-    private static ArrayList transformerList = new ArrayList();
-    private static Object[] transformers = new Object[0];
+    private static ArrayList<ClassFileTransformer> transformerList
+        = new ArrayList<ClassFileTransformer>();
+    private static ClassFileTransformer[] transformers
+        = new ClassFileTransformer[0];
 
     /**
      * Add the class file transformer object.
@@ -59,7 +61,7 @@ public abstract class ClassFileTransformer
         synchronized(transformerList)
         {
             transformerList.add(t);
-            transformers = transformerList.toArray();
+            transformers = transformerList.toArray(new ClassFileTransformer[0]);
         }
     }
 
@@ -68,7 +70,7 @@ public abstract class ClassFileTransformer
      *
      * @return ClassFileTransformer object array
      */
-    public static Object[] getTransformers()
+    public static ClassFileTransformer[] getTransformers()
     {
         // transformers is not intended to be changed frequently,
         // so it is okay to not put synchronized block here

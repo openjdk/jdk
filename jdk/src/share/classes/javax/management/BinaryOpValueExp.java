@@ -167,9 +167,71 @@ class BinaryOpValueExp extends QueryEval implements ValueExp {
      */
     public String toString()  {
         try {
-            return exp1 + " " + opString() + " " + exp2;
+            return parens(exp1, true) + " " + opString() + " " + parens(exp2, false);
         } catch (BadBinaryOpValueExpException ex) {
             return "invalid expression";
+        }
+    }
+
+    /*
+     * Add parentheses to the given subexpression if necessary to
+     * preserve meaning.  Suppose this BinaryOpValueExp is
+     * Query.times(Query.plus(Query.attr("A"), Query.attr("B")), Query.attr("C")).
+     * Then the original toString() logic would return A + B * C.
+     * We check precedences in order to return (A + B) * C, which is the
+     * meaning of the ValueExp.
+     *
+     * We need to add parentheses if the unparenthesized expression would
+     * be parsed as a different ValueExp from the original.
+     * We cannot omit parentheses even when mathematically
+     * the result would be equivalent, because we do not know whether the
+     * numeric values will be integer or floating-point.  Addition and
+     * multiplication are associative for integers but not always for
+     * floating-point.
+     *
+     * So the rule is that we omit parentheses if the ValueExp
+     * is (A op1 B) op2 C and the precedence of op1 is greater than or
+     * equal to that of op2; or if the ValueExp is A op1 (B op2 C) and
+     * the precedence of op2 is greater than that of op1.  (There are two
+     * precedences: that of * and / is greater than that of + and -.)
+     * The case of (A op1 B) op2 (C op3 D) applies each rule in turn.
+     *
+     * The following examples show the rules in action.  On the left,
+     * the original ValueExp.  On the right, the string representation.
+     *
+     * (A + B) + C     A + B + C
+     * (A * B) + C     A * B + C
+     * (A + B) * C     (A + B) * C
+     * (A * B) * C     A * B * C
+     * A + (B + C)     A + (B + C)
+     * A + (B * C)     A + B * C
+     * A * (B + C)     A * (B + C)
+     * A * (B * C)     A * (B * C)
+     */
+    private String parens(ValueExp subexp, boolean left)
+    throws BadBinaryOpValueExpException {
+        boolean omit;
+        if (subexp instanceof BinaryOpValueExp) {
+            int subop = ((BinaryOpValueExp) subexp).op;
+            if (left)
+                omit = (precedence(subop) >= precedence(op));
+            else
+                omit = (precedence(subop) > precedence(op));
+        } else
+            omit = true;
+
+        if (omit)
+            return subexp.toString();
+        else
+            return "(" + subexp + ")";
+    }
+
+    private int precedence(int xop) throws BadBinaryOpValueExpException {
+        switch (xop) {
+            case Query.PLUS: case Query.MINUS: return 0;
+            case Query.TIMES: case Query.DIV: return 1;
+            default:
+                throw new BadBinaryOpValueExpException(this);
         }
     }
 
@@ -187,5 +249,11 @@ class BinaryOpValueExp extends QueryEval implements ValueExp {
 
         throw new BadBinaryOpValueExpException(this);
     }
+
+    @Deprecated
+    public void setMBeanServer(MBeanServer s) {
+        super.setMBeanServer(s);
+ }
+
 
  }

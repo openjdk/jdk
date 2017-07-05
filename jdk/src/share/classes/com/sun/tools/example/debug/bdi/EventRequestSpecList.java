@@ -47,9 +47,8 @@ class EventRequestSpecList {
      */
     void resolve(ReferenceType refType) {
         synchronized(eventRequestSpecs) {
-            Iterator iter = eventRequestSpecs.iterator();
-            while (iter.hasNext()) {
-                ((EventRequestSpec)iter.next()).attemptResolve(refType);
+            for (EventRequestSpec spec : eventRequestSpecs) {
+                spec.attemptResolve(refType);
              }
         }
     }
@@ -79,7 +78,7 @@ class EventRequestSpecList {
 
     BreakpointSpec
     createMethodBreakpoint(String classPattern,
-                           String methodId, List methodArgs) {
+                           String methodId, List<String> methodArgs) {
         ReferenceTypeSpec refSpec =
             new PatternReferenceTypeSpec(classPattern);
         return new MethodBreakpointSpec(this, refSpec,
@@ -132,47 +131,48 @@ class EventRequestSpecList {
 
     // --------  notify routines --------------------
 
-    private Vector specListeners() {
-        return (Vector)runtime.specListeners.clone();
+    @SuppressWarnings("unchecked")
+    private Vector<SpecListener> specListeners() {
+        return (Vector<SpecListener>)runtime.specListeners.clone();
     }
 
     void notifySet(EventRequestSpec spec) {
-        Vector l = specListeners();
+        Vector<SpecListener> l = specListeners();
         SpecEvent evt = new SpecEvent(spec);
         for (int i = 0; i < l.size(); i++) {
-            spec.notifySet((SpecListener)l.elementAt(i), evt);
+            spec.notifySet(l.elementAt(i), evt);
         }
     }
 
     void notifyDeferred(EventRequestSpec spec) {
-        Vector l = specListeners();
+        Vector<SpecListener> l = specListeners();
         SpecEvent evt = new SpecEvent(spec);
         for (int i = 0; i < l.size(); i++) {
-            spec.notifyDeferred((SpecListener)l.elementAt(i), evt);
+            spec.notifyDeferred(l.elementAt(i), evt);
         }
     }
 
     void notifyDeleted(EventRequestSpec spec) {
-        Vector l = specListeners();
+        Vector<SpecListener> l = specListeners();
         SpecEvent evt = new SpecEvent(spec);
         for (int i = 0; i < l.size(); i++) {
-            spec.notifyDeleted((SpecListener)l.elementAt(i), evt);
+            spec.notifyDeleted(l.elementAt(i), evt);
         }
     }
 
     void notifyResolved(EventRequestSpec spec) {
-        Vector l = specListeners();
+        Vector<SpecListener> l = specListeners();
         SpecEvent evt = new SpecEvent(spec);
         for (int i = 0; i < l.size(); i++) {
-            spec.notifyResolved((SpecListener)l.elementAt(i), evt);
+            spec.notifyResolved(l.elementAt(i), evt);
         }
     }
 
     void notifyError(EventRequestSpec spec, Exception exc) {
-        Vector l = specListeners();
+        Vector<SpecListener> l = specListeners();
         SpecErrorEvent evt = new SpecErrorEvent(spec, exc);
         for (int i = 0; i < l.size(); i++) {
-            spec.notifyError((SpecListener)l.elementAt(i), evt);
+            spec.notifyError(l.elementAt(i), evt);
         }
     }
 }

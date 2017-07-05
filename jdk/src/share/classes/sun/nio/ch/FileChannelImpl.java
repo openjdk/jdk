@@ -52,39 +52,37 @@ public class FileChannelImpl
 {
 
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd;
 
     // Memory allocation size for mapping buffers
-    private static long allocationGranularity;
+    private static final long allocationGranularity;
 
     // Cached field for MappedByteBuffer.isAMappedBuffer
-    private static Field isAMappedBufferField;
+    private static final Field isAMappedBufferField;
 
     // File descriptor
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
 
     // File access mode (immutable)
-    private boolean writable;
-    private boolean readable;
-    private boolean appending;
+    private final boolean writable;
+    private final boolean readable;
 
     // Required to prevent finalization of creating stream (immutable)
-    private Object parent;
+    private final Object parent;
 
     // Thread-safe set of IDs of native threads, for signalling
-    private NativeThreadSet threads = new NativeThreadSet(2);
+    private final NativeThreadSet threads = new NativeThreadSet(2);
 
     // Lock for operations involving position and size
-    private Object positionLock = new Object();
+    private final Object positionLock = new Object();
 
     private FileChannelImpl(FileDescriptor fd, boolean readable,
-                            boolean writable, Object parent, boolean append)
+                            boolean writable, Object parent)
     {
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
         this.parent = parent;
-        this.appending = append;
     }
 
     // Invoked by getChannel() methods
@@ -94,14 +92,7 @@ public class FileChannelImpl
                                    boolean readable, boolean writable,
                                    Object parent)
     {
-        return new FileChannelImpl(fd, readable, writable, parent, false);
-    }
-
-    public static FileChannel open(FileDescriptor fd,
-                                   boolean readable, boolean writable,
-                                   Object parent, boolean append)
-    {
-        return new FileChannelImpl(fd, readable, writable, parent, append);
+        return new FileChannelImpl(fd, readable, writable, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -134,15 +125,7 @@ public class FileChannelImpl
             // superclass AbstractInterruptibleChannel, but the isOpen logic in
             // that method will prevent this method from being reinvoked.
             //
-            if (parent instanceof FileInputStream)
-                ((FileInputStream)parent).close();
-            else if (parent instanceof FileOutputStream)
-                ((FileOutputStream)parent).close();
-            else if (parent instanceof RandomAccessFile)
-                ((RandomAccessFile)parent).close();
-            else
-                assert false;
-
+            ((java.io.Closeable)parent).close();
         } else {
             nd.close(fd);
         }
@@ -218,8 +201,6 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 ti = threads.add();
-                if (appending)
-                    position(size());
                 do {
                     n = IOUtil.write(fd, src, -1, nd, positionLock);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
@@ -244,8 +225,6 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 ti = threads.add();
-                if (appending)
-                    position(size());
                 do {
                     n = IOUtil.write(fd, srcs, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
@@ -1051,7 +1030,7 @@ public class FileChannelImpl
         private FileKey fileKey;
 
         FileLockReference(FileLock referent,
-                          ReferenceQueue queue,
+                          ReferenceQueue<FileLock> queue,
                           FileKey key) {
             super(referent, queue);
             this.fileKey = key;
@@ -1073,7 +1052,7 @@ public class FileChannelImpl
             new ConcurrentHashMap<FileKey, ArrayList<FileLockReference>>();
 
         // reference queue for cleared refs
-        private static ReferenceQueue queue = new ReferenceQueue();
+        private static ReferenceQueue<FileLock> queue = new ReferenceQueue<FileLock>();
 
         // the enclosing file channel
         private FileChannelImpl fci;

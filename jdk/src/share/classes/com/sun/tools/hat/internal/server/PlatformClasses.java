@@ -90,9 +90,7 @@ public class PlatformClasses  {
                     // is the right thing to do anyway.
                 }
             }
-            int num = list.size();
-            names = new String[num];
-            names = (String[]) list.toArray(names);
+            names = list.toArray(new String[list.size()]);
         }
         return names;
     }
