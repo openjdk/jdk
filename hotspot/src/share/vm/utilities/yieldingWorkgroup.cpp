@@ -125,7 +125,7 @@ void YieldingFlexibleWorkGang::start_task(YieldingFlexibleGangTask* new_task) {
   if (requested_size != 0) {
     _active_workers = MIN2(requested_size, total_workers());
   } else {
-    _active_workers = total_workers();
+    _active_workers = active_workers();
   }
   new_task->set_actual_size(_active_workers);
   new_task->set_for_termination(_active_workers);
@@ -148,22 +148,22 @@ void YieldingFlexibleWorkGang::wait_for_gang() {
   for (Status status = yielding_task()->status();
        status != COMPLETED && status != YIELDED && status != ABORTED;
        status = yielding_task()->status()) {
-    assert(started_workers() <= total_workers(), "invariant");
-    assert(finished_workers() <= total_workers(), "invariant");
-    assert(yielded_workers() <= total_workers(), "invariant");
+    assert(started_workers() <= active_workers(), "invariant");
+    assert(finished_workers() <= active_workers(), "invariant");
+    assert(yielded_workers() <= active_workers(), "invariant");
     monitor()->wait(Mutex::_no_safepoint_check_flag);
   }
   switch (yielding_task()->status()) {
     case COMPLETED:
     case ABORTED: {
-      assert(finished_workers() == total_workers(), "Inconsistent status");
+      assert(finished_workers() == active_workers(), "Inconsistent status");
       assert(yielded_workers() == 0, "Invariant");
       reset();   // for next task; gang<->task binding released
       break;
     }
     case YIELDED: {
       assert(yielded_workers() > 0, "Invariant");
-      assert(yielded_workers() + finished_workers() == total_workers(),
+      assert(yielded_workers() + finished_workers() == active_workers(),
              "Inconsistent counts");
       break;
     }
@@ -182,7 +182,6 @@ void YieldingFlexibleWorkGang::continue_task(
 
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
   assert(task() != NULL && task() == gang_task, "Incorrect usage");
-  // assert(_active_workers == total_workers(), "For now");
   assert(_started_workers == _active_workers, "Precondition");
   assert(_yielded_workers > 0 && yielding_task()->status() == YIELDED,
          "Else why are we calling continue_task()");
@@ -202,7 +201,7 @@ void YieldingFlexibleWorkGang::reset() {
 void YieldingFlexibleWorkGang::yield() {
   assert(task() != NULL, "Inconsistency; should have task binding");
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
-  assert(yielded_workers() < total_workers(), "Consistency check");
+  assert(yielded_workers() < active_workers(), "Consistency check");
   if (yielding_task()->status() == ABORTING) {
     // Do not yield; we need to abort as soon as possible
     // XXX NOTE: This can cause a performance pathology in the
@@ -213,7 +212,7 @@ void YieldingFlexibleWorkGang::yield() {
     // us to return at each potential yield point.
     return;
   }
-  if (++_yielded_workers + finished_workers() == total_workers()) {
+  if (++_yielded_workers + finished_workers() == active_workers()) {
     yielding_task()->set_status(YIELDED);
     monitor()->notify_all();
   } else {

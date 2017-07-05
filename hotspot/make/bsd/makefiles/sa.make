@@ -37,11 +37,24 @@ include $(GAMMADIR)/make/sa.files
 TOPDIR    = $(shell echo `pwd`)
 GENERATED = $(TOPDIR)/../generated
 
-# tools.jar is needed by the JDI - SA binding
-ifeq ($(SA_APPLE_BOOT_JAVA),true)
-  SA_CLASSPATH = $(BOOT_JAVA_HOME)/bundle/Classes/classes.jar
+# SA-JDI depends on the standard JDI classes.
+# Default SA_CLASSPATH location:
+DEF_SA_CLASSPATH=$(BOOT_JAVA_HOME)/lib/tools.jar
+ifeq ($(ALT_SA_CLASSPATH),)
+  # no alternate specified; see if default exists
+  SA_CLASSPATH=$(shell test -f $(DEF_SA_CLASSPATH) && echo $(DEF_SA_CLASSPATH))
+  ifeq ($(SA_CLASSPATH),)
+    # the default doesn't exist
+    ifeq ($(OS_VENDOR), Darwin)
+      # A JDK from Apple doesn't have tools.jar; the JDI classes are
+      # are in the regular classes.jar file.
+      APPLE_JAR=$(BOOT_JAVA_HOME)/bundle/Classes/classes.jar
+      SA_CLASSPATH=$(shell test -f $(APPLE_JAR) && echo $(APPLE_JAR))
+    endif
+  endif
 else
-  SA_CLASSPATH = $(BOOT_JAVA_HOME)/lib/tools.jar
+  _JUNK_ := $(shell echo >&2 "INFO: ALT_SA_CLASSPATH=$(ALT_SA_CLASSPATH)")
+  SA_CLASSPATH=$(shell test -f $(ALT_SA_CLASSPATH) && echo $(ALT_SA_CLASSPATH))
 endif
 
 # TODO: if it's a modules image, check if SA module is installed.
@@ -72,8 +85,8 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
 	fi
-	$(QUIETLY) if [ ! -f $(SA_CLASSPATH) -a ! -d $(MODULELIB_PATH) ] ; then \
-	  echo "Missing $(SA_CLASSPATH) file. Use 1.6.0 or later version of JDK";\
+	$(QUIETLY) if [ ! -f "$(SA_CLASSPATH)" -a ! -d $(MODULELIB_PATH) ] ; then \
+	  echo "Cannot find JDI classes. Use 1.6.0 or later version of JDK."; \
 	  echo ""; \
 	  exit 1; \
 	fi

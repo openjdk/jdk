@@ -315,7 +315,7 @@ void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   __ cmp_and_br_short(O7_temp, T_VOID, Assembler::equal, Assembler::pt, L_ok_4);
   extract_conversion_vminfo(_masm, L5_conversion, O5_temp);
   __ ld_ptr(L4_saved_args_base, __ argument_offset(O5_temp, O5_temp), O7_temp);
-  assert(__ is_simm13(RETURN_VALUE_PLACEHOLDER), "must be simm13");
+  assert(Assembler::is_simm13(RETURN_VALUE_PLACEHOLDER), "must be simm13");
   __ cmp_and_brx_short(O7_temp, (int32_t) RETURN_VALUE_PLACEHOLDER, Assembler::equal, Assembler::pt, L_ok_4);
   __ stop("damaged ricochet frame: RETURN_VALUE_PLACEHOLDER not found");
   __ BIND(L_ok_4);

@@ -30,6 +30,27 @@
 #include "runtime/simpleThresholdPolicy.inline.hpp"
 #include "code/scopeDesc.hpp"
 
+
+void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) {
+  int invocation_count = mh->invocation_count();
+  int backedge_count = mh->backedge_count();
+  methodDataHandle mdh = mh->method_data();
+  int mdo_invocations = 0, mdo_backedges = 0;
+  int mdo_invocations_start = 0, mdo_backedges_start = 0;
+  if (mdh() != NULL) {
+    mdo_invocations = mdh->invocation_count();
+    mdo_backedges = mdh->backedge_count();
+    mdo_invocations_start = mdh->invocation_count_start();
+    mdo_backedges_start = mdh->backedge_count_start();
+  }
+  tty->print(" %stotal: %d,%d %smdo: %d(%d),%d(%d)", prefix,
+      invocation_count, backedge_count, prefix,
+      mdo_invocations, mdo_invocations_start,
+      mdo_backedges, mdo_backedges_start);
+  tty->print(" %smax levels: %d,%d", prefix,
+      mh->highest_comp_level(), mh->highest_osr_comp_level());
+}
+
 // Print an event.
 void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodHandle imh,
                                         int bci, CompLevel level) {
@@ -38,8 +59,6 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
   ttyLocker tty_lock;
   tty->print("%lf: [", os::elapsedTime());
 
-  int invocation_count = mh->invocation_count();
-  int backedge_count = mh->backedge_count();
   switch(type) {
   case CALL:
     tty->print("call");
@@ -82,23 +101,9 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
   print_specific(type, mh, imh, bci, level);
 
   if (type != COMPILE) {
-    methodDataHandle mdh = mh->method_data();
-    int mdo_invocations = 0, mdo_backedges = 0;
-    int mdo_invocations_start = 0, mdo_backedges_start = 0;
-    if (mdh() != NULL) {
-      mdo_invocations = mdh->invocation_count();
-      mdo_backedges = mdh->backedge_count();
-      mdo_invocations_start = mdh->invocation_count_start();
-      mdo_backedges_start = mdh->backedge_count_start();
-    }
-    tty->print(" total: %d,%d mdo: %d(%d),%d(%d)",
-               invocation_count, backedge_count,
-               mdo_invocations, mdo_invocations_start,
-               mdo_backedges, mdo_backedges_start);
-    tty->print(" max levels: %d,%d",
-                mh->highest_comp_level(), mh->highest_osr_comp_level());
+    print_counters("", mh);
     if (inlinee_event) {
-      tty->print(" inlinee max levels: %d,%d", imh->highest_comp_level(), imh->highest_osr_comp_level());
+      print_counters("inlinee ", imh);
     }
     tty->print(" compilable: ");
     bool need_comma = false;

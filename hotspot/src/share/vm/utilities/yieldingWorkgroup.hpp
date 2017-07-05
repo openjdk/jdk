@@ -199,16 +199,10 @@ public:
   void abort();
 
 private:
-  int _active_workers;
   int _yielded_workers;
   void wait_for_gang();
 
 public:
-  // Accessors for fields
-  int active_workers() const {
-    return _active_workers;
-  }
-
   // Accessors for fields
   int yielded_workers() const {
     return _yielded_workers;

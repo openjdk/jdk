@@ -987,6 +987,16 @@ public:
 
   void set_par_threads(int t) {
     SharedHeap::set_par_threads(t);
+    // Done in SharedHeap but oddly there are
+    // two _process_strong_tasks's in a G1CollectedHeap
+    // so do it here too.
+    _process_strong_tasks->set_n_threads(t);
+  }
+
+  // Set _n_par_threads according to a policy TBD.
+  void set_par_threads();
+
+  void set_n_termination(int t) {
     _process_strong_tasks->set_n_threads(t);
   }
 
@@ -1276,6 +1286,7 @@ public:
   // i.e., that a closure never attempt to abort a traversal.
   void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
                                        int worker,
+                                       int no_of_par_workers,
                                        jint claim_value);
 
   // It resets all the region claim values to the default.
@@ -1283,7 +1294,16 @@ public:
 
 #ifdef ASSERT
   bool check_heap_region_claim_values(jint claim_value);
+
+  // Same as the routine above but only checks regions in the
+  // current collection set.
+  bool check_cset_heap_region_claim_values(jint claim_value);
 #endif // ASSERT
+
+  // Given the id of a worker, calculate a suitable
+  // starting region for iterating over the current
+  // collection set.
+  HeapRegion* start_cset_region_for_worker(int worker_i);
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
@@ -1610,15 +1630,11 @@ public:
 public:
   void stop_conc_gc_threads();
 
-  // <NEW PREDICTION>
-
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
   void check_if_region_is_too_expensive(double predicted_time_ms);
   size_t pending_card_num();
   size_t max_pending_card_num();
   size_t cards_scanned();
-
-  // </NEW PREDICTION>
 
 protected:
   size_t _max_heap_capacity;

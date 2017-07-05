@@ -111,6 +111,8 @@ public:
   ComponentList  _components;      // List of Components matches MachNode's
                                    // operand structure
 
+  bool           _has_call;        // contain a call and caller save registers should be saved?
+
   // Public Methods
   InstructForm(const char *id, bool ideal_only = false);
   InstructForm(const char *id, InstructForm *instr, MatchRule *rule);
@@ -895,7 +897,8 @@ public:
     DEF     = 0x2, USE_DEF   = 0x3,
     KILL    = 0x4, USE_KILL  = 0x5,
     SYNTHETIC = 0x8,
-    TEMP = USE | SYNTHETIC
+    TEMP = USE | SYNTHETIC,
+    CALL = 0x10
   };
 };
 
