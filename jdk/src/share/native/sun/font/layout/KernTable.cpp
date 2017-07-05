@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 2004-2005 - All Rights Reserved
  *
  */
@@ -38,6 +39,8 @@
 #include <stdio.h>
 
 #define DEBUG 0
+
+U_NAMESPACE_BEGIN
 
 struct PairInfo {
   le_uint32 key;   // sigh, MSVC compiler gags on union here
@@ -191,6 +194,12 @@ void KernTable::process(LEGlyphStorage& storage)
     float adjust = 0;
     for (int i = 1, e = storage.getGlyphCount(); i < e; ++i) {
       key = key << 16 | (storage[i] & 0xffff);
+
+      // argh, to do a binary search, we need to have the pair list in sorted order
+      // but it is not in sorted order on win32 platforms because of the endianness difference
+      // so either I have to swap the element each time I examine it, or I have to swap
+      // all the elements ahead of time and store them in the font
+
       const PairInfo* p = pairs;
       const PairInfo* tp = (const PairInfo*)(p + rangeShift);
       if (key > tp->key) {
@@ -238,3 +247,6 @@ void KernTable::process(LEGlyphStorage& storage)
     storage.adjustPosition(storage.getGlyphCount(), adjust, 0, success);
   }
 }
+
+U_NAMESPACE_END
+

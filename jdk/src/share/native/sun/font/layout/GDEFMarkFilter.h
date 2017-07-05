@@ -32,11 +32,18 @@
 #ifndef __GDEFMARKFILTER__H
 #define __GDEFMARKFILTER__H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEGlyphFilter.h"
 #include "GlyphDefinitionTables.h"
 
-class GDEFMarkFilter : public LEGlyphFilter
+U_NAMESPACE_BEGIN
+
+class GDEFMarkFilter : public UMemory, public LEGlyphFilter
 {
 private:
     const GlyphClassDefinitionTable *classDefTable;
@@ -51,5 +58,5 @@ public:
     virtual le_bool accept(LEGlyphID glyph) const;
 };
 
-
+U_NAMESPACE_END
 #endif

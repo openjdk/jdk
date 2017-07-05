@@ -32,8 +32,15 @@
 #ifndef __INDICREORDERING_H
 #define __INDICREORDERING_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 // Characters that get refered to by name...
 #define C_SIGN_ZWNJ           0x200C
@@ -140,7 +147,7 @@ struct IndicClassTable
     static const IndicClassTable *getScriptClassTable(le_int32 scriptCode);
 };
 
-class IndicReordering {
+class IndicReordering /* not : public UObject because all methods are static */ {
 public:
     static le_int32 getWorstCaseExpansion(le_int32 scriptCode);
 
@@ -156,8 +163,7 @@ private:
     // do not instantiate
     IndicReordering();
 
-    static le_int32 findSyllable(const IndicClassTable *classTable, const LEUnicode *chars,
-        le_int32 prev, le_int32 charCount);
+    static le_int32 findSyllable(const IndicClassTable *classTable, const LEUnicode *chars, le_int32 prev, le_int32 charCount);
 
 };
 
@@ -305,4 +311,5 @@ inline le_bool IndicClassTable::hasBelowBaseForm(LEUnicode ch) const
     return hasBelowBaseForm(getCharClass(ch));
 }
 
+U_NAMESPACE_END
 #endif

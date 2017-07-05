@@ -30,7 +30,7 @@ import java.awt.event.*;
 
 import java.lang.reflect.Field;
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 import sun.awt.SunToolkit;
 
 public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
@@ -41,7 +41,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      *
      ************************************************/
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XMenuBarPeer");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XMenuBarPeer");
 
     /*
      * Primary members
@@ -533,7 +533,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      */
     public void handleKeyPress(XEvent xev) {
         XKeyEvent xkey = xev.get_xkey();
-        if (log.isLoggable(Level.FINE)) log.fine(xkey.toString());
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine(xkey.toString());
         if (isEventDisabled(xev)) {
             return;
         }

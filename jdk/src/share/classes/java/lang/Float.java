@@ -551,7 +551,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @see java.lang.Float#toString(float)
      */
     public String toString() {
-        return String.valueOf(value);
+        return Float.toString(value);
     }
 
     /**

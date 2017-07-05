@@ -24,7 +24,6 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998 - 2005 - All Rights Reserved
  *
  */
@@ -50,6 +49,8 @@
 #include "GlyphPosnLookupProc.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 // Aside from the names, the contextual positioning subtables are
 // the same as the contextual substitution subtables.
 typedef ContextualSubstitutionSubtable ContextualPositioningSubtable;
@@ -57,8 +58,7 @@ typedef ChainingContextualSubstitutionSubtable ChainingContextualPositioningSubt
 
 GlyphPositioningLookupProcessor::GlyphPositioningLookupProcessor(
         const GlyphPositioningTableHeader *glyphPositioningTableHeader,
-        LETag scriptTag, LETag languageTag,
-        const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder)
+        LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder)
     : LookupProcessor(
                       (char *) glyphPositioningTableHeader,
                       SWAPW(glyphPositioningTableHeader->scriptListOffset),
@@ -166,3 +166,5 @@ le_uint32 GlyphPositioningLookupProcessor::applySubtable(const LookupSubtable *l
 GlyphPositioningLookupProcessor::~GlyphPositioningLookupProcessor()
 {
 }
+
+U_NAMESPACE_END

@@ -38,6 +38,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_uint32 SinglePositioningSubtable::process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const
 {
     switch(SWAPW(subtableFormat))
@@ -84,11 +86,12 @@ le_uint32 SinglePositioningFormat2Subtable::process(GlyphIterator *glyphIterator
     le_int16 coverageIndex = (le_int16) getGlyphCoverage(glyph);
 
     if (coverageIndex >= 0) {
-        valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), (const char *) this,
-            *glyphIterator, fontInstance);
+        valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);
 
         return 1;
     }
 
     return 0;
 }
+
+U_NAMESPACE_END

@@ -1442,7 +1442,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         switch (field_type) {
         case T_ARRAY:
         case T_OBJECT:
-          if (field_val.as_object()->has_encoding()) {
+          if (field_val.as_object()->should_be_constant()) {
             constant =  new Constant(as_ValueType(field_val));
           }
           break;

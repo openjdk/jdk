@@ -114,6 +114,7 @@ FILES_export2 = \
 	sun/awt/KeyboardFocusManagerPeerImpl.java \
 	sun/awt/windows/WEmbeddedFrame.java \
 	sun/awt/windows/WEmbeddedFramePeer.java \
+	sun/awt/Win32FontManager.java \
         sun/awt/Win32GraphicsEnvironment.java \
         sun/awt/Win32GraphicsDevice.java \
         sun/awt/Win32GraphicsConfig.java \

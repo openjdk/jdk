@@ -32,13 +32,20 @@
 #ifndef __THAISHAPING_H
 #define __THAISHAPING_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEGlyphFilter.h"
 #include "OpenTypeTables.h"
 
+U_NAMESPACE_BEGIN
+
 class LEGlyphStorage;
 
-class ThaiShaping {
+class ThaiShaping /* not : public UObject because all methods are static */ {
 public:
 
     enum {
@@ -120,4 +127,7 @@ inline ThaiShaping::StateTransition ThaiShaping::getTransition(le_uint8 state, l
     return thaiStateTable[state][currClass];
 }
 
+U_NAMESPACE_END
 #endif
+
+

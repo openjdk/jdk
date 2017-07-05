@@ -237,12 +237,16 @@ public final class StrikeCache {
              * any glyphs. In this case we still want to free the scaler
              * context.
              */
-            if (FontManager.longAddresses) {
+            if (longAddresses()) {
                 freeLongMemory(new long[0], disposer.pScalerContext);
             } else {
                 freeIntMemory(new int[0], disposer.pScalerContext);
             }
         }
+    }
+
+    private static boolean longAddresses() {
+        return nativeAddressSize == 8;
     }
 
     static void disposeStrike(final FontStrikeDisposer disposer) {

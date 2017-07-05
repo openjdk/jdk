@@ -26,7 +26,7 @@
  * @test
  * @bug 6823453
  * @summary DeoptimizeALot causes fastdebug server jvm to fail with assert(false,"unscheduable graph")
- * @run main/othervm -Xcomp -XX:CompileOnly=Test -XX:+DeoptimizeALot Test
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:CompileOnly=Test -XX:+DeoptimizeALot Test
  */
 
 public class Test {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ final class CipherSuite implements Comparable {
     // Flag indicating if CipherSuite availability can change dynamically.
     // This is the case when we rely on a JCE cipher implementation that
     // may not be available in the installed JCE providers.
-    // It is true because we do not have a Java ECC implementation.
+    // It is true because we might not have an ECC or Kerberos implementation.
     final static boolean DYNAMIC_AVAILABILITY = true;
 
     private final static boolean ALLOW_ECC = Debug.getBooleanProperty
@@ -278,14 +278,22 @@ final class CipherSuite implements Comparable {
         KeyExchange(String name, boolean allowed) {
             this.name = name;
             this.allowed = allowed;
-            this.alwaysAvailable = allowed && (name.startsWith("EC") == false);
+            this.alwaysAvailable = allowed &&
+                (!name.startsWith("EC")) && (!name.startsWith("KRB"));
         }
 
         boolean isAvailable() {
             if (alwaysAvailable) {
                 return true;
             }
-            return allowed && JsseJce.isEcAvailable();
+
+            if (name.startsWith("EC")) {
+                return (allowed && JsseJce.isEcAvailable());
+            } else if (name.startsWith("KRB")) {
+                return (allowed && JsseJce.isKerberosAvailable());
+            } else {
+                return allowed;
+            }
         }
 
         public String toString() {

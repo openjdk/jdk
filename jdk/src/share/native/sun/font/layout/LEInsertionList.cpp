@@ -24,7 +24,6 @@
  */
 
 /*
- *
  **********************************************************************
  *   Copyright (C) 1998-2004, International Business Machines
  *   Corporation and others.  All Rights Reserved.
@@ -33,6 +32,8 @@
 
 #include "LETypes.h"
 #include "LEInsertionList.h"
+
+U_NAMESPACE_BEGIN
 
 #define ANY_NUMBER 1
 
@@ -43,6 +44,8 @@ struct InsertionRecord
     le_int32 count;
     LEGlyphID glyphs[ANY_NUMBER];
 };
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LEInsertionList)
 
 LEInsertionList::LEInsertionList(le_bool rightToLeft)
 : head(NULL), tail(NULL), growAmount(0), append(rightToLeft)
@@ -106,3 +109,5 @@ le_bool LEInsertionList::applyInsertions(LEInsertionCallback *callback)
 
     return FALSE;
 }
+
+U_NAMESPACE_END
