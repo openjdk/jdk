@@ -693,6 +693,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         return UNSAFE.getChar(metaspaceMethod + config.methodIntrinsicIdOffset);
     }
 
+    public boolean isIntrinsicCandidate() {
+        return (getFlags() & config().methodFlagsIntrinsicCandidate) != 0;
+    }
+
     @Override
     public JavaConstant invoke(JavaConstant receiver, JavaConstant[] arguments) {
         assert !isConstructor();

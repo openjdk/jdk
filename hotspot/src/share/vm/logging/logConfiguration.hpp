@@ -59,7 +59,7 @@ class LogConfiguration : public AllStatic {
   static size_t                     _n_listener_callbacks;
 
   // Create a new output. Returns NULL if failed.
-  static LogOutput* new_output(char* name, const char* options, outputStream* errstream);
+  static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
 
   // Add an output to the list of configured outputs. Returns the assigned index.
   static size_t add_output(LogOutput* out);

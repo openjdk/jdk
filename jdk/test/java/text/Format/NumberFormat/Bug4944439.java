@@ -84,7 +84,7 @@ public class Bug4944439 {
         }
 
         int index = s.indexOf('.');
-        Long l = new Long(s.substring(0, index));
+        Long l = Long.valueOf(s.substring(0, index));
         if (!l.equals(number)) {
             err = true;
             System.err.println("Failed: DecimalFormat.parse(" + s +
@@ -101,7 +101,7 @@ public class Bug4944439 {
                 number.getClass().getName());
         }
 
-        Double d = new Double(s);
+        Double d = Double.valueOf(s);
         if (!d.equals(number)) {
             err = true;
             System.err.println("Failed: DecimalFormat.parse(" + s +

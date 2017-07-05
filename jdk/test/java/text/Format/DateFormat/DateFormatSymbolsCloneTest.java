@@ -29,6 +29,7 @@
  */
 import java.text.DateFormatSymbols;
 
+@SuppressWarnings("serial")
 public class DateFormatSymbolsCloneTest extends DateFormatSymbols {
     private int value;
 

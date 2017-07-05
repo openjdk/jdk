@@ -1161,7 +1161,7 @@ void Test_invalid_log_file() {
 
   // Attempt to log to a directory (existing log not a regular file)
   create_directory(target_name);
-  LogFileOutput bad_file("tmplogdir");
+  LogFileOutput bad_file("file=tmplogdir");
   assert(bad_file.initialize("", &ss) == false, "file was initialized "
          "when there was an existing directory with the same name");
   assert(strstr(ss.as_string(), "tmplogdir is not a regular file") != NULL,

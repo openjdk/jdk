@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1133,18 +1133,3 @@ bool PSAdaptiveSizePolicy::print() const {
 
   return false;
 }
-
-#ifndef PRODUCT
-
-void TestOldFreeSpaceCalculation_test() {
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 20) == 25, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 50) == 100, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 60) == 150, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(100, 75) == 300, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 20) == 100, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 50) == 400, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 60) == 600, "Calculation of free memory failed");
-  assert(PSAdaptiveSizePolicy::calculate_free_based_on_live(400, 75) == 1200, "Calculation of free memory failed");
-}
-
-#endif /* !PRODUCT */

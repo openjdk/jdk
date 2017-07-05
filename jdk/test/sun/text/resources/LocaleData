@@ -6403,8 +6403,8 @@ CurrencyNames//bgn=Bulgarian Lev
 CurrencyNames//bif=Burundian Franc
 CurrencyNames//bob=Bolivian Boliviano
 CurrencyNames//btn=Bhutanese Ngultrum
-CurrencyNames//byb=Belarusian New Ruble (1994-1999)
-CurrencyNames//byr=Belarusian Ruble
+CurrencyNames//byb=Belarusian Ruble (1994-1999)
+CurrencyNames//byr=Belarusian Ruble (2000-2016)
 CurrencyNames//cdf=Congolese Franc
 CurrencyNames//clf=Chilean Unit of Account (UF)
 CurrencyNames//cny=Chinese Yuan
@@ -6436,7 +6436,6 @@ CurrencyNames//mop=Macanese Pataca
 CurrencyNames//mro=Mauritanian Ouguiya
 CurrencyNames//mur=Mauritian Rupee
 CurrencyNames//mvr=Maldivian Rufiyaa
-CurrencyNames//mwk=Malawian Kwacha
 CurrencyNames//mxv=Mexican Investment Unit
 CurrencyNames//mzm=Mozambican Metical (1980-2006)
 CurrencyNames//mzn=Mozambican Metical
@@ -6444,7 +6443,6 @@ CurrencyNames//nad=Namibian Dollar
 CurrencyNames//nio=Nicaraguan C\u00f3rdoba
 CurrencyNames//nlg=Dutch Guilder
 CurrencyNames//omr=Omani Rial
-CurrencyNames//pen=Peruvian Nuevo Sol
 CurrencyNames//pgk=Papua New Guinean Kina
 CurrencyNames//pkr=Pakistani Rupee
 CurrencyNames//pyg=Paraguayan Guarani
@@ -8287,3 +8285,11 @@ FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r
 
 # bug #8129361
 CurrencyNames//hrk=Kuna
+
+# bug #8164784
+CurrencyNames//mwk=Malawian Malawi Kwacha
+CurrencyNames//pen=Peruvian Sol
+
+# bug #8145952
+CurrencyNames//byn=Belarusian Ruble
+CurrencyNames/be_BY/BYN=\u0420\u0443\u0431

@@ -412,13 +412,13 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
   return result;
 }
 
-static bool under_host_klass(const InstanceKlass* ik, const Klass* host_klass) {
+static bool under_host_klass(const InstanceKlass* ik, const InstanceKlass* host_klass) {
   DEBUG_ONLY(int inf_loop_check = 1000 * 1000 * 1000);
   for (;;) {
-    const Klass* hc = (const Klass*)ik->host_klass();
+    const InstanceKlass* hc = ik->host_klass();
     if (hc == NULL)        return false;
     if (hc == host_klass)  return true;
-    ik = InstanceKlass::cast(hc);
+    ik = hc;
 
     // There's no way to make a host class loop short of patching memory.
     // Therefore there cannot be a loop here unless there's another bug.
@@ -436,8 +436,8 @@ static bool can_relax_access_check_for(const Klass* accessor,
 
   // If either is on the other's host_klass chain, access is OK,
   // because one is inside the other.
-  if (under_host_klass(accessor_ik, accessee) ||
-    under_host_klass(accessee_ik, accessor))
+  if (under_host_klass(accessor_ik, accessee_ik) ||
+    under_host_klass(accessee_ik, accessor_ik))
     return true;
 
   if ((RelaxAccessControlCheck &&
@@ -446,7 +446,7 @@ static bool can_relax_access_check_for(const Klass* accessor,
     (accessor_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION &&
     accessee_ik->major_version() < Verifier::STRICTER_ACCESS_CTRL_CHECK_VERSION)) {
     return classloader_only &&
-      Verifier::relax_verify_for(accessor_ik->class_loader()) &&
+      Verifier::relax_access_for(accessor_ik->class_loader()) &&
       accessor_ik->protection_domain() == accessee_ik->protection_domain() &&
       accessor_ik->class_loader() == accessee_ik->class_loader();
   }

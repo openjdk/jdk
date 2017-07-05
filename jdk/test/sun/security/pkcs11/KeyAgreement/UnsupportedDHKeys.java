@@ -21,21 +21,19 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8072452
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm UnsupportedDHKeys
  * @run main/othervm UnsupportedDHKeys sm
  */
 
-import java.math.BigInteger;
-
-import java.security.*;
-import javax.crypto.*;
-import javax.crypto.interfaces.*;
-import javax.crypto.spec.*;
+import java.security.InvalidParameterException;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
 
 public class UnsupportedDHKeys extends PKCS11Test {
 

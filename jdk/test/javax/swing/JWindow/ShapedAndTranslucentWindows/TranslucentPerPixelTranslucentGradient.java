@@ -25,6 +25,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @bug 8144735
  * @key headful
  * @summary Check if a per-pixel translucent and translucent window is dragged
  *          and resized by mouse correctly

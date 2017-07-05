@@ -886,17 +886,11 @@ class java_lang_ref_Reference: AllStatic {
    hc_next_offset       = 2,
    hc_discovered_offset = 3  // Is not last, see SoftRefs.
   };
-  enum {
-   hc_static_lock_offset    = 0,
-   hc_static_pending_offset = 1
-  };
 
   static int referent_offset;
   static int queue_offset;
   static int next_offset;
   static int discovered_offset;
-  static int static_lock_offset;
-  static int static_pending_offset;
   static int number_of_fake_oop_fields;
 
   // Accessors
@@ -912,13 +906,6 @@ class java_lang_ref_Reference: AllStatic {
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
   static inline HeapWord* discovered_addr(oop ref);
-
-  // Accessors for statics
-  static oop  pending_list_lock();
-  static oop  pending_list();
-
-  static HeapWord*  pending_list_lock_addr();
-  static HeapWord*  pending_list_addr();
 };
 
 

@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6414899
  * @summary Ensure the cloning functionality works.
  * @author Valerie Peng
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestCloning
  * @run main/othervm TestCloning sm
  */
