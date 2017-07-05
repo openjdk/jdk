@@ -162,6 +162,15 @@ public class Main implements sun.rmi.rmic.Constants {
             return false;
         }
 
+        if ((flags & F_WARNINGS) != 0) {
+            for (Generator g : generators) {
+                if (g instanceof RMIGenerator) {
+                    output(getText("rmic.jrmp.stubs.deprecated", program));
+                    break;
+                }
+            }
+        }
+
         return doCompile();
     }
 

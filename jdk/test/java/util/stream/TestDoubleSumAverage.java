@@ -25,21 +25,33 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import static java.lang.Double.*;
+
 /*
  * @test
- * @bug 8006572
+ * @bug 8006572 8030212
  * @summary Test for use of non-naive summation in stream-related sum and average operations.
  */
 public class TestDoubleSumAverage {
     public static void main(String... args) {
         int failures = 0;
 
-        failures += testForCompenstation();
         failures += testZeroAverageOfNonEmptyStream();
+        failures += testForCompenstation();
+        failures += testNonfiniteSum();
 
         if (failures > 0) {
             throw new RuntimeException("Found " + failures + " numerical failure(s).");
         }
+    }
+
+    /**
+     * Test to verify that a non-empty stream with a zero average is non-empty.
+     */
+    private static int testZeroAverageOfNonEmptyStream() {
+        Supplier<DoubleStream> ds = () -> DoubleStream.iterate(0.0, e -> 0.0).limit(10);
+
+        return  compareUlpDifference(0.0, ds.get().average().getAsDouble(), 0);
     }
 
     /**
@@ -83,19 +95,68 @@ public class TestDoubleSumAverage {
         return failures;
     }
 
-    /**
-     * Test to verify that a non-empty stream with a zero average is non-empty.
-     */
-    private static int testZeroAverageOfNonEmptyStream() {
-        Supplier<DoubleStream> ds = () -> DoubleStream.iterate(0.0, e -> 0.0).limit(10);
+    private static int testNonfiniteSum() {
+        int failures = 0;
 
-        return  compareUlpDifference(0.0, ds.get().average().getAsDouble(), 0);
+        Map<Supplier<DoubleStream>, Double> testCases = new LinkedHashMap<>();
+        testCases.put(() -> DoubleStream.of(MAX_VALUE, MAX_VALUE),   POSITIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(-MAX_VALUE, -MAX_VALUE), NEGATIVE_INFINITY);
+
+        testCases.put(() -> DoubleStream.of(1.0d, POSITIVE_INFINITY, 1.0d), POSITIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(POSITIVE_INFINITY),             POSITIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(POSITIVE_INFINITY, POSITIVE_INFINITY), POSITIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(POSITIVE_INFINITY, POSITIVE_INFINITY, 0.0), POSITIVE_INFINITY);
+
+        testCases.put(() -> DoubleStream.of(1.0d, NEGATIVE_INFINITY, 1.0d), NEGATIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(NEGATIVE_INFINITY),             NEGATIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(NEGATIVE_INFINITY, NEGATIVE_INFINITY), NEGATIVE_INFINITY);
+        testCases.put(() -> DoubleStream.of(NEGATIVE_INFINITY, NEGATIVE_INFINITY, 0.0), NEGATIVE_INFINITY);
+
+        testCases.put(() -> DoubleStream.of(1.0d, NaN, 1.0d),               NaN);
+        testCases.put(() -> DoubleStream.of(NaN),                           NaN);
+        testCases.put(() -> DoubleStream.of(1.0d, NEGATIVE_INFINITY, POSITIVE_INFINITY, 1.0d), NaN);
+        testCases.put(() -> DoubleStream.of(1.0d, POSITIVE_INFINITY, NEGATIVE_INFINITY, 1.0d), NaN);
+        testCases.put(() -> DoubleStream.of(POSITIVE_INFINITY, NaN), NaN);
+        testCases.put(() -> DoubleStream.of(NEGATIVE_INFINITY, NaN), NaN);
+        testCases.put(() -> DoubleStream.of(NaN, POSITIVE_INFINITY), NaN);
+        testCases.put(() -> DoubleStream.of(NaN, NEGATIVE_INFINITY), NaN);
+
+        for(Map.Entry<Supplier<DoubleStream>, Double> testCase : testCases.entrySet()) {
+            Supplier<DoubleStream> ds = testCase.getKey();
+            double expected = testCase.getValue();
+
+            DoubleSummaryStatistics stats = ds.get().collect(DoubleSummaryStatistics::new,
+                                                             DoubleSummaryStatistics::accept,
+                                                             DoubleSummaryStatistics::combine);
+
+            failures += compareUlpDifference(expected, stats.getSum(), 0);
+            failures += compareUlpDifference(expected, stats.getAverage(), 0);
+
+            failures += compareUlpDifference(expected, ds.get().sum(), 0);
+            failures += compareUlpDifference(expected, ds.get().average().getAsDouble(), 0);
+
+            failures += compareUlpDifference(expected, ds.get().boxed().collect(Collectors.summingDouble(d -> d)), 0);
+            failures += compareUlpDifference(expected, ds.get().boxed().collect(Collectors.averagingDouble(d -> d)), 0);
+        }
+
+        return failures;
     }
 
     /**
      * Compute the ulp difference of two double values and compare against an error threshold.
      */
     private static int compareUlpDifference(double expected, double computed, double threshold) {
+        if (!Double.isFinite(expected)) {
+            // Handle NaN and infinity cases
+            if (Double.compare(expected, computed) == 0)
+                return 0;
+            else {
+                System.err.printf("Unexpected sum, %g rather than %g.%n",
+                                  computed, expected);
+                return 1;
+            }
+        }
+
         double ulpDifference = Math.abs(expected - computed) / Math.ulp(expected);
 
         if (ulpDifference > threshold) {

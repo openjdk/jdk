@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,25 @@
  * questions.
  */
 
-/* @test
- * @bug 8004931
- * @compile NoBeans.java
- * @summary A compile-only test to ensure that implementations of Packer
- *   and Unpacker can be compiled without implementating the
- *   addPropertyChangeListener and removePropertyChangeListener methods.
+/*
+ * @test
+ * @bug 8028780
+ * @summary JDK KRB5 module throws OutOfMemoryError when CCache is corrupt
+ * @run main/othervm -Xmx8m CorruptedCC
  */
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import sun.security.krb5.internal.ccache.CredentialsCache;
 
-import java.io.*;
-import java.util.*;
-import java.util.jar.*;
-
-public class NoBeans {
-
-    static class MyPacker implements Pack200.Packer {
-        public SortedMap<String,String> properties() { return null; }
-        public void pack(JarFile in, OutputStream out) { }
-        public void pack(JarInputStream in, OutputStream out) { }
-    }
-
-    static class MyUnpacker implements Pack200.Unpacker {
-        public SortedMap<String,String> properties() { return null; }
-        public void unpack(InputStream in, JarOutputStream out) { }
-        public void unpack(File in, JarOutputStream out) { }
+public class CorruptedCC {
+    public static void main(String[] args) throws Exception {
+        for (int i=0; i<TimeInCCache.ccache.length; i++) {
+            byte old = TimeInCCache.ccache[i];
+            TimeInCCache.ccache[i] = 0x7f;
+            Files.write(Paths.get("tmpcc"), TimeInCCache.ccache);
+            // The next line will return null for I/O issues. That's OK.
+            CredentialsCache.getInstance("tmpcc");
+            TimeInCCache.ccache[i] = old;
+        }
     }
 }

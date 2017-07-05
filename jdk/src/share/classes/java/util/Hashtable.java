@@ -801,13 +801,11 @@ public class Hashtable<K,V>
             return false;
 
         try {
-            Iterator<Map.Entry<K,V>> i = entrySet().iterator();
-            while (i.hasNext()) {
-                Map.Entry<K,V> e = i.next();
+            for (Map.Entry<K, V> e : entrySet()) {
                 K key = e.getKey();
                 V value = e.getValue();
                 if (value == null) {
-                    if (!(t.get(key)==null && t.containsKey(key)))
+                    if (!(t.get(key) == null && t.containsKey(key)))
                         return false;
                 } else {
                     if (!value.equals(t.get(key)))
@@ -1140,8 +1138,7 @@ public class Hashtable<K,V>
             s.writeInt(count);
 
             // Stack copies of the entries in the table
-            for (int index = 0; index < table.length; index++) {
-                Entry<?,?> entry = table[index];
+            for (Entry<?, ?> entry : table) {
 
                 while (entry != null) {
                     entryStack =

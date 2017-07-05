@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464 8027570 8027687
+ * @bug 8010464 8027570 8027687 8029354
  */
 
 public class URLPermissionTest {
@@ -37,7 +37,30 @@ public class URLPermissionTest {
         abstract boolean execute();
     };
 
+    // Instantiation: should succeed
+    static class CreateTest extends Test {
+        String arg;
+        CreateTest(String arg) {
+            this.arg = arg;
+        }
+
+        @Override
+        boolean execute() {
+            try {
+                URLPermission p = new URLPermission(arg);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    };
+
+    static CreateTest createtest(String arg) {
+        return new CreateTest(arg);
+    }
+
     // Should throw an IAE on construction
+
     static class ExTest extends Test {
         String arg;
         ExTest(String arg) {
@@ -262,6 +285,7 @@ public class URLPermissionTest {
         imtest("https://www.foo.com/a/b", "https://www.foo.com:443/a/b", true),
         imtest("https://www.foo.com:200-500/a/b", "https://www.foo.com/a/b", true),
         imtest("http://www.foo.com:*/a/b", "http://www.foo.com:1-12345/a/b", true),
+        imtest("http://host/a/b", "http://HOST/a/b", true),
 
         // misc
         imtest("https:*", "http://www.foo.com", false),
@@ -297,6 +321,16 @@ public class URLPermissionTest {
         eqtest("http://www.foo.com/a/b", "http://www.foo.com:82/a/b", false),
         eqtest("https://www.foo.com/a/b", "https://www.foo.com:443/a/b", true),
         eqtest("https://www.foo.com/a/b", "https://www.foo.com:444/a/b", false),
+        eqtest("http://michael@foo.com/bar","http://michael@foo.com/bar", true),
+        eqtest("http://Michael@foo.com/bar","http://michael@goo.com/bar",false),
+        eqtest("http://michael@foo.com/bar","http://george@foo.com/bar", true),
+        eqtest("http://@foo.com/bar","http://foo.com/bar", true)
+    };
+
+    static Test[] createTests = {
+        createtest("http://user@foo.com/a/b/c"),
+        createtest("http://user:pass@foo.com/a/b/c"),
+        createtest("http://user:@foo.com/a/b/c")
     };
 
     static boolean failed = false;
@@ -383,6 +417,17 @@ public class URLPermissionTest {
                 failed = true;
             } else {
                 System.out.println ("exception test " + i + " OK");
+            }
+        }
+
+        for (int i=0; i<createTests.length; i++) {
+            CreateTest test = (CreateTest)createTests[i];
+            boolean result = test.execute();
+            if (!result) {
+                System.out.println ("test failed: " + test.arg);
+                failed = true;
+            } else {
+                System.out.println ("create test " + i + " OK");
             }
         }
 

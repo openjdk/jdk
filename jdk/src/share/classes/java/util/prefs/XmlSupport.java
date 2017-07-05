@@ -154,12 +154,12 @@ class XmlSupport {
             // Put map in xml element
             String[] keys = prefs.keys();
             Element map = (Element) elt.appendChild(doc.createElement("map"));
-            for (int i=0; i<keys.length; i++) {
+            for (String key : keys) {
                 Element entry = (Element)
                     map.appendChild(doc.createElement("entry"));
-                entry.setAttribute("key", keys[i]);
+                entry.setAttribute("key", key);
                 // NEXT STATEMENT THROWS NULL PTR EXC INSTEAD OF ASSERT FAIL
-                entry.setAttribute("value", prefs.get(keys[i], null));
+                entry.setAttribute("value", prefs.get(key, null));
             }
             // Recurse if appropriate
             if (subTree) {
@@ -344,8 +344,7 @@ class XmlSupport {
         Element xmlMap = doc.getDocumentElement( ) ;
         xmlMap.setAttribute("MAP_XML_VERSION", MAP_XML_VERSION);
 
-        for (Iterator<Map.Entry<String, String>> i = map.entrySet().iterator(); i.hasNext(); ) {
-            Map.Entry<String, String> e = i.next();
+        for (Map.Entry<String, String> e : map.entrySet()) {
             Element xe = (Element)
                 xmlMap.appendChild(doc.createElement("entry"));
             xe.setAttribute("key",   e.getKey());
