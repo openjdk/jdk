@@ -46,17 +46,14 @@ case "$OS" in
   SunOS | Linux )
     NULL=/dev/null
     FS="/"
-    TMP=/tmp
     ;;
   CYGWIN* )
     NULL=/dev/null
     FS="/"
-    TMP=/tmp
     ;;
   Windows_* )
     NULL=NUL
     FS="\\"
-    TMP="c:/temp"
     ;;
   * )
     echo "Unrecognized operating system!"
@@ -65,13 +62,11 @@ case "$OS" in
 esac
 
 # the test code
-${TESTJAVA}${FS}bin${FS}keytool > ${TMP}${FS}temp_file_40875602475 2> ${NULL}
-grep MissingResourceException ${TMP}${FS}temp_file_40875602475
+${TESTJAVA}${FS}bin${FS}keytool > temp_file_40875602475 2> ${NULL}
+grep MissingResourceException temp_file_40875602475
 
 if [ $? -eq 0 ]; then 
-    rm ${TMP}${FS}temp_file_40875602475
     exit 1
 fi
 
-rm ${TMP}${FS}temp_file_40875602475
 exit 0

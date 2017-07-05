@@ -77,9 +77,7 @@ class BrowserSupport {
                         result = (Boolean) isDesktopSupportedMethod.invoke(null);
                     } catch (IllegalAccessException e) {
                         // should never reach here
-                        InternalError x =
-                            new InternalError("Desktop.getDesktop() method not found");
-                        x.initCause(e);
+                        throw new InternalError("Desktop.getDesktop() method not found", e);
                     } catch (InvocationTargetException e) {
                         // browser not supported
                         if (Util.isVerbose()) {
@@ -101,28 +99,10 @@ class BrowserSupport {
                 result = (Boolean) isSupportedMethod.invoke(desktopObj, browseField.get(null));
                 supported = result.booleanValue();
             }
-        } catch (ClassNotFoundException e) {
-            // browser not supported
-            if (Util.isVerbose()) {
-                e.printStackTrace();
-            }
-        } catch (NoSuchMethodException e) {
-            // browser not supported
-            if (Util.isVerbose()) {
-                e.printStackTrace();
-            }
-        } catch (NoSuchFieldException e) {
-            // browser not supported
-            if (Util.isVerbose()) {
-                e.printStackTrace();
-            }
         } catch (IllegalAccessException e) {
             // should never reach here
-            InternalError x =
-                    new InternalError("Desktop.getDesktop() method not found");
-            x.initCause(e);
-            throw x;
-        } catch (InvocationTargetException e) {
+            throw new InternalError("Desktop.getDesktop() method not found", e);
+        } catch (ReflectiveOperationException e) {
             // browser not supported
             if (Util.isVerbose()) {
                 e.printStackTrace();
@@ -175,10 +155,7 @@ class BrowserSupport {
             browseMethod.invoke(desktop, uri);
         } catch (IllegalAccessException e) {
             // should never reach here
-            InternalError x =
-                new InternalError("Desktop.getDesktop() method not found");
-            x.initCause(e);
-                throw x;
+            throw new InternalError("Desktop.getDesktop() method not found", e);
         } catch (InvocationTargetException e) {
             Throwable x = e.getCause();
             if (x != null) {

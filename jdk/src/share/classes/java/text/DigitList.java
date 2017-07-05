@@ -632,7 +632,7 @@ final class DigitList implements Cloneable {
             other.tempBuffer = null;
             return other;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

@@ -1141,17 +1141,14 @@ public final class KeyTool {
             if (token) {
                 keyStore.store(null, null);
             } else {
-                FileOutputStream fout = null;
-                try {
-                    fout = (nullStream ?
-                                        (FileOutputStream)null :
-                                        new FileOutputStream(ksfname));
-                    keyStore.store
-                        (fout,
-                        (storePassNew!=null) ? storePassNew : storePass);
-                } finally {
-                    if (fout != null) {
-                        fout.close();
+                char[] pass = (storePassNew!=null) ? storePassNew : storePass;
+                if (nullStream) {
+                    keyStore.store(null, pass);
+                } else {
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    keyStore.store(bout, pass);
+                    try (FileOutputStream fout = new FileOutputStream(ksfname)) {
+                        fout.write(bout.toByteArray());
                     }
                 }
             }
@@ -1399,7 +1396,7 @@ public final class KeyTool {
     private char[] promptForKeyPass(String alias, String orig, char[] origPass) throws Exception{
         if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
             return origPass;
-        } else if (!token) {
+        } else if (!token && !protectedPath) {
             // Prompt for key password
             int count;
             for (count = 0; count < 3; count++) {
@@ -1446,7 +1443,7 @@ public final class KeyTool {
                 }
             }
         }
-        return null;    // PKCS11
+        return null;    // PKCS11, MSCAPI, or -protected
     }
     /**
      * Creates a new secret key.

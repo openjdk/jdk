@@ -708,7 +708,7 @@ public class X509CRLSelector implements CRLSelector {
             return copy;
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

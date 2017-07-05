@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ class MutableBigInteger {
      */
     BigDecimal toBigDecimal(int sign, int scale) {
         if (intLen == 0 || sign == 0)
-            return BigDecimal.valueOf(0, scale);
+            return BigDecimal.zeroValueOf(scale);
         int[] mag = getMagnitudeArray();
         int len = mag.length;
         int d = mag[0];
@@ -171,7 +171,28 @@ class MutableBigInteger {
         long v = (len == 2) ?
             ((mag[1] & LONG_MASK) | (d & LONG_MASK) << 32) :
             d & LONG_MASK;
-        return new BigDecimal(null, sign == -1 ? -v : v, scale, 0);
+        return BigDecimal.valueOf(sign == -1 ? -v : v, scale);
+    }
+
+    /**
+     * This is for internal use in converting from a MutableBigInteger
+     * object into a long value given a specified sign.
+     * returns INFLATED if value is not fit into long
+     */
+    long toCompactValue(int sign) {
+        if (intLen == 0 || sign == 0)
+            return 0L;
+        int[] mag = getMagnitudeArray();
+        int len = mag.length;
+        int d = mag[0];
+        // If this MutableBigInteger can not be fitted into long, we need to
+        // make a BigInteger object for the resultant BigDecimal object.
+        if (len > 2 || (d < 0 && len == 2))
+            return INFLATED;
+        long v = (len == 2) ?
+            ((mag[1] & LONG_MASK) | (d & LONG_MASK) << 32) :
+            d & LONG_MASK;
+        return sign == -1 ? -v : v;
     }
 
     /**
@@ -544,6 +565,24 @@ class MutableBigInteger {
     }
 
     /**
+     * The method is the same as mulsun, except the fact that q array is not
+     * updated, the only result of the method is borrow flag.
+     */
+    private int mulsubBorrow(int[] q, int[] a, int x, int len, int offset) {
+        long xLong = x & LONG_MASK;
+        long carry = 0;
+        offset += len;
+        for (int j=len-1; j >= 0; j--) {
+            long product = (a[j] & LONG_MASK) * xLong + carry;
+            long difference = q[offset--] - product;
+            carry = (product >>> 32)
+                     + (((difference & LONG_MASK) >
+                         (((~(int)product) & LONG_MASK))) ? 1:0);
+        }
+        return (int)carry;
+    }
+
+    /**
      * Right shift this MutableBigInteger n bits, where n is
      * less than 32.
      * Assumes that intLen > 0, n > 0 for speed
@@ -842,20 +881,20 @@ class MutableBigInteger {
             rem = (int) (remLong - (quotient.value[0] * divisorLong));
             remLong = rem & LONG_MASK;
         }
-
         int xlen = intLen;
-        int[] qWord = new int[2];
         while (--xlen > 0) {
-            long dividendEstimate = (remLong<<32) |
-                (value[offset + intLen - xlen] & LONG_MASK);
+            long dividendEstimate = (remLong << 32) |
+                    (value[offset + intLen - xlen] & LONG_MASK);
+            int q;
             if (dividendEstimate >= 0) {
-                qWord[0] = (int) (dividendEstimate / divisorLong);
-                qWord[1] = (int) (dividendEstimate - qWord[0] * divisorLong);
+                q = (int) (dividendEstimate / divisorLong);
+                rem = (int) (dividendEstimate - q * divisorLong);
             } else {
-                divWord(qWord, dividendEstimate, divisor);
+                long tmp = divWord(dividendEstimate, divisor);
+                q = (int) (tmp & LONG_MASK);
+                rem = (int) (tmp >>> 32);
             }
-            quotient.value[intLen - xlen] = qWord[0];
-            rem = qWord[1];
+            quotient.value[intLen - xlen] = q;
             remLong = rem & LONG_MASK;
         }
 
@@ -879,40 +918,45 @@ class MutableBigInteger {
      *
      */
     MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
+        return divide(b,quotient,true);
+    }
+
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient, boolean needReminder) {
         if (b.intLen == 0)
             throw new ArithmeticException("BigInteger divide by zero");
 
         // Dividend is zero
         if (intLen == 0) {
             quotient.intLen = quotient.offset;
-            return new MutableBigInteger();
+            return needReminder ? new MutableBigInteger() : null;
         }
 
         int cmp = compare(b);
         // Dividend less than divisor
         if (cmp < 0) {
             quotient.intLen = quotient.offset = 0;
-            return new MutableBigInteger(this);
+            return needReminder ? new MutableBigInteger(this) : null;
         }
         // Dividend equal to divisor
         if (cmp == 0) {
             quotient.value[0] = quotient.intLen = 1;
             quotient.offset = 0;
-            return new MutableBigInteger();
+            return needReminder ? new MutableBigInteger() : null;
         }
 
         quotient.clear();
         // Special case one word divisor
         if (b.intLen == 1) {
             int r = divideOneWord(b.value[b.offset], quotient);
-            if (r == 0)
-                return new MutableBigInteger();
-            return new MutableBigInteger(r);
+            if(needReminder) {
+                if (r == 0)
+                    return new MutableBigInteger();
+                return new MutableBigInteger(r);
+            } else {
+                return null;
+            }
         }
-
-        // Copy divisor value to protect divisor
-        int[] div = Arrays.copyOfRange(b.value, b.offset, b.offset + b.intLen);
-        return divideMagnitude(div, quotient);
+        return divideMagnitude(b, quotient, needReminder);
     }
 
     /**
@@ -940,30 +984,72 @@ class MutableBigInteger {
         if (d == 0)
             return divideOneWord((int)v, quotient) & LONG_MASK;
         else {
-            int[] div = new int[]{ d, (int)(v & LONG_MASK) };
-            return divideMagnitude(div, quotient).toLong();
+            return divideLongMagnitude(v, quotient).toLong();
         }
     }
 
+    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
+        int n2 = 32 - shift;
+        int c=src[srcFrom];
+        for (int i=0; i < srcLen-1; i++) {
+            int b = c;
+            c = src[++srcFrom];
+            dst[dstFrom+i] = (b << shift) | (c >>> n2);
+        }
+        dst[dstFrom+srcLen-1] = c << shift;
+    }
+
     /**
-     * Divide this MutableBigInteger by the divisor represented by its magnitude
-     * array. The quotient will be placed into the provided quotient object &
+     * Divide this MutableBigInteger by the divisor.
+     * The quotient will be placed into the provided quotient object &
      * the remainder object is returned.
      */
-    private MutableBigInteger divideMagnitude(int[] divisor,
-                                              MutableBigInteger quotient) {
-
-        // Remainder starts as dividend with space for a leading zero
-        MutableBigInteger rem = new MutableBigInteger(new int[intLen + 1]);
-        System.arraycopy(value, offset, rem.value, 1, intLen);
-        rem.intLen = intLen;
-        rem.offset = 1;
+    private MutableBigInteger divideMagnitude(MutableBigInteger div,
+                                              MutableBigInteger quotient,
+                                              boolean needReminder ) {
+        // assert div.intLen > 1
+        // D1 normalize the divisor
+        int shift = Integer.numberOfLeadingZeros(div.value[div.offset]);
+        // Copy divisor value to protect divisor
+        final int dlen = div.intLen;
+        int[] divisor;
+        MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
+        if (shift > 0) {
+            divisor = new int[dlen];
+            copyAndShift(div.value,div.offset,dlen,divisor,0,shift);
+            if(Integer.numberOfLeadingZeros(value[offset])>=shift) {
+                int[] remarr = new int[intLen + 1];
+                rem = new MutableBigInteger(remarr);
+                rem.intLen = intLen;
+                rem.offset = 1;
+                copyAndShift(value,offset,intLen,remarr,1,shift);
+            } else {
+                int[] remarr = new int[intLen + 2];
+                rem = new MutableBigInteger(remarr);
+                rem.intLen = intLen+1;
+                rem.offset = 1;
+                int rFrom = offset;
+                int c=0;
+                int n2 = 32 - shift;
+                for (int i=1; i < intLen+1; i++,rFrom++) {
+                    int b = c;
+                    c = value[rFrom];
+                    remarr[i] = (b << shift) | (c >>> n2);
+                }
+                remarr[intLen+1] = c << shift;
+            }
+        } else {
+            divisor = Arrays.copyOfRange(div.value, div.offset, div.offset + div.intLen);
+            rem = new MutableBigInteger(new int[intLen + 1]);
+            System.arraycopy(value, offset, rem.value, 1, intLen);
+            rem.intLen = intLen;
+            rem.offset = 1;
+        }
 
         int nlen = rem.intLen;
 
         // Set the quotient size
-        int dlen = divisor.length;
-        int limit = nlen - dlen + 1;
+        final int limit = nlen - dlen + 1;
         if (quotient.value.length < limit) {
             quotient.value = new int[limit];
             quotient.offset = 0;
@@ -971,14 +1057,6 @@ class MutableBigInteger {
         quotient.intLen = limit;
         int[] q = quotient.value;
 
-        // D1 normalize the divisor
-        int shift = Integer.numberOfLeadingZeros(divisor[0]);
-        if (shift > 0) {
-            // First shift will not grow array
-            BigInteger.primitiveLeftShift(divisor, dlen, shift);
-            // But this one might
-            rem.leftShift(shift);
-        }
 
         // Must insert leading 0 in rem if its length did not change
         if (rem.intLen == nlen) {
@@ -990,10 +1068,9 @@ class MutableBigInteger {
         int dh = divisor[0];
         long dhLong = dh & LONG_MASK;
         int dl = divisor[1];
-        int[] qWord = new int[2];
 
         // D2 Initialize j
-        for(int j=0; j<limit; j++) {
+        for(int j=0; j<limit-1; j++) {
             // D3 Calculate qhat
             // estimate qhat
             int qhat = 0;
@@ -1013,9 +1090,9 @@ class MutableBigInteger {
                     qhat = (int) (nChunk / dhLong);
                     qrem = (int) (nChunk - (qhat * dhLong));
                 } else {
-                    divWord(qWord, nChunk, dh);
-                    qhat = qWord[0];
-                    qrem = qWord[1];
+                    long tmp = divWord(nChunk, dh);
+                    qhat = (int) (tmp & LONG_MASK);
+                    qrem = (int) (tmp >>> 32);
                 }
             }
 
@@ -1053,6 +1130,181 @@ class MutableBigInteger {
             // Store the quotient digit
             q[j] = qhat;
         } // D7 loop on j
+        // D3 Calculate qhat
+        // estimate qhat
+        int qhat = 0;
+        int qrem = 0;
+        boolean skipCorrection = false;
+        int nh = rem.value[limit - 1 + rem.offset];
+        int nh2 = nh + 0x80000000;
+        int nm = rem.value[limit + rem.offset];
+
+        if (nh == dh) {
+            qhat = ~0;
+            qrem = nh + nm;
+            skipCorrection = qrem + 0x80000000 < nh2;
+        } else {
+            long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
+            if (nChunk >= 0) {
+                qhat = (int) (nChunk / dhLong);
+                qrem = (int) (nChunk - (qhat * dhLong));
+            } else {
+                long tmp = divWord(nChunk, dh);
+                qhat = (int) (tmp & LONG_MASK);
+                qrem = (int) (tmp >>> 32);
+            }
+        }
+        if (qhat != 0) {
+            if (!skipCorrection) { // Correct qhat
+                long nl = rem.value[limit + 1 + rem.offset] & LONG_MASK;
+                long rs = ((qrem & LONG_MASK) << 32) | nl;
+                long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+
+                if (unsignedLongCompare(estProduct, rs)) {
+                    qhat--;
+                    qrem = (int) ((qrem & LONG_MASK) + dhLong);
+                    if ((qrem & LONG_MASK) >= dhLong) {
+                        estProduct -= (dl & LONG_MASK);
+                        rs = ((qrem & LONG_MASK) << 32) | nl;
+                        if (unsignedLongCompare(estProduct, rs))
+                            qhat--;
+                    }
+                }
+            }
+
+
+            // D4 Multiply and subtract
+            int borrow;
+            rem.value[limit - 1 + rem.offset] = 0;
+            if(needReminder)
+                borrow = mulsub(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
+            else
+                borrow = mulsubBorrow(rem.value, divisor, qhat, dlen, limit - 1 + rem.offset);
+
+            // D5 Test remainder
+            if (borrow + 0x80000000 > nh2) {
+                // D6 Add back
+                if(needReminder)
+                    divadd(divisor, rem.value, limit - 1 + 1 + rem.offset);
+                qhat--;
+            }
+
+            // Store the quotient digit
+            q[(limit - 1)] = qhat;
+        }
+
+
+        if(needReminder) {
+            // D8 Unnormalize
+            if (shift > 0)
+                rem.rightShift(shift);
+            rem.normalize();
+        }
+        quotient.normalize();
+        return needReminder ? rem : null;
+    }
+
+    /**
+     * Divide this MutableBigInteger by the divisor represented by positive long
+     * value. The quotient will be placed into the provided quotient object &
+     * the remainder object is returned.
+     */
+    private MutableBigInteger divideLongMagnitude(long ldivisor, MutableBigInteger quotient) {
+        // Remainder starts as dividend with space for a leading zero
+        MutableBigInteger rem = new MutableBigInteger(new int[intLen + 1]);
+        System.arraycopy(value, offset, rem.value, 1, intLen);
+        rem.intLen = intLen;
+        rem.offset = 1;
+
+        int nlen = rem.intLen;
+
+        int limit = nlen - 2 + 1;
+        if (quotient.value.length < limit) {
+            quotient.value = new int[limit];
+            quotient.offset = 0;
+        }
+        quotient.intLen = limit;
+        int[] q = quotient.value;
+
+        // D1 normalize the divisor
+        int shift = Long.numberOfLeadingZeros(ldivisor);
+        if (shift > 0) {
+            ldivisor<<=shift;
+            rem.leftShift(shift);
+        }
+
+        // Must insert leading 0 in rem if its length did not change
+        if (rem.intLen == nlen) {
+            rem.offset = 0;
+            rem.value[0] = 0;
+            rem.intLen++;
+        }
+
+        int dh = (int)(ldivisor >>> 32);
+        long dhLong = dh & LONG_MASK;
+        int dl = (int)(ldivisor & LONG_MASK);
+
+        // D2 Initialize j
+        for (int j = 0; j < limit; j++) {
+            // D3 Calculate qhat
+            // estimate qhat
+            int qhat = 0;
+            int qrem = 0;
+            boolean skipCorrection = false;
+            int nh = rem.value[j + rem.offset];
+            int nh2 = nh + 0x80000000;
+            int nm = rem.value[j + 1 + rem.offset];
+
+            if (nh == dh) {
+                qhat = ~0;
+                qrem = nh + nm;
+                skipCorrection = qrem + 0x80000000 < nh2;
+            } else {
+                long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
+                if (nChunk >= 0) {
+                    qhat = (int) (nChunk / dhLong);
+                    qrem = (int) (nChunk - (qhat * dhLong));
+                } else {
+                    long tmp = divWord(nChunk, dh);
+                    qhat =(int)(tmp & LONG_MASK);
+                    qrem = (int)(tmp>>>32);
+                }
+            }
+
+            if (qhat == 0)
+                continue;
+
+            if (!skipCorrection) { // Correct qhat
+                long nl = rem.value[j + 2 + rem.offset] & LONG_MASK;
+                long rs = ((qrem & LONG_MASK) << 32) | nl;
+                long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+
+                if (unsignedLongCompare(estProduct, rs)) {
+                    qhat--;
+                    qrem = (int) ((qrem & LONG_MASK) + dhLong);
+                    if ((qrem & LONG_MASK) >= dhLong) {
+                        estProduct -= (dl & LONG_MASK);
+                        rs = ((qrem & LONG_MASK) << 32) | nl;
+                        if (unsignedLongCompare(estProduct, rs))
+                            qhat--;
+                    }
+                }
+            }
+
+            // D4 Multiply and subtract
+            rem.value[j + rem.offset] = 0;
+            int borrow = mulsubLong(rem.value, dh, dl, qhat,  j + rem.offset);
+
+            // D5 Test remainder
+            if (borrow + 0x80000000 > nh2) {
+                // D6 Add back
+                divaddLong(dh,dl, rem.value, j + 1 + rem.offset);
+                qhat--;
+            }
+
+            // Store the quotient digit
+            q[j] = qhat;
+        } // D7 loop on j
 
         // D8 Unnormalize
         if (shift > 0)
@@ -1061,6 +1313,46 @@ class MutableBigInteger {
         quotient.normalize();
         rem.normalize();
         return rem;
+    }
+
+    /**
+     * A primitive used for division by long.
+     * Specialized version of the method divadd.
+     * dh is a high part of the divisor, dl is a low part
+     */
+    private int divaddLong(int dh, int dl, int[] result, int offset) {
+        long carry = 0;
+
+        long sum = (dl & LONG_MASK) + (result[1+offset] & LONG_MASK);
+        result[1+offset] = (int)sum;
+
+        sum = (dh & LONG_MASK) + (result[offset] & LONG_MASK) + carry;
+        result[offset] = (int)sum;
+        carry = sum >>> 32;
+        return (int)carry;
+    }
+
+    /**
+     * This method is used for division by long.
+     * Specialized version of the method sulsub.
+     * dh is a high part of the divisor, dl is a low part
+     */
+    private int mulsubLong(int[] q, int dh, int dl, int x, int offset) {
+        long xLong = x & LONG_MASK;
+        offset += 2;
+        long product = (dl & LONG_MASK) * xLong;
+        long difference = q[offset] - product;
+        q[offset--] = (int)difference;
+        long carry = (product >>> 32)
+                 + (((difference & LONG_MASK) >
+                     (((~(int)product) & LONG_MASK))) ? 1:0);
+        product = (dh & LONG_MASK) * xLong + carry;
+        difference = q[offset] - product;
+        q[offset--] = (int)difference;
+        carry = (product >>> 32)
+                 + (((difference & LONG_MASK) >
+                     (((~(int)product) & LONG_MASK))) ? 1:0);
+        return (int)carry;
     }
 
     /**
@@ -1075,19 +1367,22 @@ class MutableBigInteger {
      * This method divides a long quantity by an int to estimate
      * qhat for two multi precision numbers. It is used when
      * the signed value of n is less than zero.
+     * Returns long value where high 32 bits contain reminder value and
+     * low 32 bits contain quotient value.
      */
-    private void divWord(int[] result, long n, int d) {
+    static long divWord(long n, int d) {
         long dLong = d & LONG_MASK;
-
+        long r;
+        long q;
         if (dLong == 1) {
-            result[0] = (int)n;
-            result[1] = 0;
-            return;
+            q = (int)n;
+            r = 0;
+            return (r << 32) | (q & LONG_MASK);
         }
 
         // Approximate the quotient and remainder
-        long q = (n >>> 1) / (dLong >>> 1);
-        long r = n - q*dLong;
+        q = (n >>> 1) / (dLong >>> 1);
+        r = n - q*dLong;
 
         // Correct the approximation
         while (r < 0) {
@@ -1098,10 +1393,8 @@ class MutableBigInteger {
             r -= dLong;
             q++;
         }
-
         // n - q*dlong == r && 0 <= r <dLong, hence we're done.
-        result[0] = (int)q;
-        result[1] = (int)r;
+        return (r << 32) | (q & LONG_MASK);
     }
 
     /**
@@ -1473,5 +1766,4 @@ class MutableBigInteger {
         mod.subtract(t1);
         return mod;
     }
-
 }

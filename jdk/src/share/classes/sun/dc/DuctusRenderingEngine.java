@@ -158,7 +158,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
             feedConsumer(pi, consumer, normalize, 0.25f);
         } catch (PathException e) {
             throw new InternalError("Unable to Stroke shape ("+
-                                    e.getMessage()+")");
+                                    e.getMessage()+")", e);
         } finally {
             while (consumer != null && consumer != sr) {
                 PathConsumer next = consumer.getConsumer();
@@ -763,7 +763,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
             consumer.endPath();
         } catch (PathException e) {
             throw new InternalError("Unable to Stroke shape ("+
-                                    e.getMessage()+")");
+                                    e.getMessage()+")", e);
         }
     }
 

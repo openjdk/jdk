@@ -373,7 +373,7 @@ class Util {
                              NoSuchMethodException    |
                              IllegalArgumentException |
                              ClassCastException x) {
-                        throw new InternalError();
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -395,7 +395,7 @@ class Util {
         } catch (InstantiationException |
                  IllegalAccessException |
                  InvocationTargetException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
         return dbb;
     }
@@ -418,7 +418,7 @@ class Util {
                              NoSuchMethodException |
                              IllegalArgumentException |
                              ClassCastException x) {
-                        throw new InternalError();
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -440,7 +440,7 @@ class Util {
         } catch (InstantiationException |
                  IllegalAccessException |
                  InvocationTargetException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
         return dbb;
     }
