@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ package java.lang.annotation;
  * @since 1.5
  * @jls 9.6.4.1 @Target
  * @jls 9.7.4 Where Annotations May Appear
+ * @jls 9.7.5 Multiple Annotations of the Same Type
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

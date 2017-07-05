@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -456,8 +457,7 @@ public abstract class ScriptFunctionData implements Serializable {
     }
 
     static boolean isPrimitiveThis(final Object obj) {
-        return obj instanceof String || obj instanceof ConsString ||
-               obj instanceof Number || obj instanceof Boolean;
+        return JSType.isString(obj) || obj instanceof Number || obj instanceof Boolean;
     }
 
     /**

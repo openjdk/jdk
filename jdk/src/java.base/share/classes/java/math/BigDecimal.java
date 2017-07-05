@@ -3740,8 +3740,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 throw new ExceptionInInitializerError(ex);
             }
         }
-        static void setIntCompactVolatile(BigDecimal bd, long val) {
-            unsafe.putLongVolatile(bd, intCompactOffset, val);
+        static void setIntCompact(BigDecimal bd, long val) {
+            unsafe.putLong(bd, intCompactOffset, val);
         }
 
         static void setIntValVolatile(BigDecimal bd, BigInteger val) {
@@ -3765,7 +3765,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             throw new java.io.StreamCorruptedException(message);
         // [all values of scale are now allowed]
         }
-        UnsafeHolder.setIntCompactVolatile(this, compactValFor(intVal));
+        UnsafeHolder.setIntCompact(this, compactValFor(intVal));
     }
 
    /**

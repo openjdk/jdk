@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class TestExtraTime {
         }
 
         testNullHandling();
+        testTimeConversions();
     }
 
     static void test(FileTime mtime, FileTime atime, FileTime ctime,
@@ -176,6 +177,35 @@ public class TestExtraTime {
             throw new RuntimeException("setLastModifiedTime(null) should throw NPE");
         } catch (NullPointerException ignored) {
             // pass
+        }
+    }
+
+    // verify that setting and getting any time is possible as per the intent
+    // of 4759491
+    static void testTimeConversions() {
+        // Sample across the entire range
+        long step = Long.MAX_VALUE / 100L;
+        testTimeConversions(Long.MIN_VALUE, Long.MAX_VALUE - step, step);
+
+        // Samples through the near future
+        long currentTime = System.currentTimeMillis();
+        testTimeConversions(currentTime, currentTime + 1_000_000, 10_000);
+    }
+
+    static void testTimeConversions(long from, long to, long step) {
+        ZipEntry ze = new ZipEntry("TestExtraTime.java");
+        for (long time = from; time <= to; time += step) {
+            ze.setTime(time);
+            FileTime lastModifiedTime = ze.getLastModifiedTime();
+            if (lastModifiedTime.toMillis() != time) {
+                throw new RuntimeException("setTime should make getLastModifiedTime " +
+                        "return the specified instant: " + time +
+                        " got: " + lastModifiedTime.toMillis());
+            }
+            if (ze.getTime() != time) {
+                throw new RuntimeException("getTime after setTime, expected: " +
+                        time + " got: " + ze.getTime());
+            }
         }
     }
 }

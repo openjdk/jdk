@@ -100,34 +100,3 @@ $(LIB_DST_DIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 TARGETS += $(PSFONTPROPFILE_TARGET_FILES)
 
 ################################################################################
-#
-# Copy cursor.properties and cursors gif files to LIB_DST_DIR
-#
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/conf
-else
-  OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/conf
-endif
-
-CURSORS_DEST_DIR := $(LIB_DST_DIR)/images/cursors
-CURSORS_OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/conf/images/cursors
-
-$(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
-	$(call install-file)
-
-TARGETS += $(CURSORS_DEST_DIR)/cursors.properties
-
-CURSORS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/share/conf/images/cursors
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  CURSORS_SRC_FILES := $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/win32_*.gif)
-else # OPENJDK_TARGET_OS
-  CURSORS_SRC_FILES := $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/motif_*.gif)
-endif # OPENJDK_TARGET_OS
-CURSORS_TARGET_FILES := $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
-
-$(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
-	$(call install-file)
-
-TARGETS += $(CURSORS_TARGET_FILES)
-
-################################################################################
