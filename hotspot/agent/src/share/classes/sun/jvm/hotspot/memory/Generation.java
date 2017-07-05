@@ -37,10 +37,7 @@ import sun.jvm.hotspot.runtime.*;
       <ul>
       <li> CardGeneration
         <ul>
-        <li> OneContigSpaceCardGeneration
-          <ul>
-          <li> TenuredGeneration
-          </ul>
+        <li> TenuredGeneration
         </ul>
       <li> DefNewGeneration
       </ul>

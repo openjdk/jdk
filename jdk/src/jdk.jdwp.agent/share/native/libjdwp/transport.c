@@ -66,8 +66,10 @@ printLastError(jdwpTransportEnv *t, jdwpTransportError err)
         len = (int)strlen(msg);
         maxlen = len+len/2+2; /* Should allow for plenty of room */
         utf8msg = (jbyte*)jvmtiAllocate(maxlen+1);
-        (void)utf8FromPlatform(msg, len, utf8msg, maxlen);
-        utf8msg[maxlen] = 0;
+        if (utf8msg != NULL) {
+           (void)utf8FromPlatform(msg, len, utf8msg, maxlen);
+           utf8msg[maxlen] = 0;
+        }
     }
     if (rv == JDWPTRANSPORT_ERROR_NONE) {
         ERROR_MESSAGE(("transport error %d: %s",err, utf8msg));
@@ -391,6 +393,10 @@ launch(char *command, char *name, char *address)
     /* Convert commandLine from UTF-8 to platform encoding */
     len = (int)strlen(commandLine);
     buf = jvmtiAllocate(len*3+3);
+    if (buf == NULL) {
+        jvmtiDeallocate(commandLine);
+        return JDWP_ERROR(OUT_OF_MEMORY);
+    }
     (void)utf8ToPlatform((jbyte*)commandLine, len, buf, len*3+3);
 
     /* Exec commandLine */
@@ -447,21 +453,23 @@ transport_startTransport(jboolean isServer, char *name, char *address,
         if (info == NULL) {
             return JDWP_ERROR(OUT_OF_MEMORY);
         }
-        info->name = jvmtiAllocate((int)strlen(name)+1);
-        (void)strcpy(info->name, name);
-        info->address = NULL;
         info->timeout = timeout;
+
+        info->name = jvmtiAllocate((int)strlen(name)+1);
         if (info->name == NULL) {
             serror = JDWP_ERROR(OUT_OF_MEMORY);
             goto handleError;
         }
+        (void)strcpy(info->name, name);
+
+        info->address = NULL;
         if (address != NULL) {
             info->address = jvmtiAllocate((int)strlen(address)+1);
-            (void)strcpy(info->address, address);
             if (info->address == NULL) {
                 serror = JDWP_ERROR(OUT_OF_MEMORY);
                 goto handleError;
             }
+            (void)strcpy(info->address, address);
         }
 
         info->transport = trans;
@@ -478,6 +486,10 @@ transport_startTransport(jboolean isServer, char *name, char *address,
          */
         len = (int)strlen(name) + (int)strlen(retAddress) + 2; /* ':' and '\0' */
         prop_value = (char*)jvmtiAllocate(len);
+        if (prop_value == NULL) {
+            serror = JDWP_ERROR(OUT_OF_MEMORY);
+            goto handleError;
+        }
         strcpy(prop_value, name);
         strcat(prop_value, ":");
         strcat(prop_value, retAddress);

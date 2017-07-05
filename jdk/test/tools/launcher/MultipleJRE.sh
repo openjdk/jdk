@@ -5,7 +5,7 @@
 # @build UglyPrintVersion
 # @build ZipMeUp
 # @run shell MultipleJRE.sh
-# @summary Verify Multiple JRE version support
+# @summary Verify Multiple JRE version support has been removed
 # @author Joseph E. Kowalski
 
 #
@@ -222,37 +222,76 @@ CreateAlignedJar() {
 #	long file name (path) or a long "Ext" entry, but adding the long
 #	comment is the easiest way.
 #
+MONDO=" Mondo comment line 00 is designed to take up space - lots and lots of space.  Mondo comment line 01 is designed to take up space - lots and lots of space.  Mondo comment line 02 is designed to take up space - lots and lots of space.  Mondo comment line 03 is designed to take up space - lots and lots of space.  Mondo comment line 04 is designed to take up space - lots and lots of space.  Mondo comment line 05 is designed to take up space - lots and lots of space.  Mondo comment line 06 is designed to take up space - lots and lots of space.  Mondo comment line 07 is designed to take up space - lots and lots of space.  Mondo comment line 08 is designed to take up space - lots and lots of space.  Mondo comment line 09 is designed to take up space - lots and lots of space.  Mondo comment line 0a is designed to take up space - lots and lots of space.  Mondo comment line 0b is designed to take up space - lots and lots of space.  Mondo comment line 0c is designed to take up space - lots and lots of space.  Mondo comment line 0d is designed to take up space - lots and lots of space.  Mondo comment line 0e is designed to take up space - lots and lots of space.  Mondo comment line 0f is designed to take up space - lots and lots of space.  Mondo comment line 10 is designed to take up space - lots and lots of space.  Mondo comment line 11 is designed to take up space - lots and lots of space.  Mondo comment line 12 is designed to take up space - lots and lots of space.  Mondo comment line 13 is designed to take up space - lots and lots of space.  Mondo comment line 14 is designed to take up space - lots and lots of space.  Mondo comment line 15 is designed to take up space - lots and lots of space.  Mondo comment line 16 is designed to take up space - lots and lots of space.  Mondo comment line 17 is designed to take up space - lots and lots of space.  Mondo comment line 18 is designed to take up space - lots and lots of space.  Mondo comment line 19 is designed to take up space - lots and lots of space.  Mondo comment line 1a is designed to take up space - lots and lots of space.  Mondo comment line 1b is designed to take up space - lots and lots of space.  Mondo comment line 1c is designed to take up space - lots and lots of space.  Mondo comment line 1d is designed to take up space - lots and lots of space.  Mondo comment line 1e is designed to take up space - lots and lots of space.  Mondo comment line 1f is designed to take up space - lots and lots of space.  Mondo comment line 20 is designed to take up space - lots and lots of space.  Mondo comment line 21 is designed to take up space - lots and lots of space.  Mondo comment line 22 is designed to take up space - lots and lots of space.  Mondo comment line 23 is designed to take up space - lots and lots of space.  Mondo comment line 24 is designed to take up space - lots and lots of space.  Mondo comment line 25 is designed to take up space - lots and lots of space.  Mondo comment line 26 is designed to take up space - lots and lots of space.  Mondo comment line 27 is designed to take up space - lots and lots of space.  Mondo comment line 28 is designed to take up space - lots and lots of space.  Mondo comment line 29 is designed to take up space - lots and lots of space.  Mondo comment line 2a is designed to take up space - lots and lots of space.  Mondo comment line 2b is designed to take up space - lots and lots of space.  Mondo comment line 2c is designed to take up space - lots and lots of space.  Mondo comment line 2d is designed to take up space - lots and lots of space.  Mondo comment line 2e is designed to take up space - lots and lots of space.  Mondo comment line 2f is designed to take up space - lots and lots of space.  Mondo comment line 30 is designed to take up space - lots and lots of space.  Mondo comment line 31 is designed to take up space - lots and lots of space.  Mondo comment line 32 is designed to take up space - lots and lots of space.  Mondo comment line 33 is designed to take up space - lots and lots of space.  Mondo comment line 34 is designed to take up space - lots and lots of space.  Mondo comment line 35 is designed to take up space - lots and lots of space.  Mondo comment line 36 is designed to take up space - lots and lots of space.  Mondo comment line 37 is designed to take up space - lots and lots of space.  Mondo comment line 38 is designed to take up space - lots and lots of space.  Mondo comment line 39 is designed to take up space - lots and lots of space.  Mondo comment line 3a is designed to take up space - lots and lots of space.  Mondo comment line 3b is designed to take up space - lots and lots of space.  Mondo comment line 3c is designed to take up space - lots and lots of space.  Mondo comment line 3d is designed to take up space - lots and lots of space.  Mondo comment line 3e is designed to take up space - lots and lots of space.  Mondo comment line 3f is designed to take up space - lots and lots of space.  Mondo comment line 40 is designed to take up space - lots and lots of space.  Mondo comment line 41 is designed to take up space - lots and lots of space.  Mondo comment line 42 is designed to take up space - lots and lots of space.  Mondo comment line 43 is designed to take up space - lots and lots of space.  Mondo comment line 44 is designed to take up space - lots and lots of space.  Mondo comment line 45 is designed to take up space - lots and lots of space.  Mondo comment line 46 is designed to take up space - lots and lots of space.  Mondo comment line 47 is designed to take up space - lots and lots of space.  Mondo comment line 48 is designed to take up space - lots and lots of space.  Mondo comment line 49 is designed to take up space - lots and lots of space.  Mondo comment line 4a is designed to take up space - lots and lots of space.  Mondo comment line 4b is designed to take up space - lots and lots of space.  Mondo comment line 4c is designed to take up space - lots and lots of space.  Mondo comment line 4d is designed to take up space - lots and lots of space.  Mondo comment line 4e is designed to take up space - lots and lots of space.  Mondo comment line 4f is designed to take up space - lots and lots of space.  Mondo comment line 50 is designed to take up space - lots and lots of space.  Mondo comment line 51 is designed to take up space - lots and lots of space.  Mondo comment line 52 is designed to take up space - lots and lots of space.  Mondo comment line 53 is designed to take up space - lots and lots of space.  Mondo comment line 54 is designed to take up space - lots and lots of space.  Mondo comment line 55 is designed to take up space - lots and lots of space.  Mondo comment line 56 is designed to take up space - lots and lots of space.  Mondo comment line 57 is designed to take up space - lots and lots of space.  Mondo comment line 58 is designed to take up space - lots and lots of space.  Mondo comment line 59 is designed to take up space - lots and lots of space.  Mondo comment line 5a is designed to take up space - lots and lots of space.  Mondo comment line 5b is designed to take up space - lots and lots of space.  Mondo comment line 5c is designed to take up space - lots and lots of space.  Mondo comment line 5d is designed to take up space - lots and lots of space.  Mondo comment line 5e is designed to take up space - lots and lots of space.  Mondo comment line 5f is designed to take up space - lots and lots of space.  Mondo comment line 60 is designed to take up space - lots and lots of space.  Mondo comment line 61 is designed to take up space - lots and lots of space.  Mondo comment line 62 is designed to take up space - lots and lots of space.  Mondo comment line 63 is designed to take up space - lots and lots of space.  Mondo comment line 64 is designed to take up space - lots and lots of space.  Mondo comment line 65 is designed to take up space - lots and lots of space.  Mondo comment line 66 is designed to take up space - lots and lots of space.  Mondo comment line 67 is designed to take up space - lots and lots of space.  Mondo comment line 68 is designed to take up space - lots and lots of space.  Mondo comment line 69 is designed to take up space - lots and lots of space.  Mondo comment line 6a is designed to take up space - lots and lots of space.  Mondo comment line 6b is designed to take up space - lots and lots of space.  Mondo comment line 6c is designed to take up space - lots and lots of space.  Mondo comment line 6d is designed to take up space - lots and lots of space.  Mondo comment line 6e is designed to take up space - lots and lots of space.  Mondo comment line 6f is designed to take up space - lots and lots of space.  Mondo comment line 70 is designed to take up space - lots and lots of space.  Mondo comment line 71 is designed to take up space - lots and lots of space.  Mondo comment line 72 is designed to take up space - lots and lots of space.  Mondo comment line 73 is designed to take up space - lots and lots of space.  Mondo comment line 74 is designed to take up space - lots and lots of space.  Mondo comment line 75 is designed to take up space - lots and lots of space.  Mondo comment line 76 is designed to take up space - lots and lots of space.  Mondo comment line 77 is designed to take up space - lots and lots of space.  Mondo comment line 78 is designed to take up space - lots and lots of space.  Mondo comment line 79 is designed to take up space - lots and lots of space.  Mondo comment line 7a is designed to take up space - lots and lots of space.  Mondo comment line 7b is designed to take up space - lots and lots of space.  Mondo comment line 7c is designed to take up space - lots and lots of space.  Mondo comment line 7d is designed to take up space - lots and lots of space.  Mondo comment line 7e is designed to take up space - lots and lots of space.  Mondo comment line 7f is designed to take up space - lots and lots of space.  Mondo comment line 80 is designed to take up space - lots and lots of space.  Mondo comment line 81 is designed to take up space - lots and lots of space.  Mondo comment line 82 is designed to take up space - lots and lots of space.  Mondo comment line 83 is designed to take up space - lots and lots of space.  Mondo comment line 84 is designed to take up space - lots and lots of space.  Mondo comment line 85 is designed to take up space - lots and lots of space.  Mondo comment line 86 is designed to take up space - lots and lots of space.  Mondo comment line 87 is designed to take up space - lots and lots of space.  Mondo comment line 88 is designed to take up space - lots and lots of space.  Mondo comment line 89 is designed to take up space - lots and lots of space.  Mondo comment line 8a is designed to take up space - lots and lots of space.  Mondo comment line 8b is designed to take up space - lots and lots of space.  Mondo comment line 8c is designed to take up space - lots and lots of space.  Mondo comment line 8d is designed to take up space - lots and lots of space.  Mondo comment line 8e is designed to take up space - lots and lots of space.  Mondo comment line 8f is designed to take up space - lots and lots of space.  Mondo comment line 90 is designed to take up space - lots and lots of space.  Mondo comment line 91 is designed to take up space - lots and lots of space.  Mondo comment line 92 is designed to take up space - lots and lots of space.  Mondo comment line 93 is designed to take up space - lots and lots of space.  Mondo comment line 94 is designed to take up space - lots and lots of space.  Mondo comment line 95 is designed to take up space - lots and lots of space.  Mondo comment line 96 is designed to take up space - lots and lots of space.  Mondo comment line 97 is designed to take up space - lots and lots of space.  Mondo comment line 98 is designed to take up space - lots and lots of space.  Mondo comment line 99 is designed to take up space - lots and lots of space.  Mondo comment line 9a is designed to take up space - lots and lots of space.  Mondo comment line 9b is designed to take up space - lots and lots of space.  Mondo comment line 9c is designed to take up space - lots and lots of space.  Mondo comment line 9d is designed to take up space - lots and lots of space.  Mondo comment line 9e is designed to take up space - lots and lots of space.  Mondo comment line 9f is designed to take up space - lots and lots of space.  Mondo comment line a0 is designed to take up space - lots and lots of space.  Mondo comment line a1 is designed to take up space - lots and lots of space.  Mondo comment line a2 is designed to take up space - lots and lots of space.  Mondo comment line a3 is designed to take up space - lots and lots of space.  Mondo comment line a4 is designed to take up space - lots and lots of space.  Mondo comment line a5 is designed to take up space - lots and lots of space.  Mondo comment line a6 is designed to take up space - lots and lots of space.  Mondo comment line a7 is designed to take up space - lots and lots of space.  Mondo comment line a8 is designed to take up space - lots and lots of space.  Mondo comment line a9 is designed to take up space - lots and lots of space.  Mondo comment line aa is designed to take up space - lots and lots of space.  Mondo comment line ab is designed to take up space - lots and lots of space.  Mondo comment line ac is designed to take up space - lots and lots of space.  Mondo comment line ad is designed to take up space - lots and lots of space.  Mondo comment line ae is designed to take up space - lots and lots of space.  Mondo comment line af is designed to take up space - lots and lots of space.  Mondo comment line b0 is designed to take up space - lots and lots of space.  Mondo comment line b1 is designed to take up space - lots and lots of space.  Mondo comment line b2 is designed to take up space - lots and lots of space.  Mondo comment line b3 is designed to take up space - lots and lots of space.  Mondo comment line b4 is designed to take up space - lots and lots of space.  Mondo comment line b5 is designed to take up space - lots and lots of space.  Mondo comment line b6 is designed to take up space - lots and lots of space.  Mondo comment line b7 is designed to take up space - lots and lots of space.  Mondo comment line b8 is designed to take up space - lots and lots of space.  Mondo comment line b9 is designed to take up space - lots and lots of space.  Mondo comment line ba is designed to take up space - lots and lots of space.  Mondo comment line bb is designed to take up space - lots and lots of space.  Mondo comment line bc is designed to take up space - lots and lots of space.  Mondo comment line bd is designed to take up space - lots and lots of space.  Mondo comment line be is designed to take up space - lots and lots of space.  Mondo comment line bf is designed to take up space - lots and lots of space.  Mondo comment line c0 is designed to take up space - lots and lots of space.  Mondo comment line c1 is designed to take up space - lots and lots of space.  Mondo comment line c2 is designed to take up space - lots and lots of space.  Mondo comment line c3 is designed to take up space - lots and lots of space.  Mondo comment line c4 is designed to take up space - lots and lots of space.  Mondo comment line c5 is designed to take up space - lots and lots of space.  Mondo comment line c6 is designed to take up space - lots and lots of space.  Mondo comment line c7 is designed to take up space - lots and lots of space.  Mondo comment line c8 is designed to take up space - lots and lots of space.  Mondo comment line c9 is designed to take up space - lots and lots of space.  Mondo comment line ca is designed to take up space - lots and lots of space.  Mondo comment line cb is designed to take up space - lots and lots of space.  Mondo comment line cc is designed to take up space - lots and lots of space.  Mondo comment line cd is designed to take up space - lots and lots of space.  Mondo comment line ce is designed to take up space - lots and lots of space.  Mondo comment line cf is designed to take up space - lots and lots of space.  Mondo comment line d0 is designed to take up space - lots and lots of space.  Mondo comment line d1 is designed to take up space - lots and lots of space.  Mondo comment line d2 is designed to take up space - lots and lots of space.  Mondo comment line d3 is designed to take up space - lots and lots of space.  Mondo comment line d4 is designed to take up space - lots and lots of space.  Mondo comment line d5 is designed to take up space - lots and lots of space.  Mondo comment line d6 is designed to take up space - lots and lots of space.  Mondo comment line d7 is designed to take up space - lots and lots of space.  Mondo comment line d8 is designed to take up space - lots and lots of space.  Mondo comment line d9 is designed to take up space - lots and lots of space.  Mondo comment line da is designed to take up space - lots and lots of space.  Mondo comment line db is designed to take up space - lots and lots of space.  Mondo comment line dc is designed to take up space - lots and lots of space.  Mondo comment line dd is designed to take up space - lots and lots of space.  Mondo comment line de is designed to take up space - lots and lots of space.  Mondo comment line df is designed to take up space - lots and lots of space.  Mondo comment line e0 is designed to take up space - lots and lots of space.  Mondo comment line e1 is designed to take up space - lots and lots of space.  Mondo comment line e2 is designed to take up space - lots and lots of space.  Mondo comment line e3 is designed to take up space - lots and lots of space.  Mondo comment line e4 is designed to take up space - lots and lots of space.  Mondo comment line e5 is designed to take up space - lots and lots of space.  Mondo comment line e6 is designed to take up space - lots and lots of space.  Mondo comment line e7 is designed to take up space - lots and lots of space.  Mondo comment line e8 is designed to take up space - lots and lots of space.  Mondo comment line e9 is designed to take up space - lots and lots of space.  Mondo comment line ea is designed to take up space - lots and lots of space.  Mondo comment line eb is designed to take up space - lots and lots of space.  Mondo comment line ec is designed to take up space - lots and lots of space.  Mondo comment line ed is designed to take up space - lots and lots of space.  Mondo comment line ee is designed to take up space - lots and lots of space.  Mondo comment line ef is designed to take up space - lots and lots of space.  Mondo comment line f0 is designed to take up space - lots and lots of space.  Mondo comment line f1 is designed to take up space - lots and lots of space.  Mondo comment line f2 is designed to take up space - lots and lots of space.  Mondo comment line f3 is designed to take up space - lots and lots of space.  Mondo comment line f4 is designed to take up space - lots and lots of space.  Mondo comment line f5 is designed to take up space - lots and lots of space.  Mondo comment line f6 is designed to take up space - lots and lots of space.  Mondo comment line f7 is designed to take up space - lots and lots of space.  Mondo comment line f8 is designed to take up space - lots and lots of space.  Mondo comment line f9 is designed to take up space - lots and lots of space.  Mondo comment line fa is designed to take up space - lots and lots of space.  Mondo comment line fb is designed to take up space - lots and lots of space.  Mondo comment line fc is designed to take up space - lots and lots of space.  Mondo comment line fd is designed to take up space - lots and lots of space.  Mondo comment line fe is designed to take up space - lots and lots of space.  Mondo comment line ff is designed to take up space - lots and lots of space."
 CommentZipFile() {
-    file=
-    tail="is designed to take up space - lots and lots of space."
-    mv PrintVersion PrintVersion.zip
-    /usr/bin/zipnote PrintVersion.zip > zipout
-    while read ampersand line; do
-	if [ "$ampersand" = "@" ]; then
-	    if [ "$line" = "(comment above this line)" ]; then
-		echo "File Comment Line." >> zipin
-		if [ "$file" = "$1" ]; then
-		    for i in 0 1 2 3 4 5 6 7 8 9 a b c d e f; do
-			for j in 0 1 2 3 4 5 6 7 8 9 a b c d e f; do
-			    echo "Mondo comment line $i$j $tail" >> zipin
-			done
-		    done
-		fi
-	    else
-		file=$line
-	    fi
+	mkdir -p META-INF
+	echo "Manifest-Version: 1.0" > META-INF/MANIFEST.MF
+	echo "Main-Class: PrintVersion" >> META-INF/MANIFEST.MF
+	if [ "$1" != "" ]; then
+	    echo "JRE-Version: $1" >> META-INF/MANIFEST.MF
 	fi
-	echo "$ampersand $line" >> zipin
-	if [ "$ampersand" = "@" ]; then
-	    if [ "$line" = "(zip file comment below this line)" ]; then
-		echo "Zip File Comment Line number 1" >> zipin
-		echo "Zip File Comment Line number 2" >> zipin
-	    fi
-	fi
-    done < zipout
-    /usr/bin/zipnote -w PrintVersion.zip < zipin
+	cp $TESTCLASSES/PrintVersion.class .
+
+	# The remaining code in CommentZipFile essentially replaces the
+	#   following code, which added comments to the jar file.
+	#   Unfortunately zipnote has been broken since 3.0 [ 2008 ] and
+	#   there has been no new [ fixed ] version.  zipnote has probably
+	#   always failed, or failed for a long time without causing the
+	#   test to fail.  So no comments were added to the file.
+	#   The comments are added using zip(1) during the creation of the
+	#   zip file.
+	#
+	# NOTE:
+	#   It seems the original intent of this test was to add a very long
+	#   comment for one file.  But zip allows a max of 256 characters, so
+	#   we settle for adding 256-character comments to lots of files.
+	#
+	# $JAR $2cMf PrintVersion PrintVersion.class AfairlyLong*
+	# $JAR $2umf META-INF/MANIFEST.MF PrintVersion
+	# /usr/bin/zipnote PrintVersion.zip > zipout
+	# ... code to modify zipout adding comments
+	# /usr/bin/zipnote -w PrintVersion.zip < zipin
+	# mv PrintVersion.zip PrintVersion
+	#
+
+
+	for i in 0 1 2 3 4 5 6 7 8 9 ; do
+		for j in 0 1 2 3 4 5 6 7 8 9 ; do
+			touch AfairlyLongNameEatsUpDirectorySpaceBetter$i$j
+		done
+	done
+
+        zip -$2c PrintVersion.zip PrintVersion.class AfairlyLong* META-INF/MANIFEST.MF << FINI
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+File Comment Line.
+$MONDO
+File Comment Line.
+File Comment Line.
+File Comment Line.
+FINI
+
+	rm -f AfairlyLong*
+
     mv PrintVersion.zip PrintVersion
-    rm zipout zipin
+
 }
 
 #
@@ -261,22 +300,29 @@ CommentZipFile() {
 #
 LaunchVM() {
 	if [ "$1" != "" ]; then
-		mess="`$JAVA -version:\"$1\" -jar PrintVersion 2>&1`"
-	else
-		mess="`$JAVA -jar PrintVersion 2>&1`"
-	fi
-	if [ $? -ne 0 ]; then
-		prefix=`echo "$mess" | cut -d ' ' -f 1-3`
-		if [ "$prefix" != "Unable to locate" ]; then
+		mess="`$JAVA \"$1\" -jar PrintVersion 2>&1`"
+		if [ $? -eq 0 ]; then
+			echo "Unexpected success of -Version:$1"
 			echo "$mess"
 			exit 1
 		fi
-		echo "Unexpected error in attempting to locate $1"
-		exit 1
+	else
+		mess="`$JAVA -jar PrintVersion 2>&1`"
+		if [ $? -ne 0 ]; then
+			prefix=`echo "$mess" | cut -d ' ' -f 1-3`
+			if [ "$prefix" != "Unable to locate" ]; then
+				echo "$mess"
+				exit 1
+			fi
+			echo "Unexpected error in attempting to locate $1"
+			exit 1
+		fi
+
 	fi
+
 	echo $mess | grep "$2" > /dev/null 2>&1
 	if [ $? != 0 ]; then
-	    echo "Launched $mess, expected $2"
+	    echo "Launched $mess, expected $1"
 	    exit 1
 	fi
 }
@@ -307,6 +353,7 @@ TestLongMainClass() {
 #
 # Main test sequence starts here
 #
+
 RELEASE=`$JAVA -version 2>&1 | head -n 1 | cut -d ' ' -f 3 | \
   sed -e "s/\"//g"`
 BASE_RELEASE=`echo $RELEASE | sed -e "s/-.*//g"`
@@ -386,91 +433,31 @@ if [ -x /usr/bin/zipnote ]; then
 fi
 
 #
-# Throw some syntactically challenged (illegal) version specifiers at
-# the interface.  Failure (of the launcher) is success for the test.
+# Now test specification of mJRE
 #
-TestSyntax "1.2..3"				# Two adjacent separators
-TestSyntax "_1.2.3"				# Begins with a separator
-TestSyntax "1.2.3-"				# Ends with a separator
-TestSyntax "1.2+.3"				# Embedded modifier
-TestSyntax "1.2.4+&1.2*&1++"			# Long and invalid
+#   In some cases this should result in failure of the command,
+#   in some cases, a warning messages, with the command succeeding.
+#
 
-# On windows we see if there is another jre installed, usually
-# there is, then we test using that, otherwise links are created
-# to get through to SelectVersion.
-if [ `IsWindows` = "false" ]; then
-   TestLongMainClass "mklink"
-else
-    $JAVAEXE -version:1.0+
-    if [ $? -eq 0 ]; then
-        TestLongMainClass "1.0+"
-    else
-        printf  "Warning: TestLongMainClass skipped as there is no"
-	printf  "viable MJRE installed.\n"
-    fi
-fi
+	# Commandline use of "-version:" should fail
+	#   with a message containing "no longer supported"
+	LaunchVM "-version:1.10+" "Error: Specifying an alternate JDK/JRE"
+	LaunchVM "-version:prettymuchanything" "Error: Specifying an alternate JDK/JRE"
 
-#
-# Because scribbling in the registry can be rather destructive, only a
-# subset of the tests are run on Windows.
-#
-if [ `IsWindows` = "true" ]; then
-    exit 0;
-fi
+	# Commandline use of "-jre-restrict-search" should now fail
+	LaunchVM "-jre-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
+	# Commandline use of "-jre-no-restrict-search" should now fail
+	LaunchVM "-jre-no-restrict-search" "\-jre\-no\-restrict\-search are also no longer valid"
 
-#
-# Additional version specifiers containing spaces.  (Sigh, unable to
-# figure out the glomming on Windows)
-#
-TestSyntax "1.2.3_99 1.3.2+ 1.2.4+&1.2*&1++"	# Long and invalid
 
-#
-# Create a mock installation of a number of shell scripts named as though
-# they were installed JREs.  Then test to see if the launcher can cause
-# the right shell scripts to be invoked.
-#
-# Note, that as a side effect, this test verifies that JAVA_VERSION_PATH
-# works.
-#
-rm -rf jdk
-JAVA_VERSION_PATH="`pwd`/jdk"
-export JAVA_VERSION_PATH
-
-CreateMockVM 1.10
-CreateMockVM 1.11.3
-CreateMockVM 1.11.3_03
-CreateMockVM 1.11.4
-CreateMockVM 1.12.3_03
-CreateMockVM 1.12.3_03-lastweek
-CreateMockVM 1.13.3_03
-CreateMockVM 1.13.3_03-lastweek
-CreateMockVM 1.13.3_03_lastweek
-CreateMockVM 1.20.0
-
-#
-# Test extracting the version information from the jar file:
-#
-#	  Requested		Expected
-CreateJar "1.10+" ""
-LaunchVM  ""			"1.20.0"
-CreateJar "1.11.3_03+&1.11*" ""
-LaunchVM  ""			"1.11.4"
-CreateJar "1.12.3_03+&1.12.3*" ""
-LaunchVM  ""			"1.12.3_03"
-CreateJar "1.13.3_03+&1.13.3*" ""
-LaunchVM  ""			"1.13.3_03_lastweek"	# Strange but true
-
-#
-# Test obtaining the version information from the command line (and that
-# it overrides the manifest).
-#
-CreateJar "${BASERELEASE}*" ""
-LaunchVM  "1.10+"		"1.20.0"
-LaunchVM  "1.11.3_03+&1.11*"	"1.11.4"
-LaunchVM  "1.12.3_03+&1.12.3*"	"1.12.3_03"
-LaunchVM  "1.13.3_03+&1.13.3*"	"1.13.3_03_lastweek"	# Strange but true
-
-[ -d jdk ] && rm -rf jdk
-[ -d META_INF ] && rm -rf META_INF
+	# mJRE directives to use a specific version should be flagged
+	#   with a warning, but the jar should be executed with the
+	#   current jre
+	CreateFullJar "junk request" ""
+	LaunchVM "" "${RELEASE}"
+        # Going to silently ignore JRE-Version setting in jar file manifest
+	#LaunchVM "" "warning: The jarfile JRE-Version"
+	
 
 exit 0
+

@@ -2213,10 +2213,10 @@ public class MethodEmitter implements Emitter {
      * @param name      name of property
      * @param flags     call site flags
      * @param isMethod  should it prefer retrieving methods
-     *
+     * @param isIndex   is this an index operation?
      * @return the method emitter
      */
-    MethodEmitter dynamicGet(final Type valueType, final String name, final int flags, final boolean isMethod) {
+    MethodEmitter dynamicGet(final Type valueType, final String name, final int flags, final boolean isMethod, final boolean isIndex) {
         if (name.length() > LARGE_STRING_THRESHOLD) { // use getIndex for extremely long names
             return load(name).dynamicGetIndex(valueType, flags, isMethod);
         }
@@ -2229,8 +2229,8 @@ public class MethodEmitter implements Emitter {
         }
 
         popType(Type.SCOPE);
-        method.visitInvokeDynamicInsn((isMethod ? "dyn:getMethod|getProp|getElem:" : "dyn:getProp|getElem|getMethod:") +
-                NameCodec.encode(name), Type.getMethodDescriptor(type, Type.OBJECT), LINKERBOOTSTRAP, flags);
+        method.visitInvokeDynamicInsn(dynGetOperation(isMethod, isIndex) + ':' + NameCodec.encode(name),
+                Type.getMethodDescriptor(type, Type.OBJECT), LINKERBOOTSTRAP, flags);
 
         pushType(type);
         convert(valueType); //most probably a nop
@@ -2243,8 +2243,9 @@ public class MethodEmitter implements Emitter {
      *
      * @param name  name of property
      * @param flags call site flags
+     * @param isIndex is this an index operation?
      */
-    void dynamicSet(final String name, final int flags) {
+    void dynamicSet(final String name, final int flags, final boolean isIndex) {
         if (name.length() > LARGE_STRING_THRESHOLD) { // use setIndex for extremely long names
             load(name).swap().dynamicSetIndex(flags);
             return;
@@ -2261,7 +2262,8 @@ public class MethodEmitter implements Emitter {
         popType(type);
         popType(Type.SCOPE);
 
-        method.visitInvokeDynamicInsn("dyn:setProp|setElem:" + NameCodec.encode(name), methodDescriptor(void.class, Object.class, type.getTypeClass()), LINKERBOOTSTRAP, flags);
+        method.visitInvokeDynamicInsn(dynSetOperation(isIndex) + ':' + NameCodec.encode(name),
+                methodDescriptor(void.class, Object.class, type.getTypeClass()), LINKERBOOTSTRAP, flags);
     }
 
      /**
@@ -2294,7 +2296,7 @@ public class MethodEmitter implements Emitter {
 
         final String signature = Type.getMethodDescriptor(resultType, Type.OBJECT /*e.g STRING->OBJECT*/, index);
 
-        method.visitInvokeDynamicInsn(isMethod ? "dyn:getMethod|getElem|getProp" : "dyn:getElem|getProp|getMethod", signature, LINKERBOOTSTRAP, flags);
+        method.visitInvokeDynamicInsn(dynGetOperation(isMethod, true), signature, LINKERBOOTSTRAP, flags);
         pushType(resultType);
 
         if (result.isBoolean()) {
@@ -2506,6 +2508,18 @@ public class MethodEmitter implements Emitter {
             }
             next = next.getNext();
         }
+    }
+
+    private static String dynGetOperation(final boolean isMethod, final boolean isIndex) {
+        if (isMethod) {
+            return isIndex ? "dyn:getMethod|getElem|getProp" : "dyn:getMethod|getProp|getElem";
+        } else {
+            return isIndex ? "dyn:getElem|getProp|getMethod" : "dyn:getProp|getElem|getMethod";
+        }
+    }
+
+    private static String dynSetOperation(final boolean isIndex) {
+        return isIndex ? "dyn:setElem|setProp" : "dyn:setProp|setElem";
     }
 
     private Type emitLocalVariableConversion(final LocalVariableConversion conversion, final boolean onlySymbolLiveValue) {

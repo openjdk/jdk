@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ ConcurrentG1Refine::~ConcurrentG1Refine() {
     for (uint i = 0; i < _n_threads; i++) {
       delete _threads[i];
     }
-    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads, mtGC);
+    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads);
   }
 }
 

@@ -216,21 +216,14 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     }
 
     /*
-     * Make sure the specified version of the JRE is running.
+     * SelectVersion() has several responsibilities:
      *
-     * There are three things to note about the SelectVersion() routine:
-     *  1) If the version running isn't correct, this routine doesn't
-     *     return (either the correct version has been exec'd or an error
-     *     was issued).
-     *  2) Argc and Argv in this scope are *not* altered by this routine.
-     *     It is the responsibility of subsequent code to ignore the
-     *     arguments handled by this routine.
-     *  3) As a side-effect, the variable "main_class" is guaranteed to
-     *     be set (if it should ever be set).  This isn't exactly the
-     *     poster child for structured programming, but it is a small
-     *     price to pay for not processing a jar file operand twice.
-     *     (Note: This side effect has been disabled.  See comment on
-     *     bugid 5030265 below.)
+     *  1) Disallow specification of another JRE.  With 1.9, another
+     *     version of the JRE cannot be invoked.
+     *  2) Allow for a JRE version to invoke JDK 1.9 or later.  Since
+     *     all mJRE directives have been stripped from the request but
+     *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
+     *     invoked from the command line.
      */
     SelectVersion(argc, argv, &main_class);
 
@@ -829,8 +822,6 @@ static void
 SelectVersion(int argc, char **argv, char **main_class)
 {
     char    *arg;
-    char    **new_argv;
-    char    **new_argp;
     char    *operand;
     char    *version = NULL;
     char    *jre = NULL;
@@ -849,6 +840,17 @@ SelectVersion(int argc, char **argv, char **main_class)
      * with the value passed through the environment (if any) and
      * simply return.
      */
+
+    /*
+     * This environmental variable can be set by mJRE capable JREs
+     * [ 1.5 thru 1.8 ].  All other aspects of mJRE processing have been
+     * stripped by those JREs.  This environmental variable allows 1.9+
+     * JREs to be started by these mJRE capable JREs.
+     * Note that mJRE directives in the jar manifest file would have been
+     * ignored for a JRE started by another JRE...
+     * .. skipped for JRE 1.5 and beyond.
+     * .. not even checked for pre 1.5.
+     */
     if ((env_in = getenv(ENV_ENTRY)) != NULL) {
         if (*env_in != '\0')
             *main_class = JLI_StringDup(env_in);
@@ -857,41 +859,26 @@ SelectVersion(int argc, char **argv, char **main_class)
 
     /*
      * Scan through the arguments for options relevant to multiple JRE
-     * support.  For reference, the command line syntax is defined as:
+     * support.  Multiple JRE support existed in JRE versions 1.5 thru 1.8.
      *
-     * SYNOPSIS
-     *      java [options] class [argument...]
-     *
-     *      java [options] -jar file.jar [argument...]
-     *
-     * As the scan is performed, make a copy of the argument list with
-     * the version specification options (new to 1.5) removed, so that
-     * a version less than 1.5 can be exec'd.
-     *
-     * Note that due to the syntax of the native Windows interface
-     * CreateProcess(), processing similar to the following exists in
-     * the Windows platform specific routine ExecJRE (in java_md.c).
-     * Changes here should be reproduced there.
+     * This capability is no longer available with JRE versions 1.9 and later.
+     * These command line options are reported as errors.
      */
-    new_argv = JLI_MemAlloc((argc + 1) * sizeof(char*));
-    new_argv[0] = argv[0];
-    new_argp = &new_argv[1];
     argc--;
     argv++;
     while ((arg = *argv) != 0 && *arg == '-') {
         if (JLI_StrCCmp(arg, "-version:") == 0) {
-            version = arg + 9;
+            JLI_ReportErrorMessage(SPC_ERROR1);
         } else if (JLI_StrCmp(arg, "-jre-restrict-search") == 0) {
-            restrict_search = 1;
-        } else if (JLI_StrCmp(arg, "-no-jre-restrict-search") == 0) {
-            restrict_search = 0;
+            JLI_ReportErrorMessage(SPC_ERROR2);
+        } else if (JLI_StrCmp(arg, "-jre-no-restrict-search") == 0) {
+            JLI_ReportErrorMessage(SPC_ERROR2);
         } else {
             if (JLI_StrCmp(arg, "-jar") == 0)
                 jarflag = 1;
             /* deal with "unfortunate" classpath syntax */
             if ((JLI_StrCmp(arg, "-classpath") == 0 || JLI_StrCmp(arg, "-cp") == 0) &&
               (argc >= 2)) {
-                *new_argp++ = arg;
                 argc--;
                 argv++;
                 arg = *argv;
@@ -908,7 +895,6 @@ SelectVersion(int argc, char **argv, char **main_class)
             } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
                 splash_file_name = arg+8;
             }
-            *new_argp++ = arg;
         }
         argc--;
         argv++;
@@ -917,11 +903,8 @@ SelectVersion(int argc, char **argv, char **main_class)
         operand = NULL;
     } else {
         argc--;
-        *new_argp++ = operand = *argv++;
+        operand = *argv++;
     }
-    while (argc-- > 0)  /* Copy over [argument...] */
-        *new_argp++ = *argv++;
-    *new_argp = NULL;
 
     /*
      * If there is a jar file, read the manifest. If the jarfile can't be
@@ -974,14 +957,6 @@ SelectVersion(int argc, char **argv, char **main_class)
         putenv(splash_jar_entry);
     }
 
-    /*
-     * The JRE-Version and JRE-Restrict-Search values (if any) from the
-     * manifest are overwritten by any specified on the command line.
-     */
-    if (version != NULL)
-        info.jre_version = version;
-    if (restrict_search != -1)
-        info.jre_restrict_search = restrict_search;
 
     /*
      * "Valid" returns (other than unrecoverable errors) follow.  Set
@@ -990,72 +965,11 @@ SelectVersion(int argc, char **argv, char **main_class)
     if (info.main_class != NULL)
         *main_class = JLI_StringDup(info.main_class);
 
-    /*
-     * If no version selection information is found either on the command
-     * line or in the manifest, simply return.
-     */
     if (info.jre_version == NULL) {
         JLI_FreeManifest();
-        JLI_MemFree(new_argv);
         return;
     }
 
-    /*
-     * Check for correct syntax of the version specification (JSR 56).
-     */
-    if (!JLI_ValidVersionString(info.jre_version)) {
-        JLI_ReportErrorMessage(SPC_ERROR1, info.jre_version);
-        exit(1);
-    }
-
-    /*
-     * Find the appropriate JVM on the system. Just to be as forgiving as
-     * possible, if the standard algorithms don't locate an appropriate
-     * jre, check to see if the one running will satisfy the requirements.
-     * This can happen on systems which haven't been set-up for multiple
-     * JRE support.
-     */
-    jre = LocateJRE(&info);
-    JLI_TraceLauncher("JRE-Version = %s, JRE-Restrict-Search = %s Selected = %s\n",
-        (info.jre_version?info.jre_version:"null"),
-        (info.jre_restrict_search?"true":"false"), (jre?jre:"null"));
-
-    if (jre == NULL) {
-        if (JLI_AcceptableRelease(GetFullVersion(), info.jre_version)) {
-            JLI_FreeManifest();
-            JLI_MemFree(new_argv);
-            return;
-        } else {
-            JLI_ReportErrorMessage(CFG_ERROR4, info.jre_version);
-            exit(1);
-        }
-    }
-
-    /*
-     * If I'm not the chosen one, exec the chosen one.  Returning from
-     * ExecJRE indicates that I am indeed the chosen one.
-     *
-     * The private environment variable _JAVA_VERSION_SET is used to
-     * prevent the chosen one from re-reading the manifest file and
-     * using the values found within to override the (potential) command
-     * line flags stripped from argv (because the target may not
-     * understand them).  Passing the MainClass value is an optimization
-     * to avoid locating, expanding and parsing the manifest extra
-     * times.
-     */
-    if (info.main_class != NULL) {
-        if (JLI_StrLen(info.main_class) <= MAXNAMELEN) {
-            (void)JLI_StrCat(env_entry, info.main_class);
-        } else {
-            JLI_ReportErrorMessage(CLS_ERROR5, MAXNAMELEN);
-            exit(1);
-        }
-    }
-    (void)putenv(env_entry);
-    ExecJRE(jre, new_argv);
-    JLI_FreeManifest();
-    JLI_MemFree(new_argv);
-    return;
 }
 
 /*
@@ -1154,10 +1068,7 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-noasyncgc") == 0) {
             /* No longer supported */
             JLI_ReportErrorMessage(ARG_WARN, arg);
-        } else if (JLI_StrCCmp(arg, "-version:") == 0 ||
-                   JLI_StrCmp(arg, "-no-jre-restrict-search") == 0 ||
-                   JLI_StrCmp(arg, "-jre-restrict-search") == 0 ||
-                   JLI_StrCCmp(arg, "-splash:") == 0) {
+        } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */

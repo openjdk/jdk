@@ -38,6 +38,7 @@ import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.AccessController;
 import java.util.ArrayList;
@@ -404,30 +405,13 @@ public class FileChannelImpl
     //
     private static volatile boolean fileSupported = true;
 
-    private long transferToDirectly(long position, int icount,
-                                    WritableByteChannel target)
+    private long transferToDirectlyInternal(long position, int icount,
+                                            WritableByteChannel target,
+                                            FileDescriptor targetFD)
         throws IOException
     {
-        if (!transferSupported)
-            return IOStatus.UNSUPPORTED;
-
-        FileDescriptor targetFD = null;
-        if (target instanceof FileChannelImpl) {
-            if (!fileSupported)
-                return IOStatus.UNSUPPORTED_CASE;
-            targetFD = ((FileChannelImpl)target).fd;
-        } else if (target instanceof SelChImpl) {
-            // Direct transfer to pipe causes EINVAL on some configurations
-            if ((target instanceof SinkChannelImpl) && !pipeSupported)
-                return IOStatus.UNSUPPORTED_CASE;
-            targetFD = ((SelChImpl)target).getFD();
-        }
-        if (targetFD == null)
-            return IOStatus.UNSUPPORTED;
-        int thisFDVal = IOUtil.fdVal(fd);
-        int targetFDVal = IOUtil.fdVal(targetFD);
-        if (thisFDVal == targetFDVal) // Not supported on some configurations
-            return IOStatus.UNSUPPORTED;
+        assert !nd.transferToDirectlyNeedsPositionLock() ||
+               Thread.holdsLock(positionLock);
 
         long n = -1;
         int ti = -1;
@@ -437,7 +421,7 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = transferTo0(thisFDVal, position, icount, targetFDVal);
+                n = transferTo0(fd, position, icount, targetFD);
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             if (n == IOStatus.UNSUPPORTED_CASE) {
                 if (target instanceof SinkChannelImpl)
@@ -455,6 +439,54 @@ public class FileChannelImpl
         } finally {
             threads.remove(ti);
             end (n > -1);
+        }
+    }
+
+    private long transferToDirectly(long position, int icount,
+                                    WritableByteChannel target)
+        throws IOException
+    {
+        if (!transferSupported)
+            return IOStatus.UNSUPPORTED;
+
+        FileDescriptor targetFD = null;
+        if (target instanceof FileChannelImpl) {
+            if (!fileSupported)
+                return IOStatus.UNSUPPORTED_CASE;
+            targetFD = ((FileChannelImpl)target).fd;
+        } else if (target instanceof SelChImpl) {
+            // Direct transfer to pipe causes EINVAL on some configurations
+            if ((target instanceof SinkChannelImpl) && !pipeSupported)
+                return IOStatus.UNSUPPORTED_CASE;
+
+            // Platform-specific restrictions. Now there is only one:
+            // Direct transfer to non-blocking channel could be forbidden
+            SelectableChannel sc = (SelectableChannel)target;
+            if (!nd.canTransferToDirectly(sc))
+                return IOStatus.UNSUPPORTED_CASE;
+
+            targetFD = ((SelChImpl)target).getFD();
+        }
+
+        if (targetFD == null)
+            return IOStatus.UNSUPPORTED;
+        int thisFDVal = IOUtil.fdVal(fd);
+        int targetFDVal = IOUtil.fdVal(targetFD);
+        if (thisFDVal == targetFDVal) // Not supported on some configurations
+            return IOStatus.UNSUPPORTED;
+
+        if (nd.transferToDirectlyNeedsPositionLock()) {
+            synchronized (positionLock) {
+                long pos = position();
+                try {
+                    return transferToDirectlyInternal(position, icount,
+                                                      target, targetFD);
+                } finally {
+                    position(pos);
+                }
+            }
+        } else {
+            return transferToDirectlyInternal(position, icount, target, targetFD);
         }
     }
 
@@ -1173,7 +1205,8 @@ public class FileChannelImpl
     private static native int unmap0(long address, long length);
 
     // Transfers from src to dst, or returns -2 if kernel can't do that
-    private native long transferTo0(int src, long position, long count, int dst);
+    private native long transferTo0(FileDescriptor src, long position,
+                                    long count, FileDescriptor dst);
 
     // Sets or reports this file's position
     // If offset is -1, the current position is returned

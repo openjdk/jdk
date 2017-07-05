@@ -52,21 +52,9 @@ void ConcurrentMarkSweepPolicy::initialize_alignments() {
 }
 
 void ConcurrentMarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC,
-    CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  if (_generations == NULL)
-    vm_exit_during_initialization("Unable to allocate gen spec");
-
-  Generation::Name yg_name =
-    UseParNewGC ? Generation::ParNew : Generation::DefNew;
-  _generations[0] = new GenerationSpec(yg_name, _initial_young_size,
-                                       _max_young_size);
-  _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep,
-                                       _initial_old_size, _max_old_size);
-
-  if (_generations[0] == NULL || _generations[1] == NULL) {
-    vm_exit_during_initialization("Unable to allocate gen spec");
-  }
+  _generations = NEW_C_HEAP_ARRAY(GenerationSpecPtr, number_of_generations(), mtGC);
+  _generations[0] = new GenerationSpec(Generation::ParNew, _initial_young_size, _max_young_size);
+  _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep, _initial_old_size, _max_old_size);
 }
 
 void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,
@@ -82,10 +70,5 @@ void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,
 
 void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
   // initialize the policy counters - 2 collectors, 3 generations
-  if (UseParNewGC) {
-    _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 3);
-  }
-  else {
-    _gc_policy_counters = new GCPolicyCounters("Copy:CMS", 2, 3);
-  }
+  _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 3);
 }

@@ -25,10 +25,10 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
-class FileDispatcherImpl extends FileDispatcher
-{
+class FileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
@@ -102,6 +102,14 @@ class FileDispatcherImpl extends FileDispatcher
         // file descriptor not required for mapping operations; okay
         // to return invalid file descriptor.
         return new FileDescriptor();
+    }
+
+    boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
+        return true;
+    }
+
+    boolean transferToDirectlyNeedsPositionLock() {
+        return false;
     }
 
     // -- Native methods --
