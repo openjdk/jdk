@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ public class ConstantTag {
   private static int JVM_CONSTANT_NameAndType             = 12;
   private static int JVM_CONSTANT_MethodHandle            = 15;  // JSR 292
   private static int JVM_CONSTANT_MethodType              = 16;  // JSR 292
-  private static int JVM_CONSTANT_InvokeDynamic           = 17;  // JSR 292
+  //      static int JVM_CONSTANT_InvokeDynamicTrans      = 17;  // JSR 292, only occurs in old class files
+  private static int JVM_CONSTANT_InvokeDynamic           = 18;  // JSR 292
   private static int JVM_CONSTANT_Invalid                 = 0;   // For bad value initialization
   private static int JVM_CONSTANT_UnresolvedClass         = 100; // Temporary tag until actual use
   private static int JVM_CONSTANT_ClassIndex              = 101; // Temporary tag while constructing constant pool

@@ -107,7 +107,6 @@ static void deopt_caller() {
     RegisterMap reg_map(thread, false);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
-    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
     assert(caller_is_deopted(), "Must be deoptimized");
   }
@@ -368,8 +367,7 @@ JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* thread, int bci,
     if (osr_nm != NULL) {
       RegisterMap map(thread, false);
       frame fr =  thread->last_frame().sender(&map);
-      VM_DeoptimizeFrame deopt(thread, fr.id());
-      VMThread::execute(&deopt);
+      Deoptimization::deoptimize_frame(thread, fr.id());
     }
   JRT_BLOCK_END
   return NULL;
@@ -441,8 +439,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // We don't really want to deoptimize the nmethod itself since we
     // can actually continue in the exception handler ourselves but I
     // don't see an easy way to have the desired effect.
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
+    assert(caller_is_deopted(), "Must be deoptimized");
 
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
@@ -835,8 +833,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       nm->make_not_entrant();
     }
 
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
 
     // Return to the now deoptimized frame.
   }
