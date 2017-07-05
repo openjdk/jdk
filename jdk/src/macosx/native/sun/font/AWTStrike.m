@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
         invDevTx.b *= -1;
         invDevTx.c *= -1;
         fFontTx = CGAffineTransformConcat(CGAffineTransformConcat(tx, invDevTx), sInverseTX);
+        fDevTx = CGAffineTransformInvert(invDevTx);
 
         // the "font size" is the square root of the determinant of the matrix
         fSize = sqrt(abs(fFontTx.a * fFontTx.d - fFontTx.b * fFontTx.c));
@@ -148,7 +149,8 @@ Java_sun_font_CStrike_getNativeGlyphAdvance
 {
     CGSize advance;
 JNF_COCOA_ENTER(env);
-    AWTFont *awtFont = ((AWTStrike *)jlong_to_ptr(awtStrikePtr))->fAWTFont;
+    AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
+    AWTFont *awtFont = awtStrike->fAWTFont;
 
     // negative glyph codes are really unicodes, which were placed there by the mapper
     // to indicate we should use CoreText to substitute the character
@@ -156,6 +158,10 @@ JNF_COCOA_ENTER(env);
     const CTFontRef fallback = CTS_CopyCTFallbackFontAndGlyphForJavaGlyphCode(awtFont, glyphCode, &glyph);
     CTFontGetAdvancesForGlyphs(fallback, kCTFontDefaultOrientation, &glyph, &advance, 1);
     CFRelease(fallback);
+    advance = CGSizeApplyAffineTransform(advance, awtStrike->fFontTx);
+    if (!JRSFontStyleUsesFractionalMetrics(awtStrike->fStyle)) {
+        advance.width = round(advance.width);
+    }
 
 JNF_COCOA_EXIT(env);
     return advance.width;

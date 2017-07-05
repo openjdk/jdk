@@ -348,6 +348,68 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // isSupported(TemporalField)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalField() {
+        assertEquals(TEST_2008.isSupported((TemporalField) null), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.NANO_OF_SECOND), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.NANO_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MICRO_OF_SECOND), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MICRO_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MILLI_OF_SECOND), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MILLI_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.SECOND_OF_MINUTE), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.SECOND_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MINUTE_OF_HOUR), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MINUTE_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.HOUR_OF_AMPM), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.HOUR_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.AMPM_OF_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.DAY_OF_WEEK), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.DAY_OF_MONTH), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.DAY_OF_YEAR), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.EPOCH_DAY), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.MONTH_OF_YEAR), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.PROLEPTIC_MONTH), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.YEAR), true);
+        assertEquals(TEST_2008.isSupported(ChronoField.YEAR_OF_ERA), true);
+        assertEquals(TEST_2008.isSupported(ChronoField.ERA), true);
+        assertEquals(TEST_2008.isSupported(ChronoField.INSTANT_SECONDS), false);
+        assertEquals(TEST_2008.isSupported(ChronoField.OFFSET_SECONDS), false);
+    }
+
+    //-----------------------------------------------------------------------
+    // isSupported(TemporalUnit)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalUnit() {
+        assertEquals(TEST_2008.isSupported((TemporalUnit) null), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.NANOS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.MICROS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.MILLIS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.SECONDS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.MINUTES), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.HOURS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.HALF_DAYS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.DAYS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.WEEKS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.MONTHS), false);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.YEARS), true);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.DECADES), true);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.CENTURIES), true);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.MILLENNIA), true);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.ERAS), true);
+        assertEquals(TEST_2008.isSupported(ChronoUnit.FOREVER), false);
+    }
+
+    //-----------------------------------------------------------------------
     // get(TemporalField)
     //-----------------------------------------------------------------------
     @Test
@@ -829,7 +891,7 @@ public class TCKYear extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // periodUntil(Temporal, TemporalUnit)
+    // until(Temporal, TemporalUnit)
     //-----------------------------------------------------------------------
     @DataProvider(name="periodUntilUnit")
     Object[][] data_periodUntilUnit() {
@@ -881,29 +943,29 @@ public class TCKYear extends AbstractDateTimeTest {
 
     @Test(dataProvider="periodUntilUnit")
     public void test_periodUntil_TemporalUnit(Year year1, Year year2, TemporalUnit unit, long expected) {
-        long amount = year1.periodUntil(year2, unit);
+        long amount = year1.until(year2, unit);
         assertEquals(amount, expected);
     }
 
     @Test(dataProvider="periodUntilUnit")
     public void test_periodUntil_TemporalUnit_negated(Year year1, Year year2, TemporalUnit unit, long expected) {
-        long amount = year2.periodUntil(year1, unit);
+        long amount = year2.until(year1, unit);
         assertEquals(amount, -expected);
     }
 
     @Test(expectedExceptions = UnsupportedTemporalTypeException.class)
     public void test_periodUntil_TemporalUnit_unsupportedUnit() {
-        TEST_2008.periodUntil(TEST_2008, MONTHS);
+        TEST_2008.until(TEST_2008, MONTHS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_periodUntil_TemporalUnit_nullEnd() {
-        TEST_2008.periodUntil(null, DAYS);
+        TEST_2008.until(null, DAYS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_periodUntil_TemporalUnit_nullUnit() {
-        TEST_2008.periodUntil(TEST_2008, null);
+        TEST_2008.until(TEST_2008, null);
     }
 
     //-----------------------------------------------------------------------

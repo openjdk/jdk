@@ -39,12 +39,20 @@ Object.defineProperty(this, "__noSuchProperty__", {
     }
 });
 
-function print(str) {
+function print() {
     var writer = context.getWriter();
     if (! (writer instanceof java.io.PrintWriter)) {
         writer = new java.io.PrintWriter(writer);
     }
-    writer.println(String(str));
+    
+    var buf = new java.lang.StringBuilder();
+    for (var i = 0; i < arguments.length; i++) {
+        if (i != 0) {
+            buf.append(' ');
+        }
+        buf.append(String(arguments[i]));
+    }
+    writer.println(buf.toString());
 }
 
 /**

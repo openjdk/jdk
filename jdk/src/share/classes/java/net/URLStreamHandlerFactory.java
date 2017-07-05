@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package java.net;
 
 /**
- * This interface defines a factory for <code>URL</code> stream
+ * This interface defines a factory for {@code URL} stream
  * protocol handlers.
  * <p>
- * It is used by the <code>URL</code> class to create a
- * <code>URLStreamHandler</code> for a specific protocol.
+ * It is used by the {@code URL} class to create a
+ * {@code URLStreamHandler} for a specific protocol.
  *
  * @author  Arthur van Hoff
  * @see     java.net.URL
@@ -39,12 +39,12 @@ package java.net;
  */
 public interface URLStreamHandlerFactory {
     /**
-     * Creates a new <code>URLStreamHandler</code> instance with the specified
+     * Creates a new {@code URLStreamHandler} instance with the specified
      * protocol.
      *
-     * @param   protocol   the protocol ("<code>ftp</code>",
-     *                     "<code>http</code>", "<code>nntp</code>", etc.).
-     * @return  a <code>URLStreamHandler</code> for the specific protocol.
+     * @param   protocol   the protocol ("{@code ftp}",
+     *                     "{@code http}", "{@code nntp}", etc.).
+     * @return  a {@code URLStreamHandler} for the specific protocol.
      * @see     java.net.URLStreamHandler
      */
     URLStreamHandler createURLStreamHandler(String protocol);

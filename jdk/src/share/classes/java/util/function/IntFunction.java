@@ -25,11 +25,14 @@
 package java.util.function;
 
 /**
- * Apply a function to the integer-valued input argument, yielding an
- * appropriate result. This is the {@code int}-consuming primitive
- * specialization for {@link Function}.
+ * Represents a function that accepts an int-valued argument and produces a
+ * result.  This is the {@code int}-consuming primitive specialization for
+ * {@link Function}.
  *
- * @param <R> the type of output objects from the function
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #apply(int)}.
+ *
+ * @param <R> the type of the result of the function
  *
  * @see Function
  * @since 1.8
@@ -38,9 +41,9 @@ package java.util.function;
 public interface IntFunction<R> {
 
     /**
-     * Compute the result of applying the function to the input argument
+     * Applies this function to the given argument.
      *
-     * @param value the input value
+     * @param value the function argument
      * @return the function result
      */
     R apply(int value);

@@ -139,7 +139,7 @@ public final class Period
      * The pattern for parsing.
      */
     private final static Pattern PATTERN =
-            Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
     /**
      * The set of supported units.
      */
@@ -184,6 +184,20 @@ public final class Period
      */
     public static Period ofMonths(int months) {
         return create(0, months, 0);
+    }
+
+    /**
+     * Obtains a {@code Period} representing a number of weeks.
+     * <p>
+     * The resulting period will be day-based, with the amount of days
+     * equal to the number of weeks multiplied by 7.
+     * The years and months units will be zero.
+     *
+     * @param weeks  the number of weeks, positive or negative
+     * @return the period, with the input weeks converted to days, not null
+     */
+    public static Period ofWeeks(int weeks) {
+        return create(0, 0, Math.multiplyExact(weeks, 7));
     }
 
     /**
@@ -257,22 +271,36 @@ public final class Period
      * Obtains a {@code Period} from a text string such as {@code PnYnMnD}.
      * <p>
      * This will parse the string produced by {@code toString()} which is
-     * based on the ISO-8601 period format {@code PnYnMnD}.
+     * based on the ISO-8601 period formats {@code PnYnMnD} and {@code PnW}.
      * <p>
      * The string starts with an optional sign, denoted by the ASCII negative
      * or positive symbol. If negative, the whole period is negated.
      * The ASCII letter "P" is next in upper or lower case.
-     * There are then three sections, each consisting of a number and a suffix.
-     * At least one of the three sections must be present.
-     * The sections have suffixes in ASCII of "Y", "M" and "D" for
-     * years, months and days, accepted in upper or lower case.
+     * There are then four sections, each consisting of a number and a suffix.
+     * At least one of the four sections must be present.
+     * The sections have suffixes in ASCII of "Y", "M", "W" and "D" for
+     * years, months, weeks and days, accepted in upper or lower case.
      * The suffixes must occur in order.
      * The number part of each section must consist of ASCII digits.
      * The number may be prefixed by the ASCII negative or positive symbol.
      * The number must parse to an {@code int}.
      * <p>
      * The leading plus/minus sign, and negative values for other units are
-     * not part of the ISO-8601 standard.
+     * not part of the ISO-8601 standard. In addition, ISO-8601 does not
+     * permit mixing between the {@code PnYnMnD} and {@code PnW} formats.
+     * Any week-based input is multiplied by 7 and treated as a number of days.
+     * <p>
+     * For example, the following are valid inputs:
+     * <pre>
+     *   "P2Y"             -- Period.ofYears(2)
+     *   "P3M"             -- Period.ofMonths(3)
+     *   "P4W"             -- Period.ofWeeks(4)
+     *   "P5D"             -- Period.ofDays(5)
+     *   "P1Y2M3D"         -- Period.of(1, 2, 3)
+     *   "P1Y2M3W4D"       -- Period.of(1, 2, 25)
+     *   "P-1Y2M"          -- Period.of(-1, 2, 0)
+     *   "-P1Y2M"          -- Period.of(-1, -2, 0)
+     * </pre>
      *
      * @param text  the text to parse, not null
      * @return the parsed period, not null
@@ -285,14 +313,18 @@ public final class Period
             int negate = ("-".equals(matcher.group(1)) ? -1 : 1);
             String yearMatch = matcher.group(2);
             String monthMatch = matcher.group(3);
-            String dayMatch = matcher.group(4);
-            if (yearMatch != null || monthMatch != null || dayMatch != null) {
+            String weekMatch = matcher.group(4);
+            String dayMatch = matcher.group(5);
+            if (yearMatch != null || monthMatch != null || dayMatch != null || weekMatch != null) {
                 try {
-                    return create(parseNumber(text, yearMatch, negate),
-                            parseNumber(text, monthMatch, negate),
-                            parseNumber(text, dayMatch, negate));
+                    int years = parseNumber(text, yearMatch, negate);
+                    int months = parseNumber(text, monthMatch, negate);
+                    int weeks = parseNumber(text, weekMatch, negate);
+                    int days = parseNumber(text, dayMatch, negate);
+                    days = Math.addExact(days, Math.multiplyExact(weeks, 7));
+                    return create(years, months, days);
                 } catch (NumberFormatException ex) {
-                    throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Period", text, 0).initCause(ex);
+                    throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0, ex);
                 }
             }
         }
@@ -307,7 +339,7 @@ public final class Period
         try {
             return Math.multiplyExact(val, negate);
         } catch (ArithmeticException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Period", text, 0).initCause(ex);
+            throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0, ex);
         }
     }
 
@@ -329,10 +361,10 @@ public final class Period
      * @param startDate  the start date, inclusive, not null
      * @param endDate  the end date, exclusive, not null
      * @return the period between this date and the end date, not null
-     * @see ChronoLocalDate#periodUntil(ChronoLocalDate)
+     * @see ChronoLocalDate#until(ChronoLocalDate)
      */
     public static Period between(LocalDate startDate, LocalDate endDate) {
-        return startDate.periodUntil(endDate);
+        return startDate.until(endDate);
     }
 
     //-----------------------------------------------------------------------
@@ -386,7 +418,7 @@ public final class Period
         } else if (unit == ChronoUnit.DAYS) {
             return getDays();
         } else {
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
     }
 

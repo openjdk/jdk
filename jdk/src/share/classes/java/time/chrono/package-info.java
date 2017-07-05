@@ -103,7 +103,7 @@
  *   // Enumerate the list of available calendars and print todays date for each.
  *       Set&lt;Chronology&gt; chronos = Chronology.getAvailableChronologies();
  *       for (Chronology chrono : chronos) {
- *           ChronoLocalDate&lt;?&gt; date = chrono.dateNow();
+ *           ChronoLocalDate date = chrono.dateNow();
  *           System.out.printf("   %20s: %s%n", chrono.getId(), date.toString());
  *       }
  * </pre>
@@ -113,7 +113,7 @@
  * </p>
  * <pre>
  *   // Print the Thai Buddhist date
- *       ChronoLocalDate&lt;?&gt; now1 = Chronology.of("ThaiBuddhist").dateNow();
+ *       ChronoLocalDate now1 = Chronology.of("ThaiBuddhist").dateNow();
  *       int day = now1.get(ChronoField.DAY_OF_MONTH);
  *       int dow = now1.get(ChronoField.DAY_OF_WEEK);
  *       int month = now1.get(ChronoField.MONTH_OF_YEAR);
@@ -121,10 +121,10 @@
  *       System.out.printf("  Today is %s %s %d-%s-%d%n", now1.getChronology().getId(),
  *                 dow, day, month, year);
  *   // Print today's date and the last day of the year for the Thai Buddhist Calendar.
- *       ChronoLocalDate&lt;?&gt; first = now1
+ *       ChronoLocalDate first = now1
  *                 .with(ChronoField.DAY_OF_MONTH, 1)
  *                 .with(ChronoField.MONTH_OF_YEAR, 1);
- *       ChronoLocalDate&lt;?&gt; last = first
+ *       ChronoLocalDate last = first
  *                 .plus(1, ChronoUnit.YEARS)
  *                 .minus(1, ChronoUnit.DAYS);
  *       System.out.printf("  %s: 1st of year: %s; end of year: %s%n", last.getChronology().getId(),

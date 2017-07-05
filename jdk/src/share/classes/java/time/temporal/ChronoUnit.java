@@ -57,9 +57,6 @@
 package java.time.temporal;
 
 import java.time.Duration;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.ChronoZonedDateTime;
 
 /**
  * A standard set of date periods units.
@@ -201,12 +198,6 @@ public enum ChronoUnit implements TemporalUnit {
     }
 
     //-----------------------------------------------------------------------
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    //-----------------------------------------------------------------------
     /**
      * Gets the estimated duration of this unit in the ISO calendar system.
      * <p>
@@ -233,41 +224,40 @@ public enum ChronoUnit implements TemporalUnit {
      */
     @Override
     public boolean isDurationEstimated() {
-        return isDateUnit();
+        return this.compareTo(DAYS) >= 0;
     }
 
     //-----------------------------------------------------------------------
     /**
      * Checks if this unit is a date unit.
+     * <p>
+     * All units from days to eras inclusive are date-based.
+     * Time-based units and {@code FOREVER} return false.
      *
      * @return true if a date unit, false if a time unit
      */
-    public boolean isDateUnit() {
-        return this.compareTo(DAYS) >= 0;
+    @Override
+    public boolean isDateBased() {
+        return this.compareTo(DAYS) >= 0 && this != FOREVER;
     }
 
     /**
      * Checks if this unit is a time unit.
+     * <p>
+     * All units from nanos to half-days inclusive are time-based.
+     * Date-based units and {@code FOREVER} return false.
      *
      * @return true if a time unit, false if a date unit
      */
-    public boolean isTimeUnit() {
+    @Override
+    public boolean isTimeBased() {
         return this.compareTo(DAYS) < 0;
     }
 
     //-----------------------------------------------------------------------
     @Override
     public boolean isSupportedBy(Temporal temporal) {
-        if (this == FOREVER) {
-            return false;
-        }
-        if (temporal instanceof ChronoLocalDate) {
-            return isDateUnit();
-        }
-        if (temporal instanceof ChronoLocalDateTime || temporal instanceof ChronoZonedDateTime) {
-            return true;
-        }
-        return TemporalUnit.super.isSupportedBy(temporal);
+        return temporal.isSupported(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -279,13 +269,13 @@ public enum ChronoUnit implements TemporalUnit {
     //-----------------------------------------------------------------------
     @Override
     public long between(Temporal temporal1, Temporal temporal2) {
-        return temporal1.periodUntil(temporal2, this);
+        return temporal1.until(temporal2, this);
     }
 
     //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return getName();
+        return name;
     }
 
 }

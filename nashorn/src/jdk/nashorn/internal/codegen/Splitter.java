@@ -96,6 +96,10 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         long weight = WeighNodes.weigh(functionNode);
         final boolean top = fn.isProgram(); //compiler.getFunctionNode() == outermost;
 
+        // We know that our LexicalContext is empty outside the call to functionNode.accept(this) below,
+        // so we can pass null to all methods expecting a LexicalContext parameter.
+        assert lc.isEmpty() : "LexicalContext not empty";
+
         if (weight >= SPLIT_THRESHOLD) {
             LOG.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
             functionNode = (FunctionNode)functionNode.accept(this);
@@ -103,11 +107,12 @@ final class Splitter extends NodeVisitor<LexicalContext> {
             if (functionNode.isSplit()) {
                 // Weight has changed so weigh again, this time using block weight cache
                 weight = WeighNodes.weigh(functionNode, weightCache);
-                functionNode = functionNode.setBody(lc, functionNode.getBody().setNeedsScope(lc));
+                functionNode = functionNode.setBody(null, functionNode.getBody().setNeedsScope(null));
             }
 
             if (weight >= SPLIT_THRESHOLD) {
-                functionNode = functionNode.setBody(lc, splitBlock(functionNode.getBody(), functionNode));
+                functionNode = functionNode.setBody(null, splitBlock(functionNode.getBody(), functionNode));
+                functionNode = functionNode.setFlag(null, FunctionNode.IS_SPLIT);
                 weight = WeighNodes.weigh(functionNode.getBody(), weightCache);
             }
         }
@@ -116,10 +121,10 @@ final class Splitter extends NodeVisitor<LexicalContext> {
 
         if (top) {
             assert outermostCompileUnit != null : "outermost compile unit is null";
-            functionNode = functionNode.setCompileUnit(lc, outermostCompileUnit);
+            functionNode = functionNode.setCompileUnit(null, outermostCompileUnit);
             outermostCompileUnit.addWeight(weight + WeighNodes.FUNCTION_WEIGHT);
         } else {
-            functionNode = functionNode.setCompileUnit(lc, findUnit(weight));
+            functionNode = functionNode.setCompileUnit(null, findUnit(weight));
         }
 
         final Block body = functionNode.getBody();
@@ -138,11 +143,11 @@ final class Splitter extends NodeVisitor<LexicalContext> {
                 return split;
             }
         });
-        functionNode = functionNode.setBody(lc, newBody);
+        functionNode = functionNode.setBody(null, newBody);
 
         assert functionNode.getCompileUnit() != null;
 
-        return functionNode.setState(lc, CompilationState.SPLIT);
+        return functionNode.setState(null, CompilationState.SPLIT);
     }
 
     private static List<FunctionNode> directChildren(final FunctionNode functionNode) {
@@ -179,7 +184,6 @@ final class Splitter extends NodeVisitor<LexicalContext> {
      * @return new weight for the resulting block.
      */
     private Block splitBlock(final Block block, final FunctionNode function) {
-        lc.setFlag(lc.getCurrentFunction(), FunctionNode.IS_SPLIT);
 
         final List<Statement> splits = new ArrayList<>();
         List<Statement> statements = new ArrayList<>();
@@ -255,8 +259,10 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         // been split already, so weigh again before splitting.
         long weight = WeighNodes.weigh(block, weightCache);
         if (weight >= SPLIT_THRESHOLD) {
-            newBlock = splitBlock(block, lc.getFunction(block));
+            final FunctionNode currentFunction = lc.getCurrentFunction();
+            newBlock = splitBlock(block, currentFunction);
             weight   = WeighNodes.weigh(newBlock, weightCache);
+            lc.setFlag(currentFunction, FunctionNode.IS_SPLIT);
         }
         weightCache.put(newBlock, weight);
         return newBlock;
@@ -289,7 +295,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
                 final Node element = value[postset];
 
                 weight = WeighNodes.weigh(element);
-                totalWeight += weight;
+                totalWeight += WeighNodes.AASTORE_WEIGHT + weight;
 
                 if (totalWeight >= SPLIT_THRESHOLD) {
                     final CompileUnit unit = compiler.findUnit(totalWeight - weight);

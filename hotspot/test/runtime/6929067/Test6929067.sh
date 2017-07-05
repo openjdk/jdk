@@ -3,6 +3,7 @@
 ##
 ## @test Test6929067.sh
 ## @bug 6929067
+## @bug 8021296
 ## @summary Stack guard pages should be removed when thread is detached
 ## @compile T.java
 ## @run shell Test6929067.sh
@@ -21,6 +22,11 @@ echo "TESTSRC=${TESTSRC}"
 OS=`uname -s`
 case "$OS" in
   Linux)
+    gcc_cmd=`which gcc`
+    if [ "x$gcc_cmd" == "x" ]; then
+        echo "WARNING: gcc not found. Cannot execute test." 2>&1
+        exit 0;
+    fi
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -119,10 +125,10 @@ echo "VM type: ${VMTYPE}"
 # Check to ensure you have a /usr/lib/libpthread.so if you don't please look
 # for /usr/lib/`uname -m`-linux-gnu version ensure to add that path to below compilation.
 
-gcc -DLINUX ${COMP_FLAG} -o invoke \
-  -I${COMPILEJAVA}/include -I${COMPILEJAVA}/include/linux \
-  -L${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE} \
-  -ljvm -lpthread invoke.c
+$gcc_cmd -DLINUX ${COMP_FLAG} -o invoke \
+    -I${COMPILEJAVA}/include -I${COMPILEJAVA}/include/linux \
+    -L${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE} \
+    -ljvm -lpthread invoke.c
 
 ./invoke
 exit $?

@@ -34,7 +34,7 @@ import jdk.nashorn.internal.runtime.QuotedStringTokenizer;
  * bundle file. Metainfo such as parameters and description is here as well
  * for context sensitive help generation.
  */
-public class OptionTemplate implements Comparable<OptionTemplate> {
+public final class OptionTemplate implements Comparable<OptionTemplate> {
     /** Resource, e.g. "nashorn" for this option */
     private final String resource;
 

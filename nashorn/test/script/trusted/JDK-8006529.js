@@ -39,19 +39,21 @@
  * and FunctionNode because of package-access check and so reflective calls.
  */
 
-var Parser              = Java.type("jdk.nashorn.internal.parser.Parser")
-var Compiler            = Java.type("jdk.nashorn.internal.codegen.Compiler")
-var Context             = Java.type("jdk.nashorn.internal.runtime.Context")
-var ScriptEnvironment   = Java.type("jdk.nashorn.internal.runtime.ScriptEnvironment")
-var Source              = Java.type("jdk.nashorn.internal.runtime.Source")
-var FunctionNode        = Java.type("jdk.nashorn.internal.ir.FunctionNode")
-var Block               = Java.type("jdk.nashorn.internal.ir.Block")
-var VarNode             = Java.type("jdk.nashorn.internal.ir.VarNode")
-var ExpressionStatement = Java.type("jdk.nashorn.internal.ir.ExpressionStatement")
-var UnaryNode           = Java.type("jdk.nashorn.internal.ir.UnaryNode")
-var BinaryNode          = Java.type("jdk.nashorn.internal.ir.BinaryNode")
-var ThrowErrorManager   = Java.type("jdk.nashorn.internal.runtime.Context$ThrowErrorManager")
-var Debug               = Java.type("jdk.nashorn.internal.runtime.Debug")
+var forName = java.lang.Class["forName(String)"];
+var Parser              = forName("jdk.nashorn.internal.parser.Parser").static
+var Compiler            = forName("jdk.nashorn.internal.codegen.Compiler").static
+var Context             = forName("jdk.nashorn.internal.runtime.Context").static
+var ScriptEnvironment   = forName("jdk.nashorn.internal.runtime.ScriptEnvironment").static
+var Source              = forName("jdk.nashorn.internal.runtime.Source").static
+var FunctionNode        = forName("jdk.nashorn.internal.ir.FunctionNode").static
+var Block               = forName("jdk.nashorn.internal.ir.Block").static
+var VarNode             = forName("jdk.nashorn.internal.ir.VarNode").static
+var ExpressionStatement = forName("jdk.nashorn.internal.ir.ExpressionStatement").static
+var UnaryNode           = forName("jdk.nashorn.internal.ir.UnaryNode").static
+var BinaryNode          = forName("jdk.nashorn.internal.ir.BinaryNode").static
+var ThrowErrorManager   = forName("jdk.nashorn.internal.runtime.Context$ThrowErrorManager").static
+var ErrorManager        = forName("jdk.nashorn.internal.runtime.ErrorManager").static
+var Debug               = forName("jdk.nashorn.internal.runtime.Debug").static
 
 var parseMethod = Parser.class.getMethod("parse");
 var compileMethod = Compiler.class.getMethod("compile", FunctionNode.class);
@@ -111,18 +113,22 @@ function findFunction(node) {
 var getContextMethod = Context.class.getMethod("getContext")
 var getEnvMethod = Context.class.getMethod("getEnv")
 
+var SourceConstructor = Source.class.getConstructor(java.lang.String.class, java.lang.String.class)
+var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
+var CompilerConstructor = Compiler.class.getConstructor(ScriptEnvironment.class)
+
 // compile(script) -- compiles a script specified as a string with its 
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
 // representing it.
 function compile(source) {
-    var source   = new Source("<no name>", source);
+    var source = SourceConstructor.newInstance("<no name>", source);
 
     var env = getEnvMethod.invoke(getContextMethod.invoke(null))
 
-    var parser   = new Parser(env, source, new ThrowErrorManager());
+    var parser   = ParserConstructor.newInstance(env, source, ThrowErrorManager.class.newInstance());
     var func     = parseMethod.invoke(parser);
 
-    var compiler = new Compiler(env);
+    var compiler = CompilerConstructor.newInstance(env);
 
     return compileMethod.invoke(compiler, func);
 };

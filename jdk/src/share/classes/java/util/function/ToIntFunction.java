@@ -25,10 +25,13 @@
 package java.util.function;
 
 /**
- * Apply a function to the input argument, yielding an appropriate result.
- * This is the {@code int}-bearing specialization for {@link Function}.
+ * Represents a function that produces an int-valued result.  This is the
+ * {@code int}-producing primitive specialization for {@link Function}.
  *
- * @param <T> the type of input objects to the function
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #applyAsInt(Object)}.
+ *
+ * @param <T> the type of the input to the function
  *
  * @see Function
  * @since 1.8
@@ -37,10 +40,10 @@ package java.util.function;
 public interface ToIntFunction<T> {
 
     /**
-     * Compute the result of applying the function to the input arguments
+     * Applies this function to the given argument.
      *
-     * @param t the input object
-     * @return the function result value
+     * @param value the function argument
+     * @return the function result
      */
-    int applyAsInt(T t);
+    int applyAsInt(T value);
 }

@@ -185,7 +185,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
             assertEquals(buf.toString(), result);
         } catch (DateTimeException ex) {
             if (result == null || value < 0) {
-                assertEquals(ex.getMessage().contains(YEAR.getName()), true);
+                assertEquals(ex.getMessage().contains(YEAR.toString()), true);
             } else {
                 throw ex;
             }

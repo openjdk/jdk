@@ -74,6 +74,9 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.TemporalAdjuster.nextOrSame;
 
 import java.io.DataInput;
@@ -88,14 +91,16 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -188,8 +193,8 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * ChronoLocalDate order constant.
      */
-    static final Comparator<ChronoLocalDate<?>> DATE_ORDER =
-        (Comparator<ChronoLocalDate<?>> & Serializable) (date1, date2) -> {
+    static final Comparator<ChronoLocalDate> DATE_ORDER =
+        (Comparator<ChronoLocalDate> & Serializable) (date1, date2) -> {
             return Long.compare(date1.toEpochDay(), date2.toEpochDay());
         };
     /**
@@ -482,60 +487,6 @@ public abstract class Chronology implements Comparable<Chronology> {
 
     //-----------------------------------------------------------------------
     /**
-     * Casts the {@code Temporal} to {@code ChronoLocalDate} with the same chronology.
-     *
-     * @param temporal  a date-time to cast, not null
-     * @return the date-time checked and cast to {@code ChronoLocalDate}, not null
-     * @throws ClassCastException if the date-time cannot be cast to ChronoLocalDate
-     *  or the chronology is not equal this Chronology
-     */
-    ChronoLocalDate<?> ensureChronoLocalDate(Temporal temporal) {
-        @SuppressWarnings("unchecked")
-        ChronoLocalDate<?> other = (ChronoLocalDate<?>) temporal;
-        if (this.equals(other.getChronology()) == false) {
-            throw new ClassCastException("Chronology mismatch, expected: " + getId() + ", actual: " + other.getChronology().getId());
-        }
-        return other;
-    }
-
-    /**
-     * Casts the {@code Temporal} to {@code ChronoLocalDateTime} with the same chronology.
-     *
-     * @param temporal   a date-time to cast, not null
-     * @return the date-time checked and cast to {@code ChronoLocalDateTime}, not null
-     * @throws ClassCastException if the date-time cannot be cast to ChronoLocalDateTimeImpl
-     *  or the chronology is not equal this Chronology
-     */
-    ChronoLocalDateTimeImpl<?> ensureChronoLocalDateTime(Temporal temporal) {
-        @SuppressWarnings("unchecked")
-        ChronoLocalDateTimeImpl<?> other = (ChronoLocalDateTimeImpl<?>) temporal;
-        if (this.equals(other.toLocalDate().getChronology()) == false) {
-            throw new ClassCastException("Chronology mismatch, required: " + getId()
-                    + ", supplied: " + other.toLocalDate().getChronology().getId());
-        }
-        return other;
-    }
-
-    /**
-     * Casts the {@code Temporal} to {@code ChronoZonedDateTimeImpl} with the same chronology.
-     *
-     * @param temporal  a date-time to cast, not null
-     * @return the date-time checked and cast to {@code ChronoZonedDateTimeImpl}, not null
-     * @throws ClassCastException if the date-time cannot be cast to ChronoZonedDateTimeImpl
-     *  or the chronology is not equal this Chronology
-     */
-    ChronoZonedDateTimeImpl<?> ensureChronoZonedDateTime(Temporal temporal) {
-        @SuppressWarnings("unchecked")
-        ChronoZonedDateTimeImpl<?> other = (ChronoZonedDateTimeImpl<?>) temporal;
-        if (this.equals(other.toLocalDate().getChronology()) == false) {
-            throw new ClassCastException("Chronology mismatch, required: " + getId()
-                    + ", supplied: " + other.toLocalDate().getChronology().getId());
-        }
-        return other;
-    }
-
-    //-----------------------------------------------------------------------
-    /**
      * Gets the ID of the chronology.
      * <p>
      * The ID uniquely identifies the {@code Chronology}.
@@ -574,7 +525,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date
      * @throws ClassCastException if the {@code era} is not of the correct type for the chronology
      */
-    public ChronoLocalDate<?> date(Era era, int yearOfEra, int month, int dayOfMonth) {
+    public ChronoLocalDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
         return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
     }
 
@@ -588,7 +539,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
      */
-    public abstract ChronoLocalDate<?> date(int prolepticYear, int month, int dayOfMonth);
+    public abstract ChronoLocalDate date(int prolepticYear, int month, int dayOfMonth);
 
     /**
      * Obtains a local date in this chronology from the era, year-of-era and
@@ -601,7 +552,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date
      * @throws ClassCastException if the {@code era} is not of the correct type for the chronology
      */
-    public ChronoLocalDate<?> dateYearDay(Era era, int yearOfEra, int dayOfYear) {
+    public ChronoLocalDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
         return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
     }
 
@@ -614,7 +565,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
      */
-    public abstract ChronoLocalDate<?> dateYearDay(int prolepticYear, int dayOfYear);
+    public abstract ChronoLocalDate dateYearDay(int prolepticYear, int dayOfYear);
 
     /**
      * Obtains a local date in this chronology from the epoch-day.
@@ -626,7 +577,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
      */
-    public abstract ChronoLocalDate<?> dateEpochDay(long epochDay);
+    public abstract ChronoLocalDate dateEpochDay(long epochDay);
 
     //-----------------------------------------------------------------------
     /**
@@ -643,7 +594,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date using the system clock and default time-zone, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate<?> dateNow() {
+    public ChronoLocalDate dateNow() {
         return dateNow(Clock.systemDefaultZone());
     }
 
@@ -660,7 +611,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date using the system clock, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate<?> dateNow(ZoneId zone) {
+    public ChronoLocalDate dateNow(ZoneId zone) {
         return dateNow(Clock.system(zone));
     }
 
@@ -675,7 +626,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate<?> dateNow(Clock clock) {
+    public ChronoLocalDate dateNow(Clock clock) {
         Objects.requireNonNull(clock, "clock");
         return date(LocalDate.now(clock));
     }
@@ -699,7 +650,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date
      * @see ChronoLocalDate#from(TemporalAccessor)
      */
-    public abstract ChronoLocalDate<?> date(TemporalAccessor temporal);
+    public abstract ChronoLocalDate date(TemporalAccessor temporal);
 
     /**
      * Obtains a local date-time in this chronology from another temporal object.
@@ -722,7 +673,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date-time
      * @see ChronoLocalDateTime#from(TemporalAccessor)
      */
-    public ChronoLocalDateTime<?> localDateTime(TemporalAccessor temporal) {
+    public ChronoLocalDateTime<? extends ChronoLocalDate> localDateTime(TemporalAccessor temporal) {
         try {
             return date(temporal).atTime(LocalTime.from(temporal));
         } catch (DateTimeException ex) {
@@ -754,7 +705,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date-time
      * @see ChronoZonedDateTime#from(TemporalAccessor)
      */
-    public ChronoZonedDateTime<?> zonedDateTime(TemporalAccessor temporal) {
+    public ChronoZonedDateTime<? extends ChronoLocalDate> zonedDateTime(TemporalAccessor temporal) {
         try {
             ZoneId zone = ZoneId.from(temporal);
             try {
@@ -762,8 +713,7 @@ public abstract class Chronology implements Comparable<Chronology> {
                 return zonedDateTime(instant, zone);
 
             } catch (DateTimeException ex1) {
-                @SuppressWarnings("rawtypes")
-                ChronoLocalDateTimeImpl cldt = ensureChronoLocalDateTime(localDateTime(temporal));
+                ChronoLocalDateTimeImpl<?> cldt = ChronoLocalDateTimeImpl.ensureValid(this, localDateTime(temporal));
                 return ChronoZonedDateTimeImpl.ofBest(cldt, zone, null);
             }
         } catch (DateTimeException ex) {
@@ -781,7 +731,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the zoned date-time, not null
      * @throws DateTimeException if the result exceeds the supported range
      */
-    public ChronoZonedDateTime<?> zonedDateTime(Instant instant, ZoneId zone) {
+    public ChronoZonedDateTime<? extends ChronoLocalDate> zonedDateTime(Instant instant, ZoneId zone) {
         return ChronoZonedDateTimeImpl.ofInstant(this, instant, zone);
     }
 
@@ -929,11 +879,82 @@ public abstract class Chronology implements Comparable<Chronology> {
      * As such, {@code ChronoField} date fields are resolved here in the
      * context of a specific chronology.
      * <p>
+     * {@code ChronoField} instances are resolved by this method, which may
+     * be overridden in subclasses.
+     * <ul>
+     * <li>{@code EPOCH_DAY} - If present, this is converted to a date and
+     *  all other date fields are then cross-checked against the date.
+     * <li>{@code PROLEPTIC_MONTH} - If present, then it is split into the
+     *  {@code YEAR} and {@code MONTH_OF_YEAR}. If the mode is strict or smart
+     *  then the field is validated.
+     * <li>{@code YEAR_OF_ERA} and {@code ERA} - If both are present, then they
+     *  are combined to form a {@code YEAR}. In lenient mode, the {@code YEAR_OF_ERA}
+     *  range is not validated, in smart and strict mode it is. The {@code ERA} is
+     *  validated for range in all three modes. If only the {@code YEAR_OF_ERA} is
+     *  present, and the mode is smart or lenient, then the last available era
+     *  is assumed. In strict mode, no era is assumed and the {@code YEAR_OF_ERA} is
+     *  left untouched. If only the {@code ERA} is present, then it is left untouched.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR} and {@code DAY_OF_MONTH} -
+     *  If all three are present, then they are combined to form a date.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is smart or strict, then the month and day are validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first day of the first month in the requested year,
+     *  then adding the difference in months, then the difference in days.
+     *  If the mode is smart, and the day-of-month is greater than the maximum for
+     *  the year-month, then the day-of-month is adjusted to the last day-of-month.
+     *  If the mode is strict, then the three fields must form a valid date.
+     * <li>{@code YEAR} and {@code DAY_OF_YEAR} -
+     *  If both are present, then they are combined to form a date.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first day of the requested year, then adding
+     *  the difference in days.
+     *  If the mode is smart or strict, then the two fields must form a valid date.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR}, {@code ALIGNED_WEEK_OF_MONTH} and
+     *  {@code ALIGNED_DAY_OF_WEEK_IN_MONTH} -
+     *  If all four are present, then they are combined to form a date.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first day of the first month in the requested year, then adding
+     *  the difference in months, then the difference in weeks, then in days.
+     *  If the mode is smart or strict, then the all four fields are validated to
+     *  their outer ranges. The date is then combined in a manner equivalent to
+     *  creating a date on the first day of the requested year and month, then adding
+     *  the amount in weeks and days to reach their values. If the mode is strict,
+     *  the date is additionally validated to check that the day and week adjustment
+     *  did not change the month.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR}, {@code ALIGNED_WEEK_OF_MONTH} and
+     *  {@code DAY_OF_WEEK} - If all four are present, then they are combined to
+     *  form a date. The approach is the same as described above for
+     *  years, months and weeks in {@code ALIGNED_DAY_OF_WEEK_IN_MONTH}.
+     *  The day-of-week is adjusted as the next or same matching day-of-week once
+     *  the years, months and weeks have been handled.
+     * <li>{@code YEAR}, {@code ALIGNED_WEEK_OF_YEAR} and {@code ALIGNED_DAY_OF_WEEK_IN_YEAR} -
+     *  If all three are present, then they are combined to form a date.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first day of the requested year, then adding
+     *  the difference in weeks, then in days.
+     *  If the mode is smart or strict, then the all three fields are validated to
+     *  their outer ranges. The date is then combined in a manner equivalent to
+     *  creating a date on the first day of the requested year, then adding
+     *  the amount in weeks and days to reach their values. If the mode is strict,
+     *  the date is additionally validated to check that the day and week adjustment
+     *  did not change the year.
+     * <li>{@code YEAR}, {@code ALIGNED_WEEK_OF_YEAR} and {@code DAY_OF_WEEK} -
+     *  If all three are present, then they are combined to form a date.
+     *  The approach is the same as described above for years and weeks in
+     *  {@code ALIGNED_DAY_OF_WEEK_IN_YEAR}. The day-of-week is adjusted as the
+     *  next or same matching day-of-week once the years and weeks have been handled.
+     * </ul>
+     * <p>
      * The default implementation is suitable for most calendar systems.
      * If {@link ChronoField#YEAR_OF_ERA} is found without an {@link ChronoField#ERA}
      * then the last era in {@link #eras()} is used.
      * The implementation assumes a 7 day week, that the first day-of-month
-     * has the value 1, and that first day-of-year has the value 1.
+     * has the value 1, that first day-of-year has the value 1, and that the
+     * first of the month and year always exists.
      *
      * @param fieldValues  the map of fields to values, which can be updated, not null
      * @param resolverStyle  the requested type of resolve, not null
@@ -941,97 +962,212 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if the date cannot be resolved, typically
      *  because of a conflict in the input data
      */
-    public ChronoLocalDate<?> resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+    public ChronoLocalDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
         // check epoch-day before inventing era
         if (fieldValues.containsKey(EPOCH_DAY)) {
             return dateEpochDay(fieldValues.remove(EPOCH_DAY));
         }
 
         // fix proleptic month before inventing era
-        Long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
-        if (pMonth != null) {
-            // first day-of-month is likely to be safest for setting proleptic-month
-            // cannot add to year zero, as not all chronologies have a year zero
-            ChronoLocalDate<?> chronoDate = dateNow()
-                    .with(DAY_OF_MONTH, 1).with(PROLEPTIC_MONTH, pMonth);
-            addFieldValue(fieldValues, MONTH_OF_YEAR, chronoDate.get(MONTH_OF_YEAR));
-            addFieldValue(fieldValues, YEAR, chronoDate.get(YEAR));
-        }
+        resolveProlepticMonth(fieldValues, resolverStyle);
 
         // invent era if necessary to resolve year-of-era
-        Long yoeLong = fieldValues.remove(YEAR_OF_ERA);
-        if (yoeLong != null) {
-            Long eraLong = fieldValues.remove(ERA);
-            int yoe = range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
-            if (eraLong != null) {
-                Era eraObj = eraOf(Math.toIntExact(eraLong));
-                addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
-            } else if (fieldValues.containsKey(YEAR)) {
-                int year = range(YEAR).checkValidIntValue(fieldValues.get(YEAR), YEAR);
-                ChronoLocalDate<?> chronoDate = dateYearDay(year, 1);
-                addFieldValue(fieldValues, YEAR, prolepticYear(chronoDate.getEra(), yoe));
-            } else {
-                List<Era> eras = eras();
-                if (eras.isEmpty()) {
-                    addFieldValue(fieldValues, YEAR, yoe);
-                } else {
-                    Era eraObj = eras.get(eras.size() - 1);
-                    addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
-                }
-            }
+        ChronoLocalDate resolved = resolveYearOfEra(fieldValues, resolverStyle);
+        if (resolved != null) {
+            return resolved;
         }
 
         // build date
         if (fieldValues.containsKey(YEAR)) {
             if (fieldValues.containsKey(MONTH_OF_YEAR)) {
                 if (fieldValues.containsKey(DAY_OF_MONTH)) {
-                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                    int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                    int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
-                    return date(y, moy, dom);
+                    return resolveYMD(fieldValues, resolverStyle);
                 }
                 if (fieldValues.containsKey(ALIGNED_WEEK_OF_MONTH)) {
                     if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_MONTH)) {
-                        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
-                        int ad = range(ALIGNED_DAY_OF_WEEK_IN_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), ALIGNED_DAY_OF_WEEK_IN_MONTH);
-                        ChronoLocalDate<?> chronoDate = date(y, moy, 1);
-                        return chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                        return resolveYMAA(fieldValues, resolverStyle);
                     }
                     if (fieldValues.containsKey(DAY_OF_WEEK)) {
-                        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
-                        int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
-                        ChronoLocalDate<?> chronoDate = date(y, moy, 1);
-                        return chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                        return resolveYMAD(fieldValues, resolverStyle);
                     }
                 }
             }
             if (fieldValues.containsKey(DAY_OF_YEAR)) {
-                int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);
-                return dateYearDay(y, doy);
+                return resolveYD(fieldValues, resolverStyle);
             }
             if (fieldValues.containsKey(ALIGNED_WEEK_OF_YEAR)) {
                 if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_YEAR)) {
-                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                    int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
-                    int ad = range(ALIGNED_DAY_OF_WEEK_IN_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), ALIGNED_DAY_OF_WEEK_IN_YEAR);
-                    ChronoLocalDate<?> chronoDate = dateYearDay(y, 1);
-                    return chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                    return resolveYAA(fieldValues, resolverStyle);
                 }
                 if (fieldValues.containsKey(DAY_OF_WEEK)) {
-                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
-                    int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
-                    int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
-                    ChronoLocalDate<?> chronoDate = dateYearDay(y, 1);
-                    return chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                    return resolveYAD(fieldValues, resolverStyle);
                 }
             }
         }
         return null;
+    }
+
+    void resolveProlepticMonth(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        Long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
+        if (pMonth != null) {
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                PROLEPTIC_MONTH.checkValidValue(pMonth);
+            }
+            // first day-of-month is likely to be safest for setting proleptic-month
+            // cannot add to year zero, as not all chronologies have a year zero
+            ChronoLocalDate chronoDate = dateNow()
+                    .with(DAY_OF_MONTH, 1).with(PROLEPTIC_MONTH, pMonth);
+            addFieldValue(fieldValues, MONTH_OF_YEAR, chronoDate.get(MONTH_OF_YEAR));
+            addFieldValue(fieldValues, YEAR, chronoDate.get(YEAR));
+        }
+    }
+
+    ChronoLocalDate resolveYearOfEra(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        Long yoeLong = fieldValues.remove(YEAR_OF_ERA);
+        if (yoeLong != null) {
+            Long eraLong = fieldValues.remove(ERA);
+            int yoe;
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                yoe = range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
+            } else {
+                yoe = Math.toIntExact(yoeLong);
+            }
+            if (eraLong != null) {
+                Era eraObj = eraOf(range(ERA).checkValidIntValue(eraLong, ERA));
+                addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
+            } else {
+                if (fieldValues.containsKey(YEAR)) {
+                    int year = range(YEAR).checkValidIntValue(fieldValues.get(YEAR), YEAR);
+                    ChronoLocalDate chronoDate = dateYearDay(year, 1);
+                    addFieldValue(fieldValues, YEAR, prolepticYear(chronoDate.getEra(), yoe));
+                } else if (resolverStyle == ResolverStyle.STRICT) {
+                    // do not invent era if strict
+                    // reinstate the field removed earlier, no cross-check issues
+                    fieldValues.put(YEAR_OF_ERA, yoeLong);
+                } else {
+                    List<Era> eras = eras();
+                    if (eras.isEmpty()) {
+                        addFieldValue(fieldValues, YEAR, yoe);
+                    } else {
+                        Era eraObj = eras.get(eras.size() - 1);
+                        addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
+                    }
+                }
+            }
+        } else if (fieldValues.containsKey(ERA)) {
+            range(ERA).checkValidValue(fieldValues.get(ERA), ERA);  // always validated
+        }
+        return null;
+    }
+
+    ChronoLocalDate resolveYMD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
+            return date(y, 1, 1).plus(months, MONTHS).plus(days, DAYS);
+        }
+        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+        ValueRange domRange = range(DAY_OF_MONTH);
+        int dom = domRange.checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+        if (resolverStyle == ResolverStyle.SMART) {  // previous valid
+            try {
+                return date(y, moy, dom);
+            } catch (DateTimeException ex) {
+                return date(y, moy, 1).with(TemporalAdjuster.lastDayOfMonth());
+            }
+        }
+        return date(y, moy, dom);
+    }
+
+    ChronoLocalDate resolveYD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_YEAR), 1);
+            return dateYearDay(y, 1).plus(days, DAYS);
+        }
+        int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);
+        return dateYearDay(y, doy);  // smart is same as strict
+    }
+
+    ChronoLocalDate resolveYMAA(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+            long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
+            return date(y, 1, 1).plus(months, MONTHS).plus(weeks, WEEKS).plus(days, DAYS);
+        }
+        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
+        int ad = range(ALIGNED_DAY_OF_WEEK_IN_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), ALIGNED_DAY_OF_WEEK_IN_MONTH);
+        ChronoLocalDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
+        if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different month");
+        }
+        return date;
+    }
+
+    ChronoLocalDate resolveYMAD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+            long dow = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
+            return resolveAligned(date(y, 1, 1), months, weeks, dow);
+        }
+        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
+        int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
+        ChronoLocalDate date = date(y, moy, 1).plus((aw - 1) * 7, DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+        if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different month");
+        }
+        return date;
+    }
+
+    ChronoLocalDate resolveYAA(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
+            return dateYearDay(y, 1).plus(weeks, WEEKS).plus(days, DAYS);
+        }
+        int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
+        int ad = range(ALIGNED_DAY_OF_WEEK_IN_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), ALIGNED_DAY_OF_WEEK_IN_YEAR);
+        ChronoLocalDate date = dateYearDay(y, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
+        if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different year");
+        }
+        return date;
+    }
+
+    ChronoLocalDate resolveYAD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+            long dow = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
+            return resolveAligned(dateYearDay(y, 1), 0, weeks, dow);
+        }
+        int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
+        int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
+        ChronoLocalDate date = dateYearDay(y, 1).plus((aw - 1) * 7, DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+        if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different year");
+        }
+        return date;
+    }
+
+    ChronoLocalDate resolveAligned(ChronoLocalDate base, long months, long weeks, long dow) {
+        ChronoLocalDate date = base.plus(months, MONTHS).plus(weeks, WEEKS);
+        if (dow > 7) {
+            date = date.plus((dow - 1) / 7, WEEKS);
+            dow = ((dow - 1) % 7) + 1;
+        } else if (dow < 1) {
+            date = date.plus(Math.subtractExact(dow,  7) / 7, WEEKS);
+            dow = ((dow + 6) % 7) + 1;
+        }
+        return date.with(nextOrSame(DayOfWeek.of((int) dow)));
     }
 
     /**

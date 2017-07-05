@@ -55,7 +55,6 @@ import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -407,7 +406,7 @@ public final class NativeObject {
             try {
                 final Object toString = TO_STRING.getGetter().invokeExact(sobj);
 
-                if (toString instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(toString)) {
                     return TO_STRING.getInvoker().invokeExact(toString, sobj);
                 }
             } catch (final RuntimeException | Error e) {
