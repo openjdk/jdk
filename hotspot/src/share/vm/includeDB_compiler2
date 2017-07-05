@@ -911,6 +911,7 @@ postaloc.cpp                            machnode.hpp
 reg_split.cpp                           addnode.hpp
 reg_split.cpp                           allocation.inline.hpp
 reg_split.cpp                           callnode.hpp
+reg_split.cpp                           c2compiler.hpp
 reg_split.cpp                           cfgnode.hpp
 reg_split.cpp                           chaitin.hpp
 reg_split.cpp                           loopnode.hpp

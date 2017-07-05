@@ -440,7 +440,7 @@ static jint VMintXor(jint op1, jint op2);
  * iushr, ishl, and ishr bytecodes, respectively.
  */
 
-static jint VMintUshr(jint op, jint num);
+static juint VMintUshr(jint op, jint num);
 static jint VMintShl (jint op, jint num);
 static jint VMintShr (jint op, jint num);
 

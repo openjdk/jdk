@@ -97,7 +97,10 @@ class GenericGrowableArray : public ResourceObj {
     assert(_len >= 0 && _len <= _max, "initial_len too big");
     _arena = (c_heap ? (Arena*)1 : NULL);
     set_nesting();
-    assert(!c_heap || allocated_on_C_heap(), "growable array must be on C heap if elements are");
+    assert(!on_C_heap() || allocated_on_C_heap(), "growable array must be on C heap if elements are");
+    assert(!on_stack() ||
+           (allocated_on_res_area() || allocated_on_stack()),
+           "growable array must be on stack if elements are not on arena and not on C heap");
   }
 
   // This GA will use the given arena for storage.
@@ -108,6 +111,10 @@ class GenericGrowableArray : public ResourceObj {
     assert(_len >= 0 && _len <= _max, "initial_len too big");
     _arena = arena;
     assert(on_arena(), "arena has taken on reserved value 0 or 1");
+    // Relax next assert to allow object allocation on resource area,
+    // on stack or embedded into an other object.
+    assert(allocated_on_arena() || allocated_on_stack(),
+           "growable array must be on arena or on stack if elements are on arena");
   }
 
   void* raw_allocate(int elementSize);

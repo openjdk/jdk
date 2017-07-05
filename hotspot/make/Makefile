@@ -85,14 +85,21 @@ C1_VM_TARGETS=product1 fastdebug1 optimized1 jvmg1
 C2_VM_TARGETS=product  fastdebug  optimized  jvmg
 KERNEL_VM_TARGETS=productkernel fastdebugkernel optimizedkernel jvmgkernel
 ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero jvmgzero
+SHARK_VM_TARGETS=productshark fastdebugshark optimizedshark jvmgshark
 
 # JDK directory list
 JDK_DIRS=bin include jre lib demo
 
 all:           all_product all_fastdebug
+ifndef BUILD_CLIENT_ONLY
 all_product:   product product1 productkernel docs export_product
 all_fastdebug: fastdebug fastdebug1 fastdebugkernel docs export_fastdebug
 all_debug:     jvmg jvmg1 jvmgkernel docs export_debug
+else
+all_product:   product1 docs export_product
+all_fastdebug: fastdebug1 docs export_fastdebug
+all_debug:     jvmg1 docs export_debug
+endif
 all_optimized: optimized optimized1 optimizedkernel docs export_optimized
 
 allzero:           all_productzero all_fastdebugzero
@@ -100,6 +107,12 @@ all_productzero:   productzero docs export_product
 all_fastdebugzero: fastdebugzero docs export_fastdebug
 all_debugzero:     jvmgzero docs export_debug
 all_optimizedzero: optimizedzero docs export_optimized
+
+allshark:           all_productshark all_fastdebugshark
+all_productshark:   productshark docs export_product
+all_fastdebugshark: fastdebugshark docs export_fastdebug
+all_debugshark:     jvmgshark docs export_debug
+all_optimizedshark: optimizedshark docs export_optimized
 
 # Do everything
 world:         all create_jdk
@@ -130,6 +143,10 @@ $(KERNEL_VM_TARGETS):
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
 	$(MAKE) VM_TARGET=$@ generic_buildzero $(ALT_OUT)
+
+$(SHARK_VM_TARGETS):
+	$(CD) $(GAMMADIR)/make; \
+	$(MAKE) VM_TARGET=$@ generic_buildshark $(ALT_OUT)
 
 # Build compiler1 (client) rule, different for platforms
 generic_build1:
@@ -197,6 +214,12 @@ generic_buildzero:
 		$(MAKE) -f $(ABS_OS_MAKEFILE) \
 			$(MAKE_ARGS) $(VM_TARGET)
 
+generic_buildshark:
+	$(MKDIR) -p $(OUTPUTDIR)
+	$(CD) $(OUTPUTDIR); \
+		$(MAKE) -f $(ABS_OS_MAKEFILE) \
+			$(MAKE_ARGS) $(VM_TARGET) 
+
 # Export file rule
 generic_export: $(EXPORT_LIST)
 export_product:
@@ -228,15 +251,22 @@ C1_BASE_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_compiler1
 C2_BASE_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_compiler2
 KERNEL_BASE_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_kernel
 ZERO_BASE_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_zero
+SHARK_BASE_DIR=$(OUTPUTDIR)/$(VM_PLATFORM)_shark
 C1_DIR=$(C1_BASE_DIR)/$(VM_SUBDIR)
 C2_DIR=$(C2_BASE_DIR)/$(VM_SUBDIR)
 KERNEL_DIR=$(KERNEL_BASE_DIR)/$(VM_SUBDIR)
 ZERO_DIR=$(ZERO_BASE_DIR)/$(VM_SUBDIR)
+SHARK_DIR=$(SHARK_BASE_DIR)/$(VM_SUBDIR)
 
 # Misc files and generated files need to come from C1 or C2 area
 ifeq ($(ZERO_BUILD), true)
+ifeq ($(SHARK_BUILD), true)
+  MISC_DIR=$(SHARK_DIR)
+  GEN_DIR=$(SHARK_BASE_DIR)/generated
+else
   MISC_DIR=$(ZERO_DIR)
   GEN_DIR=$(ZERO_BASE_DIR)/generated
+endif
 else
 ifeq ($(ARCH_DATA_MODEL), 32)
   MISC_DIR=$(C1_DIR)
@@ -290,11 +320,20 @@ endif
 # Shared Library
 ifneq ($(OSNAME),windows)
   ifeq ($(ZERO_BUILD), true)
+    ifeq ($(SHARK_BUILD), true)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(SHARK_DIR)/%.so
+	$(install-file)
+$(EXPORT_SERVER_DIR)/%.so:       $(SHARK_DIR)/%.so
+	$(install-file)
+    else
 $(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(ZERO_DIR)/%.so
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.so:       $(ZERO_DIR)/%.so
 	$(install-file)
+    endif
   else
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C1_DIR)/%.so
+	$(install-file)
 $(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C2_DIR)/%.so
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.so:       $(C1_DIR)/%.so
@@ -348,6 +387,7 @@ clean_build:
 	$(RM) -r $(C2_DIR)
 	$(RM) -r $(KERNEL_DIR)
 	$(RM) -r $(ZERO_DIR)
+	$(RM) -r $(SHARK_DIR)
 clean_export:
 	$(RM) -r $(EXPORT_PATH)
 clean_jdk:

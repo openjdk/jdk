@@ -34,6 +34,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   move(offset(), jni_offset() + 1);
 }
 
+void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
+  move(offset(), jni_offset() + 1);
+}
+
 void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
    move(offset(), jni_offset() + 2);
    move(offset() + 1, jni_offset() + 1);
@@ -87,6 +91,11 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   intptr_t* _to;
 
   virtual void pass_int() {
+    *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
+    _from -= Interpreter::stackElementSize;
+  }
+
+  virtual void pass_float() {
     *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
   }

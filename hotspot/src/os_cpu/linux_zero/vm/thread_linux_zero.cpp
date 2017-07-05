@@ -24,3 +24,5 @@
  */
 
 // This file is intentionally empty
+
+void JavaThread::cache_global_variables() { }
