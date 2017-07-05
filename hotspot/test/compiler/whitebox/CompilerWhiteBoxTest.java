@@ -31,6 +31,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 /**
  * Abstract class for WhiteBox testing of JIT.
@@ -50,7 +51,7 @@ public abstract class CompilerWhiteBoxTest {
     protected static int COMP_LEVEL_FULL_PROFILE = 3;
     /** {@code CompLevel::CompLevel_full_optimization} -- C2 or Shark */
     protected static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
-    /** Maximal value for CompLeveL */
+    /** Maximal value for CompLevel */
     protected static int COMP_LEVEL_MAX = COMP_LEVEL_FULL_OPTIMIZATION;
 
     /** Instance of WhiteBox */
@@ -75,8 +76,7 @@ public abstract class CompilerWhiteBoxTest {
     /** count of invocation to triger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
     /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
-    protected static final String MODE
-            = System.getProperty("java.vm.info");
+    protected static final String MODE = System.getProperty("java.vm.info");
 
     static {
         if (TIERED_COMPILATION) {
@@ -133,6 +133,20 @@ public abstract class CompilerWhiteBoxTest {
         return compLevel == COMP_LEVEL_FULL_OPTIMIZATION;
     }
 
+    protected static void main(
+            Function<TestCase, CompilerWhiteBoxTest> constructor,
+            String[] args) {
+        if (args.length == 0) {
+            for (TestCase test : SimpleTestCase.values()) {
+                constructor.apply(test).runTest();
+            }
+        } else {
+            for (String name : args) {
+                constructor.apply(SimpleTestCase.valueOf(name)).runTest();
+            }
+        }
+    }
+
     /** tested method */
     protected final Executable method;
     protected final TestCase testCase;
@@ -145,7 +159,7 @@ public abstract class CompilerWhiteBoxTest {
     protected CompilerWhiteBoxTest(TestCase testCase) {
         Objects.requireNonNull(testCase);
         System.out.println("TEST CASE:" + testCase.name());
-        method = testCase.executable;
+        method = testCase.getExecutable();
         this.testCase = testCase;
     }
 
@@ -204,7 +218,7 @@ public abstract class CompilerWhiteBoxTest {
         if (WHITE_BOX.getMethodCompilationLevel(method, true) != 0) {
             throw new RuntimeException(method + " osr_comp_level must be == 0");
         }
-   }
+    }
 
     /**
      * Checks, that {@linkplain #method} is compiled.
@@ -221,44 +235,46 @@ public abstract class CompilerWhiteBoxTest {
                     method, System.currentTimeMillis() - start);
             return;
         }
-        if (!WHITE_BOX.isMethodCompiled(method, testCase.isOsr)) {
+        if (!WHITE_BOX.isMethodCompiled(method, testCase.isOsr())) {
             throw new RuntimeException(method + " must be "
-                    + (testCase.isOsr ? "osr_" : "") + "compiled");
+                    + (testCase.isOsr() ? "osr_" : "") + "compiled");
         }
-        if (WHITE_BOX.getMethodCompilationLevel(method, testCase.isOsr) == 0) {
+        if (WHITE_BOX.getMethodCompilationLevel(method, testCase.isOsr())
+                == 0) {
             throw new RuntimeException(method
-                    + (testCase.isOsr ? " osr_" : " ")
+                    + (testCase.isOsr() ? " osr_" : " ")
                     + "comp_level must be != 0");
         }
     }
 
     protected final void deoptimize() {
-        WHITE_BOX.deoptimizeMethod(method, testCase.isOsr);
-        if (testCase.isOsr) {
+        WHITE_BOX.deoptimizeMethod(method, testCase.isOsr());
+        if (testCase.isOsr()) {
             WHITE_BOX.deoptimizeMethod(method, false);
         }
     }
 
     protected final int getCompLevel() {
-        return WHITE_BOX.getMethodCompilationLevel(method, testCase.isOsr);
+        return WHITE_BOX.getMethodCompilationLevel(method, testCase.isOsr());
     }
 
     protected final boolean isCompilable() {
         return WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_ANY,
-                testCase.isOsr);
+                testCase.isOsr());
     }
 
     protected final boolean isCompilable(int compLevel) {
-        return WHITE_BOX.isMethodCompilable(method, compLevel, testCase.isOsr);
+        return WHITE_BOX
+                .isMethodCompilable(method, compLevel, testCase.isOsr());
     }
 
     protected final void makeNotCompilable() {
         WHITE_BOX.makeMethodNotCompilable(method, COMP_LEVEL_ANY,
-                testCase.isOsr);
+                testCase.isOsr());
     }
 
     protected final void makeNotCompilable(int compLevel) {
-        WHITE_BOX.makeMethodNotCompilable(method, compLevel, testCase.isOsr);
+        WHITE_BOX.makeMethodNotCompilable(method, compLevel, testCase.isOsr());
     }
 
     /**
@@ -298,7 +314,7 @@ public abstract class CompilerWhiteBoxTest {
                 WHITE_BOX.isMethodCompiled(method, true));
         System.out.printf("\tosr_comp_level:\t%d%n",
                 WHITE_BOX.getMethodCompilationLevel(method, true));
-         System.out.printf("\tin_queue:\t%b%n",
+        System.out.printf("\tin_queue:\t%b%n",
                 WHITE_BOX.isMethodQueuedForCompilation(method));
         System.out.printf("compile_queues_size:\t%d%n%n",
                 WHITE_BOX.getCompileQueuesSize());
@@ -311,13 +327,13 @@ public abstract class CompilerWhiteBoxTest {
 
     /**
      * Tries to trigger compilation of {@linkplain #method} by call
-     * {@linkplain #testCase.callable} enough times.
+     * {@linkplain TestCase#getCallable()} enough times.
      *
      * @return accumulated result
      * @see #compile(int)
      */
     protected final int compile() {
-        if (testCase.isOsr) {
+        if (testCase.isOsr()) {
             return compile(1);
         } else {
             return compile(THRESHOLD);
@@ -326,7 +342,7 @@ public abstract class CompilerWhiteBoxTest {
 
     /**
      * Tries to trigger compilation of {@linkplain #method} by call
-     * {@linkplain #testCase.callable} specified times.
+     * {@linkplain TestCase#getCallable()} specified times.
      *
      * @param count invocation count
      * @return accumulated result
@@ -336,7 +352,7 @@ public abstract class CompilerWhiteBoxTest {
         Integer tmp;
         for (int i = 0; i < count; ++i) {
             try {
-                tmp = testCase.callable.call();
+                tmp = testCase.getCallable().call();
             } catch (Exception e) {
                 tmp = null;
             }
@@ -347,19 +363,32 @@ public abstract class CompilerWhiteBoxTest {
         }
         return result;
     }
+
+    /**
+     * Utility interface provides tested method and object to invoke it.
+     */
+    public interface TestCase {
+        /** the name of test case */
+        String name();
+
+        /** tested method */
+        Executable getExecutable();
+
+        /** object to invoke {@linkplain #getExecutable()} */
+        Callable<Integer> getCallable();
+
+        /** flag for OSR test case */
+        boolean isOsr();
+    }
 }
 
-/**
- * Utility structure containing tested method and object to invoke it.
- */
-enum TestCase {
+enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
     /** constructor test case */
     CONSTRUCTOR_TEST(Helper.CONSTRUCTOR, Helper.CONSTRUCTOR_CALLABLE, false),
     /** method test case */
     METOD_TEST(Helper.METHOD, Helper.METHOD_CALLABLE, false),
     /** static method test case */
     STATIC_TEST(Helper.STATIC, Helper.STATIC_CALLABLE, false),
-
     /** OSR constructor test case */
     OSR_CONSTRUCTOR_TEST(Helper.OSR_CONSTRUCTOR,
             Helper.OSR_CONSTRUCTOR_CALLABLE, true),
@@ -368,18 +397,30 @@ enum TestCase {
     /** OSR static method test case */
     OSR_STATIC_TEST(Helper.OSR_STATIC, Helper.OSR_STATIC_CALLABLE, true);
 
-    /** tested method */
-    final Executable executable;
-    /** object to invoke {@linkplain #executable} */
-    final Callable<Integer> callable;
-    /** flag for OSR test case */
-    final boolean isOsr;
+    private final Executable executable;
+    private final Callable<Integer> callable;
+    private final boolean isOsr;
 
-    private TestCase(Executable executable, Callable<Integer> callable,
+    private SimpleTestCase(Executable executable, Callable<Integer> callable,
             boolean isOsr) {
         this.executable = executable;
         this.callable = callable;
         this.isOsr = isOsr;
+    }
+
+    @Override
+    public Executable getExecutable() {
+        return executable;
+    }
+
+    @Override
+    public Callable<Integer> getCallable() {
+        return callable;
+    }
+
+    @Override
+    public boolean isOsr() {
+        return isOsr;
     }
 
     private static class Helper {
@@ -435,7 +476,6 @@ enum TestCase {
                 return osrStaticMethod();
             }
         };
-
 
         private static final Constructor CONSTRUCTOR;
         private static final Constructor OSR_CONSTRUCTOR;

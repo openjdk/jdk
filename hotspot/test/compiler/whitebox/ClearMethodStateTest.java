@@ -21,25 +21,25 @@
  * questions.
  */
 
+import java.util.function.Function;
+
 /*
  * @test ClearMethodStateTest
  * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build ClearMethodStateTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* ClearMethodStateTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* ClearMethodStateTest
  * @summary testing of WB::clearMethodState()
  * @author igor.ignatyev@oracle.com
  */
 public class ClearMethodStateTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        for (TestCase test : TestCase.values()) {
-            new ClearMethodStateTest(test).runTest();
-        }
+        CompilerWhiteBoxTest.main(ClearMethodStateTest::new, args);
     }
 
-    public ClearMethodStateTest(TestCase testCase) {
+    private ClearMethodStateTest(TestCase testCase) {
         super(testCase);
         // to prevent inlining of #method
         WHITE_BOX.testSetDontInlineMethod(method, true);
@@ -63,7 +63,7 @@ public class ClearMethodStateTest extends CompilerWhiteBoxTest {
         deoptimize();
         checkNotCompiled();
 
-        if (testCase.isOsr) {
+        if (testCase.isOsr()) {
             // part test isn't applicable for OSR test case
             return;
         }

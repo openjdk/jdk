@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,10 @@ class C2Compiler : public AbstractCompiler {
   static bool init_c2_runtime();
 
 public:
+  C2Compiler() : AbstractCompiler(c2) {}
+
   // Name
   const char *name() { return "C2"; }
-
-#ifdef TIERED
-  virtual bool is_c2() { return true; };
-#endif // TIERED
 
   void initialize();
 

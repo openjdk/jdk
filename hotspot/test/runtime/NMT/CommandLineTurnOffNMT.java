@@ -24,7 +24,7 @@
  /*
  * @test
  * @key nmt
- * @summary Turning off NMT should not result in an error or warning
+ * @summary Turning off NMT should not result in an error
  * @library /testlibrary
  */
 
@@ -38,7 +38,6 @@ public class CommandLineTurnOffNMT {
               "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("error");
-    output.shouldNotContain("warning");
     output.shouldHaveExitValue(0);
   }
 }
