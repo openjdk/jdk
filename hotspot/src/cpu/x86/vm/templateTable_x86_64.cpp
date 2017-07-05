@@ -2015,21 +2015,28 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits
   }
 }
 
-void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Register index) {
-  assert(byte_no == 1 || byte_no == 2, "byte_no out of range");
-  bool is_invokedynamic = (bytecode() == Bytecodes::_invokedynamic);
-
+void TemplateTable::resolve_cache_and_index(int byte_no,
+                                            Register result,
+                                            Register Rcache,
+                                            Register index,
+                                            size_t index_size) {
   const Register temp = rbx;
-  assert_different_registers(Rcache, index, temp);
+  assert_different_registers(result, Rcache, index, temp);
 
-  const int shift_count = (1 + byte_no) * BitsPerByte;
   Label resolved;
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
-  if (is_invokedynamic) {
-    // we are resolved if the f1 field contains a non-null CallSite object
-    __ cmpptr(Address(Rcache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f1_offset()), (int32_t) NULL_WORD);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
+  if (byte_no == f1_oop) {
+    // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+    // This kind of CP cache entry does not need to match the flags byte, because
+    // there is a 1-1 relation between bytecode type and CP entry type.
+    assert(result != noreg, ""); //else do cmpptr(Address(...), (int32_t) NULL_WORD)
+    __ movptr(result, Address(Rcache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f1_offset()));
+    __ testptr(result, result);
     __ jcc(Assembler::notEqual, resolved);
   } else {
+    assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+    assert(result == noreg, "");  //else change code for setting result
+    const int shift_count = (1 + byte_no) * BitsPerByte;
     __ movl(temp, Address(Rcache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
     __ shrl(temp, shift_count);
     // have we resolved this bytecode?
@@ -2064,7 +2071,9 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   __ call_VM(noreg, entry, temp);
 
   // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
+  if (result != noreg)
+    __ movptr(result, Address(Rcache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f1_offset()));
   __ bind(resolved);
 }
 
@@ -2100,7 +2109,8 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register itable_index,
                                                Register flags,
                                                bool is_invokevirtual,
-                                               bool is_invokevfinal /*unused*/) {
+                                               bool is_invokevfinal, /*unused*/
+                                               bool is_invokedynamic) {
   // setup registers
   const Register cache = rcx;
   const Register index = rdx;
@@ -2120,15 +2130,18 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   const int index_offset = in_bytes(constantPoolCacheOopDesc::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
-  resolve_cache_and_index(byte_no, cache, index);
-
-  assert(wordSize == 8, "adjust code below");
-  __ movptr(method, Address(cache, index, Address::times_8, method_offset));
-  if (itable_index != noreg) {
-    __ movptr(itable_index,
-            Address(cache, index, Address::times_8, index_offset));
+  if (byte_no == f1_oop) {
+    // Resolved f1_oop goes directly into 'method' register.
+    assert(is_invokedynamic, "");
+    resolve_cache_and_index(byte_no, method, cache, index, sizeof(u4));
+  } else {
+    resolve_cache_and_index(byte_no, noreg, cache, index, sizeof(u2));
+    __ movptr(method, Address(cache, index, Address::times_ptr, method_offset));
   }
-  __ movl(flags , Address(cache, index, Address::times_8, flags_offset));
+  if (itable_index != noreg) {
+    __ movptr(itable_index, Address(cache, index, Address::times_ptr, index_offset));
+  }
+  __ movl(flags, Address(cache, index, Address::times_ptr, flags_offset));
 }
 
 
@@ -2187,7 +2200,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   const Register flags = rax;
   const Register bc = c_rarg3; // uses same reg as obj, so don't mix them
 
-  resolve_cache_and_index(byte_no, cache, index);
+  resolve_cache_and_index(byte_no, noreg, cache, index, sizeof(u2));
   jvmti_post_field_access(cache, index, is_static, false);
   load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
 
@@ -2390,7 +2403,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   const Register flags = rax;
   const Register bc    = c_rarg3;
 
-  resolve_cache_and_index(byte_no, cache, index);
+  resolve_cache_and_index(byte_no, noreg, cache, index, sizeof(u2));
   jvmti_post_field_mod(cache, index, is_static);
   load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
 
@@ -2815,10 +2828,11 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no)
   // save 'interpreter return address'
   __ save_bcp();
 
-  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual);
+  load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // load receiver if needed (note: no return address pushed yet)
   if (load_receiver) {
+    assert(!is_invokedynamic, "");
     __ movl(recv, flags);
     __ andl(recv, 0xFF);
     Address recv_addr(rsp, recv, Address::times_8, -Interpreter::expr_offset_in_bytes(1));
@@ -2914,6 +2928,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
 void TemplateTable::invokevirtual(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f2_byte, "use this argument");
   prepare_invoke(rbx, noreg, byte_no);
 
   // rbx: index
@@ -2926,6 +2941,7 @@ void TemplateTable::invokevirtual(int byte_no) {
 
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
   prepare_invoke(rbx, noreg, byte_no);
   // do the call
   __ verify_oop(rbx);
@@ -2936,6 +2952,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
   prepare_invoke(rbx, noreg, byte_no);
   // do the call
   __ verify_oop(rbx);
@@ -2945,11 +2962,13 @@ void TemplateTable::invokestatic(int byte_no) {
 
 void TemplateTable::fast_invokevfinal(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f2_byte, "use this argument");
   __ stop("fast_invokevfinal not used on amd64");
 }
 
 void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_byte, "use this argument");
   prepare_invoke(rax, rbx, byte_no);
 
   // rax: Interface
@@ -3027,6 +3046,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
+  assert(byte_no == f1_oop, "use this argument");
 
   if (!EnableInvokeDynamic) {
     // We should not encounter this bytecode if !EnableInvokeDynamic.
@@ -3039,6 +3059,7 @@ void TemplateTable::invokedynamic(int byte_no) {
     return;
   }
 
+  assert(byte_no == f1_oop, "use this argument");
   prepare_invoke(rax, rbx, byte_no);
 
   // rax: CallSite object (f1)

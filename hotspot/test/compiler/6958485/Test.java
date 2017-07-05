@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,8 +22,32 @@
  */
 
 /**
- * Implementation details for JSR 292 RI, package java.dyn.
- * @author jrose
+ * @test
+ * @bug 6958485
+ * @summary fix for 6879921 was insufficient
+ *
+ * @run main/othervm -Xbatch -XX:CompileOnly=Test.init Test
  */
 
-package sun.dyn;
+public class Test {
+
+    public static void init(Object src[], boolean[] dst) {
+        // initialize the arrays
+        for (int i =0; i<src.length; i++) {
+            dst[i] = src[i] != null ? false : true;
+        }
+    }
+
+    public static void test() {
+        Object[] src = new Object[34];
+        boolean[] dst = new boolean[34];
+
+        init(src, dst);
+    }
+
+    public static void main(String[] args) {
+        for (int i=0; i< 2000; i++) {
+            test();
+        }
+    }
+}

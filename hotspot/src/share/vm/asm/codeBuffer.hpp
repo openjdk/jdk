@@ -510,9 +510,9 @@ class CodeBuffer: public StackObj {
     copy_relocations_to(blob);
     copy_code_to(blob);
   }
-  void copy_oops_to(CodeBlob* blob) {
+  void copy_oops_to(nmethod* nm) {
     if (!oop_recorder()->is_unused()) {
-      oop_recorder()->copy_to(blob);
+      oop_recorder()->copy_to(nm);
     }
   }
 

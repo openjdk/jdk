@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,12 @@ REGISTER_DEFINITION(Register, G1_scratch);
 REGISTER_DEFINITION(Register, G3_scratch);
 REGISTER_DEFINITION(Register, G4_scratch);
 REGISTER_DEFINITION(Register, Gtemp);
+REGISTER_DEFINITION(Register, Lentry_args);
+
+// JSR 292
 REGISTER_DEFINITION(Register, G5_method_type);
 REGISTER_DEFINITION(Register, G3_method_handle);
-REGISTER_DEFINITION(Register, Lentry_args);
+REGISTER_DEFINITION(Register, L7_mh_SP_save);
 
 #ifdef CC_INTERP
 REGISTER_DEFINITION(Register, Lstate);

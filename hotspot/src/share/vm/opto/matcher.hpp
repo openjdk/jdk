@@ -352,6 +352,38 @@ public:
   // registers?  True for Intel but false for most RISCs
   static const bool clone_shift_expressions;
 
+  static bool narrow_oop_use_complex_address();
+
+  // Generate implicit null check for narrow oops if it can fold
+  // into address expression (x64).
+  //
+  // [R12 + narrow_oop_reg<<3 + offset] // fold into address expression
+  // NullCheck narrow_oop_reg
+  //
+  // When narrow oops can't fold into address expression (Sparc) and
+  // base is not null use decode_not_null and normal implicit null check.
+  // Note, decode_not_null node can be used here since it is referenced
+  // only on non null path but it requires special handling, see
+  // collect_null_checks():
+  //
+  // decode_not_null narrow_oop_reg, oop_reg // 'shift' and 'add base'
+  // [oop_reg + offset]
+  // NullCheck oop_reg
+  //
+  // With Zero base and when narrow oops can not fold into address
+  // expression use normal implicit null check since only shift
+  // is needed to decode narrow oop.
+  //
+  // decode narrow_oop_reg, oop_reg // only 'shift'
+  // [oop_reg + offset]
+  // NullCheck oop_reg
+  //
+  inline static bool gen_narrow_oop_implicit_null_checks() {
+    return Universe::narrow_oop_use_implicit_null_checks() &&
+           (narrow_oop_use_complex_address() ||
+            Universe::narrow_oop_base() != NULL);
+  }
+
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no
   // extra registers.  Most RISCs will have to materialize an address into a
