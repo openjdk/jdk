@@ -35,6 +35,7 @@ import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.InfopointReason;
@@ -61,7 +62,7 @@ public class TestInvalidOopMap extends CodeInstallerTest {
         BytecodePosition pos = new BytecodePosition(null, dummyMethod, 0);
         DebugInfo info = new DebugInfo(pos);
         info.setReferenceMap(refMap);
-        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0], StackSlot.get(null, 0, true));
     }
 
     @Test(expected = NullPointerException.class)

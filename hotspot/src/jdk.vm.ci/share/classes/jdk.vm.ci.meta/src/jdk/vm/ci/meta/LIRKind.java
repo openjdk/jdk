@@ -57,7 +57,7 @@ import java.util.ArrayList;
  */
 public final class LIRKind {
 
-    private static enum IllegalKind implements PlatformKind {
+    private enum IllegalKind implements PlatformKind {
         ILLEGAL;
 
         private final EnumKey<IllegalKind> key = new EnumKey<>(this);

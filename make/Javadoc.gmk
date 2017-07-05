@@ -212,6 +212,11 @@ JDK_API_DOCSDIR = $(DOCSDIR)/jdk/api
 JRE_API_DOCSDIR = $(DOCSDIR)/jre/api
 PLATFORM_DOCSDIR = $(DOCSDIR)/platform
 
+# The core api index file is the target for the core api javadocs rule
+# and needs to be defined early so that all other javadoc rules may
+# depend on it.
+COREAPI_INDEX_FILE = $(COREAPI_DOCSDIR)/index.html
+
 # The non-core api javadocs need to be able to access the root of the core
 # api directory, so for jdk/api or jre/api to get to the core api/
 # directory we would use this:
@@ -363,8 +368,7 @@ COREAPI_HEADER = \
 # Overview file for core apis
 COREAPI_OVERVIEW = $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
 
-# The index.html, options, and packages files
-COREAPI_INDEX_FILE = $(COREAPI_DOCSDIR)/index.html
+# The options and packages files
 COREAPI_OPTIONS_FILE = $(DOCSTMPDIR)/coredocs.options
 COREAPI_PACKAGES_FILE = $(DOCSTMPDIR)/coredocs.packages
 

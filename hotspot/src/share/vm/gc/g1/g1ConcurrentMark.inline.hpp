@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTMARK_INLINE_HPP
-#define SHARE_VM_GC_G1_CONCURRENTMARK_INLINE_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP
 
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 
 // Utility routine to set an exclusive range of cards on the given
 // card liveness bitmap
-inline void ConcurrentMark::set_card_bitmap_range(BitMap* card_bm,
-                                                  BitMap::idx_t start_idx,
-                                                  BitMap::idx_t end_idx,
-                                                  bool is_par) {
+inline void G1ConcurrentMark::set_card_bitmap_range(BitMap* card_bm,
+                                                    BitMap::idx_t start_idx,
+                                                    BitMap::idx_t end_idx,
+                                                    bool is_par) {
 
   // Set the exclusive bit range [start_idx, end_idx).
   assert((end_idx - start_idx) > 0, "at least one card");
@@ -67,7 +67,7 @@ inline void ConcurrentMark::set_card_bitmap_range(BitMap* card_bm,
 
 // Returns the index in the liveness accounting card bitmap
 // for the given address
-inline BitMap::idx_t ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
+inline BitMap::idx_t G1ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
   // Below, the term "card num" means the result of shifting an address
   // by the card shift -- address 0 corresponds to card number 0.  One
   // must subtract the card num of the bottom of the heap to obtain a
@@ -78,9 +78,9 @@ inline BitMap::idx_t ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
 
 // Counts the given memory region in the given task/worker
 // counting data structures.
-inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
-                                         size_t* marked_bytes_array,
-                                         BitMap* task_card_bm) {
+inline void G1ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
+                                           size_t* marked_bytes_array,
+                                           BitMap* task_card_bm) {
   G1CollectedHeap* g1h = _g1h;
   CardTableModRefBS* ct_bs = g1h->g1_barrier_set();
 
@@ -115,11 +115,11 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
 }
 
 // Counts the given object in the given task/worker counting data structures.
-inline void ConcurrentMark::count_object(oop obj,
-                                         HeapRegion* hr,
-                                         size_t* marked_bytes_array,
-                                         BitMap* task_card_bm,
-                                         size_t word_size) {
+inline void G1ConcurrentMark::count_object(oop obj,
+                                           HeapRegion* hr,
+                                           size_t* marked_bytes_array,
+                                           BitMap* task_card_bm,
+                                           size_t word_size) {
   assert(!hr->is_continues_humongous(), "Cannot enter count_object with continues humongous");
   if (!hr->is_starts_humongous()) {
     MemRegion mr((HeapWord*)obj, word_size);
@@ -135,10 +135,10 @@ inline void ConcurrentMark::count_object(oop obj,
 
 // Attempts to mark the given object and, if successful, counts
 // the object in the given task/worker counting structures.
-inline bool ConcurrentMark::par_mark_and_count(oop obj,
-                                               HeapRegion* hr,
-                                               size_t* marked_bytes_array,
-                                               BitMap* task_card_bm) {
+inline bool G1ConcurrentMark::par_mark_and_count(oop obj,
+                                                 HeapRegion* hr,
+                                                 size_t* marked_bytes_array,
+                                                 BitMap* task_card_bm) {
   if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
     // Update the task specific count data for the object.
     count_object(obj, hr, marked_bytes_array, task_card_bm, obj->size());
@@ -150,10 +150,10 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
 // Attempts to mark the given object and, if successful, counts
 // the object in the task/worker counting structures for the
 // given worker id.
-inline bool ConcurrentMark::par_mark_and_count(oop obj,
-                                               size_t word_size,
-                                               HeapRegion* hr,
-                                               uint worker_id) {
+inline bool G1ConcurrentMark::par_mark_and_count(oop obj,
+                                                 size_t word_size,
+                                                 HeapRegion* hr,
+                                                 uint worker_id) {
   if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
     size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
     BitMap* task_card_bm = count_card_bitmap_for(worker_id);
@@ -163,7 +163,7 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
   return false;
 }
 
-inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
+inline bool G1CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
   HeapWord* start_addr = MAX2(startWord(), mr.start());
   HeapWord* end_addr = MIN2(endWord(), mr.end());
 
@@ -185,6 +185,14 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
   return true;
 }
 
+// The argument addr should be the start address of a valid object
+HeapWord* G1CMBitMapRO::nextObject(HeapWord* addr) {
+  oop obj = (oop) addr;
+  HeapWord* res =  addr + obj->size();
+  assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
+  return res;
+}
+
 #define check_mark(addr)                                                       \
   assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
          "outside underlying space?");                                         \
@@ -193,17 +201,17 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
          " corresponding to " PTR_FORMAT " (%u)",                              \
          p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr));
 
-inline void CMBitMap::mark(HeapWord* addr) {
+inline void G1CMBitMap::mark(HeapWord* addr) {
   check_mark(addr);
   _bm.set_bit(heapWordToOffset(addr));
 }
 
-inline void CMBitMap::clear(HeapWord* addr) {
+inline void G1CMBitMap::clear(HeapWord* addr) {
   check_mark(addr);
   _bm.clear_bit(heapWordToOffset(addr));
 }
 
-inline bool CMBitMap::parMark(HeapWord* addr) {
+inline bool G1CMBitMap::parMark(HeapWord* addr) {
   check_mark(addr);
   return _bm.par_set_bit(heapWordToOffset(addr));
 }
@@ -211,7 +219,7 @@ inline bool CMBitMap::parMark(HeapWord* addr) {
 #undef check_mark
 
 template<typename Fn>
-inline void CMMarkStack::iterate(Fn fn) {
+inline void G1CMMarkStack::iterate(Fn fn) {
   assert(_saved_index == _index, "saved index: %d index: %d", _saved_index, _index);
   for (int i = 0; i < _index; ++i) {
     fn(_base[i]);
@@ -219,9 +227,9 @@ inline void CMMarkStack::iterate(Fn fn) {
 }
 
 // It scans an object and visits its children.
-inline void CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
+inline void G1CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
 
-inline void CMTask::push(oop obj) {
+inline void G1CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
   assert(!_g1h->is_on_master_free_list(
@@ -242,7 +250,7 @@ inline void CMTask::push(oop obj) {
   }
 }
 
-inline bool CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
+inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
   // If obj is above the global finger, then the mark bitmap scan
   // will find it later, and no push is needed.  Similarly, if we have
   // a current region and obj is between the local finger and the
@@ -273,7 +281,7 @@ inline bool CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 }
 
 template<bool scan>
-inline void CMTask::process_grey_object(oop obj) {
+inline void G1CMTask::process_grey_object(oop obj) {
   assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
   assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
 
@@ -288,10 +296,10 @@ inline void CMTask::process_grey_object(oop obj) {
 
 
 
-inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
+inline void G1CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
   if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
     // No OrderAccess:store_load() is needed. It is implicit in the
-    // CAS done in CMBitMap::parMark() call in the routine above.
+    // CAS done in G1CMBitMap::parMark() call in the routine above.
     HeapWord* global_finger = _cm->finger();
 
     // We only need to push a newly grey object on the mark
@@ -327,7 +335,7 @@ inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
   }
 }
 
-inline void CMTask::deal_with_reference(oop obj) {
+inline void G1CMTask::deal_with_reference(oop obj) {
   increment_refs_reached();
 
   HeapWord* objAddr = (HeapWord*) obj;
@@ -346,15 +354,24 @@ inline void CMTask::deal_with_reference(oop obj) {
   }
 }
 
-inline void ConcurrentMark::markPrev(oop p) {
+inline void G1ConcurrentMark::markPrev(oop p) {
   assert(!_prevMarkBitMap->isMarked((HeapWord*) p), "sanity");
   // Note we are overriding the read-only view of the prev map here, via
   // the cast.
-  ((CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
+  ((G1CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
 }
 
-inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
-                                     uint worker_id, HeapRegion* hr) {
+bool G1ConcurrentMark::isPrevMarked(oop p) const {
+  assert(p != NULL && p->is_oop(), "expected an oop");
+  HeapWord* addr = (HeapWord*)p;
+  assert(addr >= _prevMarkBitMap->startWord() ||
+         addr < _prevMarkBitMap->endWord(), "in a region");
+
+  return _prevMarkBitMap->isMarked(addr);
+}
+
+inline void G1ConcurrentMark::grayRoot(oop obj, size_t word_size,
+                                       uint worker_id, HeapRegion* hr) {
   assert(obj != NULL, "pre-condition");
   HeapWord* addr = (HeapWord*) obj;
   if (hr == NULL) {
@@ -374,4 +391,4 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   }
 }
 
-#endif // SHARE_VM_GC_G1_CONCURRENTMARK_INLINE_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTMARK_INLINE_HPP

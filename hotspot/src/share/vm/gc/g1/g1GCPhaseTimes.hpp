@@ -36,6 +36,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   uint _active_gc_threads;
   uint _max_gc_threads;
+  jlong _gc_start_counter;
+  double _gc_pause_time_ms;
 
  public:
   enum GCParPhases {
@@ -126,7 +128,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
  public:
   G1GCPhaseTimes(uint max_gc_threads);
   void note_gc_start(uint active_gc_threads);
-  void print(double pause_time_ms);
+  void print();
 
   // record the time a phase took in seconds
   void record_time_secs(GCParPhases phase, uint worker_i, double secs);

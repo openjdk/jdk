@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTMARK_HPP
-#define SHARE_VM_GC_G1_CONCURRENTMARK_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
 
 #include "classfile/javaClasses.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
@@ -31,11 +31,11 @@
 #include "gc/shared/taskqueue.hpp"
 
 class G1CollectedHeap;
-class CMBitMap;
-class CMTask;
-class ConcurrentMark;
-typedef GenericTaskQueue<oop, mtGC>            CMTaskQueue;
-typedef GenericTaskQueueSet<CMTaskQueue, mtGC> CMTaskQueueSet;
+class G1CMBitMap;
+class G1CMTask;
+class G1ConcurrentMark;
+typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
+typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
 // and reference processing (during remarking) to determine
@@ -54,7 +54,7 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
 // A generic CM bit map.  This is essentially a wrapper around the BitMap
 // class, with one bit per (1<<_shifter) HeapWords.
 
-class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
+class G1CMBitMapRO VALUE_OBJ_CLASS_SPEC {
  protected:
   HeapWord* _bmStartWord;      // base address of range covered by map
   size_t    _bmWordSize;       // map size (in #HeapWords covered)
@@ -63,7 +63,7 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
 
  public:
   // constructor
-  CMBitMapRO(int shifter);
+  G1CMBitMapRO(int shifter);
 
   // inquiries
   HeapWord* startWord()   const { return _bmStartWord; }
@@ -96,12 +96,7 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   }
 
   // The argument addr should be the start address of a valid object
-  HeapWord* nextObject(HeapWord* addr) {
-    oop obj = (oop) addr;
-    HeapWord* res =  addr + obj->size();
-    assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
-    return res;
-  }
+  inline HeapWord* nextObject(HeapWord* addr);
 
   void print_on_error(outputStream* st, const char* prefix) const;
 
@@ -109,20 +104,20 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   NOT_PRODUCT(bool covers(MemRegion rs) const;)
 };
 
-class CMBitMapMappingChangedListener : public G1MappingChangedListener {
+class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
  private:
-  CMBitMap* _bm;
+  G1CMBitMap* _bm;
  public:
-  CMBitMapMappingChangedListener() : _bm(NULL) {}
+  G1CMBitMapMappingChangedListener() : _bm(NULL) {}
 
-  void set_bitmap(CMBitMap* bm) { _bm = bm; }
+  void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
 
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-class CMBitMap : public CMBitMapRO {
+class G1CMBitMap : public G1CMBitMapRO {
  private:
-  CMBitMapMappingChangedListener _listener;
+  G1CMBitMapMappingChangedListener _listener;
 
  public:
   static size_t compute_size(size_t heap_size);
@@ -134,7 +129,7 @@ class CMBitMap : public CMBitMapRO {
     return mark_distance();
   }
 
-  CMBitMap() : CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
+  G1CMBitMap() : G1CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
 
   // Initializes the underlying BitMap to cover the given area.
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
@@ -151,9 +146,9 @@ class CMBitMap : public CMBitMapRO {
 };
 
 // Represents a marking stack used by ConcurrentMarking in the G1 collector.
-class CMMarkStack VALUE_OBJ_CLASS_SPEC {
+class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
   VirtualSpace _virtual_space;   // Underlying backing store for actual stack
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
   oop* _base;        // bottom of stack
   jint _index;       // one more than last occupied index
   jint _capacity;    // max #elements
@@ -163,8 +158,8 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   bool  _should_expand;
 
  public:
-  CMMarkStack(ConcurrentMark* cm);
-  ~CMMarkStack();
+  G1CMMarkStack(G1ConcurrentMark* cm);
+  ~G1CMMarkStack();
 
   bool allocate(size_t capacity);
 
@@ -225,19 +220,19 @@ class YoungList;
 // Currently, we only support root region scanning once (at the start
 // of the marking cycle) and the root regions are all the survivor
 // regions populated during the initial-mark pause.
-class CMRootRegions VALUE_OBJ_CLASS_SPEC {
+class G1CMRootRegions VALUE_OBJ_CLASS_SPEC {
 private:
   YoungList*           _young_list;
-  ConcurrentMark*      _cm;
+  G1ConcurrentMark*    _cm;
 
   volatile bool        _scan_in_progress;
   volatile bool        _should_abort;
   HeapRegion* volatile _next_survivor;
 
 public:
-  CMRootRegions();
+  G1CMRootRegions();
   // We actually do most of the initialization in this method.
-  void init(G1CollectedHeap* g1h, ConcurrentMark* cm);
+  void init(G1CollectedHeap* g1h, G1ConcurrentMark* cm);
 
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();
@@ -265,19 +260,19 @@ public:
 
 class ConcurrentMarkThread;
 
-class ConcurrentMark: public CHeapObj<mtGC> {
-  friend class CMMarkStack;
+class G1ConcurrentMark: public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
-  friend class CMTask;
-  friend class CMBitMapClosure;
-  friend class CMRemarkTask;
-  friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
   friend class CalcLiveObjectsClosure;
   friend class G1CMRefProcTaskProxy;
   friend class G1CMRefProcTaskExecutor;
   friend class G1CMKeepAliveAndDrainClosure;
   friend class G1CMDrainMarkingStackClosure;
+  friend class G1CMBitMapClosure;
+  friend class G1CMConcurrentMarkingTask;
+  friend class G1CMMarkStack;
+  friend class G1CMRemarkTask;
+  friend class G1CMTask;
 
 protected:
   ConcurrentMarkThread* _cmThread;   // The thread doing the work
@@ -295,10 +290,10 @@ protected:
   FreeRegionList        _cleanup_list;
 
   // Concurrent marking support structures
-  CMBitMap                _markBitMap1;
-  CMBitMap                _markBitMap2;
-  CMBitMapRO*             _prevMarkBitMap; // Completed mark bitmap
-  CMBitMap*               _nextMarkBitMap; // Under-construction mark bitmap
+  G1CMBitMap              _markBitMap1;
+  G1CMBitMap              _markBitMap2;
+  G1CMBitMapRO*           _prevMarkBitMap; // Completed mark bitmap
+  G1CMBitMap*             _nextMarkBitMap; // Under-construction mark bitmap
 
   BitMap                  _region_bm;
   BitMap                  _card_bm;
@@ -308,10 +303,10 @@ protected:
   HeapWord*               _heap_end;
 
   // Root region tracking and claiming
-  CMRootRegions           _root_regions;
+  G1CMRootRegions         _root_regions;
 
   // For gray objects
-  CMMarkStack             _markStack; // Grey objects behind global finger
+  G1CMMarkStack           _markStack; // Grey objects behind global finger
   HeapWord* volatile      _finger;  // The global finger, region aligned,
                                     // always points to the end of the
                                     // last claimed region
@@ -319,8 +314,8 @@ protected:
   // Marking tasks
   uint                    _max_worker_id;// Maximum worker id
   uint                    _active_tasks; // Task num currently active
-  CMTask**                _tasks;        // Task queue array (max_worker_id len)
-  CMTaskQueueSet*         _task_queues;  // Task queue set
+  G1CMTask**              _tasks;        // Task queue array (max_worker_id len)
+  G1CMTaskQueueSet*       _task_queues;  // Task queue set
   ParallelTaskTerminator  _terminator;   // For termination
 
   // Two sync barriers that are used to synchronize tasks when an
@@ -435,21 +430,21 @@ protected:
   bool        out_of_regions() { return _finger >= _heap_end; }
 
   // Returns the task with the given id
-  CMTask* task(int id) {
+  G1CMTask* task(int id) {
     assert(0 <= id && id < (int) _active_tasks,
            "task id not within active bounds");
     return _tasks[id];
   }
 
   // Returns the task queue with the given id
-  CMTaskQueue* task_queue(int id) {
+  G1CMTaskQueue* task_queue(int id) {
     assert(0 <= id && id < (int) _active_tasks,
            "task queue id not within active bounds");
-    return (CMTaskQueue*) _task_queues->queue(id);
+    return (G1CMTaskQueue*) _task_queues->queue(id);
   }
 
   // Returns the task queue set
-  CMTaskQueueSet* task_queues()  { return _task_queues; }
+  G1CMTaskQueueSet* task_queues()  { return _task_queues; }
 
   // Access / manipulation of the overflow flag which is set to
   // indicate that the global stack has overflown
@@ -507,7 +502,7 @@ public:
   bool mark_stack_overflow()              { return _markStack.overflow(); }
   bool mark_stack_empty()                 { return _markStack.isEmpty(); }
 
-  CMRootRegions* root_regions() { return &_root_regions; }
+  G1CMRootRegions* root_regions() { return &_root_regions; }
 
   bool concurrent_marking_in_progress() {
     return _concurrent_marking_in_progress;
@@ -536,15 +531,15 @@ public:
   // Attempts to steal an object from the task queues of other tasks
   bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
 
-  ConcurrentMark(G1CollectedHeap* g1h,
-                 G1RegionToSpaceMapper* prev_bitmap_storage,
-                 G1RegionToSpaceMapper* next_bitmap_storage);
-  ~ConcurrentMark();
+  G1ConcurrentMark(G1CollectedHeap* g1h,
+                   G1RegionToSpaceMapper* prev_bitmap_storage,
+                   G1RegionToSpaceMapper* next_bitmap_storage);
+  ~G1ConcurrentMark();
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
 
-  CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
-  CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
+  G1CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
+  G1CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
 
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW
@@ -627,14 +622,7 @@ public:
   // If marking is not in progress, it's a no-op.
   void verify_no_cset_oops() PRODUCT_RETURN;
 
-  bool isPrevMarked(oop p) const {
-    assert(p != NULL && p->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)p;
-    assert(addr >= _prevMarkBitMap->startWord() ||
-           addr < _prevMarkBitMap->endWord(), "in a region");
-
-    return _prevMarkBitMap->isMarked(addr);
-  }
+  inline bool isPrevMarked(oop p) const;
 
   inline bool do_yield_check(uint worker_i = 0);
 
@@ -740,7 +728,7 @@ protected:
 };
 
 // A class representing a marking task.
-class CMTask : public TerminatorTerminator {
+class G1CMTask : public TerminatorTerminator {
 private:
   enum PrivateConstants {
     // the regular clock call is called once the scanned words reaches
@@ -758,13 +746,13 @@ private:
 
   uint                        _worker_id;
   G1CollectedHeap*            _g1h;
-  ConcurrentMark*             _cm;
-  CMBitMap*                   _nextMarkBitMap;
+  G1ConcurrentMark*           _cm;
+  G1CMBitMap*                 _nextMarkBitMap;
   // the task queue of this task
-  CMTaskQueue*                _task_queue;
+  G1CMTaskQueue*              _task_queue;
 private:
   // the task queue set---needed for stealing
-  CMTaskQueueSet*             _task_queues;
+  G1CMTaskQueueSet*           _task_queues;
   // indicates whether the task has been claimed---this is only  for
   // debugging purposes
   bool                        _claimed;
@@ -881,7 +869,7 @@ private:
 public:
   // It resets the task; it should be called right at the beginning of
   // a marking phase.
-  void reset(CMBitMap* _nextMarkBitMap);
+  void reset(G1CMBitMap* _nextMarkBitMap);
   // it clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 
@@ -968,12 +956,12 @@ public:
     _finger = new_finger;
   }
 
-  CMTask(uint worker_id,
-         ConcurrentMark *cm,
-         size_t* marked_bytes,
-         BitMap* card_bm,
-         CMTaskQueue* task_queue,
-         CMTaskQueueSet* task_queues);
+  G1CMTask(uint worker_id,
+           G1ConcurrentMark *cm,
+           size_t* marked_bytes,
+           BitMap* card_bm,
+           G1CMTaskQueue* task_queue,
+           G1CMTaskQueueSet* task_queues);
 
   // it prints statistics associated with this task
   void print_stats();
@@ -1033,4 +1021,4 @@ public:
   ~G1PrintRegionLivenessInfoClosure();
 };
 
-#endif // SHARE_VM_GC_G1_CONCURRENTMARK_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP

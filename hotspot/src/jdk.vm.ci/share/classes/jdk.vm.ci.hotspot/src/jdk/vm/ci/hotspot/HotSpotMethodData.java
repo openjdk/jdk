@@ -413,7 +413,7 @@ public final class HotSpotMethodData {
         private static final int COUNTER_DATA_SIZE = cellIndexToOffset(1);
         private static final int COUNTER_DATA_COUNT_OFFSET = cellIndexToOffset(config.methodDataCountOffset);
 
-        public CounterData() {
+        CounterData() {
             super(Tag.CounterData, COUNTER_DATA_SIZE);
         }
 
@@ -442,7 +442,7 @@ public final class HotSpotMethodData {
         protected static final int TAKEN_COUNT_OFFSET = cellIndexToOffset(config.jumpDataTakenOffset);
         protected static final int TAKEN_DISPLACEMENT_OFFSET = cellIndexToOffset(config.jumpDataDisplacementOffset);
 
-        public JumpData() {
+        JumpData() {
             super(Tag.JumpData, JUMP_DATA_SIZE);
         }
 
@@ -476,7 +476,7 @@ public final class HotSpotMethodData {
         final long[] counts;
         final long totalCount;
 
-        public RawItemProfile(int entries, T[] items, long[] counts, long totalCount) {
+        RawItemProfile(int entries, T[] items, long[] counts, long totalCount) {
             this.entries = entries;
             this.items = items;
             this.counts = counts;
@@ -587,7 +587,7 @@ public final class HotSpotMethodData {
 
         private static final int TYPE_CHECK_DATA_SIZE = cellIndexToOffset(2) + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
 
-        public ReceiverTypeData() {
+        ReceiverTypeData() {
             super(Tag.ReceiverTypeData, TYPE_CHECK_DATA_SIZE);
         }
 
@@ -612,7 +612,7 @@ public final class HotSpotMethodData {
         private static final int VIRTUAL_CALL_DATA_FIRST_METHOD_OFFSET = TYPE_DATA_FIRST_TYPE_OFFSET + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
         private static final int VIRTUAL_CALL_DATA_FIRST_METHOD_COUNT_OFFSET = TYPE_DATA_FIRST_TYPE_COUNT_OFFSET + TYPE_DATA_ROW_SIZE * config.typeProfileWidth;
 
-        public VirtualCallData() {
+        VirtualCallData() {
             super(Tag.VirtualCallData, VIRTUAL_CALL_DATA_SIZE);
         }
 
@@ -714,7 +714,7 @@ public final class HotSpotMethodData {
 
     private static class VirtualCallTypeData extends VirtualCallData {
 
-        public VirtualCallTypeData() {
+        VirtualCallTypeData() {
             super(Tag.VirtualCallTypeData, 0);
         }
 
@@ -730,7 +730,7 @@ public final class HotSpotMethodData {
         private static final int RET_DATA_ROW_SIZE = cellsToBytes(3);
         private static final int RET_DATA_SIZE = cellIndexToOffset(1) + RET_DATA_ROW_SIZE * config.bciProfileWidth;
 
-        public RetData() {
+        RetData() {
             super(Tag.RetData, RET_DATA_SIZE);
         }
     }
@@ -740,7 +740,7 @@ public final class HotSpotMethodData {
         private static final int BRANCH_DATA_SIZE = cellIndexToOffset(3);
         private static final int NOT_TAKEN_COUNT_OFFSET = cellIndexToOffset(config.branchDataNotTakenOffset);
 
-        public BranchData() {
+        BranchData() {
             super(Tag.BranchData, BRANCH_DATA_SIZE);
         }
 
@@ -773,7 +773,7 @@ public final class HotSpotMethodData {
         private static final int ARRAY_DATA_LENGTH_OFFSET = cellIndexToOffset(config.arrayDataArrayLenOffset);
         protected static final int ARRAY_DATA_START_OFFSET = cellIndexToOffset(config.arrayDataArrayStartOffset);
 
-        public ArrayData(Tag tag, int staticSize) {
+        ArrayData(Tag tag, int staticSize) {
             super(tag, staticSize);
         }
 
@@ -800,7 +800,7 @@ public final class HotSpotMethodData {
         private static final int MULTI_BRANCH_DATA_FIRST_COUNT_OFFSET = ARRAY_DATA_START_OFFSET + cellsToBytes(0);
         private static final int MULTI_BRANCH_DATA_FIRST_DISPLACEMENT_OFFSET = ARRAY_DATA_START_OFFSET + cellsToBytes(1);
 
-        public MultiBranchData() {
+        MultiBranchData() {
             super(Tag.MultiBranchData, MULTI_BRANCH_DATA_SIZE);
         }
 
@@ -882,13 +882,13 @@ public final class HotSpotMethodData {
 
         private static final int ARG_INFO_DATA_SIZE = cellIndexToOffset(1);
 
-        public ArgInfoData() {
+        ArgInfoData() {
             super(Tag.ArgInfoData, ARG_INFO_DATA_SIZE);
         }
     }
 
     private static class UnknownProfileData extends AbstractMethodData {
-        public UnknownProfileData(Tag tag) {
+        UnknownProfileData(Tag tag) {
             super(tag, 0);
         }
 

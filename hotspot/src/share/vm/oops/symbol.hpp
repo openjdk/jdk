@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,8 +125,8 @@ class Symbol : public MetaspaceObj {
   };
 
   static int size(int length) {
-    size_t sz = heap_word_size(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
-    return align_object_size(sz);
+    // minimum number of natural words needed to hold these bits (no non-heap version)
+    return (int)heap_word_size(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
   }
 
   void byte_at_put(int index, int value) {
