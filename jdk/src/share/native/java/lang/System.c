@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL_BUG "http://java.sun.com/cgi-bin/bugreport.cgi"
 #endif
 
-#define JAVA_MAX_SUPPORTED_VERSION 50
+#define JAVA_MAX_SUPPORTED_VERSION 51
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
 
 JNIEXPORT jobject JNICALL
