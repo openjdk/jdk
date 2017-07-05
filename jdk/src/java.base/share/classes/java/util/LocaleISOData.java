@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ class LocaleISOData {
         + "AI" + "AIA"  // Anguilla
         + "AL" + "ALB"  // Albania, People's Socialist Republic of
         + "AM" + "ARM"  // Armenia
-        + "AN" + "ANT"  // Netherlands Antilles
+//      + "AN" + "ANT"  // Netherlands Antilles
         + "AO" + "AGO"  // Angola, Republic of
         + "AQ" + "ATA"  // Antarctica (the territory South of 60 deg S)
         + "AR" + "ARG"  // Argentina, Argentine Republic
@@ -476,6 +476,29 @@ class LocaleISOData {
         + "ZM" + "ZMB"  // Zambia, Republic of
         + "ZW" + "ZWE"  // Zimbabwe
         ;
+
+    /**
+     * Array to hold country codes for ISO3166-3.
+     */
+    static final String[] ISO3166_3 = {
+        "AIDJ", "ANHH", "BQAQ", "BUMM", "BYAA", "CSHH", "CSXX", "CTKI", "DDDE",
+        "DYBJ", "FQHH", "FXFR", "GEHH", "HVBF", "JTUM", "MIUM", "NHVU", "NQAQ",
+        "NTHH", "PCHH", "PUUM", "PZPA", "RHZW", "SKIN", "SUHH", "TPTL", "VDVN",
+        "WKUM", "YDYE", "YUCS", "ZRCD"
+    };
+
+    /**
+     * This method computes a set of ISO3166-1 alpha-3 country codes from
+     * existing isoCountryTable.
+     */
+    static Set<String> computeISO3166_1Alpha3Countries() {
+        int tableLength = isoCountryTable.length();
+        String[] isoTable = new String[tableLength / 5];
+        for (int i = 0, index = 0; index < tableLength; i++, index += 5) {
+            isoTable[i] = isoCountryTable.substring(index + 2, index + 5);
+        }
+        return Set.of(isoTable);
+    }
 
     private LocaleISOData() {
     }

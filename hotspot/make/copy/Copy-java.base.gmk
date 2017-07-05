@@ -65,3 +65,17 @@ $(INCLUDE_DST_DIR)/$(JNI_MD_SUBDIR)/jni_md.h: $(JNI_MD_H_SRC)
 #TARGETS += $(INCLUDE_DST_DIR)/$(JNI_MD_SUBDIR)/jni_md.h
 
 ################################################################################
+# Optionally copy libffi.so.? into the the image
+
+ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
+  $(eval $(call SetupCopyFiles, COPY_LIBFFI, \
+      FILES := $(LIBFFI_LIB_FILE), \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+      FLATTEN := true, \
+      MACRO := install-file-nolink, \
+  ))
+
+  TARGETS += $(COPY_LIBFFI)
+endif
+
+################################################################################

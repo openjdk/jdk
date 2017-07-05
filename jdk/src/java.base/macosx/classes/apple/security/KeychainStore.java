@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -911,7 +911,6 @@ public final class KeychainStore extends KeyStoreSpi {
         return true;
     }
 
-    @SuppressWarnings("deprecation")
     private byte[] fetchPrivateKeyFromBag(byte[] privateKeyInfo) throws IOException, NoSuchAlgorithmException, CertificateException
     {
         byte[] returnValue = null;
@@ -972,7 +971,6 @@ public final class KeychainStore extends KeyStoreSpi {
         return returnValue;
     }
 
-    @SuppressWarnings("deprecation")
     private byte[] extractKeyData(DerInputStream stream)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
