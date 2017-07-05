@@ -133,6 +133,9 @@ public:
   // Maximum number of elements allowed in the queue.  This is two less
   // than the actual queue size, for somewhat complicated reasons.
   uint max_elems() { return N - 2; }
+
+  // Total size of queue.
+  static const uint total_size() { return N; }
 };
 
 template<class E> class GenericTaskQueue: public TaskQueueSuper {
