@@ -75,7 +75,7 @@ public class ConstantCallSite extends CallSite {
      *         or if the target returned by the hook is not of the given {@code targetType}
      * @throws NullPointerException if the hook returns a null value
      * @throws ClassCastException if the hook returns something other than a {@code MethodHandle}
-     * @throws Throwable anything else thrown by the the hook function
+     * @throws Throwable anything else thrown by the hook function
      */
     protected ConstantCallSite(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
         super(targetType, createTargetHook);
@@ -85,7 +85,7 @@ public class ConstantCallSite extends CallSite {
     /**
      * Returns the target method of the call site, which behaves
      * like a {@code final} field of the {@code ConstantCallSite}.
-     * That is, the the target is always the original value passed
+     * That is, the target is always the original value passed
      * to the constructor call which created this instance.
      *
      * @return the immutable linkage state of this call site, a constant method handle

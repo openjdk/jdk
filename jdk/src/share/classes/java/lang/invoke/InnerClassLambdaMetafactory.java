@@ -27,12 +27,15 @@ package java.lang.invoke;
 
 import jdk.internal.org.objectweb.asm.*;
 import sun.misc.Unsafe;
+import sun.security.action.GetPropertyAction;
 
+import java.io.FilePermission;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.PropertyPermission;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -66,12 +69,23 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     // Used to ensure that each spun class name is unique
     private static final AtomicInteger counter = new AtomicInteger(0);
 
+    // For dumping generated classes to disk, for debugging purposes
+    private static final ProxyClassesDumper dumper;
+
+    static {
+        final String key = "jdk.internal.lambda.dumpProxyClasses";
+        String path = AccessController.doPrivileged(
+                new GetPropertyAction(key), null,
+                new PropertyPermission(key , "read"));
+        dumper = (null == path) ? null : ProxyClassesDumper.getInstance(path);
+    }
+
     // See context values in AbstractValidatingLambdaMetafactory
     private final String implMethodClassName;        // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
     private final String implMethodDesc;             // Type descriptor for implementation methods "(I)Ljava/lang/String;"
-    private final Type[] implMethodArgumentTypes;    // ASM types for implementaion method parameters
-    private final Type implMethodReturnType;         // ASM type for implementaion method return type "Ljava/lang/String;"
+    private final Type[] implMethodArgumentTypes;    // ASM types for implementation method parameters
+    private final Type implMethodReturnType;         // ASM type for implementation method return type "Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
     private final String constructorDesc;            // Type descriptor for constructor "(LCC;)V"
     private final ClassWriter cw;                    // ASM class writer
@@ -259,29 +273,31 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         final byte[] classBytes = cw.toByteArray();
 
-        /*** Uncomment to dump the generated file
-            System.out.printf("Loaded: %s (%d bytes) %n", lambdaClassName,
-                              classBytes.length);
-            try (FileOutputStream fos = new FileOutputStream(lambdaClassName
-                                            .replace('/', '.') + ".class")) {
-                fos.write(classBytes);
-            } catch (IOException ex) {
-                PlatformLogger.getLogger(InnerClassLambdaMetafactory.class
-                                      .getName()).severe(ex.getMessage(), ex);
-            }
-        ***/
+        // If requested, dump out to a file for debugging purposes
+        if (dumper != null) {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    dumper.dumpClass(lambdaClassName, classBytes);
+                    return null;
+                }
+            }, null,
+            new FilePermission("<<ALL FILES>>", "read, write"),
+            // createDirectories may need it
+            new PropertyPermission("user.dir", "read"));
+        }
 
         ClassLoader loader = targetClass.getClassLoader();
         ProtectionDomain pd = (loader == null)
-            ? null
-            : AccessController.doPrivileged(
-            new PrivilegedAction<ProtectionDomain>() {
-                @Override
-                public ProtectionDomain run() {
-                    return targetClass.getProtectionDomain();
-                }
-            }
-        );
+                              ? null
+                              : AccessController.doPrivileged(
+                                      new PrivilegedAction<ProtectionDomain>() {
+                                          @Override
+                                          public ProtectionDomain run() {
+                                              return targetClass.getProtectionDomain();
+                                          }
+                                      }
+                              );
 
         return UNSAFE.defineClass(lambdaClassName,
                                   classBytes, 0, classBytes.length,

@@ -63,10 +63,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
         data.add(new Object[]{f.apply("Stream.limit(%d)"),
                 (UnaryOperator<Stream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("Stream.substream(%d)"),
-                (UnaryOperator<Stream>) s -> s.substream(SKIP_LIMIT_SIZE, SKIP_LIMIT_SIZE * 2)});
-        data.add(new Object[]{f.apply("Stream.substream(%1$d).limit(%1$d)"),
-                (UnaryOperator<Stream>) s -> s.substream(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
+        data.add(new Object[]{f.apply("Stream.skip(%1$d).limit(%1$d)"),
+                (UnaryOperator<Stream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
 
         return data.toArray(new Object[0][]);
     }
@@ -79,10 +77,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
         data.add(new Object[]{f.apply("IntStream.limit(%d)"),
                 (UnaryOperator<IntStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("IntStream.substream(%d)"),
-                (UnaryOperator<IntStream>) s -> s.substream(SKIP_LIMIT_SIZE, SKIP_LIMIT_SIZE * 2)});
-        data.add(new Object[]{f.apply("IntStream.substream(%1$d).limit(%1$d)"),
-                (UnaryOperator<IntStream>) s -> s.substream(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
+        data.add(new Object[]{f.apply("IntStream.skip(%1$d).limit(%1$d)"),
+                (UnaryOperator<IntStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
 
         return data.toArray(new Object[0][]);
     }
@@ -95,10 +91,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
         data.add(new Object[]{f.apply("LongStream.limit(%d)"),
                 (UnaryOperator<LongStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("LongStream.substream(%d)"),
-                (UnaryOperator<LongStream>) s -> s.substream(SKIP_LIMIT_SIZE, SKIP_LIMIT_SIZE * 2)});
-        data.add(new Object[]{f.apply("LongStream.substream(%1$d).limit(%1$d)"),
-                (UnaryOperator<LongStream>) s -> s.substream(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
+        data.add(new Object[]{f.apply("LongStream.skip(%1$d).limit(%1$d)"),
+                (UnaryOperator<LongStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
 
         return data.toArray(new Object[0][]);
     }
@@ -111,10 +105,8 @@ public class InfiniteStreamWithLimitOpTest extends OpTestCase {
 
         data.add(new Object[]{f.apply("DoubleStream.limit(%d)"),
                 (UnaryOperator<DoubleStream>) s -> s.limit(SKIP_LIMIT_SIZE)});
-        data.add(new Object[]{f.apply("DoubleStream.substream(%d)"),
-                (UnaryOperator<DoubleStream>) s -> s.substream(SKIP_LIMIT_SIZE, SKIP_LIMIT_SIZE * 2)});
-        data.add(new Object[]{f.apply("DoubleStream.substream(%1$d).limit(%1$d)"),
-                (UnaryOperator<DoubleStream>) s -> s.substream(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
+        data.add(new Object[]{f.apply("DoubleStream.skip(%1$d).limit(%1$d)"),
+                (UnaryOperator<DoubleStream>) s -> s.skip(SKIP_LIMIT_SIZE).limit(SKIP_LIMIT_SIZE)});
 
         return data.toArray(new Object[0][]);
     }

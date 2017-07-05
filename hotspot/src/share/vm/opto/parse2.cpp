@@ -268,7 +268,7 @@ public:
     return adjoinRange(value, value, dest, table_index);
   }
 
-  void print(ciEnv* env) {
+  void print() {
     if (is_singleton())
       tty->print(" {%d}=>%d", lo(), dest());
     else if (lo() == min_jint)
@@ -471,8 +471,8 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // These are the switch destinations hanging off the jumpnode
   int i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
-    for (int j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new (C) JumpProjNode(jtn, i, r->dest(), j - lowval));
+    for (int64 j = r->lo(); j <= r->hi(); j++, i++) {
+      Node* input = _gvn.transform(new (C) JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
@@ -632,7 +632,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     }
     tty->print("   ");
     for( r = lo; r <= hi; r++ ) {
-      r->print(env());
+      r->print();
     }
     tty->print_cr("");
   }

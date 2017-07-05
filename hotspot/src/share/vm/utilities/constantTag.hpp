@@ -108,7 +108,8 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
     _tag = tag;
   }
 
-  jbyte value()                      { return _tag; }
+  jbyte value() const                { return _tag; }
+  jbyte non_error_value() const;
 
   BasicType basic_type() const;        // if used with ldc, what kind of value gets pushed?
 

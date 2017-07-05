@@ -38,7 +38,7 @@ public class TestCMS {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseConcMarkSweepGC", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("warning");
+    output.shouldNotContain("deprecated");
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
   }

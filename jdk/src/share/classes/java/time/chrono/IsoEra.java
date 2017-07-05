@@ -69,7 +69,7 @@ import java.time.DateTimeException;
  * The ISO-8601 standard does not define eras.
  * A definition has therefore been created with two eras - 'Current era' (CE) for
  * years on or after 0001-01-01 (ISO), and 'Before current era' (BCE) for years before that.
- * <p>
+ *
  * <table summary="ISO years and eras" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
  * <tr class="tableSubHeadingColor">

@@ -68,7 +68,7 @@ import java.math.*;
  * By implementing a <code>Predicate</code> (see example in <a href="Predicate.html">Predicate</a>
  * class JavaDoc), a <code>FilteredRowSet</code> could then be used as described
  * below.
- * <P>
+ *
  * <pre>
  * {@code
  *     FilteredRowSet frs = new FilteredRowSetImpl();
@@ -91,7 +91,7 @@ import java.math.*;
  * This framework allows multiple classes implementing predicates to be
  * used in combination to achieved the required filtering result with
  * out the need for query language processing.
- * <p>
+ *
  * <h3>4.0 Updating a <code>FilteredRowSet</code> Object</h3>
  * The predicate set on a <code>FilteredRowSet</code> object
  * applies a criterion on all rows in a
@@ -112,7 +112,7 @@ import java.math.*;
  * immediate effect on criterion enforcement within the
  * <code>FilteredRowSet</code> object, and all subsequent views and updates will be
  * subject to similar enforcement.
- * <p>
+ *
  * <h3>5.0 Behavior of Rows Outside the Filter</h3>
  * Rows that fall outside of the filter set on a <code>FilteredRowSet</code>
  * object cannot be modified until the filter is removed or a

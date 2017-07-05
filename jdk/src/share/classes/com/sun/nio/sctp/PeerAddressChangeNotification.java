@@ -32,6 +32,7 @@ import java.net.SocketAddress;
  *
  * @since 1.7
  */
+@jdk.Exported
 public abstract class PeerAddressChangeNotification
     implements Notification
 {
@@ -46,6 +47,7 @@ public abstract class PeerAddressChangeNotification
      *
      * @since 1.7
      */
+    @jdk.Exported
     public enum AddressChangeEvent {
         /**
          * This address is now reachable.
