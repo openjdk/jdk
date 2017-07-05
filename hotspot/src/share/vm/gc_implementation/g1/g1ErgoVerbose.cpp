@@ -52,14 +52,13 @@ void G1ErgoVerbose::set_enabled(bool enabled) {
 const char* G1ErgoVerbose::to_string(int tag) {
   ErgoHeuristic n = extract_heuristic(tag);
   switch (n) {
-  case ErgoHeapSizing:            return "Heap Sizing";
-  case ErgoCSetConstruction:      return "CSet Construction";
-  case ErgoConcCycles:            return "Concurrent Cycles";
-  case ErgoPartiallyYoungGCs:     return "Partially-Young GCs";
+  case ErgoHeapSizing:        return "Heap Sizing";
+  case ErgoCSetConstruction:  return "CSet Construction";
+  case ErgoConcCycles:        return "Concurrent Cycles";
+  case ErgoMixedGCs:          return "Mixed GCs";
   default:
     ShouldNotReachHere();
     // Keep the Windows compiler happy
     return NULL;
   }
 }
-

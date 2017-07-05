@@ -94,6 +94,7 @@ public interface KeyInfo extends XMLStructure {
      *    in this <code>KeyInfo</code>. Never returns <code>null</code> or an
      *    empty list.
      */
+    @SuppressWarnings("rawtypes")
     List getContent();
 
     /**

@@ -737,10 +737,6 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale getDefault() {
         // do not synchronize this method - see 4071298
-        // it's OK if more than one default locale happens to be created
-        if (defaultLocale == null) {
-            initDefault();
-        }
         return defaultLocale;
     }
 
@@ -762,16 +758,23 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale getDefault(Locale.Category category) {
         // do not synchronize this method - see 4071298
-        // it's OK if more than one default locale happens to be created
         switch (category) {
         case DISPLAY:
             if (defaultDisplayLocale == null) {
-                initDefault(category);
+                synchronized(Locale.class) {
+                    if (defaultDisplayLocale == null) {
+                        defaultDisplayLocale = initDefault(category);
+                    }
+                }
             }
             return defaultDisplayLocale;
         case FORMAT:
             if (defaultFormatLocale == null) {
-                initDefault(category);
+                synchronized(Locale.class) {
+                    if (defaultFormatLocale == null) {
+                        defaultFormatLocale = initDefault(category);
+                    }
+                }
             }
             return defaultFormatLocale;
         default:
@@ -780,7 +783,7 @@ public final class Locale implements Cloneable, Serializable {
         return getDefault();
     }
 
-    private static void initDefault() {
+    private static Locale initDefault() {
         String language, region, script, country, variant;
         language = AccessController.doPrivileged(
             new GetPropertyAction("user.language", "en"));
@@ -806,16 +809,12 @@ public final class Locale implements Cloneable, Serializable {
             variant = AccessController.doPrivileged(
                 new GetPropertyAction("user.variant", ""));
         }
-        defaultLocale = getInstance(language, script, country, variant, null);
+
+        return getInstance(language, script, country, variant, null);
     }
 
-    private static void initDefault(Locale.Category category) {
-        // make sure defaultLocale is initialized
-        if (defaultLocale == null) {
-            initDefault();
-        }
-
-        Locale defaultCategoryLocale = getInstance(
+    private static Locale initDefault(Locale.Category category) {
+        return getInstance(
             AccessController.doPrivileged(
                 new GetPropertyAction(category.languageKey, defaultLocale.getLanguage())),
             AccessController.doPrivileged(
@@ -825,15 +824,6 @@ public final class Locale implements Cloneable, Serializable {
             AccessController.doPrivileged(
                 new GetPropertyAction(category.variantKey, defaultLocale.getVariant())),
             null);
-
-        switch (category) {
-        case DISPLAY:
-            defaultDisplayLocale = defaultCategoryLocale;
-            break;
-        case FORMAT:
-            defaultFormatLocale = defaultCategoryLocale;
-            break;
-        }
     }
 
     /**
@@ -1916,9 +1906,9 @@ public final class Locale implements Cloneable, Serializable {
      */
     private transient volatile int hashCodeValue = 0;
 
-    private static Locale defaultLocale = null;
-    private static Locale defaultDisplayLocale = null;
-    private static Locale defaultFormatLocale = null;
+    private volatile static Locale defaultLocale = initDefault();
+    private volatile static Locale defaultDisplayLocale = null;
+    private volatile static Locale defaultFormatLocale = null;
 
     /**
      * Return an array of the display names of the variant.

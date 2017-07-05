@@ -158,9 +158,9 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     private static Font defaultMenuFont;
 
     static {
-        defaultMenuFont = (Font) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        defaultMenuFont = AccessController.doPrivileged(
+            new PrivilegedAction <Font> () {
+                public Font run() {
                     try {
                         ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
                         return Font.decode(rb.getString("menuFont"));

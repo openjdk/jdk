@@ -198,7 +198,7 @@ public:
   // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause, int max_level);
 
-  // Returns "TRUE" iff "p" points into the allocated area of the heap.
+  // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in(), is_in_closed_subset() and is_in_youngest() may
   // be expensive to compute in general, so, to prevent
   // their inadvertent use in product jvm's, we restrict their use to

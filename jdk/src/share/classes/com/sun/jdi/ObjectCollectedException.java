@@ -33,6 +33,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class ObjectCollectedException extends RuntimeException {
+    private static final long serialVersionUID = -1928428056197269588L;
     public ObjectCollectedException() {
         super();
     }

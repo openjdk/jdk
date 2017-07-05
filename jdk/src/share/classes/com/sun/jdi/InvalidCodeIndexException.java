@@ -36,6 +36,7 @@ package com.sun.jdi;
  */
 @Deprecated
 public class InvalidCodeIndexException extends RuntimeException {
+    private static final long serialVersionUID = 7416010225133747805L;
     public InvalidCodeIndexException() {
         super();
     }

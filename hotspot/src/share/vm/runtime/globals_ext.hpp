@@ -53,4 +53,12 @@ inline bool Flag::is_unlocked_ext() const {
   return true;
 }
 
+inline bool Flag::is_writeable_ext() const {
+  return false;
+}
+
+inline bool Flag::is_external_ext() const {
+  return false;
+}
+
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXT_HPP

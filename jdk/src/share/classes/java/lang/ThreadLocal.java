@@ -144,8 +144,11 @@ public class ThreadLocal<T> {
         ThreadLocalMap map = getMap(t);
         if (map != null) {
             ThreadLocalMap.Entry e = map.getEntry(this);
-            if (e != null)
-                return (T)e.value;
+            if (e != null) {
+                @SuppressWarnings("unchecked")
+                T result = (T)e.value;
+                return result;
+            }
         }
         return setInitialValue();
     }
@@ -268,11 +271,11 @@ public class ThreadLocal<T> {
          * entry can be expunged from table.  Such entries are referred to
          * as "stale entries" in the code that follows.
          */
-        static class Entry extends WeakReference<ThreadLocal> {
+        static class Entry extends WeakReference<ThreadLocal<?>> {
             /** The value associated with this ThreadLocal. */
             Object value;
 
-            Entry(ThreadLocal k, Object v) {
+            Entry(ThreadLocal<?> k, Object v) {
                 super(k);
                 value = v;
             }
@@ -325,7 +328,7 @@ public class ThreadLocal<T> {
          * ThreadLocalMaps are constructed lazily, so we only create
          * one when we have at least one entry to put in it.
          */
-        ThreadLocalMap(ThreadLocal firstKey, Object firstValue) {
+        ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
             table = new Entry[INITIAL_CAPACITY];
             int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
             table[i] = new Entry(firstKey, firstValue);
@@ -348,7 +351,8 @@ public class ThreadLocal<T> {
             for (int j = 0; j < len; j++) {
                 Entry e = parentTable[j];
                 if (e != null) {
-                    ThreadLocal key = e.get();
+                    @SuppressWarnings("unchecked")
+                    ThreadLocal<Object> key = (ThreadLocal<Object>) e.get();
                     if (key != null) {
                         Object value = key.childValue(e.value);
                         Entry c = new Entry(key, value);
@@ -372,7 +376,7 @@ public class ThreadLocal<T> {
          * @param  key the thread local object
          * @return the entry associated with key, or null if no such
          */
-        private Entry getEntry(ThreadLocal key) {
+        private Entry getEntry(ThreadLocal<?> key) {
             int i = key.threadLocalHashCode & (table.length - 1);
             Entry e = table[i];
             if (e != null && e.get() == key)
@@ -390,12 +394,12 @@ public class ThreadLocal<T> {
          * @param  e the entry at table[i]
          * @return the entry associated with key, or null if no such
          */
-        private Entry getEntryAfterMiss(ThreadLocal key, int i, Entry e) {
+        private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
             Entry[] tab = table;
             int len = tab.length;
 
             while (e != null) {
-                ThreadLocal k = e.get();
+                ThreadLocal<?> k = e.get();
                 if (k == key)
                     return e;
                 if (k == null)
@@ -413,7 +417,7 @@ public class ThreadLocal<T> {
          * @param key the thread local object
          * @param value the value to be set
          */
-        private void set(ThreadLocal key, Object value) {
+        private void set(ThreadLocal<?> key, Object value) {
 
             // We don't use a fast path as with get() because it is at
             // least as common to use set() to create new entries as
@@ -427,7 +431,7 @@ public class ThreadLocal<T> {
             for (Entry e = tab[i];
                  e != null;
                  e = tab[i = nextIndex(i, len)]) {
-                ThreadLocal k = e.get();
+                ThreadLocal<?> k = e.get();
 
                 if (k == key) {
                     e.value = value;
@@ -449,7 +453,7 @@ public class ThreadLocal<T> {
         /**
          * Remove the entry for key.
          */
-        private void remove(ThreadLocal key) {
+        private void remove(ThreadLocal<?> key) {
             Entry[] tab = table;
             int len = tab.length;
             int i = key.threadLocalHashCode & (len-1);
@@ -479,7 +483,7 @@ public class ThreadLocal<T> {
          * @param  staleSlot index of the first stale entry encountered while
          *         searching for key.
          */
-        private void replaceStaleEntry(ThreadLocal key, Object value,
+        private void replaceStaleEntry(ThreadLocal<?> key, Object value,
                                        int staleSlot) {
             Entry[] tab = table;
             int len = tab.length;
@@ -501,7 +505,7 @@ public class ThreadLocal<T> {
             for (int i = nextIndex(staleSlot, len);
                  (e = tab[i]) != null;
                  i = nextIndex(i, len)) {
-                ThreadLocal k = e.get();
+                ThreadLocal<?> k = e.get();
 
                 // If we find key, then we need to swap it
                 // with the stale entry to maintain hash table order.
@@ -563,7 +567,7 @@ public class ThreadLocal<T> {
             for (i = nextIndex(staleSlot, len);
                  (e = tab[i]) != null;
                  i = nextIndex(i, len)) {
-                ThreadLocal k = e.get();
+                ThreadLocal<?> k = e.get();
                 if (k == null) {
                     e.value = null;
                     tab[i] = null;
@@ -650,7 +654,7 @@ public class ThreadLocal<T> {
             for (int j = 0; j < oldLen; ++j) {
                 Entry e = oldTab[j];
                 if (e != null) {
-                    ThreadLocal k = e.get();
+                    ThreadLocal<?> k = e.get();
                     if (k == null) {
                         e.value = null; // Help the GC
                     } else {

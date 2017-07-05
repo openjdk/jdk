@@ -105,7 +105,7 @@ public class GenericAttachingConnector
     /**
      * Attach to a target VM using the specified address and Connector arguments.
      */
-    public VirtualMachine attach(String address, Map args)
+    public VirtualMachine attach(String address, Map<String, ? extends Connector.Argument> args)
         throws IOException, IllegalConnectorArgumentsException
     {
         String ts  = argument(ARG_TIMEOUT, args).value();

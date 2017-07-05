@@ -240,7 +240,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     public void stop(ObjectReference throwable) throws InvalidTypeException {
         validateMirror(throwable);
         // Verify that the given object is a Throwable instance
-        List list = vm.classesByName("java.lang.Throwable");
+        List<ReferenceType> list = vm.classesByName("java.lang.Throwable");
         ClassTypeImpl throwableClass = (ClassTypeImpl)list.get(0);
         if ((throwable == null) ||
             !throwableClass.isAssignableFrom(throwable)) {
@@ -296,10 +296,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         try {
             StackFrame frame = frame(0);
             Location location = frame.location();
-            List requests = vm.eventRequestManager().breakpointRequests();
-            Iterator iter = requests.iterator();
+            List<BreakpointRequest> requests = vm.eventRequestManager().breakpointRequests();
+            Iterator<BreakpointRequest> iter = requests.iterator();
             while (iter.hasNext()) {
-                BreakpointRequest request = (BreakpointRequest)iter.next();
+                BreakpointRequest request = iter.next();
                 if (location.equals(request.location())) {
                     return true;
                 }
@@ -352,8 +352,8 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     public StackFrame frame(int index) throws IncompatibleThreadStateException  {
-        List list = privateFrames(index, 1);
-        return (StackFrame)list.get(0);
+        List<StackFrame> list = privateFrames(index, 1);
+        return list.get(0);
     }
 
     /**
@@ -447,7 +447,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 snapshot.ownedMonitors = Arrays.asList(
                                  (ObjectReference[])JDWP.ThreadReference.OwnedMonitors.
                                          process(vm, this).owned);
-                if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                     vm.printTrace(description() +
                                   " temporarily caching owned monitors"+
                                   " (count = " + snapshot.ownedMonitors.size() + ")");
@@ -475,7 +475,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                     process(vm, this).monitor;
                 snapshot.triedCurrentContended = true;
                 if ((snapshot.contendedMonitor != null) &&
-                    ((vm.traceFlags & vm.TRACE_OBJREFS) != 0)) {
+                    ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0)) {
                     vm.printTrace(description() +
                                   " temporarily caching contended monitor"+
                                   " (id = " + snapshot.contendedMonitor.uniqueID() + ")");
@@ -509,7 +509,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                     snapshot.ownedMonitorsInfo.add(mon);
                 }
 
-                if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                     vm.printTrace(description() +
                                   " temporarily caching owned monitors"+
                                   " (count = " + snapshot.ownedMonitorsInfo.size() + ")");
@@ -601,9 +601,9 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
 
     void removeListener(ThreadListener listener) {
         synchronized (vm.state()) {
-            Iterator iter = listeners.iterator();
+            Iterator<WeakReference<ThreadListener>> iter = listeners.iterator();
             while (iter.hasNext()) {
-                WeakReference ref = (WeakReference)iter.next();
+                WeakReference<ThreadListener> ref = iter.next();
                 if (listener.equals(ref.get())) {
                     iter.remove();
                     break;
@@ -619,10 +619,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      */
     private void processThreadAction(ThreadAction action) {
         synchronized (vm.state()) {
-            Iterator iter = listeners.iterator();
+            Iterator<WeakReference<ThreadListener>> iter = listeners.iterator();
             while (iter.hasNext()) {
-                WeakReference ref = (WeakReference)iter.next();
-                ThreadListener listener = (ThreadListener)ref.get();
+                WeakReference<ThreadListener> ref = iter.next();
+                ThreadListener listener = ref.get();
                 if (listener != null) {
                     switch (action.id()) {
                         case ThreadAction.THREAD_RESUMABLE:

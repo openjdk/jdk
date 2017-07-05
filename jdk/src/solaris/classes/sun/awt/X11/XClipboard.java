@@ -26,6 +26,7 @@
 package sun.awt.X11;
 
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.DataFlavor;
 import java.util.SortedMap;
 import java.io.IOException;
 import java.security.AccessController;
@@ -83,7 +84,8 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
     }
 
     protected synchronized void setContentsNative(Transferable contents) {
-        SortedMap formatMap = DataTransferer.getInstance().getFormatsForTransferable
+        SortedMap<Long,DataFlavor> formatMap =
+            DataTransferer.getInstance().getFormatsForTransferable
                 (contents, DataTransferer.adaptFlavorMap(flavorMap));
         long[] formats = DataTransferer.keysToLongArray(formatMap);
 

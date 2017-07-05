@@ -83,7 +83,7 @@ public class IntegerValueImpl extends PrimitiveValueImpl
     }
 
     public int intValue() {
-        return(int)value;
+        return value;
     }
 
     public long longValue() {

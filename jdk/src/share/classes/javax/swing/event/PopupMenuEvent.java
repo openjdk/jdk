@@ -41,6 +41,7 @@ import java.util.EventObject;
  *
  * @author Arnaud Weber
  */
+@SuppressWarnings("serial")
 public class PopupMenuEvent extends EventObject {
     /**
      * Constructs a PopupMenuEvent object.
