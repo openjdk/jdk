@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4994312
+ *@bug 4994312 8008577
  *@summary verify the German locale will accept localized pattern chars 't' and 'u'.
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4994312
  */
 
 import java.text.DateFormat;

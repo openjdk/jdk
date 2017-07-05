@@ -88,8 +88,7 @@ public abstract class LocaleProviderAdapter {
     }
 
     /**
-     * LocaleProviderAdapter preference list. The default list is intended
-     * to behave the same manner in JDK7.
+     * LocaleProviderAdapter preference list.
      */
     private static final List<Type> adapterPreference;
 
@@ -177,7 +176,14 @@ public abstract class LocaleProviderAdapter {
                 defaultLocaleProviderAdapter = Type.JRE;
             }
         } else {
-            // Default preference list
+            // Default preference list.
+            try {
+                cldrLocaleProviderAdapter = new CLDRLocaleProviderAdapter();
+                typeList.add(Type.CLDR);
+                defaultLocaleProviderAdapter = Type.CLDR;
+            } catch (UnsupportedOperationException e) {
+                LocaleServiceProviderPool.config(LocaleProviderAdapter.class, e.toString());
+            }
             typeList.add(Type.JRE);
             typeList.add(Type.SPI);
             defaultLocaleProviderAdapter = Type.JRE;
@@ -213,7 +219,10 @@ public abstract class LocaleProviderAdapter {
     public static LocaleProviderAdapter getResourceBundleBased() {
         for (Type type : getAdapterPreference()) {
             if (type == Type.JRE || type == Type.CLDR || type == Type.FALLBACK) {
-                return forType(type);
+                LocaleProviderAdapter adapter = forType(type);
+                if (adapter != null) {
+                    return adapter;
+                }
             }
         }
         // Shouldn't happen.
@@ -295,28 +304,9 @@ public abstract class LocaleProviderAdapter {
      * A utility method for implementing the default LocaleServiceProvider.isSupportedLocale
      * for the JRE, CLDR, and FALLBACK adapters.
      */
-    public static boolean isSupportedLocale(Locale locale, LocaleProviderAdapter.Type type, Set<String> langtags) {
+    public boolean isSupportedProviderLocale(Locale locale,  Set<String> langtags) {
+        LocaleProviderAdapter.Type type = getAdapterType();
         assert type == Type.JRE || type == Type.CLDR || type == Type.FALLBACK;
-        if (Locale.ROOT.equals(locale)) {
-            return true;
-        }
-
-        if (type == Type.FALLBACK) {
-            // no other locales except ROOT are supported for FALLBACK
-            return false;
-        }
-
-        locale = locale.stripExtensions();
-        if (langtags.contains(locale.toLanguageTag())) {
-            return true;
-        }
-        if (type == Type.JRE) {
-            String oldname = locale.toString().replace('_', '-');
-            return langtags.contains(oldname) ||
-                   "ja-JP-JP".equals(oldname) ||
-                   "th-TH-TH".equals(oldname) ||
-                   "no-NO-NY".equals(oldname);
-        }
         return false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,39 @@ public final class SunPCSC extends Provider {
 
     private static final long serialVersionUID = 6168388284028876579L;
 
+    private static final class ProviderService extends Provider.Service {
+
+        ProviderService(Provider p, String type, String algo, String cn) {
+            super(p, type, algo, cn, null, null);
+        }
+
+        @Override
+        public Object newInstance(Object ctrParamObj)
+            throws NoSuchAlgorithmException {
+            String type = getType();
+            String algo = getAlgorithm();
+            try {
+                if (type.equals("TerminalFactory") &&
+                    algo.equals("PC/SC")) {
+                    return new SunPCSC.Factory(ctrParamObj);
+                }
+            } catch (Exception ex) {
+                throw new NoSuchAlgorithmException("Error constructing " +
+                    type + " for " + algo + " using SunPCSC", ex);
+            }
+            throw new ProviderException("No impl for " + algo +
+                " " + type);
+        }
+    }
+
     public SunPCSC() {
         super("SunPCSC", 1.9d, "Sun PC/SC provider");
+
+        final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                put("TerminalFactory.PC/SC", "sun.security.smartcardio.SunPCSC$Factory");
+                putService(new ProviderService(p, "TerminalFactory",
+                           "PC/SC", "sun.security.smartcardio.SunPCSC$Factory"));
                 return null;
             }
         });

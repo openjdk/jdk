@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 10819 $"/>
+		<generation date="$Date: 2014-08-14 22:53:08 -0500 (Thu, 14 Aug 2014) $"/>
+		<language type="se"/>
+		<territory type="FI"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ace">ačehgiella</language>
+			<language type="ar_001">standárda arábagiella</language>
+			<language type="be">vilgesruoššagiella</language>
+			<language type="bn">bengalagiella</language>
+			<language type="de_AT">nuortariikkalaš duiskkagiella</language>
+			<language type="de_CH">šveicalaš duiskkagiella</language>
+			<language type="en_AU">austrálialaš eaŋgalsgiella</language>
+			<language type="en_CA">kanádalaš eaŋgalsgiella</language>
+			<language type="en_GB">brihttalaš eaŋgalsgiella</language>
+			<language type="en_GB" alt="short">brihttalaš eaŋgalsgiella</language>
+			<language type="en_US">amerihkálaš eaŋgalsgiella</language>
+			<language type="en_US" alt="short">amerihkálaš eaŋgalsgiella</language>
+			<language type="es_419">latiinna-amerihkalaš spánskkagiella</language>
+			<language type="es_ES">espánjalaš spánskkagiella</language>
+			<language type="es_MX">meksikolaš spánskkagiella</language>
+			<language type="fj">fižigiella</language>
+			<language type="fr_CA">kanádalaš fránskkagiella</language>
+			<language type="fr_CH">šveicalaš fránskkagiella</language>
+			<language type="hy">armenagiella</language>
+			<language type="kk">kazakhgiella</language>
+			<language type="km">kambožagiella</language>
+			<language type="ne">nepalagiella</language>
+			<language type="nl_BE">belgialaš hollánddagiella</language>
+			<language type="pa">panjabagiella</language>
+			<language type="pt_BR">brasilialaš portugálagiella</language>
+			<language type="pt_PT">portugálalaš portugálagiella</language>
+			<language type="ro_MD">moldávialaš romániagiella</language>
+			<language type="swb">komoragiella</language>
+			<language type="th">thaigiella</language>
+			<language type="vi">vietnamagiella</language>
+			<language type="zh_Hans">álkes kiinnágiella</language>
+		</languages>
+		<scripts>
+			<script type="Arab">arábalaš</script>
+			<script type="Hani">kiinnálaš</script>
+			<script type="Hans">álkes kiinnálaš</script>
+			<script type="Hans" alt="stand-alone">álkes kiinnálaš</script>
+			<script type="Hant">árbevirolaš kiinnálaš</script>
+			<script type="Hant" alt="stand-alone">árbevirolaš kiinnálaš</script>
+			<script type="Zxxx">orrut čállojuvvot</script>
+			<script type="Zzzz">dovdameahttun čállin</script>
+		</scripts>
+		<territories>
+			<territory type="003">Davvi-Amerihkká ja Gaska-Amerihkká</territory>
+			<territory type="005">Lulli-Amerihkká</territory>
+			<territory type="013">Gaska-Amerihkká</territory>
+			<territory type="021">Davvi-Amerihkká</territory>
+			<territory type="419">Latiinnalaš-Amerihkká</territory>
+			<territory type="BA">Bosnia ja Hercegovina</territory>
+			<territory type="CI" alt="variant">Côte d’Ivoire</territory>
+			<territory type="KH">Kamboža</territory>
+			<territory type="SD">Sudan</territory>
+			<territory type="TD">Chad</territory>
+		</territories>
+		<types>
+			<type type="buddhist" key="calendar">buddhista kaleandar</type>
+			<type type="chinese" key="calendar">kiinná kaleandar</type>
+			<type type="coptic" key="calendar">koptalaš kaleandar</type>
+			<type type="dangi" key="calendar">dangi kaleandar</type>
+			<type type="ethiopic" key="calendar">etiohpalaš kaleandar</type>
+			<type type="ethiopic-amete-alem" key="calendar">etiohpalaš-amete-alem kaleandar</type>
+			<type type="fullwide" key="numbers">fullwide</type>
+			<type type="gregorian" key="calendar">gregorialaš kalendar</type>
+		</types>
+		<codePatterns>
+			<codePattern type="script">čállin: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ođđajage</month>
+							<month type="2" draft="unconfirmed">guovva</month>
+							<month type="3" draft="unconfirmed">njukča</month>
+							<month type="4" draft="unconfirmed">cuoŋo</month>
+							<month type="5" draft="unconfirmed">miesse</month>
+							<month type="6" draft="unconfirmed">geasse</month>
+							<month type="7" draft="unconfirmed">suoidne</month>
+							<month type="8" draft="unconfirmed">borge</month>
+							<month type="9" draft="unconfirmed">čakča</month>
+							<month type="10" draft="unconfirmed">golggot</month>
+							<month type="11" draft="unconfirmed">skábma</month>
+							<month type="12" draft="unconfirmed">juovla</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">aejlege</day>
+							<day type="mon" draft="unconfirmed">måanta</day>
+							<day type="tue" draft="unconfirmed">däjsta</day>
+							<day type="wed" draft="unconfirmed">gaskevahkoe</day>
+							<day type="thu" draft="unconfirmed">dåarsta</day>
+							<day type="fri" draft="unconfirmed">bearjadahke</day>
+							<day type="sat" draft="unconfirmed">laavadahke</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">D</day>
+							<day type="wed" draft="unconfirmed">G</day>
+							<day type="thu" draft="unconfirmed">D</day>
+							<day type="fri" draft="unconfirmed">B</day>
+							<day type="sat" draft="unconfirmed">L</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>áigodat</displayName>
+			</field>
+			<field type="year">
+				<displayName>jahki</displayName>
+				<relative type="-1">mannan jagi</relative>
+				<relative type="0">dán jagi</relative>
+				<relative type="1">boahtte jagi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} jagi siste</relativeTimePattern>
+					<relativeTimePattern count="two">{0} jagi siste</relativeTimePattern>
+					<relativeTimePattern count="other">{0} jagi siste</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} jagi árat</relativeTimePattern>
+					<relativeTimePattern count="two">{0} jagi árat</relativeTimePattern>
+					<relativeTimePattern count="other">{0} jagi árat</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>j.</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>j.</displayName>
+			</field>
+			<field type="quarter">
+				<displayName>jahkenjealjádas</displayName>
+			</field>
+			<field type="week">
+				<displayName>vahkku</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>vahkkobeaivi</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
+		</timeZoneNames>
+	</dates>
+</ldml>
+

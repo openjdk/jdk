@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6997010
+ * @bug 6997010 7191662
  * @summary Consolidate java.security files into one file with modifications
+ * @run main/othervm CheckSecurityProvider
  */
 
 import java.security.Provider;
@@ -36,14 +37,14 @@ import java.util.List;
 /*
  * The main benefit of this test is to catch merge errors or other types
  * of issues where one or more of the security providers are accidentally
- * removed. This is why the known security providers have to
- * be explicitly listed below.
+ * removed. With the security manager enabled, this test can also catch
+ * scenarios where the default permission policy needs to be updated.
  */
 public class CheckSecurityProvider {
     public static void main(String[] args) throws Exception {
+        System.setSecurityManager(new SecurityManager());
 
         String os = System.getProperty("os.name");
-
         /*
          * This array should be updated whenever new security providers
          * are added to the the java.security file.
@@ -52,10 +53,9 @@ public class CheckSecurityProvider {
 
         List<String> expected = new ArrayList<>();
 
+        // NOTE: the ordering must match what's defined inside java.security
         if (os.equals("SunOS")) {
-            if (!isOpenJDKOnly()) {
-                expected.add("com.oracle.security.ucrypto.UcryptoProvider");
-            }
+            expected.add("com.oracle.security.ucrypto.UcryptoProvider");
             expected.add("sun.security.pkcs11.SunPKCS11");
         }
         expected.add("sun.security.provider.Sun");
@@ -68,11 +68,15 @@ public class CheckSecurityProvider {
         expected.add("org.jcp.xml.dsig.internal.dom.XMLDSigRI");
         expected.add("sun.security.smartcardio.SunPCSC");
         expected.add("sun.security.provider.certpath.ldap.JdkLDAP");
+        expected.add("com.sun.security.sasl.gsskerb.JdkSASL");
         if (os.startsWith("Windows")) {
             expected.add("sun.security.mscapi.SunMSCAPI");
         }
         if (os.contains("OS X")) {
             expected.add("apple.security.AppleProvider");
+        }
+        if (!os.equals("SunOS")) {
+            expected.add("sun.security.pkcs11.SunPKCS11");
         }
 
         Iterator<String> iter = expected.iterator();
@@ -89,11 +93,5 @@ public class CheckSecurityProvider {
         if (iter.hasNext()) {
             throw new Exception("More expected");
         }
-    }
-
-    // Copied from CheckPackageAccess.java in the same directory
-    private static boolean isOpenJDKOnly() {
-        String prop = System.getProperty("java.runtime.name");
-        return prop != null && prop.startsWith("OpenJDK");
     }
 }
