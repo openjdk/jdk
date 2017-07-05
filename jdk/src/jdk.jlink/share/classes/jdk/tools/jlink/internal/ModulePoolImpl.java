@@ -95,7 +95,7 @@ public class ModulePoolImpl implements ModulePool {
         @Override
         public void add(ModuleEntry data) {
             if (isReadOnly()) {
-                throw new PluginException("LinkConfiguration is readonly");
+                throw new PluginException("ModulePool is readonly");
             }
             Objects.requireNonNull(data);
             if (!data.getModule().equals(name)) {
@@ -180,7 +180,7 @@ public class ModulePoolImpl implements ModulePool {
     @Override
     public void add(ModuleEntry data) {
         if (isReadOnly()) {
-            throw new PluginException("LinkConfiguration is readonly");
+            throw new PluginException("ModulePool is readonly");
         }
         Objects.requireNonNull(data);
         if (resources.get(data.getPath()) != null) {
@@ -215,7 +215,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * The stream of modules contained in this LinkConfiguration.
+     * The stream of modules contained in this ModulePool.
      *
      * @return The stream of modules.
      */
@@ -225,7 +225,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Return the number of LinkModule count in this LinkConfiguration.
+     * Return the number of LinkModule count in this ModulePool.
      *
      * @return the module count.
      */
@@ -235,7 +235,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Get all ModuleEntry contained in this LinkConfiguration instance.
+     * Get all ModuleEntry contained in this ModulePool instance.
      *
      * @return The stream of LinkModuleEntries.
      */
@@ -245,7 +245,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Return the number of ModuleEntry count in this LinkConfiguration.
+     * Return the number of ModuleEntry count in this ModulePool.
      *
      * @return the entry count.
      */
@@ -267,7 +267,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Check if the LinkConfiguration contains the given ModuleEntry.
+     * Check if the ModulePool contains the given ModuleEntry.
      *
      * @param data The module data to check existence for.
      * @return The module data or null if not found.
@@ -279,7 +279,7 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Check if the LinkConfiguration contains some content at all.
+     * Check if the ModulePool contains some content at all.
      *
      * @return True, no content, false otherwise.
      */
@@ -289,16 +289,16 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
-     * Visit each ModuleEntry in this LinkConfiguration to transform it and
-     * copy the transformed ModuleEntry to the output LinkConfiguration.
+     * Visit each ModuleEntry in this ModulePool to transform it and
+     * copy the transformed ModuleEntry to the output ModulePool.
      *
      * @param transform The function called for each ModuleEntry found in
-     * the LinkConfiguration. The transform function should return a
+     * the ModulePool. The transform function should return a
      * ModuleEntry instance which will be added to the output or it should
      * return null if the passed ModuleEntry is to be ignored for the
      * output.
      *
-     * @param output The LinkConfiguration to be filled with Visitor returned
+     * @param output The ModulePool to be filled with Visitor returned
      * ModuleEntry.
      */
     @Override
@@ -351,14 +351,13 @@ public class ModulePoolImpl implements ModulePool {
     /**
      * A resource that has been compressed.
      */
-    public static final class CompressedModuleData extends ModuleEntryImpl {
+    public static final class CompressedModuleData extends ByteArrayModuleEntry {
 
         final long uncompressed_size;
 
         private CompressedModuleData(String module, String path,
-                InputStream stream, long size,
-                long uncompressed_size) {
-            super(module, path, ModuleEntry.Type.CLASS_OR_RESOURCE, stream, size);
+                byte[] content, long uncompressed_size) {
+            super(module, path, ModuleEntry.Type.CLASS_OR_RESOURCE, content);
             this.uncompressed_size = uncompressed_size;
         }
 
@@ -413,8 +412,7 @@ public class ModulePoolImpl implements ModulePool {
 
         CompressedModuleData compressedResource
                 = new CompressedModuleData(original.getModule(), original.getPath(),
-                        new ByteArrayInputStream(contentWithHeader),
-                        contentWithHeader.length, uncompressed_size);
+                        contentWithHeader, uncompressed_size);
         return compressedResource;
     }
 

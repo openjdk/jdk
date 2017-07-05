@@ -32,10 +32,9 @@ import java.net.http.WebSocket.CloseCode;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /*
  * @test
@@ -83,13 +82,7 @@ public class BasicWebSocketAPITest {
                 (ws) ->
                         TestKit.assertThrows(NullPointerException.class,
                                 "message",
-                                () -> ws.sendBinary((byte[]) null, true))
-        );
-        checkAndClose(
-                (ws) ->
-                        TestKit.assertThrows(NullPointerException.class,
-                                "message",
-                                () -> ws.sendBinary((ByteBuffer) null, true))
+                                () -> ws.sendBinary(null, true))
         );
         checkAndClose(
                 (ws) ->
@@ -125,13 +118,7 @@ public class BasicWebSocketAPITest {
                 (ws) ->
                         TestKit.assertThrows(NullPointerException.class,
                                 "message",
-                                () -> ws.sendText((CharSequence) null))
-        );
-        checkAndClose(
-                (ws) ->
-                        TestKit.assertThrows(NullPointerException.class,
-                                "message",
-                                () -> ws.sendText((Stream<? extends CharSequence>) null))
+                                () -> ws.sendText(null))
         );
         checkAndClose(
                 (ws) ->
@@ -214,17 +201,7 @@ public class BasicWebSocketAPITest {
         // FIXME: check timeout works
         // (i.e. it directly influences the time WebSocket waits for connection + opening handshake)
         TestKit.assertNotThrows(
-                () -> WebSocket.newBuilder(ws, defaultListener()).connectTimeout(1, TimeUnit.SECONDS)
-        );
-        WebSocket.Builder builder = WebSocket.newBuilder(ws, defaultListener());
-        TestKit.assertThrows(IllegalArgumentException.class,
-                "(?i).*\\bnegative\\b.*",
-                () -> builder.connectTimeout(-1, TimeUnit.SECONDS)
-        );
-        WebSocket.Builder builder1 = WebSocket.newBuilder(ws, defaultListener());
-        TestKit.assertThrows(NullPointerException.class,
-                "unit",
-                () -> builder1.connectTimeout(1, null)
+                () -> WebSocket.newBuilder(ws, defaultListener()).connectTimeout(Duration.ofSeconds(1))
         );
         // FIXME: check these headers are actually received by the server
         TestKit.assertNotThrows(

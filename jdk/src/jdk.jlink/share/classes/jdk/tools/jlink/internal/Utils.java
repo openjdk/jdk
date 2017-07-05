@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
@@ -57,46 +56,16 @@ public class Utils {
                      .collect(Collectors.toList());
     }
 
-    public static boolean isPostProcessor(Category category) {
-        return category.equals(Category.VERIFIER)
-                || category.equals(Category.PROCESSOR)
-                || category.equals(Category.PACKAGER);
-    }
-
-    public static boolean isPreProcessor(Category category) {
-        return category.equals(Category.COMPRESSOR)
-                || category.equals(Category.FILTER)
-                || category.equals(Category.MODULEINFO_TRANSFORMER)
-                || category.equals(Category.SORTER)
-                || category.equals(Category.TRANSFORMER)
-                || category.equals(Category.METAINFO_ADDER);
-    }
-
     public static boolean isPostProcessor(Plugin provider) {
-        Set<Category> types = provider.getType();
-        Objects.requireNonNull(types);
-        for (Category pt : types) {
-            return isPostProcessor(pt);
-        }
-        return false;
+        return provider.getType().isPostProcessor();
     }
 
     public static boolean isPreProcessor(Plugin provider) {
-        Set<Category> types = provider.getType();
-        Objects.requireNonNull(types);
-        for (Category pt : types) {
-            return isPreProcessor(pt);
-        }
-        return false;
+        return !isPostProcessor(provider);
     }
 
     public static Category getCategory(Plugin provider) {
-        Set<Category> types = provider.getType();
-        Objects.requireNonNull(types);
-        for (Category t : types) {
-            return t;
-        }
-        return null;
+        return provider.getType();
     }
 
     public static List<Plugin> getPreProcessors(List<Plugin> plugins) {

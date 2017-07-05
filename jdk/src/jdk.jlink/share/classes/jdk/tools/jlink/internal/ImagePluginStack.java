@@ -443,9 +443,7 @@ public final class ImagePluginStack {
                         byte[] bytes = decompressor.decompressResource(getByteOrder(),
                                 (int offset) -> pool.getStringTable().getString(offset),
                                 res.getBytes());
-                        res = ModuleEntry.create(res.getPath(),
-                                new ByteArrayInputStream(bytes),
-                                bytes.length);
+                        res = res.create(bytes);
                     } catch (IOException ex) {
                         throw new PluginException(ex);
                     }

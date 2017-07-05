@@ -272,8 +272,6 @@ sun/security/pkcs11/tls/TestMasterSecret.java                   8077138,8023434 
 sun/security/pkcs11/tls/TestPRF.java                            8077138,8023434 windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      8077138,8023434 windows-all
 
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8074580 generic-all
-
 sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
@@ -338,9 +336,6 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 # jdk_time
 
-java/time/test/java/time/TestClock_System.java                  8158128 solaris-all
-
-
 ############################################################################
 
 # jdk_util
@@ -386,8 +381,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 ############################################################################
 
 # core_tools
-
-tools/jlink/plugins/IncludeLocalesPluginTest.java               8159781 generic-all
 
 tools/jlink/JLinkOptimTest.java                                 8159264 generic-all
 

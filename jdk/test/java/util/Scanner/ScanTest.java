@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4313885 4926319 4927634 5032610 5032622 5049968 5059533 6223711 6277261 6269946 6288823
- *      8072722 8072582 8139414
+ *      8072722 8139414
  * @summary Basic tests of java.util.Scanner methods
  * @key randomness
  * @modules jdk.localedata
@@ -512,27 +512,9 @@ public class ScanTest {
     }
 
     public static void boundaryDelimTest() throws Exception {
-        // 8072582
-        StringBuilder sb = new StringBuilder();
-        append(sb, 'a', 228); sb.append(",");
-        append(sb, 'b', 293); sb.append("#,#");
-        append(sb, 'c', 308); sb.append(",");
-        append(sb, 'd', 188); sb.append("#,#");
-        append(sb, 'e', 2);
-        try (Scanner scanner = new Scanner(sb.toString())) {
-            scanner.useDelimiter("(#,#)|(,)");
-            while(scanner.hasNext()){
-                String next = scanner.next();
-                if(next.contains("#")){
-                    System.out.printf("[%s]%n", next);
-                    failCount++;
-                }
-            }
-        }
-
         // 8139414
         int i = 1019;
-        sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("--;");
         for (int j = 0; j < 1019; ++j) {
             sb.append(j%10);

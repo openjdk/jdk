@@ -609,6 +609,9 @@ public class Lexer extends Scanner {
         if (stream.get(stream.last()) != token) {
             return false;
         }
+
+        // Record current position in case multiple heredocs start on this line - see JDK-8073653
+        final State state = saveState();
         // Rewind to token start position
         reset(Token.descPosition(token));
 
@@ -616,7 +619,7 @@ public class Lexer extends Scanner {
             return scanRegEx();
         } else if (ch0 == '<') {
             if (ch1 == '<') {
-                return scanHereString(lir);
+                return scanHereString(lir, state);
             } else if (Character.isJavaIdentifierStart(ch1)) {
                 return scanXMLLiteral();
             }
@@ -1539,7 +1542,7 @@ public class Lexer extends Scanner {
      *
      * @return TRUE if is a here string.
      */
-    private boolean scanHereString(final LineInfoReceiver lir) {
+    private boolean scanHereString(final LineInfoReceiver lir, final State oldState) {
         assert ch0 == '<' && ch1 == '<';
         if (scripting) {
             // Record beginning of here string.
@@ -1588,6 +1591,11 @@ public class Lexer extends Scanner {
             lastLine++;
             int lastLinePosition = position;
             restState.setLimit(position);
+
+            if (oldState.position > position) {
+                restoreState(oldState);
+                skipLine(false);
+            }
 
             // Record beginning of string.
             final State stringState = saveState();
