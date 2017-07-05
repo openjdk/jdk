@@ -258,14 +258,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     // Search for CastP2X->Xor->URShift->Cmp path which
     // checks if the store done to a different from the value's region.
     // And replace Cmp with #0 (false) to collapse G1 post barrier.
-    Node* xorx = NULL;
-    for (DUIterator_Fast imax, i = p2x->fast_outs(imax); i < imax; i++) {
-      Node* u = p2x->fast_out(i);
-      if (u->Opcode() == Op_XorX) {
-        xorx = u;
-        break;
-      }
-    }
+    Node* xorx = p2x->find_out_with(Op_XorX);
     assert(xorx != NULL, "missing G1 post barrier");
     Node* shift = xorx->unique_out();
     Node* cmpx = shift->unique_out();
