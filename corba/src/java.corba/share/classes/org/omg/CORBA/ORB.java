@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,13 +85,17 @@ import java.security.PrivilegedAction;
  * three {@code init} methods.  Two of the three methods use the properties
  * (associations of a name with a value) shown in the
  * table below.<BR>
- * <TABLE BORDER=1 SUMMARY="Standard Java CORBA Properties">
- * <TR><TH>Property Name</TH>   <TH>Property Value</TH></TR>
+ * <TABLE class="plain">
  * <CAPTION>Standard Java CORBA Properties:</CAPTION>
+ * <thead>
+ * <TR><TH>Property Name</TH>   <TH>Property Value</TH></TR>
+ * </thead>
+ * <tbody>
  *     <TR><TD>org.omg.CORBA.ORBClass</TD>
  *     <TD>class name of an ORB implementation</TD></TR>
  *     <TR><TD>org.omg.CORBA.ORBSingletonClass</TD>
  *     <TD>class name of the ORB returned by {@code init()}</TD></TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * These properties allow a different vendor's {@code ORB}

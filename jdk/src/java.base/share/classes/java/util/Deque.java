@@ -56,7 +56,7 @@ package java.util;
  * <p>The twelve methods described above are summarized in the
  * following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of Deque methods</caption>
  *  <tr>
  *    <td></td>
@@ -99,7 +99,7 @@ package java.util;
  * inherited from the {@code Queue} interface are precisely equivalent to
  * {@code Deque} methods as indicated in the following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Comparison of Queue and Deque methods</caption>
  *  <tr>
  *    <td style="text-align:center"> <b>{@code Queue} Method</b></td>
@@ -137,7 +137,7 @@ package java.util;
  * beginning of the deque.  Stack methods are precisely equivalent to
  * {@code Deque} methods as indicated in the table below:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Comparison of Stack and Deque methods</caption>
  *  <tr>
  *    <td style="text-align:center"> <b>Stack Method</b></td>

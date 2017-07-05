@@ -38,8 +38,7 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.InMemoryJavaCompiler;
-import java.io.File;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class ModuleStress {
 

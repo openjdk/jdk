@@ -87,8 +87,11 @@ public class VectorIO {
         while (rem > 0L) {
             long bytesWritten = sc.write(bufs);
             if (bytesWritten == 0) {
-                if (sc.isBlocking())
+                if (sc.isBlocking()) {
                     throw new RuntimeException("write did not block");
+                } else {
+                    System.err.println("Non-blocking write() wrote zero bytes");
+                }
                 Thread.sleep(50);
             } else {
                 rem -= bytesWritten;
@@ -140,8 +143,10 @@ public class VectorIO {
 
                 for (;;) {
                     sc = ssc.accept();
-                    if (sc != null)
+                    if (sc != null) {
+                        System.err.println("accept() succeeded");
                         break;
+                    }
                     Thread.sleep(50);
                 }
 
@@ -154,8 +159,12 @@ public class VectorIO {
                     if (bytesRead < 0)
                         break;
                     if (bytesRead == 0) {
-                        if (sc.isBlocking())
+                        if (sc.isBlocking()) {
                             throw new RuntimeException("read did not block");
+                        } else {
+                            System.err.println
+                                ("Non-blocking read() read zero bytes");
+                        }
                         Thread.sleep(50);
                     }
                     avail -= bytesRead;
