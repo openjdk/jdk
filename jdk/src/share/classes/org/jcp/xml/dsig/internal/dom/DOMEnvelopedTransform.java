@@ -19,7 +19,7 @@
  *
  */
 /*
- * Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc. All rights reserved.
  */
 /*
  * $Id: DOMEnvelopedTransform.java,v 1.2 2008/07/24 15:20:32 mullan Exp $

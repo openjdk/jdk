@@ -70,6 +70,7 @@ import javax.management.JMRuntimeException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
+import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanPermission;
 import javax.management.MBeanRegistration;
 import javax.management.MBeanRegistrationException;
@@ -1045,8 +1046,10 @@ public class DefaultMBeanServerInterceptor
             Object resource = getResource(mbean);
             MBeanInjector.inject(resource, mbs, name);
             if (MBeanInjector.injectsSendNotification(resource)) {
+                MBeanNotificationInfo[] mbnis =
+                        mbean.getMBeanInfo().getNotifications();
                 NotificationBroadcasterSupport nbs =
-                        new NotificationBroadcasterSupport();
+                        new NotificationBroadcasterSupport(mbnis);
                 MBeanInjector.injectSendNotification(resource, nbs);
                 mbean = NotifySupport.wrap(mbean, nbs);
             }

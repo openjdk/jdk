@@ -92,7 +92,7 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
   if (UseCompressedOops) {
-    _metadata._compressed_klass = encode_heap_oop_not_null(k);
+    _metadata._compressed_klass = encode_heap_oop(k);  // may be null (parnew overflow handling)
   } else {
     _metadata._klass = (klassOop)k;
   }

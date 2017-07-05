@@ -849,10 +849,8 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Loop over monitors and insert into array
     for(idx = 0; idx < num_mon; idx++) {
       // Grab the node that defines this monitor
-      Node* box_node;
-      Node* obj_node;
-      box_node = sfn->monitor_box(jvms, idx);
-      obj_node = sfn->monitor_obj(jvms, idx);
+      Node* box_node = sfn->monitor_box(jvms, idx);
+      Node* obj_node = sfn->monitor_obj(jvms, idx);
 
       // Create ScopeValue for object
       ScopeValue *scval = NULL;
@@ -890,6 +888,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
       OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);
       Location basic_lock = Location::new_stk_loc(Location::normal,_regalloc->reg2offset(box_reg));
+      while( !box_node->is_BoxLock() )  box_node = box_node->in(1);
       monarray->append(new MonitorValue(scval, basic_lock, box_node->as_BoxLock()->is_eliminated()));
     }
 

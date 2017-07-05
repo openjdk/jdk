@@ -65,6 +65,10 @@ public final class Channels {
 
     private Channels() { }              // No instantiation
 
+    private static void checkNotNull(Object o, String name) {
+        if (o == null)
+            throw new NullPointerException("\"" + name + "\" is null!");
+    }
 
     /**
      * Write all remaining bytes in buffer to the given channel.
@@ -120,6 +124,7 @@ public final class Channels {
      * @return  A new input stream
      */
     public static InputStream newInputStream(ReadableByteChannel ch) {
+        checkNotNull(ch, "ch");
         return new sun.nio.ch.ChannelInputStream(ch);
     }
 
@@ -138,6 +143,8 @@ public final class Channels {
      * @return  A new output stream
      */
     public static OutputStream newOutputStream(final WritableByteChannel ch) {
+        checkNotNull(ch, "ch");
+
         return new OutputStream() {
 
                 private ByteBuffer bb = null;
@@ -193,9 +200,7 @@ public final class Channels {
      * @return  A new readable byte channel
      */
     public static ReadableByteChannel newChannel(final InputStream in) {
-        if (in == null) {
-            throw new NullPointerException();
-        }
+        checkNotNull(in, "in");
 
         if (in instanceof FileInputStream &&
             FileInputStream.class.equals(in.getClass())) {
@@ -270,9 +275,7 @@ public final class Channels {
      * @return  A new writable byte channel
      */
     public static WritableByteChannel newChannel(final OutputStream out) {
-        if (out == null) {
-            throw new NullPointerException();
-        }
+        checkNotNull(out, "out");
 
         if (out instanceof FileOutputStream &&
             FileOutputStream.class.equals(out.getClass())) {
@@ -357,8 +360,8 @@ public final class Channels {
                                    CharsetDecoder dec,
                                    int minBufferCap)
     {
-        dec.reset();
-        return StreamDecoder.forDecoder(ch, dec, minBufferCap);
+        checkNotNull(ch, "ch");
+        return StreamDecoder.forDecoder(ch, dec.reset(), minBufferCap);
     }
 
     /**
@@ -393,6 +396,7 @@ public final class Channels {
     public static Reader newReader(ReadableByteChannel ch,
                                    String csName)
     {
+        checkNotNull(csName, "csName");
         return newReader(ch, Charset.forName(csName).newDecoder(), -1);
     }
 
@@ -425,8 +429,8 @@ public final class Channels {
                                    final CharsetEncoder enc,
                                    final int minBufferCap)
     {
-        enc.reset();
-        return StreamEncoder.forEncoder(ch, enc, minBufferCap);
+        checkNotNull(ch, "ch");
+        return StreamEncoder.forEncoder(ch, enc.reset(), minBufferCap);
     }
 
     /**
@@ -461,6 +465,7 @@ public final class Channels {
     public static Writer newWriter(WritableByteChannel ch,
                                    String csName)
     {
+        checkNotNull(csName, "csName");
         return newWriter(ch, Charset.forName(csName).newEncoder(), -1);
     }
 
