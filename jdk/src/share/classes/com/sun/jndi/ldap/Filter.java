@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.IOException;
 /**
  * LDAP (RFC-1960) and LDAPv3 (RFC-2254) search filters.
  *
+ * @author Xuelei Fan
  * @author Vincent Ryan
  * @author Jagane Sundar
  * @author Rosanna Lee
@@ -258,7 +259,7 @@ final class Filter {
         byte[] answer = new byte[j];
         System.arraycopy(tbuf, 0, answer, 0, j);
         if (dbg) {
-            Ber.dumpBER(System.err, null, answer, 0, j);
+            Ber.dumpBER(System.err, "", answer, 0, j);
         }
         return answer;
     }
@@ -330,7 +331,7 @@ final class Filter {
         }
 
 
-        valueStart = eq + 1;            // value starts after equal sign
+        valueStart = eq + 1;        // value starts after equal sign
         valueEnd = filtEnd;
         typeStart = filtStart;      // beginning of string
 
@@ -355,20 +356,199 @@ final class Filter {
             break;
         default:
             typeEnd = eq;
+            //initializing ftype to make the compiler happy
+            ftype = 0x00;
+            break;
+        }
+
+        if (dbg) {
+            System.err.println("type: " + typeStart + ", " + typeEnd);
+            System.err.println("value: " + valueStart + ", " + valueEnd);
+        }
+
+        // check validity of type
+        //
+        // RFC4512 defines the type as the following ABNF:
+        //     attr = attributedescription
+        //     attributedescription = attributetype options
+        //     attributetype = oid
+        //     oid = descr / numericoid
+        //     descr = keystring
+        //     keystring = leadkeychar *keychar
+        //     leadkeychar = ALPHA
+        //     keychar = ALPHA / DIGIT / HYPHEN
+        //     numericoid = number 1*( DOT number )
+        //     number  = DIGIT / ( LDIGIT 1*DIGIT )
+        //     options = *( SEMI option )
+        //     option = 1*keychar
+        //
+        // And RFC4515 defines the extensible type as the following ABNF:
+        //     attr [dnattrs] [matchingrule] / [dnattrs] matchingrule
+        int optionsStart = -1;
+        int extensibleStart = -1;
+        if ((filter[typeStart] >= '0' && filter[typeStart] <= '9') ||
+            (filter[typeStart] >= 'A' && filter[typeStart] <= 'Z') ||
+            (filter[typeStart] >= 'a' && filter[typeStart] <= 'z')) {
+
+            boolean isNumericOid =
+                filter[typeStart] >= '0' && filter[typeStart] <= '9';
+            for (int i = typeStart + 1; i < typeEnd; i++) {
+                // ';' is an indicator of attribute options
+                if (filter[i] == ';') {
+                    if (isNumericOid && filter[i - 1] == '.') {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+
+                    // attribute options
+                    optionsStart = i;
+                    break;
+                }
+
+                // ':' is an indicator of extensible rules
+                if (filter[i] == ':' && ftype == LDAP_FILTER_EXT) {
+                    if (isNumericOid && filter[i - 1] == '.') {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+
+                    // extensible matching
+                    extensibleStart = i;
+                    break;
+                }
+
+                if (isNumericOid) {
+                    // numeric object identifier
+                    if ((filter[i] == '.' && filter[i - 1] == '.') ||
+                        (filter[i] != '.' &&
+                            !(filter[i] >= '0' && filter[i] <= '9'))) {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+                } else {
+                    // descriptor
+                    if (filter[i] != '-' &&
+                        !(filter[i] >= '0' && filter[i] <= '9') &&
+                        !(filter[i] >= 'A' && filter[i] <= 'Z') &&
+                        !(filter[i] >= 'a' && filter[i] <= 'z')) {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+                }
+            }
+        } else if (ftype == LDAP_FILTER_EXT && filter[typeStart] == ':') {
+            // extensible matching
+            extensibleStart = typeStart;
+        } else {
+            throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+        }
+
+        // check attribute options
+        if (optionsStart > 0) {
+            for (int i = optionsStart + 1; i < typeEnd; i++) {
+                if (filter[i] == ';') {
+                    if (filter[i - 1] == ';') {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+                    continue;
+                }
+
+                // ':' is an indicator of extensible rules
+                if (filter[i] == ':' && ftype == LDAP_FILTER_EXT) {
+                    if (filter[i - 1] == ';') {
+                        throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                    }
+
+                    // extensible matching
+                    extensibleStart = i;
+                    break;
+                }
+
+                if (filter[i] != '-' &&
+                        !(filter[i] >= '0' && filter[i] <= '9') &&
+                        !(filter[i] >= 'A' && filter[i] <= 'Z') &&
+                        !(filter[i] >= 'a' && filter[i] <= 'z')) {
+                    throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                }
+            }
+        }
+
+        // check extensible matching
+        if (extensibleStart > 0) {
+            boolean isMatchingRule = false;
+            for (int i = extensibleStart + 1; i < typeEnd; i++) {
+                if (filter[i] == ':') {
+                    throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                } else if ((filter[i] >= '0' && filter[i] <= '9') ||
+                           (filter[i] >= 'A' && filter[i] <= 'Z') ||
+                           (filter[i] >= 'a' && filter[i] <= 'z')) {
+                    boolean isNumericOid = filter[i] >= '0' && filter[i] <= '9';
+                    i++;
+                    for (int j = i; j < typeEnd; j++, i++) {
+                        // allows no more than two extensible rules
+                        if (filter[j] == ':') {
+                            if (isMatchingRule) {
+                                throw new InvalidSearchFilterException(
+                                            "invalid attribute description");
+                            }
+                            if (isNumericOid && filter[j - 1] == '.') {
+                                throw new InvalidSearchFilterException(
+                                            "invalid attribute description");
+                            }
+
+                            isMatchingRule = true;
+                            break;
+                        }
+
+                        if (isNumericOid) {
+                            // numeric object identifier
+                            if ((filter[j] == '.' && filter[j - 1] == '.') ||
+                                (filter[j] != '.' &&
+                                    !(filter[j] >= '0' && filter[j] <= '9'))) {
+                                throw new InvalidSearchFilterException(
+                                            "invalid attribute description");
+                            }
+                        } else {
+                            // descriptor
+                            if (filter[j] != '-' &&
+                                !(filter[j] >= '0' && filter[j] <= '9') &&
+                                !(filter[j] >= 'A' && filter[j] <= 'Z') &&
+                                !(filter[j] >= 'a' && filter[j] <= 'z')) {
+                                throw new InvalidSearchFilterException(
+                                            "invalid attribute description");
+                            }
+                        }
+                    }
+                } else {
+                    throw new InvalidSearchFilterException(
+                                    "invalid attribute description");
+                }
+            }
+        }
+
+        // ensure the latest byte is not isolated
+        if (filter[typeEnd - 1] == '.' || filter[typeEnd - 1] == ';' ||
+                                          filter[typeEnd - 1] == ':') {
+            throw new InvalidSearchFilterException(
+                "invalid attribute description");
+        }
+
+        if (typeEnd == eq) { // filter type is of "equal"
             if (findUnescaped(filter, '*', valueStart, valueEnd) == -1) {
                 ftype = LDAP_FILTER_EQUALITY;
-            } else if (filter[valueStart] == '*' && valueStart == (valueEnd - 1)) {
+            } else if (filter[valueStart] == '*' &&
+                            valueStart == (valueEnd - 1)) {
                 ftype = LDAP_FILTER_PRESENT;
             } else {
                 encodeSubstringFilter(ber, filter,
                     typeStart, typeEnd, valueStart, valueEnd);
                 return;
             }
-            break;
-        }
-        if (dbg) {
-            System.err.println("type: " + typeStart + ", " + typeEnd);
-            System.err.println("value: " + valueStart + ", " + valueEnd);
         }
 
         if (ftype == LDAP_FILTER_PRESENT) {
@@ -379,7 +559,7 @@ final class Filter {
         } else {
             ber.beginSeq(ftype);
                 ber.encodeOctetString(filter, Ber.ASN_OCTET_STR,
-                    typeStart, typeEnd-typeStart);
+                    typeStart, typeEnd - typeStart);
                 ber.encodeOctetString(
                     unescapeFilterValue(filter, valueStart, valueEnd),
                     Ber.ASN_OCTET_STR);
@@ -623,7 +803,8 @@ final class Filter {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    private static final boolean dbg = false;
+    // private static final boolean dbg = false;
+    private static final boolean dbg = true;
     private static int dbgIndent = 0;
 
     private static void dprint(String msg) {
