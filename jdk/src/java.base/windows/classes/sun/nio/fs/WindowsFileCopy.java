@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import com.sun.nio.file.ExtendedCopyOption;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -67,7 +66,7 @@ class WindowsFileCopy {
                 copyAttributes = true;
                 continue;
             }
-            if (option == ExtendedCopyOption.INTERRUPTIBLE) {
+            if (ExtendedOptions.INTERRUPTIBLE.matches(option)) {
                 interruptible = true;
                 continue;
             }

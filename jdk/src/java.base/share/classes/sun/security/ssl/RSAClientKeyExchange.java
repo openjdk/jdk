@@ -91,6 +91,30 @@ final class RSAClientKeyExchange extends HandshakeMessage {
     }
 
     /*
+     * Retrieving the cipher's provider name for the debug purposes
+     * can throw an exception by itself.
+     */
+    private static String safeProviderName(Cipher cipher) {
+        try {
+            return cipher.getProvider().toString();
+        } catch (Exception e) {
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("Retrieving The Cipher provider name" +
+                        " caused exception " + e.getMessage());
+            }
+        }
+        try {
+            return cipher.toString() + " (provider name not available)";
+        } catch (Exception e) {
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("Retrieving The Cipher name" +
+                        " caused exception " + e.getMessage());
+            }
+        }
+        return "(cipher/provider names not available)";
+    }
+
+    /*
      * Server gets the PKCS #1 (block format 02) data, decrypts
      * it with its private key.
      */
@@ -132,15 +156,19 @@ final class RSAClientKeyExchange extends HandshakeMessage {
                         cipher.getProvider().getName());
             } catch (InvalidKeyException | UnsupportedOperationException iue) {
                 if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println("The Cipher provider " +
-                        cipher.getProvider().getName() +
-                        " caused exception: " + iue.getMessage());
+                    System.out.println("The Cipher provider "
+                            + safeProviderName(cipher)
+                            + " caused exception: " + iue.getMessage());
                 }
 
                 needFailover = true;
             }
 
             if (needFailover) {
+                // The cipher might be spoiled by unsuccessful call to init(),
+                // so request a fresh instance
+                cipher = JsseJce.getCipher(JsseJce.CIPHER_RSA_PKCS1);
+
                 // Use DECRYPT_MODE and dispose the previous initialization.
                 cipher.init(Cipher.DECRYPT_MODE, privateKey);
                 boolean failed = false;

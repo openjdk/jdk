@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Collectors;
 import jdk.test.lib.jittester.types.TypeKlass;
 
 
@@ -42,9 +43,8 @@ public class SymbolTable {
 
         String classList = ProductionParams.addExternalSymbols.value();
         if (classList.equals("all")) {
-            for (Type type : TypeList.getReferenceTypes()) {
-                type.exportSymbols();
-            }
+            TypeList.getReferenceTypes()
+                    .forEach(Type::exportSymbols);
         } else {
             String[] splittedList = classList.split(",");
             for (Type type : TypeList.getReferenceTypes()) {
@@ -96,13 +96,9 @@ public class SymbolTable {
     public static Collection<Symbol> get(Type type, Class<?> classToCheck) {
         HashMap<Type, ArrayList<Symbol>> vars = SYMBOL_STACK.peek();
         if (vars.containsKey(type)) {
-            ArrayList<Symbol> result = new ArrayList<>();
-            for (Symbol symbol : vars.get(type)) {
-                if (classToCheck.isInstance(symbol)) {
-                    result.add(symbol);
-                }
-            }
-            return result;
+            return vars.get(type).stream()
+                .filter(classToCheck::isInstance)
+                .collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
@@ -113,7 +109,7 @@ public class SymbolTable {
         if (vars.containsKey(type)) {
             ArrayList<Symbol> result = new ArrayList<>();
             for (Symbol symbol : vars.get(type)) {
-                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.klass)) {
+                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.owner)) {
                     result.add(symbol);
                 }
             }
@@ -150,7 +146,7 @@ public class SymbolTable {
         for (Type type : SYMBOL_STACK.peek().keySet()) {
             ArrayList<Symbol> symbolsOfType =  SYMBOL_STACK.peek().get(type);
             for (Symbol symbol : symbolsOfType) {
-                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.klass)) {
+                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.owner)) {
                     if (!result.containsKey(type)) {
                         result.put(type, new ArrayList<>());
                     }
@@ -193,7 +189,7 @@ public class SymbolTable {
         for (Type type : SYMBOL_STACK.peek().keySet()) {
             ArrayList<Symbol> symbolsOfType = SYMBOL_STACK.peek().get(type);
             for (Symbol symbol : symbolsOfType) {
-                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.klass)) {
+                if (classToCheck.isInstance(symbol) && typeKlass.equals(symbol.owner)) {
                     result.add(symbol);
                 }
             }
@@ -207,7 +203,7 @@ public class SymbolTable {
         for (Type t : SYMBOL_STACK.peek().keySet()) {
             ArrayList<Symbol> symbolsOfType = SYMBOL_STACK.peek().get(t);
             for (Symbol symbol : symbolsOfType) {
-                if (typeKlass.equals(symbol.klass)) {
+                if (typeKlass.equals(symbol.owner)) {
                     result.add(symbol);
                 }
             }

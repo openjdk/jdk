@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,16 @@
 package jdk.vm.ci.code;
 
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.ValueKind;
 
 /**
- * Denotes a register that stores a value of a fixed kind. There is exactly one (canonical) instance
- * of {@link RegisterValue} for each ({@link Register}, {@link JavaKind}) pair. Use
- * {@link Register#asValue(LIRKind)} to retrieve the canonical {@link RegisterValue} instance for a
- * given (register,kind) pair.
+ * Denotes a register that stores a value of a fixed kind.
  */
 public final class RegisterValue extends AllocatableValue {
 
     private final Register reg;
 
-    /**
-     * Should only be called from {@link Register#Register} to ensure canonicalization.
-     */
-    protected RegisterValue(LIRKind kind, Register register) {
+    protected RegisterValue(ValueKind<?> kind, Register register) {
         super(kind);
         this.reg = register;
     }

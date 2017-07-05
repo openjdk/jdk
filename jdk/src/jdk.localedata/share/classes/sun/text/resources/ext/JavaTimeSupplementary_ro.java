@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -139,13 +139,13 @@ public class JavaTimeSupplementary_ro extends OpenListResourceBundle {
             },
             { "islamic.DayAbbreviations",
                 new String[] {
-                    "Dum",
-                    "Lun",
-                    "Mar",
-                    "Mie",
-                    "Joi",
-                    "Vin",
-                    "S\u00e2m",
+                    "dum.",
+                    "lun.",
+                    "mar.",
+                    "mie.",
+                    "joi",
+                    "vin.",
+                    "s\u00e2m.",
                 }
             },
             { "islamic.DayNames",
@@ -206,6 +206,12 @@ public class JavaTimeSupplementary_ro extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
                 }
             },
             { "islamic.long.Eras",
@@ -304,13 +310,13 @@ public class JavaTimeSupplementary_ro extends OpenListResourceBundle {
             },
             { "roc.DayAbbreviations",
                 new String[] {
-                    "Dum",
-                    "Lun",
-                    "Mar",
-                    "Mie",
-                    "Joi",
-                    "Vin",
-                    "S\u00e2m",
+                    "dum.",
+                    "lun.",
+                    "mar.",
+                    "mie.",
+                    "joi",
+                    "vin.",
+                    "s\u00e2m.",
                 }
             },
             { "roc.DayNames",
@@ -408,6 +414,12 @@ public class JavaTimeSupplementary_ro extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
                 }
             },
             { "roc.narrow.AmPmMarkers",

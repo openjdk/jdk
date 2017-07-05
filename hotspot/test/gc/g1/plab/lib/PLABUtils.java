@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 /**
@@ -50,7 +51,7 @@ public class PLABUtils {
      * GC logging options list.
      */
     private final static String G1_PLAB_LOGGING_OPTIONS[] = {
-        "-Xlog:gc=debug,gc+plab=debug"
+        "-Xlog:gc=debug,gc+plab=debug,gc+heap=debug"
     };
 
     /**
@@ -80,5 +81,19 @@ public class PLABUtils {
         Collections.addAll(executionOtions, GC_TUNE_OPTIONS);
         executionOtions.addAll(options);
         return executionOtions;
+    }
+
+    /**
+     * Common check for test PLAB application's results.
+     * @param out OutputAnalyzer for checking
+     * @throws RuntimeException
+     */
+    public static void commonCheck(OutputAnalyzer out) throws RuntimeException {
+        if (out.getExitValue() != 0) {
+            System.out.println(out.getOutput());
+            throw new RuntimeException("Exit code is not 0");
+        }
+        // Test expects only WhiteBox initiated GC.
+        out.shouldNotContain("Pause Young (G1 Evacuation Pause)");
     }
 }

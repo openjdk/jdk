@@ -24,9 +24,7 @@
 /*
  * @test
  * @bug 8027308
- * @key intermittent
- * @modules java.base/sun.net.www.protocol.http
- *          jdk.httpserver
+ * @modules jdk.httpserver
  * @summary  verifies that HttpURLConnection does not send the zone id in the
  *           'Host' field of the header:
  *              Host: [fe80::a00:27ff:aaaa:aaaa] instead of
@@ -42,40 +40,41 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import static java.lang.System.out;
+import static java.net.Proxy.NO_PROXY;
 
 public class ZoneId {
 
     public static void main(String[] args) throws Exception {
 
-        InetAddress address = getAppropriateIPv6Address();
+        InetAddress address = getIPv6LookbackAddress();
 
         if (address == null) {
-            System.out.println(
-                    "The test will be skipped as not a single " +
-                    "appropriate IPv6 address was found on this machine");
+            out.println("Cannot find the IPv6 loopback address. Skipping test.");
             return;
         }
         String ip6_literal = address.getHostAddress();
 
-        System.out.println("Found an appropriate IPv6 address: " + address);
+        out.println("Found an appropriate IPv6 address: " + address);
 
-        System.out.println("Starting http server...");
-        HttpServer server =
-                HttpServer.create(new InetSocketAddress(address, 0), 0);
+        out.println("Starting http server...");
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         CompletableFuture<Headers> headers = new CompletableFuture<>();
         server.createContext("/", createCapturingHandler(headers));
         server.start();
-        System.out.println("Started at " + server.getAddress());
+        out.println("Started at " + server.getAddress());
+
         try {
-            String spec = "http://[" + address.getHostAddress() + "]:" + server.getAddress().getPort();
-            System.out.println("Client is connecting to: " + spec);
-            URLConnection urlConnection = new URL(spec).openConnection();
-            ((sun.net.www.protocol.http.HttpURLConnection) urlConnection)
-                    .getResponseCode();
+            int port = server.getAddress().getPort();
+            String spec = "http://[" + address.getHostAddress() + "]:" + port;
+            out.println("Client is connecting to: " + spec);
+            URL url = new URL(spec);
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(NO_PROXY);
+            uc.getResponseCode();
         } finally {
-            System.out.println("Shutting down the server...");
+            out.println("Shutting down the server...");
             server.stop(0);
         }
 
@@ -83,7 +82,7 @@ public class ZoneId {
         String ip6_address = ip6_literal.substring(0, idx);
         List<String> hosts = headers.get().get("Host");
 
-        System.out.println("Host: " + hosts);
+        out.println("Host: " + hosts);
 
         if (hosts.size() != 1 || hosts.get(0).contains("%") ||
                                 !hosts.get(0).contains(ip6_address)) {
@@ -91,33 +90,27 @@ public class ZoneId {
         }
     }
 
-    private static InetAddress getAppropriateIPv6Address() throws SocketException {
-        System.out.println("Searching through the network interfaces...");
+    static InetAddress getIPv6LookbackAddress() throws SocketException {
+        out.println("Searching for the IPv6 loopback address...");
         Enumeration<NetworkInterface> is = NetworkInterface.getNetworkInterfaces();
+
+        // The IPv6 loopback address contains a scope id, and is "connect-able".
         while (is.hasMoreElements()) {
             NetworkInterface i = is.nextElement();
-            System.out.println("\tinterface: " + i);
-
-            // just a "good enough" marker that the interface
-            // does not support a loopback and therefore should not be used
-            if ( i.getHardwareAddress() == null) continue;
-            if (!i.isUp()) continue;
-
-            Enumeration<InetAddress> as = i.getInetAddresses();
-            while (as.hasMoreElements()) {
-                InetAddress a = as.nextElement();
-                System.out.println("\t\taddress: " + a.getHostAddress());
-                if ( !(a instanceof Inet6Address &&
-                       a.toString().contains("%")) ) {
-                    continue;
-                }
-                return a;
-            }
+            if (!i.isLoopback())
+                continue;
+            Optional<InetAddress> addr = i.inetAddresses()
+                    .filter(x -> x instanceof Inet6Address)
+                    .filter(y -> y.toString().contains("%"))
+                    .findFirst();
+            if (addr.isPresent())
+                return addr.get();
         }
+
         return null;
     }
 
-    private static HttpHandler createCapturingHandler(CompletableFuture<Headers> headers) {
+    static HttpHandler createCapturingHandler(CompletableFuture<Headers> headers) {
         return new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {

@@ -557,7 +557,7 @@ final class StringLatin1 {
 
     // inflatedCopy byte[] -> char[]
     @HotSpotIntrinsicCandidate
-    private static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+    public static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
@@ -567,7 +567,7 @@ final class StringLatin1 {
     @HotSpotIntrinsicCandidate
     public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         // We need a range check here because 'putChar' has no checks
-        checkBoundsOffCount(dstOff, len, dst.length);
+        checkBoundsOffCount(dstOff << 1, len << 1, dst.length);
         for (int i = 0; i < len; i++) {
             StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
         }

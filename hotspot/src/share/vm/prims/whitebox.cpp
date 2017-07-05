@@ -278,6 +278,49 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
                                         (size_t) magnitude, (size_t) iterations);
 WB_END
 
+static const jint serial_code   = 1;
+static const jint parallel_code = 2;
+static const jint cms_code      = 4;
+static const jint g1_code       = 8;
+
+WB_ENTRY(jint, WB_CurrentGC(JNIEnv* env, jobject o, jobject obj))
+  if (UseSerialGC) {
+    return serial_code;
+  } else if (UseParallelGC || UseParallelOldGC) {
+    return parallel_code;
+  } if (UseConcMarkSweepGC) {
+    return cms_code;
+  } else if (UseG1GC) {
+    return g1_code;
+  }
+  ShouldNotReachHere();
+  return 0;
+WB_END
+
+WB_ENTRY(jint, WB_AllSupportedGC(JNIEnv* env, jobject o, jobject obj))
+#if INCLUDE_ALL_GCS
+  return serial_code | parallel_code | cms_code | g1_code;
+#else
+  return serial_code;
+#endif // INCLUDE_ALL_GCS
+WB_END
+
+WB_ENTRY(jboolean, WB_GCSelectedByErgo(JNIEnv* env, jobject o, jobject obj))
+  if (UseSerialGC) {
+    return FLAG_IS_ERGO(UseSerialGC);
+  } else if (UseParallelGC) {
+    return FLAG_IS_ERGO(UseParallelGC);
+  } else if (UseParallelOldGC) {
+    return FLAG_IS_ERGO(UseParallelOldGC);
+  } else if (UseConcMarkSweepGC) {
+    return FLAG_IS_ERGO(UseConcMarkSweepGC);
+  } else if (UseG1GC) {
+    return FLAG_IS_ERGO(UseG1GC);
+  }
+  ShouldNotReachHere();
+  return false;
+WB_END
+
 WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   oop p = JNIHandles::resolve(obj);
 #if INCLUDE_ALL_GCS
@@ -1833,7 +1876,10 @@ static JNINativeMethod methods[] = {
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
-  {CC"removeCompilerDirective", CC"(I)V",             (void*)&WB_RemoveCompilerDirective },
+  {CC"removeCompilerDirective",   CC"(I)V",             (void*)&WB_RemoveCompilerDirective },
+  {CC"currentGC",                 CC"()I",            (void*)&WB_CurrentGC},
+  {CC"allSupportedGC",            CC"()I",            (void*)&WB_AllSupportedGC},
+  {CC"gcSelectedByErgo",          CC"()Z",            (void*)&WB_GCSelectedByErgo},
 };
 
 #undef CC

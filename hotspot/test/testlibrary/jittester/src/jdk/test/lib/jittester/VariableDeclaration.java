@@ -26,9 +26,10 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class VariableDeclaration extends IRNode {
-    protected final VariableInfo variableInfo;
+    private final VariableInfo variableInfo;
 
     public VariableDeclaration(VariableInfo value) {
+        super(value.type);
         variableInfo = value;
     }
 

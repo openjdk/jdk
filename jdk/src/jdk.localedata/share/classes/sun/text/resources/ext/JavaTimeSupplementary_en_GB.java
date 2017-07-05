@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -74,11 +74,11 @@ public class JavaTimeSupplementary_en_GB extends OpenListResourceBundle {
     protected final Object[][] getContents() {
         return new Object[][] {
             { "field.dayperiod",
-                "a.m./p.m." },
+                "am/pm" },
             { "islamic.AmPmMarkers",
                 new String[] {
-                    "a.m.",
-                    "p.m.",
+                    "am",
+                    "pm",
                 }
             },
             { "islamic.TimePatterns",
@@ -89,10 +89,22 @@ public class JavaTimeSupplementary_en_GB extends OpenListResourceBundle {
                     "HH:mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "am",
+                    "pm",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
+                }
+            },
             { "roc.AmPmMarkers",
                 new String[] {
-                    "a.m.",
-                    "p.m.",
+                    "am",
+                    "pm",
                 }
             },
             { "roc.TimePatterns",
@@ -101,6 +113,18 @@ public class JavaTimeSupplementary_en_GB extends OpenListResourceBundle {
                     "HH:mm:ss z",
                     "HH:mm:ss",
                     "HH:mm",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "am",
+                    "pm",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
         };
