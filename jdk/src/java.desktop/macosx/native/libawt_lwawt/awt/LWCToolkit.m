@@ -117,7 +117,7 @@ static long eventCount;
 }
 
 - (void)dealloc {
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     if (self.runnable) {
         (*env)->DeleteGlobalRef(env, self.runnable);
     }
@@ -125,7 +125,7 @@ static long eventCount;
 }
 
 - (void)perform {
-    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    JNIEnv* env = [ThreadUtilities getJNIEnvUncached];
     static JNF_CLASS_CACHE(sjc_Runnable, "java/lang/Runnable");
     static JNF_MEMBER_CACHE(jm_Runnable_run, sjc_Runnable, "run", "()V");
     JNFCallVoidMethod(env, self.runnable, jm_Runnable_run);

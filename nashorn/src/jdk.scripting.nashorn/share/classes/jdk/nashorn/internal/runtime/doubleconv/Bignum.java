@@ -76,7 +76,7 @@ class Bignum {
     // grow. There are no checks if the stack-allocated space is sufficient.
     static final int kBigitCapacity = kMaxSignificantBits / kBigitSize;
 
-    private int[] bigits_ = new int[kBigitCapacity];
+    private final int[] bigits_ = new int[kBigitCapacity];
     // A vector backed by bigits_buffer_. This way accesses to the array are
     // checked for out-of-bounds errors.
     // Vector<int> bigits_;

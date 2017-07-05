@@ -351,16 +351,29 @@ hotspot_fast_gc_gcold = \
 
 hotspot_fast_runtime = \
   runtime/ \
+ -runtime/6626217/Test6626217.sh \
+ -runtime/7100935 \
+ -runtime/7158988/FieldMonitor.java \
+ -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
+ -runtime/CommandLine/PrintGCApplicationConcurrentTime.java \
+ -runtime/ConstantPool/IntfMethod.java \
+ -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/ErrorHandler.java \
- -runtime/RedefineObject/TestRedefineObject.java \
- -runtime/MirrorFrame/Test8003720.java \
- -runtime/Metaspace/FragmentMetaspace.java \
- -runtime/Metaspace/FragmentMetaspaceSimple.java \
- -runtime/Thread/TestThreadDumpMonitorContention.java \
- -runtime/SharedArchiveFile/SharedBaseAddress.java \
+ -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
  -runtime/memory/RunUnitTestsConcurrently.java \
- -runtime/Unsafe/RangeCheck.java \
+ -runtime/Metaspace/FragmentMetaspace.java \
+ -runtime/Metaspace/FragmentMetaspaceSimple.java \
+ -runtime/MirrorFrame/Test8003720.java \
+ -runtime/modules/LoadUnloadModuleStress.java \
+ -runtime/modules/ModuleStress/ExportModuleStressTest.java \
+ -runtime/modules/ModuleStress/ModuleStressGC.java \
+ -runtime/NMT \
+ -runtime/RedefineObject/TestRedefineObject.java \
+ -runtime/RedefineTests/RedefinePreviousVersions.java \
+ -runtime/RedefineTests/RedefineRunningMethods.java \
+ -runtime/RedefineTests/RedefineRunningMethodsWithBacktrace.java \
+ -runtime/ReservedStack \
  -runtime/SelectionResolution/AbstractMethodErrorTest.java \
  -runtime/SelectionResolution/IllegalAccessErrorTest.java \
  -runtime/SelectionResolution/InvokeInterfaceICCE.java \
@@ -372,14 +385,14 @@ hotspot_fast_runtime = \
  -runtime/SelectionResolution/InvokeVirtualSuccessTest.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
+ -runtime/SharedArchiveFile/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
- -runtime/7158988/FieldMonitor.java \
- -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
+ -runtime/Thread/TestThreadDumpMonitorContention.java \
+ -runtime/Unsafe/RangeCheck.java \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
 hotspot_fast_serviceability = \
-  sanity/ExecuteInternalVMTests.java \
   serviceability/dcmd/compiler \
   serviceability/logging
 
@@ -398,6 +411,8 @@ hotspot_jprt = \
 hotspot_runtime_tier2 = \
   runtime/ \
   serviceability/ \
+ -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
+ -runtime/Thread/TestThreadDumpMonitorContention.java \
  -:hotspot_fast_runtime \
  -:hotspot_fast_serviceability \
  -:hotspot_runtime_tier2_platform_agnostic
@@ -405,6 +420,14 @@ hotspot_runtime_tier2 = \
 hotspot_runtime_tier2_platform_agnostic = \
   runtime/SelectionResolution \
  -:hotspot_fast_runtime
+ 
+hotspot_runtime_tier3 = \
+  runtime/ \
+  serviceability/ \
+ -:hotspot_fast_runtime \
+ -:hotspot_fast_serviceability \
+ -:hotspot_runtime_tier2_platform_agnostic \
+ -:hotspot_runtime_tier2
 
 hotspot_runtime_minimalvm = \
   runtime/MinimalVM \

@@ -51,6 +51,7 @@ import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class GetResolvedJavaMethodTest {
     private static enum TestCase {
@@ -64,9 +65,7 @@ public class GetResolvedJavaMethodTest {
         JAVA_METHOD_BASE {
             @Override
             HotSpotResolvedJavaMethod getResolvedJavaMethod() {
-                HotSpotResolvedJavaMethod methodInstance
-                        = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
-                                TEST_CLASS, 0);
+                HotSpotResolvedJavaMethod methodInstance = TEST_METHOD;
                 try {
                     METASPACE_METHOD_FIELD.set(methodInstance,
                             getPtrToMethod());
@@ -81,9 +80,7 @@ public class GetResolvedJavaMethodTest {
             @Override
             HotSpotResolvedJavaMethod getResolvedJavaMethod() {
                 long ptr = getPtrToMethod();
-                HotSpotResolvedJavaMethod methodInstance
-                        = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
-                        TEST_CLASS, 0);
+                HotSpotResolvedJavaMethod methodInstance = TEST_METHOD;
                 try {
                     METASPACE_METHOD_FIELD.set(methodInstance, ptr / 2L);
                 } catch (ReflectiveOperationException e) {
@@ -97,9 +94,7 @@ public class GetResolvedJavaMethodTest {
             @Override
             HotSpotResolvedJavaMethod getResolvedJavaMethod() {
                 long ptr = getPtrToMethod();
-                HotSpotResolvedJavaMethod methodInstance
-                        = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
-                        TEST_CLASS, 0);
+                HotSpotResolvedJavaMethod methodInstance = TEST_METHOD;
                 try {
                     METASPACE_METHOD_FIELD.set(methodInstance, 0L);
                 } catch (ReflectiveOperationException e) {
@@ -117,16 +112,21 @@ public class GetResolvedJavaMethodTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Field METASPACE_METHOD_FIELD;
     private static final Class<?> TEST_CLASS = GetResolvedJavaMethodTest.class;
+    private static final HotSpotResolvedJavaMethod TEST_METHOD;
     private static final long PTR;
     static  {
-        HotSpotResolvedJavaMethod method
-                = CompilerToVMHelper.getResolvedJavaMethodAtSlot(TEST_CLASS, 0);
+        try {
+            Method method = TEST_CLASS.getDeclaredMethod("test", TestCase.class);
+            TEST_METHOD = CompilerToVMHelper.asResolvedJavaMethod(method);
+        } catch (NoSuchMethodException e) {
+            throw new Error("TESTBUG : " + e, e);
+        }
         try {
             // jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl.metaspaceMethod
-            METASPACE_METHOD_FIELD = method.getClass()
+            METASPACE_METHOD_FIELD = TEST_METHOD.getClass()
                     .getDeclaredField("metaspaceMethod");
             METASPACE_METHOD_FIELD.setAccessible(true);
-            PTR = (long) METASPACE_METHOD_FIELD.get(method);
+            PTR = (long) METASPACE_METHOD_FIELD.get(TEST_METHOD);
         } catch (ReflectiveOperationException e) {
             throw new Error("TESTBUG : " + e, e);
         }

@@ -586,8 +586,8 @@ class GTKEngine {
      * Convenience method that delegates to finishPainting() with
      * caching enabled.
      */
-    public void finishPainting() {
-        finishPainting(true);
+    public BufferedImage finishPainting() {
+        return finishPainting(true);
     }
 
     /**
@@ -595,7 +595,7 @@ class GTKEngine {
      * BufferedImage from the offscreen buffer, (optionally) cache it,
      * and paint it.
      */
-    public void finishPainting(boolean useCache) {
+    public BufferedImage finishPainting(boolean useCache) {
         DataBufferInt dataBuffer = new DataBufferInt(w0 * h0);
         // Note that stealData() requires a markDirty() afterwards
         // since we modify the data in it.
@@ -609,11 +609,12 @@ class GTKEngine {
                 dataBuffer, w0, h0, w0, bands, null);
 
         ColorModel cm = COLOR_MODELS[transparency - 1];
-        Image img = new BufferedImage(cm, raster, false, null);
+        BufferedImage img = new BufferedImage(cm, raster, false, null);
         if (useCache) {
             cache.setImage(getClass(), null, w0, h0, cacheArgs, img);
         }
         graphics.drawImage(img, x0, y0, null);
+        return img;
     }
 
     /**

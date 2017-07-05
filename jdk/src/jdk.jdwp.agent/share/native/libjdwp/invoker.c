@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,35 @@ invoker_enableInvokeRequests(jthread thread)
     debugMonitorExit(invokerLock);
 }
 
+/*
+ * Check that method is in the specified clazz or one of its super classes.
+ * We have to enforce this check at the JDWP layer because the JNI layer
+ * has different requirements.
+ */
+static jvmtiError check_methodClass(JNIEnv *env, jclass clazz, jmethodID method)
+{
+    jclass containing_class = NULL;
+    jvmtiError error;
+
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
+                (gdata->jvmti, method, &containing_class);
+    if (error != JVMTI_ERROR_NONE) {
+        return JVMTI_ERROR_NONE;  /* Bad jmethodID ?  This will be handled elsewhere */
+    }
+
+    if (JNI_FUNC_PTR(env,IsSameObject)(env, clazz, containing_class)) {
+        return JVMTI_ERROR_NONE;
+    }
+
+    // If not the same class then check that containing_class is a superclass of
+    // clazz (not a superinterface).
+    if (JNI_FUNC_PTR(env,IsAssignableFrom)(env, clazz, containing_class) &&
+        referenceTypeTag(containing_class) != JDWP_TYPE_TAG(INTERFACE)) {
+        return JVMTI_ERROR_NONE;
+    }
+    return JVMTI_ERROR_INVALID_METHODID;
+}
+
 jvmtiError
 invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
                       jthread thread, jclass clazz, jmethodID method,
@@ -352,6 +381,13 @@ invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
     JNIEnv *env = getEnv();
     InvokeRequest *request;
     jvmtiError error = JVMTI_ERROR_NONE;
+
+    if (invokeType == INVOKE_STATIC) {
+        error = check_methodClass(env, clazz, method);
+        if (error != JVMTI_ERROR_NONE) {
+            return error;
+        }
+    }
 
     debugMonitorEnter(invokerLock);
     request = threadControl_getInvokeRequest(thread);

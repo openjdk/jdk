@@ -252,6 +252,10 @@ abstract class SunFileReader extends AudioFileReader {
      * @return the size of a PCM frame in bytes.
      */
     static final int calculatePCMFrameSize(int sampleSizeInBits, int channels) {
-        return ((sampleSizeInBits + 7) / 8) * channels;
+        try {
+            return Math.multiplyExact((sampleSizeInBits + 7) / 8, channels);
+        } catch (final ArithmeticException ignored) {
+            return 0;
+        }
     }
 }

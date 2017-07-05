@@ -51,7 +51,7 @@ public final class TemplateLiteral extends Expression {
     }
 
     @Override
-    public Node accept(NodeVisitor<? extends LexicalContext> visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterTemplateLiteral(this)) {
             return visitor.leaveTemplateLiteral(this);
         }
@@ -60,8 +60,8 @@ public final class TemplateLiteral extends Expression {
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean printType) {
-        for (Expression expr : exprs) {
+    public void toString(final StringBuilder sb, final boolean printType) {
+        for (final Expression expr : exprs) {
             sb.append(expr);
         }
     }

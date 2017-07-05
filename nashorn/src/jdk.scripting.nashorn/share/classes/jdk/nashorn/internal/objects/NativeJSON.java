@@ -473,7 +473,7 @@ public final class NativeJSON extends ScriptObject {
         if (holder instanceof ScriptObject) {
             return ((ScriptObject)holder).get(key);
         } else if (holder instanceof JSObject) {
-            JSObject jsObj = (JSObject)holder;
+            final JSObject jsObj = (JSObject)holder;
             if (key instanceof Integer) {
                 return jsObj.getSlot((Integer)key);
             } else {

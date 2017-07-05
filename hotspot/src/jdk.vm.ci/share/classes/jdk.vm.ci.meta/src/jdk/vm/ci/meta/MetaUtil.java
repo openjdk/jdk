@@ -22,9 +22,6 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
 /**
  * Miscellaneous collection of utility methods used by {@code jdk.vm.ci.meta} and its clients.
  */
@@ -225,18 +222,5 @@ public class MetaUtil {
             return "null";
         }
         return obj.getClass().getName() + "@" + System.identityHashCode(obj);
-    }
-
-    /**
-     * Used to lookup constants from {@link Modifier} that are not public (VARARGS, SYNTHETIC etc.).
-     */
-    static int getNonPublicModifierStaticField(String name) {
-        try {
-            Field field = Modifier.class.getDeclaredField(name);
-            field.setAccessible(true);
-            return field.getInt(null);
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            throw new InternalError(e);
-        }
     }
 }

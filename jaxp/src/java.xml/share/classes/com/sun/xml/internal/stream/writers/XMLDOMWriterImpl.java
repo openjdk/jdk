@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.xml.internal.stream.writers;
 
+import com.sun.org.apache.xerces.internal.dom.CoreDocumentImpl;
+import com.sun.org.apache.xerces.internal.dom.DocumentImpl;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.xml.XMLConstants;
@@ -57,7 +59,7 @@ import org.xml.sax.helpers.NamespaceSupport;
  * Change StringBuffer to StringBuilder, when JDK 1.5 will be minimum requirement for SJSXP.
  */
 
-public class XMLDOMWriterImpl implements XMLStreamWriter  {
+public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
 
 
     private Document ownerDoc = null;
@@ -552,7 +554,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
      */
     public void writeStartDocument(String version) throws XMLStreamException {
-        ownerDoc.setXmlVersion(version);
+        writeStartDocument(null, version, false, false);
     }
 
     /**
@@ -563,8 +565,20 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
      */
     public void writeStartDocument(String encoding, String version) throws XMLStreamException {
+        writeStartDocument(encoding, version, false, false);
+    }
+
+    @Override
+    public void writeStartDocument(String encoding, String version, boolean standalone, boolean standaloneSet) throws XMLStreamException {
+        if (encoding != null && ownerDoc.getClass().isAssignableFrom(DocumentImpl.class)) {
+            ((DocumentImpl)ownerDoc).setXmlEncoding(encoding);
+        }
+
         ownerDoc.setXmlVersion(version);
-        //TODO: What to do with encoding.-Venu
+
+        if (standaloneSet) {
+            ownerDoc.setXmlStandalone(standalone);
+        }
     }
 
     /**

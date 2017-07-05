@@ -28,11 +28,10 @@ import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.fromObjectClass;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
@@ -78,35 +77,8 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return new HotSpotSignature(runtime, signature);
     }
 
-    /**
-     * {@link Field} object of {@link Method#slot}.
-     */
-    private Field reflectionMethodSlot = getReflectionSlotField(Method.class);
-
-    /**
-     * {@link Field} object of {@link Constructor#slot}.
-     */
-    private Field reflectionConstructorSlot = getReflectionSlotField(Constructor.class);
-
-    private static Field getReflectionSlotField(Class<?> reflectionClass) {
-        try {
-            Field field = reflectionClass.getDeclaredField("slot");
-            field.setAccessible(true);
-            return field;
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new JVMCIError(e);
-        }
-    }
-
     public ResolvedJavaMethod lookupJavaMethod(Executable reflectionMethod) {
-        try {
-            Class<?> holder = reflectionMethod.getDeclaringClass();
-            Field slotField = reflectionMethod instanceof Constructor ? reflectionConstructorSlot : reflectionMethodSlot;
-            final int slot = slotField.getInt(reflectionMethod);
-            return runtime.getCompilerToVM().getResolvedJavaMethodAtSlot(holder, slot);
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw new JVMCIError(e);
-        }
+        return runtime.getCompilerToVM().asResolvedJavaMethod(Objects.requireNonNull(reflectionMethod));
     }
 
     public ResolvedJavaField lookupJavaField(Field reflectionField) {

@@ -85,6 +85,7 @@ typedef jboolean (JNICALL *ReadMappedEntry_t)(jzfile *zip, jzentry *entry, unsig
 typedef jzentry* (JNICALL *GetNextEntry_t)(jzfile *zip, jint n);
 typedef jboolean (JNICALL *ZipInflateFully_t)(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
 typedef jint     (JNICALL *Crc32_t)(jint crc, const jbyte *buf, jint len);
+typedef void     (JNICALL *FreeEntry_t)(jzfile *zip, jzentry *entry);
 
 static ZipOpen_t         ZipOpen            = NULL;
 static ZipClose_t        ZipClose           = NULL;
@@ -95,6 +96,7 @@ static GetNextEntry_t    GetNextEntry       = NULL;
 static canonicalize_fn_t CanonicalizeEntry  = NULL;
 static ZipInflateFully_t ZipInflateFully    = NULL;
 static Crc32_t           Crc32              = NULL;
+static FreeEntry_t       FreeEntry          = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
 
@@ -150,6 +152,7 @@ int             ClassLoader::_num_entries        = 0;
 GrowableArray<char*>* ClassLoader::_boot_modules_array = NULL;
 GrowableArray<char*>* ClassLoader::_platform_modules_array = NULL;
 SharedPathsMiscInfo* ClassLoader::_shared_paths_misc_info = NULL;
+int  ClassLoader::_num_patch_mod_prefixes = 0;
 #endif
 
 // helper routines
@@ -317,6 +320,20 @@ ClassPathZipEntry::~ClassPathZipEntry() {
     (*ZipClose)(_zip);
   }
   FREE_C_HEAP_ARRAY(char, _zip_name);
+}
+
+bool ClassPathZipEntry::stream_exists(const char* name) {
+  // enable call to C land
+  JavaThread* thread = JavaThread::current();
+  ThreadToNativeFromVM ttn(thread);
+  // check whether zip archive contains name
+  jint name_len, filesize;
+  jzentry* entry = (*FindEntry)(_zip, name, &filesize, &name_len);
+  if (entry != NULL) {
+    (*FreeEntry)(_zip, entry);
+    return true;
+  }
+  return false;
 }
 
 u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {
@@ -640,7 +657,7 @@ void ClassLoader::check_shared_classpath(const char *path) {
 
   struct stat st;
   if (os::stat(path, &st) == 0) {
-    if ((st.st_mode & S_IFREG) != S_IFREG) { // is directory
+    if ((st.st_mode & S_IFMT) != S_IFREG) { // is not a regular file
       if (!os::dir_is_empty(path)) {
         tty->print_cr("Error: non-empty directory '%s'", path);
         exit_with_path_failure("CDS allows only empty directories in archived classpaths", NULL);
@@ -693,8 +710,6 @@ void ClassLoader::setup_patch_mod_entries() {
   GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
   int num_of_entries = patch_mod_args->length();
 
-  assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with --patch-module");
-  assert(!UseSharedSpaces, "UseSharedSpaces not supported with --patch-module");
 
   // Set up the boot loader's _patch_mod_entries list
   _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, true);
@@ -851,7 +866,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
                                                      bool is_boot_append, TRAPS) {
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
-  if ((st->st_mode & S_IFREG) == S_IFREG) {
+  if ((st->st_mode & S_IFMT) == S_IFREG) {
     ResourceMark rm(thread);
     // Regular file, should be a zip or jimage file
     // Canonicalized filename
@@ -914,7 +929,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
   // check for a regular file
   struct stat st;
   if (os::stat(path, &st) == 0) {
-    if ((st.st_mode & S_IFREG) == S_IFREG) {
+    if ((st.st_mode & S_IFMT) == S_IFREG) {
       char canonical_path[JVM_MAXPATHLEN];
       if (get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
         char* error_msg = NULL;
@@ -1068,6 +1083,7 @@ void ClassLoader::load_zip_library() {
   GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, os::dll_lookup(handle, "ZIP_GetNextEntry"));
   ZipInflateFully = CAST_TO_FN_PTR(ZipInflateFully_t, os::dll_lookup(handle, "ZIP_InflateFully"));
   Crc32        = CAST_TO_FN_PTR(Crc32_t, os::dll_lookup(handle, "ZIP_CRC32"));
+  FreeEntry    = CAST_TO_FN_PTR(FreeEntry_t, os::dll_lookup(handle, "ZIP_FreeEntry"));
 
   // ZIP_Close is not exported on Windows in JDK5.0 so don't abort if ZIP_Close is NULL
   if (ZipOpen == NULL || FindEntry == NULL || ReadEntry == NULL ||
@@ -1395,6 +1411,57 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
   return NULL;
 }
 
+#if INCLUDE_CDS
+// The following function is only used during CDS dump time.
+// It checks if a class can be found in the jar entries of the _patch_mod_entries.
+// It does not support non-jar entries.
+bool ClassLoader::is_in_patch_module(const char* const file_name) {
+  assert(DumpSharedSpaces, "dump time only");
+  if (_patch_mod_entries == NULL) {
+    return false;
+  }
+
+  int num_of_entries = _patch_mod_entries->length();
+  char* class_module_name = NULL;
+  ResourceMark rm;
+  const char *pkg_name = package_from_name(file_name);
+  // Using the jimage to obtain the class' module name.
+  // The ModuleEntryTable cannot be used at this point during dump time
+  // because the module system hasn't been initialized yet.
+  if (pkg_name != NULL) {
+    JImageFile *jimage = _jrt_entry->jimage();
+    class_module_name = (char*)(*JImagePackageToModule)(jimage, pkg_name);
+  }
+
+  if (class_module_name == NULL) {
+    return false;
+  }
+
+  // Loop through all the patch module entries looking for module
+  for (int i = 0; i < num_of_entries; i++) {
+    ModuleClassPathList* module_cpl = _patch_mod_entries->at(i);
+    Symbol* module_cpl_name = module_cpl->module_name();
+
+    if (strcmp(module_cpl_name->as_C_string(), class_module_name) == 0) {
+      // Class' module has been located, attempt to locate
+      // the class from the module's ClassPathEntry list.
+      ClassPathEntry* e = module_cpl->module_first_entry();
+      while (e != NULL) {
+        if (e->is_jar_file()) {
+          if (e->stream_exists(file_name)) {
+            return true;
+          } else {
+            e = e->next();
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+#endif // INCLUDE_CDS
+
 instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_only, TRAPS) {
   assert(name != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -1420,8 +1487,8 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
 
   // If DumpSharedSpaces is true boot loader visibility boundaries are set to:
   //   - [jimage] + [_first_append_entry to _last_append_entry] (all path entries).
-  // No --patch-module entries or exploded module builds are included since CDS
-  // is not supported if --patch-module or exploded module builds are used.
+  // If a class is found in the --patch-module entries, the class will not be included in the
+  // CDS archive. Also, CDS is not supported if exploded module builds are used.
   //
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
@@ -1444,8 +1511,17 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
   // found within its module specification, the search should continue to Load Attempt #2.
   // Note: The --patch-module entries are never searched if the boot loader's
   //       visibility boundary is limited to only searching the append entries.
-  if (_patch_mod_entries != NULL && !search_append_only && !DumpSharedSpaces) {
-    stream = search_module_entries(_patch_mod_entries, class_name, file_name, CHECK_NULL);
+  if (_patch_mod_entries != NULL && !search_append_only) {
+    if (!DumpSharedSpaces) {
+      stream = search_module_entries(_patch_mod_entries, class_name, file_name, CHECK_NULL);
+    } else {
+#if INCLUDE_CDS
+      if (is_in_patch_module(file_name)) {
+        tty->print_cr("Preload Warning: Skip archiving class %s found in --patch-module entry", class_name);
+        return NULL;
+      }
+#endif
+    }
   }
 
   // Load Attempt #2: [jimage | exploded build]
@@ -1596,8 +1672,57 @@ void ClassLoader::initialize() {
 }
 
 #if INCLUDE_CDS
+// Capture all the --patch-module entries specified during CDS dump time.
+// It also captures the non-existing path(s) and the required file(s) during inspecting
+// the entries.
+void ClassLoader::setup_patch_mod_path() {
+  assert(DumpSharedSpaces, "only used with -Xshare:dump");
+  ResourceMark rm;
+  GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
+  if (patch_mod_args != NULL) {
+    int num_of_entries = patch_mod_args->length();
+    for (int i = 0; i < num_of_entries; i++) {
+      const char* module_name = (patch_mod_args->at(i))->module_name();
+      const char* module_path = (patch_mod_args->at(i))->path_string();
+      int path_len = (int)strlen(module_path);
+      int name_len = (int)strlen(module_name);
+      int buf_len = name_len + path_len + 2; // add 2 for the '=' and NULL terminator
+      int end = 0;
+      char* buf = NEW_C_HEAP_ARRAY(char, buf_len, mtInternal);
+      // Iterate over the module's class path entries
+      for (int start = 0; start < path_len; start = end) {
+        while (module_path[end] && module_path[end] != os::path_separator()[0]) {
+          end++;
+        }
+        strncpy(buf, &module_path[start], end - start);
+        buf[end - start] = '\0';
+        struct stat st;
+        if (os::stat(buf, &st) != 0) {
+          // File not found
+          _shared_paths_misc_info->add_nonexist_path(buf);
+        } else {
+          if ((st.st_mode & S_IFMT) != S_IFREG) { // is not a regular file
+            vm_exit_during_initialization(
+              "--patch-module requires a regular file during dumping", buf);
+          } else {
+            _shared_paths_misc_info->add_required_file(buf);
+          }
+        }
+        while (module_path[end] == os::path_separator()[0]) {
+          end++;
+        }
+      };
+      jio_snprintf(buf, buf_len, "%s=%s", module_name, module_path);
+      _shared_paths_misc_info->add_patch_mod_classpath((const char*)buf);
+      _num_patch_mod_prefixes++;
+      FREE_C_HEAP_ARRAY(char, buf);
+    }
+  }
+}
+
 void ClassLoader::initialize_shared_path() {
   if (DumpSharedSpaces) {
+    setup_patch_mod_path();
     ClassLoaderExt::setup_search_paths();
     _shared_paths_misc_info->write_jint(0); // see comments in SharedPathsMiscInfo::check()
   }
