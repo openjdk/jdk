@@ -56,7 +56,7 @@ public class MethodScope extends AbstractScope<Method> {
     }
 
     /**
-     * Factory method. Takes a <tt>Method</tt> object and creates a
+     * Factory method. Takes a {@code Method} object and creates a
      * scope for it.
      * @param m - A Method whose scope we want to obtain
      * @return The type-variable scope for the method m

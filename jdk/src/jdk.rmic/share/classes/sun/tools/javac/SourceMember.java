@@ -394,7 +394,7 @@ class SourceMember extends MemberDefinition implements Constants {
      * <p>
      * This is the method which requests checking.
      * The real work is done by
-     * <tt>Vset check(Environment, Context, Vset)</tt>.
+     * {@code Vset check(Environment, Context, Vset)}.
      */
     public void check(Environment env) throws ClassNotFound {
         if (tracing) env.dtEnter("SourceMember.check: " +

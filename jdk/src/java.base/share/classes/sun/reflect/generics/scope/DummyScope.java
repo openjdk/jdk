@@ -29,9 +29,9 @@ import java.lang.reflect.TypeVariable;
 
 /**
  * This class is used to provide enclosing scopes for top level classes.
- * We cannot use <tt>null</tt> to represent such a scope, since the
+ * We cannot use {@code null} to represent such a scope, since the
  * enclosing scope is computed lazily, and so the field storing it is
- * null until it has been computed. Therefore, <tt>null</tt> is reserved
+ * null until it has been computed. Therefore, {@code null} is reserved
  * to represent an as-yet-uncomputed scope, and cannot be used for any
  * other kind of scope.
  */
@@ -53,7 +53,7 @@ public class DummyScope implements Scope {
 
     /**
      * Lookup a type variable in the scope, using its name. Always returns
-     * <tt>null</tt>.
+     * {@code null}.
      * @param name - the name of the type variable being looked up
      * @return  null
      */

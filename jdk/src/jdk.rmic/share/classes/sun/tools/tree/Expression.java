@@ -210,8 +210,8 @@ class Expression extends Node {
     }
 
     /**
-     * Return a <code>FieldUpdater</code> object to be used in updating the
-     * value of the location denoted by <code>this</code>, which must be an
+     * Return a {@code FieldUpdater} object to be used in updating the
+     * value of the location denoted by {@code this}, which must be an
      * expression suitable for the left-hand side of an assignment.
      * This is used for implementing assignments to private fields for which
      * an access method is required.  Returns null if no access method is
@@ -228,8 +228,8 @@ class Expression extends Node {
     }
 
     /**
-     * Return a <code>FieldUpdater</code> object to be used in updating the value of the
-     * location denoted by <code>this</code>, which must be an expression suitable for the
+     * Return a {@code FieldUpdater} object to be used in updating the value of the
+     * location denoted by {@code this}, which must be an expression suitable for the
      * left-hand side of an assignment.  This is used for implementing the assignment
      * operators and the increment/decrement operators on private fields that require an
      * access method, e.g., uplevel from an inner class.  Returns null if no access method
@@ -260,9 +260,9 @@ class Expression extends Node {
      * <li> a type name followed by fields or types
      * <li> a package name followed a type and then fields or types
      * </nl>
-     * If a type name is found, it rewrites itself as a <tt>TypeExpression</tt>.
+     * If a type name is found, it rewrites itself as a {@code TypeExpression}.
      * If a node decides it can only be a package prefix, it sets its
-     * type to <tt>Type.tPackage</tt>.  The caller must detect this
+     * type to {@code Type.tPackage}.  The caller must detect this
      * and act appropriately to verify the full package name.
      * @arg loc the expression containing the ambiguous expression
      */
