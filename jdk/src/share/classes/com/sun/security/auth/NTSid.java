@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class NTSid implements Principal, java.io.Serializable {
         if (stringSid == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("invalid null input: value",
+                        ("invalid.null.input.value",
                         "sun.security.util.AuthResources"));
             Object[] source = {"stringSid"};
             throw new NullPointerException(form.format(source));
@@ -81,7 +81,7 @@ public class NTSid implements Principal, java.io.Serializable {
         if (stringSid.length() == 0) {
             throw new IllegalArgumentException
                 (sun.security.util.ResourcesMgr.getString
-                        ("Invalid NTSid value",
+                        ("Invalid.NTSid.value",
                         "sun.security.util.AuthResources"));
         }
         sid = new String(stringSid);
@@ -108,7 +108,7 @@ public class NTSid implements Principal, java.io.Serializable {
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
                 (sun.security.util.ResourcesMgr.getString
-                        ("NTSid: name",
+                        ("NTSid.name",
                         "sun.security.util.AuthResources"));
         Object[] source = {sid};
         return form.format(source);

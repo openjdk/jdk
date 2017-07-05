@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public final class Subject implements java.io.Serializable {
             pubCredentials == null ||
             privCredentials == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null input(s)"));
+                (ResourcesMgr.getString("invalid.null.input.s."));
 
         this.principals = Collections.synchronizedSet(new SecureSet<Principal>
                                 (this, PRINCIPAL_SET, principals));
@@ -289,7 +289,7 @@ public final class Subject implements java.io.Serializable {
 
         if (acc == null) {
             throw new NullPointerException(ResourcesMgr.getString
-                ("invalid null AccessControlContext provided"));
+                ("invalid.null.AccessControlContext.provided"));
         }
 
         // return the Subject from the DomainCombiner of the provided context
@@ -346,7 +346,7 @@ public final class Subject implements java.io.Serializable {
         }
         if (action == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null action provided"));
+                (ResourcesMgr.getString("invalid.null.action.provided"));
 
         // set up the new Subject-based AccessControlContext
         // for doPrivileged
@@ -406,7 +406,7 @@ public final class Subject implements java.io.Serializable {
 
         if (action == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null action provided"));
+                (ResourcesMgr.getString("invalid.null.action.provided"));
 
         // set up the new Subject-based AccessControlContext for doPrivileged
         final AccessControlContext currentAcc = AccessController.getContext();
@@ -460,7 +460,7 @@ public final class Subject implements java.io.Serializable {
 
         if (action == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null action provided"));
+                (ResourcesMgr.getString("invalid.null.action.provided"));
 
         // set up the new Subject-based AccessControlContext
         // for doPrivileged
@@ -524,7 +524,7 @@ public final class Subject implements java.io.Serializable {
 
         if (action == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null action provided"));
+                (ResourcesMgr.getString("invalid.null.action.provided"));
 
         // set up the new Subject-based AccessControlContext for doPrivileged
         final AccessControlContext callerAcc =
@@ -603,7 +603,7 @@ public final class Subject implements java.io.Serializable {
 
         if (c == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null Class provided"));
+                (ResourcesMgr.getString("invalid.null.Class.provided"));
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
@@ -697,7 +697,7 @@ public final class Subject implements java.io.Serializable {
 
         if (c == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null Class provided"));
+                (ResourcesMgr.getString("invalid.null.Class.provided"));
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
@@ -742,7 +742,7 @@ public final class Subject implements java.io.Serializable {
 
         if (c == null)
             throw new NullPointerException
-                (ResourcesMgr.getString("invalid null Class provided"));
+                (ResourcesMgr.getString("invalid.null.Class.provided"));
 
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
@@ -832,15 +832,15 @@ public final class Subject implements java.io.Serializable {
      */
     String toString(boolean includePrivateCredentials) {
 
-        String s = ResourcesMgr.getString("Subject:\n");
+        String s = ResourcesMgr.getString("Subject.");
         String suffix = "";
 
         synchronized(principals) {
             Iterator<Principal> pI = principals.iterator();
             while (pI.hasNext()) {
                 Principal p = pI.next();
-                suffix = suffix + ResourcesMgr.getString("\tPrincipal: ") +
-                        p.toString() + ResourcesMgr.getString("\n");
+                suffix = suffix + ResourcesMgr.getString(".Principal.") +
+                        p.toString() + ResourcesMgr.getString("NEWLINE");
             }
         }
 
@@ -849,8 +849,8 @@ public final class Subject implements java.io.Serializable {
             while (pI.hasNext()) {
                 Object o = pI.next();
                 suffix = suffix +
-                        ResourcesMgr.getString("\tPublic Credential: ") +
-                        o.toString() + ResourcesMgr.getString("\n");
+                        ResourcesMgr.getString(".Public.Credential.") +
+                        o.toString() + ResourcesMgr.getString("NEWLINE");
             }
         }
 
@@ -861,12 +861,12 @@ public final class Subject implements java.io.Serializable {
                     try {
                         Object o = pI.next();
                         suffix += ResourcesMgr.getString
-                                        ("\tPrivate Credential: ") +
+                                        (".Private.Credential.") +
                                         o.toString() +
-                                        ResourcesMgr.getString("\n");
+                                        ResourcesMgr.getString("NEWLINE");
                     } catch (SecurityException se) {
                         suffix += ResourcesMgr.getString
-                                ("\tPrivate Credential inaccessible\n");
+                                (".Private.Credential.inaccessible.");
                         break;
                     }
                 }
@@ -1036,7 +1036,7 @@ public final class Subject implements java.io.Serializable {
 
                     if (subject.isReadOnly()) {
                         throw new IllegalStateException(ResourcesMgr.getString
-                                ("Subject is read-only"));
+                                ("Subject.is.read.only"));
                     }
 
                     java.lang.SecurityManager sm = System.getSecurityManager();
@@ -1062,7 +1062,7 @@ public final class Subject implements java.io.Serializable {
 
             if (subject.isReadOnly()) {
                 throw new IllegalStateException
-                        (ResourcesMgr.getString("Subject is read-only"));
+                        (ResourcesMgr.getString("Subject.is.read.only"));
             }
 
             java.lang.SecurityManager sm = System.getSecurityManager();
@@ -1084,9 +1084,7 @@ public final class Subject implements java.io.Serializable {
             case Subject.PRINCIPAL_SET:
                 if (!(o instanceof Principal)) {
                     throw new SecurityException(ResourcesMgr.getString
-                        ("attempting to add an object which is not an " +
-                        "instance of java.security.Principal to a " +
-                        "Subject's Principal Set"));
+                        ("attempting.to.add.an.object.which.is.not.an.instance.of.java.security.Principal.to.a.Subject.s.Principal.Set"));
                 }
                 break;
             default:
@@ -1389,8 +1387,7 @@ public final class Subject implements java.io.Serializable {
 
             if (!o.getClass().isAssignableFrom(c)) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                        ("attempting to add an object which is not an " +
-                        "instance of class"));
+                        ("attempting.to.add.an.object.which.is.not.an.instance.of.class"));
                 Object[] source = {c.toString()};
                 throw new SecurityException(form.format(source));
             }

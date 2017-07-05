@@ -74,9 +74,9 @@ public class SSL {
         KeyTab ktab = KeyTab.create(OneKDC.KTAB);
         PrincipalName service = new PrincipalName(
                 "host/" + server, PrincipalName.KRB_NT_SRV_HST);
-        ktab.addEntry(service, "pass1".toCharArray(), 1);
-        ktab.addEntry(service, "pass2".toCharArray(), 2);
-        ktab.addEntry(service, "pass3".toCharArray(), 3);
+        ktab.addEntry(service, "pass1".toCharArray(), 1, true);
+        ktab.addEntry(service, "pass2".toCharArray(), 2, true);
+        ktab.addEntry(service, "pass3".toCharArray(), 3, true);
         ktab.save();
 
         // and use the middle one as the real key
