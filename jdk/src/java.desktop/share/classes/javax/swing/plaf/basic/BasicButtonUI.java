@@ -64,7 +64,7 @@ public class BasicButtonUI extends ButtonUI{
      */
     protected int defaultTextShiftOffset;
 
-    private final static String propertyPrefix = "Button" + ".";
+    private static final String propertyPrefix = "Button" + ".";
 
     private static final Object BASIC_BUTTON_UI_KEY = new Object();
 

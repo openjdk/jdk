@@ -1579,9 +1579,11 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             return;
           }
           // Make sure "this" has been initialized if current method is an
-          // <init>
+          // <init>.  Note that "<init>" methods in interfaces are just
+          // normal methods.  Interfaces cannot have ctors.
           if (_method->name() == vmSymbols::object_initializer_name() &&
-              current_frame.flag_this_uninit()) {
+              current_frame.flag_this_uninit() &&
+              !current_class()->is_interface()) {
             verify_error(ErrorContext::bad_code(bci),
                          "Constructor must call super() or this() "
                          "before return");

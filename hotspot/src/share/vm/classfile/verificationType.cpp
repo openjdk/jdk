@@ -70,9 +70,12 @@ bool VerificationType::is_reference_assignable_from(
     if (this_class->is_interface() && (!from_field_is_protected ||
         from.name() != vmSymbols::java_lang_Object())) {
       // If we are not trying to access a protected field or method in
-      // java.lang.Object then we treat interfaces as java.lang.Object,
-      // including java.lang.Cloneable and java.io.Serializable.
-      return true;
+      // java.lang.Object then, for arrays, we only allow assignability
+      // to interfaces java.lang.Cloneable and java.io.Serializable.
+      // Otherwise, we treat interfaces as java.lang.Object.
+      return !from.is_array() ||
+        this_class == SystemDictionary::Cloneable_klass() ||
+        this_class == SystemDictionary::Serializable_klass();
     } else if (from.is_object()) {
       Klass* from_class = SystemDictionary::resolve_or_fail(
           from.name(), Handle(THREAD, klass->class_loader()),

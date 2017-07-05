@@ -252,9 +252,9 @@ public final class DebugSettings {
     private static final String PROP_CTRACE = "ctrace";
     private static final int PROP_CTRACE_LEN = PROP_CTRACE.length();
 
-    private native synchronized void setCTracingOn(boolean enabled);
-    private native synchronized void setCTracingOn(boolean enabled, String file);
-    private native synchronized void setCTracingOn(boolean enabled, String file, int line);
+    private synchronized native void setCTracingOn(boolean enabled);
+    private synchronized native void setCTracingOn(boolean enabled, String file);
+    private synchronized native void setCTracingOn(boolean enabled, String file, int line);
 
     private void loadNativeSettings() {
         boolean        ctracingOn;

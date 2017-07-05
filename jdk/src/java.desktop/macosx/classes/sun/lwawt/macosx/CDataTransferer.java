@@ -171,7 +171,7 @@ public class CDataTransferer extends DataTransferer {
     }
 
     @Override
-    synchronized protected Long getFormatForNativeAsLong(String str) {
+    protected synchronized Long getFormatForNativeAsLong(String str) {
         Long format = predefinedClipboardNameMap.get(str);
 
         if (format == null) {

@@ -28,6 +28,8 @@ package java.lang.reflect;
 import java.lang.annotation.*;
 import java.util.Map;
 import java.util.Objects;
+
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
@@ -79,7 +81,7 @@ public abstract class Executable extends AccessibleObject
     Annotation[][] parseParameterAnnotations(byte[] parameterAnnotations) {
         return AnnotationParser.parseParameterAnnotations(
                parameterAnnotations,
-               sun.misc.SharedSecrets.getJavaLangAccess().
+               SharedSecrets.getJavaLangAccess().
                getConstantPool(getDeclaringClass()),
                getDeclaringClass());
     }
@@ -601,7 +603,7 @@ public abstract class Executable extends AccessibleObject
                     } else {
                         declAnnos = AnnotationParser.parseAnnotations(
                                 getAnnotationBytes(),
-                                sun.misc.SharedSecrets.getJavaLangAccess().
+                                SharedSecrets.getJavaLangAccess().
                                         getConstantPool(getDeclaringClass()),
                                 getDeclaringClass()
                         );
@@ -638,7 +640,7 @@ public abstract class Executable extends AccessibleObject
      */
     AnnotatedType getAnnotatedReturnType0(Type returnType) {
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
+                SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
@@ -672,7 +674,7 @@ public abstract class Executable extends AccessibleObject
         if (Modifier.isStatic(this.getModifiers()))
             return null;
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
+                SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
@@ -696,7 +698,7 @@ public abstract class Executable extends AccessibleObject
      */
     public AnnotatedType[] getAnnotatedParameterTypes() {
         return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
+                SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
@@ -720,7 +722,7 @@ public abstract class Executable extends AccessibleObject
      */
     public AnnotatedType[] getAnnotatedExceptionTypes() {
         return TypeAnnotationParser.buildAnnotatedTypes(getTypeAnnotationBytes0(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
+                SharedSecrets.getJavaLangAccess().
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),

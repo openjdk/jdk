@@ -51,8 +51,8 @@ final class RealTimeSequencer extends AbstractMidiDevice
     // STATIC VARIABLES
 
     /** debugging flags */
-    private final static boolean DEBUG_PUMP = false;
-    private final static boolean DEBUG_PUMP_ALL = false;
+    private static final boolean DEBUG_PUMP = false;
+    private static final boolean DEBUG_PUMP_ALL = false;
 
     /**
      * Event Dispatcher thread. Should be using a shared event

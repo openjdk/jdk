@@ -145,7 +145,7 @@ class RTFAttributes
     /************************************************************************/
     /************************************************************************/
 
-    static abstract class GenericAttribute
+    abstract static class GenericAttribute
     {
         int domain;
         Object swingName;

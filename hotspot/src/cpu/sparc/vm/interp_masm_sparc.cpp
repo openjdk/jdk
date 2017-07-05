@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2021,6 +2021,8 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
     test_method_data_pointer(profile_continue);
 
     if (MethodData::profile_return_jsr292_only()) {
+      assert(Method::intrinsic_id_size_in_bytes() == 2, "assuming Method::_intrinsic_id is u2");
+
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
       // begining of the ProfileData we intend to update to check its
@@ -2031,7 +2033,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
       cmp_and_br_short(tmp1, Bytecodes::_invokedynamic, equal, pn, do_profile);
       cmp(tmp1, Bytecodes::_invokehandle);
       br(equal, false, pn, do_profile);
-      delayed()->ldub(Lmethod, Method::intrinsic_id_offset_in_bytes(), tmp1);
+      delayed()->lduh(Lmethod, Method::intrinsic_id_offset_in_bytes(), tmp1);
       cmp_and_br_short(tmp1, vmIntrinsics::_compiledLambdaForm, notEqual, pt, profile_continue);
 
       bind(do_profile);

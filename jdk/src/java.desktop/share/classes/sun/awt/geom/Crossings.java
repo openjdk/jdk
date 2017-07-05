@@ -307,7 +307,7 @@ public abstract class Crossings {
         return false;
     }
 
-    public final static class EvenOdd extends Crossings {
+    public static final class EvenOdd extends Crossings {
         public EvenOdd(double xlo, double ylo, double xhi, double yhi) {
             super(xlo, ylo, xhi, yhi);
         }
@@ -390,7 +390,7 @@ public abstract class Crossings {
         }
     }
 
-    public final static class NonZero extends Crossings {
+    public static final class NonZero extends Crossings {
         private int crosscounts[];
 
         public NonZero(double xlo, double ylo, double xhi, double yhi) {

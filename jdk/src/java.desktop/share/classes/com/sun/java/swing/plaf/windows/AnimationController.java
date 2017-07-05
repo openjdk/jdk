@@ -69,11 +69,11 @@ import sun.awt.AppContext;
  */
 class AnimationController implements ActionListener, PropertyChangeListener {
 
-    private final static boolean VISTA_ANIMATION_DISABLED =
+    private static final boolean VISTA_ANIMATION_DISABLED =
         AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
 
 
-    private final static Object ANIMATION_CONTROLLER_KEY =
+    private static final Object ANIMATION_CONTROLLER_KEY =
         new StringBuilder("ANIMATION_CONTROLLER_KEY");
 
     private final Map<JComponent, Map<Part, AnimationState>> animationStateMap =

@@ -117,39 +117,39 @@ public class BasicStroke implements Stroke {
      * Joins path segments by extending their outside edges until
      * they meet.
      */
-    @Native public final static int JOIN_MITER = 0;
+    @Native public static final int JOIN_MITER = 0;
 
     /**
      * Joins path segments by rounding off the corner at a radius
      * of half the line width.
      */
-    @Native public final static int JOIN_ROUND = 1;
+    @Native public static final int JOIN_ROUND = 1;
 
     /**
      * Joins path segments by connecting the outer corners of their
      * wide outlines with a straight segment.
      */
-    @Native public final static int JOIN_BEVEL = 2;
+    @Native public static final int JOIN_BEVEL = 2;
 
     /**
      * Ends unclosed subpaths and dash segments with no added
      * decoration.
      */
-    @Native public final static int CAP_BUTT = 0;
+    @Native public static final int CAP_BUTT = 0;
 
     /**
      * Ends unclosed subpaths and dash segments with a round
      * decoration that has a radius equal to half of the width
      * of the pen.
      */
-    @Native public final static int CAP_ROUND = 1;
+    @Native public static final int CAP_ROUND = 1;
 
     /**
      * Ends unclosed subpaths and dash segments with a square
      * projection that extends beyond the end of the segment
      * to a distance equal to half of the line width.
      */
-    @Native public final static int CAP_SQUARE = 2;
+    @Native public static final int CAP_SQUARE = 2;
 
     float width;
 

@@ -267,7 +267,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
      * fields
      */
 
-    static final private Point  zero     = new Point(0,0);
+    private static final Point  zero     = new Point(0,0);
 
     /**
      * The location of the drag cursor's hotspot in Component coordinates.

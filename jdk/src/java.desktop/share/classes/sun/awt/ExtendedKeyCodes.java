@@ -12,16 +12,16 @@ public class ExtendedKeyCodes {
      * or higher.
      */
      // Keycodes declared in KeyEvent.java with corresponding Unicode values.
-     private final static HashMap<Integer, Integer>  regularKeyCodesMap =
+     private static final HashMap<Integer, Integer>  regularKeyCodesMap =
                                           new HashMap<Integer,Integer>(98, 1.0f);
 
      // Keycodes derived from Unicode values. Here should be collected codes
      // for characters appearing on the primary layer of at least one
      // known keyboard layout. For instance, sterling sign is on the primary layer
      // of the Mac Italian layout.
-     private final static HashSet<Integer> extendedKeyCodesSet =
+     private static final HashSet<Integer> extendedKeyCodesSet =
                                                   new HashSet<Integer>(501, 1.0f);
-     final public static int getExtendedKeyCodeForChar( int c ) {
+     public static final int getExtendedKeyCodeForChar( int c ) {
          int uc = Character.toUpperCase( c );
          int lc = Character.toLowerCase( c );
          if (regularKeyCodesMap.containsKey( c )) {

@@ -169,12 +169,12 @@ public abstract class InfoWindow extends Window {
                     display();
                 }};
 
-        private final static int TOOLTIP_SHOW_TIME = 10000;
-        private final static int TOOLTIP_START_DELAY_TIME = 1000;
-        private final static int TOOLTIP_MAX_LENGTH = 64;
-        private final static int TOOLTIP_MOUSE_CURSOR_INDENT = 5;
-        private final static Color TOOLTIP_BACKGROUND_COLOR = new Color(255, 255, 220);
-        private final static Font TOOLTIP_TEXT_FONT = XWindow.getDefaultFont();
+        private static final int TOOLTIP_SHOW_TIME = 10000;
+        private static final int TOOLTIP_START_DELAY_TIME = 1000;
+        private static final int TOOLTIP_MAX_LENGTH = 64;
+        private static final int TOOLTIP_MOUSE_CURSOR_INDENT = 5;
+        private static final Color TOOLTIP_BACKGROUND_COLOR = new Color(255, 255, 220);
+        private static final Font TOOLTIP_TEXT_FONT = XWindow.getDefaultFont();
 
         public Tooltip(Frame parent, Object target,
                 LiveArguments liveArguments)
@@ -258,15 +258,15 @@ public abstract class InfoWindow extends Window {
         private final LiveArguments liveArguments;
         private final Object target;
 
-        private final static int BALLOON_SHOW_TIME = 10000;
-        private final static int BALLOON_TEXT_MAX_LENGTH = 256;
-        private final static int BALLOON_WORD_LINE_MAX_LENGTH = 16;
-        private final static int BALLOON_WORD_LINE_MAX_COUNT = 4;
-        private final static int BALLOON_ICON_WIDTH = 32;
-        private final static int BALLOON_ICON_HEIGHT = 32;
-        private final static int BALLOON_TRAY_ICON_INDENT = 0;
-        private final static Color BALLOON_CAPTION_BACKGROUND_COLOR = new Color(200, 200 ,255);
-        private final static Font BALLOON_CAPTION_FONT = new Font(Font.DIALOG, Font.BOLD, 12);
+        private static final int BALLOON_SHOW_TIME = 10000;
+        private static final int BALLOON_TEXT_MAX_LENGTH = 256;
+        private static final int BALLOON_WORD_LINE_MAX_LENGTH = 16;
+        private static final int BALLOON_WORD_LINE_MAX_COUNT = 4;
+        private static final int BALLOON_ICON_WIDTH = 32;
+        private static final int BALLOON_ICON_HEIGHT = 32;
+        private static final int BALLOON_TRAY_ICON_INDENT = 0;
+        private static final Color BALLOON_CAPTION_BACKGROUND_COLOR = new Color(200, 200 ,255);
+        private static final Font BALLOON_CAPTION_FONT = new Font(Font.DIALOG, Font.BOLD, 12);
 
         private Panel mainPanel = new Panel();
         private Panel captionPanel = new Panel();

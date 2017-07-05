@@ -47,9 +47,9 @@ import java.util.Iterator;
 import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
-import sun.misc.JavaBeansAccess;
 
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaBeansAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -102,17 +102,17 @@ public class Introspector {
      * Flag to indicate to use of all beaninfo.
      * @since 1.2
      */
-    public final static int USE_ALL_BEANINFO           = 1;
+    public static final int USE_ALL_BEANINFO           = 1;
     /**
      * Flag to indicate to ignore immediate beaninfo.
      * @since 1.2
      */
-    public final static int IGNORE_IMMEDIATE_BEANINFO  = 2;
+    public static final int IGNORE_IMMEDIATE_BEANINFO  = 2;
     /**
      * Flag to indicate to ignore all beaninfo.
      * @since 1.2
      */
-    public final static int IGNORE_ALL_BEANINFO        = 3;
+    public static final int IGNORE_ALL_BEANINFO        = 3;
 
     // Static Caches to speed up introspection.
     private static final WeakCache<Class<?>, Method[]> declaredMethodCache = new WeakCache<>();
@@ -139,7 +139,7 @@ public class Introspector {
     // events maps from String names to EventSetDescriptors
     private Map<String, EventSetDescriptor> events;
 
-    private final static EventSetDescriptor[] EMPTY_EVENTSETDESCRIPTORS = new EventSetDescriptor[0];
+    private static final EventSetDescriptor[] EMPTY_EVENTSETDESCRIPTORS = new EventSetDescriptor[0];
 
     static final String ADD_PREFIX = "add";
     static final String REMOVE_PREFIX = "remove";

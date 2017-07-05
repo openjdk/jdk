@@ -44,7 +44,7 @@ import java.io.InvalidObjectException;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Map;
 import java.util.HashMap;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * The <code>TextAttribute</code> class defines attribute keys and

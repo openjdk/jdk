@@ -35,7 +35,7 @@ final class WDialogPeer extends WWindowPeer implements DialogPeer {
 
     // Platform default background for dialogs.  Gets set on target if
     // target has none explicitly specified.
-    final static Color defaultBackground =  SystemColor.control;
+    static final Color defaultBackground =  SystemColor.control;
 
     // If target doesn't have its background color set, we set its
     // background to platform default.

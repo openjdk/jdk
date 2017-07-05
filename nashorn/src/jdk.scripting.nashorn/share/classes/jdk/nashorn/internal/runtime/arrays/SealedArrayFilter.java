@@ -50,15 +50,15 @@ class SealedArrayFilter extends ArrayFilter {
 
     @Override
     public boolean canDelete(final int index, final boolean strict) {
-        if (strict) {
-            throw typeError("cant.delete.property", Integer.toString(index), "sealed array");
-        }
-        return false;
+        return canDelete(ArrayIndex.toLongIndex(index), strict);
     }
 
     @Override
-    public boolean canDelete(final long fromIndex, final long toIndex, final boolean strict) {
-        return canDelete((int) fromIndex, strict);
+    public boolean canDelete(final long longIndex, final boolean strict) {
+        if (strict) {
+            throw typeError("cant.delete.property", Long.toString(longIndex), "sealed array");
+        }
+        return false;
     }
 
     @Override

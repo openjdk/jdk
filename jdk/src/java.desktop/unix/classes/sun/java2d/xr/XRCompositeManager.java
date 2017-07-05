@@ -48,9 +48,9 @@ public class XRCompositeManager {
     private static boolean enableGradCache = true;
     private static XRCompositeManager instance;
 
-    private final static int SOLID = 0;
-    private final static int TEXTURE = 1;
-    private final static int GRADIENT = 2;
+    private static final int SOLID = 0;
+    private static final int TEXTURE = 1;
+    private static final int GRADIENT = 2;
 
     int srcType;
     XRSolidSrcPict solidSrc32;

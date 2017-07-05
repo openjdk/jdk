@@ -335,7 +335,7 @@ public interface MidiDevice extends AutoCloseable {
         /**
          * Obtains the version of the device.
          *
-         * @return textual version information for the device.
+         * @return textual version information for the device
          */
         public final String getVersion() {
             return version;

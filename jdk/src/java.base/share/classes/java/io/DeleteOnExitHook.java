@@ -26,6 +26,7 @@ package java.io;
 
 import java.util.*;
 import java.io.File;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * This class holds a set of filenames to be deleted on VM exit through a shutdown hook.
@@ -41,7 +42,7 @@ class DeleteOnExitHook {
         // delete on exit list and cause the DeleteOnExitHook to be
         // registered during shutdown in progress. So set the
         // registerShutdownInProgress parameter to true.
-        sun.misc.SharedSecrets.getJavaLangAccess()
+        SharedSecrets.getJavaLangAccess()
             .registerShutdownHook(2 /* Shutdown hook invocation order */,
                 true /* register even if shutdown in progress */,
                 new Runnable() {

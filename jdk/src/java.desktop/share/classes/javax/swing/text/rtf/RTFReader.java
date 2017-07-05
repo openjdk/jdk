@@ -86,7 +86,7 @@ class RTFReader extends RTFParser
    *  Unicode character. */
   int skippingCharacters;
 
-  static private Dictionary<String, RTFAttribute> straightforwardAttributes;
+  private static Dictionary<String, RTFAttribute> straightforwardAttributes;
   static {
       straightforwardAttributes = RTFAttributes.attributesByKeyword();
   }
@@ -1066,7 +1066,7 @@ abstract class AttributeTrackingDestination implements Destination
         parserState.put("sec", sectionAttributes);
     }
 
-    abstract public void handleText(String text);
+    public abstract void handleText(String text);
 
     public void handleBinaryBlob(byte[] data)
     {
