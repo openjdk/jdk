@@ -112,7 +112,12 @@ final class ImageNativeSubstrate implements ImageSubstrate {
 
     @Override
     public byte[] getStringBytes(int offset) {
-        return getStringBytes(id, offset);
+        byte[] ret = getStringBytes(id, offset);
+        if (ret == null) {
+            throw new OutOfMemoryError("Error accessing array at offset "
+                    + offset);
+        }
+        return ret;
     }
 
     @Override

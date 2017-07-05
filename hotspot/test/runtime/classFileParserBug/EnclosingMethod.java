@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-
-/* @test
- * @bug 5012882
- * @summary Test jvmti hprof
  *
- * @compile -g ../Context.java ../DemoRun.java
- * @build MonitorTest
- * @run main MonitorTest Context 25 200 1000
  */
 
-/* To create monitor contention, increase the default configuration.
- *   Hprof seems to have historically not output anything unless certain
- *   limits have been reached on the total contention time.
+/*
+ * @test
+ * @bug 8130183
+ * @summary For InnerClasses attribute, VM permits inner_class_info_index value of zero
+ * @compile badEnclMthd.jcod
+ * @run main/othervm -Xverify:all EnclosingMethod
  */
 
-public class MonitorTest {
+// Test that an EnclosingMethod attribute with the value of 0 causes a ClassFormatError.
+public class EnclosingMethod {
+    public static void main(String args[]) throws Throwable {
 
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
-
-        /* Run JVMTI hprof agent with monitor=y */
-        hprof = new DemoRun("hprof", "monitor=y,file=monitor.txt");
-        hprof.runit(args[0]);
-
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
+        System.out.println("Regression test for bug 8130183");
+        try {
+            Class newClass = Class.forName("badEnclMthd");
+            throw new RuntimeException("Expected ClassFormatError exception not thrown");
+        } catch (java.lang.ClassFormatError e) {
+            System.out.println("Test EnclosingMethod passed");
         }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
     }
 }

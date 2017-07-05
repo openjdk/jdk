@@ -1802,14 +1802,25 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   assert(!this->has_pending_exception(), "ensure_join should have cleared");
 
   // 6282335 JNI DetachCurrentThread spec states that all Java monitors
-  // held by this thread must be released.  A detach operation must only
-  // get here if there are no Java frames on the stack.  Therefore, any
-  // owned monitors at this point MUST be JNI-acquired monitors which are
-  // pre-inflated and in the monitor cache.
+  // held by this thread must be released. The spec does not distinguish
+  // between JNI-acquired and regular Java monitors. We can only see
+  // regular Java monitors here if monitor enter-exit matching is broken.
   //
-  // ensure_join() ignores IllegalThreadStateExceptions, and so does this.
-  if (exit_type == jni_detach && JNIDetachReleasesMonitors) {
-    assert(!this->has_last_Java_frame(), "detaching with Java frames?");
+  // Optionally release any monitors for regular JavaThread exits. This
+  // is provided as a work around for any bugs in monitor enter-exit
+  // matching. This can be expensive so it is not enabled by default.
+  // ObjectMonitor::Knob_ExitRelease is a superset of the
+  // JNIDetachReleasesMonitors option.
+  //
+  // ensure_join() ignores IllegalThreadStateExceptions, and so does
+  // ObjectSynchronizer::release_monitors_owned_by_thread().
+  if ((exit_type == jni_detach && JNIDetachReleasesMonitors) ||
+      ObjectMonitor::Knob_ExitRelease) {
+    // Sanity check even though JNI DetachCurrentThread() would have
+    // returned JNI_ERR if there was a Java frame. JavaThread exit
+    // should be done executing Java code by the time we get here.
+    assert(!this->has_last_Java_frame(),
+           "should not have a Java frame when detaching or exiting");
     ObjectSynchronizer::release_monitors_owned_by_thread(this);
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
   }

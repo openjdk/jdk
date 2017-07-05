@@ -61,6 +61,12 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   if (!_head->is_Loop()) {
     return false;
   }
+
+  // check for vectorized loops, any unswitching was already applied
+  if (_head->is_CountedLoop() && _head->as_CountedLoop()->do_unroll_only()) {
+    return false;
+  }
+
   int nodes_left = phase->C->max_node_limit() - phase->C->live_nodes();
   if ((int)(2 * _body.size()) > nodes_left) {
     return false; // Too speculative if running low on nodes.
