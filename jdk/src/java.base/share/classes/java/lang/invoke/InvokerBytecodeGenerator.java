@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ class InvokerBytecodeGenerator {
     private static final String LFN_SIG = "L" + LFN + ";";
     private static final String LL_SIG  = "(L" + OBJ + ";)L" + OBJ + ";";
     private static final String LLV_SIG = "(L" + OBJ + ";L" + OBJ + ";)V";
-    private static final String CLL_SIG = "(L" + CLS + ";L" + OBJ + ";)L" + OBJ + ";";
 
     /** Name of its super class*/
     private static final String superName = OBJ;
@@ -571,7 +570,7 @@ class InvokerBytecodeGenerator {
             mv.visitLdcInsn(constantPlaceholder(cls));
             mv.visitTypeInsn(Opcodes.CHECKCAST, CLS);
             mv.visitInsn(Opcodes.SWAP);
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, MHI, "castReference", CLL_SIG, false);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, CLS, "cast", LL_SIG, false);
             if (Object[].class.isAssignableFrom(cls))
                 mv.visitTypeInsn(Opcodes.CHECKCAST, OBJARY);
             else if (PROFILE_LEVEL > 0)

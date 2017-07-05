@@ -32,7 +32,11 @@ public class TestAESDecode extends TestAESBase {
   @Override
   public void run() {
     try {
-      if (!noReinit) dCipher.init(Cipher.DECRYPT_MODE, key, algParams);
+      if (mode.equals("GCM")) {
+        gcm_init(false);
+      } else if (!noReinit) {
+        dCipher.init(Cipher.DECRYPT_MODE, key, algParams);
+      }
       decode = new byte[decodeLength];
       if (testingMisalignment) {
         int tempSize = dCipher.update(encode, encOutputOffset, (decodeMsgSize - lastChunkSize), decode, decOutputOffset);

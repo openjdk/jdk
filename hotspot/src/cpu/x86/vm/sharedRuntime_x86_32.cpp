@@ -2456,7 +2456,8 @@ void SharedRuntime::generate_deopt_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
-  CodeBuffer   buffer("deopt_blob", 1024, 1024);
+  // note: the buffer code size must account for StackShadowPages=50
+  CodeBuffer   buffer("deopt_blob", 1536, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
   OopMap* map = NULL;

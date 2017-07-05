@@ -617,6 +617,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints,
                                      final MethodType callSiteType, final int fnFlags) {
         final CompiledFunction cfn = new CompiledFunction(target, this, invalidatedProgramPoints, callSiteType, fnFlags);
+        assert noDuplicateCode(cfn) : "duplicate code";
         code.add(cfn);
         return cfn;
     }
@@ -683,14 +684,17 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     synchronized CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
-        CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope, forbidden);
+        assert isValidCallSite(callSiteType) : callSiteType;
+
+        CompiledFunction existingBest = pickFunction(callSiteType, false);
+        if (existingBest == null) {
+            existingBest = pickFunction(callSiteType, true); // try vararg last
+        }
         if (existingBest == null) {
             existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope, true), callSiteType);
         }
 
         assert existingBest != null;
-        //we are calling a vararg method with real args
-        boolean varArgWithRealArgs = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
 
         //if the best one is an apply to call, it has to match the callsite exactly
         //or we need to regenerate
@@ -699,24 +703,15 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             if (best != null) {
                 return best;
             }
-            varArgWithRealArgs = true;
-        }
 
-        if (varArgWithRealArgs) {
             // special case: we had an apply to call, but we failed to make it fit.
             // Try to generate a specialized one for this callsite. It may
             // be another apply to call specialization, or it may not, but whatever
             // it is, it is a specialization that is guaranteed to fit
-            final FunctionInitializer fnInit = compileTypeSpecialization(callSiteType, runtimeScope, false);
-            existingBest = addCode(fnInit, callSiteType);
+            existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope, false), callSiteType);
         }
 
         return existingBest;
-    }
-
-    @Override
-    boolean isRecompilable() {
-        return true;
     }
 
     @Override
@@ -825,6 +820,16 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             newFn = newFn.setBody(lc, newFn.getBody().setNeedsScope(null));
         }
         return newFn;
+    }
+
+    // Make sure code does not contain a compiled function with the same signature as compiledFunction
+    private boolean noDuplicateCode(final CompiledFunction compiledFunction) {
+        for (final CompiledFunction cf : code) {
+            if (cf.type().equals(compiledFunction.type())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,10 @@
 // The knob* variables are effectively final.  Once set they should
 // never be modified hence.  Consider using __read_mostly with GCC.
 
+int ObjectMonitor::Knob_ExitRelease = 0;
 int ObjectMonitor::Knob_Verbose     = 0;
 int ObjectMonitor::Knob_VerifyInUse = 0;
+int ObjectMonitor::Knob_VerifyMatch = 0;
 int ObjectMonitor::Knob_SpinLimit   = 5000;    // derived by an external tool -
 static int Knob_LogSpins            = 0;       // enable jvmstat tally for spins
 static int Knob_HandOff             = 0;
@@ -250,24 +252,6 @@ static volatile int InitDone        = 0;
 
 // -----------------------------------------------------------------------------
 // Enter support
-
-bool ObjectMonitor::try_enter(Thread* THREAD) {
-  if (THREAD != _owner) {
-    if (THREAD->is_lock_owned ((address)_owner)) {
-      assert(_recursions == 0, "internal state error");
-      _owner = THREAD;
-      _recursions = 1;
-      return true;
-    }
-    if (Atomic::cmpxchg_ptr (THREAD, &_owner, NULL) != NULL) {
-      return false;
-    }
-    return true;
-  } else {
-    _recursions++;
-    return true;
-  }
-}
 
 void NOINLINE ObjectMonitor::enter(TRAPS) {
   // The following code is ordered to check the most common cases first
@@ -2272,7 +2256,7 @@ void ObjectWaiter::wait_reenter_end(ObjectMonitor * const mon) {
 }
 
 inline void ObjectMonitor::AddWaiter(ObjectWaiter* node) {
-  assert(node != NULL, "should not dequeue NULL node");
+  assert(node != NULL, "should not add NULL node");
   assert(node->_prev == NULL, "node already in list");
   assert(node->_next == NULL, "node already in list");
   // put node at end of queue (circular doubly linked list)
@@ -2407,8 +2391,8 @@ static int kvGetInt(char * kvList, const char * Key, int Default) {
   char * v = kvGet(kvList, Key);
   int rslt = v ? ::strtol(v, NULL, 0) : Default;
   if (Knob_ReportSettings && v != NULL) {
-    ::printf ("  SyncKnob: %s %d(%d)\n", Key, rslt, Default) ;
-    ::fflush(stdout);
+    tty->print_cr("INFO: SyncKnob: %s %d(%d)", Key, rslt, Default) ;
+    tty->flush();
   }
   return rslt;
 }
@@ -2442,8 +2426,10 @@ void ObjectMonitor::DeferredInitialize() {
 
   #define SETKNOB(x) { Knob_##x = kvGetInt(knobs, #x, Knob_##x); }
   SETKNOB(ReportSettings);
+  SETKNOB(ExitRelease);
   SETKNOB(Verbose);
   SETKNOB(VerifyInUse);
+  SETKNOB(VerifyMatch);
   SETKNOB(FixedSpin);
   SETKNOB(SpinLimit);
   SETKNOB(SpinBase);
@@ -2477,7 +2463,9 @@ void ObjectMonitor::DeferredInitialize() {
 
   if (os::is_MP()) {
     BackOffMask = (1 << Knob_SpinBackOff) - 1;
-    if (Knob_ReportSettings) ::printf("BackOffMask=%X\n", BackOffMask);
+    if (Knob_ReportSettings) {
+      tty->print_cr("INFO: BackOffMask=0x%X", BackOffMask);
+    }
     // CONSIDER: BackOffMask = ROUNDUP_NEXT_POWER2 (ncpus-1)
   } else {
     Knob_SpinLimit = 0;
