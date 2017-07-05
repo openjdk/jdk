@@ -962,6 +962,12 @@ public class BasicScrollPaneUI
                         return;
                     }
                     orientation = SwingConstants.HORIZONTAL;
+                } else if(e.isShiftDown()){
+                    JScrollBar hScroll = scrollpane.getHorizontalScrollBar();
+                    if (hScroll != null && hScroll.isVisible()) {
+                        toScroll = hScroll;
+                        orientation = SwingConstants.HORIZONTAL;
+                    }
                 }
 
                 e.consume();

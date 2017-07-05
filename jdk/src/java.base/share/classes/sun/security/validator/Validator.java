@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ public abstract class Validator {
      */
     public final static String VAR_PLUGIN_CODE_SIGNING = "plugin code signing";
 
+    private final String type;
     final EndEntityChecker endEntityChecker;
     final String variant;
 
@@ -154,6 +155,7 @@ public abstract class Validator {
     volatile Date validationDate;
 
     Validator(String type, String variant) {
+        this.type = type;
         this.variant = variant;
         endEntityChecker = EndEntityChecker.getInstance(type, variant);
     }
@@ -261,7 +263,16 @@ public abstract class Validator {
 
         // omit EE extension check if EE cert is also trust anchor
         if (chain.length > 1) {
-            endEntityChecker.check(chain[0], parameter);
+            // EndEntityChecker does not need to check unresolved critical
+            // extensions when validating with a TYPE_PKIX Validator.
+            // A TYPE_PKIX Validator will already have run checks on all
+            // certs' extensions, including checks by any PKIXCertPathCheckers
+            // included in the PKIXParameters, so the extra checks would be
+            // redundant.
+            boolean checkUnresolvedCritExts =
+                    (type == TYPE_PKIX) ? false : true;
+            endEntityChecker.check(chain[0], parameter,
+                                   checkUnresolvedCritExts);
         }
 
         return chain;

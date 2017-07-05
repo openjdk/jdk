@@ -4316,9 +4316,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
          */
         protected boolean validatedContents; // = false
         /**
-         * Size of the back buffers
+         * Width of the back buffers
          */
         protected int width;
+        /**
+         * Height of the back buffers
+         */
         protected int height;
 
         /**
@@ -6013,6 +6016,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * If no such listeners exist, this method returns an empty array.
      *
+     * @param <T> the type of the listeners
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
      *          <code>java.util.EventListener</code>

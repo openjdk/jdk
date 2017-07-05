@@ -41,7 +41,8 @@
                         The build is now a "<code>configure &amp;&amp; make</code>" style build
                     </li>
                     <li>
-                        Any GNU make 3.81 or newer should work
+                        Any GNU make 3.81 or newer should work, except on
+                        Windows where 4.0 or newer is recommended.
                     </li>
                     <li>
                         The build should scale, i.e. more processors should
@@ -358,8 +359,8 @@
                 For all systems:
                 <ul>
                     <li>
-                        Be sure the GNU make utility is version 3.81 or newer,
-                        e.g. run "<code>make -version</code>"
+                        Be sure the GNU make utility is version 3.81 (4.0 on
+                        windows) or newer, e.g. run "<code>make -version</code>"
                     </li>
                     <li>
                         Install a
@@ -1726,10 +1727,10 @@
             A few notes about using GNU make:
             <ul>
                 <li>
-                    You need GNU make version 3.81 or newer.
-                    If the GNU make utility on your systems is not
-                    3.81 or newer,
-                    see <a href="#buildgmake">"Building GNU make"</a>.
+                    You need GNU make version 3.81 or newer. On Windows 4.0 or
+                    newer is recommended.
+                    If the GNU make utility on your systems is not of a suitable
+                    version see <a href="#buildgmake">"Building GNU make"</a>.
                 </li>
                 <li>
                     Place the location of the GNU make binary in the

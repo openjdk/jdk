@@ -45,7 +45,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
     LIBRARY := hprof, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBHPROF_SRC), \
-    LANG := C, \
     OPTIMIZATION := $(LIBHPROF_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         $(BUILD_LIBHPROF_CFLAGS), \
@@ -75,7 +74,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO, \
     LIBRARY := java_crw_demo, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_CRW_DEMO_SRC), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         $(addprefix -I, $(LIBJAVA_CRW_DEMO_SRC)), \

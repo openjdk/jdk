@@ -36,6 +36,10 @@ ifeq ($(wildcard $(SPEC)),)
   $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
 endif
 
+# By defining this pseudo target, make will automatically remove targets
+# if their recipe fails so that a rebuild is automatically triggered on the
+# next make invocation.
+.DELETE_ON_ERROR:
 
 ##############################
 # Functions
@@ -482,6 +486,13 @@ endef
 MakeDir = \
     $(strip $(if $(subst $(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),,$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9)),\
       $(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)))
+
+################################################################################
+# Assign a variable only if it is empty
+# Param 1 - Variable to assign
+# Param 2 - Value to assign
+SetIfEmpty = \
+    $(if $($(strip $1)),,$(eval $(strip $1) := $2))
 
 ################################################################################
 

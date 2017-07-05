@@ -29,7 +29,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
     LIBRARY := net, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBNET_SRC_DIRS), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
         $(LIBJAVA_HEADER_FLAGS) $(addprefix -I, $(LIBNET_SRC_DIRS)), \

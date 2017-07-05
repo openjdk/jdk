@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,24 +92,37 @@ public class @(BeanClassName)BeanInfo extends javax.swing.SwingBeanInfoBase {
     /**
      * @return an icon of the specified kind for @(BeanClassName)
      */
-    public Image getIcon(int kind) {
+    public Image getIcon(final int kind) {
         Image i;
         switch (kind){
             case ICON_COLOR_32x32:
-                i = loadImage("beaninfo/images/@(BeanClassName)Color32.gif");
-                return ((i == null) ? loadImage("beaninfo/images/JComponentColor32.gif") : i);
+                i = loadStandardImage("beaninfo/images/@(BeanClassName)Color32.gif");
+                return ((i == null) ? loadStandardImage("beaninfo/images/JComponentColor32.gif") : i);
             case ICON_COLOR_16x16:
-                i = loadImage("beaninfo/images/@(BeanClassName)Color16.gif");
-                return ((i == null) ? loadImage("beaninfo/images/JComponentColor16.gif") : i);
+                i = loadStandardImage("beaninfo/images/@(BeanClassName)Color16.gif");
+                return ((i == null) ? loadStandardImage("beaninfo/images/JComponentColor16.gif") : i);
             case ICON_MONO_32x32:
-                i = loadImage("beaninfo/images/@(BeanClassName)Mono32.gif");
-                return ((i == null) ? loadImage("beaninfo/images/JComponentMono32.gif") : i);		  
+                i = loadStandardImage("beaninfo/images/@(BeanClassName)Mono32.gif");
+                return ((i == null) ? loadStandardImage("beaninfo/images/JComponentMono32.gif") : i);         
             case ICON_MONO_16x16:
-                i = loadImage("beaninfo/images/@(BeanClassName)Mono16.gif");
-                return ((i == null) ? loadImage("beaninfo/images/JComponentMono16.gif") : i);		  
+                i = loadStandardImage("beaninfo/images/@(BeanClassName)Mono16.gif");
+                return ((i == null) ? loadStandardImage("beaninfo/images/JComponentMono16.gif") : i);         
             default:
                 return super.getIcon(kind);
         }
+    }
+
+    /**
+     * This is a utility method to help in loading standard icon images.
+     *
+     * @param  resourceName A pathname relative to the directory holding the
+     *         class file of the current class
+     * @return an image object. May be null if the load failed.
+     * @see java.beans.SimpleBeanInfo#loadImage(String)
+     */
+    private Image loadStandardImage(final String resourceName) {
+        return java.security.AccessController.doPrivileged(
+                (java.security.PrivilegedAction<Image>) () -> loadImage(resourceName));
     }
 }
 

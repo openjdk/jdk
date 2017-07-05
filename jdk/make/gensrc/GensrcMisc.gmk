@@ -63,9 +63,7 @@ SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOR_SRC)/$(GENSRC_SOR_SRC_FILE) | 
 $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOR_EXE, \
     SRC := $(GENSRC_SOR_SRC), \
     INCLUDE_FILES := $(GENSRC_SOR_SRC_FILE), \
-    LANG := C, \
-    CC := $(BUILD_CC), \
-    LDEXE := $(BUILD_LD), \
+    TOOLCHAIN := TOOLCHAIN_BUILD, \
     OBJECT_DIR := $(GENSRC_SOR_BIN), \
     OUTPUT_DIR := $(GENSRC_SOR_BIN), \
     PROGRAM := genSocketOptionRegistry))
@@ -101,9 +99,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupNativeCompilation,BUILD_GENSRC_UC_EXE, \
       SRC := $(GENSRC_UC_SRC), \
       INCLUDE_FILES := $(GENSRC_UC_SRC_FILE), \
-      LANG := C, \
-      CC := $(BUILD_CC), \
-      LDEXE := $(BUILD_CC), \
+      TOOLCHAIN := TOOLCHAIN_BUILD, \
       CFLAGS := $(filter -D%, $(CFLAGS_JDKEXE)), \
       OBJECT_DIR := $(GENSRC_UC_BIN), \
       OUTPUT_DIR := $(GENSRC_UC_BIN), \
@@ -142,9 +138,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOL_EXE, \
       SRC := $(GENSRC_SOL_SRC), \
       INCLUDE_FILES := $(GENSRC_SOL_SRC_FILE), \
-      LANG := C, \
-      CC := $(BUILD_CC), \
-      LDEXE := $(BUILD_CC), \
+      TOOLCHAIN := TOOLCHAIN_BUILD, \
       OBJECT_DIR := $(GENSRC_SOL_BIN), \
       OUTPUT_DIR := $(GENSRC_SOL_BIN), \
       PROGRAM := genSolarisConstants))

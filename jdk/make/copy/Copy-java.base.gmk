@@ -170,9 +170,6 @@ POLICY_SRC_LIST :=
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   POLICY_SRC_LIST += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
-  ifndef OPENJDK
-    POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
-  endif
 endif
 
 POLICY_SRC_LIST += $(POLICY_SRC)

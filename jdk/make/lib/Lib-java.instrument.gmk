@@ -57,7 +57,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LIBRARY := instrument, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBINSTRUMENT_SRC), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(LIBINSTRUMENT_CFLAGS) $(CFLAGS_WARNINGS_ARE_ERRORS), \
     CFLAGS_debug := -DJPLIS_LOGGING, \

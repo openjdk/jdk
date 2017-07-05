@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ public class ImmutableDescriptor implements Descriptor {
     /**
      * Construct a descriptor containing the given fields and values.
      *
+     * @param fieldNames the field names
+     * @param fieldValues the field values
      * @throws IllegalArgumentException if either array is null, or
      * if the arrays have different sizes, or
      * if a field name is null or empty, or if the same field name
@@ -81,6 +83,7 @@ public class ImmutableDescriptor implements Descriptor {
      * is {@code a=b=c} then the field name is {@code a} and its value
      * is {@code b=c}.
      *
+     * @param fields the field names
      * @throws IllegalArgumentException if the parameter is null, or
      * if a field name is empty, or if the same field name appears
      * more than once, or if one of the strings does not contain
@@ -94,6 +97,7 @@ public class ImmutableDescriptor implements Descriptor {
      * <p>Construct a descriptor where the names and values of the fields
      * are the keys and values of the given Map.</p>
      *
+     * @param fields the field names and values
      * @throws IllegalArgumentException if the parameter is null, or
      * if a field name is null or empty, or if the same field name appears
      * more than once (which can happen because field names are not case
