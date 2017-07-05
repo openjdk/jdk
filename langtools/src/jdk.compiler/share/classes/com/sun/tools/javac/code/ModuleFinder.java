@@ -267,6 +267,7 @@ public class ModuleFinder {
     private List<ModuleSymbol> scanModulePath(ModuleSymbol toFind) {
         ListBuffer<ModuleSymbol> results = new ListBuffer<>();
         Map<Name, Location> namesInSet = new HashMap<>();
+        boolean multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         while (moduleLocationIterator.hasNext()) {
             Set<Location> locns = (moduleLocationIterator.next());
             namesInSet.clear();
@@ -279,10 +280,29 @@ public class ModuleFinder {
                             // module has already been found, so ignore this instance
                             continue;
                         }
+                        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) &&
+                            msym.patchLocation == null) {
+                            msym.patchLocation =
+                                    fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH,
+                                                                     msym.name.toString());
+                            checkModuleInfoOnLocation(msym.patchLocation, Kind.CLASS, Kind.SOURCE);
+                            if (msym.patchLocation != null &&
+                                multiModuleMode &&
+                                fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                                msym.patchOutputLocation =
+                                        fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT,
+                                                                         msym.name.toString());
+                                checkModuleInfoOnLocation(msym.patchOutputLocation, Kind.CLASS);
+                            }
+                        }
                         if (moduleLocationIterator.outer == StandardLocation.MODULE_SOURCE_PATH) {
-                            msym.sourceLocation = l;
-                            if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT, msym.name.toString());
+                            if (msym.patchLocation == null) {
+                                msym.sourceLocation = l;
+                                if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
+                                    msym.classLocation =
+                                            fileManager.getLocationForModule(StandardLocation.CLASS_OUTPUT,
+                                                                             msym.name.toString());
+                                }
                             }
                         } else {
                             msym.classLocation = l;
@@ -291,7 +311,8 @@ public class ModuleFinder {
                             moduleLocationIterator.outer == StandardLocation.UPGRADE_MODULE_PATH) {
                             msym.flags_field |= Flags.SYSTEM_MODULE;
                         }
-                        if (toFind == msym || toFind == null) {
+                        if (toFind == null ||
+                            (toFind == msym && (msym.sourceLocation != null || msym.classLocation != null))) {
                             // Note: cannot return msym directly, because we must finish
                             // processing this set first
                             results.add(msym);
@@ -309,6 +330,21 @@ public class ModuleFinder {
         }
 
         return results.toList();
+    }
+
+    private void checkModuleInfoOnLocation(Location location, Kind... kinds) throws IOException {
+        if (location == null)
+            return ;
+
+        for (Kind kind : kinds) {
+            JavaFileObject file = fileManager.getJavaFileForInput(location,
+                                                                  names.module_info.toString(),
+                                                                  kind);
+            if (file != null) {
+                log.error(Errors.LocnModuleInfoNotAllowedOnPatchPath(file));
+                return;
+            }
+        }
     }
 
     private void findModuleInfo(ModuleSymbol msym) {

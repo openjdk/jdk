@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
+import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
@@ -232,7 +233,7 @@ public class JlinkTask {
 
             return EXIT_OK;
         } catch (PluginException | IllegalArgumentException |
-                 UncheckedIOException |IOException | ResolutionException e) {
+                 UncheckedIOException |IOException | FindException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
@@ -370,7 +371,7 @@ public class JlinkTask {
      */
     private ModuleFinder modulePathFinder() {
         Path[] entries = options.modulePath.toArray(new Path[0]);
-        ModuleFinder finder = new ModulePath(Runtime.version(), true, entries);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
         if (!options.limitMods.isEmpty()) {
             finder = limitFinder(finder, options.limitMods, Collections.emptySet());
         }
@@ -388,7 +389,7 @@ public class JlinkTask {
                                                Set<String> roots)
     {
         Path[] entries = paths.toArray(new Path[0]);
-        ModuleFinder finder = new ModulePath(Runtime.version(), true, entries);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, entries);
 
         // if limitmods is specified then limit the universe
         if (!limitMods.isEmpty()) {
@@ -418,9 +419,9 @@ public class JlinkTask {
         }
 
         Configuration cf = Configuration.empty()
-                .resolveRequires(finder,
-                                 ModuleFinder.of(),
-                                 roots);
+                .resolve(finder,
+                         ModuleFinder.of(),
+                         roots);
 
         // emit warning for modules that end with a digit
         cf.modules().stream()
@@ -458,9 +459,9 @@ public class JlinkTask {
 
         // resolve all root modules
         Configuration cf = Configuration.empty()
-                .resolveRequires(finder,
-                                 ModuleFinder.of(),
-                                 roots);
+                .resolve(finder,
+                         ModuleFinder.of(),
+                         roots);
 
         // module name -> reference
         Map<String, ModuleReference> map = new HashMap<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.Writer;
  *
  * <p>
  * Note that this class doesn't escape other Unicode characters
- * that are typically unsafe. For example, &#x611B; (A kanji
+ * that are typically unsafe. For example, {@literal &#x611B;} (A kanji
  * that means "love") can be considered as unsafe because
  * javac with English Windows cannot accept this character in the
  * source code.

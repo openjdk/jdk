@@ -7,6 +7,7 @@ image/gif		gif GIF
 image/ief		ief
 image/jpeg		jpeg jpg jpe JPG
 image/tiff		tiff tif
+image/png		png PNG
 image/x-xwindowdump	xwd
 application/postscript	ai eps ps
 application/rtf		rtf
