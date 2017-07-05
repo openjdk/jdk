@@ -227,31 +227,7 @@ bool os::have_special_privileges() {
 #endif
 
 // Cpu architecture string
-#if   defined(ZERO)
-static char cpu_arch[] = ZERO_LIBARCH;
-#elif defined(IA64)
-static char cpu_arch[] = "ia64";
-#elif defined(IA32)
-static char cpu_arch[] = "i386";
-#elif defined(AMD64)
-static char cpu_arch[] = "amd64";
-#elif defined(ARM)
-static char cpu_arch[] = "arm";
-#elif defined(PPC32)
-static char cpu_arch[] = "ppc";
-#elif defined(PPC64)
-static char cpu_arch[] = "ppc64";
-#elif defined(SPARC)
-  #ifdef _LP64
-static char cpu_arch[] = "sparcv9";
-  #else
-static char cpu_arch[] = "sparc";
-  #endif
-#elif defined(AARCH64)
-static char cpu_arch[] = "aarch64";
-#else
-  #error Add appropriate cpu_arch setting
-#endif
+static char cpu_arch[] = HOTSPOT_LIB_ARCH;
 
 
 // pid_t gettid()
@@ -3296,7 +3272,7 @@ size_t os::Linux::find_large_page_size() {
 
 #ifndef ZERO
   large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
-                     ARM_ONLY(2 * M) PPC_ONLY(4 * M) AARCH64_ONLY(2 * M);
+                     ARM32_ONLY(2 * M) PPC_ONLY(4 * M) AARCH64_ONLY(2 * M);
 #endif // ZERO
 
   FILE *fp = fopen("/proc/meminfo", "r");

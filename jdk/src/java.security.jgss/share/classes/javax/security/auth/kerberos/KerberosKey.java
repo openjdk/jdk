@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ import javax.security.auth.DestroyFailedException;
  * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor,
  * an implementation may accept non-IANA algorithm names (For example,
  * "ArcFourMac" for "rc4-hmac"), but the {@link #getAlgorithm} method
- * must always return the IANA algorithm name.<p>
+ * must always return the IANA algorithm name.
  *
  * @implNote Old algorithm names used before JDK 9 are supported in the
  * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor in this

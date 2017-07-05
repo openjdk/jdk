@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ import java.security.PrivilegedAction;
  *
  *     private static void createAndShowGUI() {
  *         final JFrame frame = new JFrame();
- *         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ *         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
  *
  *         // work with the layer as with any other Swing component
  *         frame.add(createLayer());

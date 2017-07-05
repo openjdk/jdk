@@ -236,7 +236,7 @@ void AbstractWorkGang::threads_do(ThreadClosure* tc) const {
 GangWorker::GangWorker(AbstractWorkGang* gang, uint id) {
   _gang = gang;
   set_id(id);
-  set_name("Gang worker#%d (%s)", id, gang->name());
+  set_name("%s#%d", gang->name(), id);
 }
 
 void GangWorker::run() {

@@ -52,7 +52,6 @@ var Parser = Java.type("jdk.nashorn.api.tree.Parser");
 var SimpleTreeVisitor = Java.type("jdk.nashorn.api.tree.SimpleTreeVisitorES5_1");
 
 var parser = Parser.create("-scripting", "--const-as-var");
-var protoFound = false;
 
 function checkFile(file) {
     // print("checking " + file);
@@ -91,8 +90,4 @@ if (file.isDirectory()) {
         .forEach(checkFile);
 } else {
     checkFile(file);
-}
-
-if (protoFound) {
-    print("__proto__ is non-standard. Use Object.get/setPrototypeOf instead");
 }

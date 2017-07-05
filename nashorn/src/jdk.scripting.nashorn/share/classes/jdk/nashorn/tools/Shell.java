@@ -109,7 +109,10 @@ public class Shell {
      */
     public static void main(final String[] args) {
         try {
-            System.exit(main(System.in, System.out, System.err, args));
+            final int exitCode = main(System.in, System.out, System.err, args);
+            if (exitCode != SUCCESS) {
+                System.exit(exitCode);
+            }
         } catch (final IOException e) {
             System.err.println(e); //bootstrapping, Context.err may not exist
             System.exit(IO_ERROR);
