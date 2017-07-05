@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,7 @@ public  class MimeMultipart {
      * <code>contentType</code> field. <p>
      *
      * MimeBodyParts may be added later.
+     * @param subtype subtype.
      */
     public MimeMultipart(String subtype) {
         //super();
@@ -163,6 +164,8 @@ public  class MimeMultipart {
      *      This must be the same information as {@link DataSource#getContentType()}.
      *      All the callers of this method seem to have this object handy, so
      *      for performance reason this method accepts it. Can be null.
+     *
+     * @exception MessagingException in case of error
      */
     public MimeMultipart(DataSource ds, ContentType ct) throws MessagingException {
         // 'ds' was not a MultipartDataSource, we have
@@ -189,7 +192,8 @@ public  class MimeMultipart {
     /**
      * Return the number of enclosed MimeBodyPart objects.
      *
-     * @return          number of parts
+     * @return          number of parts.
+     * @throws MessagingException in case of error.
      */
     public  int getCount() throws MessagingException {
         parse();
@@ -202,8 +206,8 @@ public  class MimeMultipart {
     /**
      * Get the specified MimeBodyPart.  BodyParts are numbered starting at 0.
      *
-     * @param index     the index of the desired MimeBodyPart
-     * @return          the MimeBodyPart
+     * @param index     the index of the desired MimeBodyPart.
+     * @return          the MimeBodyPart.
      * @exception       MessagingException if no such MimeBodyPart exists
      */
     public  MimeBodyPart getBodyPart(int index)
@@ -221,6 +225,7 @@ public  class MimeMultipart {
      *
      * @param  CID      the ContentID of the desired part
      * @return          the MimeBodyPart
+     * @exception       MessagingException if no such MimeBodyPart exists.
      */
     public  MimeBodyPart getBodyPart(String CID)
                         throws MessagingException {
@@ -256,6 +261,8 @@ public  class MimeMultipart {
      * expensive for a specific MimeMultipart subclass, then it
      * might itself want to track whether its internal state actually
      * did change, and do the header updating only if necessary.
+     *
+     * @exception       MessagingException in case of error.
      */
     protected void updateHeaders() throws MessagingException {
         for (int i = 0; i < parts.size(); i++)
@@ -265,6 +272,11 @@ public  class MimeMultipart {
     /**
      * Iterates through all the parts and outputs each Mime part
      * separated by a boundary.
+     *
+     * @param os output stream.
+     *
+     * @exception IOException if an I/O Error occurs.
+     * @exception MessagingException in case of error.
      */
     public void writeTo(OutputStream os)
             throws IOException, MessagingException {
@@ -290,6 +302,8 @@ public  class MimeMultipart {
      * set to true, and if true on entry nothing is done.  This
      * method is called by all other methods that need data for
      * the body parts, to make sure the data has been parsed.
+     *
+     * @exception MessagingException in case of error.
      *
      * @since   JavaMail 1.2
      */
@@ -490,8 +504,9 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * an InternetHeaders object.
      *
-     * @param   is      the InputStream to read the headers from
-     * @exception       MessagingException
+     * @param   is      the InputStream to read the headers from.
+     * @return headers.
+     * @exception       MessagingException in case of error.
      * @since           JavaMail 1.2
      */
     protected InternetHeaders createInternetHeaders(InputStream is)
@@ -506,8 +521,10 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * a MimeBodyPart object.
      *
-     * @param   headers         the headers for the body part
-     * @param   content         the content of the body part
+     * @param   headers         the headers for the body part.
+     * @param   content         the content of the body part.
+     * @param   len             the content length.
+     * @return  MimeBodyPart
      * @since                   JavaMail 1.2
      */
     protected MimeBodyPart createMimeBodyPart(InternetHeaders headers, byte[] content, int len) {
@@ -521,8 +538,9 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * a MimeBodyPart object.
      *
-     * @param   is              InputStream containing the body part
-     * @exception               MessagingException
+     * @param   is              InputStream containing the body part.
+     * @return  MimeBodyPart.
+     * @exception               MessagingException in case of error.
      * @since                   JavaMail 1.2
      */
     protected MimeBodyPart createMimeBodyPart(InputStream is) throws MessagingException {
@@ -543,8 +561,8 @@ public  class MimeMultipart {
      * a specific multipart subtype.
      *
      * @param   mp      MimeMultipart datasource
+     * @exception               MessagingException in case of error.
      */
-
     protected void setMultipartDataSource(MultipartDataSource mp)
                         throws MessagingException {
         contentType = new ContentType(mp.getContentType());
