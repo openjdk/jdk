@@ -189,7 +189,8 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
 
     @Override
     protected void loadValue(final Expression expr, final Type type) {
-        codegen.loadExpressionAsType(expr, type);
+        // Use generic type in order to avoid conversion between object types
+        codegen.loadExpressionAsType(expr, Type.generic(type));
     }
 
     @Override

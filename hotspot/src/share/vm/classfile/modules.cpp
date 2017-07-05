@@ -206,7 +206,7 @@ static void define_javabase_module(jobject module, jstring version,
   assert(pkg_list->length() == 0 || package_table != NULL, "Bad package_table");
 
   // Ensure java.base's ModuleEntry has been created
-  assert(ModuleEntryTable::javabase_module() != NULL, "No ModuleEntry for java.base");
+  assert(ModuleEntryTable::javabase_moduleEntry() != NULL, "No ModuleEntry for java.base");
 
   bool duplicate_javabase = false;
   {
@@ -226,7 +226,7 @@ static void define_javabase_module(jobject module, jstring version,
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
         if (package_table->lookup_only(pkg_list->at(x)) == NULL) {
-          pkg = package_table->locked_create_entry_or_null(pkg_list->at(x), ModuleEntryTable::javabase_module());
+          pkg = package_table->locked_create_entry_or_null(pkg_list->at(x), ModuleEntryTable::javabase_moduleEntry());
           assert(pkg != NULL, "Unable to create a java.base package entry");
         }
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
@@ -255,9 +255,6 @@ static void define_javabase_module(jobject module, jstring version,
     log_trace(modules)("define_javabase_module(): creation of package %s for module java.base",
                        (pkg_list->at(x))->as_C_string());
   }
-
-  // Patch any previously loaded classes' module field with java.base's jlr.Module.
-  ModuleEntryTable::patch_javabase_entries(module_handle);
 }
 
 void Modules::define_module(jobject module, jstring version,

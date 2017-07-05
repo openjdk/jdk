@@ -133,129 +133,184 @@ void G1CMBitMap::clear_range(MemRegion mr) {
 }
 
 G1CMMarkStack::G1CMMarkStack() :
-  _reserved_space(),
+  _max_chunk_capacity(0),
   _base(NULL),
-  _capacity(0),
-  _saved_index((size_t)AllBits),
+  _chunk_capacity(0),
+  _out_of_memory(false),
   _should_expand(false) {
   set_empty();
 }
 
 bool G1CMMarkStack::resize(size_t new_capacity) {
   assert(is_empty(), "Only resize when stack is empty.");
-  assert(new_capacity <= MarkStackSizeMax,
-         "Trying to resize stack to " SIZE_FORMAT " elements when the maximum is " SIZE_FORMAT, new_capacity, MarkStackSizeMax);
+  assert(new_capacity <= _max_chunk_capacity,
+         "Trying to resize stack to " SIZE_FORMAT " chunks when the maximum is " SIZE_FORMAT, new_capacity, _max_chunk_capacity);
 
-  size_t reservation_size = ReservedSpace::allocation_align_size_up(new_capacity * sizeof(oop));
+  OopChunk* new_base = MmapArrayAllocator<OopChunk, mtGC>::allocate_or_null(new_capacity);
 
-  ReservedSpace rs(reservation_size);
-  if (!rs.is_reserved()) {
-    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " elements and size " SIZE_FORMAT "B.", new_capacity, reservation_size);
+  if (new_base == NULL) {
+    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(OopChunk));
     return false;
   }
-
-  VirtualSpace vs;
-
-  if (!vs.initialize(rs, rs.size())) {
-    rs.release();
-    log_warning(gc)("Failed to commit memory for new overflow mark stack of size " SIZE_FORMAT "B.", rs.size());
-    return false;
-  }
-
-  assert(vs.committed_size() == rs.size(), "Failed to commit all of the mark stack.");
-
   // Release old mapping.
-  _reserved_space.release();
+  if (_base != NULL) {
+    MmapArrayAllocator<OopChunk, mtGC>::free(_base, _chunk_capacity);
+  }
 
-  // Save new mapping for future unmapping.
-  _reserved_space = rs;
-
-  MemTracker::record_virtual_memory_type((address)_reserved_space.base(), mtGC);
-
-  _base = (oop*) vs.low();
-  _capacity = new_capacity;
+  _base = new_base;
+  _chunk_capacity = new_capacity;
   set_empty();
   _should_expand = false;
 
   return true;
 }
 
-bool G1CMMarkStack::allocate(size_t capacity) {
-  return resize(capacity);
+size_t G1CMMarkStack::capacity_alignment() {
+  return (size_t)lcm(os::vm_allocation_granularity(), sizeof(OopChunk)) / sizeof(void*);
+}
+
+bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
+  guarantee(_max_chunk_capacity == 0, "G1CMMarkStack already initialized.");
+
+  size_t const OopChunkSizeInVoidStar = sizeof(OopChunk) / sizeof(void*);
+
+  _max_chunk_capacity = (size_t)align_size_up(max_capacity, capacity_alignment()) / OopChunkSizeInVoidStar;
+  size_t initial_chunk_capacity = (size_t)align_size_up(initial_capacity, capacity_alignment()) / OopChunkSizeInVoidStar;
+
+  guarantee(initial_chunk_capacity <= _max_chunk_capacity,
+            "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,
+            _max_chunk_capacity,
+            initial_chunk_capacity);
+
+  log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
+                initial_chunk_capacity, _max_chunk_capacity);
+
+  return resize(initial_chunk_capacity);
 }
 
 void G1CMMarkStack::expand() {
   // Clear expansion flag
   _should_expand = false;
 
-  if (_capacity == MarkStackSizeMax) {
-    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " elements.", _capacity);
+  if (_chunk_capacity == _max_chunk_capacity) {
+    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _chunk_capacity);
     return;
   }
-  size_t old_capacity = _capacity;
+  size_t old_capacity = _chunk_capacity;
   // Double capacity if possible
-  size_t new_capacity = MIN2(old_capacity * 2, MarkStackSizeMax);
+  size_t new_capacity = MIN2(old_capacity * 2, _max_chunk_capacity);
 
   if (resize(new_capacity)) {
-    log_debug(gc)("Expanded marking stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " elements",
+    log_debug(gc)("Expanded mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
                   old_capacity, new_capacity);
   } else {
-    log_warning(gc)("Failed to expand marking stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " elements",
+    log_warning(gc)("Failed to expand mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
                     old_capacity, new_capacity);
   }
 }
 
 G1CMMarkStack::~G1CMMarkStack() {
   if (_base != NULL) {
-    _base = NULL;
-    _reserved_space.release();
+    MmapArrayAllocator<OopChunk, mtGC>::free(_base, _chunk_capacity);
   }
 }
 
-void G1CMMarkStack::par_push_arr(oop* buffer, size_t n) {
-  MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  size_t start = _index;
-  size_t next_index = start + n;
-  if (next_index > _capacity) {
-    _overflow = true;
-    return;
-  }
-  // Otherwise.
-  _index = next_index;
-  for (size_t i = 0; i < n; i++) {
-    size_t ind = start + i;
-    assert(ind < _capacity, "By overflow test above.");
-    _base[ind] = buffer[i];
-  }
+void G1CMMarkStack::add_chunk_to_list(OopChunk* volatile* list, OopChunk* elem) {
+  elem->next = *list;
+  *list = elem;
 }
 
-bool G1CMMarkStack::par_pop_arr(oop* buffer, size_t max, size_t* n) {
-  MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  size_t index = _index;
-  if (index == 0) {
-    *n = 0;
+void G1CMMarkStack::add_chunk_to_chunk_list(OopChunk* elem) {
+  MutexLockerEx x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+  add_chunk_to_list(&_chunk_list, elem);
+  _chunks_in_chunk_list++;
+}
+
+void G1CMMarkStack::add_chunk_to_free_list(OopChunk* elem) {
+  MutexLockerEx x(MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
+  add_chunk_to_list(&_free_list, elem);
+}
+
+G1CMMarkStack::OopChunk* G1CMMarkStack::remove_chunk_from_list(OopChunk* volatile* list) {
+  OopChunk* result = *list;
+  if (result != NULL) {
+    *list = (*list)->next;
+  }
+  return result;
+}
+
+G1CMMarkStack::OopChunk* G1CMMarkStack::remove_chunk_from_chunk_list() {
+  MutexLockerEx x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+  OopChunk* result = remove_chunk_from_list(&_chunk_list);
+  if (result != NULL) {
+    _chunks_in_chunk_list--;
+  }
+  return result;
+}
+
+G1CMMarkStack::OopChunk* G1CMMarkStack::remove_chunk_from_free_list() {
+  MutexLockerEx x(MarkStackFreeList_lock, Mutex::_no_safepoint_check_flag);
+  return remove_chunk_from_list(&_free_list);
+}
+
+G1CMMarkStack::OopChunk* G1CMMarkStack::allocate_new_chunk() {
+  // This dirty read of _hwm is okay because we only ever increase the _hwm in parallel code.
+  // Further this limits _hwm to a value of _chunk_capacity + #threads, avoiding
+  // wraparound of _hwm.
+  if (_hwm >= _chunk_capacity) {
+    return NULL;
+  }
+
+  size_t cur_idx = Atomic::add(1, &_hwm) - 1;
+  if (cur_idx >= _chunk_capacity) {
+    return NULL;
+  }
+
+  OopChunk* result = ::new (&_base[cur_idx]) OopChunk;
+  result->next = NULL;
+  return result;
+}
+
+bool G1CMMarkStack::par_push_chunk(oop* ptr_arr) {
+  // Get a new chunk.
+  OopChunk* new_chunk = remove_chunk_from_free_list();
+
+  if (new_chunk == NULL) {
+    // Did not get a chunk from the free list. Allocate from backing memory.
+    new_chunk = allocate_new_chunk();
+  }
+
+  if (new_chunk == NULL) {
+    _out_of_memory = true;
     return false;
-  } else {
-    size_t k = MIN2(max, index);
-    size_t new_ind = index - k;
-    for (size_t j = 0; j < k; j++) {
-      buffer[j] = _base[new_ind + j];
-    }
-    _index = new_ind;
-    *n = k;
-    return true;
   }
+
+  Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, OopsPerChunk * sizeof(oop));
+
+  add_chunk_to_chunk_list(new_chunk);
+
+  return true;
 }
 
-void G1CMMarkStack::note_start_of_gc() {
-  assert(_saved_index == (size_t)AllBits, "note_start_of_gc()/end_of_gc() calls bracketed incorrectly");
-  _saved_index = _index;
+bool G1CMMarkStack::par_pop_chunk(oop* ptr_arr) {
+  OopChunk* cur = remove_chunk_from_chunk_list();
+
+  if (cur == NULL) {
+    return false;
+  }
+
+  Copy::conjoint_memory_atomic(cur->data, ptr_arr, OopsPerChunk * sizeof(oop));
+
+  add_chunk_to_free_list(cur);
+  return true;
 }
 
-void G1CMMarkStack::note_end_of_gc() {
-  guarantee(!stack_modified(), "Saved index " SIZE_FORMAT " must be the same as " SIZE_FORMAT, _saved_index, _index);
-
-  _saved_index = (size_t)AllBits;
+void G1CMMarkStack::set_empty() {
+  _chunks_in_chunk_list = 0;
+  _hwm = 0;
+  clear_out_of_memory();
+  _chunk_list = NULL;
+  _free_list = NULL;
 }
 
 G1CMRootRegions::G1CMRootRegions() :
@@ -483,9 +538,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     }
   }
 
-  if (!_global_mark_stack.allocate(MarkStackSize)) {
+  if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
-    return;
   }
 
   _tasks = NEW_C_HEAP_ARRAY(G1CMTask*, _max_worker_id, mtGC);
@@ -1695,10 +1749,10 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // oop closures will set the has_overflown flag if we overflow the
     // global marking stack.
 
-    assert(_global_mark_stack.overflow() || _global_mark_stack.is_empty(),
-            "mark stack should be empty (unless it overflowed)");
+    assert(_global_mark_stack.is_out_of_memory() || _global_mark_stack.is_empty(),
+            "Mark stack should be empty (unless it is out of memory)");
 
-    if (_global_mark_stack.overflow()) {
+    if (_global_mark_stack.is_out_of_memory()) {
       // This should have been done already when we tried to push an
       // entry on to the global mark stack. But let's do it again.
       set_has_overflown();
@@ -2343,49 +2397,54 @@ void G1CMTask::decrease_limits() {
 }
 
 void G1CMTask::move_entries_to_global_stack() {
-  // local array where we'll store the entries that will be popped
-  // from the local queue
-  oop buffer[global_stack_transfer_size];
+  // Local array where we'll store the entries that will be popped
+  // from the local queue.
+  oop buffer[G1CMMarkStack::OopsPerChunk];
 
-  int n = 0;
+  size_t n = 0;
   oop obj;
-  while (n < global_stack_transfer_size && _task_queue->pop_local(obj)) {
+  while (n < G1CMMarkStack::OopsPerChunk && _task_queue->pop_local(obj)) {
     buffer[n] = obj;
     ++n;
   }
+  if (n < G1CMMarkStack::OopsPerChunk) {
+    buffer[n] = NULL;
+  }
 
   if (n > 0) {
-    // we popped at least one entry from the local queue
-
-    if (!_cm->mark_stack_push(buffer, n)) {
+    if (!_cm->mark_stack_push(buffer)) {
       set_has_aborted();
     }
   }
 
-  // this operation was quite expensive, so decrease the limits
+  // This operation was quite expensive, so decrease the limits.
   decrease_limits();
 }
 
-void G1CMTask::get_entries_from_global_stack() {
-  // local array where we'll store the entries that will be popped
+bool G1CMTask::get_entries_from_global_stack() {
+  // Local array where we'll store the entries that will be popped
   // from the global stack.
-  oop buffer[global_stack_transfer_size];
-  size_t n;
-  _cm->mark_stack_pop(buffer, global_stack_transfer_size, &n);
-  assert(n <= global_stack_transfer_size,
-         "we should not pop more than the given limit");
-  if (n > 0) {
-    // yes, we did actually pop at least one entry
-    for (size_t i = 0; i < n; ++i) {
-      bool success = _task_queue->push(buffer[i]);
-      // We only call this when the local queue is empty or under a
-      // given target limit. So, we do not expect this push to fail.
-      assert(success, "invariant");
-    }
+  oop buffer[G1CMMarkStack::OopsPerChunk];
+
+  if (!_cm->mark_stack_pop(buffer)) {
+    return false;
   }
 
-  // this operation was quite expensive, so decrease the limits
+  // We did actually pop at least one entry.
+  for (size_t i = 0; i < G1CMMarkStack::OopsPerChunk; ++i) {
+    oop elem = buffer[i];
+    if (elem == NULL) {
+      break;
+    }
+    bool success = _task_queue->push(elem);
+    // We only call this when the local queue is empty or under a
+    // given target limit. So, we do not expect this push to fail.
+    assert(success, "invariant");
+  }
+
+  // This operation was quite expensive, so decrease the limits
   decrease_limits();
+  return true;
 }
 
 void G1CMTask::drain_local_queue(bool partially) {
@@ -2429,20 +2488,21 @@ void G1CMTask::drain_global_stack(bool partially) {
 
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
-  // of things to do) or totally (at the very end).  Notice that,
-  // because we move entries from the global stack in chunks or
-  // because another task might be doing the same, we might in fact
-  // drop below the target. But, this is not a problem.
-  size_t target_size;
+  // of things to do) or totally (at the very end).
+  // Notice that when draining the global mark stack partially, due to the racyness
+  // of the mark stack size update we might in fact drop below the target. But,
+  // this is not a problem.
+  // In case of total draining, we simply process until the global mark stack is
+  // totally empty, disregarding the size counter.
   if (partially) {
-    target_size = _cm->partial_mark_stack_size_target();
-  } else {
-    target_size = 0;
-  }
-
-  if (_cm->mark_stack_size() > target_size) {
+    size_t const target_size = _cm->partial_mark_stack_size_target();
     while (!has_aborted() && _cm->mark_stack_size() > target_size) {
-      get_entries_from_global_stack();
+      if (get_entries_from_global_stack()) {
+        drain_local_queue(partially);
+      }
+    }
+  } else {
+    while (!has_aborted() && get_entries_from_global_stack()) {
       drain_local_queue(partially);
     }
   }

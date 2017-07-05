@@ -72,7 +72,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   null_loader_data->add_class(ak);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
-  complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_module(), CHECK_NULL);
+  complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
 
   return ak;
 }
@@ -347,7 +347,7 @@ const char* TypeArrayKlass::internal_name() const {
 
 // A TypeArrayKlass is an array of a primitive type, its defining module is java.base
 ModuleEntry* TypeArrayKlass::module() const {
-  return ModuleEntryTable::javabase_module();
+  return ModuleEntryTable::javabase_moduleEntry();
 }
 
 PackageEntry* TypeArrayKlass::package() const {

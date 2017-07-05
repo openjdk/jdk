@@ -1516,11 +1516,12 @@ public final class String
      * @return  a hash code value for this object.
      */
     public int hashCode() {
-        if (hash == 0 && value.length > 0) {
-            hash = isLatin1() ? StringLatin1.hashCode(value)
-                              : StringUTF16.hashCode(value);
+        int h = hash;
+        if (h == 0 && value.length > 0) {
+            hash = h = isLatin1() ? StringLatin1.hashCode(value)
+                                  : StringUTF16.hashCode(value);
         }
-        return hash;
+        return h;
     }
 
     /**
