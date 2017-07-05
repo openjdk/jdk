@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class VerificationProvider extends Provider {
     }
 
     public VerificationProvider() {
-        super("SunJarVerification", 1.7, "Jar Verification Provider");
+        super("SunJarVerification", 1.8d, "Jar Verification Provider");
         // register all algorithms normally registered by the Sun and SunRsaSign
         // providers, but only if they are missing
         if (ACTIVE == false) {

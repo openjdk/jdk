@@ -89,7 +89,7 @@ class Random implements java.io.Serializable {
     private static final long addend = 0xBL;
     private static final long mask = (1L << 48) - 1;
 
-    private static final double DOUBLE_UNIT = 1.0 / (1L << 53);
+    private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53)
 
     // IllegalArgumentException messages
     static final String BadBound = "bound must be positive";

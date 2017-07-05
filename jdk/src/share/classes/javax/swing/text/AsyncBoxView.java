@@ -193,7 +193,7 @@ public class AsyncBoxView extends View {
      * of the child at the given index.
      *
      * @param index the child index.  This should be a
-     *   value >= 0 and < getViewCount().
+     *   value &gt;= 0 and &lt; getViewCount().
      */
     protected ChildState getChildState(int index) {
         synchronized(stats) {
@@ -350,8 +350,8 @@ public class AsyncBoxView extends View {
      * thread will not happen (i.e. the layout thread
      * acquires a read lock before doing anything).
      *
-     * @param offset the starting offset into the child views >= 0
-     * @param length the number of existing views to replace >= 0
+     * @param offset the starting offset into the child views &gt;= 0
+     * @param length the number of existing views to replace &gt;= 0
      * @param views the child views to insert
      */
     public void replace(int offset, int length, View[] views) {
@@ -417,7 +417,7 @@ public class AsyncBoxView extends View {
      * the model.  This is implemented to fetch the view in the case
      * where there is a child view for each child element.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      */
@@ -525,8 +525,8 @@ public class AsyncBoxView extends View {
      * axis.  Since the minor axis is flexible, work is queued to resize
      * the children if the minor span changes.
      *
-     * @param width the width >= 0
-     * @param height the height >= 0
+     * @param width the width &gt;= 0
+     * @param height the height &gt;= 0
      */
     public void setSize(float width, float height) {
         setSpanOnAxis(X_AXIS, width);
@@ -618,7 +618,7 @@ public class AsyncBoxView extends View {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -643,7 +643,7 @@ public class AsyncBoxView extends View {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return  the span the view would like to be rendered into >= 0.
+     * @return  the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -671,7 +671,7 @@ public class AsyncBoxView extends View {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -690,7 +690,7 @@ public class AsyncBoxView extends View {
      * the default is to not be a composite view this
      * returns 0.
      *
-     * @return the number of views >= 0
+     * @return the number of views &gt;= 0
      * @see View#getViewCount
      */
     public int getViewCount() {
@@ -703,7 +703,7 @@ public class AsyncBoxView extends View {
      * Gets the nth child view.  Since there are no
      * children by default, this returns null.
      *
-     * @param n the number of the view to get, >= 0 && < getViewCount()
+     * @param n the number of the view to get, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @return the view
      */
     public View getView(int n) {
@@ -721,7 +721,7 @@ public class AsyncBoxView extends View {
      * their location.  This returns null since the
      * default is to not have any child views.
      *
-     * @param index the index of the child, >= 0 && < getViewCount()
+     * @param index the index of the child, &gt;= 0 &amp;&amp; &lt; getViewCount()
      * @param a  the allocation to this view.
      * @return the allocation to the child
      */
@@ -736,7 +736,7 @@ public class AsyncBoxView extends View {
      * to return -1 to indicate there is no valid child index for any
      * position.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      * @since 1.3
@@ -749,7 +749,7 @@ public class AsyncBoxView extends View {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @param b the bias toward the previous character or the
      *  next character represented by the offset, in case the
@@ -788,11 +788,11 @@ public class AsyncBoxView extends View {
      * on the child view with a lock on the ChildState object
      * to avoid interaction with the layout thread.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
-     *  given point in the view >= 0.  The biasReturn argument will be
+     *  given point in the view &gt;= 0.  The biasReturn argument will be
      * filled in to indicate that the point given is closer to the next
      * character in the model or the previous character in the model.
      */
@@ -828,16 +828,16 @@ public class AsyncBoxView extends View {
      * they might not be in the same order found in the model, or they just
      * might not allow access to some of the locations in the model.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard;
      *  this may be one of the following:
-     *  <ul>
-     *  <code>SwingConstants.WEST</code>
-     *  <code>SwingConstants.EAST</code>
-     *  <code>SwingConstants.NORTH</code>
-     *  <code>SwingConstants.SOUTH</code>
+     *  <ul style="list-style-type:none">
+     *  <li><code>SwingConstants.WEST</code></li>
+     *  <li><code>SwingConstants.EAST</code></li>
+     *  <li><code>SwingConstants.NORTH</code></li>
+     *  <li><code>SwingConstants.SOUTH</code></li>
      *  </ul>
      * @param biasRet an array contain the bias that was checked
      * @return the location within the model that best represents the next
@@ -1007,8 +1007,8 @@ public class AsyncBoxView extends View {
          * with one or more calls to getChildAllocation that
          * should also be in the synchronized block.
          *
-         * @param x the X coordinate >= 0
-         * @param y the Y coordinate >= 0
+         * @param x the X coordinate &gt;= 0
+         * @param y the Y coordinate &gt;= 0
          * @param a the allocation to the View
          * @return the nearest child index
          */

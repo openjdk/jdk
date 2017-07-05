@@ -260,6 +260,10 @@ RegionToYXBandedRectangles(JNIEnv *env,
             /* return; REMIND: What to do here? */
         }
         Region_StartIteration(env, &clipInfo);
+        if ((*env)->ExceptionCheck(env)) {
+            return 0;
+        }
+
         numrects = Region_CountIterationRects(&clipInfo);
         if ((unsigned long)numrects > initialBufferSize) {
             *pRect = (RECT_T *) SAFE_SIZE_ARRAY_ALLOC(malloc, numrects, sizeof(RECT_T));

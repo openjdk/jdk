@@ -69,13 +69,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.OffsetDateTime;
-import java.time.Period;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoPeriod;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
@@ -84,8 +84,6 @@ import java.time.chrono.JapaneseDate;
 import java.time.chrono.MinguoChronology;
 import java.time.chrono.MinguoDate;
 import java.time.chrono.MinguoEra;
-import java.time.chrono.MinguoChronology;
-import java.time.chrono.MinguoDate;
 import java.time.chrono.ThaiBuddhistChronology;
 import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.ResolverStyle;
@@ -499,8 +497,8 @@ public class TCKMinguoChronology {
     public void test_periodUntilDate() {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
-        Period period = mdate1.until(mdate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(mdate2);
+        assertEquals(period, MinguoChronology.INSTANCE.period(1, 1, 1));
     }
 
     @Test
@@ -516,8 +514,8 @@ public class TCKMinguoChronology {
         MinguoDate mdate1 = MinguoDate.of(1970, 1, 1);
         MinguoDate mdate2 = MinguoDate.of(1971, 2, 2);
         ThaiBuddhistDate ldate2 = ThaiBuddhistChronology.INSTANCE.date(mdate2);
-        Period period = mdate1.until(ldate2);
-        assertEquals(period, Period.of(1, 1, 1));
+        ChronoPeriod period = mdate1.until(ldate2);
+        assertEquals(period, MinguoChronology.INSTANCE.period(1, 1, 1));
     }
 
     //-----------------------------------------------------------------------

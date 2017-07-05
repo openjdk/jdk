@@ -132,7 +132,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         if (source != null) {
             sb.append(source.getName())
                 .append(':')
-                .append(source.getLine(Token.descPosition(token)))
+                .append(functionNode.getLineNumber())
                 .append(' ');
         }
 

@@ -53,7 +53,7 @@ import javax.accessibility.*;
  * created by this code example:
  * <p>
  * <img src="doc-files/Checkbox-1.gif" alt="The following context describes the graphic."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * The button labeled <code>one</code> is in the "on" state, and the
  * other two are in the "off" state. In this example, which uses the

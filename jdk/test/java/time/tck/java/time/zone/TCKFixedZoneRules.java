@@ -107,25 +107,7 @@ public class TCKFixedZoneRules {
     //-----------------------------------------------------------------------
     // Basics
     //-----------------------------------------------------------------------
-    @Test(dataProvider="rules")
-    public void test_serialization(ZoneRules test, ZoneOffset expectedOffset) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-        assertEquals(result.getClass(), test.getClass());
-    }
-
-    //-----------------------------------------------------------------------
-    // basics
-    //-----------------------------------------------------------------------
     @Test(dataProvider="rules")
     public void test_getOffset_Instant(ZoneRules test, ZoneOffset expectedOffset) {
         assertEquals(test.getOffset(INSTANT), expectedOffset);
