@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,7 +639,6 @@ void MachCallNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-
 bool MachCallNode::return_value_is_used() const {
   if (tf()->range()->cnt() == TypeFunc::Parms) {
     // void return
@@ -657,6 +656,14 @@ bool MachCallNode::return_value_is_used() const {
   return false;
 }
 
+// Similar to cousin class CallNode::returns_pointer
+// Because this is used in deoptimization, we want the type info, not the data
+// flow info; the interpreter will "use" things that are dead to the optimizer.
+bool MachCallNode::returns_pointer() const {
+  const TypeTuple *r = tf()->range();
+  return (r->cnt() > TypeFunc::Parms &&
+          r->field_at(TypeFunc::Parms)->isa_ptr());
+}
 
 //------------------------------Registers--------------------------------------
 const RegMask &MachCallNode::in_RegMask(uint idx) const {

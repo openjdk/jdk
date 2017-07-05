@@ -107,7 +107,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
                                int caller_bci, ciCallProfile& profile,
                                WarmCallInfo* wci_result) {
   // Allows targeted inlining
-  if(callee_method->should_inline()) {
+  if (callee_method->should_inline()) {
     *wci_result = *(WarmCallInfo::always_hot());
     if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
@@ -116,6 +116,12 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     set_msg("force inline by CompilerOracle");
     _forced_inline = true;
     return true;
+  }
+
+  if (callee_method->force_inline()) {
+      set_msg("force inline by annotation");
+      _forced_inline = true;
+      return true;
   }
 
 #ifndef PRODUCT
@@ -244,6 +250,11 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   }
 #endif
 
+  if (callee_method->force_inline()) {
+    set_msg("force inline by annotation");
+    return false;
+  }
+
   // Now perform checks which are heuristic
 
   if (is_unboxing_method(callee_method, C)) {
@@ -251,12 +262,10 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
     return false;
   }
 
-  if (!callee_method->force_inline()) {
-    if (callee_method->has_compiled_code() &&
-        callee_method->instructions_size() > InlineSmallCode) {
-      set_msg("already compiled into a big method");
-      return true;
-    }
+  if (callee_method->has_compiled_code() &&
+      callee_method->instructions_size() > InlineSmallCode) {
+    set_msg("already compiled into a big method");
+    return true;
   }
 
   // don't inline exception code unless the top method belongs to an
@@ -349,7 +358,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       // Escape Analysis stress testing when running Xcomp or CTW:
       // inline constructors even if they are not reached.
     } else if (forced_inline()) {
-      // Inlining was forced by CompilerOracle or ciReplay
+      // Inlining was forced by CompilerOracle, ciReplay or annotation
     } else if (profile.count() == 0) {
       // don't inline unreached call sites
        set_msg("call site not reached");

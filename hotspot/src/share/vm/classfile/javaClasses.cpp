@@ -1239,6 +1239,16 @@ oop java_lang_Throwable::message(Handle throwable) {
 }
 
 
+// Return Symbol for detailed_message or NULL
+Symbol* java_lang_Throwable::detail_message(oop throwable) {
+  PRESERVE_EXCEPTION_MARK;  // Keep original exception
+  oop detailed_message = java_lang_Throwable::message(throwable);
+  if (detailed_message != NULL) {
+    return java_lang_String::as_symbol(detailed_message, THREAD);
+  }
+  return NULL;
+}
+
 void java_lang_Throwable::set_message(oop throwable, oop value) {
   throwable->obj_field_put(detailMessage_offset, value);
 }
