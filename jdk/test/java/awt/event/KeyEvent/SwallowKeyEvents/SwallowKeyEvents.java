@@ -27,10 +27,13 @@
   @summary   Tests that key events with modifiers are not swallowed.
   @author    anton.tarasov: area=awt.focus
   @library   ../../../regtesthelpers
+  @library ../../../../../lib/testlibrary
+  @build jdk.testlibrary.OSInfo
   @build     Util
   @run       main SwallowKeyEvents
 */
 
+import jdk.testlibrary.OSInfo;
 import java.awt.AWTException;
 import java.awt.Frame;
 import java.awt.Robot;
@@ -49,7 +52,7 @@ public class SwallowKeyEvents {
     static Robot r;
 
     public static void main(String[] args) {
-        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.WINDOWS) {
+        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
             System.out.println("Skipped. Test not for MS Windows.");
             return;
         }

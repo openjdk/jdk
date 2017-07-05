@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,6 +61,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -698,7 +699,7 @@ public class J2DBench {
             }
         };
         guiFrame = f;
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.getContentPane().setLayout(new BorderLayout());
         f.getContentPane().add(Group.root.getJComponent(), BorderLayout.CENTER);
         JPanel p = new JPanel();

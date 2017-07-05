@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -105,14 +105,6 @@ ifneq (,$(findstring $(ARCH), amd64 x86_64 i686 i586))
   HS_ARCH           = x86
 endif
 
-# ARM
-ifeq ($(ARCH), arm)
-  ARCH_DATA_MODEL  = 32
-  PLATFORM         = linux-arm
-  VM_PLATFORM      = linux_arm
-  HS_ARCH          = arm
-endif
-
 # PPC
 # Notice: after 8046471 ARCH will be 'ppc' for top-level ppc64 builds but
 # 'ppc64' for HotSpot-only ppc64 builds. Need to detect both variants here!
@@ -121,10 +113,6 @@ ifneq (,$(findstring $(ARCH), ppc ppc64))
     MAKE_ARGS        += LP64=1
     PLATFORM         = linux-ppc64
     VM_PLATFORM      = linux_ppc64
-  else
-    ARCH_DATA_MODEL  = 32
-    PLATFORM         = linux-ppc
-    VM_PLATFORM      = linux_ppc
   endif
 
   HS_ARCH = ppc

@@ -42,6 +42,7 @@ import java.util.List;
  * @test
  * @bug 8007373
  * @summary jdk7 backward compatibility serialization problem
+ * @key intermittent
  */
 
 public class Inet6AddressSerializationTest {

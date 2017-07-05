@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,33 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Insets;
 
 import javax.swing.border.Border;
 
+import sun.swing.SwingUtilities2;
+
+/**
+ * The class represents the border of a {@code JMenuBar}.
+ */
 public class AquaMenuBarBorder implements Border {
-    public AquaMenuBarBorder() {
-        super();
-    }
 
-    /**
-     * Paints the border for the specified component with the specified
-     * position and size.
-     * @param c the component for which this border is being painted
-     * @param g the paint graphics
-     * @param x the x position of the painted border
-     * @param y the y position of the painted border
-     * @param width the width of the painted border
-     * @param height the height of the painted border
-     */
-    public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
-        // for now we don't paint a border. We let the button paint it since there
-        // needs to be a strict ordering for aqua components.
-        //paintButton(c, g, x, y, width, height);
+    @Override
+    public void paintBorder(final Component c, final Graphics g, final int x,
+                            final int y, final int width, final int height) {
         g.setColor(Color.gray);
-        g.drawLine(x, y + height - 1, x + width, y + height - 1);
+        SwingUtilities2.drawHLine(g, x, x + width - 1, y + height - 1);
     }
 
-    /**
-     * Returns the insets of the border.
-     * @param c the component for which this border insets value applies
-     */
+    @Override
     public Insets getBorderInsets(final Component c) {
         return new Insets(0, 0, 1, 0);
     }
 
-    /**
-     * Returns whether or not the border is opaque.  If the border
-     * is opaque, it is responsible for filling in it's own
-     * background when painting.
-     */
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }

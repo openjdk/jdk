@@ -1066,6 +1066,10 @@ loop:
      * @param isStatement True if a statement (not used in a FOR.)
      */
     private List<VarNode> variableStatement(final TokenType varType, final boolean isStatement) {
+        return variableStatement(varType, isStatement, -1);
+    }
+
+    private List<VarNode> variableStatement(final TokenType varType, final boolean isStatement, final int sourceOrder) {
         // VAR tested in caller.
         next();
 
@@ -1104,7 +1108,7 @@ loop:
             }
 
             // Allocate var node.
-            final VarNode var = new VarNode(varLine, varToken, finish, name.setIsDeclaredHere(), init, varFlags);
+            final VarNode var = new VarNode(varLine, varToken, sourceOrder, finish, name.setIsDeclaredHere(), init, varFlags);
             vars.add(var);
             appendStatement(var);
 
@@ -1211,6 +1215,10 @@ loop:
     private void forStatement() {
         final long forToken = token;
         final int forLine = line;
+        // start position of this for statement. This is used
+        // for sort order for variables declared in the initialzer
+        // part of this 'for' statement (if any).
+        final int forStart = Token.descPosition(forToken);
         // When ES6 for-let is enabled we create a container block to capture the LET.
         final int startLine = start;
         final ParserContextBlockNode outer = useBlockScope() ? newBlock() : null;
@@ -1243,7 +1251,7 @@ loop:
             switch (type) {
             case VAR:
                 // Var declaration captured in for outer block.
-                vars = variableStatement(type, false);
+                vars = variableStatement(type, false, forStart);
                 break;
             case SEMICOLON:
                 break;
@@ -1253,12 +1261,12 @@ loop:
                         flags |= ForNode.PER_ITERATION_SCOPE;
                     }
                     // LET/CONST declaration captured in container block created above.
-                    vars = variableStatement(type, false);
+                    vars = variableStatement(type, false, forStart);
                     break;
                 }
                 if (env._const_as_var && type == CONST) {
                     // Var declaration captured in for outer block.
-                    vars = variableStatement(TokenType.VAR, false);
+                    vars = variableStatement(TokenType.VAR, false, forStart);
                     break;
                 }
 

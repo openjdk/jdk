@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.testlibrary.OSInfo;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -31,12 +32,13 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileSystemView;
-import sun.awt.OSInfo;
 
 /**
  * @test
  * @bug 8062561
  * @summary File system view returns null default directory
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main/othervm bug8062561 GENERATE_POLICY
  * @run main/othervm/policy=security.policy bug8062561 CHECK_DEFAULT_DIR run
  */
@@ -72,7 +74,7 @@ public class bug8062561 {
         File defaultDirectory = FileSystemView.getFileSystemView().
                 getDefaultDirectory();
         if (defaultDirectory != null) {
-            throw new RuntimeException("File system default directory is null!");
+            throw new RuntimeException("File system default directory must be null! (FilePermission has not been granted in our policy file).");
         }
     }
     private static volatile JFileChooser fileChooser;

@@ -65,7 +65,7 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
   assert(_collector == NULL, "Collector already set");
   _collector = collector;
 
-  set_name("Concurrent Mark-Sweep GC Thread");
+  set_name("CMS Main Thread");
 
   if (os::create_thread(this, os::cgc_thread)) {
     // An old comment here said: "Priority should be just less
