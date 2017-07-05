@@ -26,10 +26,19 @@
  * @test
  * @bug 8073184
  * @summary CastII that guards counted loops confuses range check elimination with LoopLimitCheck off
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LoopLimitCheck -XX:CompileOnly=TestCastIINoLoopLimitCheck.m -Xcomp  TestCastIINoLoopLimitCheck
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileOnly=TestCastIINoLoopLimitCheck.m -Xcomp  TestCastIINoLoopLimitCheck
  *
  */
 
+/*
+ * The test was originally run with
+ *
+ * -XX:+UnlockDiagnosticVMOptions -XX:-LoopLimitCheck
+ *
+ * to trigger a problem with code guarded with !LoopLimitCheck.
+ * JDK-8072422 has removed that code but kept the test because the
+ * test generates an interesting graph shape.
+ */
 public class TestCastIINoLoopLimitCheck {
 
     static void m(int i, int index, char[] buf) {

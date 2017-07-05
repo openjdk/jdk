@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,8 @@ public:
   // Hashing algorithm, used as the hash value used by the
   //     StringTable for bucket selection and comparison (stored in the
   //     HashtableEntry structures).  This is used in the String.intern() method.
-  template<typename T> static unsigned int hash_string(const T* s, int len);
+  static unsigned int hash_string(const jchar* s, int len);
+  static unsigned int hash_string(oop string);
 
   // Internal test.
   static void test_alt_hash() PRODUCT_RETURN;

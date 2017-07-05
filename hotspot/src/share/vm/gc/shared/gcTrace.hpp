@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ class GCTracer : public ResourceObj {
 
  protected:
   GCTracer(GCName name) : _shared_gc_info(name) {}
-  void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
+  virtual void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
   virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  private:
@@ -297,8 +297,11 @@ class CMSTracer : public OldGCTracer {
 };
 
 class G1OldTracer : public OldGCTracer {
+ protected:
+  void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
  public:
   G1OldTracer() : OldGCTracer(G1Old) {}
+  void set_gc_cause(GCCause::Cause cause);
 };
 
 #endif // SHARE_VM_GC_SHARED_GCTRACE_HPP

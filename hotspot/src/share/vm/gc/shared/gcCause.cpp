@@ -57,6 +57,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _wb_conc_mark:
       return "WhiteBox Initiated Concurrent Mark";
 
+    case _wb_full_gc:
+      return "WhiteBox Initiated Full GC";
+
     case _update_allocation_context_stats_inc:
     case _update_allocation_context_stats_full:
       return "Update Allocation Context Stats";
@@ -72,6 +75,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _metadata_GC_threshold:
       return "Metadata GC Threshold";
+
+    case _metadata_GC_clear_soft_refs:
+      return "Metadata GC Clear Soft References";
 
     case _cms_generation_full:
       return "CMS Generation Full";
@@ -99,9 +105,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _g1_humongous_allocation:
       return "G1 Humongous Allocation";
-
-    case _last_ditch_collection:
-      return "Last ditch collection";
 
     case _dcmd_gc_run:
       return "Diagnostic Command";

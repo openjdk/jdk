@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <jni.h>
-#include <windows.h>
+#include "precompiled.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-JNIEXPORT jlong JNICALL Java_jdk_test_failurehandler_jtreg_GatherProcessInfoTimeoutHandler_getWin32Pid
-        (JNIEnv* env, jobject o, jlong handle) {
-    return GetProcessId(handle);
+G1HeapSizingPolicy* G1HeapSizingPolicy::create(const G1CollectedHeap* g1, const G1Analytics* analytics) {
+  return new G1HeapSizingPolicy(g1, analytics);
 }
-#ifdef __cplusplus
-}
-#endif

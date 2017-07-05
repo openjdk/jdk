@@ -35,8 +35,10 @@ public interface MemoryAccessProvider {
      * @param displacement the displacement within the object in bytes
      * @return the read value encapsulated in a {@link JavaConstant} object, or {@code null} if the
      *         value cannot be read.
+     * @throws IllegalArgumentException if {@code kind} is {@link JavaKind#Void} or not
+     *             {@linkplain JavaKind#isPrimitive() primitive} kind
      */
-    JavaConstant readUnsafeConstant(JavaKind kind, JavaConstant base, long displacement);
+    JavaConstant readUnsafeConstant(JavaKind kind, JavaConstant base, long displacement) throws IllegalArgumentException;
 
     /**
      * Reads a primitive value using a base address and a displacement.
@@ -46,8 +48,11 @@ public interface MemoryAccessProvider {
      * @param displacement the displacement within the object in bytes
      * @param bits the number of bits to read from memory
      * @return the read value encapsulated in a {@link JavaConstant} object of {@link JavaKind} kind
+     * @throws IllegalArgumentException if {@code kind} is {@link JavaKind#Void} or not
+     *             {@linkplain JavaKind#isPrimitive() primitive} kind or {@code bits} is not 8, 16,
+     *             32 or 64
      */
-    JavaConstant readPrimitiveConstant(JavaKind kind, Constant base, long displacement, int bits);
+    JavaConstant readPrimitiveConstant(JavaKind kind, Constant base, long displacement, int bits) throws IllegalArgumentException;
 
     /**
      * Reads a Java {@link Object} value using a base address and a displacement.

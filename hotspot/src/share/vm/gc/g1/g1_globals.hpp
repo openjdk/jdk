@@ -233,10 +233,6 @@
           "Raise a fatal VM exit out of memory failure in the event "       \
           " that heap expansion fails due to running out of swap.")         \
                                                                             \
-  develop(uintx, G1ConcMarkForceOverflow, 0,                                \
-          "The number of times we'll force an overflow during "             \
-          "concurrent marking")                                             \
-                                                                            \
   experimental(uintx, G1MaxNewSizePercent, 60,                              \
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \

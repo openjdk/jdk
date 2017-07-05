@@ -624,6 +624,7 @@ class Assembler : public AbstractAssembler {
     VNOR_OPCODE    = (4u  << OPCODE_SHIFT | 1284u     ),
     VOR_OPCODE     = (4u  << OPCODE_SHIFT | 1156u     ),
     VXOR_OPCODE    = (4u  << OPCODE_SHIFT | 1220u     ),
+    VRLD_OPCODE    = (4u  << OPCODE_SHIFT |  196u     ),
     VRLB_OPCODE    = (4u  << OPCODE_SHIFT |    4u     ),
     VRLW_OPCODE    = (4u  << OPCODE_SHIFT |  132u     ),
     VRLH_OPCODE    = (4u  << OPCODE_SHIFT |   68u     ),
@@ -2047,6 +2048,7 @@ class Assembler : public AbstractAssembler {
   inline void vnor(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vor(      VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vxor(     VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vrld(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrlb(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrlw(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrlh(     VectorRegister d, VectorRegister a, VectorRegister b);

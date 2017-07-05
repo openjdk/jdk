@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,11 @@ void GCTaskThread::run() {
   this->initialize_named_thread();
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {
-    if (TraceGCTaskThread) {
-      tty->print_cr("GCTaskThread::run: "
-                    "  binding to processor %u", processor_id());
-    }
+    log_trace(gc, task, thread)("GCTaskThread::run: binding to processor %u", processor_id());
     if (!os::bind_to_processor(processor_id())) {
       DEBUG_ONLY(
-        warning("Couldn't bind GCTaskThread %u to processor %u",
-                      which(), processor_id());
+        log_warning(gc)("Couldn't bind GCTaskThread %u to processor %u",
+                        which(), processor_id());
       )
     }
   }

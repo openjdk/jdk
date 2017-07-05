@@ -493,7 +493,7 @@ void PSMarkSweep::deallocate_stacks() {
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -523,6 +523,8 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Process reference objects found during marking
   {
+    GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer);
+
     ref_processor()->setup_policy(clear_all_softrefs);
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
@@ -533,26 +535,37 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
 
-  // Unload classes and purge the SystemDictionary.
-  bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer);
 
-  // Unload nmethods.
-  CodeCache::do_unloading(is_alive_closure(), purged_class);
+    // Unload classes and purge the SystemDictionary.
+    bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Prune dead klasses from subklass/sibling/implementor lists.
-  Klass::clean_weak_klass_links(is_alive_closure());
+    // Unload nmethods.
+    CodeCache::do_unloading(is_alive_closure(), purged_class);
 
-  // Delete entries for dead interned strings.
-  StringTable::unlink(is_alive_closure());
+    // Prune dead klasses from subklass/sibling/implementor lists.
+    Klass::clean_weak_klass_links(is_alive_closure());
+  }
 
-  // Clean up unreferenced symbols in symbol table.
-  SymbolTable::unlink();
+  {
+    GCTraceTime(Debug, gc, phases) t("Scrub String Table", _gc_timer);
+    // Delete entries for dead interned strings.
+    StringTable::unlink(is_alive_closure());
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer);
+    // Clean up unreferenced symbols in symbol table.
+    SymbolTable::unlink();
+  }
+
   _gc_tracer->report_object_count_after_gc(is_alive_closure());
 }
 
 
 void PSMarkSweep::mark_sweep_phase2() {
-  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 2: Compute new object addresses", _gc_timer);
 
   // Now all live objects are marked, compute the new object addresses.
 
@@ -570,16 +583,9 @@ void PSMarkSweep::mark_sweep_phase2() {
   old_gen->precompact();
 }
 
-// This should be moved to the shared markSweep code!
-class PSAlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static PSAlwaysTrueClosure always_true;
-
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -603,7 +609,7 @@ void PSMarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
+  JNIHandles::weak_oops_do(adjust_pointer_closure());
 
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
@@ -619,7 +625,7 @@ void PSMarkSweep::mark_sweep_phase3() {
 
 void PSMarkSweep::mark_sweep_phase4() {
   EventMark m("4 compact heap");
-  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 4: Move objects", _gc_timer);
 
   // All pointers are now adjusted, move objects accordingly
 
@@ -638,7 +644,7 @@ jlong PSMarkSweep::millis_since_last_gc() {
   jlong ret_val = now - _time_of_last_gc;
   // XXX See note in genCollectedHeap::millis_since_last_gc().
   if (ret_val < 0) {
-    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, ret_val);)
+    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, ret_val);)
     return 0;
   }
   return ret_val;
