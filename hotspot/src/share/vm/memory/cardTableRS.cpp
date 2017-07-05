@@ -38,21 +38,18 @@
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
-CardTableRS::CardTableRS(MemRegion whole_heap,
-                         int max_covered_regions) :
+CardTableRS::CardTableRS(MemRegion whole_heap) :
   GenRemSet(),
-  _cur_youngergen_card_val(youngergenP1_card),
-  _regions_to_iterate(max_covered_regions - 1)
+  _cur_youngergen_card_val(youngergenP1_card)
 {
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
-      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap,
-                                                  max_covered_regions);
+      _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap);
   } else {
-    _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+    _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
   }
 #else
-  _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
+  _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
 #endif
   _ct_bs->initialize();
   set_bs(_ct_bs);

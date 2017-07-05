@@ -48,11 +48,13 @@ final class AstSerializer {
     private static final int COMPRESSION_LEVEL = Options.getIntProperty("nashorn.serialize.compression", 4);
     static byte[] serialize(final FunctionNode fn) {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (final ObjectOutputStream oout = new ObjectOutputStream(new DeflaterOutputStream(out,
-                new Deflater(COMPRESSION_LEVEL)))) {
+        final Deflater deflater = new Deflater(COMPRESSION_LEVEL);
+        try (final ObjectOutputStream oout = new ObjectOutputStream(new DeflaterOutputStream(out, deflater))) {
             oout.writeObject(removeInnerFunctionBodies(fn));
         } catch (final IOException e) {
             throw new AssertionError("Unexpected exception serializing function", e);
+        } finally {
+            deflater.end();
         }
         return out.toByteArray();
     }

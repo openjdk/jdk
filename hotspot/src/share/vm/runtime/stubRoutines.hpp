@@ -126,6 +126,7 @@ class StubRoutines: AllStatic {
   static address _atomic_store_ptr_entry;
   static address _atomic_cmpxchg_entry;
   static address _atomic_cmpxchg_ptr_entry;
+  static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
   static address _atomic_add_ptr_entry;
@@ -282,6 +283,7 @@ class StubRoutines: AllStatic {
   static address atomic_store_ptr_entry()                  { return _atomic_store_ptr_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
   static address atomic_cmpxchg_ptr_entry()                { return _atomic_cmpxchg_ptr_entry; }
+  static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
   static address atomic_add_ptr_entry()                    { return _atomic_add_ptr_entry; }

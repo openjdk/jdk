@@ -46,6 +46,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     private final static String MSG = "TlsKeyMaterialGenerator must be "
         + "initialized using a TlsKeyMaterialParameterSpec";
 
+    @SuppressWarnings("deprecation")
     private TlsKeyMaterialParameterSpec spec;
 
     private int protocolVersion;
@@ -57,6 +58,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
         if (params instanceof TlsKeyMaterialParameterSpec == false) {
@@ -91,6 +93,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private SecretKey engineGenerateKey0() throws GeneralSecurityException {
         byte[] masterSecret = spec.getMasterSecret().getEncoded();
 

@@ -28,7 +28,7 @@ include LibCommon.gmk
 ################################################################################
 
 LIBINSTRUMENT_SRC := $(JDK_TOPDIR)/src/java.instrument/share/native/libinstrument \
-    $(JDK_TOPDIR)/src/java.instrument/$(OPENJDK_TARGET_OS_API_DIR)/native/libinstrument \
+    $(JDK_TOPDIR)/src/java.instrument/$(OPENJDK_TARGET_OS_TYPE)/native/libinstrument \
     #
 LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
     $(addprefix -I, $(LIBINSTRUMENT_SRC)) \

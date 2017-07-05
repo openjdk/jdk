@@ -68,6 +68,7 @@
 #include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 // put OS-includes here

@@ -773,7 +773,7 @@ class PerfDataManager : AllStatic {
     static PerfStringVariable* create_string_variable(CounterNS ns,
                                                       const char* name,
                                                       const char *s, TRAPS) {
-      return create_string_variable(ns, name, 0, s, CHECK_NULL);
+      return create_string_variable(ns, name, 0, s, THREAD);
     };
 
     static PerfLongVariable* create_long_variable(CounterNS ns,
@@ -784,7 +784,7 @@ class PerfDataManager : AllStatic {
     static PerfLongVariable* create_long_variable(CounterNS ns,
                                                   const char* name,
                                                   PerfData::Units u, TRAPS) {
-      return create_long_variable(ns, name, u, (jlong)0, CHECK_NULL);
+      return create_long_variable(ns, name, u, (jlong)0, THREAD);
     };
 
     static PerfLongVariable* create_long_variable(CounterNS, const char* name,
@@ -805,7 +805,7 @@ class PerfDataManager : AllStatic {
 
     static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
                                                 PerfData::Units u, TRAPS) {
-      return create_long_counter(ns, name, u, (jlong)0, CHECK_NULL);
+      return create_long_counter(ns, name, u, (jlong)0, THREAD);
     };
 
     static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
@@ -823,49 +823,49 @@ class PerfDataManager : AllStatic {
 
     static PerfConstant* create_constant(CounterNS ns, const char* name,
                                          PerfData::Units u, jlong val, TRAPS) {
-      return create_long_constant(ns, name, u, val, CHECK_NULL);
+      return create_long_constant(ns, name, u, val, THREAD);
     }
 
     static PerfVariable* create_variable(CounterNS ns, const char* name,
                                          PerfData::Units u, jlong ival, TRAPS) {
-      return create_long_variable(ns, name, u, ival, CHECK_NULL);
+      return create_long_variable(ns, name, u, ival, THREAD);
     }
 
     static PerfVariable* create_variable(CounterNS ns, const char* name,
                                          PerfData::Units u, TRAPS) {
-      return create_long_variable(ns, name, u, (jlong)0, CHECK_NULL);
+      return create_long_variable(ns, name, u, (jlong)0, THREAD);
     }
 
     static PerfVariable* create_variable(CounterNS ns, const char* name,
                                          PerfData::Units u, jlong* sp, TRAPS) {
-      return create_long_variable(ns, name, u, sp, CHECK_NULL);
+      return create_long_variable(ns, name, u, sp, THREAD);
     }
 
     static PerfVariable* create_variable(CounterNS ns, const char* name,
                                          PerfData::Units u,
                                          PerfSampleHelper* sh, TRAPS) {
-      return create_long_variable(ns, name, u, sh, CHECK_NULL);
+      return create_long_variable(ns, name, u, sh, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u, jlong ival, TRAPS) {
-      return create_long_counter(ns, name, u, ival, CHECK_NULL);
+      return create_long_counter(ns, name, u, ival, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u, TRAPS) {
-      return create_long_counter(ns, name, u, (jlong)0, CHECK_NULL);
+      return create_long_counter(ns, name, u, (jlong)0, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u, jlong* sp, TRAPS) {
-      return create_long_counter(ns, name, u, sp, CHECK_NULL);
+      return create_long_counter(ns, name, u, sp, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u,
                                        PerfSampleHelper* sh, TRAPS) {
-      return create_long_counter(ns, name, u, sh, CHECK_NULL);
+      return create_long_counter(ns, name, u, sh, THREAD);
     }
 
     static void destroy();

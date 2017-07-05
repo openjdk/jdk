@@ -102,23 +102,25 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
     // Attempt to compile while subsuming loads into machine instructions.
     Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing);
 
-
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
       if (C.failure_reason_is(retry_no_subsuming_loads())) {
         assert(subsume_loads, "must make progress");
         subsume_loads = false;
+        env->report_failure(C.failure_reason());
         continue;  // retry
       }
       if (C.failure_reason_is(retry_no_escape_analysis())) {
         assert(do_escape_analysis, "must make progress");
         do_escape_analysis = false;
+        env->report_failure(C.failure_reason());
         continue;  // retry
       }
       if (C.has_boxed_value()) {
         // Recompile without boxing elimination regardless failure reason.
         assert(eliminate_boxing, "must make progress");
         eliminate_boxing = false;
+        env->report_failure(C.failure_reason());
         continue;  // retry
       }
       // Pass any other failure reason up to the ciEnv.

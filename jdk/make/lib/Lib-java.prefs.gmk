@@ -30,7 +30,7 @@ include LibCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/macosx/native/libprefs
 else
-  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_API_DIR)/native/libprefs
+  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_TYPE)/native/libprefs
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \

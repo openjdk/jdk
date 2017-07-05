@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 # @test
 # @bug     4982128
 # @summary Test low memory detection of non-heap memory pool
-#
+# @requires vm.gc=="null"
 # @run build LowMemoryTest2 MemoryUtil
 # @run shell/timeout=600 LowMemoryTest2.sh
 #

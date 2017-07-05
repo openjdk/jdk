@@ -105,10 +105,10 @@ public class NativeDataView extends ScriptObject {
 
     private NativeDataView(final NativeArrayBuffer arrBuf, final ByteBuffer buf, final int offset, final int length) {
         super(Global.instance().getDataViewPrototype(), $nasgenmap$);
-        this.buffer = arrBuf;
+        this.buffer     = arrBuf;
         this.byteOffset = offset;
         this.byteLength = length;
-        this.buf = buf;
+        this.buf        = buf;
     }
 
     /**
@@ -135,14 +135,14 @@ public class NativeDataView extends ScriptObject {
             throw typeError("not.an.arraybuffer.in.dataview");
         }
 
-        final NativeArrayBuffer arrBuf = (NativeArrayBuffer) args[0];
+        final NativeArrayBuffer arrBuf = (NativeArrayBuffer)args[0];
         switch (args.length) {
-            case 1:
-                return new NativeDataView(arrBuf);
-            case 2:
-                return new NativeDataView(arrBuf, JSType.toInt32(args[1]));
-            default:
-                return new NativeDataView(arrBuf, JSType.toInt32(args[1]), JSType.toInt32(args[2]));
+        case 1:
+            return new NativeDataView(arrBuf);
+        case 2:
+            return new NativeDataView(arrBuf, JSType.toInt32(args[1]));
+        default:
+            return new NativeDataView(arrBuf, JSType.toInt32(args[1]), JSType.toInt32(args[2]));
         }
     }
 
@@ -995,7 +995,7 @@ public class NativeDataView extends ScriptObject {
 
     private static NativeDataView checkSelf(final Object self) {
         if (!(self instanceof NativeDataView)) {
-            throw typeError("not.an.arraybuffer", ScriptRuntime.safeToString(self));
+            throw typeError("not.an.arraybuffer.in.dataview", ScriptRuntime.safeToString(self));
         }
         return (NativeDataView)self;
     }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,55 @@ ifeq ($(JDK6_OR_EARLIER),0)
       ifneq ($(ALT_OBJCOPY),)
         $(eval $(call print_info, "ALT_OBJCOPY=$(ALT_OBJCOPY)"))
         OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+      endif
+
+      ifneq ($(OBJCOPY),)
+        # OBJCOPY version check:
+        # - version number is last blank separate word on first line
+        # - version number formats that have been seen:
+        #   - <major>.<minor>
+        #   - <major>.<minor>.<micro>
+        #
+        # Full Debug Symbols on Solaris needs version 2.21.1 or newer.
+        #
+        OBJCOPY_VERS_CHK := $(shell \
+          $(OBJCOPY) --version \
+            | sed -n \
+                  -e 's/.* //' \
+                  -e '/^[01]\./b bad' \
+                  -e '/^2\./{' \
+                  -e '  s/^2\.//' \
+                  -e '  /^[0-9]$$/b bad' \
+                  -e '  /^[0-9]\./b bad' \
+                  -e '  /^1[0-9]$$/b bad' \
+                  -e '  /^1[0-9]\./b bad' \
+                  -e '  /^20\./b bad' \
+                  -e '  /^21\.0$$/b bad' \
+                  -e '  /^21\.0\./b bad' \
+                  -e '}' \
+                  -e ':good' \
+                  -e 's/.*/VALID_VERSION/p' \
+                  -e 'q' \
+                  -e ':bad' \
+                  -e 's/.*/BAD_VERSION/p' \
+                  -e 'q' \
+          )
+        ifeq ($(OBJCOPY_VERS_CHK),BAD_VERSION)
+          _JUNK_ := $(shell \
+            echo >&2 "WARNING: $(OBJCOPY) --version info:"; \
+            $(OBJCOPY) --version | sed -n -e 's/^/WARNING: /p' -e 'q' >&2; \
+            echo >&2 "WARNING: an objcopy version of 2.21.1 or newer" \
+              "is needed to create valid .debuginfo files."; \
+            echo >&2 "WARNING: ignoring above objcopy command."; \
+            echo >&2 "WARNING: patch 149063-01 or newer contains the" \
+              "correct Solaris 10 SPARC version."; \
+            echo >&2 "WARNING: patch 149064-01 or newer contains the" \
+              "correct Solaris 10 X86 version."; \
+            echo >&2 "WARNING: Solaris 11 Update 1 contains the" \
+              "correct version."; \
+            )
+          OBJCOPY=
+        endif
       endif
 
       ifeq ($(OBJCOPY),)

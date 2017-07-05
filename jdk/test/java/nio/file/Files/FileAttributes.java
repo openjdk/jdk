@@ -52,12 +52,6 @@ public class FileAttributes {
         }
     }
 
-    // checks that two time values are within 1s of each other
-    static void checkNearEqual(FileTime t1, FileTime t2) {
-        long diff = Math.abs(t1.toMillis() - t2.toMillis());
-        assertTrue(diff <= 1000);
-    }
-
     // Exercise getAttribute/setAttribute/readAttributes on basic attributes
     static void checkBasicAttributes(Path file, BasicFileAttributes attrs)
         throws IOException

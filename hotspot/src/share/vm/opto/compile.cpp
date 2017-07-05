@@ -67,7 +67,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 
 
@@ -662,7 +661,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
-                  _interpreter_frame_size(0) {
+                  _interpreter_frame_size(0),
+                  _max_node_limit(MaxNodeLimit) {
   C = this;
 
   CompileWrapper cw(this);
@@ -975,7 +975,8 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
     _allowed_reasons(0),
-    _interpreter_frame_size(0) {
+    _interpreter_frame_size(0),
+    _max_node_limit(MaxNodeLimit) {
   C = this;
 
   TraceTime t1(NULL, &_t_totalCompilation, CITime, false);
@@ -1088,6 +1089,7 @@ void Compile::Init(int aliaslevel) {
   set_do_method_data_update(false);
   set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
+  method_has_option_value("MaxNodeLimit", _max_node_limit);
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
     int rtm_state = method()->method_data()->rtm_state();
@@ -3540,13 +3542,6 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == NULL) {
     // Record the first failure reason.
     _failure_reason = reason;
-  }
-
-  EventCompilerFailure event;
-  if (event.should_commit()) {
-    event.set_compileID(Compile::compile_id());
-    event.set_failure(reason);
-    event.commit();
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

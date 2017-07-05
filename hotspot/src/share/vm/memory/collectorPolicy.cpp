@@ -152,9 +152,8 @@ bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
   return result;
 }
 
-GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap,
-                                           int max_covered_regions) {
-  return new CardTableRS(whole_heap, max_covered_regions);
+GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
+  return new CardTableRS(whole_heap);
 }
 
 void CollectorPolicy::cleared_all_soft_refs() {

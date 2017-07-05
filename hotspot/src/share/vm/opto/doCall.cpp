@@ -418,6 +418,11 @@ void Parse::do_call() {
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != NULL, "cannot be null");
 
+  // Bump max node limit for JSR292 users
+  if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
+    C->set_max_node_limit(3*MaxNodeLimit);
+  }
+
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
   if (!will_link || can_not_compile_call_site(orig_callee, klass)) {
@@ -794,7 +799,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   Node* ex_klass_node = NULL;
   if (has_ex_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
-    ex_klass_node = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT) );
+    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
 
     // Compute the exception klass a little more cleverly.
     // Obvious solution is to simple do a LoadKlass from the 'ex_node'.
@@ -812,7 +817,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
           continue;
         }
         Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
-        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT) );
+        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
       _gvn.set_type(ex_klass_node, TypeKlassPtr::OBJECT);

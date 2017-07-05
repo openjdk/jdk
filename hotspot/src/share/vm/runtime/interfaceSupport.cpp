@@ -87,7 +87,7 @@ void InterfaceSupport::gc_alot() {
   // Short-circuit any possible re-entrant gc-a-lot attempt
   if (thread->skip_gcalot()) return;
 
-  if (is_init_completed()) {
+  if (Threads::is_vm_complete()) {
 
     if (++_fullgc_alot_invocation < FullGCALotStart) {
       return;

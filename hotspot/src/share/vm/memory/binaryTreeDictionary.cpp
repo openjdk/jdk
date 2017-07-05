@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/macros.hpp"
 #include "gc_implementation/shared/allocationStats.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/freeList.hpp"
 #include "memory/freeBlockDictionary.hpp"
@@ -32,7 +32,6 @@
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
-#include "gc_implementation/shared/spaceDecorator.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/adaptiveFreeList.hpp"
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"

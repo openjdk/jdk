@@ -147,29 +147,21 @@ public final class DOMReference extends DOMStructure
         if (dm == null) {
             throw new NullPointerException("DigestMethod must be non-null");
         }
-        if (appliedTransforms == null) {
-            this.allTransforms = new ArrayList<Transform>();
-        } else {
-            this.allTransforms = new ArrayList<Transform>(appliedTransforms);
-            for (int i = 0, size = this.allTransforms.size(); i < size; i++) {
-                if (!(this.allTransforms.get(i) instanceof Transform)) {
-                    throw new ClassCastException
-                        ("appliedTransforms["+i+"] is not a valid type");
-                }
-            }
+        List<Transform> tempList =
+            Collections.checkedList(new ArrayList<Transform>(),
+                                    Transform.class);
+        if (appliedTransforms != null) {
+            tempList.addAll(appliedTransforms);
         }
-        if (transforms == null) {
-            this.transforms = Collections.emptyList();
-        } else {
-            this.transforms = new ArrayList<Transform>(transforms);
-            for (int i = 0, size = this.transforms.size(); i < size; i++) {
-                if (!(this.transforms.get(i) instanceof Transform)) {
-                    throw new ClassCastException
-                        ("transforms["+i+"] is not a valid type");
-                }
-            }
-            this.allTransforms.addAll(this.transforms);
+        List<Transform> tempList2 =
+            Collections.checkedList(new ArrayList<Transform>(),
+                                    Transform.class);
+        if (transforms != null) {
+            tempList.addAll(transforms);
+            tempList2.addAll(transforms);
         }
+        this.allTransforms = Collections.unmodifiableList(tempList);
+        this.transforms = tempList2;
         this.digestMethod = dm;
         this.uri = uri;
         if ((uri != null) && (!uri.equals(""))) {
@@ -642,7 +634,7 @@ public final class DOMReference extends DOMStructure
             if (xsi.isNodeSet()) {
                 try {
                     final Set<Node> s = xsi.getNodeSet();
-                    return new NodeSetData() {
+                    return new NodeSetData<Node>() {
                         public Iterator<Node> iterator() { return s.iterator(); }
                     };
                 } catch (Exception e) {

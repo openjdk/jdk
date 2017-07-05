@@ -30,10 +30,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/imageFile.hpp"
 #include "classfile/javaClasses.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedPathsMiscInfo.hpp"
-#include "classfile/sharedClassUtil.hpp"
-#endif
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -65,8 +61,13 @@
 #include "services/management.hpp"
 #include "services/threadService.hpp"
 #include "utilities/events.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_CDS
+#include "classfile/sharedPathsMiscInfo.hpp"
+#include "classfile/sharedClassUtil.hpp"
+#endif
+
 
 // Entry points in zip.dll for loading zip/jar file entries and image file entries
 
@@ -1212,7 +1213,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     h = context.record_result(classpath_index, e, result, THREAD);
   } else {
     if (DumpSharedSpaces) {
-      tty->print_cr("Preload Error: Cannot find %s", class_name);
+      tty->print_cr("Preload Warning: Cannot find %s", class_name);
     }
   }
 

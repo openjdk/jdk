@@ -191,7 +191,7 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   if (or_null) {
     return h_ak->array_klass_or_null(n);
   }
-  return h_ak->array_klass(n, CHECK_NULL);
+  return h_ak->array_klass(n, THREAD);
 }
 
 Klass* TypeArrayKlass::array_klass_impl(bool or_null, TRAPS) {
