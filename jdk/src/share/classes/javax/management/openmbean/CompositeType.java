@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,8 +159,8 @@ public class CompositeType extends OpenType<CompositeData> {
     }
 
     private static void checkForNullElement(Object[] arg, String argName) {
-        if ( (arg == null) || (arg.length == 0) ) {
-            throw new IllegalArgumentException("Argument "+ argName +"[] cannot be null or empty.");
+        if (arg == null) {
+            throw new IllegalArgumentException("Argument "+ argName +"[] cannot be null.");
         }
         for (int i=0; i<arg.length; i++) {
             if (arg[i] == null) {
