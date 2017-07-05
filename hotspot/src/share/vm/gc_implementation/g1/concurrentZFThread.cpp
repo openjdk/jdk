@@ -157,10 +157,14 @@ void ConcurrentZFThread::stop() {
   }
 }
 
-void ConcurrentZFThread::print() {
-  gclog_or_tty->print("\"Concurrent ZF Thread\" ");
-  Thread::print();
-  gclog_or_tty->cr();
+void ConcurrentZFThread::print() const {
+  print_on(tty);
+}
+
+void ConcurrentZFThread::print_on(outputStream* st) const {
+  st->print("\"G1 Concurrent Zero-Fill Thread\" ");
+  Thread::print_on(st);
+  st->cr();
 }
 
 

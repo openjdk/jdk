@@ -258,6 +258,7 @@ JAVA_JAVA_java = \
     java/util/ServiceConfigurationError.java \
     java/util/Timer.java \
     java/util/TimerTask.java \
+    java/util/Objects.java \
     java/util/UUID.java \
     java/util/concurrent/AbstractExecutorService.java \
     java/util/concurrent/ArrayBlockingQueue.java \

@@ -377,3 +377,11 @@ void ConcurrentG1Refine::clear_and_record_card_counts() {
   _g1h->g1_policy()->record_cc_clear_time(elapsed * 1000.0);
 #endif
 }
+
+void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
+  for (int i = 0; i < _n_threads; ++i) {
+    _threads[i]->print_on(st);
+    st->cr();
+  }
+}
+

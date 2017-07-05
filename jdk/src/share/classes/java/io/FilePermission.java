@@ -209,7 +209,17 @@ public final class FilePermission extends Permission implements Serializable {
         cpath = AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 try {
-                    return sun.security.provider.PolicyFile.canonPath(cpath);
+                    String path = cpath;
+                    if (cpath.endsWith("*")) {
+                        // call getCanonicalPath with a path with wildcard character
+                        // replaced to avoid calling it with paths that are
+                        // intended to match all entries in a directory
+                        path = path.substring(0, path.length()-1) + "-";
+                        path = new File(path).getCanonicalPath();
+                        return path.substring(0, path.length()-1) + "*";
+                    } else {
+                        return new File(path).getCanonicalPath();
+                    }
                 } catch (IOException ioe) {
                     return cpath;
                 }

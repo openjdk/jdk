@@ -132,6 +132,9 @@ ifeq ($(OSNAME),solaris)
 
 endif
 
+# BUILDARCH is set to "zero" for Zero builds.  VARIANTARCH
+# is used to give the build directories meaningful names.
+VARIANTARCH = $(subst i386,i486,$(ZERO_LIBARCH))
 
 # There is a (semi-) regular correspondence between make targets and actions:
 #
@@ -158,6 +161,13 @@ endif
 #       profiledcore    core            <os>_<arch>_core/profiled
 #       productcore     core            <os>_<arch>_core/product
 #
+#       debugzero       zero            <os>_<arch>_zero/debug
+#       fastdebugzero   zero            <os>_<arch>_zero/fastdebug
+#       jvmgzero        zero            <os>_<arch>_zero/jvmg
+#       optimizedzero   zero            <os>_<arch>_zero/optimized
+#       profiledzero    zero            <os>_<arch>_zero/profiled
+#       productzero     zero            <os>_<arch>_zero/product
+#
 # What you get with each target:
 #
 # debug*     - "thin" libjvm_g - debug info linked into the gamma_g launcher
@@ -171,16 +181,22 @@ endif
 # in the build.sh script:
 TARGETS           = debug jvmg fastdebug optimized profiled product
 
-SUBDIR_DOCS       = $(OSNAME)_$(BUILDARCH)_docs
+ifeq ($(ZERO_BUILD), true)
+  SUBDIR_DOCS     = $(OSNAME)_$(VARIANTARCH)_docs
+else
+  SUBDIR_DOCS     = $(OSNAME)_$(BUILDARCH)_docs
+endif
 SUBDIRS_C1        = $(addprefix $(OSNAME)_$(BUILDARCH)_compiler1/,$(TARGETS))
 SUBDIRS_C2        = $(addprefix $(OSNAME)_$(BUILDARCH)_compiler2/,$(TARGETS))
 SUBDIRS_TIERED    = $(addprefix $(OSNAME)_$(BUILDARCH)_tiered/,$(TARGETS))
 SUBDIRS_CORE      = $(addprefix $(OSNAME)_$(BUILDARCH)_core/,$(TARGETS))
+SUBDIRS_ZERO      = $(addprefix $(OSNAME)_$(VARIANTARCH)_zero/,$(TARGETS))
 
 TARGETS_C2        = $(TARGETS)
 TARGETS_C1        = $(addsuffix 1,$(TARGETS))
 TARGETS_TIERED    = $(addsuffix tiered,$(TARGETS))
 TARGETS_CORE      = $(addsuffix core,$(TARGETS))
+TARGETS_ZERO      = $(addsuffix zero,$(TARGETS))
 
 BUILDTREE_MAKE    = $(GAMMADIR)/make/$(OSNAME)/makefiles/buildtree.make
 BUILDTREE_VARS    = GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OSNAME) ARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH)
@@ -196,6 +212,7 @@ all:
 	@echo "  $(TARGETS_C2)"
 	@echo "  $(TARGETS_C1)"
 	@echo "  $(TARGETS_CORE)"
+	@echo "  $(TARGETS_ZERO)"
 
 checks: check_os_version check_j2se_version
 
@@ -245,6 +262,13 @@ $(SUBDIRS_CORE): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
 	$(BUILDTREE) VARIANT=core
 
+$(SUBDIRS_ZERO): $(BUILDTREE_MAKE) platform_zero
+	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
+	$(BUILDTREE) VARIANT=zero VARIANTARCH=$(VARIANTARCH)
+
+platform_zero: $(GAMMADIR)/make/$(OSNAME)/platform_zero.in
+	$(SED) 's/@ZERO_ARCHDEF@/$(ZERO_ARCHDEF)/g;s/@ZERO_LIBARCH@/$(ZERO_LIBARCH)/g;' < $< > $@
+
 # Define INSTALL=y at command line to automatically copy JVM into JAVA_HOME
 
 $(TARGETS_C2):  $(SUBDIRS_C2)
@@ -275,10 +299,18 @@ ifdef INSTALL
 	cd $(OSNAME)_$(BUILDARCH)_core/$(patsubst %core,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
+$(TARGETS_ZERO):  $(SUBDIRS_ZERO)
+	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && $(MAKE) $(MFLAGS)
+	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && ./test_gamma
+ifdef INSTALL
+	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && $(MAKE) $(MFLAGS) install
+endif
+
 # Just build the tree, and nothing else:
 tree:      $(SUBDIRS_C2)
 tree1:     $(SUBDIRS_C1)
 treecore:  $(SUBDIRS_CORE)
+treezero:  $(SUBDIRS_ZERO)
 
 # Doc target.  This is the same for all build options.
 #     Hence create a docs directory beside ...$(ARCH)_[...]
@@ -293,20 +325,22 @@ compiler1:  jvmg1 product1
 
 core: jvmgcore productcore
 
+zero: jvmgzero productzero
+
 clean_docs:
 	rm -rf $(SUBDIR_DOCS)
 
-clean_compiler1 clean_compiler2 clean_core:
+clean_compiler1 clean_compiler2 clean_core clean_zero:
 	rm -rf $(OSNAME)_$(BUILDARCH)_$(subst clean_,,$@)
 
-clean:  clean_compiler2 clean_compiler1 clean_core clean_docs
+clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_docs
 
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/cscope.make
 
 #-------------------------------------------------------------------------------
 
-.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE)
-.PHONY: tree tree1 treecore
-.PHONY: all compiler1 compiler2 core
-.PHONY: clean clean_compiler1 clean_compiler2 clean_core docs clean_docs
+.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE) $(TARGETS_ZERO)
+.PHONY: tree tree1 treecore treezero
+.PHONY: all compiler1 compiler2 core zero
+.PHONY: clean clean_compiler1 clean_compiler2 clean_core clean_zero docs clean_docs
 .PHONY: checks check_os_version check_j2se_version

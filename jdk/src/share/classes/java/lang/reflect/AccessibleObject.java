@@ -44,6 +44,8 @@ import java.lang.annotation.Annotation;
  * as Java Object Serialization or other persistence mechanisms, to
  * manipulate objects in a manner that would normally be prohibited.
  *
+ * <p>By default, a reflected object is <em>not</em> accessible.
+ *
  * @see Field
  * @see Method
  * @see Constructor

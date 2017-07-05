@@ -64,6 +64,8 @@ public final class OCSP {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
+    private static final int CONNECT_TIMEOUT = 15000; // 15 seconds
+
     private OCSP() {}
 
     /**
@@ -176,6 +178,8 @@ public final class OCSP {
                 debug.println("connecting to OCSP service at: " + url);
             }
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
+            con.setConnectTimeout(CONNECT_TIMEOUT);
+            con.setReadTimeout(CONNECT_TIMEOUT);
             con.setDoOutput(true);
             con.setDoInput(true);
             con.setRequestMethod("POST");
