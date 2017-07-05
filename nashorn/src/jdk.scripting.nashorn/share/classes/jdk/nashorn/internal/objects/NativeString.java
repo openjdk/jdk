@@ -58,10 +58,10 @@ import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.OptimisticBuiltins;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
@@ -743,8 +743,8 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
             nativeRegExp = NativeRegExp.flatRegExp(JSType.toString(string));
         }
 
-        if (replacement instanceof ScriptFunction) {
-            return nativeRegExp.replace(str, "", (ScriptFunction)replacement);
+        if (Bootstrap.isCallable(replacement)) {
+            return nativeRegExp.replace(str, "", replacement);
         }
 
         return nativeRegExp.replace(str, JSType.toString(replacement), null);

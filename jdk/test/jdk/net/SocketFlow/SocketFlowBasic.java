@@ -25,6 +25,7 @@
  * @test
  * @bug 8765432
  * @summary Basic test for SocketFlow API
+ * @modules jdk.net
  * @run testng SocketFlowBasic
  */
 
