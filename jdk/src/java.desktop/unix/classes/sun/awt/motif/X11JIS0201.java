@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 import sun.nio.cs.*;
-import sun.nio.cs.ext.JIS_X_0201;
+import sun.nio.cs.ext.*;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class X11JIS0201 extends Charset {

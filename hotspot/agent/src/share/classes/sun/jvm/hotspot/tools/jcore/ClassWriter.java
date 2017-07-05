@@ -423,12 +423,22 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected void writeMethods() throws IOException {
         MethodArray methods = klass.getMethods();
-        final int len = methods.length();
+        ArrayList<Method> valid_methods = new ArrayList<Method>();
+        for (int i = 0; i < methods.length(); i++) {
+            Method m = methods.at(i);
+            long accessFlags = m.getAccessFlags();
+            // overpass method
+            if (accessFlags == (JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE)) {
+                continue;
+            }
+            valid_methods.add(m);
+        }
+        final int len = valid_methods.size();
         // write number of methods
         dos.writeShort((short) len);
         if (DEBUG) debugMessage("number of methods = " + len);
         for (int m = 0; m < len; m++) {
-            writeMethod(methods.at(m));
+            writeMethod(valid_methods.get(m));
         }
     }
 

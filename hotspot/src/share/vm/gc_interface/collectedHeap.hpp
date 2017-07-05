@@ -175,7 +175,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Fill with a single object (either an int array or a java.lang.Object).
   static inline void fill_with_object_impl(HeapWord* start, size_t words, bool zap = true);
 
-  virtual void trace_heap(GCWhen::Type when, GCTracer* tracer);
+  virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
   virtual void check_for_bad_heap_word_value(HeapWord* addr, size_t size)
@@ -606,8 +606,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
 
-  void trace_heap_before_gc(GCTracer* gc_tracer);
-  void trace_heap_after_gc(GCTracer* gc_tracer);
+  void trace_heap_before_gc(const GCTracer* gc_tracer);
+  void trace_heap_after_gc(const GCTracer* gc_tracer);
 
   // Heap verification
   virtual void verify(bool silent, VerifyOption option) = 0;
