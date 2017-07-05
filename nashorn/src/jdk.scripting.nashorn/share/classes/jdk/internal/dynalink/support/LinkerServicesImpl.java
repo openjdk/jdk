@@ -94,8 +94,6 @@ import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
  * Default implementation of the {@link LinkerServices} interface.
- *
- * @author Attila Szegedi
  */
 public class LinkerServicesImpl implements LinkerServices {
 
@@ -129,11 +127,6 @@ public class LinkerServicesImpl implements LinkerServices {
     @Override
     public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
         return typeConverterFactory.asType(handle, fromType);
-    }
-
-    @Override
-    public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
-        return Implementation.asTypeLosslessReturn(this, handle, fromType);
     }
 
     @Override

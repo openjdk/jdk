@@ -90,15 +90,17 @@ package jdk.internal.dynalink.linker;
  * of additional conversions. The static way of selecting the "most specific" method will fail more often, because there
  * will be multiple maximally specific method with unrelated signatures. In these cases, language runtimes can be asked
  * to resolve the ambiguity by expressing preferences for one conversion over the other.
- * @author Attila Szegedi
  */
 public interface ConversionComparator {
     /**
      * Enumeration of possible outcomes of comparing one conversion to another.
      */
     enum Comparison {
+        /** The conversions cannot be compared. **/
         INDETERMINATE,
+        /** The first conversion is better than the second one. **/
         TYPE_1_BETTER,
+        /** The second conversion is better than the first one. **/
         TYPE_2_BETTER,
     }
 

@@ -111,14 +111,13 @@ import jdk.internal.dynalink.support.TypeConverterFactory;
 import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
- * A factory class for creating {@link DynamicLinker}s. The most usual dynamic linker is a linker that is a composition
- * of all {@link GuardingDynamicLinker}s known and pre-created by the caller as well as any
- * {@link AutoDiscovery automatically discovered} guarding linkers and the standard fallback {@link BeansLinker} and a
- * {@link DefaultPrelinkFilter}. See {@link DynamicLinker} documentation for tips on how to use this class.
- *
- * @author Attila Szegedi
+ * A factory class for creating {@link DynamicLinker}s. The usual dynamic linker is a linker composed of all
+ * {@link GuardingDynamicLinker}s known and pre-created by the caller as well as any
+ * {@link AutoDiscovery automatically discovered} guarding linkers and the standard fallback
+ * {@link BeansLinker} and a {@link DefaultPrelinkFilter}. See {@link DynamicLinker} documentation for tips on
+ * how to use this class.
  */
-public class DynamicLinkerFactory {
+public final class DynamicLinkerFactory {
     /**
      * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink threshold}.
      */

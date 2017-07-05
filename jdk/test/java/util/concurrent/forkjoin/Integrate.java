@@ -59,14 +59,15 @@ public final class Integrate {
     static final int DYNAMIC = 0;
     static final int FORK = 1;
 
-    // the function to integrate
-    static double computeFunction(double x)  {
+    /** the function to integrate */
+    static double computeFunction(double x) {
         return (x * x + 1.0) * x;
     }
 
     static final double start = 0.0;
     static final double end = 1536.0;
-    /*
+
+    /**
      * The number of recursive calls for
      * integrate from start to end.
      * (Empirically determined)
@@ -126,7 +127,6 @@ public final class Integrate {
         System.out.println(g);
         g.shutdown();
     }
-
 
     // Sequential version
     static final class SQuad extends RecursiveAction {

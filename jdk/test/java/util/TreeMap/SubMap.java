@@ -40,7 +40,7 @@ public class SubMap {
         boolean exc = false;
         try {
             m2.firstKey();
-        } catch(NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             exc = true;
         }
         if (!exc)
@@ -49,7 +49,7 @@ public class SubMap {
         exc = false;
         try {
             m2.lastKey();
-        } catch(NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             exc = true;
         }
         if (!exc)
@@ -70,7 +70,7 @@ public class SubMap {
         exc = false;
         try {
             s2.first();
-        } catch(NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             exc = true;
         }
         if (!exc)
@@ -79,7 +79,7 @@ public class SubMap {
         exc = false;
         try {
             s2.last();
-        } catch(NoSuchElementException e) {
+        } catch (NoSuchElementException e) {
             exc = true;
         }
         if (!exc)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ import java.util.Objects;
         synchronized (this) {
             if (type instanceof String) {
                 String sig = (String) type;
-                MethodType res = MethodType.fromMethodDescriptorString(sig, getClassLoader());
+                MethodType res = MethodType.fromDescriptor(sig, getClassLoader());
                 type = res;
             } else if (type instanceof Object[]) {
                 Object[] typeInfo = (Object[]) type;
@@ -206,7 +206,7 @@ import java.util.Objects;
         synchronized (this) {
             if (type instanceof String) {
                 String sig = (String) type;
-                MethodType mtype = MethodType.fromMethodDescriptorString("()"+sig, getClassLoader());
+                MethodType mtype = MethodType.fromDescriptor("()"+sig, getClassLoader());
                 Class<?> res = mtype.returnType();
                 type = res;
             }

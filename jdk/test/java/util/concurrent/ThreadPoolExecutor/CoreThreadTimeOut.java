@@ -55,7 +55,7 @@ public class CoreThreadTimeOut {
         return count;
     }
 
-    long millisElapsedSince(long t0) {
+    static long millisElapsedSince(long t0) {
         return (System.nanoTime() - t0) / (1000L * 1000L);
     }
 
