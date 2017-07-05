@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4650679
+ * @bug 4650679 8037360
  * @summary Unit test for socket channels
  * @library ..
  */
@@ -42,9 +42,7 @@ public class Connect {
             test1(echoServer);
         }
         try {
-            TestServers.RefusingServer refusingServer
-                = TestServers.RefusingServer.startNewServer();
-            test1(refusingServer);
+            test1(TestServers.RefusingServer.newRefusingServer());
             throw new Exception("Refused connection throws no exception");
         } catch (ConnectException ce) {
             // Correct result

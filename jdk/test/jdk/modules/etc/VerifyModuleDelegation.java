@@ -26,7 +26,7 @@
  * @summary Verify the defining class loader of each module never delegates
  *          to its child class loader. Also sanity check java.compact2
  *          requires.
- * @run testng VerifyModuleDelegation
+ * @run testng/othervm -Djdk.launcher.addmods=ALL-SYSTEM VerifyModuleDelegation
  */
 
 import java.lang.module.ModuleDescriptor;

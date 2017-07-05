@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,10 +249,10 @@ public class AudioInputStream extends InputStream {
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-
         // make sure we don't read fractions of a frame.
-        if( (len%frameSize) != 0 ) {
-            len -= (len%frameSize);
+        final int reminder = len % frameSize;
+        if (reminder != 0) {
+            len -= reminder;
             if (len == 0) {
                 return 0;
             }
@@ -312,6 +312,10 @@ public class AudioInputStream extends InputStream {
     /**
      * Skips over and discards a specified number of bytes from this audio input
      * stream.
+     * <p>
+     * This method will always skip an integral number of frames. If {@code n}
+     * does not specify an integral number of frames, a maximum of
+     * {@code n - (n % frameSize)} bytes will be skipped.
      *
      * @param  n the requested number of bytes to be skipped
      * @return the actual number of bytes skipped
@@ -321,14 +325,13 @@ public class AudioInputStream extends InputStream {
      */
     @Override
     public long skip(long n) throws IOException {
-        if (n <= 0) {
-            return 0;
-        }
-
         // make sure not to skip fractional frames
         final long reminder = n % frameSize;
         if (reminder != 0) {
             n -= reminder;
+        }
+        if (n <= 0) {
+            return 0;
         }
 
         if (frameLength != AudioSystem.NOT_SPECIFIED) {

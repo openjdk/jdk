@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
+#include "jni.h"
 
 int     DoSplashLoadMemory(void* pdata, int size); /* requires preloading the file */
 int     DoSplashLoadFile(const char* filename);
@@ -30,5 +30,6 @@ void    DoSplashInit(void);
 void    DoSplashClose(void);
 void    DoSplashSetFileJarName(const char* fileName, const char* jarName);
 void    DoSplashSetScaleFactor(float scaleFactor);
-char*   DoSplashGetScaledImageName(const char* jarName, const char* fileName,
-                                    float* scaleFactor);
+jboolean DoSplashGetScaledImageName(const char* jarName, const char* fileName,
+         float* scaleFactor, char *scaleImageName, const size_t scaleImageNameLength);
+int     DoSplashGetScaledImgNameMaxPstfixLen(const char *fileName);

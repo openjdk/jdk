@@ -621,10 +621,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putIntUnaligned:          return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Relaxed, true);
   case vmIntrinsics::_putLongUnaligned:         return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Relaxed, true);
 
-  case vmIntrinsics::_putOrderedObject:         return inline_unsafe_access(!is_native_ptr,  is_store, T_OBJECT,   Release, false);
-  case vmIntrinsics::_putOrderedInt:            return inline_unsafe_access(!is_native_ptr,  is_store, T_INT,      Release, false);
-  case vmIntrinsics::_putOrderedLong:           return inline_unsafe_access(!is_native_ptr,  is_store, T_LONG,     Release, false);
-
   case vmIntrinsics::_getObjectAcquire:         return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,   Acquire, false);
   case vmIntrinsics::_getBooleanAcquire:        return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN,  Acquire, false);
   case vmIntrinsics::_getByteAcquire:           return inline_unsafe_access(!is_native_ptr, !is_store, T_BYTE,     Acquire, false);

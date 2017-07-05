@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,14 @@
 
 package java.awt;
 
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitStrategy;
+import java.awt.desktop.SystemEventListener;
 import java.awt.peer.DesktopPeer;
 import java.io.File;
 import java.io.FilePermission;
@@ -35,12 +43,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import sun.awt.SunToolkit;
+import javax.swing.JMenuBar;
 import sun.security.util.SecurityConstants;
 
 /**
- * The {@code Desktop} class allows a Java application to launch
- * associated applications registered on the native desktop to handle
- * a {@link java.net.URI} or a file.
+ * The {@code Desktop} class allows interact with various desktop capabilities.
  *
  * <p> Supported operations include:
  * <ul>
@@ -58,9 +65,11 @@ import sun.security.util.SecurityConstants;
  * or file. If there is no associated application or the associated
  * application fails to be launched, an exception is thrown.
  *
- * <p> An application is registered to a URI or file type; for
- * example, the {@code "sxi"} file extension is typically registered
- * to StarOffice.  The mechanism of registering, accessing, and
+ * Please see {@link Desktop.Action} for the full list of supported operations
+ * and capabilities.
+ *
+ * <p> An application is registered to a URI or file type.
+ * The mechanism of registering, accessing, and
  * launching the associated application is platform-dependent.
  *
  * <p> Each operation is an action type represented by the {@link
@@ -69,6 +78,8 @@ import sun.security.util.SecurityConstants;
  * <p> Note: when some action is invoked and the associated
  * application is executed, it will be executed on the same system as
  * the one on which the Java application was launched.
+ *
+ * @see Action
  *
  * @since 1.6
  * @author Armin Chen
@@ -106,11 +117,145 @@ public class Desktop {
          * @see Desktop#mail(java.net.URI)
          */
         MAIL,
+
         /**
          * Represents a "browse" action.
          * @see Desktop#browse(java.net.URI)
          */
-        BROWSE
+        BROWSE,
+
+        /**
+         * Represents an AppForegroundListener
+         * @see java.awt.desktop.AppForegroundListener
+         * @since 9
+         */
+        APP_EVENT_FOREGROUND,
+
+        /**
+         * Represents an AppHiddenListener
+         * @see java.awt.desktop.AppHiddenListener
+         * @since 9
+         */
+        APP_EVENT_HIDDEN,
+
+        /**
+         * Represents an AppReopenedListener
+         * @see java.awt.desktop.AppReopenedListener
+         * @since 9
+         */
+        APP_EVENT_REOPENED,
+
+        /**
+         * Represents a ScreenSleepListener
+         * @see java.awt.desktop.ScreenSleepListener
+         * @since 9
+         */
+        APP_EVENT_SCREEN_SLEEP,
+
+        /**
+         * Represents a SystemSleepListener
+         * @see java.awt.desktop.SystemSleepListener
+         * @since 9
+         */
+        APP_EVENT_SYSTEM_SLEEP,
+
+        /**
+         * Represents a UserSessionListener
+         * @see java.awt.desktop.UserSessionListener
+         * @since 9
+         */
+        APP_EVENT_USER_SESSION,
+
+        /**
+         * Represents an AboutHandler
+         * @see #setAboutHandler(java.awt.desktop.AboutHandler)
+         * @since 9
+         */
+        APP_ABOUT,
+
+        /**
+         * Represents a PreferencesHandler
+         * @see #setPreferencesHandler(java.awt.desktop.PreferencesHandler)
+         * @since 9
+         */
+        APP_PREFERENCES,
+
+        /**
+         * Represents an OpenFilesHandler
+         * @see #setOpenFileHandler(java.awt.desktop.OpenFilesHandler)
+         * @since 9
+         */
+        APP_OPEN_FILE,
+
+        /**
+         * Represents a PrintFilesHandler
+         * @see #setPrintFileHandler(java.awt.desktop.PrintFilesHandler)
+         * @since 9
+         */
+        APP_PRINT_FILE,
+
+        /**
+         * Represents an OpenURIHandler
+         * @see #setOpenURIHandler(java.awt.desktop.OpenURIHandler)
+         * @since 9
+         */
+        APP_OPEN_URI,
+
+        /**
+         * Represents a QuitHandler
+         * @see #setQuitHandler(java.awt.desktop.QuitHandler)
+         * @since 9
+         */
+        APP_QUIT_HANDLER,
+
+        /**
+         * Represents a QuitStrategy
+         * @see #setQuitStrategy(java.awt.desktop.QuitStrategy)
+         * @since 9
+         */
+        APP_QUIT_STRATEGY,
+
+        /**
+         * Represents a SuddenTermination
+         * @see #enableSuddenTermination()
+         * @since 9
+         */
+        APP_SUDDEN_TERMINATION,
+
+        /**
+         * Represents a requestForeground
+         * @see #requestForeground(boolean)
+         * @since 9
+         */
+        APP_REQUEST_FOREGROUND,
+
+        /**
+         * Represents a HelpViewer
+         * @see #openHelpViewer()
+         * @since 9
+         */
+        APP_HELP_VIEWER,
+
+        /**
+         * Represents a menu bar
+         * @see #setDefaultMenuBar(javax.swing.JMenuBar)
+         * @since 9
+         */
+        APP_MENU_BAR,
+
+        /**
+         * Represents a browse file directory
+         * @see #browseFileDirectory(java.io.File)
+         * @since 9
+         */
+        BROWSE_FILE_DIR,
+
+        /**
+         * Represents a move to trash
+         * @see #moveToTrash(java.io.File)
+         * @since 9
+         */
+        MOVE_TO_TRASH
     };
 
     private DesktopPeer peer;
@@ -128,10 +273,10 @@ public class Desktop {
 
     /**
      * Returns the {@code Desktop} instance of the current
-     * browser context.  On some platforms the Desktop API may not be
+     * desktop context. On some platforms the Desktop API may not be
      * supported; use the {@link #isDesktopSupported} method to
      * determine if the current desktop is supported.
-     * @return the Desktop instance of the current browser context
+     * @return the Desktop instance
      * @throws HeadlessException if {@link
      * GraphicsEnvironment#isHeadless()} returns {@code true}
      * @throws UnsupportedOperationException if this class is not
@@ -208,7 +353,7 @@ public class Desktop {
 
         if (!file.exists()) {
             throw new IllegalArgumentException("The file: "
-                                               + file.getPath() + " doesn't exist.");
+                    + file.getPath() + " doesn't exist.");
         }
 
         file.canRead();
@@ -224,7 +369,7 @@ public class Desktop {
     private void checkActionSupport(Action actionType){
         if (!isSupported(actionType)) {
             throw new UnsupportedOperationException("The " + actionType.name()
-                                                    + " action is not supported on the current platform!");
+                    + " action is not supported on the current platform!");
         }
     }
 
@@ -238,7 +383,7 @@ public class Desktop {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new AWTPermission(
-                                   "showWindowWithoutWarningBanner"));
+                    "showWindowWithoutWarningBanner"));
         }
     }
 
@@ -479,7 +624,409 @@ public class Desktop {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new FilePermission("<<ALL FILES>>",
-                                                  SecurityConstants.FILE_EXECUTE_ACTION));
+                    SecurityConstants.FILE_EXECUTE_ACTION));
         }
+    }
+
+    private void checkRead() throws SecurityException {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new FilePermission("<<ALL FILES>>",
+                    SecurityConstants.FILE_READ_ACTION));
+        }
+    }
+
+    private void checkDelete() throws SecurityException {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new FilePermission("<<ALL FILES>>",
+                    SecurityConstants.FILE_DELETE_ACTION));
+        }
+    }
+
+    private void checkQuitPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkExit(0);
+        }
+    }
+
+    /**
+     * Adds sub-types of {@link SystemEventListener} to listen for notifications
+     * from the native system.
+     *
+     * Has no effect if SystemEventListener's sub-type is unsupported on the current
+     * platform.
+     *
+     * @param listener listener
+     *
+     * @throws SecurityException if a security manager exists and it
+     * denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission
+     *
+     * @see java.awt.desktop.AppForegroundListener
+     * @see java.awt.desktop.AppHiddenListener
+     * @see java.awt.desktop.AppReopenedListener
+     * @see java.awt.desktop.ScreenSleepListener
+     * @see java.awt.desktop.SystemSleepListener
+     * @see java.awt.desktop.UserSessionListener
+     * @since 9
+     */
+    public void addAppEventListener(final SystemEventListener listener) {
+        checkAWTPermission();
+        peer.addAppEventListener(listener);
+    }
+
+    /**
+     * Removes sub-types of {@link SystemEventListener} to listen for notifications
+     * from the native system.
+     *
+     * Has no effect if SystemEventListener's sub-type is unsupported on  the current
+     * platform.
+     *
+     * @param listener listener
+     *
+     * @throws SecurityException if a security manager exists and it
+     * denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission
+     *
+     * @see java.awt.desktop.AppForegroundListener
+     * @see java.awt.desktop.AppHiddenListener
+     * @see java.awt.desktop.AppReopenedListener
+     * @see java.awt.desktop.ScreenSleepListener
+     * @see java.awt.desktop.SystemSleepListener
+     * @see java.awt.desktop.UserSessionListener
+     * @since 9
+     */
+    public void removeAppEventListener(final SystemEventListener listener) {
+        checkAWTPermission();
+        peer.removeAppEventListener(listener);
+    }
+
+    /**
+     * Installs a handler to show a custom About window for your application.
+     * <p>
+     * Setting the {@link java.awt.desktop.AboutHandler} to {@code null} reverts it to the
+     * default behavior.
+     *
+     * @param aboutHandler the handler to respond to the
+     * {@link java.awt.desktop.AboutHandler#handleAbout} )} message
+     *
+     * @throws SecurityException if a security manager exists and it
+     * denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_ABOUT} action
+     *
+     * @since 9
+     */
+    public void setAboutHandler(final AboutHandler aboutHandler) {
+        checkAWTPermission();
+        checkActionSupport(Action.APP_ABOUT);
+        peer.setAboutHandler(aboutHandler);
+    }
+
+    /**
+     * Installs a handler to show a custom Preferences window for your
+     * application.
+     * <p>
+     * Setting the {@link PreferencesHandler} to {@code null} reverts it to
+     * the default behavior
+     *
+     * @param preferencesHandler the handler to respond to the
+     * {@link PreferencesHandler#handlePreferences(PreferencesEvent)}
+     *
+     * @throws SecurityException if a security manager exists and it
+     * denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_PREFERENCES} action
+     * @since 9
+     */
+    public void setPreferencesHandler(final PreferencesHandler preferencesHandler) {
+        checkAWTPermission();
+        checkActionSupport(Action.APP_PREFERENCES);
+        peer.setPreferencesHandler(preferencesHandler);
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * open a list of files.
+     *
+     * @implNote Please note that for Mac OS, notifications
+     * are only sent if the Java app is a bundled application,
+     * with a {@code CFBundleDocumentTypes} array present in its
+     * Info.plist. See the
+     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
+     * Info.plist Key Reference</a> for more information about adding a
+     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     *
+     * @param openFileHandler handler
+     *
+     * @throws SecurityException if a security manager exists and its
+     * {@link java.lang.SecurityManager#checkRead(java.lang.String)}
+     * method denies read access to the files, or it denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission, or the calling thread is not allowed to create a
+     * subprocess
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_OPEN_FILE} action
+     * @since 9
+     */
+    public void setOpenFileHandler(final OpenFilesHandler openFileHandler) {
+        checkAWTPermission();
+        checkExec();
+        checkRead();
+        checkActionSupport(Action.APP_OPEN_FILE);
+        peer.setOpenFileHandler(openFileHandler);
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * print a list of files.
+     *
+     * @implNote Please note that for Mac OS, notifications
+     * are only sent if the Java app is a bundled application,
+     * with a {@code CFBundleDocumentTypes} array present in its
+     * Info.plist. See the
+     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
+     * Info.plist Key Reference</a> for more information about adding a
+     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     *
+     * @param printFileHandler handler
+     * @throws SecurityException if a security manager exists and its
+     * {@link java.lang.SecurityManager#checkPrintJobAccess()} method denies
+     * the permission to print.
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_PRINT_FILE} action
+     * @since 9
+     */
+    public void setPrintFileHandler(final PrintFilesHandler printFileHandler) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPrintJobAccess();
+        }
+        checkActionSupport(Action.APP_PRINT_FILE);
+        peer.setPrintFileHandler(printFileHandler);
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * open a URL.
+     *
+     * Setting the handler to {@code null} causes all
+     * {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be
+     * enqueued until another handler is set.
+     *
+     * @implNote Please note that for Mac OS, notifications
+     * are only sent if the Java app is a bundled application,
+     * with a {@code CFBundleDocumentTypes} array present in its
+     * Info.plist. See the
+     * <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">
+     * Info.plist Key Reference</a> for more information about adding a
+     * {@code CFBundleDocumentTypes} key to your app's Info.plist.
+     *
+     * @param openURIHandler handler
+     *
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * permission, or the calling thread is not allowed to create a
+     * subprocess
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_OPEN_URI} action
+     * @since 9
+     */
+    public void setOpenURIHandler(final OpenURIHandler openURIHandler) {
+        checkAWTPermission();
+        checkExec();
+        checkActionSupport(Action.APP_OPEN_URI);
+        peer.setOpenURIHandler(openURIHandler);
+    }
+
+    /**
+     * Installs the handler which determines if the application should quit. The
+     * handler is passed a one-shot {@link java.awt.desktop.QuitResponse} which can cancel or
+     * proceed with the quit. Setting the handler to {@code null} causes
+     * all quit requests to directly perform the default {@link QuitStrategy}.
+     *
+     * @param quitHandler the handler that is called when the application is
+     * asked to quit
+     *
+     * @throws SecurityException if a security manager exists and it
+     * will not allow the caller to invoke {@code System.exit}
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_QUIT_HANDLER} action
+     * @since 9
+     */
+    public void setQuitHandler(final QuitHandler quitHandler) {
+        checkQuitPermission();
+        checkActionSupport(Action.APP_QUIT_HANDLER);
+        peer.setQuitHandler(quitHandler);
+    }
+
+    /**
+     * Sets the default strategy used to quit this application. The default is
+     * calling SYSTEM_EXIT_0.
+     *
+     * @param strategy the way this application should be shutdown
+     *
+     * @throws SecurityException if a security manager exists and it
+     * will not allow the caller to invoke {@code System.exit}
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_QUIT_STRATEGY} action
+     * @see QuitStrategy
+     * @since 9
+     */
+    public void setQuitStrategy(final QuitStrategy strategy) {
+        checkQuitPermission();
+        checkActionSupport(Action.APP_QUIT_STRATEGY);
+        peer.setQuitStrategy(strategy);
+    }
+
+    /**
+     * Enables this application to be suddenly terminated.
+     *
+     * Call this method to indicate your application's state is saved, and
+     * requires no notification to be terminated. Letting your application
+     * remain terminatable improves the user experience by avoiding re-paging in
+     * your application when it's asked to quit.
+     *
+     * <b>Note: enabling sudden termination will allow your application to be
+     * quit without notifying your QuitHandler, or running any shutdown
+     * hooks.</b>
+     * E.g. user-initiated Cmd-Q, logout, restart, or shutdown requests will
+     * effectively "kill -KILL" your application.
+     *
+     * @throws SecurityException if a security manager exists and it
+     * will not allow the caller to invoke {@code System.exit}
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_SUDDEN_TERMINATION} action
+     * @see #disableSuddenTermination()
+     * @since 9
+     */
+    public void enableSuddenTermination() {
+        checkQuitPermission();
+        checkActionSupport(Action.APP_SUDDEN_TERMINATION);
+        peer.enableSuddenTermination();
+    }
+
+    /**
+     * Prevents this application from being suddenly terminated.
+     *
+     * Call this method to indicate that your application has unsaved state, and
+     * may not be terminated without notification.
+     *
+     * @throws SecurityException if a security manager exists and it
+     * will not allow the caller to invoke {@code System.exit}
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_SUDDEN_TERMINATION} action
+     * @see #enableSuddenTermination()
+     * @since 9
+     */
+    public void disableSuddenTermination() {
+        checkQuitPermission();
+        checkActionSupport(Action.APP_SUDDEN_TERMINATION);
+        peer.disableSuddenTermination();
+    }
+
+    /**
+     * Requests this application to move to the foreground.
+     *
+     * @param allWindows if all windows of this application should be moved to
+     * the foreground, or only the foremost one
+     * @throws SecurityException if a security manager exists and it denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_REQUEST_FOREGROUND} action
+     * @since 9
+     */
+    public void requestForeground(final boolean allWindows) {
+        checkAWTPermission();
+        checkActionSupport(Action.APP_REQUEST_FOREGROUND);
+        peer.requestForeground(allWindows);
+    }
+
+    /**
+     * Opens the native help viewer application.
+     *
+     * @implNote Please note that for Mac OS, it opens the native help viewer
+     * application if a Help Book has been added to the application bundler
+     * and registered in the Info.plist with CFBundleHelpBookFolder
+     *
+     * @throws SecurityException if a security manager exists and it denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_HELP_VIEWER} action
+     * @since 9
+     */
+    public void openHelpViewer() {
+        checkAWTPermission();
+        checkActionSupport(Action.APP_HELP_VIEWER);
+        peer.openHelpViewer();
+    }
+
+    /**
+     * Sets the default menu bar to use when there are no active frames.
+     *
+     * @implNote Aqua Look and Feel should be active to support this on Mac OS.
+     *
+     * @param menuBar to use when no other frames are active
+     * @throws SecurityException if a security manager exists and it denies the
+     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * @throws UnsupportedOperationException if the current platform
+     * does not support the {@link Desktop.Action#APP_MENU_BAR} action
+     * @since 9
+     */
+    public void setDefaultMenuBar(final JMenuBar menuBar) {
+        checkAWTPermission();
+        checkActionSupport(Action.APP_MENU_BAR);
+        peer.setDefaultMenuBar(menuBar);
+    }
+
+    /**
+     * Opens a folder containing the {@code file} and selects it
+     * in a default system file manager.
+     * @param file the file
+     * @throws SecurityException If a security manager exists and its
+     *         {@link SecurityManager#checkRead(java.lang.String)} method
+     *         denies read access to the file
+     * @throws UnsupportedOperationException if the current platform
+     *         does not support the {@link Desktop.Action#BROWSE_FILE_DIR} action
+     * @throws NullPointerException if {@code file} is {@code null}
+     * @throws IllegalArgumentException if the specified file doesn't
+     * exist
+     * @since 9
+     */
+    public void browseFileDirectory(File file) {
+        checkRead();
+        checkActionSupport(Action.BROWSE_FILE_DIR);
+        checkFileValidation(file);
+        peer.browseFileDirectory(file);
+    }
+
+    /**
+     * Moves the specified file to the trash.
+     *
+     * @param file the file
+     * @return returns true if successfully moved the file to the trash.
+     * @throws SecurityException If a security manager exists and its
+     *         {@link SecurityManager#checkWrite(java.lang.String)} method
+     *         denies write access to the file
+     * @throws UnsupportedOperationException if the current platform
+     *         does not support the {@link Desktop.Action#MOVE_TO_TRASH} action
+     * @throws NullPointerException if {@code file} is {@code null}
+     * @throws IllegalArgumentException if the specified file doesn't
+     * exist
+     *
+     * @since 9
+     */
+    public boolean moveToTrash(final File file) {
+        checkDelete();
+        checkActionSupport(Action.MOVE_TO_TRASH);
+        checkFileValidation(file);
+        return peer.moveToTrash(file);
     }
 }

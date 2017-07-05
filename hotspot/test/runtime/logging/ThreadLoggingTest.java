@@ -27,7 +27,7 @@
  * @bug 8149036 8150619
  * @summary os+thread output should contain logging calls for thread start stop attaches detaches
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver ThreadLoggingTest

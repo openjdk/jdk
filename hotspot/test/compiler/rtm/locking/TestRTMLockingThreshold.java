@@ -28,7 +28,7 @@
  * @summary Verify that RTMLockingThreshold affects rtm state transition
  *          ProfileRTM => UseRTM.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMLockingThreshold
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

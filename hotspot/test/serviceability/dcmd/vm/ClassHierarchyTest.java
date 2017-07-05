@@ -25,7 +25,7 @@
  * @test
  * @summary Test of diagnostic command VM.class_hierarchy
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

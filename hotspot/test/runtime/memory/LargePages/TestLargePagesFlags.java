@@ -24,7 +24,7 @@
 /* @test TestLargePagesFlags
  * @summary Tests how large pages are choosen depending on the given large pages flag combinations.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestLargePagesFlags
  */

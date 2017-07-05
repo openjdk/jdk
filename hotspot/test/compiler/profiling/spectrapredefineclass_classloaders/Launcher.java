@@ -27,7 +27,7 @@ import jdk.test.lib.*;
  * @test
  * @bug 8040237
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
  * @build Agent Test A B

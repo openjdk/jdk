@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,46 @@
 
 package com.apple.eawt;
 
-import java.awt.*;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.desktop.AboutEvent;
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.AppForegroundEvent;
+import java.awt.desktop.AppForegroundListener;
+import java.awt.desktop.AppHiddenEvent;
+import java.awt.desktop.AppHiddenListener;
+import java.awt.desktop.AppReopenedEvent;
+import java.awt.desktop.AppReopenedListener;
+import java.awt.desktop.OpenFilesEvent;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIEvent;
+import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesEvent;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesEvent;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitEvent;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitStrategy;
+import java.awt.desktop.ScreenSleepEvent;
+import java.awt.desktop.ScreenSleepListener;
+import java.awt.desktop.SystemEventListener;
+import java.awt.desktop.SystemSleepEvent;
+import java.awt.desktop.SystemSleepListener;
+import java.awt.desktop.UserSessionEvent;
+import java.awt.desktop.UserSessionEvent.Reason;
+import java.awt.desktop.UserSessionListener;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.net.*;
-import java.util.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
-
-import com.apple.eawt.AppEvent.*;
 
 class _AppEventHandler {
     private static final int NOTIFY_ABOUT = 1;
@@ -84,9 +114,7 @@ class _AppEventHandler {
     final _ScreenSleepDispatcher screenSleepDispatcher = new _ScreenSleepDispatcher();
     final _SystemSleepDispatcher systemSleepDispatcher = new _SystemSleepDispatcher();
 
-    final _AppEventLegacyHandler legacyHandler = new _AppEventLegacyHandler(this);
-
-    QuitStrategy defaultQuitAction = QuitStrategy.SYSTEM_EXIT_0;
+    QuitStrategy defaultQuitAction = QuitStrategy.NORMAL_EXIT;
 
     _AppEventHandler() {
         final String strategyProp = System.getProperty("apple.eawt.quitStrategy");
@@ -94,15 +122,16 @@ class _AppEventHandler {
 
         if ("CLOSE_ALL_WINDOWS".equals(strategyProp)) {
             setDefaultQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
-        } else if ("SYSTEM_EXIT_O".equals(strategyProp)) {
-            setDefaultQuitStrategy(QuitStrategy.SYSTEM_EXIT_0);
+        } else if ("SYSTEM_EXIT_O".equals(strategyProp)
+                || "NORMAL_EXIT".equals(strategyProp)) {
+            setDefaultQuitStrategy(QuitStrategy.NORMAL_EXIT);
         } else {
             System.err.println("unrecognized apple.eawt.quitStrategy: " + strategyProp);
         }
     }
 
-    void addListener(final AppEventListener listener) {
-        if (listener instanceof AppReOpenedListener) reOpenAppDispatcher.addListener((AppReOpenedListener)listener);
+    void addListener(final SystemEventListener listener) {
+        if (listener instanceof AppReopenedListener) reOpenAppDispatcher.addListener((AppReopenedListener)listener);
         if (listener instanceof AppForegroundListener) foregroundAppDispatcher.addListener((AppForegroundListener)listener);
         if (listener instanceof AppHiddenListener) hiddenAppDispatcher.addListener((AppHiddenListener)listener);
         if (listener instanceof UserSessionListener) userSessionDispatcher.addListener((UserSessionListener)listener);
@@ -110,8 +139,8 @@ class _AppEventHandler {
         if (listener instanceof SystemSleepListener) systemSleepDispatcher.addListener((SystemSleepListener)listener);
     }
 
-    void removeListener(final AppEventListener listener) {
-        if (listener instanceof AppReOpenedListener) reOpenAppDispatcher.removeListener((AppReOpenedListener)listener);
+    void removeListener(final SystemEventListener listener) {
+        if (listener instanceof AppReopenedListener) reOpenAppDispatcher.removeListener((AppReopenedListener)listener);
         if (listener instanceof AppForegroundListener) foregroundAppDispatcher.removeListener((AppForegroundListener)listener);
         if (listener instanceof AppHiddenListener) hiddenAppDispatcher.removeListener((AppHiddenListener)listener);
         if (listener instanceof UserSessionListener) userSessionDispatcher.removeListener((UserSessionListener)listener);
@@ -127,10 +156,10 @@ class _AppEventHandler {
         this.defaultQuitAction = defaultQuitAction;
     }
 
-    QuitResponse currentQuitResponse;
-    synchronized QuitResponse obtainQuitResponse() {
+    MacQuitResponse currentQuitResponse;
+    synchronized MacQuitResponse obtainQuitResponse() {
         if (currentQuitResponse != null) return currentQuitResponse;
-        return currentQuitResponse = new QuitResponse(this);
+        return currentQuitResponse = new MacQuitResponse(this);
     }
 
     synchronized void cancelQuit() {
@@ -142,7 +171,7 @@ class _AppEventHandler {
         currentQuitResponse = null;
 
         try {
-            if (defaultQuitAction == QuitStrategy.SYSTEM_EXIT_0) System.exit(0);
+            if (defaultQuitAction == QuitStrategy.NORMAL_EXIT) System.exit(0);
 
             if (defaultQuitAction != QuitStrategy.CLOSE_ALL_WINDOWS) {
                 throw new RuntimeException("Unknown quit action");
@@ -270,10 +299,10 @@ class _AppEventHandler {
         }
     }
 
-    class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReOpenedListener> {
-        void performOnListener(AppReOpenedListener listener, final _NativeEvent event) {
-            final AppReOpenedEvent e = new AppReOpenedEvent();
-            listener.appReOpened(e);
+    class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
+        void performOnListener(AppReopenedListener listener, final _NativeEvent event) {
+            final AppReopenedEvent e = new AppReopenedEvent();
+            listener.appReopened(e);
         }
     }
 
@@ -302,7 +331,9 @@ class _AppEventHandler {
     }
 
     class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
-        UserSessionEvent createEvent(final boolean isTrue) { return new UserSessionEvent(); }
+        UserSessionEvent createEvent(final boolean isTrue) {
+            return new UserSessionEvent(Reason.UNSPECIFIED);
+        }
 
         void performFalseEventOn(final UserSessionListener listener, final UserSessionEvent e) {
             listener.userSessionDeactivated(e);
@@ -391,7 +422,7 @@ class _AppEventHandler {
         }
 
         void performUsing(final QuitHandler handler, final _NativeEvent event) {
-            final QuitResponse response = obtainQuitResponse(); // obtains the "current" quit response
+            final MacQuitResponse response = obtainQuitResponse(); // obtains the "current" quit response
             handler.handleQuitRequestWith(new QuitEvent(), response);
         }
     }
@@ -524,9 +555,6 @@ class _AppEventHandler {
 
             setHandlerContext(AppContext.getAppContext());
 
-            // if a new handler is installed, block addition of legacy ApplicationListeners
-            if (handler == legacyHandler) return;
-            legacyHandler.blockLegacyAPI();
         }
 
         void performDefaultAction(final _NativeEvent event) { } // by default, do nothing
@@ -574,10 +602,6 @@ class _AppEventHandler {
                     }
                 }
             }
-
-            // if a new handler is installed, block addition of legacy ApplicationListeners
-            if (handler == legacyHandler) return;
-            legacyHandler.blockLegacyAPI();
         }
     }
 }

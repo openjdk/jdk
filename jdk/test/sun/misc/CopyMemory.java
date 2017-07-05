@@ -24,7 +24,8 @@
 /* @test
  * @bug 6565543
  * @summary Minimal test for unsafe.copyMemory() and unsafe.setMemory()
- * @modules java.base/sun.nio.ch java.base/sun.misc
+ * @modules java.base/sun.nio.ch
+ *          jdk.unsupported
  * @key randomness
  */
 

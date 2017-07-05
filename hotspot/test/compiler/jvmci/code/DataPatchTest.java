@@ -40,6 +40,8 @@ package compiler.jvmci.code;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.hotspot.HotSpotConstant;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.hotspot.HotSpotSymbol;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
@@ -152,6 +154,35 @@ public class DataPatchTest extends CodeInstallationTest {
             Register narrowKlass = asm.emitLoadNarrowPointer(ref);
             Register klass = asm.emitUncompressPointer(narrowKlass, HotSpotVMConfig.config().narrowKlassBase, HotSpotVMConfig.config().narrowKlassShift);
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);
+            asm.emitPointerRet(ret);
+        });
+    }
+
+
+    public static long getConstSymbol(HotSpotMetaAccessProvider meta) {
+        HotSpotSymbol symbol = meta.lookupSymbol("java/lang/Object");
+        return symbol.getMetaspacePointer();
+    }
+
+    private void testSymbol(TestCompiler compiler) {
+        test(compiler, getMethod("getConstSymbol", HotSpotMetaAccessProvider.class), (HotSpotMetaAccessProvider) metaAccess);
+    }
+
+    @Test
+    public void testInlineSymbol() {
+        testSymbol(asm -> {
+            HotSpotSymbol symbol = ((HotSpotMetaAccessProvider) metaAccess).lookupSymbol("java/lang/Object");
+            Register ret = asm.emitLoadPointer((HotSpotConstant) symbol.asConstant());
+            asm.emitPointerRet(ret);
+        });
+    }
+
+    @Test
+    public void testSymbolInDataSection() {
+        testSymbol(asm -> {
+            HotSpotSymbol symbol = ((HotSpotMetaAccessProvider) metaAccess).lookupSymbol("java/lang/Object");
+            DataSectionReference ref = asm.emitDataItem((HotSpotConstant) symbol.asConstant());
+            Register ret = asm.emitLoadPointer(ref);
             asm.emitPointerRet(ret);
         });
     }

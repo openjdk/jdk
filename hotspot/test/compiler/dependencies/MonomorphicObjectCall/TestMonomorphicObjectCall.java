@@ -34,7 +34,7 @@ import jdk.test.lib.*;
  * @bug 8050079
  * @summary Compiles a monomorphic call to finalizeObject() on a modified java.lang.Object to test C1 CHA.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  *          java.base/jdk.internal
  * @ignore 8132924

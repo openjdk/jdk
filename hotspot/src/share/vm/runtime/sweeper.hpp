@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ class WhiteBox;
 //     and sweep_code_cache() cannot execute at the same time.
 //     To reclaim memory, nmethods are first marked as 'not-entrant'. Methods can
 //     be made not-entrant by (i) the sweeper, (ii) deoptimization, (iii) dependency
-//     invalidation, and (iv) being replaced be a different method version (tiered
-//     compilation). Not-entrant nmethod cannot be called by Java threads, but they
-//     can still be active on the stack. To ensure that active nmethod are not reclaimed,
+//     invalidation, and (iv) being replaced by a different method version (tiered
+//     compilation). Not-entrant nmethods cannot be called by Java threads, but they
+//     can still be active on the stack. To ensure that active nmethods are not reclaimed,
 //     we have to wait until the next marking phase has completed. If a not-entrant
 //     nmethod was NOT marked as active, it can be converted to 'zombie' state. To safely
-//     remove the nmethod, all inline caches (IC) that point to the the nmethod must be
+//     remove the nmethod, all inline caches (IC) that point to the nmethod must be
 //     cleared. After that, the nmethod can be evicted from the code cache. Each nmethod's
 //     state change happens during separate sweeps. It may take at least 3 sweeps before an
 //     nmethod's space is freed.
@@ -60,7 +60,6 @@ class NMethodSweeper : public AllStatic {
   enum MethodStateChange {
     None,
     MadeZombie,
-    MarkedForReclamation,
     Flushed
   };
   static long      _traversals;                   // Stack scan count, also sweep ID.
@@ -76,7 +75,6 @@ class NMethodSweeper : public AllStatic {
   static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
                                                   //   1) alive       -> not_entrant
                                                   //   2) not_entrant -> zombie
-                                                  //   3) zombie      -> marked_for_reclamation
   // Stat counters
   static long      _total_nof_methods_reclaimed;    // Accumulated nof methods flushed
   static long      _total_nof_c2_methods_reclaimed; // Accumulated nof C2-compiled methods flushed

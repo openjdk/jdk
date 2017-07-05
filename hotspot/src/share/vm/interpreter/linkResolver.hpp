@@ -69,6 +69,9 @@ class CallInfo : public StackObj {
                    int vtable_index, TRAPS);
   void set_handle(const methodHandle& resolved_method,
                   Handle resolved_appendix, Handle resolved_method_type, TRAPS);
+  void set_handle(KlassHandle resolved_klass,
+                  const methodHandle& resolved_method,
+                  Handle resolved_appendix, Handle resolved_method_type, TRAPS);
   void set_common(KlassHandle resolved_klass, KlassHandle selected_klass,
                   const methodHandle& resolved_method,
                   const methodHandle& selected_method,

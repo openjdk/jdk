@@ -770,6 +770,10 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
                                            AwtPrintControl::getMinPageID);
     jint maxPage = env->CallIntMethod(printCtrl,
                                       AwtPrintControl::getMaxPageID);
+
+    jint selectType = env->CallIntMethod(printCtrl,
+                                         AwtPrintControl::getSelectID);
+
     pd.nMaxPage = (maxPage <= (jint)((WORD)-1)) ? (WORD)maxPage : (WORD)-1;
     // In the event that the application displays the dialog before
     // installing a Printable, but sets a page range, then max page will be 1
@@ -779,17 +783,18 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
     // So if we detect this fix up such a problem here.
     if (pd.nMinPage > pd.nFromPage) pd.nMinPage = pd.nFromPage;
     if (pd.nMaxPage < pd.nToPage) pd.nMaxPage = pd.nToPage;
-    if (pd.nFromPage > pd.nMinPage || pd.nToPage < pd.nMaxPage) {
-      pd.Flags |= PD_PAGENUMS;
+    if (selectType != 0 && (pd.nFromPage > pd.nMinPage || pd.nToPage < pd.nMaxPage)) {
+        if (selectType == PD_SELECTION) {
+            pd.Flags |= PD_SELECTION;
+        } else {
+            pd.Flags |= PD_PAGENUMS;
+        }
     }
 
     if (env->CallBooleanMethod(printCtrl,
                                AwtPrintControl::getDestID)) {
       pd.Flags |= PD_PRINTTOFILE;
     }
-
-    jint selectType = env->CallIntMethod(printCtrl,
-                                         AwtPrintControl::getSelectID);
 
     // selectType identifies whether No selection (2D) or
     // SunPageSelection (AWT)

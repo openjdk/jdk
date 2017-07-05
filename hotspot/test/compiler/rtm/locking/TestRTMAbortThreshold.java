@@ -28,7 +28,7 @@
  * @summary Verify that RTMAbortThreshold option affects
  *          amount of aborts after which abort ratio is calculated.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMAbortThreshold
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -28,7 +28,7 @@
  *          when sharing mode is ON, and continue w/o sharing if sharing
  *          mode is AUTO.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main ArchiveDoesNotExist
  */

@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8147388
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument
  *          java.management

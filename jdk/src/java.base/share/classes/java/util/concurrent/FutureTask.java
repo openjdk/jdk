@@ -174,7 +174,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     if (t != null)
                         t.interrupt();
                 } finally { // final state
-                    U.putOrderedInt(this, STATE, INTERRUPTED);
+                    U.putIntRelease(this, STATE, INTERRUPTED);
                 }
             }
         } finally {
@@ -230,7 +230,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     protected void set(V v) {
         if (U.compareAndSwapInt(this, STATE, NEW, COMPLETING)) {
             outcome = v;
-            U.putOrderedInt(this, STATE, NORMAL); // final state
+            U.putIntRelease(this, STATE, NORMAL); // final state
             finishCompletion();
         }
     }
@@ -248,7 +248,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     protected void setException(Throwable t) {
         if (U.compareAndSwapInt(this, STATE, NEW, COMPLETING)) {
             outcome = t;
-            U.putOrderedInt(this, STATE, EXCEPTIONAL); // final state
+            U.putIntRelease(this, STATE, EXCEPTIONAL); // final state
             finishCompletion();
         }
     }

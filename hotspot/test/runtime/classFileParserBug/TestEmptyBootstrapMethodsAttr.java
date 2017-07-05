@@ -26,7 +26,7 @@
  * @bug 8041918
  * @library /testlibrary
  * @summary Test empty bootstrap_methods table within BootstrapMethods attribute
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile TestEmptyBootstrapMethodsAttr.java
  * @run main TestEmptyBootstrapMethodsAttr

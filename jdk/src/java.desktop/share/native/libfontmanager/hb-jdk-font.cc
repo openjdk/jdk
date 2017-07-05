@@ -293,7 +293,7 @@ reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
       return NULL;
   }
   length = env->GetArrayLength(tableBytes);
-  buffer = new jbyte[length];
+  buffer = (jbyte *)calloc(length, sizeof(jbyte));
   env->GetByteArrayRegion(tableBytes, 0, length, buffer);
 
   return hb_blob_create((const char *)buffer, length,

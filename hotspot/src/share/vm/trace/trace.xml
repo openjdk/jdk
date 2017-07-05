@@ -550,7 +550,6 @@ Declares a structure type that can be used in other events.
       <value type="INTEGER" field="sweepIndex" label="Sweep Index" relation="SWEEP_ID"/>
       <value type="UINT" field="sweptCount" label="Methods Swept"/>
       <value type="UINT" field="flushedCount" label="Methods Flushed"/>
-      <value type="UINT" field="markedCount" label="Methods Reclaimed"/>
       <value type="UINT" field="zombifiedCount" label="Methods Zombified"/>
     </event>
 
