@@ -181,28 +181,29 @@ class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 void PSRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<ParallelGCThreads; i++) {
+  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
+  for(uint i=0; i < manager->active_workers(); i++) {
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
-  ParallelTaskTerminator terminator(
-                 ParallelScavengeHeap::gc_task_manager()->workers(),
+  ParallelTaskTerminator terminator(manager->active_workers(),
                  (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
-  if (task.marks_oops_alive() && ParallelGCThreads > 1) {
-    for (uint j=0; j<ParallelGCThreads; j++) {
+  if (task.marks_oops_alive() && manager->active_workers() > 1) {
+    for (uint j = 0; j < manager->active_workers(); j++) {
       q->enqueue(new StealTask(&terminator));
     }
   }
-  ParallelScavengeHeap::gc_task_manager()->execute_and_wait(q);
+  manager->execute_and_wait(q);
 }
 
 
 void PSRefProcTaskExecutor::execute(EnqueueTask& task)
 {
   GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<ParallelGCThreads; i++) {
+  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
+  for(uint i=0; i < manager->active_workers(); i++) {
     q->enqueue(new PSRefEnqueueTaskProxy(task, i));
   }
-  ParallelScavengeHeap::gc_task_manager()->execute_and_wait(q);
+  manager->execute_and_wait(q);
 }
 
 // This method contains all heap specific policy for invoking scavenge.
@@ -375,6 +376,14 @@ bool PSScavenge::invoke_no_policy() {
     // Release all previously held resources
     gc_task_manager()->release_all_resources();
 
+    // Set the number of GC threads to be used in this collection
+    gc_task_manager()->set_active_gang();
+    gc_task_manager()->task_idle_workers();
+    // Get the active number of workers here and use that value
+    // throughout the methods.
+    uint active_workers = gc_task_manager()->active_workers();
+    heap->set_par_threads(active_workers);
+
     PSPromotionManager::pre_scavenge();
 
     // We'll use the promotion manager again later.
@@ -385,8 +394,9 @@ bool PSScavenge::invoke_no_policy() {
 
       GCTaskQueue* q = GCTaskQueue::create();
 
-      for(uint i=0; i<ParallelGCThreads; i++) {
-        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i));
+      uint stripe_total = active_workers;
+      for(uint i=0; i < stripe_total; i++) {
+        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
       }
 
       q->enqueue(new SerialOldToYoungRootsTask(perm_gen, perm_top));
@@ -403,10 +413,10 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
       ParallelTaskTerminator terminator(
-                  gc_task_manager()->workers(),
+        active_workers,
                   (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
-      if (ParallelGCThreads>1) {
-        for (uint j=0; j<ParallelGCThreads; j++) {
+      if (active_workers > 1) {
+        for (uint j = 0; j < active_workers; j++) {
           q->enqueue(new StealTask(&terminator));
         }
       }
@@ -419,6 +429,7 @@ bool PSScavenge::invoke_no_policy() {
     // Process reference objects discovered during scavenge
     {
       reference_processor()->setup_policy(false); // not always_clear
+      reference_processor()->set_active_mt_degree(active_workers);
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       if (reference_processor()->processing_is_mt()) {
@@ -622,6 +633,8 @@ bool PSScavenge::invoke_no_policy() {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
+
+    gc_task_manager()->release_idle_workers();
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
@@ -804,6 +817,7 @@ void PSScavenge::initialize() {
 
   // Initialize ref handling object for scavenging.
   MemRegion mr = young_gen->reserved();
+
   _ref_processor =
     new ReferenceProcessor(mr,                         // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing

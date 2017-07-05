@@ -119,6 +119,8 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   } else {
     _noop_null = _oop_null; // Should be initialized
   }
+  _pcmp_neq = NULL; // Should be initialized
+  _pcmp_eq  = NULL;
 }
 
 void ConnectionGraph::add_pointsto_edge(uint from_i, uint to_i) {
@@ -128,6 +130,13 @@ void ConnectionGraph::add_pointsto_edge(uint from_i, uint to_i) {
   assert(f->node_type() != PointsToNode::UnknownType && t->node_type() != PointsToNode::UnknownType, "node types must be set");
   assert(f->node_type() == PointsToNode::LocalVar || f->node_type() == PointsToNode::Field, "invalid source of PointsTo edge");
   assert(t->node_type() == PointsToNode::JavaObject, "invalid destination of PointsTo edge");
+  if (to_i == _phantom_object) { // Quick test for most common object
+    if (f->has_unknown_ptr()) {
+      return;
+    } else {
+      f->set_has_unknown_ptr();
+    }
+  }
   add_edge(f, to_i, PointsToNode::PointsToEdge);
 }
 
@@ -163,6 +172,9 @@ int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
 }
 
 void ConnectionGraph::add_field_edge(uint from_i, uint to_i, int offset) {
+  // Don't add fields to NULL pointer.
+  if (is_null_ptr(from_i))
+    return;
   PointsToNode *f = ptnode_adr(from_i);
   PointsToNode *t = ptnode_adr(to_i);
 
@@ -177,7 +189,7 @@ void ConnectionGraph::add_field_edge(uint from_i, uint to_i, int offset) {
 
 void ConnectionGraph::set_escape_state(uint ni, PointsToNode::EscapeState es) {
   // Don't change non-escaping state of NULL pointer.
-  if (ni == _noop_null || ni == _oop_null)
+  if (is_null_ptr(ni))
     return;
   PointsToNode *npt = ptnode_adr(ni);
   PointsToNode::EscapeState old_es = npt->escape_state();
@@ -309,6 +321,9 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
 
   visited->set(ni);
   PointsToNode *ptn = ptnode_adr(ni);
+  assert(ptn->node_type() == PointsToNode::LocalVar ||
+         ptn->node_type() == PointsToNode::Field, "sanity");
+  assert(ptn->edge_count() != 0, "should have at least phantom_object");
 
   // Mark current edges as visited and move deferred edges to separate array.
   for (uint i = 0; i < ptn->edge_count(); ) {
@@ -329,6 +344,7 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
     uint t = deferred_edges->at(next);
     PointsToNode *ptt = ptnode_adr(t);
     uint e_cnt = ptt->edge_count();
+    assert(e_cnt != 0, "should have at least phantom_object");
     for (uint e = 0; e < e_cnt; e++) {
       uint etgt = ptt->edge_target(e);
       if (visited->test_set(etgt))
@@ -337,16 +353,26 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
       PointsToNode::EdgeType et = ptt->edge_type(e);
       if (et == PointsToNode::PointsToEdge) {
         add_pointsto_edge(ni, etgt);
-        if(etgt == _phantom_object) {
-          // Special case - field set outside (globally escaping).
-          set_escape_state(ni, PointsToNode::GlobalEscape);
-        }
       } else if (et == PointsToNode::DeferredEdge) {
         deferred_edges->append(etgt);
       } else {
         assert(false,"invalid connection graph");
       }
     }
+  }
+  if (ptn->edge_count() == 0) {
+    // No pointsto edges found after deferred edges are removed.
+    // For example, in the next case where call is replaced
+    // with uncommon trap and as result array's load references
+    // itself through deferred edges:
+    //
+    // A a = b[i];
+    // if (c!=null) a = c.foo();
+    // b[i] = a;
+    //
+    // Assume the value was set outside this method and
+    // add edge to phantom object.
+    add_pointsto_edge(ni, _phantom_object);
   }
 }
 
@@ -356,13 +382,25 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
 //  a pointsto edge is added if it is a JavaObject
 
 void ConnectionGraph::add_edge_from_fields(uint adr_i, uint to_i, int offs) {
+  // No fields for NULL pointer.
+  if (is_null_ptr(adr_i)) {
+    return;
+  }
   PointsToNode* an = ptnode_adr(adr_i);
   PointsToNode* to = ptnode_adr(to_i);
   bool deferred = (to->node_type() == PointsToNode::LocalVar);
-
+  bool escaped  = (to_i == _phantom_object) && (offs == Type::OffsetTop);
+  if (escaped) {
+    // Values in fields escaped during call.
+    assert(an->escape_state() >= PointsToNode::ArgEscape, "sanity");
+    offs = Type::OffsetBot;
+  }
   for (uint fe = 0; fe < an->edge_count(); fe++) {
     assert(an->edge_type(fe) == PointsToNode::FieldEdge, "expecting a field edge");
     int fi = an->edge_target(fe);
+    if (escaped) {
+      set_escape_state(fi, PointsToNode::GlobalEscape);
+    }
     PointsToNode* pf = ptnode_adr(fi);
     int po = pf->offset();
     if (po == offs || po == Type::OffsetBot || offs == Type::OffsetBot) {
@@ -377,6 +415,15 @@ void ConnectionGraph::add_edge_from_fields(uint adr_i, uint to_i, int offs) {
 // Add a deferred  edge from node given by "from_i" to any field of adr_i
 // whose offset matches "offset".
 void ConnectionGraph::add_deferred_edge_to_fields(uint from_i, uint adr_i, int offs) {
+  // No fields for NULL pointer.
+  if (is_null_ptr(adr_i)) {
+    return;
+  }
+  if (adr_i == _phantom_object) {
+    // Add only one edge for unknown object.
+    add_pointsto_edge(from_i, _phantom_object);
+    return;
+  }
   PointsToNode* an = ptnode_adr(adr_i);
   bool is_alloc = an->_node->is_Allocate();
   for (uint fe = 0; fe < an->edge_count(); fe++) {
@@ -392,6 +439,13 @@ void ConnectionGraph::add_deferred_edge_to_fields(uint from_i, uint adr_i, int o
       add_deferred_edge(from_i, fi);
     }
   }
+  // Some fields references (AddP) may still be missing
+  // until Connection Graph construction is complete.
+  // For example, loads from RAW pointers with offset 0
+  // which don't have AddP.
+  // A reference to phantom_object will be added if
+  // a field reference is still missing after completing
+  // Connection Graph (see remove_deferred()).
 }
 
 // Helper functions
@@ -1540,8 +1594,8 @@ bool ConnectionGraph::compute_escape() {
 
   GrowableArray<Node*> alloc_worklist;
   GrowableArray<Node*> addp_worklist;
+  GrowableArray<Node*> ptr_cmp_worklist;
   PhaseGVN* igvn = _igvn;
-  bool has_allocations = false;
 
   // Push all useful nodes onto CG list and set their type.
   for( uint next = 0; next < worklist_init.size(); ++next ) {
@@ -1551,11 +1605,8 @@ bool ConnectionGraph::compute_escape() {
     // for an escape status. See process_call_result() below.
     if (n->is_Allocate() || n->is_CallStaticJava() &&
         ptnode_adr(n->_idx)->node_type() == PointsToNode::JavaObject) {
-      has_allocations = true;
-      if (n->is_Allocate())
-        alloc_worklist.append(n);
-    }
-    if(n->is_AddP()) {
+      alloc_worklist.append(n);
+    } else if(n->is_AddP()) {
       // Collect address nodes. Use them during stage 3 below
       // to build initial connection graph field edges.
       addp_worklist.append(n);
@@ -1563,6 +1614,10 @@ bool ConnectionGraph::compute_escape() {
       // Collect all MergeMem nodes to add memory slices for
       // scalar replaceable objects in split_unique_types().
       _mergemem_worklist.append(n->as_MergeMem());
+    } else if (OptimizePtrCompare && n->is_Cmp() &&
+               (n->Opcode() == Op_CmpP || n->Opcode() == Op_CmpN)) {
+      // Compare pointers nodes
+      ptr_cmp_worklist.append(n);
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
@@ -1570,7 +1625,7 @@ bool ConnectionGraph::compute_escape() {
     }
   }
 
-  if (!has_allocations) {
+  if (alloc_worklist.length() == 0) {
     _collecting = false;
     return false; // Nothing to do.
   }
@@ -1588,7 +1643,7 @@ bool ConnectionGraph::compute_escape() {
   for( uint next = 0; next < addp_length; ++next ) {
     Node* n = addp_worklist.at(next);
     Node* base = get_addp_base(n);
-    if (base->is_Proj())
+    if (base->is_Proj() && base->in(0)->is_Call())
       base = base->in(0);
     PointsToNode::NodeType nt = ptnode_adr(base->_idx)->node_type();
     if (nt == PointsToNode::JavaObject) {
@@ -1653,39 +1708,7 @@ bool ConnectionGraph::compute_escape() {
   }
 #undef CG_BUILD_ITER_LIMIT
 
-  Arena* arena = Thread::current()->resource_area();
-  VectorSet visited(arena);
-
-  // 5. Find fields initializing values for not escaped allocations
-  uint alloc_length = alloc_worklist.length();
-  for (uint next = 0; next < alloc_length; ++next) {
-    Node* n = alloc_worklist.at(next);
-    if (ptnode_adr(n->_idx)->escape_state() == PointsToNode::NoEscape) {
-      find_init_values(n, &visited, igvn);
-    }
-  }
-
-  worklist.clear();
-
-  // 6. Remove deferred edges from the graph.
-  uint cg_length = cg_worklist.length();
-  for (uint next = 0; next < cg_length; ++next) {
-    int ni = cg_worklist.at(next);
-    PointsToNode* ptn = ptnode_adr(ni);
-    PointsToNode::NodeType nt = ptn->node_type();
-    if (nt == PointsToNode::LocalVar || nt == PointsToNode::Field) {
-      remove_deferred(ni, &worklist, &visited);
-      Node *n = ptn->_node;
-    }
-  }
-
-  // 7. Adjust escape state of nonescaping objects.
-  for (uint next = 0; next < addp_length; ++next) {
-    Node* n = addp_worklist.at(next);
-    adjust_escape_state(n);
-  }
-
-  // 8. Propagate escape states.
+  // 5. Propagate escaped states.
   worklist.clear();
 
   // mark all nodes reachable from GlobalEscape nodes
@@ -1694,20 +1717,72 @@ bool ConnectionGraph::compute_escape() {
   // mark all nodes reachable from ArgEscape nodes
   bool has_non_escaping_obj = propagate_escape_state(&cg_worklist, &worklist, PointsToNode::ArgEscape);
 
+  Arena* arena = Thread::current()->resource_area();
+  VectorSet visited(arena);
+
+  // 6. Find fields initializing values for not escaped allocations
+  uint alloc_length = alloc_worklist.length();
+  for (uint next = 0; next < alloc_length; ++next) {
+    Node* n = alloc_worklist.at(next);
+    if (ptnode_adr(n->_idx)->escape_state() == PointsToNode::NoEscape) {
+      has_non_escaping_obj = true;
+      if (n->is_Allocate()) {
+        find_init_values(n, &visited, igvn);
+      }
+    }
+  }
+
+  uint cg_length = cg_worklist.length();
+
+  // Skip the rest of code if all objects escaped.
+  if (!has_non_escaping_obj) {
+    cg_length = 0;
+    addp_length = 0;
+  }
+
+  for (uint next = 0; next < cg_length; ++next) {
+    int ni = cg_worklist.at(next);
+    PointsToNode* ptn = ptnode_adr(ni);
+    PointsToNode::NodeType nt = ptn->node_type();
+    if (nt == PointsToNode::LocalVar || nt == PointsToNode::Field) {
+      if (ptn->edge_count() == 0) {
+        // No values were found. Assume the value was set
+        // outside this method - add edge to phantom object.
+        add_pointsto_edge(ni, _phantom_object);
+      }
+    }
+  }
+
+  // 7. Remove deferred edges from the graph.
+  for (uint next = 0; next < cg_length; ++next) {
+    int ni = cg_worklist.at(next);
+    PointsToNode* ptn = ptnode_adr(ni);
+    PointsToNode::NodeType nt = ptn->node_type();
+    if (nt == PointsToNode::LocalVar || nt == PointsToNode::Field) {
+      remove_deferred(ni, &worklist, &visited);
+    }
+  }
+
+  // 8. Adjust escape state of nonescaping objects.
+  for (uint next = 0; next < addp_length; ++next) {
+    Node* n = addp_worklist.at(next);
+    adjust_escape_state(n);
+  }
+
   // push all NoEscape nodes on the worklist
+  worklist.clear();
   for( uint next = 0; next < cg_length; ++next ) {
     int nk = cg_worklist.at(next);
-    if (ptnode_adr(nk)->escape_state() == PointsToNode::NoEscape)
+    if (ptnode_adr(nk)->escape_state() == PointsToNode::NoEscape &&
+        !is_null_ptr(nk))
       worklist.push(nk);
   }
+
   alloc_worklist.clear();
-  // mark all nodes reachable from NoEscape nodes
+  // Propagate scalar_replaceable value.
   while(worklist.length() > 0) {
     uint nk = worklist.pop();
     PointsToNode* ptn = ptnode_adr(nk);
-    if (ptn->node_type() == PointsToNode::JavaObject &&
-        !(nk == _noop_null || nk == _oop_null))
-      has_non_escaping_obj = true; // Non Escape
     Node* n = ptn->_node;
     bool scalar_replaceable = ptn->scalar_replaceable();
     if (n->is_Allocate() && scalar_replaceable) {
@@ -1719,6 +1794,8 @@ bool ConnectionGraph::compute_escape() {
     uint e_cnt = ptn->edge_count();
     for (uint ei = 0; ei < e_cnt; ei++) {
       uint npi = ptn->edge_target(ei);
+      if (is_null_ptr(npi))
+        continue;
       PointsToNode *np = ptnode_adr(npi);
       if (np->escape_state() < PointsToNode::NoEscape) {
         set_escape_state(npi, PointsToNode::NoEscape);
@@ -1727,7 +1804,6 @@ bool ConnectionGraph::compute_escape() {
         }
         worklist.push(npi);
       } else if (np->scalar_replaceable() && !scalar_replaceable) {
-        // Propagate scalar_replaceable value.
         np->set_scalar_replaceable(false);
         worklist.push(npi);
       }
@@ -1737,9 +1813,11 @@ bool ConnectionGraph::compute_escape() {
   _collecting = false;
   assert(C->unique() == nodes_size(), "there should be no new ideal nodes during ConnectionGraph build");
 
-  assert(ptnode_adr(_oop_null)->escape_state() == PointsToNode::NoEscape, "sanity");
+  assert(ptnode_adr(_oop_null)->escape_state() == PointsToNode::NoEscape &&
+         ptnode_adr(_oop_null)->edge_count() == 0, "sanity");
   if (UseCompressedOops) {
-    assert(ptnode_adr(_noop_null)->escape_state() == PointsToNode::NoEscape, "sanity");
+    assert(ptnode_adr(_noop_null)->escape_state() == PointsToNode::NoEscape &&
+           ptnode_adr(_noop_null)->edge_count() == 0, "sanity");
   }
 
   if (EliminateLocks && has_non_escaping_obj) {
@@ -1749,16 +1827,51 @@ bool ConnectionGraph::compute_escape() {
       Node *n = C->macro_node(i);
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
-        if (!alock->is_eliminated()) {
+        if (!alock->is_eliminated() || alock->is_coarsened()) {
           PointsToNode::EscapeState es = escape_state(alock->obj_node());
           assert(es != PointsToNode::UnknownEscape, "should know");
           if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-            // Mark it eliminated
-            alock->set_eliminated();
+            if (!alock->is_eliminated()) {
+              // Mark it eliminated to update any counters
+              alock->set_eliminated();
+            } else {
+              // The lock could be marked eliminated by lock coarsening
+              // code during first IGVN before EA. Clear coarsened flag
+              // to eliminate all associated locks/unlocks and relock
+              // during deoptimization.
+              alock->clear_coarsened();
+            }
           }
         }
       }
     }
+  }
+
+  if (OptimizePtrCompare && has_non_escaping_obj) {
+    // Add ConI(#CC_GT) and ConI(#CC_EQ).
+    _pcmp_neq = igvn->makecon(TypeInt::CC_GT);
+    _pcmp_eq = igvn->makecon(TypeInt::CC_EQ);
+    // Optimize objects compare.
+    while (ptr_cmp_worklist.length() != 0) {
+      Node *n = ptr_cmp_worklist.pop();
+      Node *res = optimize_ptr_compare(n);
+      if (res != NULL) {
+#ifndef PRODUCT
+        if (PrintOptimizePtrCompare) {
+          tty->print_cr("++++ Replaced: %d %s(%d,%d) --> %s", n->_idx, (n->Opcode() == Op_CmpP ? "CmpP" : "CmpN"), n->in(1)->_idx, n->in(2)->_idx, (res == _pcmp_eq ? "EQ" : "NotEQ"));
+          if (Verbose) {
+            n->dump(1);
+          }
+        }
+#endif
+        _igvn->replace_node(n, res);
+      }
+    }
+    // cleanup
+    if (_pcmp_neq->outcnt() == 0)
+      igvn->hash_delete(_pcmp_neq);
+    if (_pcmp_eq->outcnt()  == 0)
+      igvn->hash_delete(_pcmp_eq);
   }
 
 #ifndef PRODUCT
@@ -1821,15 +1934,30 @@ void ConnectionGraph::find_init_values(Node* alloc, VectorSet* visited, PhaseTra
   // Connection Graph does not record a default initialization by NULL
   // captured by Initialize node.
   //
+  uint null_idx = UseCompressedOops ? _noop_null : _oop_null;
   uint ae_cnt = pta->edge_count();
+  bool visited_bottom_offset = false;
   for (uint ei = 0; ei < ae_cnt; ei++) {
     uint nidx = pta->edge_target(ei); // Field (AddP)
     PointsToNode* ptn = ptnode_adr(nidx);
     assert(ptn->_node->is_AddP(), "Should be AddP nodes only");
     int offset = ptn->offset();
-    if (offset != Type::OffsetBot &&
-        offset != oopDesc::klass_offset_in_bytes() &&
-        !visited->test_set(offset)) {
+    if (offset == Type::OffsetBot) {
+      if (!visited_bottom_offset) {
+        visited_bottom_offset = true;
+        // Check only oop fields.
+        const Type* adr_type = ptn->_node->as_AddP()->bottom_type();
+        if (!adr_type->isa_aryptr() ||
+            (adr_type->isa_aryptr()->klass() == NULL) ||
+             adr_type->isa_aryptr()->klass()->is_obj_array_klass()) {
+          // OffsetBot is used to reference array's element,
+          // always add reference to NULL since we don't
+          // known which element is referenced.
+          add_edge_from_fields(alloc->_idx, null_idx, offset);
+        }
+      }
+    } else if (offset != oopDesc::klass_offset_in_bytes() &&
+               !visited->test_set(offset)) {
 
       // Check only oop fields.
       const Type* adr_type = ptn->_node->as_AddP()->bottom_type();
@@ -1904,7 +2032,6 @@ void ConnectionGraph::find_init_values(Node* alloc, VectorSet* visited, PhaseTra
         }
         if (value == NULL || value != ptnode_adr(value->_idx)->_node) {
           // A field's initializing value was not recorded. Add NULL.
-          uint null_idx = UseCompressedOops ? _noop_null : _oop_null;
           add_edge_from_fields(alloc->_idx, null_idx, offset);
         }
       }
@@ -1990,13 +2117,21 @@ bool ConnectionGraph::propagate_escape_state(GrowableArray<int>* cg_worklist,
   }
   // mark all reachable nodes
   while (worklist->length() > 0) {
-    PointsToNode* ptn = ptnode_adr(worklist->pop());
-    if (ptn->node_type() == PointsToNode::JavaObject) {
+    int pt = worklist->pop();
+    PointsToNode* ptn = ptnode_adr(pt);
+    if (ptn->node_type() == PointsToNode::JavaObject &&
+        !is_null_ptr(pt)) {
       has_java_obj = true;
+      if (esc_state > PointsToNode::NoEscape) {
+        // fields values are unknown if object escapes
+        add_edge_from_fields(pt, _phantom_object, Type::OffsetBot);
+      }
     }
     uint e_cnt = ptn->edge_count();
     for (uint ei = 0; ei < e_cnt; ei++) {
       uint npi = ptn->edge_target(ei);
+      if (is_null_ptr(npi))
+        continue;
       PointsToNode *np = ptnode_adr(npi);
       if (np->escape_state() < esc_state) {
         set_escape_state(npi, esc_state);
@@ -2008,8 +2143,100 @@ bool ConnectionGraph::propagate_escape_state(GrowableArray<int>* cg_worklist,
   return has_java_obj && (esc_state < PointsToNode::GlobalEscape);
 }
 
-void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *phase) {
+// Optimize objects compare.
+Node* ConnectionGraph::optimize_ptr_compare(Node* n) {
+  assert(OptimizePtrCompare, "sanity");
+  // Clone returned Set since PointsTo() returns pointer
+  // to the same structure ConnectionGraph.pt_ptset.
+  VectorSet ptset1 = *PointsTo(n->in(1));
+  VectorSet ptset2 = *PointsTo(n->in(2));
 
+  // Check simple cases first.
+  if (ptset1.Size() == 1) {
+    uint pt1 = ptset1.getelem();
+    PointsToNode* ptn1 = ptnode_adr(pt1);
+    if (ptn1->escape_state() == PointsToNode::NoEscape) {
+      if (ptset2.Size() == 1 && ptset2.getelem() == pt1) {
+        // Comparing the same not escaping object.
+        return _pcmp_eq;
+      }
+      Node* obj = ptn1->_node;
+      // Comparing not escaping allocation.
+      if ((obj->is_Allocate() || obj->is_CallStaticJava()) &&
+          !ptset2.test(pt1)) {
+        return _pcmp_neq; // This includes nullness check.
+      }
+    }
+  } else if (ptset2.Size() == 1) {
+    uint pt2 = ptset2.getelem();
+    PointsToNode* ptn2 = ptnode_adr(pt2);
+    if (ptn2->escape_state() == PointsToNode::NoEscape) {
+      Node* obj = ptn2->_node;
+      // Comparing not escaping allocation.
+      if ((obj->is_Allocate() || obj->is_CallStaticJava()) &&
+          !ptset1.test(pt2)) {
+        return _pcmp_neq; // This includes nullness check.
+      }
+    }
+  }
+
+  if (!ptset1.disjoint(ptset2)) {
+    return NULL; // Sets are not disjoint
+  }
+
+  // Sets are disjoint.
+  bool set1_has_unknown_ptr = ptset1.test(_phantom_object) != 0;
+  bool set2_has_unknown_ptr = ptset2.test(_phantom_object) != 0;
+  bool set1_has_null_ptr   = (ptset1.test(_oop_null) | ptset1.test(_noop_null)) != 0;
+  bool set2_has_null_ptr   = (ptset2.test(_oop_null) | ptset2.test(_noop_null)) != 0;
+
+  if (set1_has_unknown_ptr && set2_has_null_ptr ||
+      set2_has_unknown_ptr && set1_has_null_ptr) {
+    // Check nullness of unknown object.
+    return NULL;
+  }
+
+  // Disjointness by itself is not sufficient since
+  // alias analysis is not complete for escaped objects.
+  // Disjoint sets are definitely unrelated only when
+  // at least one set has only not escaping objects.
+  if (!set1_has_unknown_ptr && !set1_has_null_ptr) {
+    bool has_only_non_escaping_alloc = true;
+    for (VectorSetI i(&ptset1); i.test(); ++i) {
+      uint pt = i.elem;
+      PointsToNode* ptn = ptnode_adr(pt);
+      Node* obj = ptn->_node;
+      if (ptn->escape_state() != PointsToNode::NoEscape ||
+          !(obj->is_Allocate() || obj->is_CallStaticJava())) {
+        has_only_non_escaping_alloc = false;
+        break;
+      }
+    }
+    if (has_only_non_escaping_alloc) {
+      return _pcmp_neq;
+    }
+  }
+  if (!set2_has_unknown_ptr && !set2_has_null_ptr) {
+    bool has_only_non_escaping_alloc = true;
+    for (VectorSetI i(&ptset2); i.test(); ++i) {
+      uint pt = i.elem;
+      PointsToNode* ptn = ptnode_adr(pt);
+      Node* obj = ptn->_node;
+      if (ptn->escape_state() != PointsToNode::NoEscape ||
+          !(obj->is_Allocate() || obj->is_CallStaticJava())) {
+        has_only_non_escaping_alloc = false;
+        break;
+      }
+    }
+    if (has_only_non_escaping_alloc) {
+      return _pcmp_neq;
+    }
+  }
+  return NULL;
+}
+
+void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *phase) {
+    bool is_arraycopy = false;
     switch (call->Opcode()) {
 #ifdef ASSERT
     case Op_Allocate:
@@ -2019,25 +2246,44 @@ void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *pha
       assert(false, "should be done already");
       break;
 #endif
-    case Op_CallLeaf:
     case Op_CallLeafNoFP:
+      is_arraycopy = (call->as_CallLeaf()->_name != NULL &&
+                      strstr(call->as_CallLeaf()->_name, "arraycopy") != 0);
+      // fall through
+    case Op_CallLeaf:
     {
       // Stub calls, objects do not escape but they are not scale replaceable.
       // Adjust escape state for outgoing arguments.
       const TypeTuple * d = call->tf()->domain();
+      bool src_has_oops = false;
       for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
         const Type* at = d->field_at(i);
         Node *arg = call->in(i)->uncast();
         const Type *aat = phase->type(arg);
+        PointsToNode::EscapeState arg_esc = ptnode_adr(arg->_idx)->escape_state();
         if (!arg->is_top() && at->isa_ptr() && aat->isa_ptr() &&
-            ptnode_adr(arg->_idx)->escape_state() < PointsToNode::ArgEscape) {
+            (is_arraycopy || arg_esc < PointsToNode::ArgEscape)) {
 
           assert(aat == Type::TOP || aat == TypePtr::NULL_PTR ||
                  aat->isa_ptr() != NULL, "expecting an Ptr");
+          bool arg_has_oops = aat->isa_oopptr() &&
+                              (aat->isa_oopptr()->klass() == NULL || aat->isa_instptr() ||
+                               (aat->isa_aryptr() && aat->isa_aryptr()->klass()->is_obj_array_klass()));
+          if (i == TypeFunc::Parms) {
+            src_has_oops = arg_has_oops;
+          }
+          //
+          // src or dst could be j.l.Object when other is basic type array:
+          //
+          //   arraycopy(char[],0,Object*,0,size);
+          //   arraycopy(Object*,0,char[],0,size);
+          //
+          // Don't add edges from dst's fields in such cases.
+          //
+          bool arg_is_arraycopy_dest = src_has_oops && is_arraycopy &&
+                                       arg_has_oops && (i > TypeFunc::Parms);
 #ifdef ASSERT
-          if (!(call->Opcode() == Op_CallLeafNoFP &&
-                call->as_CallLeaf()->_name != NULL &&
-                (strstr(call->as_CallLeaf()->_name, "arraycopy")  != 0) ||
+          if (!(is_arraycopy ||
                 call->as_CallLeaf()->_name != NULL &&
                 (strcmp(call->as_CallLeaf()->_name, "g1_wb_pre")  == 0 ||
                  strcmp(call->as_CallLeaf()->_name, "g1_wb_post") == 0 ))
@@ -2046,20 +2292,72 @@ void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *pha
             assert(false, "EA: unexpected CallLeaf");
           }
 #endif
+          // Always process arraycopy's destination object since
+          // we need to add all possible edges to references in
+          // source object.
+          if (arg_esc >= PointsToNode::ArgEscape &&
+              !arg_is_arraycopy_dest) {
+            continue;
+          }
           set_escape_state(arg->_idx, PointsToNode::ArgEscape);
+          Node* arg_base = arg;
           if (arg->is_AddP()) {
             //
             // The inline_native_clone() case when the arraycopy stub is called
             // after the allocation before Initialize and CheckCastPP nodes.
+            // Or normal arraycopy for object arrays case.
             //
             // Set AddP's base (Allocate) as not scalar replaceable since
             // pointer to the base (with offset) is passed as argument.
             //
-            arg = get_addp_base(arg);
+            arg_base = get_addp_base(arg);
           }
-          for( VectorSetI j(PointsTo(arg)); j.test(); ++j ) {
-            uint pt = j.elem;
-            set_escape_state(pt, PointsToNode::ArgEscape);
+          VectorSet argset = *PointsTo(arg_base); // Clone set
+          for( VectorSetI j(&argset); j.test(); ++j ) {
+            uint pd = j.elem; // Destination object
+            set_escape_state(pd, PointsToNode::ArgEscape);
+
+            if (arg_is_arraycopy_dest) {
+              PointsToNode* ptd = ptnode_adr(pd);
+              // Conservatively reference an unknown object since
+              // not all source's fields/elements may be known.
+              add_edge_from_fields(pd, _phantom_object, Type::OffsetBot);
+
+              Node *src = call->in(TypeFunc::Parms)->uncast();
+              Node* src_base = src;
+              if (src->is_AddP()) {
+                src_base  = get_addp_base(src);
+              }
+              // Create edges from destination's fields to
+              // everything known source's fields could point to.
+              for( VectorSetI s(PointsTo(src_base)); s.test(); ++s ) {
+                uint ps = s.elem;
+                bool has_bottom_offset = false;
+                for (uint fd = 0; fd < ptd->edge_count(); fd++) {
+                  assert(ptd->edge_type(fd) == PointsToNode::FieldEdge, "expecting a field edge");
+                  int fdi = ptd->edge_target(fd);
+                  PointsToNode* pfd = ptnode_adr(fdi);
+                  int offset = pfd->offset();
+                  if (offset == Type::OffsetBot)
+                    has_bottom_offset = true;
+                  assert(offset != -1, "offset should be set");
+                  add_deferred_edge_to_fields(fdi, ps, offset);
+                }
+                // Destination object may not have access (no field edge)
+                // to fields which are accessed in source object.
+                // As result no edges will be created to those source's
+                // fields and escape state of destination object will
+                // not be propagated to those fields.
+                //
+                // Mark source object as global escape except in
+                // the case with Type::OffsetBot field (which is
+                // common case for array elements access) when
+                // edges are created to all source's fields.
+                if (!has_bottom_offset) {
+                  set_escape_state(ps, PointsToNode::GlobalEscape);
+                }
+              }
+            }
           }
         }
       }
@@ -2102,14 +2400,16 @@ void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *pha
             for( VectorSetI j(PointsTo(arg)); j.test(); ++j ) {
               uint pt = j.elem;
               if (global_escapes) {
-                //The argument global escapes, mark everything it could point to
+                // The argument global escapes, mark everything it could point to
                 set_escape_state(pt, PointsToNode::GlobalEscape);
+                add_edge_from_fields(pt, _phantom_object, Type::OffsetBot);
               } else {
-                if (fields_escapes) {
-                  // The argument itself doesn't escape, but any fields might
-                  add_edge_from_fields(pt, _phantom_object, Type::OffsetBot);
-                }
                 set_escape_state(pt, PointsToNode::ArgEscape);
+                if (fields_escapes) {
+                  // The argument itself doesn't escape, but any fields might.
+                  // Use OffsetTop to indicate such case.
+                  add_edge_from_fields(pt, _phantom_object, Type::OffsetTop);
+                }
               }
             }
           }
@@ -2135,6 +2435,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *pha
           for( VectorSetI j(PointsTo(arg)); j.test(); ++j ) {
             uint pt = j.elem;
             set_escape_state(pt, PointsToNode::GlobalEscape);
+            add_edge_from_fields(pt, _phantom_object, Type::OffsetBot);
           }
         }
       }
@@ -2235,15 +2536,16 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
           // it's fields will be marked as NoEscape at least.
           set_escape_state(call_idx, PointsToNode::NoEscape);
           ptnode_adr(call_idx)->set_scalar_replaceable(false);
+          // Fields values are unknown
+          add_edge_from_fields(call_idx, _phantom_object, Type::OffsetBot);
           add_pointsto_edge(resproj_idx, call_idx);
           copy_dependencies = true;
-        } else if (call_analyzer->is_return_local()) {
+        } else {
           // determine whether any arguments are returned
           set_escape_state(call_idx, PointsToNode::ArgEscape);
           bool ret_arg = false;
           for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
             const Type* at = d->field_at(i);
-
             if (at->isa_oopptr() != NULL) {
               Node *arg = call->in(i)->uncast();
 
@@ -2259,17 +2561,14 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
               }
             }
           }
-          if (done && !ret_arg) {
-            // Returns unknown object.
-            set_escape_state(call_idx, PointsToNode::GlobalEscape);
-            add_pointsto_edge(resproj_idx, _phantom_object);
-          }
           if (done) {
             copy_dependencies = true;
+            // is_return_local() is true when only arguments are returned.
+            if (!ret_arg || !call_analyzer->is_return_local()) {
+              // Returns unknown object.
+              add_pointsto_edge(resproj_idx, _phantom_object);
+            }
           }
-        } else {
-          set_escape_state(call_idx, PointsToNode::GlobalEscape);
-          add_pointsto_edge(resproj_idx, _phantom_object);
         }
         if (copy_dependencies)
           call_analyzer->copy_dependencies(_compile->dependencies());
@@ -2431,6 +2730,11 @@ void ConnectionGraph::record_for_escape_analysis(Node *n, PhaseTransform *phase)
       add_node(n, PointsToNode::JavaObject, PointsToNode::GlobalEscape, false);
       break;
     }
+    case Op_PartialSubtypeCheck:
+    { // Produces Null or notNull and is used in CmpP.
+      add_node(n, PointsToNode::JavaObject, PointsToNode::ArgEscape, true);
+      break;
+    }
     case Op_Phi:
     {
       const Type *t = n->as_Phi()->type();
@@ -2589,10 +2893,11 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
     case Op_AddP:
     {
       Node *base = get_addp_base(n);
+      int offset = address_offset(n, phase);
       // Create a field edge to this node from everything base could point to.
       for( VectorSetI i(PointsTo(base)); i.test(); ++i ) {
         uint pt = i.elem;
-        add_field_edge(pt, n_idx, address_offset(n, phase));
+        add_field_edge(pt, n_idx, offset);
       }
       break;
     }
@@ -2659,6 +2964,10 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       int offset = address_offset(adr, phase);
       for( VectorSetI i(PointsTo(adr_base)); i.test(); ++i ) {
         uint pt = i.elem;
+        if (adr->is_AddP()) {
+          // Add field edge if it is missing.
+          add_field_edge(pt, adr->_idx, offset);
+        }
         add_deferred_edge_to_fields(n_idx, pt, offset);
       }
       break;
@@ -2666,6 +2975,11 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
     case Op_Parm:
     {
       assert(false, "Op_Parm");
+      break;
+    }
+    case Op_PartialSubtypeCheck:
+    {
+      assert(false, "Op_PartialSubtypeCheck");
       break;
     }
     case Op_Phi:
@@ -2745,11 +3059,14 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
       assert(adr->is_AddP(), "expecting an AddP");
       Node *adr_base = get_addp_base(adr);
       Node *val = n->in(MemNode::ValueIn)->uncast();
+      int offset = address_offset(adr, phase);
       // For everything "adr_base" could point to, create a deferred edge
       // to "val" from each field with the same offset.
       for( VectorSetI i(PointsTo(adr_base)); i.test(); ++i ) {
         uint pt = i.elem;
-        add_edge_from_fields(pt, val->_idx, address_offset(adr, phase));
+        // Add field edge if it is missing.
+        add_field_edge(pt, adr->_idx, offset);
+        add_edge_from_fields(pt, val->_idx, offset);
       }
       break;
     }
