@@ -26,7 +26,7 @@
  * @bug 8028207
  * @summary Verify that GVN doesn't mess up the two addExacts
  * @compile GVNTest.java
- * @run main GVNTest
+ * @run main GVNTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
  *
  */
 
