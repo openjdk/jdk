@@ -486,7 +486,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             int dataType = 0;
             int scanStride = width;
 
-            if (dcm.getPixelSize() == 24 || dcm.getPixelSize() == 32) {
+            if (dcm.getPixelSize() > 16) {
                 dataType = DataBuffer.TYPE_INT;
             } else {
                 // 15, 16

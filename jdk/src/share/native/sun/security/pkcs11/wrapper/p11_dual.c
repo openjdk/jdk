@@ -92,7 +92,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestEn
     ckpEncryptedPart = (CK_BYTE_PTR) malloc(ckEncryptedPartLength * sizeof(CK_BYTE));
     if (ckpEncryptedPart == NULL) {
         free(ckpPart);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -144,7 +144,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptD
     ckpPart = (CK_BYTE_PTR) malloc(ckPartLength * sizeof(CK_BYTE));
     if (ckpPart == NULL) {
         free(ckpEncryptedPart);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -196,7 +196,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignEncr
     ckpEncryptedPart = (CK_BYTE_PTR) malloc(ckEncryptedPartLength * sizeof(CK_BYTE));
     if (ckpEncryptedPart == NULL) {
         free(ckpPart);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -248,7 +248,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptV
     ckpPart = (CK_BYTE_PTR) malloc(ckPartLength * sizeof(CK_BYTE));
     if (ckpPart == NULL) {
         free(ckpEncryptedPart);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 

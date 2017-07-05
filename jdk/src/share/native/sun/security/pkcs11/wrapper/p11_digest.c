@@ -131,7 +131,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestSingle
         /* always use single part op, even for large data */
         bufP = (CK_BYTE_PTR) malloc((size_t)jInLen);
         if (bufP == NULL) {
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return 0;
         }
     }
@@ -190,7 +190,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestUpdate
         bufLen = min(MAX_HEAP_BUFFER_LEN, jInLen);
         bufP = (CK_BYTE_PTR) malloc((size_t)bufLen);
         if (bufP == NULL) {
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return;
         }
     }
