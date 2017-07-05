@@ -34,7 +34,7 @@
     #define NO_JNI
   #endif
   #define JLI_ReportMessage(...) printf(__VA_ARGS__)
-  #define JAVA_OPTIONS "JAVA_OPTIONS"
+  #define JDK_JAVA_OPTIONS "JDK_JAVA_OPTIONS"
   int IsWhiteSpaceOption(const char* name) { return 1; }
 #else
   #include "java.h"
@@ -429,10 +429,6 @@ int isTerminalOpt(char *arg) {
 }
 
 jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
-
-#ifndef ENABLE_JAVA_OPTIONS
-    return JNI_FALSE;
-#else
     char *env = getenv(var_name);
     char *p, *arg;
     char quote;
@@ -458,6 +454,11 @@ jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
     while (*env != '\0') {
         while (*env != '\0' && isspace(*env)) {
             env++;
+        }
+
+        // Trailing space
+        if (*env == '\0') {
+            break;
         }
 
         arg = p;
@@ -519,7 +520,6 @@ jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
     }
 
     return JNI_TRUE;
-#endif
 }
 
 #ifdef DEBUG_ARGFILE

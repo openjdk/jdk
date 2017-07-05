@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "CredOwner:\n\tIdentitetshavareklass = {0}\n\tIdentitetshavarenamn = {1}"},
 
         // javax.security.auth.x500
-        {"provided.null.name", "angav null-namn"},
-        {"provided.null.keyword.map", "nullnyckelordsmappning tillhandah\u00F6lls"},
-        {"provided.null.OID.map", "null-OID-mappning tillhandah\u00F6lls"},
+        {"provided.null.name", "null-namn angavs"},
+        {"provided.null.keyword.map", "nullnyckelordsmappning angavs"},
+        {"provided.null.OID.map", "null-OID-mappning angavs"},
 
         // javax.security.auth.Subject
         {"NEWLINE", "\n"},
@@ -63,7 +63,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "ogiltigt null-AccessControlContext"},
         {"invalid.null.action.provided", "ogiltig null-funktion"},
         {"invalid.null.Class.provided", "ogiltig null-klass"},
-        {"Subject.", "Innehavare:\n"},
+        {"Subject.", "Subjekt:\n"},
         {".Principal.", "\tIdentitetshavare: "},
         {".Public.Credential.", "\tOffentlig inloggning: "},
         {".Private.Credentials.inaccessible.",
@@ -71,9 +71,9 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {".Private.Credential.", "\tPrivat inloggning: "},
         {".Private.Credential.inaccessible.",
                 "\tPrivat inloggning \u00E4r inte tillg\u00E4nglig\n"},
-        {"Subject.is.read.only", "Innehavare \u00E4r skrivskyddad"},
+        {"Subject.is.read.only", "Subjektet \u00E4r skrivskyddad"},
         {"attempting.to.add.an.object.which.is.not.an.instance.of.java.security.Principal.to.a.Subject.s.Principal.Set",
-                "f\u00F6rs\u00F6k att l\u00E4gga till ett objekt som inte \u00E4r en f\u00F6rekomst av java.security.Principal till en upps\u00E4ttning av identitetshavare"},
+                "f\u00F6rs\u00F6k att l\u00E4gga till ett objekt som inte \u00E4r en instans av java.security.Principal till ett subjekts upps\u00E4ttning av identitetshavare"},
         {"attempting.to.add.an.object.which.is.not.an.instance.of.class",
                 "f\u00F6rs\u00F6ker l\u00E4gga till ett objekt som inte \u00E4r en instans av {0}"},
 
@@ -84,11 +84,11 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Invalid.null.input.name", "Ogiltiga null-indata: namn"},
         {"No.LoginModules.configured.for.name",
          "Inga inloggningsmoduler har konfigurerats f\u00F6r {0}"},
-        {"invalid.null.Subject.provided", "ogiltig null-innehavare"},
+        {"invalid.null.Subject.provided", "ogiltig null-subjekt"},
         {"invalid.null.CallbackHandler.provided",
                 "ogiltig null-CallbackHandler"},
         {"null.subject.logout.called.before.login",
-                "null-innehavare - utloggning anropades f\u00F6re inloggning"},
+                "null-subjekt - utloggning anropades f\u00F6re inloggning"},
         {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
                 "kan inte instansiera LoginModule, {0}, eftersom den inte tillhandah\u00E5ller n\u00E5gon icke-argumentskonstruktor"},
         {"unable.to.instantiate.LoginModule",
@@ -148,12 +148,12 @@ public class Resources_sv extends java.util.ListResourceBundle {
 
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
-                "PKCS11-tecken [{0}] L\u00F6senord: "},
+                "L\u00F6senord f\u00F6r PKCS11-token [{0}]: "},
 
         /* --- DEPRECATED --- */
         // javax.security.auth.Policy
         {"unable.to.instantiate.Subject.based.policy",
-                "den innehavarbaserade policyn kan inte skapas"}
+                "kan inte instansiera subjektbaserad policy"}
     };
 
 

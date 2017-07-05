@@ -77,7 +77,7 @@ public class TestProvider extends FileSystemProvider {
                              LinkOption... options)
         throws IOException
     {
-        throw new ReadOnlyFileSystemException();
+        throw new RuntimeException("not implemented");
     }
 
     @Override
@@ -110,19 +110,20 @@ public class TestProvider extends FileSystemProvider {
 
     @Override
     public void delete(Path file) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        Path delegate = theFileSystem.unwrap(file);
+        defaultProvider.delete(delegate);
     }
 
     @Override
     public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
         throws IOException
     {
-        throw new ReadOnlyFileSystemException();
+        throw new RuntimeException("not implemented");
     }
 
     @Override
     public void createLink(Path link, Path existing) throws IOException {
-        throw new ReadOnlyFileSystemException();
+        throw new RuntimeException("not implemented");
     }
 
     @Override
@@ -136,14 +137,14 @@ public class TestProvider extends FileSystemProvider {
     public void copy(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        throw new ReadOnlyFileSystemException();
+        throw new RuntimeException("not implemented");
     }
 
     @Override
     public void move(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        throw new ReadOnlyFileSystemException();
+        throw new RuntimeException("not implemented");
     }
 
     @Override
@@ -158,7 +159,8 @@ public class TestProvider extends FileSystemProvider {
     public void createDirectory(Path dir, FileAttribute<?>... attrs)
         throws IOException
     {
-        throw new ReadOnlyFileSystemException();
+        Path delegate = theFileSystem.unwrap(dir);
+        defaultProvider.createDirectory(delegate, attrs);
     }
 
     @Override
@@ -167,13 +169,8 @@ public class TestProvider extends FileSystemProvider {
                                               FileAttribute<?>... attrs)
         throws IOException
     {
-        if (options.contains(StandardOpenOption.READ) && options.size() == 1) {
-            Path delegate = theFileSystem.unwrap(file);
-            options = Collections.singleton(StandardOpenOption.READ);
-            return defaultProvider.newByteChannel(delegate, options, attrs);
-        }
-
-        throw new RuntimeException("not implemented");
+        Path delegate = theFileSystem.unwrap(file);
+        return defaultProvider.newByteChannel(delegate, options, attrs);
     }
 
     @Override
@@ -236,7 +233,7 @@ public class TestProvider extends FileSystemProvider {
 
         @Override
         public boolean isReadOnly() {
-            return true;
+            return false;
         }
 
         @Override
@@ -419,7 +416,7 @@ public class TestProvider extends FileSystemProvider {
 
         @Override
         public File toFile() {
-            return delegate.toFile();
+            return new File(toString());
         }
 
         @Override

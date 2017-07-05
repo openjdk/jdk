@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ import sun.awt.AWTAccessor;
  * in which case a default <code>Frame</code> is used as the parent,
  * and the dialog will be
  * centered on the screen (depending on the {@literal L&F}).
- * <dt><a name=message>message</a><dd>
+ * <dt><a id=message>message</a><dd>
  * A descriptive message to be placed in the dialog box.
  * In the most common usage, message is just a <code>String</code> or
  * <code>String</code> constant.

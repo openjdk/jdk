@@ -34,15 +34,14 @@
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.lang.NoSuchFieldException;
-import java.lang.NoSuchMethodException;
 import java.lang.RuntimeException;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
-import jdk.test.lib.*;
+
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class ModifyAnonymous {
 

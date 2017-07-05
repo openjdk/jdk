@@ -25,7 +25,6 @@ package jdk.test;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.lang.reflect.Module;
 import static jdk.test.ProxyTest.*;
 
 public class Main {

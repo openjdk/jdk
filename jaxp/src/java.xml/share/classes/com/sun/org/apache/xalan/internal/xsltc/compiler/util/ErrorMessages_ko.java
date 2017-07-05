@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -417,7 +417,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * XSLTC to process the XML input document had a configuration problem.
          */
         {ErrorMsg.SAX_PARSER_CONFIG_ERR,
-        "JAXP \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 \uC81C\uB300\uB85C \uAD6C\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "JAXP \uAD6C\uBB38\uBD84\uC11D\uAE30\uAC00 \uC81C\uB300\uB85C \uAD6C\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
 
         /*
          * Note to translators:  The substitution text names the internal error
