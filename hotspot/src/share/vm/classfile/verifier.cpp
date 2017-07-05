@@ -63,6 +63,7 @@
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
+#define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
 
 // Access to external entry for VerifyClassCodes - old byte code verifier
 
@@ -2319,6 +2320,11 @@ void ClassVerifier::verify_invoke_instructions(
     case Bytecodes::_invokespecial:
       types = (1 << JVM_CONSTANT_InterfaceMethodref) |
               (1 << JVM_CONSTANT_Methodref);
+      break;
+    case Bytecodes::_invokestatic:
+      types = (_klass->major_version() < STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION) ?
+        (1 << JVM_CONSTANT_Methodref) :
+        ((1 << JVM_CONSTANT_InterfaceMethodref) | (1 << JVM_CONSTANT_Methodref));
       break;
     default:
       types = 1 << JVM_CONSTANT_Methodref;

@@ -567,6 +567,14 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     print_on(st);
   }
 
+  virtual void print_on_error(outputStream* st) const {
+    st->print_cr("Heap:");
+    print_extended_on(st);
+    st->cr();
+
+    _barrier_set->print_on(st);
+  }
+
   // Print all GC threads (other than the VM thread)
   // used by this heap.
   virtual void print_gc_threads_on(outputStream* st) const = 0;
