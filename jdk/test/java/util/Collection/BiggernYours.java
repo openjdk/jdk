@@ -174,6 +174,11 @@ public class BiggernYours {
                 public int size() {return randomize(super.size());}});
 
         testCollections(
+            new ConcurrentLinkedDeque(),
+            new ConcurrentLinkedDeque() {
+                public int size() {return randomize(super.size());}});
+
+        testCollections(
             new ConcurrentLinkedQueue(),
             new ConcurrentLinkedQueue() {
                 public int size() {return randomize(super.size());}});

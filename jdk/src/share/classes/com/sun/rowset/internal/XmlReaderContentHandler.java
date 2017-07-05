@@ -441,9 +441,9 @@ public class XmlReaderContentHandler extends DefaultHandler {
         updates = new Vector();
 
         // start out with the empty string
-        columnValue = new String("");
-        propertyValue = new String("");
-        metaDataValue = new String("");
+        columnValue = "";
+        propertyValue = "";
+        metaDataValue = "";
 
         nullVal = false;
         idx = 0;
@@ -481,21 +481,21 @@ public class XmlReaderContentHandler extends DefaultHandler {
         items = properties.length;
 
         for (i=0;i<items;i++) {
-            propMap.put(properties[i], new Integer(i));
+            propMap.put(properties[i], Integer.valueOf(i));
         }
 
         colDefMap = new HashMap();
         items = colDef.length;
 
         for (i=0;i<items;i++) {
-            colDefMap.put(colDef[i], new Integer(i));
+            colDefMap.put(colDef[i], Integer.valueOf(i));
         }
 
         dataMap = new HashMap();
         items = data.length;
 
         for (i=0;i<items;i++) {
-            dataMap.put(data[i], new Integer(i));
+            dataMap.put(data[i], Integer.valueOf(i));
         }
 
         //Initialize connection map here
@@ -686,7 +686,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             }
 
             // propertyValue need to be reset to an empty string
-            propertyValue = new String("");
+            propertyValue = "";
             setTag(-1);
             break;
         case METADATA:
@@ -710,7 +710,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
 
                 }
                 // metaDataValue needs to be reset to an empty string
-                metaDataValue = new String("");
+                metaDataValue = "";
             }
             setTag(-1);
             break;
@@ -736,7 +736,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                         insertValue(tempStr);
                     }
                     // columnValue now need to be reset to the empty string
-                    columnValue = new String("");
+                    columnValue = "";
                 } catch (SQLException ex) {
                     throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsert").toString(), ex.getMessage()));
                 }
@@ -981,7 +981,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
 
     private boolean getBooleanValue(String s) {
 
-        return new Boolean(s).booleanValue();
+        return Boolean.valueOf(s).booleanValue();
     }
 
     private java.math.BigDecimal getBigDecimalValue(String s) {
@@ -1316,7 +1316,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
               **/
 
             tempUpdate = tempUpdate.concat(new String(ch,start,len));
-            upd[0] = new Integer(idx);
+            upd[0] = Integer.valueOf(idx);
             upd[1] = tempUpdate;
             //updates.add(upd);
 

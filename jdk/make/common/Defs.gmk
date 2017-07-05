@@ -334,7 +334,7 @@ DOCSDIR             = $(OUTPUTDIR)/docs$(DOCSDIRSUFFIX)
 DOCSDIRSUFFIX       =
 
 # The MESSAGE, WARNING and ERROR files are used to store sanityck and 
-# SCCS check messages, warnings and errors. 
+# warnings and errors. 
 ifndef ERROR_FILE
   ERROR_FILE   = $(OUTPUTDIR)/sanityCheckErrors.txt
 endif
@@ -633,38 +633,6 @@ LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
 		  $(OTHER_LINTFLAGS)
 
 VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
-
-# Note: As a rule, GNU Make rules should not appear in any of the 
-# Defs*.gmk files. These were added for Kestrel-Solaris and do address
-# a TeamWare bug. They should be moved elsewhere for Merlin.
-# 
-#  Override gnumake built-in rules which do sccs get operations badly.
-#  (They put the checked out code in the current directory, not in the
-#  directory of the original file.) 
-# Since this is a symptom of a teamware failure, complain and die on the spot.
-
-# This message immediately goes to stdout and the build terminates.
-define SCCS-trouble
-$(error  \
-"ERROR: File $@ referenced while building in $(CURRENT_DIRECTORY) \
- is out of date with respect to its SCCS file $<. \
- This can happen from an unresolved Teamware conflict, a file movement, or \
- a failure in which SCCS files are updated but the 'sccs get' was not done. \
- You should double check for other out of date files in your workspace. \
- Or run: cd $(TOPDIR) && $(MAKE) sccs_get")
-endef
-
-%:: s.%
-	@$(SCCS-trouble)
-%:: SCCS/s.%
-	@$(SCCS-trouble)
-	@$(ECHO) "         is out of date with respect to its SCCS file." >> $(WARNING_FILE)
-	@$(ECHO) "         This file may be from an unresolved Teamware conflict." >> $(WARNING_FILE)
-	@$(ECHO) "         This is also a symptom of a Teamware bringover/putback failure" >> $(WARNING_FILE)
-	@$(ECHO) "         in which SCCS files are updated but not checked out." >> $(WARNING_FILE)
-	@$(ECHO) "         Check for other out of date files in your workspace." >> $(WARNING_FILE)
-	@$(ECHO) "" >> $(WARNING_FILE)
-	@#exit 666
 
 ifdef INSANE
   export INSANE

@@ -138,7 +138,7 @@ package java.util.concurrent;
  *        if (right.tryUnfork()) // directly calculate if not stolen
  *          sum += right.atLeaf(right.lo, right.hi);
  *       else {
- *          right.helpJoin();
+ *          right.join();
  *          sum += right.result;
  *        }
  *        right = right.next;

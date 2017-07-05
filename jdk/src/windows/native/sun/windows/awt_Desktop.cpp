@@ -59,15 +59,17 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
                     FORMAT_MESSAGE_FROM_SYSTEM  |
                     FORMAT_MESSAGE_IGNORE_INSERTS,
                     NULL,
-                    GetLastError(),
+                    (int)retval,
                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
                     (LPTSTR)&buffer,
                     0,
                     NULL );
 
-        jstring errmsg = JNU_NewStringPlatform(env, buffer, len);
-        LocalFree(buffer);
-        return errmsg;
+        if (buffer) {
+            jstring errmsg = JNU_NewStringPlatform(env, buffer);
+            LocalFree(buffer);
+            return errmsg;
+        }
     }
 
     return NULL;

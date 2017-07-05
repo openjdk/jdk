@@ -7,8 +7,8 @@
 <osVersion>5.10</osVersion>
 <osArchitecture>sparc</osArchitecture>
 <systemModel>Sun-Fire-V440</systemModel>
-<systemManufacturer>Sun Microsystems</systemManufacturer>
-<cpuManufacturer>Sun Microsystems</cpuManufacturer>
+<systemManufacturer>Oracle Corporation</systemManufacturer>
+<cpuManufacturer>Oracle Corporation</cpuManufacturer>
 <serialNumber>BEL078932</serialNumber>
 </environment>
 <registry urn="urn:st:9543ffaa-a4f1-4f77-b2d1-f561922d4e4a" version="1.0">
@@ -20,7 +20,7 @@
 <product_parent_urn>urn:uuid:fdc90b21-018d-4cab-b866-612c7c119ed3</product_parent_urn>
 <product_parent>Java Platform Standard Edition 6 (Java SE 6)</product_parent>
 <product_defined_inst_id>id=1.6.0-internal-b00 sparc,dir=/myjdk/solaris-sparc</product_defined_inst_id>
-<product_vendor>Sun Microsystems</product_vendor>
+<product_vendor>Oracle Corporation</product_vendor>
 <platform_arch>sparc</platform_arch>
 <timestamp>2007-11-13 00:49:01 GMT</timestamp>
 <container>global</container>
@@ -35,7 +35,7 @@
 <product_parent_urn>urn:uuid:fdc90b21-018d-4cab-b866-612c7c119ed3</product_parent_urn>
 <product_parent>Java Platform Standard Edition 6 (Java SE 6)</product_parent>
 <product_defined_inst_id>id=1.6.0_05-b01 i386,dir=/myjdk/solaris-i586</product_defined_inst_id>
-<product_vendor>Sun Microsystems</product_vendor>
+<product_vendor>Oracle Corporation</product_vendor>
 <platform_arch>i386</platform_arch>
 <timestamp>2007-11-13 00:49:01 GMT</timestamp>
 <container>global</container>
@@ -50,7 +50,7 @@
 <product_parent_urn>urn:uuid:596ffcfa-63d5-11d7-9886-ac816a682f92</product_parent_urn>
 <product_parent>Solaris Operating System</product_parent>
 <product_defined_inst_id/>
-<product_vendor>Sun Microsystems</product_vendor>
+<product_vendor>Oracle Corporation</product_vendor>
 <platform_arch>sparc</platform_arch>
 <timestamp>2007-11-13 00:49:01 GMT</timestamp>
 <container>global</container>

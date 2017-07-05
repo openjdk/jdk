@@ -76,7 +76,7 @@ cscope.out: cscope.files FRC
 # What files should we include?  A simple rule might be just those files under
 # SCM control, however this would miss files we create like the opcodes and
 # CClassHeaders.  The following attempts to find everything that is *useful*.
-# (.del files are created by sccsrm, demo directories contain many .java files
+# (demo directories contain many .java files
 # that probably aren't useful for development, and the pkgarchive may contain
 # duplicates of files within the source hierarchy).  The ordering of the .raw
 # file is an attempt to make cscope display the most relevant files first.
