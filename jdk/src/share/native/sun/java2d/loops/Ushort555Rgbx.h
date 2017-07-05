@@ -34,6 +34,8 @@
 typedef jushort Ushort555RgbxPixelType;
 typedef jushort Ushort555RgbxDataType;
 
+#define Ushort555RgbxIsOpaque 1
+
 #define Ushort555RgbxPixelStride        2
 
 #define DeclareUshort555RgbxLoadVars(PREFIX)
