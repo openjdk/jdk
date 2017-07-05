@@ -24,6 +24,14 @@
 /**
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.code.site
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
+ *          jdk.vm.ci/jdk.vm.ci.common
+ *          jdk.vm.ci/jdk.vm.ci.amd64
+ *          jdk.vm.ci/jdk.vm.ci.sparc
  * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.code.InterpreterFrameSizeTest
  */

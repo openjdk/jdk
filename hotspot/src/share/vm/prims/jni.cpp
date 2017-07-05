@@ -930,13 +930,7 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
                              _arguments->push_oop(Handle((oop *)l, false)); }
 
   inline void set_ap(va_list rap) {
-#ifdef va_copy
     va_copy(_ap, rap);
-#elif defined (__va_copy)
-    __va_copy(_ap, rap);
-#else
-    _ap = rap;
-#endif
   }
 
  public:

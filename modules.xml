@@ -844,6 +844,18 @@
     </export>
   </module>
   <module>
+    <name>jdk.jsobject</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.desktop</depend>
+    <export>
+      <name>netscape.javascript</name>
+    </export>
+    <export>
+      <name>jdk.internal.netscape.javascript.spi</name>
+      <to>jdk.plugin</to>
+    </export>
+  </module>
+  <module>
     <name>java.httpclient</name>
     <depend>java.base</depend>
     <export>
@@ -1802,10 +1814,10 @@
       <name>com.sun.tools.javadoc</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet</name>  
+      <name>jdk.javadoc.doclet</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet.taglet</name>  
+      <name>jdk.javadoc.doclet.taglet</name>
     </export>
   </module>
   <module>
