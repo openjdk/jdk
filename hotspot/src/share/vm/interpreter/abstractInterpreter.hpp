@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ class AbstractInterpreter: AllStatic {
     empty,                                                      // empty method (code: _return)
     accessor,                                                   // accessor method (code: _aload_0, _getfield, _(a|i)return)
     abstract,                                                   // abstract method (throws an AbstractMethodException)
+    method_handle,                                              // java.dyn.MethodHandles::invoke
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
@@ -90,8 +91,6 @@ class AbstractInterpreter: AllStatic {
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
 
   static address    _rethrow_exception_entry;                   // rethrows an activation in previous frame
-
-
 
   friend class      AbstractInterpreterGenerator;
   friend class              InterpreterGenerator;
