@@ -73,7 +73,7 @@ import sun.swing.SwingLazyValue;
  * but provides defaults for these features so that simple tables can be
  * set up easily.  For example, to set up a table with 10 rows and 10
  * columns of numbers:
- * <p>
+ *
  * <pre>
  *      TableModel dataModel = new AbstractTableModel() {
  *          public int getColumnCount() { return 10; }
@@ -659,7 +659,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * should contain the values for that row. In other words,
      * the value of the cell at row 1, column 5 can be obtained
      * with the following code:
-     * <p>
+     *
      * <pre>((Vector)rowData.elementAt(1)).elementAt(5);</pre>
      * <p>
      * @param rowData           the data for the new table
@@ -674,7 +674,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <code>rowData</code>, with column names, <code>columnNames</code>.
      * <code>rowData</code> is an array of rows, so the value of the cell at row 1,
      * column 5 can be obtained with the following code:
-     * <p>
+     *
      * <pre> rowData[1][5]; </pre>
      * <p>
      * All rows must be of the same length as <code>columnNames</code>.
@@ -3062,9 +3062,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *   interface that allows any data structure containing a collection
      *   of elements with a size, preferred size, maximum size and minimum size
      *   to have its elements manipulated by the algorithm.
-     * <p>
+     *
      * <H3> Distributing the delta </H3>
-     * <p>
+     *
      * <H4> Overview </H4>
      * <P>
      * Call "DELTA" the difference between the target size and the
@@ -3073,7 +3073,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * sizes and adding a share of the DELTA - that share being based on
      * how far each preferred size is from its limiting bound (minimum or
      * maximum).
-     * <p>
+     *
      * <H4>Definition</H4>
      * <P>
      * Call the individual constraints min[i], max[i], and pref[i].
@@ -3081,21 +3081,21 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Call their respective sums: MIN, MAX, and PREF.
      * <p>
      * Each new size will be calculated using:
-     * <p>
+     *
      * <pre>
      *          size[i] = pref[i] + delta[i]
      * </pre>
      * where each individual delta[i] is calculated according to:
      * <p>
      * If (DELTA &lt; 0) we are in shrink mode where:
-     * <p>
+     *
      * <PRE>
      *                        DELTA
      *          delta[i] = ------------ * (pref[i] - min[i])
      *                     (PREF - MIN)
      * </PRE>
      * If (DELTA &gt; 0) we are in expand mode where:
-     * <p>
+     *
      * <PRE>
      *                        DELTA
      *          delta[i] = ------------ * (max[i] - pref[i])
@@ -6373,7 +6373,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <p>
      * Here's an example of creating a <code>MessageFormat</code> that can be
      * used to print "Duke's Table: Page - " and the current page number:
-     * <p>
+     *
      * <pre>
      *     // notice the escaping of the single quote
      *     // notice how the page number is included with "{0}"
@@ -7686,7 +7686,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
              * Returns a boolean value indicating whether the specified column
              * is selected.
              *
-             * @param r zero-based column of the table
+             * @param c zero-based column of the table
              * @return the boolean value true if the specified column is selected.
              * Otherwise, false.
              * @since 1.3

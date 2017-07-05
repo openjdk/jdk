@@ -57,7 +57,6 @@ import java.awt.geom.AffineTransform;
 *   <code>FontRenderContext</code> which is directly constructed will
 *   most likely not represent any actual graphics device, and may lead
 *   to unexpected or incorrect results.
-*   <p>
 *   @see java.awt.RenderingHints#KEY_TEXT_ANTIALIASING
 *   @see java.awt.RenderingHints#KEY_FRACTIONALMETRICS
 *   @see java.awt.Graphics2D#getFontRenderContext()

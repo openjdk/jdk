@@ -34,7 +34,7 @@ import javax.swing.table.*;
  * and all references to rows and columns are in the co-ordinate
  * system of the model.
  * Depending on the parameters used in the constructors, the TableModelevent
- * can be used to specify the following types of changes: <p>
+ * can be used to specify the following types of changes:
  *
  * <pre>
  * TableModelEvent(source);              //  The data, ie. all rows changed

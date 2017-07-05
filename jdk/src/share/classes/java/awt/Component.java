@@ -106,7 +106,7 @@ import sun.util.logging.PlatformLogger;
  * adding/removing components to/from containers, the whole hierarchy must be
  * validated afterwards by means of the {@link Container#validate()} method
  * invoked on the top-most invalid container of the hierarchy.
- * <p>
+ *
  * <h3>Serialization</h3>
  * It is important to note that only AWT listeners which conform
  * to the <code>Serializable</code> protocol will be saved when
@@ -3859,7 +3859,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This is a proxy capabilities class used when a FlipBufferStrategy
      * is created instead of the requested Blit strategy.
      *
-     * @see sun.awt.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
+     * @see sun.java2d.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
      */
     private class ProxyCapabilities extends ExtendedBufferCapabilities {
         private BufferCapabilities orig;
@@ -4515,7 +4515,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Private class to perform sub-region blitting.  Swing will use
      * this subclass via the SubRegionShowable interface in order to
      * copy only the area changed during a repaint.
-     * @see javax.swing.BufferStrategyPaintManager
+     * See javax.swing.BufferStrategyPaintManager.
      */
     private class BltSubRegionBufferStrategy extends BltBufferStrategy
         implements SubRegionShowable
@@ -6328,7 +6328,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless component events are
      * enabled for this component. Component events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>ComponentListener</code> object is registered
      * via <code>addComponentListener</code>.
      * <li>Component events are enabled via <code>enableEvents</code>.
@@ -6373,7 +6373,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless focus events are
      * enabled for this component. Focus events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>FocusListener</code> object is registered
      * via <code>addFocusListener</code>.
      * <li>Focus events are enabled via <code>enableEvents</code>.
@@ -6393,7 +6393,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * with a <code>FocusEvent</code> as the argument will result in a
      * call to the <code>Component</code>'s <code>processFocusEvent</code>
      * method regardless of the current <code>KeyboardFocusManager</code>.
-     * <p>
+     *
      * <p>Note that if the event parameter is <code>null</code>
      * the behavior is unspecified and may result in an
      * exception.
@@ -6430,7 +6430,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless key events are
      * enabled for this component. Key events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>KeyListener</code> object is registered
      * via <code>addKeyListener</code>.
      * <li>Key events are enabled via <code>enableEvents</code>.
@@ -6499,7 +6499,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless mouse events are
      * enabled for this component. Mouse events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>MouseListener</code> object is registered
      * via <code>addMouseListener</code>.
      * <li>Mouse events are enabled via <code>enableEvents</code>.
@@ -6547,7 +6547,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless mouse motion events are
      * enabled for this component. Mouse motion events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>MouseMotionListener</code> object is registered
      * via <code>addMouseMotionListener</code>.
      * <li>Mouse motion events are enabled via <code>enableEvents</code>.
@@ -6586,7 +6586,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless mouse wheel events are
      * enabled for this component. Mouse wheel events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>A <code>MouseWheelListener</code> object is registered
      * via <code>addMouseWheelListener</code>.
      * <li>Mouse wheel events are enabled via <code>enableEvents</code>.
@@ -6630,7 +6630,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless input method events
      * are enabled for this component. Input method events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>InputMethodListener</code> object is registered
      * via <code>addInputMethodListener</code>.
      * <li>Input method events are enabled via <code>enableEvents</code>.
@@ -6669,7 +6669,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless hierarchy events
      * are enabled for this component. Hierarchy events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>HierarchyListener</code> object is registered
      * via <code>addHierarchyListener</code>.
      * <li>Hierarchy events are enabled via <code>enableEvents</code>.
@@ -6705,7 +6705,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method is not called unless hierarchy bounds events
      * are enabled for this component. Hierarchy bounds events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>HierarchyBoundsListener</code> object is registered
      * via <code>addHierarchyBoundsListener</code>.
      * <li>Hierarchy bounds events are enabled via <code>enableEvents</code>.

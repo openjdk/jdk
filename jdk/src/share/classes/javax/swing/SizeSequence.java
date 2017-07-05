@@ -52,7 +52,7 @@ package javax.swing;
  * <p>
  * The following figure shows the relationship between size and position data
  * for a multi-column component.
- * <p>
+ *
  * <center>
  * <img src="doc-files/SizeSequence-1.gif" width=384 height = 100
  * alt="The first item begins at position 0, the second at the position equal
@@ -76,7 +76,6 @@ package javax.swing;
  * However, any other unit of measure (for example, time in days)
  * could be just as valid.
  *
- * <p>
  *
  * <h3>Implementation Notes</h3>
  *

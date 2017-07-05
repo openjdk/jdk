@@ -40,7 +40,7 @@ import javax.accessibility.*;
  * The current choice is displayed as the title of the menu.
  * <p>
  * The following code example produces a pop-up menu:
- * <p>
+ *
  * <hr><blockquote><pre>
  * Choice ColorChooser = new Choice();
  * ColorChooser.add("Green");
@@ -609,7 +609,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * This method is not called unless item events are
      * enabled for this component. Item events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ItemListener</code> object is registered
      * via <code>addItemListener</code>.
      * <li>Item events are enabled via <code>enableEvents</code>.

@@ -36,7 +36,7 @@ import javax.accessibility.*;
  * directly.
  * <p>
  * For example, the code&nbsp;.&nbsp;.&nbsp;.
- * <p>
+ *
  * <hr><blockquote><pre>
  * setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
  * add(new Label("Hi There!"));

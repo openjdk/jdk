@@ -1427,6 +1427,17 @@ Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
   return InstanceKlass::find_method(methods(), name, signature);
 }
 
+// find_instance_method looks up the name/signature in the local methods array
+// and skips over static methods
+Method* InstanceKlass::find_instance_method(
+    Array<Method*>* methods, Symbol* name, Symbol* signature) {
+  Method* meth = InstanceKlass::find_method(methods, name, signature);
+  if (meth != NULL && meth->is_static()) {
+      meth = NULL;
+  }
+  return meth;
+}
+
 // find_method looks up the name/signature in the local methods array
 Method* InstanceKlass::find_method(
     Array<Method*>* methods, Symbol* name, Symbol* signature) {
@@ -2169,7 +2180,6 @@ int InstanceKlass::oop_adjust_pointers(oop obj) {
     obj, \
     MarkSweep::adjust_pointer(p), \
     assert_is_in)
-  MarkSweep::adjust_klass(obj->klass());
   return size;
 }
 
