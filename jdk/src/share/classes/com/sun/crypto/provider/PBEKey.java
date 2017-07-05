@@ -55,9 +55,12 @@ final class PBEKey implements SecretKey {
             // Should allow an empty password.
             passwd = new char[0];
         }
-        for (int i=0; i<passwd.length; i++) {
-            if ((passwd[i] < '\u0020') || (passwd[i] > '\u007E')) {
-                throw new InvalidKeySpecException("Password is not ASCII");
+        // Accept "\0" to signify "zero-length password with no terminator".
+        if (!(passwd.length == 1 && passwd[0] == 0)) {
+            for (int i=0; i<passwd.length; i++) {
+                if ((passwd[i] < '\u0020') || (passwd[i] > '\u007E')) {
+                    throw new InvalidKeySpecException("Password is not ASCII");
+                }
             }
         }
         this.key = new byte[passwd.length];

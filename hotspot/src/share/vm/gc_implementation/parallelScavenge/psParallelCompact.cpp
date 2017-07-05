@@ -1993,12 +1993,12 @@ bool ParallelCompactData::region_contains(size_t region_index, HeapWord* addr) {
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
-void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != NULL, "Sanity");
 
   if (GC_locker::check_active_before_gc()) {
-    return;
+    return false;
   }
 
   TimeStamp marking_start;
@@ -2248,6 +2248,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
 #endif
+
+  return true;
 }
 
 bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,

@@ -600,6 +600,10 @@ extern "C" void flush()  {
   tty->flush();
 }
 
+extern "C" void events() {
+  Command c("events");
+  Events::print();
+}
 
 // Given a heap address that was valid before the most recent GC, if
 // the oop that used to contain it is still live, prints the new
@@ -759,7 +763,7 @@ void help() {
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");
-  tty->print_cr("  events()      - dump last 50 events");
+  tty->print_cr("  events()      - dump events from ring buffers");
 
 
   tty->print_cr("compiler debugging");

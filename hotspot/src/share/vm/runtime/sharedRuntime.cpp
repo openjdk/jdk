@@ -804,6 +804,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         if (thread->deopt_mark() != NULL) {
           Deoptimization::cleanup_deopt_info(thread, NULL);
         }
+        Events::log_exception(thread, "StackOverflowError at " INTPTR_FORMAT, pc);
         return StubRoutines::throw_StackOverflowError_entry();
       }
 
@@ -820,8 +821,10 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 
           if (vt_stub->is_abstract_method_error(pc)) {
             assert(!vt_stub->is_vtable_stub(), "should never see AbstractMethodErrors from vtable-type VtableStubs");
+            Events::log_exception(thread, "AbstractMethodError at " INTPTR_FORMAT, pc);
             return StubRoutines::throw_AbstractMethodError_entry();
           } else {
+            Events::log_exception(thread, "NullPointerException at vtable entry " INTPTR_FORMAT, pc);
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
         } else {
@@ -838,6 +841,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           if (!cb->is_nmethod()) {
             guarantee(cb->is_adapter_blob() || cb->is_method_handles_adapter_blob(),
                       "exception happened outside interpreter, nmethods and vtable stubs (1)");
+            Events::log_exception(thread, "NullPointerException in code blob at " INTPTR_FORMAT, pc);
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
@@ -849,6 +853,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             // => the nmethod is not yet active (i.e., the frame
             // is not set up yet) => use return address pushed by
             // caller => don't push another return address
+            Events::log_exception(thread, "NullPointerException in IC check " INTPTR_FORMAT, pc);
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
 

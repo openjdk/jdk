@@ -162,7 +162,7 @@ public abstract class SctpMultiChannel
      */
     public static SctpMultiChannel open() throws
         IOException {
-        return new sun.nio.ch.SctpMultiChannelImpl((SelectorProvider)null);
+        return new sun.nio.ch.sctp.SctpMultiChannelImpl((SelectorProvider)null);
     }
 
     /**
