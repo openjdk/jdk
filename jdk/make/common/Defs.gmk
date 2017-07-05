@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -486,6 +486,10 @@ ifdef ALT_COPYRIGHT_YEAR
   COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
 else
   COPYRIGHT_YEAR := $(shell $(DATE) '+%Y')
+endif
+
+ifndef OPENJDK
+include $(JDK_TOPDIR)/make/closed/common/Defs.gmk
 endif
 
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)

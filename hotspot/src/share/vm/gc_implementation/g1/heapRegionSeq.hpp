@@ -76,7 +76,8 @@ class HeapRegionSeq: public CHeapObj {
   // that are available for allocation.
   size_t free_suffix();
 
-  // Finds a contiguous set of empty regions of length num.
+  // Find a contiguous set of empty regions of length num and return
+  // the index of the first region or -1 if the search was unsuccessful.
   int find_contiguous(size_t num);
 
   // Apply the "doHeapRegion" method of "blk" to all regions in "this",

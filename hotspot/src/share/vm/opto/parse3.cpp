@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,8 @@ void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
         return;
     }
     else {
-      // final non-static field of a trusted class ({java,sun}.dyn
-      // classes).
+      // final non-static field of a trusted class (classes in
+      // java.lang.invoke and sun.invoke packages and subpackages).
       if (obj->is_Con()) {
         const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
         ciObject* constant_oop = oop_ptr->const_oop();

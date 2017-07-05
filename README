@@ -29,13 +29,14 @@ Simple Build Instructions:
      Set the environment variable ALT_BOOTDIR to the location of JDK 6.
 
   2. Check the sanity of doing a build with your current system:
-       gnumake sanity
+       make sanity
      See README-builds.html if you run into problems.
   
   3. Do a complete build of the OpenJDK:
-       gnumake all
+       make all
      The resulting JDK image should be found in build/*/j2sdk-image
 
-where gnumake is GNU make 3.81 or newer, /usr/bin/make on Linux and
-/usr/sfw/bin/gmake or /opt/sfw/bin/gmake on Solaris.
+where make is GNU make 3.81 or newer, /usr/bin/make on Linux usually
+is 3.81 or newer.
 
+Complete details are available in README-builds.html.
