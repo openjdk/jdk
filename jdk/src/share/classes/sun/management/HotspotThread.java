@@ -58,7 +58,7 @@ class HotspotThread
         String[] names = new String[count];
         long[] times = new long[count];
         int numThreads = getInternalThreadTimes0(names, times);
-        Map<String, Long> result = new HashMap<String, Long>(numThreads);
+        Map<String, Long> result = new HashMap<>(numThreads);
         for (int i = 0; i < numThreads; i++) {
             result.put(names[i], new Long(times[i]));
         }

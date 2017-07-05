@@ -1920,7 +1920,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     return true;
   } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
     if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-       dlinfo.dli_fname, buf, buflen, offset) == Decoder::no_error) {
+       buf, buflen, offset, dlinfo.dli_fname)) {
        return true;
     }
   }

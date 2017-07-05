@@ -120,13 +120,13 @@ class HotspotCompilation
         // current implementation.  We first look up in the SUN_CI namespace
         // since most counters are in SUN_CI namespace.
 
-        if ((c = (Counter) counters.get(SUN_CI + name)) != null) {
+        if ((c = counters.get(SUN_CI + name)) != null) {
             return c;
         }
-        if ((c = (Counter) counters.get(COM_SUN_CI + name)) != null) {
+        if ((c = counters.get(COM_SUN_CI + name)) != null) {
             return c;
         }
-        if ((c = (Counter) counters.get(JAVA_CI + name)) != null) {
+        if ((c = counters.get(JAVA_CI + name)) != null) {
             return c;
         }
 
@@ -136,10 +136,8 @@ class HotspotCompilation
 
     private void initCompilerCounters() {
         // Build a tree map of the current list of performance counters
-        ListIterator iter = getInternalCompilerCounters().listIterator();
-        counters = new TreeMap<String, Counter>();
-        while (iter.hasNext()) {
-            Counter c = (Counter) iter.next();
+        counters = new TreeMap<>();
+        for (Counter c: getInternalCompilerCounters()) {
             counters.put(c.getName(), c);
         }
 
@@ -200,7 +198,7 @@ class HotspotCompilation
     }
 
     public java.util.List<CompilerThreadStat> getCompilerThreadStats() {
-        List<CompilerThreadStat> list = new ArrayList<CompilerThreadStat>(threads.length);
+        List<CompilerThreadStat> list = new ArrayList<>(threads.length);
         int i = 0;
         if (threads[0] == null) {
             // no adaptor thread

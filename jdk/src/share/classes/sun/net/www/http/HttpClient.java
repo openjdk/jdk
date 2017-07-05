@@ -47,8 +47,6 @@ public class HttpClient extends NetworkClient {
 
     private boolean inCache;
 
-    protected CookieHandler cookieHandler;
-
     // Http requests we send
     MessageHeader requests;
 
@@ -200,14 +198,6 @@ public class HttpClient extends NetworkClient {
             port = getDefaultPort();
         }
         setConnectTimeout(to);
-
-        // get the cookieHandler if there is any
-        cookieHandler = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CookieHandler>() {
-                public CookieHandler run() {
-                    return CookieHandler.getDefault();
-                }
-            });
 
         capture = HttpCapture.getCapture(url);
         openServer();
@@ -656,6 +646,7 @@ public class HttpClient extends NetworkClient {
 
                 // we've finished parsing http headers
                 // check if there are any applicable cookies to set (in cache)
+                CookieHandler cookieHandler = httpuc.getCookieHandler();
                 if (cookieHandler != null) {
                     URI uri = ParseUtil.toURI(url);
                     // NOTE: That cast from Map shouldn't be necessary but

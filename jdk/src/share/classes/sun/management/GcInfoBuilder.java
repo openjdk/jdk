@@ -104,7 +104,7 @@ public class GcInfoBuilder {
         int itemCount = numGcInfoItems + gcExtItemCount;
         allItemNames = new String[itemCount];
         String[] allItemDescs = new String[itemCount];
-        OpenType[] allItemTypes = new OpenType[itemCount];
+        OpenType<?>[] allItemTypes = new OpenType<?>[itemCount];
 
         System.arraycopy(gcInfoItemNames, 0, allItemNames, 0, numGcInfoItems);
         System.arraycopy(gcInfoItemNames, 0, allItemDescs, 0, numGcInfoItems);

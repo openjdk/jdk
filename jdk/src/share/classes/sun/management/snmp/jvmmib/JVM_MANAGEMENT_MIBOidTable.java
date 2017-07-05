@@ -47,6 +47,7 @@ import com.sun.jmx.snmp.SnmpOidTableSupport;
  */
 public class JVM_MANAGEMENT_MIBOidTable extends SnmpOidTableSupport implements Serializable {
 
+    static final long serialVersionUID = -5010870014488732061L;
     /**
      * Default constructor. Initialize the Mib tree.
      */

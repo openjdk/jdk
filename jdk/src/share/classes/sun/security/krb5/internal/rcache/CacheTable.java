@@ -31,8 +31,6 @@
 package sun.security.krb5.internal.rcache;
 
 import java.util.Hashtable;
-import sun.security.krb5.internal.KerberosTime;
-
 
 /**
  * This class implements Hashtable to store the replay caches.
@@ -60,12 +58,15 @@ public class CacheTable extends Hashtable<String,ReplayCache> {
             }
             rc = new ReplayCache(principal, this);
             rc.put(time, currTime);
-            super.put(principal, rc);
+            if (!rc.isEmpty()) {
+                super.put(principal, rc);
+            }
         }
         else {
             rc.put(time, currTime);
-            // re-insert the entry, since rc.put could have removed the entry
-            super.put(principal, rc);
+            if (rc.isEmpty()) {
+                super.remove(rc);
+            }
             if (DEBUG) {
                 System.out.println("replay cache found.");
             }

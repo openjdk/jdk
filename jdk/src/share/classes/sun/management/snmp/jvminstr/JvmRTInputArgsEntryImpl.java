@@ -44,6 +44,7 @@ import sun.management.snmp.jvmmib.JvmRTInputArgsEntryMBean;
 public class JvmRTInputArgsEntryImpl implements JvmRTInputArgsEntryMBean,
                                                 Serializable {
 
+    static final long serialVersionUID = 1000306518436503395L;
     private final String item;
     private final int index;
 

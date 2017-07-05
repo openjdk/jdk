@@ -76,11 +76,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
                                 Field f = cl.getDeclaredField("builder");
                                 f.setAccessible(true);
                                 return (GcInfoBuilder)f.get(info);
-                            } catch(ClassNotFoundException e) {
-                                return null;
-                            } catch(NoSuchFieldException e) {
-                                return null;
-                            } catch(IllegalAccessException e) {
+                            } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
                                 return null;
                             }
                         }
@@ -92,11 +88,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
                                 Field f = cl.getDeclaredField("extAttributes");
                                 f.setAccessible(true);
                                 return (Object[])f.get(info);
-                            } catch(ClassNotFoundException e) {
-                                return null;
-                            } catch(NoSuchFieldException e) {
-                                return null;
-                            } catch(IllegalAccessException e) {
+                            } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
                                 return null;
                             }
                         }
@@ -180,10 +172,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
             Method m = GcInfo.class.getMethod("getMemoryUsageBeforeGc");
             memoryUsageMapType =
                 MappedMXBeanType.getMappedType(m.getGenericReturnType());
-        } catch (NoSuchMethodException e) {
-            // Should never reach here
-            throw new AssertionError(e);
-        } catch (OpenDataException e) {
+        } catch (NoSuchMethodException | OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
         }
@@ -197,7 +186,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
     static synchronized OpenType[] getBaseGcInfoItemTypes() {
         if (baseGcInfoItemTypes == null) {
             OpenType<?> memoryUsageOpenType = memoryUsageMapType.getOpenType();
-            baseGcInfoItemTypes = new OpenType[] {
+            baseGcInfoItemTypes = new OpenType<?>[] {
                 SimpleType.LONG,
                 SimpleType.LONG,
                 SimpleType.LONG,
@@ -225,10 +214,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
         try {
             TabularData td = (TabularData) cd.get(MEMORY_USAGE_BEFORE_GC);
             return cast(memoryUsageMapType.toJavaTypeData(td));
-        } catch (InvalidObjectException e) {
-            // Should never reach here
-            throw new AssertionError(e);
-        } catch (OpenDataException e) {
+        } catch (InvalidObjectException | OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
         }
@@ -244,10 +230,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
             TabularData td = (TabularData) cd.get(MEMORY_USAGE_AFTER_GC);
             //return (Map<String,MemoryUsage>)
             return cast(memoryUsageMapType.toJavaTypeData(td));
-        } catch (InvalidObjectException e) {
-            // Should never reach here
-            throw new AssertionError(e);
-        } catch (OpenDataException e) {
+        } catch (InvalidObjectException | OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
         }

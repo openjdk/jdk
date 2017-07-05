@@ -50,6 +50,8 @@ import sun.management.snmp.util.MibLogger;
  * The class is used for representing SNMP metadata for the "JvmMemory" group.
  */
 public class JvmMemoryMetaImpl extends JvmMemoryMeta {
+
+    static final long serialVersionUID = -6500448253825893071L;
     /**
      * Constructor for the metadata associated to "JvmMemory".
      */
