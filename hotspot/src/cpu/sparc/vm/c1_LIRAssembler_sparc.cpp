@@ -1705,8 +1705,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 }
 
 
-void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result) {
-
+void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type) {
   Assembler::Condition acond;
   switch (condition) {
     case lir_cond_equal:        acond = Assembler::equal;        break;
@@ -1737,7 +1736,12 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     ShouldNotReachHere();
   }
   Label skip;
-  __ br(acond, false, Assembler::pt, skip);
+#ifdef _LP64
+    if  (type == T_INT) {
+      __ br(acond, false, Assembler::pt, skip);
+    } else
+#endif
+      __ brx(acond, false, Assembler::pt, skip); // checks icc on 32bit and xcc on 64bit
   if (opr1->is_constant() && opr1->type() == T_INT) {
     Register dest = result->as_register();
     if (Assembler::is_simm13(opr1->as_jint())) {
@@ -2688,6 +2692,11 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
 #ifdef _LP64
     __ mov(cmp_value_lo, t1);
     __ mov(new_value_lo, t2);
+    // perform the compare and swap operation
+    __ casx(addr, t1, t2);
+    // generate condition code - if the swap succeeded, t2 ("new value" reg) was
+    // overwritten with the original value in "addr" and will be equal to t1.
+    __ cmp(t1, t2);
 #else
     // move high and low halves of long values into single registers
     __ sllx(cmp_value_hi, 32, t1);         // shift high half into temp reg
@@ -2696,13 +2705,15 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ sllx(new_value_hi, 32, t2);
     __ srl(new_value_lo, 0, new_value_lo);
     __ or3(t2, new_value_lo, t2);          // t2 holds 64-bit value to swap
-#endif
     // perform the compare and swap operation
     __ casx(addr, t1, t2);
     // generate condition code - if the swap succeeded, t2 ("new value" reg) was
     // overwritten with the original value in "addr" and will be equal to t1.
-    __ cmp(t1, t2);
-
+    // Produce icc flag for 32bit.
+    __ sub(t1, t2, t2);
+    __ srlx(t2, 32, t1);
+    __ orcc(t2, t1, G0);
+#endif
   } else if (op->code() == lir_cas_int || op->code() == lir_cas_obj) {
     Register addr = op->addr()->as_pointer_register();
     Register cmp_value = op->cmp_value()->as_register();

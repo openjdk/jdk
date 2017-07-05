@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,12 +674,14 @@ private:
   // Utilities
 
 #ifdef _LP64
- static bool is_simm(int64_t x, int nbits) { return -( CONST64(1) << (nbits-1) )  <= x   &&   x  <  ( CONST64(1) << (nbits-1) ); }
+ static bool is_simm(int64_t x, int nbits) { return -(CONST64(1) << (nbits-1)) <= x &&
+                                                    x < (CONST64(1) << (nbits-1)); }
  static bool is_simm32(int64_t x) { return x == (int64_t)(int32_t)x; }
 #else
- static bool is_simm(int32_t x, int nbits) { return -( 1 << (nbits-1) )  <= x   &&   x  <  ( 1 << (nbits-1) ); }
+ static bool is_simm(int32_t x, int nbits) { return -(1 << (nbits-1)) <= x &&
+                                                    x < (1 << (nbits-1)); }
  static bool is_simm32(int32_t x) { return true; }
-#endif // LP64
+#endif // _LP64
 
   // Generic instructions
   // Does 32bit or 64bit as needed for the platform. In some sense these
@@ -705,7 +707,6 @@ private:
   void push(void* v);
   void pop(void* v);
 
-
   // These do register sized moves/scans
   void rep_mov();
   void rep_set();
@@ -716,6 +717,8 @@ private:
 
   // Vanilla instructions in lexical order
 
+  void adcl(Address dst, int32_t imm32);
+  void adcl(Address dst, Register src);
   void adcl(Register dst, int32_t imm32);
   void adcl(Register dst, Address src);
   void adcl(Register dst, Register src);
@@ -723,7 +726,6 @@ private:
   void adcq(Register dst, int32_t imm32);
   void adcq(Register dst, Address src);
   void adcq(Register dst, Register src);
-
 
   void addl(Address dst, int32_t imm32);
   void addl(Address dst, Register src);
@@ -736,7 +738,6 @@ private:
   void addq(Register dst, int32_t imm32);
   void addq(Register dst, Address src);
   void addq(Register dst, Register src);
-
 
   void addr_nop_4();
   void addr_nop_5();
@@ -758,7 +759,6 @@ private:
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
-
 
   // Bitwise Logical AND of Packed Double-Precision Floating-Point Values
   void andpd(XMMRegister dst, Address src);
@@ -1151,7 +1151,7 @@ private:
 #ifdef _LP64
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
-  void movq(Address dst, Register src);
+  void movq(Address  dst, Register src);
 #endif
 
   void movq(Address     dst, MMXRegister src );
@@ -1177,7 +1177,7 @@ private:
   void movsbq(Register dst, Register src);
 
   // Move signed 32bit immediate to 64bit extending sign
-  void movslq(Address dst, int32_t imm64);
+  void movslq(Address  dst, int32_t imm64);
   void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
@@ -1857,7 +1857,10 @@ class MacroAssembler: public Assembler {
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
+  void incr_allocated_bytes(Register thread,
+                            Register var_size_in_bytes, int con_size_in_bytes,
+                            Register t1 = noreg);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -2180,9 +2183,9 @@ public:
   void divss(XMMRegister dst, Address src)        { Assembler::divss(dst, src); }
   void divss(XMMRegister dst, AddressLiteral src) { Assembler::divss(dst, as_Address(src)); }
 
-  void movsd(XMMRegister dst, XMMRegister src)    { Assembler::movsd(dst, src); }
-  void movsd(Address dst, XMMRegister src)        { Assembler::movsd(dst, src); }
-  void movsd(XMMRegister dst, Address src)        { Assembler::movsd(dst, src); }
+  void movsd(XMMRegister dst, XMMRegister src) { Assembler::movsd(dst, src); }
+  void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
+  void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src) { Assembler::movsd(dst, as_Address(src)); }
 
   void mulsd(XMMRegister dst, XMMRegister src)    { Assembler::mulsd(dst, src); }
