@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2407,6 +2407,53 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return answer;
             }
         }
+    }
+
+    /**
+     * Returns the integer square root of this BigInteger.  The integer square
+     * root of the corresponding mathematical integer {@code n} is the largest
+     * mathematical integer {@code s} such that {@code s*s <= n}.  It is equal
+     * to the value of {@code floor(sqrt(n))}, where {@code sqrt(n)} denotes the
+     * real square root of {@code n} treated as a real.  Note that the integer
+     * square root will be less than the real square root if the latter is not
+     * representable as an integral value.
+     *
+     * @return the integer square root of {@code this}
+     * @throws ArithmeticException if {@code this} is negative.  (The square
+     *         root of a negative integer {@code val} is
+     *         {@code (i * sqrt(-val))} where <i>i</i> is the
+     *         <i>imaginary unit</i> and is equal to
+     *         {@code sqrt(-1)}.)
+     * @since  1.9
+     */
+    public BigInteger sqrt() {
+        if (this.signum < 0) {
+            throw new ArithmeticException("Negative BigInteger");
+        }
+
+        return new MutableBigInteger(this.mag).sqrt().toBigInteger();
+    }
+
+    /**
+     * Returns an array of two BigIntegers containing the integer square root
+     * {@code s} of {@code this} and its remainder {@code this - s*s},
+     * respectively.
+     *
+     * @return an array of two BigIntegers with the integer square root at
+     *         offset 0 and the remainder at offset 1
+     * @throws ArithmeticException if {@code this} is negative.  (The square
+     *         root of a negative integer {@code val} is
+     *         {@code (i * sqrt(-val))} where <i>i</i> is the
+     *         <i>imaginary unit</i> and is equal to
+     *         {@code sqrt(-1)}.)
+     * @see #sqrt()
+     * @since  1.9
+     */
+    public BigInteger[] sqrtAndRemainder() {
+        BigInteger s = sqrt();
+        BigInteger r = this.subtract(s.square());
+        assert r.compareTo(BigInteger.ZERO) >= 0;
+        return new BigInteger[] {s, r};
     }
 
     /**

@@ -35,6 +35,7 @@ import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
 import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
+import static java.lang.String.checkBoundsOffCount;
 
 final class StringUTF16 {
 
@@ -156,6 +157,8 @@ final class StringUTF16 {
     // compressedCopy byte[] -> byte[]
     @HotSpotIntrinsicCandidate
     public static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        // We need a range check here because 'getChar' has no checks
+        checkBoundsOffCount(srcOff, len, src.length);
         for (int i = 0; i < len; i++) {
             int c = getChar(src, srcOff++);
             if (c >>> 8 != 0) {
@@ -200,6 +203,8 @@ final class StringUTF16 {
 
     @HotSpotIntrinsicCandidate
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
+        // We need a range check here because 'getChar' has no checks
+        checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value.length);
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
         }
@@ -909,11 +914,6 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    public static void getCharsSB(byte[] val, int srcBegin, int srcEnd, char dst[], int dstBegin) {
-        checkOffset(srcEnd, val.length >> 1);
-        getChars(val, srcBegin, srcEnd, dst, dstBegin);
-    }
-
     public static void putCharSB(byte[] val, int index, int c) {
         checkIndex(index, val.length >> 1);
         putChar(val, index, c);
@@ -944,11 +944,6 @@ final class StringUTF16 {
     public static int codePointCountSB(byte[] val, int beginIndex, int endIndex) {
         checkOffset(endIndex, val.length >> 1);
         return codePointCount(val, beginIndex, endIndex);
-    }
-
-    public static String newStringSB(byte[] val, int index, int len) {
-        checkOffset(index + len, val.length >> 1);
-        return newString(val, index, len);
     }
 
     ////////////////////////////////////////////////////////////////

@@ -173,7 +173,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_UnixNativeDispatcher_futimes;
 		Java_sun_nio_fs_UnixNativeDispatcher_open0;
 		Java_sun_nio_fs_UnixNativeDispatcher_openat0;
-		Java_sun_nio_fs_UnixNativeDispatcher_close;
+		Java_sun_nio_fs_UnixNativeDispatcher_close0;
 		Java_sun_nio_fs_UnixNativeDispatcher_read;
 		Java_sun_nio_fs_UnixNativeDispatcher_write;
 		Java_sun_nio_fs_UnixNativeDispatcher_fopen0;

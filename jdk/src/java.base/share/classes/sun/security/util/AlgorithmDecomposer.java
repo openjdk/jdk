@@ -35,8 +35,10 @@ import java.util.regex.Pattern;
 public class AlgorithmDecomposer {
 
     private static final Pattern transPattern = Pattern.compile("/");
+
+    // '(?<!padd)in': match 'in' but not preceded with 'padd'.
     private static final Pattern pattern =
-                    Pattern.compile("with|and|in", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("with|and|(?<!padd)in", Pattern.CASE_INSENSITIVE);
 
     /**
      * Decompose the standard algorithm name into sub-elements.

@@ -1,4 +1,4 @@
-#! missing method linker example
+# Usage: jjs -cp buffer_indexing_linker.jar buffer_index.js
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -31,19 +31,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script assumes you've built jdk9 or using latest
-// jdk9 image and put the 'bin' directory in the PATH
+// This script depends on buffer indexing dynalink linker. Without that
+// linker in classpath, this script will fail to run properly.
 
-$EXEC.throwOnError=true
+function str(buf) {
+    var s = ''
+    for (var i = 0; i < buf.length; i++)
+        s += buf[i] + ","
+    return s
+}
 
-// compile MissingMethodLinkerExporter
-`javac -cp ../dist/nashorn.jar MissingMethodLinkerExporter.java MissingMethodHandler.java MissingMethodExample.java`
+var ByteBuffer = Java.type("java.nio.ByteBuffer")
+var bb = ByteBuffer.allocate(10)
+for (var i = 0; i < bb.length; i++)
+    bb[i] = i*i
+print(str(bb))
 
-// make a jar file out of pluggable linker
-`jar cvf missing_method_linker.jar MissingMethod*.class META-INF/`
+var CharBuffer = Java.type("java.nio.CharBuffer")
+var cb = CharBuffer.wrap("hello world")
+print(str(cb))
 
-// run a sample script that uses pluggable linker
-// but make sure classpath points to the pluggable linker jar!
+var RandomAccessFile = Java.type("java.io.RandomAccessFile")
+var raf = new RandomAccessFile("buffer_index.js", "r")
+var chan = raf.getChannel()
+var fileSize = chan.size()
+var buf = ByteBuffer.allocate(fileSize)
+chan.read(buf)
+chan.close()
 
-`jjs -cp missing_method_linker.jar missing_method.js`
-print($OUT)
+var str = ''
+for (var i = 0; i < buf.length; i++)
+    str += String.fromCharCode(buf[i])
+print(str)
