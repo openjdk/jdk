@@ -349,6 +349,12 @@ hotspot_fast_gc_closed = \
 hotspot_fast_gc_gcold = \
   gc/stress/TestGCOld.java
 
+hotspot_fast_gc_gcbasher = \
+  gc/stress/gcbasher/TestGCBasherWithG1.java \
+  gc/stress/gcbasher/TestGCBasherWithCMS.java \
+  gc/stress/gcbasher/TestGCBasherWithSerial.java \
+  gc/stress/gcbasher/TestGCBasherWithParallel.java
+
 hotspot_fast_runtime = \
   runtime/ \
  -runtime/6626217/Test6626217.sh \

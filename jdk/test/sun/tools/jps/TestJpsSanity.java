@@ -96,7 +96,7 @@ public class TestJpsSanity {
     }
 
     private static void testJpsUnknownHost() throws Exception {
-        String invalidHostName = "Oja781nh2ev7vcvbajdg-Sda1-C";
+        String invalidHostName = "Oja781nh2ev7vcvbajdg-Sda1-C.invalid";
         OutputAnalyzer output = JpsHelper.jps(invalidHostName);
         Asserts.assertNotEquals(output.getExitValue(), 0, "Exit code shouldn't be 0");
         Asserts.assertFalse(output.getStderr().isEmpty(), "Error output should not be empty");
