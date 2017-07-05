@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
 
-#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
 #include "gc_implementation/shared/gSpaceCounters.hpp"
 #include "gc_implementation/shared/gcStats.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/freeBlockDictionary.hpp"
 #include "memory/generation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
@@ -1106,7 +1106,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
                                 int level, CardTableRS* ct,
                                 bool use_adaptive_freelists,
-                                FreeBlockDictionary::DictionaryChoice);
+                                FreeBlockDictionary<FreeChunk>::DictionaryChoice);
 
   // Accessors
   CMSCollector* collector() const { return _collector; }
@@ -1328,7 +1328,7 @@ class ASConcurrentMarkSweepGeneration : public ConcurrentMarkSweepGeneration {
   ASConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
                                   int level, CardTableRS* ct,
                                   bool use_adaptive_freelists,
-                                  FreeBlockDictionary::DictionaryChoice
+                                  FreeBlockDictionary<FreeChunk>::DictionaryChoice
                                     dictionaryChoice) :
     ConcurrentMarkSweepGeneration(rs, initial_byte_size, level, ct,
       use_adaptive_freelists, dictionaryChoice) {}
