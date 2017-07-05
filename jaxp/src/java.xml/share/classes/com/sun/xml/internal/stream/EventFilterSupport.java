@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class EventFilterSupport extends EventReaderDelegate {
     }
 
     public XMLEvent nextEvent()throws XMLStreamException{
-        if(super.hasNext()){
+        while (super.hasNext()) {
             //get the next event by calling XMLEventReader
             XMLEvent event = super.nextEvent();
 
@@ -72,27 +72,19 @@ public class EventFilterSupport extends EventReaderDelegate {
             if(fEventFilter.accept(event)){
                 return event;
             }
-            else{
-                return nextEvent();
-            }
-        }else{
-            throw new NoSuchElementException();
         }
+        throw new NoSuchElementException();
     }//nextEvent()
 
      public XMLEvent nextTag() throws XMLStreamException{
-         if(super.hasNext()){
+         while (super.hasNext()) {
              XMLEvent event = super.nextTag();
              //if the filter accepts this event return this event.
              if(fEventFilter.accept(event)){
                 return event;
              }
-             else{
-                return nextTag();
-             }
-         }else{
-             throw new NoSuchElementException();
          }
+         throw new NoSuchElementException();
      }
 
      public XMLEvent peek() throws XMLStreamException{

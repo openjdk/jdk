@@ -36,8 +36,6 @@ import java.io.FileInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * A class providing APIs for the CORBA Object Request Broker
  * features.  The {@code ORB} class also provides
@@ -188,6 +186,24 @@ abstract public class ORB {
     private static final String ORBClassKey = "org.omg.CORBA.ORBClass";
     private static final String ORBSingletonClassKey = "org.omg.CORBA.ORBSingletonClass";
 
+    // check that access to the class is not restricted by the security manager.
+    private static void checkPackageAccess(String name) {
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            String cname = name.replace('/', '.');
+            if (cname.startsWith("[")) {
+                int b = cname.lastIndexOf('[') + 2;
+                if (b > 1 && b < cname.length()) {
+                    cname = cname.substring(b);
+                }
+            }
+            int i = cname.lastIndexOf('.');
+            if (i != -1) {
+                s.checkPackageAccess(cname.substring(0, i));
+            }
+        }
+    }
+
     //
     // The global instance of the singleton ORB implementation which
     // acts as a factory for typecodes for generated Helper classes.
@@ -318,7 +334,7 @@ abstract public class ORB {
    private static ORB create_impl_with_systemclassloader(String className) {
 
         try {
-            ReflectUtil.checkPackageAccess(className);
+            checkPackageAccess(className);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
             Class<?> singletonOrbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
@@ -337,7 +353,7 @@ abstract public class ORB {
             cl = ClassLoader.getSystemClassLoader();
 
         try {
-            ReflectUtil.checkPackageAccess(className);
+            checkPackageAccess(className);
             Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
             Class<?> orbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
             return (ORB)orbClass.newInstance();

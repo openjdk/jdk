@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,18 @@
  * questions.
  */
 
-module customplugin {
-    requires jdk.jlink;
-    provides jdk.tools.jlink.plugin.Plugin with plugin.HelloPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with plugin.CustomPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with plugin.RogueAdderPlugin;
-    provides jdk.tools.jlink.plugin.Plugin with plugin.RogueFilterPlugin;
+/*
+ * @test
+ * @bug 8168075
+ * @summary Ensure that security messages can be formatted during system class
+ *   loader initialization.
+ * @build CustomClassLoader
+ * @run main/othervm/java.security.policy=error.policy -Djava.security.manager -Djava.system.class.loader=CustomClassLoader BootMessages
+ */
+
+public class BootMessages {
+
+    public static void main(String[] args) throws Exception {
+
+    }
 }

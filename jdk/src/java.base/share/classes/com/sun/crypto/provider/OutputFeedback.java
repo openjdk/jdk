@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,11 +162,11 @@ final class OutputFeedback extends FeedbackCipher {
             for (int i = 0; i < numBytes; i++) {
                 cipher[i + cipherOffset] =
                     (byte)(k[i] ^ plain[i + plainOffset]);
-                if (nShift != 0) {
-                    System.arraycopy(register, numBytes, register, 0, nShift);
-                }
-                System.arraycopy(k, 0, register, nShift, numBytes);
             }
+            if (nShift != 0) {
+                System.arraycopy(register, numBytes, register, 0, nShift);
+            }
+            System.arraycopy(k, 0, register, nShift, numBytes);
         }
         return plainLen;
     }

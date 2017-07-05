@@ -5180,7 +5180,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1484571183
+DATE_WHEN_GENERATED=1485508515
 
 ###############################################################################
 #
@@ -31282,12 +31282,6 @@ $as_echo "$as_me: The path of IMPORT_MODULES_TOPDIR, which resolves as \"$path\"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
-  fi
-  # Workaround for using different imported module-info.java in Jake due to a
-  # change in format. Remove once new format is standard in JDK 9 and javafx
-  # delivers just that.
-  if test -d "$IMPORT_MODULES_TOPDIR/modules_src_jake"; then
-    IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src_jake $IMPORT_MODULES_SRC"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/make"; then
     IMPORT_MODULES_MAKE="$IMPORT_MODULES_TOPDIR/make"

@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.15 [November 20, 2014]
- * Copyright (c) 1998-2002,2004,2006-2014 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.26 [October 20, 2016]
+ * Copyright (c) 1998-2002,2004,2006-2014,2016 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -94,7 +94,7 @@ png_calloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
  */
 PNG_FUNCTION(png_voidp /* PRIVATE */,
 png_malloc_base,(png_const_structrp png_ptr, png_alloc_size_t size),
-   PNG_ALLOCATED)
+    PNG_ALLOCATED)
 {
    /* Moved to png_malloc_base from png_malloc_default in 1.6.0; the DOS
     * allocators have also been removed in 1.6.0, so any 16-bit system now has
@@ -135,9 +135,9 @@ png_malloc_base,(png_const_structrp png_ptr, png_alloc_size_t size),
  */
 static png_voidp
 png_malloc_array_checked(png_const_structrp png_ptr, int nelements,
-   size_t element_size)
+    size_t element_size)
 {
-   png_alloc_size_t req = nelements; /* known to be > 0 */
+   png_alloc_size_t req = (png_alloc_size_t)nelements; /* known to be > 0 */
 
    if (req <= PNG_SIZE_MAX/element_size)
       return png_malloc_base(png_ptr, req * element_size);
@@ -148,7 +148,7 @@ png_malloc_array_checked(png_const_structrp png_ptr, int nelements,
 
 PNG_FUNCTION(png_voidp /* PRIVATE */,
 png_malloc_array,(png_const_structrp png_ptr, int nelements,
-   size_t element_size),PNG_ALLOCATED)
+    size_t element_size),PNG_ALLOCATED)
 {
    if (nelements <= 0 || element_size == 0)
       png_error(png_ptr, "internal error: array alloc");
@@ -158,7 +158,7 @@ png_malloc_array,(png_const_structrp png_ptr, int nelements,
 
 PNG_FUNCTION(png_voidp /* PRIVATE */,
 png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
-   int old_elements, int add_elements, size_t element_size),PNG_ALLOCATED)
+    int old_elements, int add_elements, size_t element_size),PNG_ALLOCATED)
 {
    /* These are internal errors: */
    if (add_elements <= 0 || element_size == 0 || old_elements < 0 ||
@@ -171,7 +171,7 @@ png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
    if (add_elements <= INT_MAX - old_elements)
    {
       png_voidp new_array = png_malloc_array_checked(png_ptr,
-         old_elements+add_elements, element_size);
+          old_elements+add_elements, element_size);
 
       if (new_array != NULL)
       {
@@ -182,7 +182,7 @@ png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
             memcpy(new_array, old_array, element_size*(unsigned)old_elements);
 
          memset((char*)new_array + element_size*(unsigned)old_elements, 0,
-            element_size*(unsigned)add_elements);
+             element_size*(unsigned)add_elements);
 
          return new_array;
       }
@@ -215,7 +215,7 @@ png_malloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
 #ifdef PNG_USER_MEM_SUPPORTED
 PNG_FUNCTION(png_voidp,PNGAPI
 png_malloc_default,(png_const_structrp png_ptr, png_alloc_size_t size),
-   PNG_ALLOCATED PNG_DEPRECATED)
+    PNG_ALLOCATED PNG_DEPRECATED)
 {
    png_voidp ret;
 
@@ -238,7 +238,7 @@ png_malloc_default,(png_const_structrp png_ptr, png_alloc_size_t size),
  */
 PNG_FUNCTION(png_voidp,PNGAPI
 png_malloc_warn,(png_const_structrp png_ptr, png_alloc_size_t size),
-   PNG_ALLOCATED)
+    PNG_ALLOCATED)
 {
    if (png_ptr != NULL)
    {

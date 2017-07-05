@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,11 @@ public abstract class OutputStream extends org.omg.CORBA.portable.OutputStream {
     /**
      * Create a new instance of this class.
      *
-     * throw SecurityException if SecurityManager is installed and
+     * @implNote
+     * Throws SecurityException if SecurityManager is installed and
      * enableSubclassImplementation SerializablePermission
      * is not granted or jdk.corba.allowOutputStreamSubclass system
-     * property is either not set or is set to 'false'
+     * property is either not set or is set to 'false'.
      */
     public OutputStream() {
         this(checkPermission());

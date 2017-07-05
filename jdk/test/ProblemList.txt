@@ -203,6 +203,8 @@ java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGr
 
 sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
+java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+
 ############################################################################
 
 # jdk_security
@@ -251,6 +253,7 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
+tools/launcher/ArgsEnvVar.java					8173712 generic-all
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
 tools/jimage/JImageExtractTest.java                             8169713 generic-all
@@ -259,8 +262,6 @@ tools/jimage/JImageVerifyTest.java                              8169713 generic-
 
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
-
-tools/jlink/CustomPluginTest.java                               8172864 generic-all
 
 ############################################################################
 
