@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.xml.internal.ws.db;
 
-import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
@@ -38,19 +37,17 @@ import javax.xml.transform.Source;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.WebServiceFeature;
 
-import com.sun.xml.internal.org.jvnet.ws.databinding.Databinding;
-import com.sun.xml.internal.org.jvnet.ws.databinding.DatabindingModeFeature;
-import com.sun.xml.internal.org.jvnet.ws.databinding.Databinding.Builder;
-import com.sun.xml.internal.org.jvnet.ws.databinding.Databinding.WSDLGenerator;
 import org.xml.sax.EntityResolver;
 
+import com.oracle.webservices.internal.api.databinding.Databinding;
+import com.oracle.webservices.internal.api.databinding.Databinding.Builder;
+import com.oracle.webservices.internal.api.databinding.WSDLGenerator;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
 import com.sun.xml.internal.ws.api.databinding.DatabindingFactory;
-import com.sun.xml.internal.ws.api.databinding.WSDLGenInfo;
+import com.sun.xml.internal.ws.api.databinding.MetadataReader;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.spi.db.DatabindingException;
 import com.sun.xml.internal.ws.spi.db.DatabindingProvider;
 import com.sun.xml.internal.ws.util.ServiceFinder;
 
@@ -115,7 +112,7 @@ public class DatabindingFactoryImpl extends DatabindingFactory {
                 return provider.create(config);
         }
 
-    public Databinding.WSDLGenerator createWsdlGen(DatabindingConfig config) {
+    public WSDLGenerator createWsdlGen(DatabindingConfig config) {
         DatabindingProvider provider = provider(config);
         return provider.wsdlGen(config);
     }
@@ -145,8 +142,8 @@ public class DatabindingFactoryImpl extends DatabindingFactory {
                      config.getMappingInfo().getDatabindingMode() != null)
                         return config.getMappingInfo().getDatabindingMode();
         if ( config.getFeatures() != null) for (WebServiceFeature f : config.getFeatures()) {
-            if (f instanceof DatabindingModeFeature) {
-                DatabindingModeFeature dmf = (DatabindingModeFeature) f;
+            if (f instanceof com.oracle.webservices.internal.api.databinding.DatabindingModeFeature) {
+                com.oracle.webservices.internal.api.databinding.DatabindingModeFeature dmf = (com.oracle.webservices.internal.api.databinding.DatabindingModeFeature) f;
                 return dmf.getMode();
             }
         }
@@ -235,16 +232,19 @@ public class DatabindingFactoryImpl extends DatabindingFactory {
             if (isfor(WSDLPort.class, name, value)) {
                 config.setWsdlPort((WSDLPort)value);
             }
+            if (isfor(MetadataReader.class, name, value)) {
+                config.setMetadataReader((MetadataReader)value);
+            }
             return this;
         }
         boolean isfor(Class<?> type, String name, Object value) {
             return type.getName().equals(name) && type.isInstance(value);
         }
 
-        public com.sun.xml.internal.org.jvnet.ws.databinding.Databinding build() {
+        public com.oracle.webservices.internal.api.databinding.Databinding build() {
             return factory.createRuntime(config);
         }
-        public WSDLGenerator createWSDLGenerator() {
+        public com.oracle.webservices.internal.api.databinding.WSDLGenerator createWSDLGenerator() {
             return factory.createWsdlGen(config);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /**
- * Default partial implementations of {@link Pipe}.
+ * Default partial implementations of {@link com.sun.xml.internal.ws.api.pipe.Pipe}.
  *
  * <p>
  * This is intended to be useful for projects building on

@@ -381,38 +381,32 @@ md_ntohl(unsigned l)
 }
 
 static void dll_build_name(char* buffer, size_t buflen,
-                           const char* pname, const char* fname) {
-    // Loosely based on os_solaris.cpp
+                           const char* paths, const char* fname) {
+    char *path, *paths_copy, *next_token;
 
-      char *pathname = (char *)pname;
-      *buffer = '\0';
-      while (strlen(pathname) > 0) {
-          char *p = strchr(pathname, ':');
-          if (p == NULL) {
-              p = pathname + strlen(pathname);
-          }
-          /* check for NULL path */
-          if (p == pathname) {
-              continue;
-          }
-          (void)snprintf(buffer, buflen, "%.*s/lib%s" JNI_LIB_SUFFIX,
-                         (int)(p - pathname), pathname, fname);
+    paths_copy = strdup(paths);
+    if (paths_copy == NULL) {
+        return;
+    }
 
-          if (access(buffer, F_OK) == 0) {
-              break;
-          }
-          if (*p == '\0') {
-              pathname = p;
-          } else {
-              pathname = p + 1;
-          }
-          *buffer = '\0';
-      }
+    next_token = NULL;
+    path = strtok_r(paths_copy, ":", &next_token);
+
+    while (path != NULL) {
+        snprintf(buffer, buflen, "%s/lib%s" JNI_LIB_SUFFIX, path, fname);
+        if (access(buffer, F_OK) == 0) {
+            break;
+        }
+        *buffer = '\0';
+        path = strtok_r(NULL, ":", &next_token);
+    }
+
+    free(paths_copy);
 }
 
 /* Create the actual fill filename for a dynamic library.  */
 void
-md_build_library_name(char *holder, int holderlen, char *pname, char *fname)
+md_build_library_name(char *holder, int holderlen, const char *pname, const char *fname)
 {
     int   pnamelen;
 

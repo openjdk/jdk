@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 package com.sun.xml.internal.ws.server.provider;
 
 import com.sun.istack.internal.Nullable;
+import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
+import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 
 import javax.xml.ws.soap.SOAPBinding;
 
@@ -37,6 +39,7 @@ import javax.xml.ws.soap.SOAPBinding;
  * @author Jitendra Kotamraju
  */
 
+public // TODO need this in the factory
 abstract class ProviderArgumentsBuilder<T> {
 
     /**
@@ -57,7 +60,7 @@ abstract class ProviderArgumentsBuilder<T> {
      * Binds {@link com.sun.xml.internal.ws.api.message.Message} to method invocation parameter
      * @param packet
      */
-    protected abstract T getParameter(Packet packet);
+    /*protected*/ public abstract T getParameter(Packet packet); // TODO public for DISI pluggable Provider
 
     protected abstract Message getResponseMessage(T returnValue);
 
@@ -75,21 +78,26 @@ abstract class ProviderArgumentsBuilder<T> {
 
     public static ProviderArgumentsBuilder<?> create(ProviderEndpointModel model, WSBinding binding) {
         if (model.datatype == Packet.class)
-                return new PacketProviderArgumentsBuilder();
+                return new PacketProviderArgumentsBuilder(binding.getSOAPVersion());
         return (binding instanceof SOAPBinding) ? SOAPProviderArgumentBuilder.create(model, binding.getSOAPVersion())
                 : XMLProviderArgumentBuilder.createBuilder(model, binding);
     }
 
     private static class PacketProviderArgumentsBuilder extends ProviderArgumentsBuilder<Packet> {
+                private final SOAPVersion soapVersion;
 
-                @Override
-                protected Message getResponseMessage(Exception e) {
-                        // Should never be called
-                        throw new IllegalStateException();
+                public PacketProviderArgumentsBuilder(SOAPVersion soapVersion) {
+                    this.soapVersion = soapVersion;
                 }
 
                 @Override
-                protected Packet getParameter(Packet packet) {
+                protected Message getResponseMessage(Exception e) {
+                    // Will be called by AsyncProviderCallbackImpl.sendError
+                    return SOAPFaultBuilder.createSOAPFaultMessage(soapVersion, null, e);
+                }
+
+                @Override
+                /*protected*/ public Packet getParameter(Packet packet) {
                         return packet;
                 }
 

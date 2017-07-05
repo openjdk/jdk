@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Vivek Pandey
@@ -139,13 +141,22 @@ public class WsimportOptions extends Options {
     /**
      * Authentication file
      */
-    public File authFile;
+    public File authFile = null;
+
+    //can user.home value be null?
+    public static final String defaultAuthfile
+            = System.getProperty("user.home") + System.getProperty("file.separator")
+            + ".metro" + System.getProperty("file.separator") + "auth";
 
     /**
      * Setting disableAuthenticator to true disables the DefaultAuthenticator.
      * -XdisableAuthenticator
      */
     public boolean disableAuthenticator;
+
+    public String proxyAuth = null;
+    private String proxyHost = null;
+    private String proxyPort = null;
 
     /**
      * Additional arguments
@@ -240,6 +251,16 @@ public class WsimportOptions extends Options {
                 }
             }
         }
+
+        if (encoding != null && schemaCompiler.getOptions().encoding == null) {
+            try {
+                schemaCompiler.getOptions().parseArgument(
+                        new String[] {"-encoding", encoding}, 0);
+            } catch (com.sun.tools.internal.xjc.BadCommandLineException ex) {
+                Logger.getLogger(WsimportOptions.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
         if(destDir == null)
             destDir = new File(".");
         if(sourceDir == null)
@@ -292,15 +313,15 @@ public class WsimportOptions extends Options {
             if (value.length() == 0) {
                 throw new BadCommandLineException(WscompileMessages.WSCOMPILE_INVALID_OPTION(args[i]));
             }
-            int index = value.indexOf(':');
-            if (index == -1) {
+            parseProxy(value);
+            if (proxyHost != null || proxyPort != null) {
                 System.setProperty("proxySet", "true");
-                System.setProperty("proxyHost", value);
-                System.setProperty("proxyPort", "8080");
-            } else {
-                System.setProperty("proxySet", "true");
-                System.setProperty("proxyHost", value.substring(0, index));
-                System.setProperty("proxyPort", value.substring(index + 1));
+            }
+            if (proxyHost != null) {
+                System.setProperty("proxyHost", proxyHost);
+            }
+            if (proxyPort != null) {
+                System.setProperty("proxyPort", proxyPort);
             }
             return 1;
         } else if (args[i].equals("-Xno-addressing-databinding")) {
@@ -574,6 +595,37 @@ public class WsimportOptions extends Options {
      */
     public String getExtensionOption(String argument) {
         return extensionOptions.get(argument);
+    }
+
+    private void parseProxy(String text) throws BadCommandLineException {
+        int i = text.lastIndexOf('@');
+        int j = text.lastIndexOf(':');
+
+        if (i > 0) {
+            proxyAuth = text.substring(0, i);
+            if (j > i) {
+                proxyHost = text.substring(i + 1, j);
+                proxyPort = text.substring(j + 1);
+            } else {
+                proxyHost = text.substring(i + 1);
+                proxyPort = "8080";
+            }
+        } else {
+            //no auth info
+            if (j < 0) {
+                //no port
+                proxyHost = text;
+                proxyPort = "8080";
+            } else {
+                proxyHost = text.substring(0, j);
+                proxyPort = text.substring(j + 1);
+            }
+        }
+        try {
+            Integer.valueOf(proxyPort);
+        } catch (NumberFormatException e) {
+            throw new BadCommandLineException(WscompileMessages.WSIMPORT_ILLEGAL_PROXY(text));
+        }
     }
 
     /**

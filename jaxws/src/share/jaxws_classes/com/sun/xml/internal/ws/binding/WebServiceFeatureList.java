@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.xml.internal.ws.binding;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.api.FeatureListValidator;
+import com.sun.xml.internal.ws.api.FeatureListValidatorAnnotation;
 import com.sun.xml.internal.ws.api.ImpliesWebServiceFeature;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -50,7 +52,7 @@ import javax.xml.ws.soap.MTOM;
 import javax.xml.ws.soap.MTOMFeature;
 import javax.xml.ws.spi.WebServiceFeatureAnnotation;
 
-import com.sun.xml.internal.org.jvnet.ws.EnvelopeStyleFeature;
+import com.oracle.webservices.internal.api.EnvelopeStyleFeature;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -76,6 +78,7 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
     }
 
     private Map<Class<? extends WebServiceFeature>, WebServiceFeature> wsfeatures = new HashMap<Class<? extends WebServiceFeature>, WebServiceFeature>();
+    private boolean isValidating = false;
 
     public WebServiceFeatureList() {
     }
@@ -89,7 +92,34 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
     public WebServiceFeatureList(@NotNull WebServiceFeature... features) {
         if (features != null) {
             for (WebServiceFeature f : features) {
-                add(f);
+                addNoValidate(f);
+            }
+        }
+    }
+
+    public void validate() {
+        if (!isValidating) {
+            isValidating = true;
+
+            // validation
+            for (WebServiceFeature ff : this) {
+                validate(ff);
+            }
+        }
+    }
+
+    private void validate(WebServiceFeature feature) {
+        // run validation
+        FeatureListValidatorAnnotation fva = feature.getClass().getAnnotation(FeatureListValidatorAnnotation.class);
+        if (fva != null) {
+            Class<? extends FeatureListValidator> beanClass = fva.bean();
+            try {
+                FeatureListValidator validator = beanClass.newInstance();
+                validator.validate(this);
+            } catch (InstantiationException e) {
+                throw new WebServiceException(e);
+            } catch (IllegalAccessException e) {
+                throw new WebServiceException(e);
             }
         }
     }
@@ -98,6 +128,7 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
         if (features != null) {
             wsfeatures.putAll(features.wsfeatures);
             parent = features.parent;
+            isValidating = features.isValidating;
         }
     }
 
@@ -247,6 +278,9 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
                     final Method annotationMethod = annotation.annotationType().getDeclaredMethod(methodName);
                     final Object annotationFieldValue = annotationMethod.invoke(annotation);
                     final Object[] arg = { annotationFieldValue };
+                    if (skipDuringOrgJvnetWsToComOracleWebservicesPackageMove(builderMethod, annotationFieldValue)) {
+                        continue;
+                    }
                     builderMethod.invoke(builder, arg);
                 }
             }
@@ -264,6 +298,27 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
         } catch (final InvocationTargetException e) {
             throw new WebServiceException(e);
         }
+    }
+
+    // TODO this will be removed after package move is complete.
+    private static boolean skipDuringOrgJvnetWsToComOracleWebservicesPackageMove(
+        final Method builderMethod,
+        final Object annotationFieldValue)
+    {
+        final Class<?> annotationFieldValueClass = annotationFieldValue.getClass();
+        if (! annotationFieldValueClass.isEnum()) {
+            return false;
+        }
+        final Class<?>[] builderMethodParameterTypes = builderMethod.getParameterTypes();
+        if (builderMethodParameterTypes.length != 1) {
+            throw new WebServiceException("expected only 1 parameter");
+        }
+        final String builderParameterTypeName = builderMethodParameterTypes[0].getName();
+        if (! builderParameterTypeName.startsWith("com.oracle.webservices.internal.test.features_annotations_enums.apinew") &&
+            ! builderParameterTypeName.startsWith("com.oracle.webservices.internal.api")) {
+            return false;
+        }
+        return false;
     }
 
     public Iterator<WebServiceFeature> iterator() {
@@ -302,12 +357,21 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
      * Adds a feature to the list if it's not already added.
      */
     public void add(@NotNull WebServiceFeature f) {
+        if(addNoValidate(f) && isValidating)
+            validate(f);
+    }
+
+    private boolean addNoValidate(@NotNull WebServiceFeature f) {
         if (!wsfeatures.containsKey(f.getClass())) {
             wsfeatures.put(f.getClass(), f);
 
             if (f instanceof ImpliesWebServiceFeature)
                 ((ImpliesWebServiceFeature) f).implyFeatures(this);
+
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -500,7 +564,13 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
     }
 
     static public SOAPVersion getSoapVersion(WSFeatureList features) {
-        EnvelopeStyleFeature env = features.get(EnvelopeStyleFeature.class);
+        {
+            EnvelopeStyleFeature env = features.get(EnvelopeStyleFeature.class);
+            if (env != null) {
+                return SOAPVersion.from(env);
+            }
+        }
+        com.oracle.webservices.internal.api.EnvelopeStyleFeature env = features.get(com.oracle.webservices.internal.api.EnvelopeStyleFeature.class);
         return env != null ? SOAPVersion.from(env) : null;
     }
 

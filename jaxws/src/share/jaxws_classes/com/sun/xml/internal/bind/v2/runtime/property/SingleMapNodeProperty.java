@@ -142,6 +142,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
 
         private ThreadLocal<BeanT> target = new ThreadLocal<BeanT>();
         private ThreadLocal<ValueT> map = new ThreadLocal<ValueT>();
+        private int depthCounter = 0; // needed to clean ThreadLocals
 
         @Override
         public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
@@ -149,6 +150,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
             try {
                 target.set((BeanT)state.prev.target);
                 map.set(acc.get(target.get()));
+                depthCounter++;
                 if(map.get() == null) {
                     map.set(ClassFactory.create(mapImplClass));
                 }
@@ -166,7 +168,10 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
             super.leaveElement(state, ea);
             try {
                 acc.set(target.get(), map.get());
-                target.remove();
+                if (--depthCounter == 0) {
+                    target.remove();
+                    map.remove();
+                }
             } catch (AccessorException ex) {
                 handleGenericException(ex,true);
             }

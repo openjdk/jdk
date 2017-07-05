@@ -166,7 +166,7 @@ public abstract class WhiteSpaceProcessor {
     /**
      * Returns true if the specified string is all whitespace.
      */
-    public static final boolean isWhiteSpace(CharSequence s) {
+    public static boolean isWhiteSpace(CharSequence s) {
         for( int i=s.length()-1; i>=0; i-- )
             if(!isWhiteSpace(s.charAt(i)))
                 return false;
@@ -174,7 +174,7 @@ public abstract class WhiteSpaceProcessor {
     }
 
     /** returns true if the specified char is a white space character. */
-    public static final boolean isWhiteSpace(char ch) {
+    public static boolean isWhiteSpace(char ch) {
         // most of the characters are non-control characters.
         // so check that first to quickly return false for most of the cases.
         if( ch>0x20 )   return false;
@@ -187,7 +187,7 @@ public abstract class WhiteSpaceProcessor {
      * Returns true if the specified char is a white space character
      * but not 0x20.
      */
-    protected static final boolean isWhiteSpaceExceptSpace(char ch) {
+    protected static boolean isWhiteSpaceExceptSpace(char ch) {
         // most of the characters are non-control characters.
         // so check that first to quickly return false for most of the cases.
         if( ch>=0x20 )   return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,19 @@ package com.sun.xml.internal.ws.api.streaming;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.streaming.XMLReaderException;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import org.xml.sax.InputSource;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.logging.Logger;
 import java.security.AccessController;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory for {@link XMLStreamReader}.
@@ -54,6 +51,7 @@ import java.security.AccessController;
  *
  * @author Kohsuke Kawaguchi
  */
+@SuppressWarnings("StaticNonFinalUsedInInitialization")
 public abstract class XMLStreamReaderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(XMLStreamReaderFactory.class.getName());
@@ -69,20 +67,23 @@ public abstract class XMLStreamReaderFactory {
 
         // this system property can be used to disable the pooling altogether,
         // in case someone hits an issue with pooling in the production system.
-        if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool"))
+        if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool")) {
             f = Zephyr.newInstance(xif);
+        }
 
         if(f==null) {
             // is this Woodstox?
-            if(xif.getClass().getName().equals("com.ctc.wstx.stax.WstxInputFactory"))
+            if (xif.getClass().getName().equals("com.ctc.wstx.stax.WstxInputFactory")) {
                 f = new Woodstox(xif);
+            }
         }
 
-        if(f==null)
+        if (f==null) {
             f = new Default();
+        }
 
         theInstance = f;
-        LOGGER.fine("XMLStreamReaderFactory instance is = "+theInstance);
+        LOGGER.log(Level.FINE, "XMLStreamReaderFactory instance is = {0}", theInstance);
     }
 
     private static XMLInputFactory getXMLInputFactory() {
@@ -95,7 +96,7 @@ public abstract class XMLStreamReaderFactory {
             }
         }
         if (xif == null) {
-            xif = XMLInputFactory.newInstance();
+             xif = XmlUtil.newXMLInputFactory(true);
         }
         xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
         xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
@@ -109,7 +110,9 @@ public abstract class XMLStreamReaderFactory {
      * the JAX-WS RI uses.
      */
     public static void set(XMLStreamReaderFactory f) {
-        if(f==null) throw new IllegalArgumentException();
+        if(f==null) {
+            throw new IllegalArgumentException();
+        }
         theInstance = f;
     }
 
@@ -213,7 +216,7 @@ public abstract class XMLStreamReaderFactory {
     /**
      * {@link XMLStreamReaderFactory} implementation for SJSXP/JAXP RI.
      */
-    public static final class Zephyr extends XMLStreamReaderFactory {
+    private static final class Zephyr extends XMLStreamReaderFactory {
         private final XMLInputFactory xif;
 
         private final ThreadLocal<XMLStreamReader> pool = new ThreadLocal<XMLStreamReader>();

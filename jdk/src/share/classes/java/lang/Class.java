@@ -113,8 +113,7 @@ import sun.reflect.misc.ReflectUtil;
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   JDK1.0
  */
-public final
-    class Class<T> implements java.io.Serializable,
+public final class Class<T> implements java.io.Serializable,
                               java.lang.reflect.GenericDeclaration,
                               java.lang.reflect.Type,
                               java.lang.reflect.AnnotatedElement {
@@ -150,6 +149,75 @@ public final
             + getName();
     }
 
+    /**
+     * Returns a string describing this {@code Class}, including
+     * information about modifiers and type parameters.
+     *
+     * The string is formatted as a list of type modifiers, if any,
+     * followed by the kind of type (empty string for primitive types
+     * and {@code class}, {@code enum}, {@code interface}, or {@code
+     * &#64;interface}, as appropriate), followed by the type's name,
+     * followed by an angle-bracketed comma-separated list of the
+     * type's type parameters, if any.
+     *
+     * A space is used to separate modifiers from one another and to
+     * separate any modifiers from the kind of type. The modifiers
+     * occur in canonical order. If there are no type parameters, the
+     * type parameter list is elided.
+     *
+     * <p>Note that since information about the runtime representation
+     * of a type is being generated, modifiers not present on the
+     * originating source code or illegal on the originating source
+     * code may be present.
+     *
+     * @return a string describing this {@code Class}, including
+     * information about modifiers and type parameters
+     *
+     * @since 1.8
+     */
+    public String toGenericString() {
+        if (isPrimitive()) {
+            return toString();
+        } else {
+            StringBuilder sb = new StringBuilder();
+
+            // Class modifiers are a superset of interface modifiers
+            int modifiers = getModifiers() & Modifier.classModifiers();
+            if (modifiers != 0) {
+                sb.append(Modifier.toString(modifiers));
+                sb.append(' ');
+            }
+
+            if (isAnnotation()) {
+                sb.append('@');
+            }
+            if (isInterface()) { // Note: all annotation types are interfaces
+                sb.append("interface");
+            } else {
+                if (isEnum())
+                    sb.append("enum");
+                else
+                    sb.append("class");
+            }
+            sb.append(' ');
+            sb.append(getName());
+
+            TypeVariable<?>[] typeparms = getTypeParameters();
+            if (typeparms.length > 0) {
+                boolean first = true;
+                sb.append('<');
+                for(TypeVariable<?> typeparm: typeparms) {
+                    if (!first)
+                        sb.append(',');
+                    sb.append(typeparm.getTypeName());
+                    first = false;
+                }
+                sb.append('>');
+            }
+
+            return sb.toString();
+        }
+    }
 
     /**
      * Returns the {@code Class} object associated with the class or
@@ -1161,6 +1229,32 @@ public final
             index++;
         // Eventually, this is the empty string iff this is an anonymous class
         return simpleName.substring(index);
+    }
+
+    /**
+     * Return an informative string for the name of this type.
+     *
+     * @return an informative string for the name of this type
+     * @since 1.8
+     */
+    public String getTypeName() {
+        if (isArray()) {
+            try {
+                Class<?> cl = this;
+                int dimensions = 0;
+                while (cl.isArray()) {
+                    dimensions++;
+                    cl = cl.getComponentType();
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append(cl.getName());
+                for (int i = 0; i < dimensions; i++) {
+                    sb.append("[]");
+                }
+                return sb.toString();
+            } catch (Throwable e) { /*FALLTHRU*/ }
+        }
+        return getName();
     }
 
     /**

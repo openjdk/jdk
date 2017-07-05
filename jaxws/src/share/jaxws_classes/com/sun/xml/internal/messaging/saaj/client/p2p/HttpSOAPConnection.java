@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,8 @@ class HttpSOAPConnection extends SOAPConnection {
             }
         } catch (ClassNotFoundException ex) {
             //Do nothing. URLEndpoint is available only when JAXM is there.
-            log.finest("SAAJ0090.p2p.endpoint.available.only.for.JAXM");
+            if (log.isLoggable(Level.FINEST))
+                log.finest("SAAJ0090.p2p.endpoint.available.only.for.JAXM");
         }
 
         if (urlEndpointClass != null) {
@@ -152,7 +153,7 @@ class HttpSOAPConnection extends SOAPConnection {
         }
     }
 
-    SOAPMessage post(SOAPMessage message, URL endPoint) throws SOAPException {
+    SOAPMessage post(SOAPMessage message, URL endPoint) throws SOAPException, IOException {
         boolean isFailure = false;
 
         URL url = null;
@@ -164,8 +165,8 @@ class HttpSOAPConnection extends SOAPConnection {
                 //if(!setHttps)
                 initHttps();
             // Process the URL
-            JaxmURI uri = new JaxmURI(endPoint.toString());
-            String userInfo = uri.getUserinfo();
+            URI uri = new URI(endPoint.toString());
+            String userInfo = uri.getRawUserInfo();
 
             url = endPoint;
 
@@ -224,7 +225,8 @@ class HttpSOAPConnection extends SOAPConnection {
 
                 if ("Authorization".equals(header.getName())) {
                     hasAuth = true;
-                    log.fine("SAAJ0091.p2p.https.auth.in.POST.true");
+                    if (log.isLoggable(Level.FINE))
+                        log.fine("SAAJ0091.p2p.https.auth.in.POST.true");
                 }
             }
 
@@ -233,10 +235,12 @@ class HttpSOAPConnection extends SOAPConnection {
             }
 
             OutputStream out = httpConnection.getOutputStream();
-            message.writeTo(out);
-
-            out.flush();
-            out.close();
+            try {
+                message.writeTo(out);
+                out.flush();
+            } finally {
+                out.close();
+            }
 
             httpConnection.connect();
 
@@ -279,6 +283,7 @@ class HttpSOAPConnection extends SOAPConnection {
         }
 
         SOAPMessage response = null;
+        InputStream httpIn = null;
         if (responseCode == HttpURLConnection.HTTP_OK || isFailure) {
             try {
                 MimeHeaders headers = new MimeHeaders();
@@ -305,7 +310,7 @@ class HttpSOAPConnection extends SOAPConnection {
                     i++;
                 }
 
-                InputStream httpIn =
+                httpIn =
                     (isFailure
                         ? httpConnection.getErrorStream()
                         : httpConnection.getInputStream());
@@ -327,15 +332,16 @@ class HttpSOAPConnection extends SOAPConnection {
                     response = messageFactory.createMessage(headers, in);
                 }
 
-                httpIn.close();
-                httpConnection.disconnect();
-
             } catch (SOAPException ex) {
                 throw ex;
             } catch (Exception ex) {
                 log.log(Level.SEVERE,"SAAJ0010.p2p.cannot.read.resp", ex);
                 throw new SOAPExceptionImpl(
                     "Unable to read response: " + ex.getMessage());
+            } finally {
+               if (httpIn != null)
+                   httpIn.close();
+               httpConnection.disconnect();
             }
         }
         return response;
@@ -397,7 +403,7 @@ class HttpSOAPConnection extends SOAPConnection {
             throw new SOAPExceptionImpl("Bad endPoint type " + endPoint);
     }
 
-    SOAPMessage doGet(URL endPoint) throws SOAPException {
+    SOAPMessage doGet(URL endPoint) throws SOAPException, IOException {
         boolean isFailure = false;
 
         URL url = null;
@@ -409,8 +415,8 @@ class HttpSOAPConnection extends SOAPConnection {
             if (endPoint.getProtocol().equals("https"))
                 initHttps();
             // Process the URL
-            JaxmURI uri = new JaxmURI(endPoint.toString());
-            String userInfo = uri.getUserinfo();
+            URI uri = new URI(endPoint.toString());
+            String userInfo = uri.getRawUserInfo();
 
             url = endPoint;
 
@@ -475,6 +481,7 @@ class HttpSOAPConnection extends SOAPConnection {
         }
 
         SOAPMessage response = null;
+        InputStream httpIn = null;
         if (responseCode == HttpURLConnection.HTTP_OK || isFailure) {
             try {
                 MimeHeaders headers = new MimeHeaders();
@@ -501,7 +508,7 @@ class HttpSOAPConnection extends SOAPConnection {
                     i++;
                 }
 
-                InputStream httpIn =
+                httpIn =
                         (isFailure
                         ? httpConnection.getErrorStream()
                         : httpConnection.getInputStream());
@@ -520,9 +527,6 @@ class HttpSOAPConnection extends SOAPConnection {
                     response = messageFactory.createMessage(headers, httpIn);
                 }
 
-                httpIn.close();
-                httpConnection.disconnect();
-
             } catch (SOAPException ex) {
                 throw ex;
             } catch (Exception ex) {
@@ -531,6 +535,10 @@ class HttpSOAPConnection extends SOAPConnection {
                         ex);
                 throw new SOAPExceptionImpl(
                     "Unable to read response: " + ex.getMessage());
+            } finally {
+               if (httpIn != null)
+                   httpIn.close();
+               httpConnection.disconnect();
             }
         }
         return response;
@@ -570,9 +578,8 @@ class HttpSOAPConnection extends SOAPConnection {
     private void initHttps() {
         //if(!setHttps) {
         String pkgs = SAAJUtil.getSystemProperty("java.protocol.handler.pkgs");
-        log.log(Level.FINE,
-                "SAAJ0053.p2p.providers",
-                new String[] { pkgs });
+        if (log.isLoggable(Level.FINE))
+            log.log(Level.FINE, "SAAJ0053.p2p.providers", new String[] { pkgs });
 
         if (pkgs == null || pkgs.indexOf(SSL_PKG) < 0) {
             if (pkgs == null)
@@ -580,16 +587,16 @@ class HttpSOAPConnection extends SOAPConnection {
             else
                 pkgs = pkgs + "|" + SSL_PKG;
             System.setProperty("java.protocol.handler.pkgs", pkgs);
-            log.log(Level.FINE,
-                    "SAAJ0054.p2p.set.providers",
-                    new String[] { pkgs });
+            if (log.isLoggable(Level.FINE))
+                log.log(Level.FINE, "SAAJ0054.p2p.set.providers",
+                        new String[] { pkgs });
             try {
                 Class c = Class.forName(SSL_PROVIDER);
                 Provider p = (Provider) c.newInstance();
                 Security.addProvider(p);
-                log.log(Level.FINE,
-                        "SAAJ0055.p2p.added.ssl.provider",
-                        new String[] { SSL_PROVIDER });
+                if (log.isLoggable(Level.FINE))
+                    log.log(Level.FINE, "SAAJ0055.p2p.added.ssl.provider",
+                            new String[] { SSL_PROVIDER });
                 //System.out.println("Added SSL_PROVIDER " + SSL_PROVIDER);
                 //setHttps = true;
             } catch (Exception ex) {

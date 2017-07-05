@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import com.sun.org.glassfish.gmbal.ManagedData;
  * is equivalent to this feature being present and disabled.
  * <p>
  * If this feature is enabled by the client and the Service supports the
- * Fast Infoset encoding, as specified by the {@link FastInfosetFeature},
+ * Fast Infoset encoding, as specified by the {@link com.sun.xml.internal.ws.api.fastinfoset.FastInfosetFeature},
  * and Fast Infoset is determined to be the most optimal encoding, then the
  * Fast Infoset encoding will be automatically selected by the client.
  * <p>

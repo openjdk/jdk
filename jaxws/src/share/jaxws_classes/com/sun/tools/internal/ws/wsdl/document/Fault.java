@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class Fault extends Entity implements TWSDLExtensible {
         return (Message) document.find(Kinds.MESSAGE, _message);
     }
 
+    @Override
     public QName getElementName() {
         return WSDLConstants.QNAME_FAULT;
     }
@@ -76,12 +77,14 @@ public class Fault extends Entity implements TWSDLExtensible {
         _documentation = d;
     }
 
+    @Override
     public void withAllQNamesDo(QNameAction action) {
         if (_message != null) {
             action.perform(_message);
         }
     }
 
+    @Override
     public void withAllEntityReferencesDo(EntityReferenceAction action) {
         super.withAllEntityReferencesDo(action);
         if (_message != null) {
@@ -94,6 +97,7 @@ public class Fault extends Entity implements TWSDLExtensible {
         visitor.postVisit(this);
     }
 
+    @Override
     public void validateThis() {
         if (_name == null) {
             failValidation("validation.missingRequiredAttribute", "name");
@@ -109,14 +113,17 @@ public class Fault extends Entity implements TWSDLExtensible {
     private String _action;
     private ExtensibilityHelper _helper;
 
+    @Override
     public String getNameValue() {
         return getName();
     }
 
+    @Override
     public String getNamespaceURI() {
-        return parent.getNamespaceURI();
+        return (parent == null) ? null : parent.getNamespaceURI();
     }
 
+    @Override
     public QName getWSDLElementName() {
         return getElementName();
     }
@@ -124,6 +131,7 @@ public class Fault extends Entity implements TWSDLExtensible {
     /* (non-Javadoc)
     * @see TWSDLExtensible#addExtension(ExtensionImpl)
     */
+    @Override
     public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
 
@@ -132,10 +140,12 @@ public class Fault extends Entity implements TWSDLExtensible {
     /* (non-Javadoc)
      * @see TWSDLExtensible#extensions()
      */
+    @Override
     public Iterable<TWSDLExtension> extensions() {
         return _helper.extensions();
     }
 
+    @Override
     public TWSDLExtensible getParent() {
         return parent;
     }

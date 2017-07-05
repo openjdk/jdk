@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,9 @@
 
 package com.sun.xml.internal.ws.developer;
 
-import com.sun.xml.internal.org.jvnet.mimepull.MIMEPart;
+import java.net.URL;
 
 import javax.activation.DataSource;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.File;
-import java.net.URL;
 
 /**
  * Implementation of {@link com.sun.xml.internal.org.jvnet.staxex.StreamingDataHandler} to access MIME
@@ -55,6 +50,8 @@ import java.net.URL;
  */
 public abstract class StreamingDataHandler extends com.sun.xml.internal.org.jvnet.staxex.StreamingDataHandler {
 
+    private String hrefCid;
+
     public StreamingDataHandler(Object o, String s) {
         super(o, s);
     }
@@ -65,6 +62,14 @@ public abstract class StreamingDataHandler extends com.sun.xml.internal.org.jvne
 
     public StreamingDataHandler(DataSource dataSource) {
         super(dataSource);
+    }
+
+    public String getHrefCid() {
+        return hrefCid;
+    }
+
+    public void setHrefCid(final String cid) {
+        this.hrefCid = cid;
     }
 
 }

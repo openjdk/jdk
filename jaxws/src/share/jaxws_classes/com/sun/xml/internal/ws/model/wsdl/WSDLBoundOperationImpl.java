@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.istack.internal.Nullable;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
 import com.sun.xml.internal.ws.api.model.wsdl.*;
+import com.sun.xml.internal.ws.model.RuntimeModeler;
 
 import javax.jws.WebParam.Mode;
 import javax.jws.soap.SOAPBinding.Style;
@@ -382,7 +383,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
      * For rpclit gives namespace value on soapbinding:body@namespace
      *
      * @return   non-null for rpclit and null for doclit
-     * @see com.sun.xml.internal.ws.model.RuntimeModeler#processRpcMethod(com.sun.xml.internal.ws.model.JavaMethodImpl, String, javax.jws.WebMethod, String, java.lang.reflect.Method, javax.jws.WebService)
+     * @see RuntimeModeler#processRpcMethod(JavaMethodImpl, String, String, Method)
      */
     public String getRequestNamespace(){
         return (reqNamespace != null)?reqNamespace:name.getNamespaceURI();
@@ -397,7 +398,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
      * For rpclit gives namespace value on soapbinding:body@namespace
      *
      * @return   non-null for rpclit and null for doclit
-     *      * @see com.sun.xml.internal.ws.modeler.RuntimeModeler#processRpcMethod(com.sun.xml.internal.ws.model.JavaMethod, String, javax.jws.WebMethod, String, java.lang.reflect.Method, javax.jws.WebService)
+     * @see RuntimeModeler#processRpcMethod(JavaMethodImpl, String, String, Method)
      */
     public String getResponseNamespace(){
         return (respNamespace!=null)?respNamespace:name.getNamespaceURI();

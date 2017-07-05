@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ import java.lang.annotation.*;
 public @interface WsgenProtocol {
     /**
      * Token for wsgen -wsdl[:protocol]
-     * @return
+     * @return Token for wsgen -wsdl[:protocol]
      */
     String token();
 
     /**
      * The corresponding lexical string used to create BindingID
-     * @return
+     * @return lexical string used to create BindingID
      */
     String lexical();
 }

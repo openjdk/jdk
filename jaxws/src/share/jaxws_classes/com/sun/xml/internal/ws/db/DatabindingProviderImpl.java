@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package com.sun.xml.internal.ws.db;
 import java.io.File;
 import java.util.Map;
 
-import com.sun.xml.internal.org.jvnet.ws.databinding.Databinding.WSDLGenerator;
-
+import com.oracle.webservices.internal.api.databinding.WSDLGenerator;
+import com.oracle.webservices.internal.api.databinding.WSDLResolver;
 import com.sun.xml.internal.ws.api.databinding.Databinding;
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
 import com.sun.xml.internal.ws.api.databinding.WSDLGenInfo;
@@ -45,7 +45,7 @@ public class DatabindingProviderImpl implements DatabindingProvider {
         Map<String, Object> properties;
 
         public void init(Map<String, Object> p) {
-                properties = p;
+            properties = p;
         }
 
         DatabindingImpl getCachedDatabindingImpl(DatabindingConfig config) {
@@ -72,7 +72,7 @@ public class DatabindingProviderImpl implements DatabindingProvider {
         return true;
     }
 
-    static public class JaxwsWsdlGen implements Databinding.WSDLGenerator {
+    static public class JaxwsWsdlGen implements WSDLGenerator {
         DatabindingImpl databinding;
         WSDLGenInfo wsdlGenInfo;
 
@@ -87,12 +87,12 @@ public class DatabindingProviderImpl implements DatabindingProvider {
         }
 
         public WSDLGenerator property(String name, Object value) {
-            // TODO Auto-generated method stub
-            return null;
+            // TODO wsdlGenInfo.set...
+            return this;
         }
 
         public void generate(WSDLResolver wsdlResolver) {
-//            wsdlGenInfo.setWsdlResolver(wsdlResolver);
+            wsdlGenInfo.setWsdlResolver(wsdlResolver);
             databinding.generateWSDL(wsdlGenInfo);
         }
 

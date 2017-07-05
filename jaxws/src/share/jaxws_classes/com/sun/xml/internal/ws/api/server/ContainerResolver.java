@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@ import com.sun.istack.internal.NotNull;
 /**
  * This class determines an instance of {@link Container} for the runtime.
  * It applies for both server and client runtimes(for e.g in Servlet could
- * be accessing a Web Service). Always call {@link #setInstance} when the
- * application's environment is initailized and a Container instance should
- * be associated with an application.
+ * be accessing a Web Service).
  *
  * A client that is invoking a web service may be running in a
  * container(for e.g servlet). T
@@ -46,13 +44,9 @@ import com.sun.istack.internal.NotNull;
  */
 public abstract class ContainerResolver {
 
-    private static final ContainerResolver NONE = new ContainerResolver() {
-        public Container getContainer() {
-            return Container.NONE;
-        }
-    };
+    private static final ThreadLocalContainerResolver DEFAULT = new ThreadLocalContainerResolver();
 
-    private static volatile ContainerResolver theResolver = NONE;
+    private static volatile ContainerResolver theResolver = DEFAULT;
 
     /**
      * Sets the custom container resolver which can be used to get client's
@@ -62,7 +56,7 @@ public abstract class ContainerResolver {
      */
     public static void setInstance(ContainerResolver resolver) {
         if(resolver==null)
-            resolver = NONE;
+            resolver = DEFAULT;
         theResolver = resolver;
     }
 
@@ -80,8 +74,8 @@ public abstract class ContainerResolver {
      *
      * @return default container resolver
      */
-    public static ContainerResolver getDefault() {
-        return NONE;
+    public static ThreadLocalContainerResolver getDefault() {
+        return DEFAULT;
     }
 
     /**

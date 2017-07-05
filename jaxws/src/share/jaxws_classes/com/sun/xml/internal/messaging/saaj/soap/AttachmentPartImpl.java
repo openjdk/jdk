@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,10 +260,9 @@ public class AttachmentPartImpl extends AttachmentPart {
         this.dataHandler = dataHandler;
         rawContent = null;
 
-        log.log(
-            Level.FINE,
-            "SAAJ0580.soap.set.Content-Type",
-            new String[] { dataHandler.getContentType()});
+        if (log.isLoggable(Level.FINE))
+            log.log(Level.FINE, "SAAJ0580.soap.set.Content-Type",
+                    new String[] { dataHandler.getContentType() });
         setMimeHeader("Content-Type", dataHandler.getContentType());
     }
 
@@ -602,6 +601,12 @@ public class AttachmentPartImpl extends AttachmentPart {
     // attachments are equal if they are the same reference
     public boolean equals(Object o) {
         return (this == o);
+    }
+
+    // In JDK 8 we get a warning if we implement equals() but not hashCode().
+    // There is no intuitive value for this, the default one in Object is fine.
+    public int hashCode() {
+        return super.hashCode();
     }
 
     public MimeHeaders getMimeHeaders() {

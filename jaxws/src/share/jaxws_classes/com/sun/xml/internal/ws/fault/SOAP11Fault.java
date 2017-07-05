@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.xml.soap.Detail;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.soap.SOAPFaultException;
 import java.util.Iterator;
 
 /**
@@ -102,12 +101,13 @@ class SOAP11Fault extends SOAPFaultBuilder {
         this.faultstring = reason;
         this.faultactor = actor;
         if (detailObject != null) {
-            if("".equals(detailObject.getNamespaceURI()) && "detail".equals(detailObject.getLocalName())){
+            if ((detailObject.getNamespaceURI() == null ||
+                 "".equals(detailObject.getNamespaceURI())) && "detail".equals(detailObject.getLocalName())) {
                 detail = new DetailType();
-                for(Element detailEntry : DOMUtil.getChildElements(detailObject)){
+                for(Element detailEntry : DOMUtil.getChildElements(detailObject)) {
                     detail.getDetails().add(detailEntry);
                 }
-            }else{
+            } else {
                 detail = new DetailType(detailObject);
             }
         }

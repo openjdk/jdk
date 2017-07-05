@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,19 +38,19 @@ import static java.lang.annotation.RetentionPolicy.*;
  * if the class does not request any resources to be injected. Only one
  * method can be annotated with this annotation. The method on which the
  * PostConstruct annotation is applied MUST fulfill all of the following
- * criteria -
-- The method MUST NOT have any parameters except in the case of EJB
- * interceptors   in which case it takes an InvocationC ontext object as
- * defined by the EJB   specification.
- * - The return type of the method MUST be void.
- * - The method MUST NOT throw a checked exception.
- * - The method on which PostConstruct is applied MAY be public, protected,
- * package private or private.
- * - The method MUST NOT be static except for the application client.
- * - The method MAY be final.
- * - If the method throws an unchecked exception the class MUST NOT be put into
+ * criteria:<ul>
+ * <li>The method MUST NOT have any parameters except in the case of EJB
+ * interceptors in which case it takes an InvocationContext object as
+ * defined by the EJB specification.</li>
+ * <li>The return type of the method MUST be void.</li>
+ * <li>The method MUST NOT throw a checked exception.</li>
+ * <li>The method on which PostConstruct is applied MAY be public, protected,
+ * package private or private.</li>
+ * <li>The method MUST NOT be static except for the application client.</li>
+ * <li>The method MAY be final.</li>
+ * <li>If the method throws an unchecked exception the class MUST NOT be put into
  * service except in the case of EJBs where the EJB can handle exceptions and
- * even   recover from them.
+ * even recover from them.</li></ul>
  * @since Common Annotations 1.0
  * @see javax.annotation.PreDestroy
  * @see javax.annotation.Resource

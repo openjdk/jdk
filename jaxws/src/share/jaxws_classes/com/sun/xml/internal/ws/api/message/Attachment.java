@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,19 @@ public interface Attachment {
 
     /**
      * Content ID of the attachment. Uniquely identifies an attachment.
+     *
+     * http://www.ietf.org/rfc/rfc2392.txt (which is referred by the ws-i attachment profile
+     * http://www.ws-i.org/Profiles/AttachmentsProfile-1.0.html)
+     *
+     * content-id    = url-addr-spec
+     * url-addr-spec = addr-spec  ; URL encoding of RFC 822 addr-spec
+     * cid-url       = "cid" ":" content-id
+     *
+     * A "cid" URL is converted to the corresponding Content-ID message header [MIME] by
+     * removing the "cid:" prefix, converting the % encoded character to their equivalent
+     * US-ASCII characters, and enclosing the remaining parts with an angle bracket pair,
+     * "<" and ">".  For  example, "cid:foo4%25foo1@bar.net" corresponds to
+     *      Content-ID: <foo4%25foo1@bar.net>
      *
      * @return
      *      The content ID like "foo-bar-zot@abc.com", without

@@ -29,16 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
-import javax.xml.bind.helpers.PrintConversionEventImpl;
-import javax.xml.bind.helpers.ValidationEventImpl;
-import javax.xml.bind.helpers.ValidationEventLocatorImpl;
-
-import com.sun.xml.internal.bind.util.ValidationEventLocatorExImpl;
-
-import org.xml.sax.SAXException;
-
 
 /**
  * @author Kohsuke Kawaguchi
@@ -95,6 +86,7 @@ public class RuntimeUtil {
     /**
      * Reports a print conversion error while marshalling.
      */
+/*
     public static void handlePrintConversionException(
         Object caller, Exception e, XMLSerializer serializer ) throws SAXException {
 
@@ -109,10 +101,12 @@ public class RuntimeUtil {
             new ValidationEventLocatorImpl(caller), e );
         serializer.reportError(ve);
     }
+*/
 
     /**
      * Reports that the type of an object in a property is unexpected.
      */
+/*
     public static void handleTypeMismatchError( XMLSerializer serializer,
             Object parentObject, String fieldName, Object childObject ) throws SAXException {
 
@@ -126,6 +120,7 @@ public class RuntimeUtil {
 
         serializer.reportError(ve);
     }
+*/
 
     private static String getTypeName( Object o ) {
         return o.getClass().getName();

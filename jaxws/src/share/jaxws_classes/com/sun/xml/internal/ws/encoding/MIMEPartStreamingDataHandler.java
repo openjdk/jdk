@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,14 +62,17 @@ public class MIMEPartStreamingDataHandler extends StreamingDataHandler {
         ds = (StreamingDataSource)getDataSource();
     }
 
+    @Override
     public InputStream readOnce() throws IOException {
         return ds.readOnce();
     }
 
+    @Override
     public void moveTo(File file) throws IOException {
         ds.moveTo(file);
     }
 
+    @Override
     public void close() throws IOException {
         ds.close();
     }
@@ -81,6 +84,7 @@ public class MIMEPartStreamingDataHandler extends StreamingDataHandler {
             this.part = part;
         }
 
+        @Override
         public InputStream getInputStream() throws IOException {
             return part.read();             //readOnce() ??
         }
@@ -97,14 +101,17 @@ public class MIMEPartStreamingDataHandler extends StreamingDataHandler {
             part.moveTo(file);
         }
 
+        @Override
         public OutputStream getOutputStream() throws IOException {
             return null;
         }
 
+        @Override
         public String getContentType() {
             return part.getContentType();
         }
 
+        @Override
         public String getName() {
             return "";
         }

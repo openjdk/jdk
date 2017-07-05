@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import com.sun.xml.internal.ws.message.AttachmentUnmarshallerImpl;
 import com.sun.xml.internal.ws.model.ParameterImpl;
 import com.sun.xml.internal.ws.model.WrapperParameter;
 import com.sun.xml.internal.ws.resources.ServerMessages;
+import com.sun.xml.internal.ws.spi.db.RepeatedElementBridge;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import com.sun.xml.internal.ws.spi.db.DatabindingException;
 import com.sun.xml.internal.ws.spi.db.PropertyAccessor;
@@ -95,9 +96,80 @@ public abstract class ResponseBuilder {
      */
     public abstract Object readResponse(Message reply, Object[] args) throws JAXBException, XMLStreamException;
 
+    static final class WrappedPartBuilder {
+        private final XMLBridge bridge;
+        private final ValueSetter setter;
+        public WrappedPartBuilder(XMLBridge bridge, ValueSetter setter) {
+            this.bridge = bridge;
+            this.setter = setter;
+        }
+        final Object readResponse(Object[] args, XMLStreamReader r, AttachmentSet att) throws JAXBException {
+            Object obj;
+            AttachmentUnmarshallerImpl au = (att != null)?new AttachmentUnmarshallerImpl(att):null;
+            if (bridge instanceof RepeatedElementBridge) {
+                RepeatedElementBridge rbridge = (RepeatedElementBridge)bridge;
+                ArrayList list = new ArrayList();
+                QName name = r.getName();
+                while (r.getEventType()==XMLStreamReader.START_ELEMENT && name.equals(r.getName())) {
+                    list.add(rbridge.unmarshal(r, au));
+                    XMLStreamReaderUtil.toNextTag(r, name);
+                }
+                obj = rbridge.collectionHandler().convert(list);
+            } else {
+                obj = bridge.unmarshal(r, au);
+            }
+            return setter.put(obj,args);
+        }
+    }
+    /**
+     * {@link ResponseBuilder.PartBuilder} keyed by the element name (inside the wrapper element.)
+     */
+    protected Map<QName,WrappedPartBuilder> wrappedParts = null;
+    protected QName wrapperName;
+
+    protected Object readWrappedResponse(Message msg, Object[] args) throws JAXBException, XMLStreamException {
+        Object retVal = null;
+
+        if (!msg.hasPayload()) {
+            throw new WebServiceException("No payload. Expecting payload with "+wrapperName+" element");
+        }
+        XMLStreamReader reader = msg.readPayload();
+        XMLStreamReaderUtil.verifyTag(reader,wrapperName);
+        reader.nextTag();
+
+        while(reader.getEventType()==XMLStreamReader.START_ELEMENT) {
+            // TODO: QName has a performance issue
+            WrappedPartBuilder part = wrappedParts.get(reader.getName());
+            if(part==null) {
+                // no corresponding part found. ignore
+                XMLStreamReaderUtil.skipElement(reader);
+                reader.nextTag();
+            } else {
+                Object o = part.readResponse(args,reader, msg.getAttachments());
+                // there's only at most one ResponseBuilder that returns a value.
+                if(o!=null) {
+                    assert retVal==null;
+                    retVal = o;
+                }
+            }
+            // skip any whitespace
+            if (reader.getEventType() != XMLStreamConstants.START_ELEMENT &&
+                    reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+                XMLStreamReaderUtil.nextElementContent(reader);
+            }
+        }
+
+        // we are done with the body
+        reader.close();
+        XMLStreamReaderFactory.recycle(reader);
+
+        return retVal;
+    }
+
     static final class None extends ResponseBuilder {
         private None(){
         }
+        @Override
         public Object readResponse(Message msg, Object[] args) {
             msg.consume();
             return null;
@@ -108,7 +180,7 @@ public abstract class ResponseBuilder {
      * The singleton instance that produces null return value.
      * Used for operations that doesn't have any output.
      */
-    public static ResponseBuilder NONE = new None();
+    public final static ResponseBuilder NONE = new None();
 
     /**
      * Returns the 'uninitialized' value for the given type.
@@ -116,6 +188,7 @@ public abstract class ResponseBuilder {
      * <p>
      * For primitive types, it's '0', and for reference types, it's null.
      */
+    @SuppressWarnings("element-type-mismatch")
     public static Object getVMUninitializedValue(Type type) {
         // if this map returns null, that means the 'type' is a reference type,
         // in which case 'null' is the correct null value, so this code is correct.
@@ -147,6 +220,7 @@ public abstract class ResponseBuilder {
             this.nullValue = nullValue;
             this.setter = setter;
         }
+        @Override
         public Object readResponse(Message msg, Object[] args) {
             return setter.put(nullValue, args);
         }
@@ -178,6 +252,7 @@ public abstract class ResponseBuilder {
             this(builders.toArray(new ResponseBuilder[builders.size()]));
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException, XMLStreamException {
             Object retVal = null;
             for (ResponseBuilder builder : builders) {
@@ -238,6 +313,7 @@ public abstract class ResponseBuilder {
             }
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException, XMLStreamException {
             // TODO not to loop
             for (Attachment att : msg.getAttachments()) {
@@ -260,6 +336,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             return setter.put(att.asDataHandler(), args);
         }
@@ -270,6 +347,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             att.getContentType();
             StringDataContentHandler sdh = new StringDataContentHandler();
@@ -288,6 +366,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             return setter.put(att.asByteArray(), args);
         }
@@ -298,6 +377,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             return setter.put(att.asSource(), args);
         }
@@ -308,6 +388,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             Image image;
             InputStream is = null;
@@ -334,6 +415,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) {
             return setter.put(att.asInputStream(), args);
         }
@@ -344,6 +426,7 @@ public abstract class ResponseBuilder {
             super(param, setter);
         }
 
+        @Override
         Object mapAttachment(Attachment att, Object[] args) throws JAXBException {
             Object obj = param.getXMLBridge().unmarshal(att.asInputStream());
             return setter.put(obj, args);
@@ -375,6 +458,7 @@ public abstract class ResponseBuilder {
      * @return null
      *      if the parsing fails.
      */
+    @SuppressWarnings("FinalStaticMethod")
     public static final String getWSDLPartName(com.sun.xml.internal.ws.api.message.Attachment att){
         String cId = att.getContentId();
 
@@ -440,6 +524,7 @@ public abstract class ResponseBuilder {
             }
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException {
             com.sun.xml.internal.ws.api.message.Header header = null;
             Iterator<com.sun.xml.internal.ws.api.message.Header> it =
@@ -477,6 +562,7 @@ public abstract class ResponseBuilder {
             this.setter = setter;
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException {
             return setter.put( msg.readPayloadAsJAXB(bridge), args );
         }
@@ -494,41 +580,50 @@ public abstract class ResponseBuilder {
 
         private final XMLBridge wrapper;
 
-        private final QName wrapperName;
+        private boolean dynamicWrapper;
 
         public DocLit(WrapperParameter wp, ValueSetterFactory setterFactory) {
             wrapperName = wp.getName();
             wrapper = wp.getXMLBridge();
             Class wrapperType = (Class) wrapper.getTypeInfo().type;
+            dynamicWrapper = WrapperComposite.class.equals(wrapperType);
 
-            List<PartBuilder> parts = new ArrayList<PartBuilder>();
+            List<PartBuilder> tempParts = new ArrayList<PartBuilder>();
 
             List<ParameterImpl> children = wp.getWrapperChildren();
             for (ParameterImpl p : children) {
                 if(p.isIN())
                     continue;
                 QName name = p.getName();
-                try {
-                    parts.add( new PartBuilder(
-                        wp.getOwner().getBindingContext().getElementPropertyAccessor(
-                            wrapperType,
-                            name.getNamespaceURI(),
-                            p.getName().getLocalPart()),
-                        setterFactory.get(p)
-                    ));
-                    // wrapper parameter itself always bind to body, and
-                    // so do all its children
-                    assert p.getBinding()== ParameterBinding.BODY;
-                } catch (JAXBException e) {
-                    throw new WebServiceException(  // TODO: i18n
-                        wrapperType+" do not have a property of the name "+name,e);
+                if (dynamicWrapper) {
+                    if (wrappedParts == null) wrappedParts = new HashMap<QName,WrappedPartBuilder>();
+                    XMLBridge xmlBridge = p.getInlinedRepeatedElementBridge();
+                    if (xmlBridge == null) xmlBridge = p.getXMLBridge();
+                    wrappedParts.put( p.getName(), new WrappedPartBuilder(xmlBridge, setterFactory.get(p)));
+                } else {
+                    try {
+                        tempParts.add(new PartBuilder(
+                                    wp.getOwner().getBindingContext().getElementPropertyAccessor(
+                                        wrapperType,
+                                        name.getNamespaceURI(),
+                                        p.getName().getLocalPart()),
+                                    setterFactory.get(p)
+                                ));
+                        // wrapper parameter itself always bind to body, and
+                        // so do all its children
+                        assert p.getBinding()== ParameterBinding.BODY;
+                    } catch (JAXBException e) {
+                        throw new WebServiceException(  // TODO: i18n
+                            wrapperType+" do not have a property of the name "+name,e);
+                    }
                 }
             }
-
-            this.parts = parts.toArray(new PartBuilder[parts.size()]);
+            this.parts = tempParts.toArray(new PartBuilder[tempParts.size()]);
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException, XMLStreamException {
+            if (dynamicWrapper) return readWrappedResponse(msg, args);
             Object retVal = null;
 
             if (parts.length>0) {
@@ -599,20 +694,13 @@ public abstract class ResponseBuilder {
      * and processes all such wrapped parts.
      */
     public static final class RpcLit extends ResponseBuilder {
-        /**
-         * {@link PartBuilder} keyed by the element name (inside the wrapper element.)
-         */
-        private final Map<QName,PartBuilder> parts = new HashMap<QName,PartBuilder>();
-
-        private QName wrapperName;
-
         public RpcLit(WrapperParameter wp, ValueSetterFactory setterFactory) {
             assert wp.getTypeInfo().type== WrapperComposite.class;
-
             wrapperName = wp.getName();
+            wrappedParts = new HashMap<QName,WrappedPartBuilder>();
             List<ParameterImpl> children = wp.getWrapperChildren();
             for (ParameterImpl p : children) {
-                parts.put( p.getName(), new PartBuilder(
+                wrappedParts.put( p.getName(), new WrappedPartBuilder(
                     p.getXMLBridge(), setterFactory.get(p)
                 ));
                 // wrapper parameter itself always bind to body, and
@@ -621,70 +709,9 @@ public abstract class ResponseBuilder {
             }
         }
 
+        @Override
         public Object readResponse(Message msg, Object[] args) throws JAXBException, XMLStreamException {
-            Object retVal = null;
-
-            if (!msg.hasPayload()) {
-                throw new WebServiceException("No payload. Expecting payload with "+wrapperName+" element");
-            }
-            XMLStreamReader reader = msg.readPayload();
-            XMLStreamReaderUtil.verifyTag(reader,wrapperName);
-            reader.nextTag();
-
-            while(reader.getEventType()==XMLStreamReader.START_ELEMENT) {
-                // TODO: QName has a performance issue
-                PartBuilder part = parts.get(reader.getName());
-                if(part==null) {
-                    // no corresponding part found. ignore
-                    XMLStreamReaderUtil.skipElement(reader);
-                    reader.nextTag();
-                } else {
-                    Object o = part.readResponse(args,reader, msg.getAttachments());
-                    // there's only at most one ResponseBuilder that returns a value.
-                    if(o!=null) {
-                        assert retVal==null;
-                        retVal = o;
-                    }
-                }
-                // skip any whitespace
-                if (reader.getEventType() != XMLStreamConstants.START_ELEMENT &&
-                        reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
-                    XMLStreamReaderUtil.nextElementContent(reader);
-                }
-            }
-
-            // we are done with the body
-            reader.close();
-            XMLStreamReaderFactory.recycle(reader);
-
-            return retVal;
-        }
-
-        /**
-         * Unmarshals each wrapped part into a JAXB object and moves it
-         * to the expected place.
-         */
-        static final class PartBuilder {
-            private final XMLBridge bridge;
-            private final ValueSetter setter;
-
-            /**
-             * @param bridge
-             *      specifies how the part is unmarshalled.
-             * @param setter
-             *      specifies how the obtained value is returned to the client.
-             */
-            public PartBuilder(XMLBridge bridge, ValueSetter setter) {
-                this.bridge = bridge;
-                this.setter = setter;
-            }
-
-            final Object readResponse(Object[] args, XMLStreamReader r, AttachmentSet att) throws JAXBException {
-                Object obj = bridge.unmarshal(r, (att != null)?new AttachmentUnmarshallerImpl(att):null);
-                return setter.put(obj,args);
-            }
-
-
+            return readWrappedResponse(msg, args);
         }
     }
 

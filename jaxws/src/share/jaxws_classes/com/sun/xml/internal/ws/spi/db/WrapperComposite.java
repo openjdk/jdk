@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ package com.sun.xml.internal.ws.spi.db;
  *
  * <p>
  * The binding of this class is always known to {@link BindingContext}, so it can be
- * used without passing anything to {@link BindingContext#newInstance}.
+ * used without passing anything to {@link BindingContext#newWrapperInstace(Class)}.
  * This object can be only used for marshalling, not for unmarshalling.
  *
  * @author Kohsuke Kawaguchi

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import javax.xml.transform.sax.SAXResult;
 
 import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
 
+import com.sun.xml.internal.bind.v2.util.XmlFactory;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.Locator;
@@ -76,12 +78,14 @@ final class DomHandlerEx implements DomHandler<DomHandlerEx.DomAndLocation,DomHa
 
         ResultImpl() {
             try {
-                s2d = new SAX2DOMEx();
+                DocumentBuilderFactory factory = XmlFactory.createDocumentBuilderFactory(false); // safe - only used for BI
+                s2d = new SAX2DOMEx(factory);
             } catch (ParserConfigurationException e) {
                 throw new AssertionError(e);    // impossible
             }
 
             XMLFilterImpl f = new XMLFilterImpl() {
+                @Override
                 public void setDocumentLocator(Locator locator) {
                     super.setDocumentLocator(locator);
                     location = new LocatorImpl(locator);

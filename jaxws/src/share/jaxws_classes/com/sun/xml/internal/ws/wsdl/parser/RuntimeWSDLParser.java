@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
 import com.sun.xml.internal.stream.buffer.XMLStreamBufferMark;
 import com.sun.xml.internal.stream.buffer.stax.StreamReaderBufferCreator;
 import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.api.BindingIDFactory;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.WSDLLocator;
@@ -100,6 +101,7 @@ public class RuntimeWSDLParser {
     private final XMLEntityResolver resolver;
 
     private final PolicyResolver policyResolver;
+
     /**
      * The {@link WSDLParserExtension}. Always non-null.
      */
@@ -224,10 +226,6 @@ public class RuntimeWSDLParser {
         return wsdlParser.wsdlDoc;
     }
 
-    private static WSDLModelImpl tryWithMex(@NotNull RuntimeWSDLParser wsdlParser, @NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, Throwable e, PolicyResolver policyResolver, WSDLParserExtension... extensions) throws SAXException, XMLStreamException {
-        return tryWithMex(wsdlParser, wsdlLoc, resolver, isClientSide, container, e, Service.class, policyResolver, extensions);
-    }
-
     private static WSDLModelImpl tryWithMex(@NotNull RuntimeWSDLParser wsdlParser, @NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, Throwable e, Class serviceClass, PolicyResolver policyResolver, WSDLParserExtension... extensions) throws SAXException, XMLStreamException {
         ArrayList<Throwable> exceptions = new ArrayList<Throwable>();
         try {
@@ -244,10 +242,6 @@ public class RuntimeWSDLParser {
             exceptions.add(e1);
         }
         throw new InaccessibleWSDLException(exceptions);
-    }
-
-    private WSDLModelImpl parseUsingMex(@NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, PolicyResolver policyResolver, WSDLParserExtension[] extensions) throws IOException, SAXException, XMLStreamException, URISyntaxException {
-        return parseUsingMex(wsdlLoc, resolver, isClientSide, container, Service.class, policyResolver, extensions);
     }
 
     private WSDLModelImpl parseUsingMex(@NotNull URL wsdlLoc, @NotNull EntityResolver resolver, boolean isClientSide, Container container, Class serviceClass, PolicyResolver policyResolver, WSDLParserExtension[] extensions) throws IOException, SAXException, XMLStreamException, URISyntaxException {
@@ -347,10 +341,6 @@ public class RuntimeWSDLParser {
         this.extensionFacade =  new WSDLParserExtensionFacade(this.extensions.toArray(new WSDLParserExtension[0]));
     }
 
-    private Parser resolveWSDL(@Nullable URL wsdlLoc, @NotNull Source wsdlSource) throws IOException, SAXException, XMLStreamException {
-        return resolveWSDL(wsdlLoc, wsdlSource, Service.class);
-    }
-
     private Parser resolveWSDL(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, Class serviceClass) throws IOException, SAXException, XMLStreamException {
         String systemId = wsdlSource.getSystemId();
 
@@ -369,22 +359,22 @@ public class RuntimeWSDLParser {
                 }
             }
         }
-        if(parser == null){
-                //If a WSDL source is provided that is known to be readable, then
-                //prioritize that over the URL - this avoids going over the network
-                //an additional time if a valid WSDL Source is provided - Deva Sagar 09/20/2011
-                if (wsdlSource != null && isKnownReadableSource(wsdlSource)) {
+        if (parser == null) {
+            //If a WSDL source is provided that is known to be readable, then
+            //prioritize that over the URL - this avoids going over the network
+            //an additional time if a valid WSDL Source is provided - Deva Sagar 09/20/2011
+            if (isKnownReadableSource(wsdlSource)) {
                 parser = new Parser(wsdlLoc, createReader(wsdlSource));
-                } else if (wsdlLoc != null) {
-                        parser = new Parser(wsdlLoc, createReader(wsdlLoc, serviceClass));
-                }
+            } else if (wsdlLoc != null) {
+                parser = new Parser(wsdlLoc, createReader(wsdlLoc, serviceClass));
+            }
 
-                //parser could still be null if isKnownReadableSource returns
-                //false and wsdlLoc is also null. Fall back to using Source based
-                //parser since Source is not null
-                if (parser == null) {
-                        parser = new Parser(wsdlLoc, createReader(wsdlSource));
-                }
+            //parser could still be null if isKnownReadableSource returns
+            //false and wsdlLoc is also null. Fall back to using Source based
+            //parser since Source is not null
+            if (parser == null) {
+                parser = new Parser(wsdlLoc, createReader(wsdlSource));
+            }
         }
         return parser;
     }
@@ -568,7 +558,9 @@ public class RuntimeWSDLParser {
         while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
             QName name = reader.getName();
             if (WSDLConstants.NS_SOAP_BINDING.equals(name)) {
-                binding.setBindingId(BindingID.SOAP11_HTTP);
+                String transport = reader.getAttributeValue(null, WSDLConstants.ATTR_TRANSPORT);
+                binding.setBindingId(createBindingId(transport, SOAPVersion.SOAP_11));
+
                 String style = reader.getAttributeValue(null, "style");
 
                 if ((style != null) && (style.equals("rpc"))) {
@@ -578,7 +570,9 @@ public class RuntimeWSDLParser {
                 }
                 goToEnd(reader);
             } else if (WSDLConstants.NS_SOAP12_BINDING.equals(name)) {
-                binding.setBindingId(BindingID.SOAP12_HTTP);
+                String transport = reader.getAttributeValue(null, WSDLConstants.ATTR_TRANSPORT);
+                binding.setBindingId(createBindingId(transport, SOAPVersion.SOAP_12));
+
                 String style = reader.getAttributeValue(null, "style");
                 if ((style != null) && (style.equals("rpc"))) {
                     binding.setStyle(Style.RPC);
@@ -592,6 +586,18 @@ public class RuntimeWSDLParser {
                 extensionFacade.bindingElements(binding, reader);
             }
         }
+    }
+
+    private static BindingID createBindingId(String transport, SOAPVersion soapVersion) {
+        if (!transport.equals(SOAPConstants.URI_SOAP_TRANSPORT_HTTP)) {
+            for( BindingIDFactory f : ServiceFinder.find(BindingIDFactory.class) ) {
+                BindingID bindingId = f.create(transport, soapVersion);
+                if(bindingId!=null) {
+                    return bindingId;
+                }
+            }
+        }
+        return soapVersion.equals(SOAPVersion.SOAP_11)?BindingID.SOAP11_HTTP:BindingID.SOAP12_HTTP;
     }
 
 
@@ -913,7 +919,7 @@ public class RuntimeWSDLParser {
                     QName descName = reader.getAttributeName(i);
                     if (descName.getLocalPart().equals("element"))
                         kind = WSDLDescriptorKind.ELEMENT;
-                    else if (descName.getLocalPart().equals("TYPE"))
+                    else if (descName.getLocalPart().equals("type"))
                         kind = WSDLDescriptorKind.TYPE;
 
                     if (descName.getLocalPart().equals("element") || descName.getLocalPart().equals("type")) {

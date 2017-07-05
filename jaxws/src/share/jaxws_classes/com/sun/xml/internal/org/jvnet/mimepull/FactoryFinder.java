@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class FactoryFinder {
 
@@ -58,26 +60,34 @@ class FactoryFinder {
 
     private static String findJarServiceProviderName(String factoryId) {
         String serviceId = "META-INF/services/" + factoryId;
-        InputStream is = null;
+        InputStream is;
         is = cl.getResourceAsStream(serviceId);
 
         if (is == null) {
             return null;
         }
 
-        BufferedReader rd;
+        String factoryClassName;
+        BufferedReader rd = null;
         try {
-            rd = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-        } catch (java.io.UnsupportedEncodingException e) {
-            rd = new BufferedReader(new InputStreamReader(is));
-        }
-
-        String factoryClassName = null;
-        try {
-            factoryClassName = rd.readLine();
-            rd.close();
-        } catch (IOException x) {
-            return null;
+            try {
+                rd = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            } catch (java.io.UnsupportedEncodingException e) {
+                rd = new BufferedReader(new InputStreamReader(is));
+            }
+            try {
+                factoryClassName = rd.readLine();
+            } catch (IOException x) {
+                return null;
+            }
+        } finally {
+            if (rd != null) {
+                try {
+                    rd.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(FactoryFinder.class.getName()).log(Level.INFO, null, ex);
+                }
+            }
         }
 
         return factoryClassName;

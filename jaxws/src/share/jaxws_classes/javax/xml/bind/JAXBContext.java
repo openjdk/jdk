@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.io.InputStream;
  *   that must be processed. (see JLS, Section 7.4.1 "Named Packages").
  *   </li>
  *   <li>{@link #newInstance(Class...) JAXBContext.newInstance( com.acme.foo.Foo.class )} <br/>
- *    The JAXBContext instance is intialized with class(es)
+ *    The JAXBContext instance is initialized with class(es)
  *    passed as parameter(s) and classes that are statically reachable from
  *    these class(es). See {@link #newInstance(Class...)} for details.
  *   </li>
@@ -218,7 +218,7 @@ import java.io.InputStream;
  * For each package/class explicitly passed in to the {@link #newInstance} method, in the order they are specified,
  * <tt>jaxb.properties</tt> file is looked up in its package, by using the associated classloader &mdash;
  * this is {@link Class#getClassLoader() the owner class loader} for a {@link Class} argument, and for a package
- * the speified {@link ClassLoader}.
+ * the specified {@link ClassLoader}.
  *
  * <p>
  * If such a file is discovered, it is {@link Properties#load(InputStream) loaded} as a property file, and
@@ -627,12 +627,16 @@ public abstract class JAXBContext {
     public static JAXBContext newInstance( Class[] classesToBeBound, Map<String,?> properties )
         throws JAXBException {
 
-        if (classesToBeBound == null) throw new IllegalArgumentException();
+        if (classesToBeBound == null) {
+                throw new IllegalArgumentException();
+        }
 
         // but it is an error to have nulls in it.
-        for( int i=classesToBeBound.length-1; i>=0; i-- )
-            if(classesToBeBound[i]==null)
+        for (int i = classesToBeBound.length - 1; i >= 0; i--) {
+            if (classesToBeBound[i] == null) {
                 throw new IllegalArgumentException();
+            }
+        }
 
         return ContextFinder.find(classesToBeBound,properties);
     }

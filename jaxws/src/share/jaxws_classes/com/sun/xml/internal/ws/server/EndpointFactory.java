@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,27 @@ package com.sun.xml.internal.ws.server;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
+import com.sun.xml.internal.stream.buffer.MutableXMLStreamBuffer;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.policy.PolicyResolverFactory;
-import com.sun.xml.internal.ws.api.policy.PolicyResolver;
-import com.sun.xml.internal.ws.api.databinding.WSDLGenInfo;
-import com.sun.xml.internal.ws.api.databinding.DatabindingFactory;
+import com.sun.xml.internal.ws.api.WSFeatureList;
 import com.sun.xml.internal.ws.api.databinding.DatabindingConfig;
+import com.sun.xml.internal.ws.api.databinding.DatabindingFactory;
+import com.sun.xml.internal.ws.api.databinding.MetadataReader;
+import com.sun.xml.internal.ws.api.databinding.WSDLGenInfo;
 import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.server.*;
+import com.sun.xml.internal.ws.api.policy.PolicyResolver;
+import com.sun.xml.internal.ws.api.policy.PolicyResolverFactory;
+import com.sun.xml.internal.ws.api.server.AsyncProvider;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
+import com.sun.xml.internal.ws.api.server.InstanceResolver;
+import com.sun.xml.internal.ws.api.server.Invoker;
+import com.sun.xml.internal.ws.api.server.SDDocument;
+import com.sun.xml.internal.ws.api.server.SDDocumentSource;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
+import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.api.wsdl.parser.XMLEntityResolver;
 import com.sun.xml.internal.ws.api.wsdl.parser.XMLEntityResolver.Parser;
@@ -46,11 +56,14 @@ import com.sun.xml.internal.ws.binding.BindingImpl;
 import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
 import com.sun.xml.internal.ws.binding.WebServiceFeatureList;
 import com.sun.xml.internal.ws.model.AbstractSEIModelImpl;
+import com.sun.xml.internal.ws.model.ReflectAnnotationReader;
 import com.sun.xml.internal.ws.model.RuntimeModeler;
 import com.sun.xml.internal.ws.model.SOAPSEIModel;
 import com.sun.xml.internal.ws.model.wsdl.WSDLModelImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLServiceImpl;
+import com.sun.xml.internal.ws.policy.PolicyMap;
+import com.sun.xml.internal.ws.policy.jaxws.PolicyUtil;
 import com.sun.xml.internal.ws.resources.ServerMessages;
 import com.sun.xml.internal.ws.server.provider.ProviderInvokerTube;
 import com.sun.xml.internal.ws.server.sei.SEIInvokerTube;
@@ -58,20 +71,20 @@ import com.sun.xml.internal.ws.util.HandlerAnnotationInfo;
 import com.sun.xml.internal.ws.util.HandlerAnnotationProcessor;
 import com.sun.xml.internal.ws.util.ServiceConfigurationError;
 import com.sun.xml.internal.ws.util.ServiceFinder;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
-import com.sun.xml.internal.ws.wsdl.writer.WSDLGenerator;
-import com.sun.xml.internal.ws.policy.PolicyMap;
-import com.sun.xml.internal.ws.policy.jaxws.PolicyUtil;
 import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.jws.WebService;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.ws.Provider;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.WebServiceProvider;
 import javax.xml.ws.WebServiceFeature;
+import javax.xml.ws.WebServiceProvider;
 import javax.xml.ws.soap.SOAPBinding;
 import java.io.IOException;
 import java.net.URL;
@@ -165,8 +178,10 @@ public class EndpointFactory {
         if(implType ==null)
             throw new IllegalArgumentException();
 
+        MetadataReader metadataReader = getExternalMetadatReader(implType, binding);
+
         if (isStandard) {
-                verifyImplementorClass(implType);
+            verifyImplementorClass(implType, metadataReader);
         }
 
         if (invoker == null) {
@@ -184,10 +199,10 @@ public class EndpointFactory {
             container = ContainerResolver.getInstance().getContainer();
 
         if(serviceName==null)
-            serviceName = getDefaultServiceName(implType);
+            serviceName = getDefaultServiceName(implType, metadataReader);
 
         if(portName==null)
-            portName = getDefaultPortName(serviceName,implType);
+            portName = getDefaultPortName(serviceName,implType, metadataReader);
 
         {// error check
             String serviceNS = serviceName.getNamespaceURI();
@@ -207,21 +222,21 @@ public class EndpointFactory {
 
         QName portTypeName = null;
         if (isStandard && implType.getAnnotation(WebServiceProvider.class)==null) {
-            portTypeName = RuntimeModeler.getPortTypeName(implType);
+            portTypeName = RuntimeModeler.getPortTypeName(implType, metadataReader);
         }
 
         // Categorises the documents as WSDL, Schema etc
         List<SDDocumentImpl> docList = categoriseMetadata(md, serviceName, portTypeName);
         // Finds the primary WSDL and makes sure that metadata doesn't have
         // two concrete or abstract WSDLs
-        SDDocumentImpl primaryDoc = findPrimary(docList);
+        SDDocumentImpl primaryDoc = primaryWsdl != null ? SDDocumentImpl.create(primaryWsdl,serviceName,portTypeName) : findPrimary(docList);
 
         EndpointAwareTube terminal;
         WSDLPortImpl wsdlPort = null;
         AbstractSEIModelImpl seiModel = null;
         // create WSDL model
         if (primaryDoc != null) {
-            wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container);
+            wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container, resolver);
         }
 
         WebServiceFeatureList features=((BindingImpl)binding).getFeatures();
@@ -247,7 +262,7 @@ public class EndpointFactory {
                 configFtrs = PolicyUtil.getPortScopedFeatures(policyMap,serviceName,portName);
             }
             features.mergeFeatures(configFtrs, true);
-            terminal = createProviderInvokerTube(implType,binding,invoker);
+            terminal = createProviderInvokerTube(implType, binding, invoker, container);
         } else {
             // Create runtime model for non Provider endpoints
             seiModel = createSEIModel(wsdlPort, implType, serviceName, portName, binding);
@@ -260,7 +275,7 @@ public class EndpointFactory {
             if (primaryDoc == null) {
                 primaryDoc = generateWSDL(binding, seiModel, docList, container, implType);
                 // create WSDL model
-                wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container);
+                wsdlPort = getWSDLPort(primaryDoc, docList, serviceName, portName, container, resolver);
                 seiModel.freeze(wsdlPort);
             }
             policyMap = wsdlPort.getOwner().getParent().getPolicyMap();
@@ -277,8 +292,9 @@ public class EndpointFactory {
         }
         // Selects only required metadata for this endpoint from the passed-in metadata
         if (primaryDoc != null) {
-            docList = findMetadataClosure(primaryDoc, docList);
+            docList = findMetadataClosure(primaryDoc, docList, resolver);
         }
+
         ServiceDefinitionImpl serviceDefiniton = (primaryDoc != null) ? new ServiceDefinitionImpl(docList, primaryDoc) : null;
 
         return create(serviceName, portName, binding, container, seiModel, wsdlPort, implType, serviceDefiniton,
@@ -298,10 +314,10 @@ public class EndpointFactory {
         return new SEIInvokerTube(seiModel,invoker,binding);
     }
 
-    protected <T> EndpointAwareTube createProviderInvokerTube(Class<T> implType, WSBinding binding, Invoker invoker) {
-        return ProviderInvokerTube.create(implType, binding, invoker);
+    protected <T> EndpointAwareTube createProviderInvokerTube(final Class<T> implType, final WSBinding binding,
+                                                              final Invoker invoker, final Container container) {
+        return ProviderInvokerTube.create(implType, binding, invoker, container);
     }
-
     /**
      * Goes through the original metadata documents and collects the required ones.
      * This done traversing from primary WSDL and its imports until it builds a
@@ -311,7 +327,7 @@ public class EndpointFactory {
      * @param docList complete metadata
      * @return new metadata that doesn't contain extraneous documnets.
      */
-    private static List<SDDocumentImpl> findMetadataClosure(SDDocumentImpl primaryDoc, List<SDDocumentImpl> docList) {
+    private static List<SDDocumentImpl> findMetadataClosure(SDDocumentImpl primaryDoc, List<SDDocumentImpl> docList, EntityResolver resolver) {
         // create a map for old metadata
         Map<String, SDDocumentImpl> oldMap = new HashMap<String, SDDocumentImpl>();
         for(SDDocumentImpl doc : docList) {
@@ -328,10 +344,24 @@ public class EndpointFactory {
             SDDocumentImpl doc = oldMap.get(url);
             if (doc == null) {
                 // old metadata doesn't have this imported doc, may be external
-                continue;
+                if (resolver != null) {
+                        try {
+                                InputSource source = resolver.resolveEntity(null, url);
+                                if (source != null) {
+                                        MutableXMLStreamBuffer xsb = new MutableXMLStreamBuffer();
+                                        XMLStreamReader reader = XmlUtil.newXMLInputFactory(true).createXMLStreamReader(source.getByteStream());
+                                        xsb.createFromXMLStreamReader(reader);
+
+                                        SDDocumentSource sdocSource = SDDocumentImpl.create(new URL(url), xsb);
+                                        doc = SDDocumentImpl.create(sdocSource, null, null);
+                                }
+                        } catch (Exception ex) {
+                                ex.printStackTrace();
+                        }
+                }
             }
             // Check if new metadata already contains this doc
-            if (!newMap.containsKey(url)) {
+            if (doc != null && !newMap.containsKey(url)) {
                 newMap.put(url, doc);
                 remaining.addAll(doc.getImports());
             }
@@ -366,8 +396,29 @@ public class EndpointFactory {
      *      If it has both @WebService and @WebServiceProvider annotations
      */
     public static boolean verifyImplementorClass(Class<?> clz) {
-        WebServiceProvider wsProvider = clz.getAnnotation(WebServiceProvider.class);
-        WebService ws = clz.getAnnotation(WebService.class);
+        return verifyImplementorClass(clz, null);
+    }
+
+    /**
+     * Verifies if the endpoint implementor class has @WebService or @WebServiceProvider
+     * annotation; passing MetadataReader instance allows to read annotations from
+     * xml descriptor instead of class's annotations
+     *
+     * @return
+     *       true if it is a Provider or AsyncProvider endpoint
+     *       false otherwise
+     * @throws java.lang.IllegalArgumentException
+     *      If it doesn't have any one of @WebService or @WebServiceProvider
+     *      If it has both @WebService and @WebServiceProvider annotations
+     */
+    public static boolean verifyImplementorClass(Class<?> clz, MetadataReader metadataReader) {
+
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
+
+        WebServiceProvider wsProvider = metadataReader.getAnnotation(WebServiceProvider.class, clz);
+        WebService ws = metadataReader.getAnnotation(WebService.class, clz);
         if (wsProvider == null && ws == null) {
             throw new IllegalArgumentException(clz +" has neither @WebService nor @WebServiceProvider annotation");
         }
@@ -415,8 +466,20 @@ public class EndpointFactory {
 //              config.getMappingInfo().setBindingID(binding.getBindingId());
                 config.setClassLoader(implType.getClassLoader());
                 config.getMappingInfo().setPortName(portName);
+
+        config.setMetadataReader(getExternalMetadatReader(implType, binding));
+
                 com.sun.xml.internal.ws.db.DatabindingImpl rt = (com.sun.xml.internal.ws.db.DatabindingImpl)fac.createRuntime(config);
                 return (AbstractSEIModelImpl) rt.getModel();
+    }
+
+    public static MetadataReader getExternalMetadatReader(Class<?> implType, WSBinding binding) {
+        com.oracle.webservices.internal.api.databinding.ExternalMetadataFeature ef = binding.getFeature(
+                com.oracle.webservices.internal.api.databinding.ExternalMetadataFeature.class);
+        // TODO-Miran: would it be necessary to disable secure xml processing?
+        if (ef != null)
+            return ef.getMetadataReader(implType.getClassLoader(), false);
+        return null;
     }
 
     /**
@@ -443,18 +506,29 @@ public class EndpointFactory {
      * @return non-null service name
      */
     public static @NotNull QName getDefaultServiceName(Class<?> implType) {
-        return getDefaultServiceName(implType, true);
+        return getDefaultServiceName(implType, null);
+    }
+
+    public static @NotNull QName getDefaultServiceName(Class<?> implType, MetadataReader metadataReader) {
+        return getDefaultServiceName(implType, true, metadataReader);
     }
 
     public static @NotNull QName getDefaultServiceName(Class<?> implType, boolean isStandard) {
+        return getDefaultServiceName(implType, isStandard, null);
+    }
+
+    public static @NotNull QName getDefaultServiceName(Class<?> implType, boolean isStandard, MetadataReader metadataReader) {
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
         QName serviceName;
-        WebServiceProvider wsProvider = implType.getAnnotation(WebServiceProvider.class);
+        WebServiceProvider wsProvider = metadataReader.getAnnotation(WebServiceProvider.class, implType);
         if (wsProvider!=null) {
             String tns = wsProvider.targetNamespace();
             String local = wsProvider.serviceName();
             serviceName = new QName(tns, local);
         } else {
-            serviceName = RuntimeModeler.getServiceName(implType, isStandard);
+            serviceName = RuntimeModeler.getServiceName(implType, metadataReader, isStandard);
         }
         assert serviceName != null;
         return serviceName;
@@ -467,18 +541,29 @@ public class EndpointFactory {
      * @return non-null port name
      */
     public static @NotNull QName getDefaultPortName(QName serviceName, Class<?> implType) {
-        return getDefaultPortName(serviceName, implType, true);
+        return getDefaultPortName(serviceName, implType, null);
+    }
+
+    public static @NotNull QName getDefaultPortName(QName serviceName, Class<?> implType, MetadataReader metadataReader) {
+        return getDefaultPortName(serviceName, implType, true, metadataReader);
     }
 
     public static @NotNull QName getDefaultPortName(QName serviceName, Class<?> implType, boolean isStandard) {
+        return getDefaultPortName(serviceName, implType, isStandard, null);
+    }
+
+    public static @NotNull QName getDefaultPortName(QName serviceName, Class<?> implType, boolean isStandard, MetadataReader metadataReader) {
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
         QName portName;
-        WebServiceProvider wsProvider = implType.getAnnotation(WebServiceProvider.class);
+        WebServiceProvider wsProvider = metadataReader.getAnnotation(WebServiceProvider.class, implType);
         if (wsProvider!=null) {
             String tns = wsProvider.targetNamespace();
             String local = wsProvider.portName();
             portName = new QName(tns, local);
         } else {
-            portName = RuntimeModeler.getPortName(implType, serviceName.getNamespaceURI(), isStandard);
+            portName = RuntimeModeler.getPortName(implType, metadataReader, serviceName.getNamespaceURI(), isStandard);
         }
         assert portName != null;
         return portName;
@@ -494,19 +579,39 @@ public class EndpointFactory {
      * @return wsdl if there is wsdlLocation, else null
      */
     public static @Nullable String getWsdlLocation(Class<?> implType) {
-        String wsdl;
-        WebService ws = implType.getAnnotation(WebService.class);
+        return getWsdlLocation(implType, new ReflectAnnotationReader());
+    }
+
+    /**
+     * Returns the wsdl from @WebService, or @WebServiceProvider annotation using
+     * wsdlLocation element.
+     *
+     * @param implType
+     *      endpoint implementation class
+     *      make sure that you called {@link #verifyImplementorClass} on it.
+     * @return wsdl if there is wsdlLocation, else null
+     */
+    public static @Nullable String getWsdlLocation(Class<?> implType, MetadataReader metadataReader) {
+
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
+
+        WebService ws = metadataReader.getAnnotation(WebService.class, implType);
         if (ws != null) {
-            wsdl = ws.wsdlLocation();
+            return nullIfEmpty(ws.wsdlLocation());
         } else {
             WebServiceProvider wsProvider = implType.getAnnotation(WebServiceProvider.class);
             assert wsProvider != null;
-            wsdl = wsProvider.wsdlLocation();
+            return nullIfEmpty(wsProvider.wsdlLocation());
         }
-        if (wsdl.length() < 1) {
-            wsdl = null;
+    }
+
+    private static String nullIfEmpty(String string) {
+        if (string.length() < 1) {
+            string = null;
         }
-        return wsdl;
+        return string;
     }
 
     /**
@@ -532,11 +637,17 @@ public class EndpointFactory {
         wsdlGenInfo.setContainer(container);
         wsdlGenInfo.setExtensions(ServiceFinder.find(WSDLGeneratorExtension.class).toArray());
         wsdlGenInfo.setInlineSchemas(false);
+        wsdlGenInfo.setSecureXmlProcessingDisabled(isSecureXmlProcessingDisabled(binding.getFeatures()));
         seiModel.getDatabinding().generateWSDL(wsdlGenInfo);
 //        WSDLGenerator wsdlGen = new WSDLGenerator(seiModel, wsdlResolver, binding, container, implType, false,
 //                ServiceFinder.find(WSDLGeneratorExtension.class).toArray());
 //        wsdlGen.doGeneration();
         return wsdlResolver.updateDocs();
+    }
+
+    private static boolean isSecureXmlProcessingDisabled(WSFeatureList featureList) {
+        // TODO-Miran: would it be necessary to disable secure xml processing?
+        return false;
     }
 
     /**
@@ -619,12 +730,13 @@ public class EndpointFactory {
      * @return non-null wsdl port object
      */
     private static @NotNull WSDLPortImpl getWSDLPort(SDDocumentSource primaryWsdl, List<? extends SDDocumentSource> metadata,
-                                                     @NotNull QName serviceName, @NotNull QName portName, Container container) {
+                                                     @NotNull QName serviceName, @NotNull QName portName, Container container,
+                                                     EntityResolver resolver) {
         URL wsdlUrl = primaryWsdl.getSystemId();
         try {
             // TODO: delegate to another entity resolver
             WSDLModelImpl wsdlDoc = RuntimeWSDLParser.parse(
-                new Parser(primaryWsdl), new EntityResolverImpl(metadata),
+                new Parser(primaryWsdl), new EntityResolverImpl(metadata, resolver),
                     false, container, ServiceFinder.find(WSDLParserExtension.class).toArray());
             if(wsdlDoc.getServices().size() == 0) {
                 throw new ServerRtException(ServerMessages.localizableRUNTIME_PARSER_WSDL_NOSERVICE_IN_WSDLMODEL(wsdlUrl));
@@ -654,11 +766,13 @@ public class EndpointFactory {
      */
     private static final class EntityResolverImpl implements XMLEntityResolver {
         private Map<String,SDDocumentSource> metadata = new HashMap<String,SDDocumentSource>();
+        private EntityResolver resolver;
 
-        public EntityResolverImpl(List<? extends SDDocumentSource> metadata) {
+        public EntityResolverImpl(List<? extends SDDocumentSource> metadata, EntityResolver resolver) {
             for (SDDocumentSource doc : metadata) {
                 this.metadata.put(doc.getSystemId().toExternalForm(),doc);
             }
+            this.resolver = resolver;
         }
 
         public Parser resolveEntity (String publicId, String systemId) throws IOException, XMLStreamException {
@@ -666,6 +780,17 @@ public class EndpointFactory {
                 SDDocumentSource doc = metadata.get(systemId);
                 if (doc != null)
                     return new Parser(doc);
+            }
+            if (resolver != null) {
+                try {
+                    InputSource source = resolver.resolveEntity(publicId, systemId);
+                    if (source != null) {
+                        Parser p = new Parser(null, XMLStreamReaderFactory.create(source, true));
+                        return p;
+                    }
+                } catch (SAXException e) {
+                    throw new XMLStreamException(e);
+                }
             }
             return null;
         }

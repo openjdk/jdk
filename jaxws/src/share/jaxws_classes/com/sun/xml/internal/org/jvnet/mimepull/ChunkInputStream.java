@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,9 @@ final class ChunkInputStream extends InputStream {
 
     @Override
     public int read(byte b[], int off, int sz) throws IOException {
-        if(!fetch())    return -1;
+        if (!fetch()) {
+            return -1;
+        }
 
         sz = Math.min(sz, len-offset);
         System.arraycopy(buf,offset,b,off,sz);
@@ -60,7 +62,9 @@ final class ChunkInputStream extends InputStream {
     }
 
     public int read() throws IOException {
-        if(!fetch()) return -1;
+        if (!fetch()) {
+            return -1;
+        }
         return (buf[offset++] & 0xff);
     }
 
@@ -88,6 +92,7 @@ final class ChunkInputStream extends InputStream {
         return true;
     }
 
+    @Override
     public void close() throws IOException {
         super.close();
         current = null;

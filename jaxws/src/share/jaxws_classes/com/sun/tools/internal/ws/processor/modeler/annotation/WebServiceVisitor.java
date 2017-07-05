@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.tools.internal.ws.util.ClassNameInfo;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPStyle;
 import com.sun.xml.internal.ws.model.RuntimeModeler;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.jws.Oneway;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -53,6 +54,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
@@ -139,7 +141,10 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
                 serviceImplName = null;
                 postProcessWebService(webService, e);
                 serviceImplName = null;
+                break;
             }
+            default:
+                break;
         }
         return null;
     }
@@ -281,6 +286,8 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
                 soapStyle = SOAPStyle.DOCUMENT;
                 wrapped = soapBinding.parameterStyle().equals(ParameterStyle.WRAPPED);
             }
+        } else {
+                pushedSoapBinding = false;
         }
         return soapBinding;
     }
@@ -366,6 +373,7 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
                 }
                 for (TypeMirror superType : element.getInterfaces())
                     processMethods((TypeElement) ((DeclaredType) superType).asElement());
+                break;
             }
             case CLASS: {
                 builder.log("ProcessedMethods Class: " + element);
@@ -382,7 +390,10 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
                 if (!superclass.getKind().equals(TypeKind.NONE)) {
                     processMethods((TypeElement) ((DeclaredType) superclass).asElement());
                 }
+                break;
             }
+            default:
+                break;
         }
     }
 
@@ -504,7 +515,7 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
         boolean hasDefaultConstructor = false;
         for (ExecutableElement constructor : ElementFilter.constructorsIn(classElement.getEnclosedElements())) {
             if (constructor.getModifiers().contains(Modifier.PUBLIC) &&
-                    constructor.getParameters().size() == 0) {
+                    constructor.getParameters().isEmpty()) {
                 hasDefaultConstructor = true;
                 break;
             }
@@ -547,7 +558,7 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
             if (((DeclaredType) interfaceType).asElement().equals(interfaceElement))
                 return true;
         }
-        List<ExecutableElement> classMethods = ElementFilter.methodsIn(classElement.getEnclosedElements());
+        List<ExecutableElement> classMethods = getClassMethods(classElement);
         boolean implementsMethod;
         for (ExecutableElement interfaceMethod : ElementFilter.methodsIn(interfaceElement.getEnclosedElements())) {
             implementsMethod = false;
@@ -566,17 +577,32 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
         return true;
     }
 
+    private static List<ExecutableElement> getClassMethods(TypeElement classElement) {
+        if (classElement.getQualifiedName().toString().equals(Object.class.getName())) // we don't need Object's methods
+            return null;
+        TypeElement superclassElement = (TypeElement) ((DeclaredType) classElement.getSuperclass()).asElement();
+        List<ExecutableElement> superclassesMethods = getClassMethods(superclassElement);
+        List<ExecutableElement> classMethods = ElementFilter.methodsIn(classElement.getEnclosedElements());
+        if (superclassesMethods == null)
+            return classMethods;
+        else
+            superclassesMethods.addAll(classMethods);
+        return superclassesMethods;
+    }
+
     protected boolean sameMethod(ExecutableElement method1, ExecutableElement method2) {
         if (!method1.getSimpleName().equals(method2.getSimpleName()))
             return false;
-        if (!method1.getReturnType().equals(method2.getReturnType()))
+        Types typeUtils = builder.getProcessingEnvironment().getTypeUtils();
+        if(!typeUtils.isSameType(method1.getReturnType(), method2.getReturnType())
+                && !typeUtils.isSubtype(method2.getReturnType(), method1.getReturnType()))
             return false;
         List<? extends VariableElement> parameters1 = method1.getParameters();
         List<? extends VariableElement> parameters2 = method2.getParameters();
         if (parameters1.size() != parameters2.size())
             return false;
         for (int i = 0; i < parameters1.size(); i++) {
-            if (!builder.getProcessingEnvironment().getTypeUtils().isSameType(parameters1.get(i).asType(), parameters2.get(i).asType()))
+            if (!typeUtils.isSameType(parameters1.get(i).asType(), parameters2.get(i).asType()))
                 return false;
         }
         return true;
@@ -616,9 +642,9 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
                 }
                 DeclaredType superClass = (DeclaredType) element.getSuperclass();
 
-                TypeElement typeElement = (TypeElement) superClass.asElement();
-                return typeElement.getQualifiedName().toString().equals(Object.class.getName())
-                        || methodsAreLegal(typeElement);
+                TypeElement tE = (TypeElement) superClass.asElement();
+                return tE.getQualifiedName().toString().equals(Object.class.getName())
+                        || methodsAreLegal(tE);
             }
             default: {
                 throw new IllegalArgumentException("Class or interface was expecting. But element: " + element);
@@ -800,12 +826,12 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
     protected boolean isLegalType(TypeMirror type) {
         if (!(type != null && type.getKind().equals(TypeKind.DECLARED)))
             return true;
-        TypeElement typeElement = (TypeElement) ((DeclaredType) type).asElement();
-        if (typeElement == null) {
+        TypeElement tE = (TypeElement) ((DeclaredType) type).asElement();
+        if (tE == null) {
             // can be null, if this type's declaration is unknown. This may be the result of a processing error, such as a missing class file.
             builder.processError(WebserviceapMessages.WEBSERVICEAP_COULD_NOT_FIND_TYPEDECL(type.toString(), context.getRound()));
         }
-        return !builder.isRemote(typeElement);
+        return !builder.isRemote(tE);
     }
 
     protected VariableElement getOutParameter(ExecutableElement method) {
@@ -821,18 +847,22 @@ public abstract class WebServiceVisitor extends SimpleElementVisitor6<Void, Obje
 
     protected static class MySoapBinding implements SOAPBinding {
 
+        @Override
         public Style style() {
             return SOAPBinding.Style.DOCUMENT;
         }
 
+        @Override
         public Use use() {
             return SOAPBinding.Use.LITERAL;
         }
 
+        @Override
         public ParameterStyle parameterStyle() {
             return SOAPBinding.ParameterStyle.WRAPPED;
         }
 
+        @Override
         public Class<? extends java.lang.annotation.Annotation> annotationType() {
             return SOAPBinding.class;
         }

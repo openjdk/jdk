@@ -31,7 +31,6 @@ import com.sun.source.util.Trees;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 
-import java.lang.annotation.Annotation;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -53,6 +52,7 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -375,17 +375,17 @@ public class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableE
             throw new IllegalStateException();
         }
 
-        @Override
+//        @Override
         public List<? extends AnnotationMirror> getAnnotationMirrors() {
             throw new IllegalStateException();
         }
 
-        @Override
+//        @Override
         public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
             throw new IllegalStateException();
         }
 
-        @Override
+//        @Override
         public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
             throw new IllegalStateException();
         }

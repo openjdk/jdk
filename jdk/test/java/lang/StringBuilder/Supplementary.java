@@ -37,6 +37,7 @@ public class Supplementary {
         test4();        // Test for appendCodePoint(int codePoint)
         test5();        // Test for codePointCount(int beginIndex, int endIndex)
         test6();        // Test for offsetByCodePoints(int index, int offset)
+        testDontReadOutOfBoundsTrailingSurrogate();
     }
 
     /* Text strings which are used as input data.
@@ -305,6 +306,19 @@ public class Supplementary {
         }
     }
 
+    static void testDontReadOutOfBoundsTrailingSurrogate() {
+        StringBuilder sb = new StringBuilder();
+        int suppl = Character.MIN_SUPPLEMENTARY_CODE_POINT;
+        sb.appendCodePoint(suppl);
+        check(sb.codePointAt(0) != (int) suppl,
+              "codePointAt(0)", sb.codePointAt(0), suppl);
+        check(sb.length() != 2, "sb.length()");
+        sb.setLength(1);
+        check(sb.length() != 1, "sb.length()");
+        check(sb.codePointAt(0) != Character.highSurrogate(suppl),
+              "codePointAt(0)",
+              sb.codePointAt(0), Character.highSurrogate(suppl));
+    }
 
     static final boolean At = true, Before = false;
 

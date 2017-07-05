@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,8 +298,29 @@ public abstract class AbstractWrapperBeanGenerator<T,C,M,A extends Comparable> {
      * @return list of properties in the correct order for an exception bean
      */
     public Collection<A> collectExceptionBeanMembers(C exception) {
+        return collectExceptionBeanMembers(exception, true);
+    }
+
+    /**
+     * Computes and sorts exception bean members for a given exception as per
+     * the 3.7 section of the spec. It takes all getter properties in the
+     * exception and its superclasses(except getCause, getLocalizedMessage,
+     * getStackTrace, getClass). The returned collection is sorted based
+     * on the property names.
+     *
+     * <p>
+     * But if the exception has @XmlType its values are honored. Only the
+     * propOrder properties are considered. The returned collection is sorted
+     * as per the given propOrder.
+     *
+     * @param exception
+     * @param decapitalize if true, all the property names are decapitalized
+     *
+     * @return list of properties in the correct order for an exception bean
+     */
+   public Collection<A> collectExceptionBeanMembers(C exception, boolean decapitalize ) {
         TreeMap<String, A> fields = new TreeMap<String, A>();
-        getExceptionProperties(exception, fields);
+        getExceptionProperties(exception, fields, decapitalize);
 
         // Consider only the @XmlType(propOrder) properties
         XmlType xmlType = annReader.getClassAnnotation(XmlType.class, exception, null);
@@ -325,10 +346,10 @@ public abstract class AbstractWrapperBeanGenerator<T,C,M,A extends Comparable> {
     }
 
 
-    private void getExceptionProperties(C exception, TreeMap<String, A> fields) {
+    private void getExceptionProperties(C exception, TreeMap<String, A> fields, boolean decapitalize) {
         C sc = nav.getSuperClass(exception);
         if (sc != null) {
-            getExceptionProperties(sc, fields);
+            getExceptionProperties(sc, fields, decapitalize);
         }
         Collection<? extends M> methods = nav.getDeclaredMethods(exception);
 
@@ -355,9 +376,8 @@ public abstract class AbstractWrapperBeanGenerator<T,C,M,A extends Comparable> {
 
             T returnType = getSafeType(nav.getReturnType(method));
             if (nav.getMethodParameters(method).length == 0) {
-                String fieldName = name.startsWith("get")
-                        ? StringUtils.decapitalize(name.substring(3))
-                        : StringUtils.decapitalize(name.substring(2));
+                String fieldName = name.startsWith("get") ? name.substring(3) : name.substring(2);
+                if (decapitalize) fieldName = StringUtils.decapitalize(fieldName);
                 fields.put(fieldName, factory.createWrapperBeanMember(returnType, fieldName, Collections.<Annotation>emptyList()));
             }
         }

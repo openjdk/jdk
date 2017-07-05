@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public final class NavigatorImpl implements Navigator<NType,NClass,Void,Void> {
         return create(primitiveType);
     }
 
-
+    @SuppressWarnings("FinalStaticMethod")
     public static final NType create(Type t) {
         if(t==null)     return null;
         if(t instanceof Class)
@@ -236,17 +236,18 @@ public final class NavigatorImpl implements Navigator<NType,NClass,Void,Void> {
     public Location getClassLocation(final NClass c) {
         // not really needed for XJC but doesn't hurt to have one
         return new Location() {
+            @Override
             public String toString() {
                 return c.fullName();
             }
         };
     }
 
-    public Location getFieldLocation(Void _) {
+    public Location getFieldLocation(Void v) {
         throw new IllegalStateException();
     }
 
-    public Location getMethodLocation(Void _) {
+    public Location getMethodLocation(Void v) {
         throw new IllegalStateException();
     }
 

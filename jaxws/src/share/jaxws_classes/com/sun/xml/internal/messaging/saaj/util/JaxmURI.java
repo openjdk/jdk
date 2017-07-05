@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ import java.io.Serializable;
 
       // if we get to this point, we need to resolve relative path
       // RFC 2396 5.2 #6
-      String path = new String();
+      String path = "";
       String basePath = p_base.getPath();
 
       // 6a - get all but the last segment of the base URI path
@@ -1135,6 +1135,11 @@ import java.io.Serializable;
       }
     }
     return false;
+  }
+
+  public int hashCode() {
+          // No members safe to use, just default to a constant.
+          return 153214;
   }
 
  /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import com.sun.tools.internal.ws.resources.WsdlMessages;
 
 import javax.xml.namespace.QName;
 import java.util.*;
-
-import org.xml.sax.helpers.LocatorImpl;
 
 /**
  * An abstract class for documents containing entities.
@@ -163,10 +161,11 @@ public abstract class AbstractDocument {
     private final Set includedDocuments;
     private final List includedEntities;
 
-    private class LocallyValidatingAction implements EntityAction {
+    private static class LocallyValidatingAction implements EntityAction {
         public LocallyValidatingAction() {
         }
 
+        @Override
         public void perform(Entity entity) {
             try {
                 entity.validateThis();

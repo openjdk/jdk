@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.xml.stream.XMLStreamException;
  *
  * <p>
  * Some producer of infoset (in particular, such as FastInfoset,
- * XOP deecoder), usees a native format that enables efficient
+ * XOP decoder), uses a native format that enables efficient
  * treatment of binary data. For ordinary infoset consumer
  * (that just uses {@link XMLStreamReader}, those binary data
  * will just look like base64-encoded string, but this interface

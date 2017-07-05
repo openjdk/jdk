@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.AbstractList;
+import java.util.Map.Entry;
 
 /**
  * List of {@link HttpAdapter}s created together.
@@ -58,12 +59,13 @@ public abstract class HttpAdapterList<T extends HttpAdapter> extends AbstractLis
     private final Map<PortInfo, String> addressMap = new HashMap<PortInfo, String>();
 
     // TODO: documented because it's used by AS
+    @Override
     public T createAdapter(String name, String urlPattern, WSEndpoint<?> endpoint) {
         T t = createHttpAdapter(name, urlPattern, endpoint);
         adapters.add(t);
         WSDLPort port = endpoint.getPort();
         if (port != null) {
-            PortInfo portInfo = new PortInfo(port.getOwner().getName(),port.getName().getLocalPart());
+            PortInfo portInfo = new PortInfo(port.getOwner().getName(),port.getName().getLocalPart(), endpoint.getImplementationClass());
             addressMap.put(portInfo, getValidPath(urlPattern));
         }
         return t;
@@ -88,21 +90,36 @@ public abstract class HttpAdapterList<T extends HttpAdapter> extends AbstractLis
 
     /**
      * Creates a PortAddressResolver that maps portname to its address
+     *
+     * @param endpointImpl application endpoint Class that eventually serves the request.
      */
-    public PortAddressResolver createPortAddressResolver(final String baseAddress) {
+    public PortAddressResolver createPortAddressResolver(final String baseAddress, final Class<?> endpointImpl) {
         return new PortAddressResolver() {
+            @Override
             public String getAddressFor(@NotNull QName serviceName, @NotNull String portName) {
-                String urlPattern = addressMap.get(new PortInfo(serviceName,portName));
+                String urlPattern = addressMap.get(new PortInfo(serviceName,portName, endpointImpl));
+                if (urlPattern == null) {
+                    //if a WSDL defines more ports, urlpattern is null (portName does not match endpointImpl)
+                    //so fallback to the default behaviour where only serviceName/portName is checked
+                    for (Entry<PortInfo, String> e : addressMap.entrySet()) {
+                        if (serviceName.equals(e.getKey().serviceName) && portName.equals(e.getKey().portName)) {
+                                urlPattern = e.getValue();
+                                break;
+                        }
+                    }
+                }
                 return (urlPattern == null) ? null : baseAddress+urlPattern;
             }
         };
     }
 
 
+    @Override
     public T get(int index) {
         return adapters.get(index);
     }
 
+    @Override
     public int size() {
         return adapters.size();
     }
@@ -110,24 +127,30 @@ public abstract class HttpAdapterList<T extends HttpAdapter> extends AbstractLis
     private static class PortInfo {
         private final QName serviceName;
         private final String portName;
+        private final Class<?> implClass;
 
-        PortInfo(@NotNull QName serviceName, @NotNull String portName) {
+        PortInfo(@NotNull QName serviceName, @NotNull String portName, Class<?> implClass) {
             this.serviceName = serviceName;
             this.portName = portName;
+            this.implClass = implClass;
         }
 
         @Override
         public boolean equals(Object portInfo) {
             if (portInfo instanceof PortInfo) {
                 PortInfo that = (PortInfo)portInfo;
-                return this.serviceName.equals(that.serviceName) && this.portName.equals(that.portName);
+                if (this.implClass == null) {
+                    return this.serviceName.equals(that.serviceName) && this.portName.equals(that.portName) && that.implClass == null;
+                }
+                return this.serviceName.equals(that.serviceName) && this.portName.equals(that.portName) && this.implClass.equals(that.implClass);
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return serviceName.hashCode()+portName.hashCode();
+            int retVal = serviceName.hashCode()+portName.hashCode();
+            return implClass != null ? retVal + implClass.hashCode() : retVal;
         }
     }
 }

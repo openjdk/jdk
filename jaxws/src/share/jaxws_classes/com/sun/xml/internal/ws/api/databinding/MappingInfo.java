@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,9 @@ public class MappingInfo {
         protected BindingID bindingID;
         protected QName serviceName;
         protected QName portName;
+        protected String defaultSchemaNamespaceSuffix;
 
-        public String getTargetNamespace() {
+    public String getTargetNamespace() {
                 return targetNamespace;
         }
         public void setTargetNamespace(String targetNamespace) {
@@ -82,4 +83,10 @@ public class MappingInfo {
         public void setPortName(QName portName) {
                 this.portName = portName;
         }
+    public String getDefaultSchemaNamespaceSuffix() {
+        return defaultSchemaNamespaceSuffix;
+    }
+    public void setDefaultSchemaNamespaceSuffix(String defaultSchemaNamespaceSuffix) {
+        this.defaultSchemaNamespaceSuffix = defaultSchemaNamespaceSuffix;
+    }
 }

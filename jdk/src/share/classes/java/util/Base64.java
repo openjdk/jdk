@@ -620,7 +620,10 @@ public class Base64 {
      * required. So if the final unit of the encoded byte data only has
      * two or three Base64 characters (without the corresponding padding
      * character(s) padded), they are decoded as if followed by padding
-     * character(s).
+     * character(s). If there is padding character present in the
+     * final unit, the correct number of padding character(s) must be
+     * present, otherwise {@code IllegalArgumentException} is thrown
+     * during decoding.
      *
      * <p> Instances of {@link Decoder} class are safe for use by
      * multiple concurrent threads.
@@ -1034,23 +1037,26 @@ public class Base64 {
                 throw new IllegalArgumentException(
                     "Input byte[] should at least have 2 bytes for base64 bytes");
             }
-            if (src[sl - 1] == '=') {
-                paddings++;
-                if (src[sl - 2] == '=')
-                    paddings++;
-            }
             if (isMIME) {
                 // scan all bytes to fill out all non-alphabet. a performance
                 // trade-off of pre-scan or Arrays.copyOf
                 int n = 0;
                 while (sp < sl) {
                     int b = src[sp++] & 0xff;
-                    if (b == '=')
+                    if (b == '=') {
+                        len -= (sl - sp + 1);
                         break;
+                    }
                     if ((b = base64[b]) == -1)
                         n++;
                 }
                 len -= n;
+            } else {
+                if (src[sl - 1] == '=') {
+                    paddings++;
+                    if (src[sl - 2] == '=')
+                        paddings++;
+                }
             }
             if (paddings == 0 && (len & 0x3) !=  0)
                 paddings = 4 - (len & 0x3);

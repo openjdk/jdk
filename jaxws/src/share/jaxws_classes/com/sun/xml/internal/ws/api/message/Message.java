@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.api.model.SEIModel;
+import com.sun.xml.internal.ws.api.model.WSDLOperationMapping;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundPortType;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
@@ -56,6 +57,7 @@ import org.xml.sax.SAXParseException;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
+import javax.xml.soap.MimeHeaders;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLStreamException;
@@ -67,6 +69,8 @@ import javax.xml.ws.WebServiceException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -206,14 +210,14 @@ public abstract class Message {
      * <h3>Implementation Note</h3>
      * <p>
      * {@link Message} implementation is allowed to defer
-     * the construction of {@link HeaderList} object. So
+     * the construction of {@link MessageHeaders} object. So
      * if you only want to check for the existence of any header
      * element, use {@link #hasHeaders()}.
      *
      * @return
      *      always return the same non-null object.
      */
-    public abstract @NotNull HeaderList getHeaders();
+    public abstract @NotNull MessageHeaders getHeaders();
 
     /**
      * Gets the attachments of this message
@@ -237,6 +241,15 @@ public abstract class Message {
     protected AttachmentSet attachmentSet;
 
     private WSDLBoundOperation operation = null;
+
+    private WSDLOperationMapping wsdlOperationMapping = null;
+
+    private MessageMetadata messageMetadata = null;
+
+    public void setMessageMedadata(MessageMetadata metadata) {
+        messageMetadata = metadata;
+    }
+
 
     /**
      * Returns the operation of which this message is an instance of.
@@ -267,6 +280,10 @@ public abstract class Message {
      */
     @Deprecated
     public final @Nullable WSDLBoundOperation getOperation(@NotNull WSDLBoundPortType boundPortType) {
+        if (operation == null && messageMetadata != null) {
+            if (wsdlOperationMapping == null) wsdlOperationMapping = messageMetadata.getWSDLOperationMapping();
+            if (wsdlOperationMapping != null) operation = wsdlOperationMapping.getWSDLBoundOperation();
+        }
         if(operation==null)
             operation = boundPortType.getOperation(getPayloadNamespaceURI(),getPayloadLocalPart());
         return operation;
@@ -312,6 +329,13 @@ public abstract class Message {
      */
     @Deprecated
     public final @Nullable JavaMethod getMethod(@NotNull SEIModel seiModel) {
+        if (wsdlOperationMapping == null && messageMetadata != null) {
+            wsdlOperationMapping = messageMetadata.getWSDLOperationMapping();
+        }
+        if (wsdlOperationMapping != null) {
+            return wsdlOperationMapping.getJavaMethod();
+        }
+        //fall back to the original logic which could be incorrect ...
         String localPart = getPayloadLocalPart();
         String nsUri;
         if (localPart == null) {
@@ -509,6 +533,28 @@ public abstract class Message {
         return readAsSOAPMessage();
     }
 
+    public static Map<String, List<String>> getTransportHeaders(Packet packet) {
+        return getTransportHeaders(packet, packet.getState().isInbound());
+    }
+
+    public static Map<String, List<String>> getTransportHeaders(Packet packet, boolean inbound) {
+        Map<String, List<String>> headers = null;
+        String key = inbound ? Packet.INBOUND_TRANSPORT_HEADERS : Packet.OUTBOUND_TRANSPORT_HEADERS;
+        if (packet.supports(key)) {
+            headers = (Map<String, List<String>>)packet.get(key);
+        }
+        return headers;
+    }
+
+    public static void addSOAPMimeHeaders(MimeHeaders mh, Map<String, List<String>> headers) {
+        for(Map.Entry<String, List<String>> e : headers.entrySet()) {
+            if (!e.getKey().equalsIgnoreCase("Content-Type")) {
+                for(String value : e.getValue()) {
+                    mh.addHeader(e.getKey(), value);
+                }
+            }
+        }
+    }
     /**
      * Reads the payload as a JAXB object by using the given unmarshaller.
      *
@@ -720,7 +766,7 @@ public abstract class Message {
     public @NotNull String getID(AddressingVersion av, SOAPVersion sv) {
         String uuid = null;
         if (av != null) {
-            uuid = getHeaders().getMessageID(av, sv);
+            uuid = AddressingUtils.getMessageID(getHeaders(), av, sv);
         }
         if (uuid == null) {
             uuid = generateMessageID();
@@ -735,5 +781,9 @@ public abstract class Message {
      */
     public static String generateMessageID() {
         return "uuid:" + UUID.randomUUID().toString();
+    }
+
+    public SOAPVersion getSOAPVersion() {
+        return null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.xml.validation.Validator;
  * An {@link ErrorHandler} to receive errors encountered during the
  * {@link Validator#validate} method invocation. Specify
  * a custom handler in {@link SchemaValidation}, {@link SchemaValidationFeature}
- * to customize the error handling process during validaiton.
+ * to customize the error handling process during validation.
  *
  * @see SchemaValidation
  * @author Jitendra Kotamraju

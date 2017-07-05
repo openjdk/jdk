@@ -34,8 +34,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,8 +52,6 @@ import com.sun.xml.internal.bind.v2.runtime.reflect.opt.OptimizedAccessorFactory
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Receiver;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
-import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
-import com.sun.istack.internal.Nullable;
 
 import org.xml.sax.SAXException;
 
@@ -181,6 +177,15 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     public boolean isValueTypeAbstractable() {
         return !nonAbstractableClasses.contains(getValueType());
+    }
+
+    /**
+     * Checks if it is not builtin jaxb class
+     * @param clazz to be checked
+     * @return true if it is NOT builtin class
+     */
+    public boolean isAbstractable(Class clazz) {
+        return !nonAbstractableClasses.contains(clazz);
     }
 
     /**

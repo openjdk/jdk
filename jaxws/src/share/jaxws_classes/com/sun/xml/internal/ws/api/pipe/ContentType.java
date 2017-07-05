@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@ package com.sun.xml.internal.ws.api.pipe;
  * A Content-Type transport header that will be returned by {@link Codec#encode(com.sun.xml.internal.ws.api.message.Packet, java.io.OutputStream)}.
  * It will provide the Content-Type header and also take care of SOAP 1.1 SOAPAction header.
  *
- * @see {@link com.sun.xml.internal.org.jvnet.ws.message.ContentType}
+ * @see com.oracle.webservices.internal.api.message.ContentType
  * TODO: rename to ContentMetadata?
  *
  * @author Vivek Pandey
  */
-public interface ContentType extends com.sun.xml.internal.org.jvnet.ws.message.ContentType {
+public interface ContentType extends com.oracle.webservices.internal.api.message.ContentType {
 }

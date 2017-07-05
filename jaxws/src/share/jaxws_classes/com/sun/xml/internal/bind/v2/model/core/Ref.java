@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.sun.xml.internal.bind.v2.model.annotation.AnnotationReader;
-import com.sun.xml.internal.bind.v2.model.impl.ModelBuilder;
+import com.sun.xml.internal.bind.v2.model.impl.ModelBuilderI;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 
 /**
@@ -68,8 +68,8 @@ public final class Ref<T,C> {
         this.valueList = valueList;
     }
 
-    public Ref(ModelBuilder<T,C,?,?> builder, T type, XmlJavaTypeAdapter xjta, XmlList xl ) {
-        this(builder.reader,builder.nav,type,xjta,xl);
+    public Ref(ModelBuilderI<T,C,?,?> builder, T type, XmlJavaTypeAdapter xjta, XmlList xl ) {
+        this(builder.getReader(),builder.getNavigator(),type,xjta,xl);
     }
 
     public Ref(AnnotationReader<T,C,?,?> reader,

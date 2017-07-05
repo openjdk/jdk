@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.xml.internal.ws.binding;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.client.HandlerConfiguration;
 import com.sun.xml.internal.ws.encoding.soap.streaming.SOAP12NamespaceConstants;
 import com.sun.xml.internal.ws.resources.ClientMessages;
@@ -43,7 +42,6 @@ import javax.xml.ws.handler.Handler;
 import javax.xml.ws.soap.MTOMFeature;
 import javax.xml.ws.soap.SOAPBinding;
 import java.util.*;
-
 
 /**
  * @author WS Development Team
@@ -118,7 +116,7 @@ public final class SOAPBindingImpl extends BindingImpl implements SOAPBinding {
      * Protocol Handlers and sets the HandlerConfiguration.
      */
     public void setHandlerChain(List<Handler> chain) {
-        handlerConfig = new HandlerConfiguration(handlerConfig.getRoles(), chain);
+        setHandlerConfig(new HandlerConfiguration(getHandlerConfig().getRoles(), chain));
     }
 
     protected void addRequiredRoles(Set<String> roles) {
@@ -126,7 +124,7 @@ public final class SOAPBindingImpl extends BindingImpl implements SOAPBinding {
     }
 
     public Set<String> getRoles() {
-        return handlerConfig.getRoles();
+        return getHandlerConfig().getRoles();
     }
 
     /**
@@ -142,7 +140,7 @@ public final class SOAPBindingImpl extends BindingImpl implements SOAPBinding {
             throw new WebServiceException(ClientMessages.INVALID_SOAP_ROLE_NONE());
         }
         addRequiredRoles(roles);
-        handlerConfig = new HandlerConfiguration(roles, getHandlerConfig());
+        setHandlerConfig(new HandlerConfiguration(roles, getHandlerConfig()));
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@ package com.apple.jobjc;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * A wrapper around a direct ByteBuffer and its native pointer. For documentation, @see java.nio.ByteBuffer
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class NativeBuffer {
     static native long getPtrOfBuffer(final ByteBuffer byteBuffer);
 

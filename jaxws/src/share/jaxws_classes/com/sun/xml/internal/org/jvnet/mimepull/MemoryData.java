@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.org.jvnet.mimepull;
 import java.nio.ByteBuffer;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,14 +51,17 @@ final class MemoryData implements Data {
     }
 
     // size of the chunk given by the parser
+    @Override
     public int size() {
         return len;
     }
 
+    @Override
     public byte[] read() {
         return data;
     }
 
+    @Override
     public long writeTo(DataFile file) {
         return file.writeTo(data, 0, len);
     }
@@ -68,6 +72,7 @@ final class MemoryData implements Data {
      * @param buf
      * @return
      */
+    @Override
     public Data createNext(DataHead dataHead, ByteBuffer buf) {
         if (!config.isOnlyMemory() && dataHead.inMemory >= config.memoryThreshold) {
             try {
@@ -79,7 +84,7 @@ final class MemoryData implements Data {
                         : File.createTempFile(prefix, suffix, dir);
                 // delete the temp file when VM exits as a last resort for file clean up
                 tempFile.deleteOnExit();
-                LOGGER.fine("Created temp file = "+tempFile);
+                if (LOGGER.isLoggable(Level.FINE)) {LOGGER.log(Level.FINE, "Created temp file = {0}", tempFile);}
                 dataHead.dataFile = new DataFile(tempFile);
             } catch(IOException ioe) {
                 throw new MIMEParsingException(ioe);

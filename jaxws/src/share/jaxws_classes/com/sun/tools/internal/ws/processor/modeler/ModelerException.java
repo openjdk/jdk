@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package com.sun.tools.internal.ws.processor.modeler;
 
+import com.sun.istack.internal.localization.Localizable;
 import com.sun.tools.internal.ws.processor.ProcessorException;
-import com.sun.xml.internal.ws.util.localization.Localizable;
 
 /**
  * ModelerException represents an exception that occurred while
@@ -37,6 +37,10 @@ import com.sun.xml.internal.ws.util.localization.Localizable;
  * @author WS Development Team
 */
 public class ModelerException extends ProcessorException {
+
+    public ModelerException(String key) {
+        super(key);
+    }
 
     public ModelerException(String key, Object... args) {
         super(key, args);

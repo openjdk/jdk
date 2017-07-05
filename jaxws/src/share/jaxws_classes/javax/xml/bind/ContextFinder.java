@@ -500,7 +500,7 @@ class ContextFinder {
         String classnameAsResource = clazz.getName().replace('.', '/') + ".class";
 
         if(loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
+            loader = getSystemClassLoader();
         }
 
         return loader.getResource(classnameAsResource);
@@ -587,6 +587,19 @@ class ContextFinder {
                     new java.security.PrivilegedAction() {
                         public java.lang.Object run() {
                             return c.getClassLoader();
+                        }
+                    });
+        }
+    }
+
+    private static ClassLoader getSystemClassLoader() {
+        if (System.getSecurityManager() == null) {
+            return ClassLoader.getSystemClassLoader();
+        } else {
+            return (ClassLoader) java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction() {
+                        public java.lang.Object run() {
+                            return ClassLoader.getSystemClassLoader();
                         }
                     });
         }

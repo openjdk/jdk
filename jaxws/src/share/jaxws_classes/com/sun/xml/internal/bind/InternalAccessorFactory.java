@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.xml.bind.JAXBException;
 
 /**
  * A means to allow the user to provide customized Accessor
- * to be used by JAXB. Adds ability to supress warnings.
+ * to be used by JAXB. Adds ability to suppress warnings.
  */
 public interface InternalAccessorFactory extends AccessorFactory {
     /**
@@ -40,7 +40,7 @@ public interface InternalAccessorFactory extends AccessorFactory {
      * @param bean the class to be processed.
      * @param f the field within the class to be accessed.
      * @param readOnly  the isStatic value of the field's modifier.
-     * @param supressWarnings supress reflection warnings
+     * @param supressWarnings suppress reflection warnings
      * @return Accessor the accessor for this field
      *
      * @throws JAXBException reports failures of the method.

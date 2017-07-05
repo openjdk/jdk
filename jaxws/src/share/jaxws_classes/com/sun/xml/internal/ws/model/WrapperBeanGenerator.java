@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ public class WrapperBeanGenerator {
 
     static Class createRequestWrapperBean(String className, Method method, QName reqElemName, ClassLoader cl) {
 
-        LOGGER.fine("Request Wrapper Class : "+className);
+        LOGGER.log(Level.FINE, "Request Wrapper Class : {0}", className);
 
         List<Field> requestMembers = RUNTIME_GENERATOR.collectRequestBeanMembers(
                 method);
@@ -276,7 +276,7 @@ public class WrapperBeanGenerator {
 
     static Class createResponseWrapperBean(String className, Method method, QName resElemName, ClassLoader cl) {
 
-        LOGGER.fine("Response Wrapper Class : "+className);
+        LOGGER.log(Level.FINE, "Response Wrapper Class : {0}", className);
 
         List<Field> responseMembers = RUNTIME_GENERATOR.collectResponseBeanMembers(method);
 
@@ -327,8 +327,12 @@ public class WrapperBeanGenerator {
 
 
     static Class createExceptionBean(String className, Class exception, String typeNS, String elemName, String elemNS, ClassLoader cl) {
+        return createExceptionBean(className, exception, typeNS, elemName, elemNS, cl, true);
+    }
 
-        Collection<Field> fields = RUNTIME_GENERATOR.collectExceptionBeanMembers(exception);
+    static Class createExceptionBean(String className, Class exception, String typeNS, String elemName, String elemNS, ClassLoader cl, boolean decapitalizeExceptionBeanProperties) {
+
+        Collection<Field> fields = RUNTIME_GENERATOR.collectExceptionBeanMembers(exception, decapitalizeExceptionBeanProperties);
 
         byte[] image;
         try {

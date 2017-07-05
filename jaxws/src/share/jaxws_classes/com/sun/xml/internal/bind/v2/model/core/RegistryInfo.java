@@ -29,13 +29,11 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
-import com.sun.xml.internal.bind.v2.model.impl.ModelBuilder;
-
 /**
  * Represents the information in a class with {@link XmlRegistry} annotaion.
  *
  * <p>
- * This interface is only meant to be used as a return type from {@link ModelBuilder}.
+ * This interface is only meant to be used as a return type from {@link com.sun.xml.internal.bind.v2.model.impl.ModelBuilder}.
  *
  * @author Kohsuke Kawaguchi
  */

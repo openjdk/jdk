@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,5 +59,5 @@ public interface Localizable {
      * <p>
      * Use of "new" is to create an unique instance.
      */
-    public static final String NOT_LOCALIZABLE = new String("\u0000");
+    public static final String NOT_LOCALIZABLE = "\u0000";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class AnnotationProcessorContext {
     public SeiContext getSeiContext(Name seiName) {
         SeiContext context = seiContextMap.get(seiName);
         if (context == null) {
-            context = new SeiContext(seiName);
+            context = new SeiContext();
             addSeiContext(seiName, context);
         }
         return context;
@@ -107,14 +107,17 @@ public class AnnotationProcessorContext {
         private Map<String, WrapperInfo> resOperationWrapperMap = new HashMap<String, WrapperInfo>();
         private Map<Name, FaultInfo> exceptionBeanMap = new HashMap<Name, FaultInfo>();
 
-        private Name seiName;
         private Name seiImplName;
         private boolean implementsSei;
         private String namespaceUri;
 
-        public SeiContext(Name seiName) {
-            this.seiName = seiName;
-        }
+        public SeiContext() {};
+
+        /**
+         * @deprecated use empty constructor, seiName value is ignored
+         * @param seiName
+         */
+        public SeiContext(Name seiName) {};
 
         public void setImplementsSei(boolean implementsSei) {
             this.implementsSei = implementsSei;

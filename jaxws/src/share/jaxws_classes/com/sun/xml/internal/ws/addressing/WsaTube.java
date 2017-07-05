@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException
 import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
+import com.sun.xml.internal.ws.api.message.AddressingUtils;
 import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Messages;
@@ -43,21 +43,16 @@ import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.pipe.TubeCloner;
 import com.sun.xml.internal.ws.api.pipe.helper.AbstractFilterTubeImpl;
 import com.sun.xml.internal.ws.developer.MemberSubmissionAddressingFeature;
-import com.sun.xml.internal.ws.developer.WSBindingProvider;
 import com.sun.xml.internal.ws.message.FaultDetailHeader;
 import com.sun.xml.internal.ws.resources.AddressingMessages;
-import com.sun.xml.internal.ws.binding.BindingImpl;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.WebServiceException;
-import javax.xml.ws.Binding;
 import javax.xml.ws.soap.AddressingFeature;
 import javax.xml.ws.soap.SOAPBinding;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -107,16 +102,15 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
     }
 
     private void addKnownHeadersToBinding(WSBinding binding) {
-        Set<QName> headerQNames = binding.getKnownHeaders();
         for (AddressingVersion addrVersion: AddressingVersion.values()) {
-          headerQNames.add(addrVersion.actionTag);
-          headerQNames.add(addrVersion.faultDetailTag);
-          headerQNames.add(addrVersion.faultToTag);
-          headerQNames.add(addrVersion.fromTag);
-          headerQNames.add(addrVersion.messageIDTag);
-          headerQNames.add(addrVersion.relatesToTag);
-          headerQNames.add(addrVersion.replyToTag);
-          headerQNames.add(addrVersion.toTag);
+          binding.addKnownHeader(addrVersion.actionTag);
+          binding.addKnownHeader(addrVersion.faultDetailTag);
+          binding.addKnownHeader(addrVersion.faultToTag);
+          binding.addKnownHeader(addrVersion.fromTag);
+          binding.addKnownHeader(addrVersion.messageIDTag);
+          binding.addKnownHeader(addrVersion.relatesToTag);
+          binding.addKnownHeader(addrVersion.replyToTag);
+          binding.addKnownHeader(addrVersion.toTag);
         }
     }
 
@@ -206,7 +200,9 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
         if (packet.getMessage().getHeaders() != null)
             return false;
 
-        String action = packet.getMessage().getHeaders().getAction(addressingVersion, soapVersion);
+        String action = AddressingUtils.getAction(
+                packet.getMessage().getHeaders(),
+                addressingVersion, soapVersion);
         if (action == null)
             return true;
 
@@ -370,7 +366,9 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
     }
 
     protected void validateSOAPAction(Packet packet) {
-        String gotA = packet.getMessage().getHeaders().getAction(addressingVersion, soapVersion);
+        String gotA = AddressingUtils.getAction(
+                packet.getMessage().getHeaders(),
+                addressingVersion, soapVersion);
         if (gotA == null)
             throw new WebServiceException(AddressingMessages.VALIDATION_SERVER_NULL_ACTION());
         if(packet.soapAction != null && !packet.soapAction.equals("\"\"") && !packet.soapAction.equals("\""+gotA+"\"")) {

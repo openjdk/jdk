@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-
 package com.sun.tools.internal.ws.resources;
 
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.istack.internal.localization.Localizable;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -698,6 +697,18 @@ public final class WebserviceapMessages {
      */
     public static String WEBSERVICEAP_METHOD_NOT_IMPLEMENTED(Object arg0, Object arg1, Object arg2) {
         return localizer.localize(localizableWEBSERVICEAP_METHOD_NOT_IMPLEMENTED(arg0, arg1, arg2));
+    }
+
+    public static Localizable localizableWEBSERVICEAP_PARSING_JAVAC_OPTIONS_ERROR() {
+        return messageFactory.getMessage("webserviceap.parsing.javac.options.error");
+    }
+
+    /**
+     * Can't get javac options from processingEnv.
+     *
+     */
+    public static String WEBSERVICEAP_PARSING_JAVAC_OPTIONS_ERROR() {
+        return localizer.localize(localizableWEBSERVICEAP_PARSING_JAVAC_OPTIONS_ERROR());
     }
 
     public static Localizable localizableWEBSERVICE_ENCODED_NOT_SUPPORTED(Object arg0, Object arg1) {

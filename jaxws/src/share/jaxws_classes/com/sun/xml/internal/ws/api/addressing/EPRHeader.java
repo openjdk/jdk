@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,27 @@
 
 package com.sun.xml.internal.ws.api.addressing;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Writer;
+
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.message.AbstractHeaderImpl;
 import com.sun.xml.internal.ws.util.xml.XmlUtil;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPHeader;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -102,7 +111,19 @@ final class EPRHeader extends AbstractHeaderImpl {
             SOAPHeader header = saaj.getSOAPHeader();
             if (header == null)
                 header = saaj.getSOAPPart().getEnvelope().addHeader();
-            t.transform(epr.asSource(localName), new DOMResult(header));
+// TODO workaround for oracle xdk bug 16555545, when this bug is fixed the line below can be
+// uncommented and all lines below, except the catch block, can be removed.
+//            t.transform(epr.asSource(localName), new DOMResult(header));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            XMLStreamWriter w = XMLOutputFactory.newFactory().createXMLStreamWriter(baos);
+            epr.writeTo(localName, w);
+            w.flush();
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
+            fac.setNamespaceAware(true);
+            Node eprNode = fac.newDocumentBuilder().parse(bais).getDocumentElement();
+            Node eprNodeToAdd = header.getOwnerDocument().importNode(eprNode, true);
+            header.appendChild(eprNodeToAdd);
         } catch (Exception e) {
             throw new SOAPException(e);
         }

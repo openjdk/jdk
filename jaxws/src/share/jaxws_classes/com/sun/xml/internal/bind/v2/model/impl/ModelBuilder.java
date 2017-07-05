@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@
 
 package com.sun.xml.internal.bind.v2.model.impl;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlAttachmentRef;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.bind.annotation.XmlSchema;
@@ -50,9 +55,9 @@ import com.sun.xml.internal.bind.v2.model.core.RegistryInfo;
 import com.sun.xml.internal.bind.v2.model.core.TypeInfo;
 import com.sun.xml.internal.bind.v2.model.core.TypeInfoSet;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
+import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.WhiteSpaceProcessor;
-
 
 /**
  * Builds a {@link TypeInfoSet} (a set of JAXB properties)
@@ -66,7 +71,8 @@ import com.sun.xml.internal.bind.WhiteSpaceProcessor;
  *
  * @author Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
-public class ModelBuilder<T,C,F,M> {
+public class ModelBuilder<T,C,F,M> implements ModelBuilderI<T,C,F,M> {
+    private static final Logger logger;
 
     /**
      * {@link TypeInfo}s that are built will go into this set.
@@ -183,6 +189,13 @@ public class ModelBuilder<T,C,F,M> {
         }
     }
 
+    /**
+     * Logger init
+     */
+    static {
+        logger = Logger.getLogger(ModelBuilder.class.getName());
+    }
+
     protected TypeInfoSetImpl<T,C,F,M> createTypeInfoSet() {
         return new TypeInfoSetImpl<T,C,F,M>(nav,reader,BuiltinLeafInfoImpl.createLeaves(nav));
     }
@@ -233,12 +246,14 @@ public class ModelBuilder<T,C,F,M> {
                 for( PropertyInfo<T,C> p : ci.getProperties() ) {
                     if(p.kind()== PropertyKind.REFERENCE) {
                         // make sure that we have a registry for this package
-                        String pkg = nav.getPackageName(ci.getClazz());
-                        if(!registries.containsKey(pkg)) {
-                            // insert the package's object factory
-                            C c = nav.findClass(pkg + ".ObjectFactory",ci.getClazz());
-                            if(c!=null)
-                                addRegistry(c,(Locatable)p);
+                        addToRegistry(clazz, (Locatable) p);
+                        Class[] prmzdClasses = getParametrizedTypes(p);
+                        if (prmzdClasses != null) {
+                            for (Class prmzdClass : prmzdClasses) {
+                                if (prmzdClass != clazz) {
+                                    addToRegistry((C) prmzdClass, (Locatable) p);
+                                }
+                            }
                         }
                     }
 
@@ -263,6 +278,46 @@ public class ModelBuilder<T,C,F,M> {
 
 
         return r;
+    }
+
+    /**
+     * Adding package's ObjectFactory methods to registry
+     * @param clazz which package will be used
+     * @param p location
+     */
+    private void addToRegistry(C clazz, Locatable p) {
+        String pkg = nav.getPackageName(clazz);
+        if (!registries.containsKey(pkg)) {
+            // insert the package's object factory
+            C c = nav.findClass(pkg + ".ObjectFactory", clazz);
+            if (c != null)
+                addRegistry(c, p);
+        }
+    }
+
+    /**
+     * Getting parametrized classes of {@code JAXBElement<...>} property
+     * @param p property which parametrized types we will try to get
+     * @return null - if it's not JAXBElement property, or it's not parametrized, and array of parametrized classes in other case
+     */
+    private Class[] getParametrizedTypes(PropertyInfo p) {
+        try {
+            Type pType = ((RuntimePropertyInfo) p).getIndividualType();
+            if (pType instanceof ParameterizedType) {
+                ParameterizedType prmzdType = (ParameterizedType) pType;
+                if (prmzdType.getRawType() == JAXBElement.class) {
+                    Type[] actualTypes = prmzdType.getActualTypeArguments();
+                    Class[] result = new Class[actualTypes.length];
+                    for (int i = 0; i < actualTypes.length; i++) {
+                        result[i] = (Class) actualTypes[i];
+                    }
+                    return result;
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Error in ModelBuilder.getParametrizedTypes. " + e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -416,5 +471,15 @@ public class ModelBuilder<T,C,F,M> {
 
     public boolean isReplaced(C sc) {
         return subclassReplacements.containsKey(sc);
+    }
+
+    @Override
+    public Navigator<T, C, F, M> getNavigator() {
+        return nav;
+    }
+
+    @Override
+    public AnnotationReader<T, C, F, M> getReader() {
+        return reader;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.writer.ZipCodeWriter;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.tools.DefaultAuthenticator;
 import com.sun.tools.internal.xjc.generator.bean.BeanGenerator;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.outline.Outline;
@@ -222,9 +223,15 @@ public class Driver {
         opt.setSchemaLanguage(Language.XMLSCHEMA);  // disable auto-guessing
         try {
             opt.parseArguments(args);
-        } catch (WeAreDone _) {
+        } catch (WeAreDone e) {
+            if (opt.proxyAuth != null) {
+                DefaultAuthenticator.reset();
+            }
             return -1;
         } catch(BadCommandLineException e) {
+            if (opt.proxyAuth != null) {
+                DefaultAuthenticator.reset();
+            }
             e.initOptions(opt);
             throw e;
         }
@@ -400,6 +407,10 @@ public class Driver {
                 // quit without filling the user's screen
                 listener.message(Messages.format(Messages.STACK_OVERFLOW));
                 return -1;
+            }
+        } finally {
+            if (opt.proxyAuth != null) {
+                DefaultAuthenticator.reset();
             }
         }
     }

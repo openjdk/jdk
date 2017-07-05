@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 package com.sun.xml.internal.ws.util;
 
 import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.databinding.MetadataReader;
 import com.sun.xml.internal.ws.api.server.AsyncProvider;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 import com.sun.xml.internal.ws.handler.HandlerChainsModel;
+import com.sun.xml.internal.ws.model.ReflectAnnotationReader;
 import com.sun.xml.internal.ws.server.EndpointFactory;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
 import com.sun.istack.internal.NotNull;
@@ -89,14 +91,17 @@ public class HandlerAnnotationProcessor {
     public static HandlerAnnotationInfo buildHandlerInfo(@NotNull
         Class<?> clazz, QName serviceName, QName portName, WSBinding binding) {
 
+        MetadataReader metadataReader = EndpointFactory.getExternalMetadatReader(clazz, binding);
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
+
 //        clazz = checkClass(clazz);
-        HandlerChain handlerChain =
-            clazz.getAnnotation(HandlerChain.class);
+        HandlerChain handlerChain = metadataReader.getAnnotation(HandlerChain.class, clazz);
         if (handlerChain == null) {
-            clazz = getSEI(clazz);
+            clazz = getSEI(clazz, metadataReader);
             if (clazz != null)
-            handlerChain =
-                clazz.getAnnotation(HandlerChain.class);
+            handlerChain = metadataReader.getAnnotation(HandlerChain.class, clazz);
             if (handlerChain == null)
                 return null;
         }
@@ -160,7 +165,11 @@ public class HandlerAnnotationProcessor {
         }
     }
 
-    static Class getSEI(Class<?> clazz) {
+    static Class getSEI(Class<?> clazz, MetadataReader metadataReader) {
+        if (metadataReader == null) {
+            metadataReader = new ReflectAnnotationReader();
+        }
+
         if (Provider.class.isAssignableFrom(clazz) || AsyncProvider.class.isAssignableFrom(clazz)) {
             //No SEI for Provider Implementation
             return null;
@@ -169,17 +178,17 @@ public class HandlerAnnotationProcessor {
             //No SEI for Service class
             return null;
         }
-        if (!clazz.isAnnotationPresent(WebService.class)) {
-            throw new UtilException("util.handler.no.webservice.annotation",
-                clazz.getCanonicalName());
-        }
 
-        WebService webService = clazz.getAnnotation(WebService.class);
+        WebService webService = metadataReader.getAnnotation(WebService.class, clazz);
+        if (webService == null) {
+            throw new UtilException("util.handler.no.webservice.annotation", clazz.getCanonicalName());
+        }
 
         String ei = webService.endpointInterface();
         if (ei.length() > 0) {
             clazz = getClass(webService.endpointInterface());
-            if (!clazz.isAnnotationPresent(WebService.class)) {
+            WebService ws = metadataReader.getAnnotation(WebService.class, clazz);
+            if (ws == null) {
                 throw new UtilException("util.handler.endpoint.interface.no.webservice",
                     webService.endpointInterface());
             }

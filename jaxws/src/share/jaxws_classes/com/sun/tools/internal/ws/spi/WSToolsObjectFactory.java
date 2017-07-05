@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public abstract class WSToolsObjectFactory {
      *
      * @return true if there is no error, otherwise false
      *
-     * @see {@link #wsimport(OutputStream, Container, String[])}
+     * @see #wsimport(OutputStream, Container, String[])
      */
     public boolean wsimport(OutputStream logStream, String[] args) {
         return wsimport(logStream, Container.NONE, args);
@@ -91,7 +91,7 @@ public abstract class WSToolsObjectFactory {
      * artifacts like wrapper, exception bean classes etc.
      *
      * @return true if there is no error, otherwise false
-     * @see {@link #wsgen(OutputStream, Container, String[])}
+     * @see #wsgen(OutputStream, Container, String[])
      */
     public boolean wsgen(OutputStream logStream, String[] args) {
         return wsgen(logStream, Container.NONE, args);

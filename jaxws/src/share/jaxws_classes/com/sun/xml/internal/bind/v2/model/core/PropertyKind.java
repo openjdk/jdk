@@ -29,9 +29,6 @@ import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlInlineBinaryData;
 
-import com.sun.xml.internal.bind.v2.runtime.property.PropertyFactory;
-
-
 /**
  * An Enum that indicates if the property is
  * Element, ElementRef, Value, or Attribute.
@@ -60,7 +57,7 @@ public enum PropertyKind {
     public final boolean isOrdered;
 
     /**
-     * {@link PropertyFactory} benefits from having index numbers assigned to
+     * {@link com.sun.xml.internal.bind.v2.runtime.property.PropertyFactory} benefits from having index numbers assigned to
      * {@link #ELEMENT}, {@link #REFERENCE}, and {@link #MAP} in this order.
      */
     public final int propertyIndex;

@@ -120,7 +120,7 @@ public final class ClassFactory {
 
     /**
      * The same as {@link #create0} but with an error handling to make
-     * the instanciation error fatal.
+     * the instantiation error fatal.
      */
     public static <T> T create( Class<T> clazz ) {
         try {

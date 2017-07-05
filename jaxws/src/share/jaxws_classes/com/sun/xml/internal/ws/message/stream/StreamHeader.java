@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.message.Header;
 import com.sun.xml.internal.ws.message.AbstractHeaderImpl;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -193,7 +194,7 @@ public abstract class StreamHeader extends AbstractHeaderImpl {
             // TODO what about in-scope namespaces
             // Not very efficient consider implementing a stream buffer
             // processor that produces a DOM node from the buffer.
-            TransformerFactory tf = TransformerFactory.newInstance();
+            TransformerFactory tf = XmlUtil.newTransformerFactory();
             Transformer t = tf.newTransformer();
             XMLStreamBufferSource source = new XMLStreamBufferSource(_mark);
             DOMResult result = new DOMResult();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.xml.internal.ws.api.server.PortAddressResolver;
 import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
 import com.sun.xml.internal.ws.wsdl.parser.WSDLConstants;
 import com.sun.xml.internal.ws.addressing.W3CAddressingConstants;
+import com.sun.xml.internal.ws.addressing.v200408.MemberSubmissionAddressingConstants;
 import com.sun.istack.internal.Nullable;
 
 import javax.xml.namespace.QName;
@@ -158,11 +159,13 @@ public final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
             if (value != null) {
                 portName = new QName(targetNamespace,value);
             }
-        } else if (name.equals(W3CAddressingConstants.WSA_EPR_QNAME)) {
+        } else if (name.equals(W3CAddressingConstants.WSA_EPR_QNAME)
+                        || name.equals(MemberSubmissionAddressingConstants.WSA_EPR_QNAME)) {
             if (serviceName != null && portName != null) {
                 inEpr = true;
             }
-        } else if (name.equals(W3CAddressingConstants.WSA_ADDRESS_QNAME)) {
+        } else if (name.equals(W3CAddressingConstants.WSA_ADDRESS_QNAME)
+                        || name.equals(MemberSubmissionAddressingConstants.WSA_ADDRESS_QNAME)) {
             if (inEpr) {
                 inEprAddress = true;
             }
@@ -177,12 +180,14 @@ public final class WSDLPatcher extends XMLStreamReaderToXMLStreamWriter {
             serviceName = null;
         } else if (name.equals(WSDLConstants.QNAME_PORT)) {
             portName = null;
-        } else if (name.equals(W3CAddressingConstants.WSA_EPR_QNAME)) {
+        } else if (name.equals(W3CAddressingConstants.WSA_EPR_QNAME)
+                        || name.equals(MemberSubmissionAddressingConstants.WSA_EPR_QNAME)) {
             if (inEpr) {
                 inEpr = false;
             }
-        } else if (name.equals(W3CAddressingConstants.WSA_ADDRESS_QNAME)) {
-            if (inEprAddress) {
+                } else if (name.equals(W3CAddressingConstants.WSA_ADDRESS_QNAME)
+                                || name.equals(MemberSubmissionAddressingConstants.WSA_ADDRESS_QNAME)) {
+                        if (inEprAddress) {
                 String value = getAddressLocation();
                 if (value != null) {
                     logger.fine("Fixing EPR Address for service:"+serviceName+ " port:"+portName

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.api.model.Parameter;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
+import com.sun.xml.internal.ws.spi.db.RepeatedElementBridge;
+import com.sun.xml.internal.ws.spi.db.WrapperComposite;
 import com.sun.xml.internal.ws.spi.db.XMLBridge;
 import com.sun.xml.internal.ws.spi.db.TypeInfo;
 
@@ -65,6 +67,9 @@ public class ParameterImpl implements Parameter {
     private QName name;
     private final JavaMethodImpl parent;
 
+    WrapperParameter wrapper;
+    TypeInfo itemTypeInfo;
+
     public ParameterImpl(JavaMethodImpl parent, TypeInfo type, Mode mode, int index) {
         assert type != null;
 
@@ -94,6 +99,26 @@ public class ParameterImpl implements Parameter {
         return getOwner().getXMLBridge(typeInfo);
     }
 
+    public XMLBridge getInlinedRepeatedElementBridge() {
+        TypeInfo itemType = getItemType();
+        if (itemType != null) {
+            XMLBridge xb = getOwner().getXMLBridge(itemType);
+            if (xb != null) return new RepeatedElementBridge(typeInfo, xb);
+        }
+        return null;
+    }
+
+    public TypeInfo getItemType() {
+        if (itemTypeInfo != null) return itemTypeInfo;
+        //RpcLit cannot inline repeated element in wrapper
+        if (parent.getBinding().isRpcLit() || wrapper == null) return null;
+        //InlinedRepeatedElementBridge is only used for dynamic wrapper (no wrapper class)
+        if (!WrapperComposite.class.equals(wrapper.getTypeInfo().type)) return null;
+        if (!getBinding().isBody()) return null;
+        itemTypeInfo = typeInfo.getItemType();
+        return  itemTypeInfo;
+    }
+
     /**  @deprecated  */
     public Bridge getBridge() {
         return getOwner().getBridge(typeReference);
@@ -118,7 +143,7 @@ public class ParameterImpl implements Parameter {
 
     /**
      * Sometimes we need to overwrite the typeReferenc, such as during patching for rpclit
-     * @see AbstractSEIModelImpl#applyParameterBinding(com.sun.xml.internal.ws.model.wsdl.WSDLBoundPortTypeImpl)
+     * @see AbstractSEIModelImpl#applyRpcLitParamBinding(JavaMethodImpl, WrapperParameter, WSDLBoundPortType, WebParam.Mode)
      * @deprecated
      */
     void setTypeReference(TypeReference type){
@@ -229,6 +254,7 @@ public class ParameterImpl implements Parameter {
     }
 
     void fillTypes(List<TypeInfo> types) {
-        types.add(getTypeInfo());
+        TypeInfo itemType = getItemType();
+        types.add((itemType != null) ? itemType : getTypeInfo());
     }
 }
