@@ -709,10 +709,10 @@ static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
   Bytecodes::Code code       = field_access.code();
 
   // We must load class, initialize class and resolvethe field
-  FieldAccessInfo result; // initialize class if needed
+  fieldDescriptor result; // initialize class if needed
   constantPoolHandle constants(THREAD, caller->constants());
-  LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK_NULL);
-  return result.klass()();
+  LinkResolver::resolve_field_access(result, constants, field_access.index(), Bytecodes::java_code(code), CHECK_NULL);
+  return result.field_holder();
 }
 
 
@@ -826,11 +826,11 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   if (stub_id == Runtime1::access_field_patching_id) {
 
     Bytecode_field field_access(caller_method, bci);
-    FieldAccessInfo result; // initialize class if needed
+    fieldDescriptor result; // initialize class if needed
     Bytecodes::Code code = field_access.code();
     constantPoolHandle constants(THREAD, caller_method->constants());
-    LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK);
-    patch_field_offset = result.field_offset();
+    LinkResolver::resolve_field_access(result, constants, field_access.index(), Bytecodes::java_code(code), CHECK);
+    patch_field_offset = result.offset();
 
     // If we're patching a field which is volatile then at compile it
     // must not have been know to be volatile, so the generated code

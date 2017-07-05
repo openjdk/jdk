@@ -218,13 +218,13 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
       // ld;ld;ld,jmp,nop
       const int basic = 5*BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedKlassPointers ?
+                        (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return basic + slop;
     } else {
       const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedKlassPointers ?
+                        (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return (basic + slop);
     }

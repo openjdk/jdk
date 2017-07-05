@@ -69,7 +69,7 @@ inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
 }
 
 inline Klass* oopDesc::klass() const {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     return Klass::decode_klass_not_null(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
@@ -78,7 +78,7 @@ inline Klass* oopDesc::klass() const {
 
 inline Klass* oopDesc::klass_or_null() const volatile {
   // can be NULL in CMS
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     return Klass::decode_klass(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
@@ -86,19 +86,19 @@ inline Klass* oopDesc::klass_or_null() const volatile {
 }
 
 inline int oopDesc::klass_gap_offset_in_bytes() {
-  assert(UseCompressedKlassPointers, "only applicable to compressed klass pointers");
+  assert(UseCompressedClassPointers, "only applicable to compressed klass pointers");
   return oopDesc::klass_offset_in_bytes() + sizeof(narrowKlass);
 }
 
 inline Klass** oopDesc::klass_addr() {
   // Only used internally and with CMS and will not work with
   // UseCompressedOops
-  assert(!UseCompressedKlassPointers, "only supported with uncompressed klass pointers");
+  assert(!UseCompressedClassPointers, "only supported with uncompressed klass pointers");
   return (Klass**) &_metadata._klass;
 }
 
 inline narrowKlass* oopDesc::compressed_klass_addr() {
-  assert(UseCompressedKlassPointers, "only called by compressed klass pointers");
+  assert(UseCompressedClassPointers, "only called by compressed klass pointers");
   return &_metadata._compressed_klass;
 }
 
@@ -106,7 +106,7 @@ inline void oopDesc::set_klass(Klass* k) {
   // since klasses are promoted no store check is needed
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {
     *klass_addr() = k;
@@ -118,7 +118,7 @@ inline int oopDesc::klass_gap() const {
 }
 
 inline void oopDesc::set_klass_gap(int v) {
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes()) = v;
   }
 }
@@ -126,7 +126,7 @@ inline void oopDesc::set_klass_gap(int v) {
 inline void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     _metadata._compressed_klass = (narrowKlass)encode_heap_oop(k);  // may be null (parnew overflow handling)
   } else {
     _metadata._klass = (Klass*)(address)k;
@@ -135,7 +135,7 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
 
 inline oop oopDesc::list_ptr_from_klass() {
   // This is only to be used during GC, for from-space objects.
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     return decode_heap_oop((narrowOop)_metadata._compressed_klass);
   } else {
     // Special case for GC

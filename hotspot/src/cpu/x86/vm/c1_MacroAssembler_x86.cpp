@@ -157,7 +157,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markOopDesc::prototype());
   }
 #ifdef _LP64
-  if (UseCompressedKlassPointers) { // Take care not to kill klass
+  if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(t1, klass);
     encode_klass_not_null(t1);
     movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
@@ -171,7 +171,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
   }
 #ifdef _LP64
-  else if (UseCompressedKlassPointers) {
+  else if (UseCompressedClassPointers) {
     xorptr(t1, t1);
     store_klass_gap(obj, t1);
   }
@@ -334,7 +334,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
   int start_offset = offset();
 
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     load_klass(rscratch1, receiver);
     cmpptr(rscratch1, iCache);
   } else {
@@ -345,7 +345,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   jump_cc(Assembler::notEqual,
           RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  assert(UseCompressedKlassPointers || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
+  assert(UseCompressedClassPointers || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
 }
 
 
