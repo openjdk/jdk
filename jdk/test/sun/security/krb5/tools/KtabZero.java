@@ -33,6 +33,7 @@ import java.nio.file.Paths;
  * @test
  * @bug 8014196
  * @summary ktab creates a file with zero kt_vno
+ * @modules java.security.jgss/sun.security.krb5.internal.ktab
  */
 public class KtabZero {
 

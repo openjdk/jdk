@@ -81,11 +81,9 @@ implements HistoricallyNamedCharset
 
     private static class Encoder extends ISO2022.Encoder {
 
-        public Encoder(Charset cs)
-        {
+        public Encoder(Charset cs) {
             super(cs);
-            SODesig = "$)C";
-
+            SODesig = new byte[] {'$', ')', 'C' };
             try {
                 ISOEncoder = ksc5601_cs.newEncoder();
             } catch (Exception e) { }

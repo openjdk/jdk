@@ -25,6 +25,7 @@
  * @test
  * @summary BasicConstraintsExtension does not encode when (ca==false && pathLen<0)
  * @bug 6803376
+ * @modules java.base/sun.security.x509
  */
 
 import sun.security.x509.BasicConstraintsExtension;

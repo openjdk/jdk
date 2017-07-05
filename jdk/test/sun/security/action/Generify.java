@@ -25,6 +25,7 @@
  * @test
  * @bug 5057136
  * @summary Generify sun.security.action.GetPropertyAction and friends
+ * @modules java.base/sun.security.action
  */
 
 import java.io.*;

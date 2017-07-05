@@ -28,6 +28,8 @@
  * @bug 6418425
  * @bug 6418433
  * @summary ObjectIdentifier should reject 1.2.3.-4 and throw IOException on all format errors
+ * @modules java.base/sun.security.util
+ *          java.security.jgss
  */
 
 import java.io.IOException;

@@ -24,6 +24,7 @@
 /* @test
  * @bug 4920526
  * @summary Needs per connection proxy support for URLs
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile PerConnectionProxy.java

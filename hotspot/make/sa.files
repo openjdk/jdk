@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,11 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windows/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/x86/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/g1/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/parallelScavenge/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/shared/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_interface/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/cms/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/g1/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/parallel/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/serial/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/gc/shared/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/interpreter/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/jdi/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/memory/*.java \

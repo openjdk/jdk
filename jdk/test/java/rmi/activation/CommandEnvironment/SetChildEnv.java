@@ -35,6 +35,10 @@
  * @author Adrian Colley
  *
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivationLibrary
  *     Eliza Retireable Doctor Doctor_Stub
  * @run main/othervm/timeout=240/policy=security.policy

@@ -24,6 +24,7 @@
 /* @test
  * @bug 4313887
  * @summary Unit test for Watchable#register's permission checks
+ * @modules java.base/com.sun.nio.file
  * @build WithSecurityManager
  * @run main/othervm WithSecurityManager denyAll.policy - fail
  * @run main/othervm WithSecurityManager denyAll.policy tree fail

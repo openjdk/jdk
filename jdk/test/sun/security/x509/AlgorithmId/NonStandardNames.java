@@ -25,6 +25,10 @@
  * @test
  * @bug 7180907
  * @summary Jarsigner -verify fails if rsa file used sha-256 with authenticated attributes
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file NonStandardNames.java
  * @run main NonStandardNames
  */

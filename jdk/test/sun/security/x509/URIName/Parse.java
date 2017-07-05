@@ -26,6 +26,8 @@
  * @bug 8005389
  * @summary CRL Distribution Point URIs with spaces or backslashes should
  *          not be parseable
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

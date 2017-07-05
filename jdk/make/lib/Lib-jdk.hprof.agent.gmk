@@ -49,7 +49,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         $(BUILD_LIBHPROF_CFLAGS), \
     CFLAGS_debug := -DHPROF_LOGGING, \
-    CFLAGS_windows := -D_WINSOCK_DEPRECATED_NO_WARNINGS, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libhprof/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

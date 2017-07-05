@@ -24,6 +24,8 @@
  * @test
  * @bug 6682516
  * @summary SPNEGO_HTTP_AUTH/WWW_KRB and SPNEGO_HTTP_AUTH/WWW_SPNEGO failed on all non-windows platforms
+ * @modules java.base/sun.net.spi.nameservice
+ *          java.security.jgss/sun.security.krb5
  * @run main/othervm -Dsun.net.spi.nameservice.provider.1=ns,mock -Djava.security.krb5.conf=krb5.conf Test
  */
 

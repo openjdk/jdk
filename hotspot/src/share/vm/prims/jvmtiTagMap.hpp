@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #ifndef SHARE_VM_PRIMS_JVMTITAGMAP_HPP
 #define SHARE_VM_PRIMS_JVMTITAGMAP_HPP
 
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/allocation.hpp"
-#include "memory/genCollectedHeap.hpp"
 #include "memory/universe.hpp"
 
 // forward references

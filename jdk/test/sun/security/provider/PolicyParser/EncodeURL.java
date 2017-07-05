@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4797850
+ * @modules java.base/sun.security.provider
  * @summary Security policy file does not grok hash mark in pathnames
  */
 

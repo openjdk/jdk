@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4726087
+ * @modules java.base/sun.net.www
  * @library ../../httptest/
  * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main RelativeRedirect

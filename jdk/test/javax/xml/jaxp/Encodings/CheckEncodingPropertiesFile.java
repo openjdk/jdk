@@ -30,6 +30,7 @@
  *      correctly maps them to their preferred mime names.
  *      Also checks that the Encodings.properties resource file
  *      is consistent.
+ * @modules java.xml/com.sun.org.apache.xml.internal.serializer
  * @compile -XDignore.symbol.file CheckEncodingPropertiesFile.java
  * @run main CheckEncodingPropertiesFile
  * @author Daniel Fuchs

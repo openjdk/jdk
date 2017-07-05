@@ -43,8 +43,6 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
 
-import sun.security.ssl.SSLSocketImpl;
-
 /*
  * Certificates and key used in the test.
  *

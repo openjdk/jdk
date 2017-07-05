@@ -23,6 +23,9 @@
 /*
  * @test
  * @bug 6862679
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.crypto.dk
  * @run main/othervm RFC396xTest
  * @summary ESC: AD Authentication with user with umlauts fails
  */
