@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
     assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
     _young_gen = heap->young_gen();
-    _card_table = (CardTableExtension*)heap->barrier_set();
+    _card_table = barrier_set_cast<CardTableExtension>(heap->barrier_set());
     // No point in asserting barrier set type here. Need to make CardTableExtension
     // a unique barrier set type.
   }
@@ -341,7 +341,9 @@ void CardTableExtension::verify_all_young_refs_precise() {
 
   PSOldGen* old_gen = heap->old_gen();
 
-  CheckForPreciseMarks check(heap->young_gen(), (CardTableExtension*)heap->barrier_set());
+  CheckForPreciseMarks check(
+    heap->young_gen(),
+    barrier_set_cast<CardTableExtension>(heap->barrier_set()));
 
   old_gen->oop_iterate_no_header(&check);
 
@@ -349,8 +351,8 @@ void CardTableExtension::verify_all_young_refs_precise() {
 }
 
 void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {
-  CardTableExtension* card_table = (CardTableExtension*)Universe::heap()->barrier_set();
-  // FIX ME ASSERT HERE
+  CardTableExtension* card_table =
+    barrier_set_cast<CardTableExtension>(Universe::heap()->barrier_set());
 
   jbyte* bot = card_table->byte_for(mr.start());
   jbyte* top = card_table->byte_for(mr.end());

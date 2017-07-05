@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,7 @@ private:
   u2                _max_stack;                  // Maximum number of entries on the expression stack
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
+  u2                _orig_method_idnum;          // Original unique identification number for the method
 
   // Constructor
   ConstMethod(int byte_code_size,
@@ -472,6 +473,9 @@ public:
   static const u2 UNSET_IDNUM;
   u2 method_idnum() const                        { return _method_idnum; }
   void set_method_idnum(u2 idnum)                { _method_idnum = idnum; }
+
+  u2 orig_method_idnum() const                   { return _orig_method_idnum; }
+  void set_orig_method_idnum(u2 idnum)           { _orig_method_idnum = idnum; }
 
   // max stack
   int  max_stack() const                         { return _max_stack; }

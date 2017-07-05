@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1440,7 +1440,7 @@ public:
   CMCountDataClosureBase(G1CollectedHeap* g1h,
                          BitMap* region_bm, BitMap* card_bm):
     _g1h(g1h), _cm(g1h->concurrent_mark()),
-    _ct_bs((CardTableModRefBS*) (g1h->barrier_set())),
+    _ct_bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
     _region_bm(region_bm), _card_bm(card_bm) { }
 };
 
@@ -3111,7 +3111,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
                               BitMap* cm_card_bm,
                               uint max_worker_id) :
     _g1h(g1h), _cm(g1h->concurrent_mark()),
-    _ct_bs((CardTableModRefBS*) (g1h->barrier_set())),
+    _ct_bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
     _cm_card_bm(cm_card_bm), _max_worker_id(max_worker_id) { }
 
   bool doHeapRegion(HeapRegion* hr) {

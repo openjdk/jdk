@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1091,6 +1091,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
     }
     // update idnum for new location
     merged_methods->at(i)->set_method_idnum(i);
+    merged_methods->at(i)->set_orig_method_idnum(i);
   }
 
   // Verify correct order

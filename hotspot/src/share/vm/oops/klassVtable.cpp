@@ -863,44 +863,43 @@ bool klassVtable::adjust_default_method(int vtable_index, Method* old_method, Me
   }
   return updated;
 }
-void klassVtable::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                        int methods_length, bool * trace_name_printed) {
-  // search the vtable for uses of either obsolete or EMCP methods
-  for (int j = 0; j < methods_length; j++) {
-    Method* old_method = old_methods[j];
-    Method* new_method = new_methods[j];
 
-    // In the vast majority of cases we could get the vtable index
-    // by using:  old_method->vtable_index()
-    // However, there are rare cases, eg. sun.awt.X11.XDecoratedPeer.getX()
-    // in sun.awt.X11.XFramePeer where methods occur more than once in the
-    // vtable, so, alas, we must do an exhaustive search.
-    for (int index = 0; index < length(); index++) {
-      if (unchecked_method_at(index) == old_method) {
-        put_method_at(new_method, index);
-          // For default methods, need to update the _default_methods array
-          // which can only have one method entry for a given signature
-          bool updated_default = false;
-          if (old_method->is_default_method()) {
-            updated_default = adjust_default_method(index, old_method, new_method);
-          }
+// search the vtable for uses of either obsolete or EMCP methods
+void klassVtable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
+  int prn_enabled = 0;
+  for (int index = 0; index < length(); index++) {
+    Method* old_method = unchecked_method_at(index);
+    if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+      continue; // skip uninteresting entries
+    }
+    assert(!old_method->is_deleted(), "vtable methods may not be deleted");
 
-        if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
-          if (!(*trace_name_printed)) {
-            // RC_TRACE_MESG macro has an embedded ResourceMark
-            RC_TRACE_MESG(("adjust: klassname=%s for methods from name=%s",
-                           klass()->external_name(),
-                           old_method->method_holder()->external_name()));
-            *trace_name_printed = true;
-          }
-          // RC_TRACE macro has an embedded ResourceMark
-          RC_TRACE(0x00100000, ("vtable method update: %s(%s), updated default = %s",
-                                new_method->name()->as_C_string(),
-                                new_method->signature()->as_C_string(),
-                                updated_default ? "true" : "false"));
-        }
-        // cannot 'break' here; see for-loop comment above.
+    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(old_method != new_method, "sanity check");
+
+    put_method_at(new_method, index);
+    // For default methods, need to update the _default_methods array
+    // which can only have one method entry for a given signature
+    bool updated_default = false;
+    if (old_method->is_default_method()) {
+      updated_default = adjust_default_method(index, old_method, new_method);
+    }
+
+    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (!(*trace_name_printed)) {
+        // RC_TRACE_MESG macro has an embedded ResourceMark
+        RC_TRACE_MESG(("adjust: klassname=%s for methods from name=%s",
+                       klass()->external_name(),
+                       old_method->method_holder()->external_name()));
+        *trace_name_printed = true;
       }
+      // RC_TRACE macro has an embedded ResourceMark
+      RC_TRACE(0x00100000, ("vtable method update: %s(%s), updated default = %s",
+                            new_method->name()->as_C_string(),
+                            new_method->signature()->as_C_string(),
+                            updated_default ? "true" : "false"));
     }
   }
 }
@@ -1193,37 +1192,35 @@ void klassItable::initialize_with_method(Method* m) {
 }
 
 #if INCLUDE_JVMTI
-void klassItable::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                        int methods_length, bool * trace_name_printed) {
-  // search the itable for uses of either obsolete or EMCP methods
-  for (int j = 0; j < methods_length; j++) {
-    Method* old_method = old_methods[j];
-    Method* new_method = new_methods[j];
-    itableMethodEntry* ime = method_entry(0);
+// search the itable for uses of either obsolete or EMCP methods
+void klassItable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
 
-    // The itable can describe more than one interface and the same
-    // method signature can be specified by more than one interface.
-    // This means we have to do an exhaustive search to find all the
-    // old_method references.
-    for (int i = 0; i < _size_method_table; i++) {
-      if (ime->method() == old_method) {
-        ime->initialize(new_method);
+  itableMethodEntry* ime = method_entry(0);
+  for (int i = 0; i < _size_method_table; i++, ime++) {
+    Method* old_method = ime->method();
+    if (old_method == NULL || old_method->method_holder() != holder || !old_method->is_old()) {
+      continue; // skip uninteresting entries
+    }
+    assert(!old_method->is_deleted(), "itable methods may not be deleted");
 
-        if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
-          if (!(*trace_name_printed)) {
-            // RC_TRACE_MESG macro has an embedded ResourceMark
-            RC_TRACE_MESG(("adjust: name=%s",
-              old_method->method_holder()->external_name()));
-            *trace_name_printed = true;
-          }
-          // RC_TRACE macro has an embedded ResourceMark
-          RC_TRACE(0x00200000, ("itable method update: %s(%s)",
-            new_method->name()->as_C_string(),
-            new_method->signature()->as_C_string()));
-        }
-        // cannot 'break' here; see for-loop comment above.
+    Method* new_method = holder->method_with_idnum(old_method->orig_method_idnum());
+
+    assert(new_method != NULL, "method_with_idnum() should not be NULL");
+    assert(old_method != new_method, "sanity check");
+
+    ime->initialize(new_method);
+
+    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (!(*trace_name_printed)) {
+        // RC_TRACE_MESG macro has an embedded ResourceMark
+        RC_TRACE_MESG(("adjust: name=%s",
+          old_method->method_holder()->external_name()));
+        *trace_name_printed = true;
       }
-      ime++;
+      // RC_TRACE macro has an embedded ResourceMark
+      RC_TRACE(0x00200000, ("itable method update: %s(%s)",
+        new_method->name()->as_C_string(),
+        new_method->signature()->as_C_string()));
     }
   }
 }

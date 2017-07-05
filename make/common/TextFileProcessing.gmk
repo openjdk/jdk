@@ -77,15 +77,8 @@ endef
 #   processed first, and replacements will be done on the included fragments as well.
 #   If neither is present, the files will just be copied without modifications.
 #
-define SetupTextFileProcessing
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupTextFileProcessing, please update TextFileProcessing.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupTextFileProcessingInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupTextFileProcessingInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupTextFileProcessing($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupTextFileProcessing, please update TextFileProcessing.gmk))
+SetupTextFileProcessing = $(NamedParamsMacroTemplate)
+define SetupTextFileProcessingBody
 
   ifneq ($$($1_SOURCE_FILES),)
     ifneq ($$($1_SOURCE_DIRS),)
