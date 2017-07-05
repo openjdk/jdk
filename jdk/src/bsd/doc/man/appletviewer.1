@@ -1,0 +1,66 @@
+." Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH appletviewer 1 "10 May 2011"
+
+.LP
+.SH "Name"
+appletviewer \- The Java Applet Viewer.
+.LP
+.LP
+The \f3appletviewer\fP command allows you to run applets outside of a web browser.
+.LP
+.SH "SYNOPSIS"
+.LP
+.LP
+\f4appletviewer\fP \f2[\fP \f2options\fP \f2] \fP\f2urls\fP ...
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3appletviewer\fP command connects to the documents or resources designated by \f2urls\fP and displays each applet referenced by the documents in its own window. Note: if the documents referred to by \f2urls\fP do not reference any applets with the \f2OBJECT\fP, \f2EMBED\fP, or \f2APPLET\fP tag, then \f3appletviewer\fP does nothing. For details on the HTML tags that \f3appletviewer\fP supports, see
+.na
+\f2AppletViewer Tags\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/appletviewertags.html.
+.LP
+.LP
+\f3Note:\fP The \f3appletviewer\fP requires encoded URLs according to the escaping mechanism defined in RFC2396. Only encoded URLs are supported. However, file names must be unencoded, as specified in RFC2396.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-debug
+Starts the applet viewer in the Java debugger, jdb(1), thus allowing you to debug the applets in the document.
+.TP 3
+\-encoding \  \ encoding name
+Specify the input HTML file encoding name.
+.TP 3
+\-Jjavaoption
+Passes through the string \f2javaoption\fP as a single argument to the Java interpreter which runs the appletviewer. The argument should not contain spaces. Multiple argument words must all begin with the prefix \f3\-J\fP, which is stripped. This is useful for adjusting the compiler's execution environment or memory usage.
+.RE
+
+.LP
+.LP
+
+.LP
+

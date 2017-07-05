@@ -269,6 +269,9 @@ JVM_DumpAllStacks(JNIEnv *env, jclass unused);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);
 
+JNIEXPORT void JNICALL
+JVM_SetNativeThreadName(JNIEnv *env, jobject jthread, jstring name);
+
 /* getStackTrace() and getAllStackTraces() method */
 JNIEXPORT jobjectArray JNICALL
 JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);

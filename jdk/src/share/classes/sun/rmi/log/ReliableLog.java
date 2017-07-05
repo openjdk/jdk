@@ -344,10 +344,9 @@ public class ReliableLog {
                                return ClassLoader.getSystemClassLoader();
                             }
                         });
-                Class cl = loader.loadClass(logClassName);
-                if (LogFile.class.isAssignableFrom(cl)) {
-                    return cl.getConstructor(String.class, String.class);
-                }
+                Class<? extends LogFile> cl =
+                    loader.loadClass(logClassName).asSubclass(LogFile.class);
+                return cl.getConstructor(String.class, String.class);
             } catch (Exception e) {
                 System.err.println("Exception occurred:");
                 e.printStackTrace();
@@ -595,10 +594,10 @@ public class ReliableLog {
         } else {
             name = versionFile;
         }
-        DataOutputStream out =
-            new DataOutputStream(new FileOutputStream(fName(name)));
-        writeInt(out, version);
-        out.close();
+        try (FileOutputStream fos = new FileOutputStream(fName(name));
+             DataOutputStream out = new DataOutputStream(fos)) {
+            writeInt(out, version);
+        }
     }
 
     /**
@@ -629,11 +628,9 @@ public class ReliableLog {
      * @exception IOException If an I/O error has occurred.
      */
     private int readVersion(String name) throws IOException {
-        DataInputStream in = new DataInputStream(new FileInputStream(name));
-        try {
+        try (DataInputStream in = new DataInputStream
+                (new FileInputStream(name))) {
             return in.readInt();
-        } finally {
-            in.close();
         }
     }
 

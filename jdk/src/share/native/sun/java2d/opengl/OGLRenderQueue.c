@@ -25,7 +25,7 @@
 
 #ifndef HEADLESS
 
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "sun_java2d_pipe_BufferedOpCodes.h"
 
@@ -63,6 +63,7 @@ static OGLSDOps *dstOps = NULL;
 extern OGLContext *OGLSD_SetScratchSurface(JNIEnv *env, jlong pConfigInfo);
 extern void OGLGC_DestroyOGLGraphicsConfig(jlong pConfigInfo);
 extern void OGLSD_SwapBuffers(JNIEnv *env, jlong window);
+extern void OGLSD_Flush(JNIEnv *env);
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
@@ -454,7 +455,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 if (oglsdo != NULL) {
                     CONTINUE_IF_NULL(oglc);
                     RESET_PREVIOUS_OP();
-                    OGLSD_Flush(env, oglsdo);
+                    OGLSD_Delete(env, oglsdo);
                 }
             }
             break;
@@ -465,7 +466,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
                 if (oglsdo != NULL) {
                     CONTINUE_IF_NULL(oglc);
                     RESET_PREVIOUS_OP();
-                    OGLSD_Flush(env, oglsdo);
+                    OGLSD_Delete(env, oglsdo);
                     if (oglsdo->privOps != NULL) {
                         free(oglsdo->privOps);
                     }
@@ -707,6 +708,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
         } else {
             j2d_glFlush();
         }
+        OGLSD_Flush(env);
     }
 }
 

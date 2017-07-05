@@ -34,6 +34,18 @@ FILES_solaris = \
 
 FILES_linux = 
 
+FILES_bsd =
+
+FILES_macosx = \
+    PLATFORM_API_MacOSX_MidiIn.c \
+    PLATFORM_API_MacOSX_MidiOut.c \
+    PLATFORM_API_MacOSX_MidiUtils.c
+
+FILES_cpp_macosx = \
+    PLATFORM_API_MacOSX_Utils.cpp \
+    PLATFORM_API_MacOSX_PCM.cpp \
+    PLATFORM_API_MacOSX_Ports.cpp
+
 FILES_windows = \
 	PLATFORM_API_WinOS_MidiIn.c \
 	PLATFORM_API_WinOS_MidiOut.c \

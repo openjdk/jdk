@@ -62,6 +62,12 @@ case "$OS" in
     CP="${FS}bin${FS}cp"
     CHMOD="${FS}bin${FS}chmod"
     ;;
+  Darwin )
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
   Windows* )
     FS="\\"
     PS=";"
@@ -87,18 +93,18 @@ esac
 # compile test
 
 ${TESTJAVA}${FS}bin${FS}javac \
-	-classpath ${TESTSRC}${FS}.. \
-	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}ConfigQuotedString.java
+        -classpath ${TESTSRC}${FS}.. \
+        -d ${TESTCLASSES} \
+        ${TESTSRC}${FS}ConfigQuotedString.java
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java \
-	-classpath ${TESTCLASSES} \
-	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ConfigQuotedString-nss.txt \
-	-Dtest.src=${TESTSRC} \
-	-Dtest.classes=${TESTCLASSES} \
-	ConfigQuotedString
+        -classpath ${TESTCLASSES} \
+        -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ConfigQuotedString-nss.txt \
+        -Dtest.src=${TESTSRC} \
+        -Dtest.classes=${TESTCLASSES} \
+        ConfigQuotedString
 
 # save error status
 status=$?

@@ -177,6 +177,19 @@ $(shell \
   fi)
 endef
 
+# Expand SRCDIR_LIST, which is used to automatically include various
+# platform and shared sources/headers.  This is mainly useful for the
+# Mac OS X build, which pulls its platform sources from the solaris and/or
+# macosx trees, depending on the component.
+ifeq ($(PLATFORM), macosx)
+  define JavaSrcDirList
+  $(JAVA_SRCDIR_LIST:%=$1$(JDK_TOPDIR)/%/$2)
+  endef
+  define NativeSrcDirList
+  $(NATIVE_SRCDIR_LIST:%=$1$(JDK_TOPDIR)/%/$2)
+  endef
+endif
+
 # Make sure certain variables are non-empty at this point
 _check_values:=\
 $(call CheckValue,ARCH,),\

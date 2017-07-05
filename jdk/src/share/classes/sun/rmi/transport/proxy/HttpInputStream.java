@@ -70,8 +70,8 @@ class HttpInputStream extends FilterInputStream {
                 throw new EOFException();
 
             if (line.toLowerCase().startsWith(key)) {
-                if (contentLengthFound)
-                    ; // what would we want to do in this case??
+                // if contentLengthFound is true
+                // we should probably do something here
                 bytesLeft =
                     Integer.parseInt(line.substring(key.length()).trim());
                 contentLengthFound = true;

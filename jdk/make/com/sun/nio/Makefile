@@ -32,8 +32,12 @@ SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
 SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = sctp
 include $(BUILDDIR)/common/Subdirs.gmk
+
+ifneq ($(PLATFORM), macosx)
+SUBDIRS = sctp
+endif
+
 
 all build clean clobber::
 	$(SUBDIRS-loop)

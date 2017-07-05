@@ -394,6 +394,8 @@ public abstract class AccessibleContext {
     private AccessibleRelationSet relationSet
         = new AccessibleRelationSet();
 
+    private Object nativeAXResource;
+
     /**
      * Gets the accessibleName property of this object.  The accessibleName
      * property of an object is a localized String that designates the purpose
