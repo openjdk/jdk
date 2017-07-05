@@ -55,8 +55,6 @@ public class WindowsFlags {
      *               This flag can force us to use d3d
      *               anyway in these situations.  Or, this flag can force us to
      *               not use d3d in a situation where we would use it otherwise.
-     *      translAccelEnabled: usage: "-Dsun.java2d.translaccel=true"
-     *               equivalent to sun.java2d.d3d=true
      *      offscreenSharingEnabled: usage: "-Dsun.java2d.offscreenSharing=true"
      *               Turns on the ability to share a hardware-accelerated
      *               offscreen surface through the JAWT interface.  See
@@ -67,23 +65,6 @@ public class WindowsFlags {
      *               without being very sure that we will be willing to support
      *               that API in the future regardless of other native
      *               rendering pipeline changes.
-     *      accelReset: usage: "-Dsun.java2d.accelReset"
-     *               This flag tells us to reset any persistent information
-     *               the display device acceleration characteristics so that
-     *               we are forced to retest these characteristics.  This flag
-     *               is primarily used for debugging purposes (to allow testing
-     *               of the persistent storage mechanisms) but may also be
-     *               needed by some users if, for example, a driver upgrade
-     *               may change the runtime characteristics and they want the
-     *               tests to be re-run.
-     *      checkRegistry: usage: "-Dsun.java2d.checkRegistry"
-     *               This flag tells us to output the current registry settings
-     *               (after our initialization) to the console.
-     *      disableRegistry: usage: "-Dsun.java2d.disableRegistry"
-     *               This flag tells us to disable all registry-related
-     *               activities.  It is mainly here for debugging purposes,
-     *               to allow us to see whether any runtime bugs are caused
-     *               by or related to registry problems.
      *      magPresent: usage: "-Djavax.accessibility.screen_magnifier_present"
      *               This flag is set either on the command line or in the
      *               properties file.  It tells Swing whether the user is
@@ -121,9 +102,6 @@ public class WindowsFlags {
     private static boolean oglEnabled;
     private static boolean oglVerbose;
     private static boolean offscreenSharingEnabled;
-    private static boolean accelReset;
-    private static boolean checkRegistry;
-    private static boolean disableRegistry;
     private static boolean magPresent;
     private static boolean setHighDPIAware;
     // TODO: other flags, including nopixfmt
@@ -234,11 +212,6 @@ public class WindowsFlags {
                 }
                 offscreenSharingEnabled =
                     getBooleanProp("sun.java2d.offscreenSharing", false);
-                accelReset = getBooleanProp("sun.java2d.accelReset", false);
-                checkRegistry =
-                    getBooleanProp("sun.java2d.checkRegistry", false);
-                disableRegistry =
-                    getBooleanProp("sun.java2d.disableRegistry", false);
                 String dpiOverride = System.getProperty("sun.java2d.dpiaware");
                 if (dpiOverride != null) {
                     setHighDPIAware = dpiOverride.equalsIgnoreCase("true");
@@ -265,22 +238,12 @@ public class WindowsFlags {
         System.out.println("WindowsFlags (Java):");
         System.out.println("  ddEnabled: " + ddEnabled + "\n" +
                            "  ddOffscreenEnabled: " + ddOffscreenEnabled + "\n" +
-                           "  ddVramForced: " + ddVramForced + "\n" +
-                           "  ddLockEnabled: " + ddLockEnabled + "\n" +
-                           "  ddLockSet: " + ddLockSet + "\n" +
-                           "  ddBlitEnabled: " + ddBlitEnabled + "\n" +
-                           "  ddScaleEnabled: " + ddScaleEnabled + "\n" +
                            "  d3dEnabled: " + d3dEnabled + "\n" +
                            "  d3dSet: " + d3dSet + "\n" +
                            "  oglEnabled: " + oglEnabled + "\n" +
                            "  oglVerbose: " + oglVerbose + "\n" +
                            "  gdiBlitEnabled: " + gdiBlitEnabled + "\n" +
-                           "  translAccelEnabled: " + translAccelEnabled + "\n" +
-                           "  offscreenSharingEnabled: " + offscreenSharingEnabled + "\n" +
-                           "  accelReset: " + accelReset + "\n" +
-                           "  checkRegistry: " + checkRegistry + "\n" +
-                           "  disableRegistry: " + disableRegistry + "\n" +
-                           "  d3dTexBPP: " + d3dTexBpp);
+                           "  offscreenSharingEnabled: " + offscreenSharingEnabled);
         */
     }
 
@@ -302,10 +265,6 @@ public class WindowsFlags {
 
     public static boolean isGdiBlitEnabled() {
         return gdiBlitEnabled;
-    }
-
-    public static boolean isTranslucentAccelerationEnabled() {
-        return d3dEnabled;
     }
 
     public static boolean isOffscreenSharingEnabled() {

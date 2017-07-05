@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,19 @@ class CompilationPolicy : public CHeapObj<mtCompiler> {
   static elapsedTimer       _accumulated_time;
 
   static bool               _in_vm_startup;
+
+  // m must be compiled before executing it
+  static bool must_be_compiled(methodHandle m, int comp_level = CompLevel_all);
+
 public:
   static  void set_in_vm_startup(bool in_vm_startup) { _in_vm_startup = in_vm_startup; }
   static  void completed_vm_startup();
   static  bool delay_compilation_during_startup()    { return _in_vm_startup; }
 
-  // m must be compiled before executing it
-  static bool must_be_compiled(methodHandle m, int comp_level = CompLevel_all);
+  // If m must_be_compiled then request a compilation from the CompileBroker.
+  // This supports the -Xcomp option.
+  static void compile_if_required(methodHandle m, TRAPS);
+
   // m is allowed to be compiled
   static bool can_be_compiled(methodHandle m, int comp_level = CompLevel_all);
   // m is allowed to be osr compiled
@@ -68,7 +74,7 @@ public:
   virtual int compiler_count(CompLevel comp_level) = 0;
   // main notification entry, return a pointer to an nmethod if the OSR is required,
   // returns NULL otherwise.
-  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) = 0;
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) = 0;
   // safepoint() is called at the end of the safepoint
   virtual void do_safepoint_work() = 0;
   // reprofile request
@@ -109,7 +115,7 @@ public:
   virtual bool is_mature(Method* method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
-  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread);
   virtual void method_invocation_event(const methodHandle& m, JavaThread* thread) = 0;
   virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) = 0;
 };

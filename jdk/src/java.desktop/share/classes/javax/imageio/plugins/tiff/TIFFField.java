@@ -412,7 +412,7 @@ public class TIFFField implements Cloneable {
 
     /**
      * Creates a {@code TIFFField} from a TIFF native image
-     * metadata node. If the value of the <tt>"tagNumber"</tt> attribute
+     * metadata node. If the value of the <tt>"number"</tt> attribute
      * of the node is not found in {@code tagSet} then a new
      * {@code TIFFTag} with name {@code TIFFTag.UNKNOWN_TAG_NAME}
      * will be created and assigned to the field.
@@ -424,6 +424,10 @@ public class TIFFField implements Cloneable {
      * {@code null}.
      * @throws IllegalArgumentException if the name of the node is not
      * {@code "TIFFField"}.
+     * @throws NullPointerException if the node does not contain any data.
+     * @throws IllegalArgumentException if the combination of node attributes
+     * and data is not legal per the {@link #TIFFField(TIFFTag,int,int,Object)}
+     * constructor specification.
      * @return A new {@code TIFFField}.
      */
     public static TIFFField createFromMetadataNode(TIFFTagSet tagSet,
@@ -1089,6 +1093,15 @@ public class TIFFField implements Cloneable {
      * {@code TIFF_SBYTE} data will be returned in the range
      * [-128, 127].
      *
+     * <p> Data in {@code TIFF_FLOAT} and {@code TIFF_DOUBLE} are
+     * simply cast to {@code long} and may suffer from truncation.
+     *
+     * <p> Data in {@code TIFF_SRATIONAL} or
+     * {@code TIFF_RATIONAL} format are evaluated by dividing the
+     * numerator into the denominator using double-precision
+     * arithmetic and then casting to {@code long}.  Loss of
+     * precision and truncation may occur.
+     *
      * <p> Data in {@code TIFF_ASCII} format will be parsed as by
      * the {@code Double.parseDouble} method, with the result
      * cast to {@code long}.
@@ -1112,6 +1125,10 @@ public class TIFFField implements Cloneable {
         case TIFFTag.TIFF_LONG:
         case TIFFTag.TIFF_IFD_POINTER:
             return ((long[])data)[index];
+        case TIFFTag.TIFF_FLOAT:
+            return (long)((float[])data)[index];
+        case TIFFTag.TIFF_DOUBLE:
+            return (long)((double[])data)[index];
         case TIFFTag.TIFF_SRATIONAL:
             int[] ivalue = getAsSRational(index);
             return (long)((double)ivalue[0]/ivalue[1]);
@@ -1286,7 +1303,11 @@ public class TIFFField implements Cloneable {
      * version of the data item.  Data of type
      * {@code TIFFTag.TIFF_RATIONAL} or {@code TIFF_SRATIONAL} are
      * represented as a pair of integers separated by a
-     * {@code '/'} character.
+     * {@code '/'} character.  If the numerator of a
+     * {@code TIFFTag.TIFF_RATIONAL} or {@code TIFF_SRATIONAL} is an integral
+     * multiple of the denominator, then the value is represented as
+     * {@code "q/1"} where {@code q} is the quotient of the numerator and
+     * denominator.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code String}.

@@ -32,7 +32,6 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 /**
@@ -43,7 +42,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class WaveFloatFileReader extends SunFileReader {
 
     @Override
-    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+    StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
         RIFFReader riffiterator = new RIFFReader(stream);
@@ -88,20 +87,17 @@ public final class WaveFloatFileReader extends SunFileReader {
         AudioFormat audioformat = new AudioFormat(
                 Encoding.PCM_FLOAT, samplerate, bits, channels,
                 framesize, samplerate, false);
-        long frameLength = dataSize / audioformat.getFrameSize();
-        if (frameLength > Integer.MAX_VALUE) {
-            frameLength = AudioSystem.NOT_SPECIFIED;
-        }
-
-        return new AudioFileFormat(AudioFileFormat.Type.WAVE, audioformat,
-                                   (int) frameLength);
+        return new StandardFileFormat(AudioFileFormat.Type.WAVE, audioformat,
+                                      dataSize / audioformat.getFrameSize());
     }
 
     @Override
     public AudioInputStream getAudioInputStream(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
-        final AudioFileFormat format = getAudioFileFormat(stream);
+        final StandardFileFormat format = getAudioFileFormat(stream);
+        final AudioFormat af = format.getFormat();
+        final long length = format.getLongFrameLength();
         // we've got everything, the stream is supported and it is at the
         // beginning of the header, so find the data chunk again and return an
         // AudioInputStream
@@ -109,8 +105,6 @@ public final class WaveFloatFileReader extends SunFileReader {
         while (riffiterator.hasNextChunk()) {
             RIFFReader chunk = riffiterator.nextChunk();
             if (chunk.getFormat().equals("data")) {
-                final AudioFormat af = format.getFormat();
-                final long length = chunk.getSize() / af.getFrameSize();
                 return new AudioInputStream(chunk, af, length);
             }
         }

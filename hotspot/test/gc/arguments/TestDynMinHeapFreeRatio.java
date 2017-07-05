@@ -26,6 +26,7 @@
  * @bug 8028391
  * @summary Verify that MinHeapFreeRatio flag is manageable
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @run main TestDynMinHeapFreeRatio
  * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 TestDynMinHeapFreeRatio

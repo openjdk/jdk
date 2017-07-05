@@ -145,7 +145,7 @@ ifeq ($(HAS_FILE_FUNCTION), true)
         $$(strip $2),$$(subst $$(SPACE),$$(NEWLINE),$$(strip $$($$(strip $1)))))
   endef
 
-else # HAS_FILE_FUNCTION
+else # HAS_FILE_FUNCTION = false
 
   $(eval compress_paths = \
       $(strip $(shell $(CAT) $(SRC_ROOT)/make/common/support/ListPathsSafely-pre-compress.incl)))
@@ -172,8 +172,8 @@ else # HAS_FILE_FUNCTION
   # Param 2 - File to print to
   # Param 3 - Set to true to append to file instead of overwriting
   define ListPathsSafely
-    ifneq (,$$(word 10001,$$($1)))
-      $$(error Cannot list safely more than 10000 paths. $1 has $$(words $$($1)) paths!)
+    ifneq (,$$(word 30001,$$($$(strip $1))))
+      $$(error Cannot list safely more than 30000 paths. $1 has $$(words $$($$(strip $1))) paths!)
     endif
     $$(call MakeDir, $$(dir $2))
     ifneq ($$(strip $3), true)
@@ -229,6 +229,106 @@ else # HAS_FILE_FUNCTION
     $$(call ListPathsSafely_IfPrintf,$1,$2,9251,9500)
     $$(call ListPathsSafely_IfPrintf,$1,$2,9501,9750)
     $$(call ListPathsSafely_IfPrintf,$1,$2,9751,10000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,10001,10250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,10251,10500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,10501,10750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,10751,11000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,11001,11250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,11251,11500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,11501,11750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,11751,12000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,12001,12250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,12251,12500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,12501,12750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,12751,13000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,13001,13250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,13251,13500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,13501,13750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,13751,14000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,14001,14250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,14251,14500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,14501,14750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,14751,15000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,15001,15250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,15251,15500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,15501,15750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,15751,16000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,16001,16250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,16251,16500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,16501,16750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,16751,17000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,17001,17250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,17251,17500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,17501,17750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,17751,18000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,18001,18250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,18251,18500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,18501,18750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,18751,19000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,19001,19250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,19251,19500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,19501,19750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,19751,20000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,20001,20250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,20251,20500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,20501,20750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,20751,21000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,21001,21250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,21251,21500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,21501,21750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,21751,22000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,22001,22250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,22251,22500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,22501,22750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,22751,23000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,23001,23250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,23251,23500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,23501,23750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,23751,24000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,24001,24250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,24251,24500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,24501,24750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,24751,25000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,25001,25250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,25251,25500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,25501,25750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,25751,26000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,26001,26250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,26251,26500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,26501,26750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,26751,27000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,27001,27250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,27251,27500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,27501,27750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,27751,28000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,28001,28250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,28251,28500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,28501,28750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,28751,29000)
+
+    $$(call ListPathsSafely_IfPrintf,$1,$2,29001,29250)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,29251,29500)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,29501,29750)
+    $$(call ListPathsSafely_IfPrintf,$1,$2,29751,30000)
   endef
 endif # HAS_FILE_FUNCTION
 
@@ -420,8 +520,12 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   # set. Some files get their write permissions removed after being copied to the
   # output dir. When these are copied again to images, xattr would fail. By only clearing
   # attributes when they are present, failing on this is avoided.
+  #
+  # If copying a soft link to a directory, need to delete the target first to avoid
+  # weird errors.
   define install-file
 	$(MKDIR) -p '$(@D)'
+	$(RM) '$@'
 	$(CP) -fRP '$<' '$@'
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef

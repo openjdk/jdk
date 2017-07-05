@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2016, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 /*
  * @test
  * @bug 8080190
+ * @bug 8154537
  * @key regression
  * @summary Test that the rotate distance used in the rotate instruction is properly masked with 0x1f
  * @run main/othervm -Xbatch -XX:-UseOnStackReplacement IntRotateWithImmediate
@@ -33,7 +35,7 @@
 public class IntRotateWithImmediate {
 
   // This is currently the same as Integer.rotateRight()
-  static int rotateRight(int i, int distance) {
+  static int rotateRight1(int i, int distance) {
     // On some architectures (i.e. x86_64 and ppc64) the following computation is
     // matched in the .ad file into a single MachNode which emmits a single rotate
     // machine instruction. It is important that the shift amount is masked to match
@@ -43,17 +45,29 @@ public class IntRotateWithImmediate {
     return ((i >>> distance) | (i << -distance));
   }
 
-  static int compute(int x) {
-    return rotateRight(x, 3);
+  static int rotateRight2(int i, int distance) {
+      return ((i >>> distance) | (i << (32-distance)));
+  }
+
+  static int compute1(int x) {
+    return rotateRight1(x, 3);
+  }
+
+  static int compute2(int x) {
+    return rotateRight2(x, 3);
   }
 
   public static void main(String args[]) {
     int val = 4096;
 
-    int firstResult = compute(val);
+    int firstResult = compute1(val);
 
     for (int i = 0; i < 100000; i++) {
-      int newResult = compute(val);
+      int newResult = compute1(val);
+      if (firstResult != newResult) {
+        throw new InternalError(firstResult + " != " + newResult);
+      }
+      newResult = compute2(val);
       if (firstResult != newResult) {
         throw new InternalError(firstResult + " != " + newResult);
       }

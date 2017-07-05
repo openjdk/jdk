@@ -343,13 +343,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   }
 #endif
 
-
-  assert(thread->can_call_java(), "cannot compile from the native compiler");
-  if (CompilationPolicy::must_be_compiled(method)) {
-    CompileBroker::compile_method(method, InvocationEntryBci,
-                                  CompilationPolicy::policy()->initial_compile_level(),
-                                  methodHandle(), 0, "must_be_compiled", CHECK);
-  }
+  CompilationPolicy::compile_if_required(method, CHECK);
 
   // Since the call stub sets up like the interpreter we call the from_interpreted_entry
   // so we can go compiled via a i2c. Otherwise initial entry method will always

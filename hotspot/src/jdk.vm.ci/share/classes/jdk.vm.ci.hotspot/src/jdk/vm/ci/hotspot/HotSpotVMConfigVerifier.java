@@ -40,7 +40,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A {@link ClassVisitor} that verifies {@link HotSpotVMConfig} does not access {@link Unsafe} from

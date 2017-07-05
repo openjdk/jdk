@@ -37,13 +37,13 @@ class Rewriter: public StackObj {
   instanceKlassHandle _klass;
   constantPoolHandle  _pool;
   Array<Method*>*     _methods;
-  intArray            _cp_map;
-  intStack            _cp_cache_map;        // for Methodref, Fieldref,
-                                            // InterfaceMethodref and InvokeDynamic
-  intArray            _reference_map;       // maps from cp index to resolved_refs index (or -1)
-  intStack            _resolved_references_map;    // for strings, methodHandle, methodType
-  intStack            _invokedynamic_references_map; // for invokedynamic resolved refs
-  intArray            _method_handle_invokers;
+  GrowableArray<int>  _cp_map;
+  GrowableArray<int>  _cp_cache_map;  // for Methodref, Fieldref,
+                                      // InterfaceMethodref and InvokeDynamic
+  GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
+  GrowableArray<int>  _resolved_references_map; // for strings, methodHandle, methodType
+  GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
+  GrowableArray<int>  _method_handle_invokers;
   int                 _resolved_reference_limit;
 
   // For mapping invokedynamic bytecodes, which are discovered during method
@@ -51,28 +51,31 @@ class Rewriter: public StackObj {
   // If there are any invokespecial/InterfaceMethodref special case bytecodes,
   // these entries are added before invokedynamic entries so that the
   // invokespecial bytecode 16 bit index doesn't overflow.
-  intStack            _invokedynamic_cp_cache_map;
+  GrowableArray<int>      _invokedynamic_cp_cache_map;
 
   // For patching.
   GrowableArray<address>* _patch_invokedynamic_bcps;
   GrowableArray<int>*     _patch_invokedynamic_refs;
 
   void init_maps(int length) {
-    _cp_map.initialize(length, -1);
-    // Choose an initial value large enough that we don't get frequent
-    // calls to grow().
-    _cp_cache_map.initialize(length/2);
+    _cp_map.trunc_to(0);
+    _cp_map.at_grow(length, -1);
+
+    _cp_cache_map.trunc_to(0);
     // Also cache resolved objects, in another different cache.
-    _reference_map.initialize(length, -1);
-    _resolved_references_map.initialize(length/2);
-    _invokedynamic_references_map.initialize(length/2);
+    _reference_map.trunc_to(0);
+    _reference_map.at_grow(length, -1);
+
+    _method_handle_invokers.trunc_to(0);
+    _resolved_references_map.trunc_to(0);
+    _invokedynamic_references_map.trunc_to(0);
     _resolved_reference_limit = -1;
     _first_iteration_cp_cache_limit = -1;
 
     // invokedynamic specific fields
-    _invokedynamic_cp_cache_map.initialize(length/4);
-    _patch_invokedynamic_bcps = new GrowableArray<address>(length/4);
-    _patch_invokedynamic_refs = new GrowableArray<int>(length/4);
+    _invokedynamic_cp_cache_map.trunc_to(0);
+    _patch_invokedynamic_bcps = new GrowableArray<address>(length / 4);
+    _patch_invokedynamic_refs = new GrowableArray<int>(length / 4);
   }
 
   int _first_iteration_cp_cache_limit;
@@ -90,10 +93,10 @@ class Rewriter: public StackObj {
     return _cp_cache_map.length() - _first_iteration_cp_cache_limit;
   }
 
-  int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map[i]; }
-  bool has_cp_cache(int i) { return (uint)i < (uint)_cp_map.length() && _cp_map[i] >= 0; }
+  int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
+  bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
 
-  int add_map_entry(int cp_index, intArray* cp_map, intStack* cp_cache_map) {
+  int add_map_entry(int cp_index, GrowableArray<int>* cp_map, GrowableArray<int>* cp_cache_map) {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");
     int cache_index = cp_cache_map->append(cp_index);
     cp_map->at_put(cp_index, cache_index);
@@ -121,7 +124,7 @@ class Rewriter: public StackObj {
   }
 
   int invokedynamic_cp_cache_entry_pool_index(int cache_index) {
-    int cp_index = _invokedynamic_cp_cache_map[cache_index];
+    int cp_index = _invokedynamic_cp_cache_map.at(cache_index);
     return cp_index;
   }
 
@@ -131,9 +134,9 @@ class Rewriter: public StackObj {
     assert(_first_iteration_cp_cache_limit >= 0, "add these special cache entries after first iteration");
     // Don't add InterfaceMethodref if it already exists at the end.
     for (int i = _first_iteration_cp_cache_limit; i < _cp_cache_map.length(); i++) {
-     if (cp_cache_entry_pool_index(i) == cp_index) {
-       return i;
-     }
+      if (cp_cache_entry_pool_index(i) == cp_index) {
+        return i;
+      }
     }
     int cache_index = _cp_cache_map.append(cp_index);
     assert(cache_index >= _first_iteration_cp_cache_limit, "");
@@ -144,10 +147,10 @@ class Rewriter: public StackObj {
 
   int  cp_entry_to_resolved_references(int cp_index) const {
     assert(has_entry_in_resolved_references(cp_index), "oob");
-    return _reference_map[cp_index];
+    return _reference_map.at(cp_index);
   }
   bool has_entry_in_resolved_references(int cp_index) const {
-    return (uint)cp_index < (uint)_reference_map.length() && _reference_map[cp_index] >= 0;
+    return (uint) cp_index < (uint) _reference_map.length() && _reference_map.at(cp_index) >= 0;
   }
 
   // add a new entry to the resolved_references map
@@ -174,13 +177,13 @@ class Rewriter: public StackObj {
   }
 
   int resolved_references_entry_to_pool_index(int ref_index) {
-    int cp_index = _resolved_references_map[ref_index];
+    int cp_index = _resolved_references_map.at(ref_index);
     return cp_index;
   }
 
   // Access the contents of _cp_cache_map to determine CP cache layout.
   int cp_cache_entry_pool_index(int cache_index) {
-    int cp_index = _cp_cache_map[cache_index];
+    int cp_index = _cp_cache_map.at(cache_index);
     return cp_index;
   }
 

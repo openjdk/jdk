@@ -34,6 +34,7 @@ import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -44,9 +45,10 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.LinkModule;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
@@ -112,19 +114,19 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit((resource) -> {
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy((resource) -> {
             if (resource.getModule().equals(MODULENAME)) {
                 String path = resource.getPath();
                 resource = predicate.test(path) ? resource: null;
                 if (resource != null &&
-                    resource.getType().equals(ModuleDataType.CLASS_OR_RESOURCE)) {
+                    resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
                     byte[] bytes = resource.getBytes();
                     ClassReader cr = new ClassReader(bytes);
                     if (Arrays.stream(cr.getInterfaces())
                         .anyMatch(i -> i.contains(METAINFONAME)) &&
                         stripUnsupportedLocales(bytes, cr)) {
-                        resource = new Pool.ModuleData(MODULENAME, path,
+                        resource = ModuleEntry.create(MODULENAME, path,
                             resource.getType(),
                             new ByteArrayInputStream(bytes), bytes.length);
                     }
@@ -135,9 +137,9 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.FILTER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.FILTER);
         return Collections.unmodifiableSet(set);
     }
 
@@ -172,12 +174,13 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     }
 
     @Override
-    public void previsit(Pool resources, StringTable strings) {
+    public void previsit(ModulePool resources, StringTable strings) {
         final Pattern p = Pattern.compile(".*((Data_)|(Names_))(?<tag>.*)\\.class");
-        Pool.Module module = resources.getModule(MODULENAME);
+        Optional<LinkModule> optMod = resources.findModule(MODULENAME);
 
         // jdk.localedata module validation
-        if (module != null) {
+        if (optMod.isPresent()) {
+            LinkModule module = optMod.get();
             Set<String> packages = module.getAllPackages();
             if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
                 throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
@@ -186,7 +189,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
                         .collect(Collectors.joining(",\n\t")));
             }
 
-            available = Stream.concat(module.getContent().stream()
+            available = Stream.concat(module.entries()
                                         .map(md -> p.matcher(md.getPath()))
                                         .filter(m -> m.matches())
                                         .map(m -> m.group("tag").replaceAll("_", "-")),

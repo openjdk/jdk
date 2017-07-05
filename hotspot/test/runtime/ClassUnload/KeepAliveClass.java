@@ -24,6 +24,7 @@
 /*
  * @test KeepAliveClass
  * @summary This test case uses a java.lang.Class instance to keep a class alive.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /runtime/testlibrary
  * @library classes
  * @build KeepAliveClass test.Empty

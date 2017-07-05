@@ -144,7 +144,7 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
     return _promoHead == NULL;
   }
   void startTrackingPromotions();
-  void stopTrackingPromotions(uint worker_id = 0);
+  void stopTrackingPromotions();
   bool tracking() const          { return _tracking;  }
   void track(PromotedObject* trackOop);      // keep track of a promoted oop
   // The following variant must be used when trackOop is not fully

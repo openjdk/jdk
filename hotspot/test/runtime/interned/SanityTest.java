@@ -24,6 +24,7 @@
 /*
  * @test SanityTest
  * @summary Sanity check of String.intern() & GC
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build SanityTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

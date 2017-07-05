@@ -166,7 +166,7 @@ import javax.swing.event.*;
  * </ul>
  *
  * <p>For more information on the <code>Document</code> class, see
- * <a href="http://java.sun.com/products/jfc/tsc">The Swing Connection</a>
+ * <a href="http://www.oracle.com/technetwork/java/javase/tech/articles-jsp-139072.html">The Swing Connection</a>
  * and most particularly the article,
  * <a href="http://java.sun.com/products/jfc/tsc/articles/text/element_interface">
  * The Element Interface</a>.

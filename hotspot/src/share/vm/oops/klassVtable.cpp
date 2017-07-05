@@ -34,7 +34,6 @@
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/copy.hpp"
@@ -887,19 +886,17 @@ void klassVtable::adjust_method_entries(InstanceKlass* holder, bool * trace_name
       updated_default = adjust_default_method(index, old_method, new_method);
     }
 
-    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+    if (log_is_enabled(Info, redefine, class, update)) {
+      ResourceMark rm;
       if (!(*trace_name_printed)) {
-        // RC_TRACE_MESG macro has an embedded ResourceMark
-        RC_TRACE_MESG(("adjust: klassname=%s for methods from name=%s",
-                       klass()->external_name(),
-                       old_method->method_holder()->external_name()));
+        log_info(redefine, class, update)
+          ("adjust: klassname=%s for methods from name=%s",
+           klass()->external_name(), old_method->method_holder()->external_name());
         *trace_name_printed = true;
       }
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00100000, ("vtable method update: %s(%s), updated default = %s",
-                            new_method->name()->as_C_string(),
-                            new_method->signature()->as_C_string(),
-                            updated_default ? "true" : "false"));
+      log_debug(redefine, class, update, vtables)
+        ("vtable method update: %s(%s), updated default = %s",
+         new_method->name()->as_C_string(), new_method->signature()->as_C_string(), updated_default ? "true" : "false");
     }
   }
 }
@@ -1205,17 +1202,14 @@ void klassItable::adjust_method_entries(InstanceKlass* holder, bool * trace_name
 
     ime->initialize(new_method);
 
-    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+    if (log_is_enabled(Info, redefine, class, update)) {
+      ResourceMark rm;
       if (!(*trace_name_printed)) {
-        // RC_TRACE_MESG macro has an embedded ResourceMark
-        RC_TRACE_MESG(("adjust: name=%s",
-          old_method->method_holder()->external_name()));
+        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
         *trace_name_printed = true;
       }
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00200000, ("itable method update: %s(%s)",
-        new_method->name()->as_C_string(),
-        new_method->signature()->as_C_string()));
+      log_trace(redefine, class, update, itables)
+        ("itable method update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
     }
   }
 }

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,6 +24,8 @@
 package jdk.test.bar;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -39,18 +39,36 @@ public class Bar {
 
         ModuleDescriptor md = Bar.class.getModule().getDescriptor();
         System.out.println("nameAndVersion:" + md.toNameAndVersion());
-        System.out.println("mainClass:" + md.mainClass().get());
+        md.mainClass().ifPresent(mc -> System.out.println("mainClass:" + mc));
+
+        StringJoiner sj = new StringJoiner(",");
+        md.requires().stream().map(ModuleDescriptor.Requires::name).sorted().forEach(sj::add);
+        System.out.println("requires:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.exports().stream().map(ModuleDescriptor.Exports::source).sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("exports:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.uses().stream().sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("uses:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.provides().keySet().stream().sorted().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("provides:" + sj.toString());
+
+        sj = new StringJoiner(",");
+        md.conceals().forEach(sj::add);
+        if (!sj.toString().equals(""))
+            System.out.println("conceals:" + sj.toString());
 
         Method m = ModuleDescriptor.class.getDeclaredMethod("hashes");
         m.setAccessible(true);
         ModuleDescriptor foo = jdk.test.foo.Foo.class.getModule().getDescriptor();
-        Optional<ModuleHashes> oHashes =
-                (Optional<ModuleHashes>) m.invoke(foo);
-
+        Optional<ModuleHashes> oHashes = (Optional<ModuleHashes>) m.invoke(foo);
         System.out.println("hashes:" + oHashes.get().hashFor("bar"));
-
-        StringJoiner sj = new StringJoiner(",");
-        md.conceals().forEach(sj::add);
-        System.out.println("conceals:" + sj.toString());
     }
 }

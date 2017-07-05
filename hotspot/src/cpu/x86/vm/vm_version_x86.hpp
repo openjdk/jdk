@@ -844,6 +844,11 @@ public:
   static uint32_t get_xsave_header_upper_segment() {
     return _cpuid_info.xem_xcr0_edx;
   }
+
+  // SSE2 and later processors implement a 'pause' instruction
+  // that can be used for efficient implementation of
+  // the intrinsic for java.lang.Thread.onSpinWait()
+  static bool supports_on_spin_wait() { return supports_sse2(); }
 };
 
 #endif // CPU_X86_VM_VM_VERSION_X86_HPP

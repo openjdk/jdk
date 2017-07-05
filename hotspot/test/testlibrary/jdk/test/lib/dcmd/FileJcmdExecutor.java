@@ -55,7 +55,7 @@ public class FileJcmdExecutor extends PidJcmdExecutor {
         File cmdFile = createTempFile();
         writeCommandToTemporaryFile(cmd, cmdFile);
 
-        return Arrays.asList(jcmdBinary, Integer.toString(pid),
+        return Arrays.asList(jcmdBinary, Long.toString(pid),
                 "-f", cmdFile.getAbsolutePath());
     }
 

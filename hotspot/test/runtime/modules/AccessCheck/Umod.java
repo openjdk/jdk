@@ -27,6 +27,7 @@
  * @test
  * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in unnamed module.
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
@@ -91,7 +92,7 @@ public class Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      // map module m1 to class loader.
      // class c2 will be loaded in an unnamed module/loader.
@@ -137,7 +138,7 @@ public class Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MySameClassLoader loader = new MySameClassLoader();
      // map module m1 to class loader.
@@ -183,7 +184,7 @@ public class Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MySameClassLoader loader = new MySameClassLoader();
      // map module m1 to class loader.

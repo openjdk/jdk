@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,11 +115,8 @@ class   Assert;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
-define_array(ValueArray, Value)
-define_stack(Values, ValueArray)
-
-define_array(ValueStackArray, ValueStack*)
-define_stack(ValueStackStack, ValueStackArray)
+typedef GrowableArray<Value> Values;
+typedef GrowableArray<ValueStack*> ValueStackStack;
 
 // BlockClosure is the base class for block traversal/iteration.
 
@@ -137,14 +134,13 @@ class ValueVisitor: public StackObj {
 
 
 // Some array and list classes
-define_array(BlockBeginArray, BlockBegin*)
-define_stack(_BlockList, BlockBeginArray)
+typedef GrowableArray<BlockBegin*> BlockBeginArray;
 
-class BlockList: public _BlockList {
+class BlockList: public GrowableArray<BlockBegin*> {
  public:
-  BlockList(): _BlockList() {}
-  BlockList(const int size): _BlockList(size) {}
-  BlockList(const int size, BlockBegin* init): _BlockList(size, init) {}
+  BlockList(): GrowableArray<BlockBegin*>() {}
+  BlockList(const int size): GrowableArray<BlockBegin*>(size) {}
+  BlockList(const int size, BlockBegin* init): GrowableArray<BlockBegin*>(size, size, init) {}
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
@@ -1600,8 +1596,8 @@ LEAF(BlockBegin, StateSplit)
   int        _flags;                             // the flags associated with this block
 
   // fields used by BlockListBuilder
-  int        _total_preds;                       // number of predecessors found by BlockListBuilder
-  BitMap     _stores_to_locals;                  // bit is set when a local variable is stored in the block
+  int            _total_preds;                   // number of predecessors found by BlockListBuilder
+  ResourceBitMap _stores_to_locals;              // bit is set when a local variable is stored in the block
 
   // SSA specific fields: (factor out later)
   BlockList   _successors;                       // the successors of this block
@@ -1618,15 +1614,15 @@ LEAF(BlockBegin, StateSplit)
   Label      _label;                             // the label associated with this block
   LIR_List*  _lir;                               // the low level intermediate representation for this block
 
-  BitMap      _live_in;                          // set of live LIR_Opr registers at entry to this block
-  BitMap      _live_out;                         // set of live LIR_Opr registers at exit from this block
-  BitMap      _live_gen;                         // set of registers used before any redefinition in this block
-  BitMap      _live_kill;                        // set of registers defined in this block
+  ResourceBitMap _live_in;                       // set of live LIR_Opr registers at entry to this block
+  ResourceBitMap _live_out;                      // set of live LIR_Opr registers at exit from this block
+  ResourceBitMap _live_gen;                      // set of registers used before any redefinition in this block
+  ResourceBitMap _live_kill;                     // set of registers defined in this block
 
-  BitMap      _fpu_register_usage;
-  intArray*   _fpu_stack_state;                  // For x86 FPU code generation with UseLinearScan
-  int         _first_lir_instruction_id;         // ID of first LIR instruction in this block
-  int         _last_lir_instruction_id;          // ID of last LIR instruction in this block
+  ResourceBitMap _fpu_register_usage;
+  intArray*      _fpu_stack_state;               // For x86 FPU code generation with UseLinearScan
+  int            _first_lir_instruction_id;      // ID of first LIR instruction in this block
+  int            _last_lir_instruction_id;       // ID of last LIR instruction in this block
 
   void iterate_preorder (boolArray& mark, BlockClosure* closure);
   void iterate_postorder(boolArray& mark, BlockClosure* closure);
@@ -1697,11 +1693,11 @@ LEAF(BlockBegin, StateSplit)
   Label* label()                                 { return &_label; }
   LIR_List* lir() const                          { return _lir; }
   int exception_handler_pco() const              { return _exception_handler_pco; }
-  BitMap& live_in()                              { return _live_in;        }
-  BitMap& live_out()                             { return _live_out;       }
-  BitMap& live_gen()                             { return _live_gen;       }
-  BitMap& live_kill()                            { return _live_kill;      }
-  BitMap& fpu_register_usage()                   { return _fpu_register_usage; }
+  ResourceBitMap& live_in()                      { return _live_in;        }
+  ResourceBitMap& live_out()                     { return _live_out;       }
+  ResourceBitMap& live_gen()                     { return _live_gen;       }
+  ResourceBitMap& live_kill()                    { return _live_kill;      }
+  ResourceBitMap& fpu_register_usage()           { return _fpu_register_usage; }
   intArray* fpu_stack_state() const              { return _fpu_stack_state;    }
   int first_lir_instruction_id() const           { return _first_lir_instruction_id; }
   int last_lir_instruction_id() const            { return _last_lir_instruction_id; }
@@ -1722,16 +1718,16 @@ LEAF(BlockBegin, StateSplit)
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
   void set_lir(LIR_List* lir)                    { _lir = lir; }
   void set_exception_handler_pco(int pco)        { _exception_handler_pco = pco; }
-  void set_live_in       (BitMap map)            { _live_in = map;        }
-  void set_live_out      (BitMap map)            { _live_out = map;       }
-  void set_live_gen      (BitMap map)            { _live_gen = map;       }
-  void set_live_kill     (BitMap map)            { _live_kill = map;      }
-  void set_fpu_register_usage(BitMap map)        { _fpu_register_usage = map; }
+  void set_live_in  (const ResourceBitMap& map)  { _live_in = map;   }
+  void set_live_out (const ResourceBitMap& map)  { _live_out = map;  }
+  void set_live_gen (const ResourceBitMap& map)  { _live_gen = map;  }
+  void set_live_kill(const ResourceBitMap& map)  { _live_kill = map; }
+  void set_fpu_register_usage(const ResourceBitMap& map) { _fpu_register_usage = map; }
   void set_fpu_stack_state(intArray* state)      { _fpu_stack_state = state;  }
   void set_first_lir_instruction_id(int id)      { _first_lir_instruction_id = id;  }
   void set_last_lir_instruction_id(int id)       { _last_lir_instruction_id = id;  }
   void increment_total_preds(int n = 1)          { _total_preds += n; }
-  void init_stores_to_locals(int locals_count)   { _stores_to_locals = BitMap(locals_count); _stores_to_locals.clear(); }
+  void init_stores_to_locals(int locals_count)   { _stores_to_locals.initialize(locals_count); }
 
   // generic
   virtual void state_values_do(ValueVisitor* f);
@@ -1747,7 +1743,7 @@ LEAF(BlockBegin, StateSplit)
   void remove_predecessor(BlockBegin* pred);
   bool is_predecessor(BlockBegin* pred) const    { return _predecessors.contains(pred); }
   int number_of_preds() const                    { return _predecessors.length(); }
-  BlockBegin* pred_at(int i) const               { return _predecessors[i]; }
+  BlockBegin* pred_at(int i) const               { return _predecessors.at(i); }
 
   // exception handlers potentially invoked by this block
   void add_exception_handler(BlockBegin* b);
@@ -2612,10 +2608,7 @@ class BlockPair: public CompilationResourceObj {
   void set_from(BlockBegin* b) { _from = b; }
 };
 
-
-define_array(BlockPairArray, BlockPair*)
-define_stack(BlockPairList, BlockPairArray)
-
+typedef GrowableArray<BlockPair*> BlockPairList;
 
 inline int         BlockBegin::number_of_sux() const            { assert(_end == NULL || _end->number_of_sux() == _successors.length(), "mismatch"); return _successors.length(); }
 inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end == NULL || _end->sux_at(i) == _successors.at(i), "mismatch");          return _successors.at(i); }

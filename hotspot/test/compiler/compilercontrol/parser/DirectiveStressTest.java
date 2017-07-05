@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Stress directive json parser
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib ../share /
  * @run driver compiler.compilercontrol.parser.DirectiveStressTest
  */

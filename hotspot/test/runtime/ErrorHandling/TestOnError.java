@@ -24,6 +24,7 @@
 /*
  * @test TestOnError
  * @summary Test using -XX:OnError=<cmd>
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build TestOnError
  * @run main TestOnError

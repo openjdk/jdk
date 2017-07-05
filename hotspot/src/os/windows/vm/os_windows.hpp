@@ -36,7 +36,7 @@ static const char* path_separator() { return ";"; }
 
 class win32 {
   friend class os;
-  friend unsigned __stdcall java_start(class Thread*);
+  friend unsigned __stdcall thread_native_entry(class Thread*);
 
  protected:
   static int    _vm_page_size;

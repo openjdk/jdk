@@ -40,37 +40,51 @@ import jdk.test.lib.*;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {
+        boolean test_runtime = true;
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
+            "-XX:+UseG1GC",
+            "-XX:+UseCompressedOops",
             "-XX:+PrintSharedSpaces",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");
 
-        new OutputAnalyzer(pb.start())
-            .shouldContain("Loading classes to share")
-            .shouldContain("Shared string table stats")
-            .shouldHaveExitValue(0);
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./SharedStrings.jsa",
-            // these are required modes for shared strings
-            "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-            // needed for access to white box test API
-            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
-            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-Xshare:on", "-showversion", "SharedStringsWb");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
+        OutputAnalyzer dumpOutput = new OutputAnalyzer(pb.start());
         try {
-            output.shouldContain("sharing");
-            output.shouldHaveExitValue(0);
+            dumpOutput.shouldContain("Loading classes to share");
+            dumpOutput.shouldContain("Shared string table stats");
+            dumpOutput.shouldHaveExitValue(0);
         } catch (RuntimeException e) {
-            output.shouldContain("Unable to use shared archive");
-            output.shouldHaveExitValue(1);
+            if (dumpOutput.getOutput().indexOf("Shared strings are excluded") != -1 ||
+                dumpOutput.getOutput().indexOf("Cannot dump shared archive") != -1) {
+                test_runtime = false;
+            } else {
+                throw new RuntimeException("Unexpected failure");
+            }
+        }
+
+        if (test_runtime) {
+            pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:SharedArchiveFile=./SharedStrings.jsa",
+                // these are required modes for shared strings
+                "-XX:+UseCompressedOops", "-XX:+UseG1GC",
+                // needed for access to white box test API
+                "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+                "-Xshare:on", "-showversion", "SharedStringsWb");
+
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+            try {
+                output.shouldContain("sharing");
+                output.shouldHaveExitValue(0);
+            } catch (RuntimeException e) {
+                output.shouldContain("Unable to use shared archive");
+                output.shouldHaveExitValue(1);
+            }
         }
     }
 }

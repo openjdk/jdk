@@ -252,13 +252,15 @@ SpoolBlock* PromotionInfo::getSpoolBlock() {
 }
 
 void PromotionInfo::startTrackingPromotions() {
+  assert(noPromotions(), "sanity");
   assert(_spoolHead == _spoolTail && _firstIndex == _nextIndex,
          "spooling inconsistency?");
   _firstIndex = _nextIndex = 1;
   _tracking = true;
 }
 
-void PromotionInfo::stopTrackingPromotions(uint worker_id) {
+void PromotionInfo::stopTrackingPromotions() {
+  assert(noPromotions(), "we should have torn down the lists by now");
   assert(_spoolHead == _spoolTail && _firstIndex == _nextIndex,
          "spooling inconsistency?");
   _firstIndex = _nextIndex = 1;

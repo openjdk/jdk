@@ -52,8 +52,5 @@ public class OrderDouble extends Order {
         buf = DoubleBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckDoubleBuffer(buf, nord);
-
-        ckDoubleBuffer(ByteBuffer.allocate(LENGTH).asDoubleBuffer(), be);
-        ckDoubleBuffer(ByteBuffer.allocateDirect(LENGTH).asDoubleBuffer(), be);
     }
 }

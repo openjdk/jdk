@@ -53,7 +53,18 @@ class LogDecorations VALUE_OBJ_CLASS_SPEC {
 
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
 
+  LogLevelType level() const {
+    return _level;
+  }
+
+  void set_level(LogLevelType level) {
+    _level = level;
+  }
+
   const char* decoration(LogDecorators::Decorator decorator) const {
+    if (decorator == LogDecorators::level_decorator) {
+      return LogLevel::name(_level);
+    }
     return _decoration_offset[decorator];
   }
 };

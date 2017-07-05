@@ -250,6 +250,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void membar_storestore();
   void membar_loadstore();
   void membar_storeload();
+  void on_spin_wait();
   void get_thread(LIR_Opr result);
 
   void verify_oop_map(CodeEmitInfo* info);

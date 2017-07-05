@@ -31,9 +31,12 @@
  * @run main BasicLauncherTest
  */
 
+import static jdk.testlibrary.Asserts.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -99,7 +102,7 @@ public class BasicLauncherTest {
 
         System.out.println("Starting LingeredApp");
         try {
-            theApp = LingeredApp.startApp();
+            theApp = LingeredApp.startApp(Arrays.asList("-Xmx256m"));
 
             System.out.println("Starting " + toolName + " " + toolArgs.get(0) + " against " + theApp.getPid());
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(toolName);
@@ -129,6 +132,21 @@ public class BasicLauncherTest {
         launch(expectedMessage, Arrays.asList(toolArgs));
     }
 
+    public static void testHeapDump() throws IOException {
+        File dump = new File("jhsdb.jmap.dump." +
+                             System.currentTimeMillis() + ".hprof");
+        if (dump.exists()) {
+            dump.delete();
+        }
+        dump.deleteOnExit();
+
+        launch("heap written to", "jmap",
+               "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
+
+        assertTrue(dump.exists() && dump.isFile(),
+                   "Could not create dump file " + dump.getAbsolutePath());
+    }
+
     public static void main(String[] args)
         throws IOException {
 
@@ -144,6 +162,8 @@ public class BasicLauncherTest {
         launch("compiler detected", "jmap");
         launch("Java System Properties", "jinfo");
         launch("java.threads", "jsnap");
+
+        testHeapDump();
 
         // The test throws RuntimeException on error.
         // IOException is thrown if LingeredApp can't start because of some bad

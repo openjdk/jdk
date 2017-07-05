@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,47 +23,107 @@
 
 /*
  * @test
- * @bug 8032884
+ * @bug 8032884 8072579
  * @summary Globalbindings optionalProperty="primitive" does not work when minOccurs=0
- * @run shell compile-schema.sh
- * @compile -addmods java.xml.bind XjcOptionalPropertyTest.java
- * @run main/othervm XjcOptionalPropertyTest
+ * @library /lib/testlibrary
+ * @modules java.xml.bind
+ * @run testng/othervm XjcOptionalPropertyTest
  */
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import java.util.Arrays;
+import jdk.testlibrary.JDKToolLauncher;
+import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 public class XjcOptionalPropertyTest {
 
-    public static void main(String[] args) throws IOException {
-
-        generated.Foo foo = new generated.Foo();
-        log("foo = " + foo);
+    @Test
+    public void optionalPropertyTest() throws Exception {
+        runXjc();
+        compileXjcGeneratedClasses();
+        URLClassLoader testClassLoader;
+        testClassLoader = URLClassLoader.newInstance(new URL[]{testWorkDirUrl});
+        Class fooClass = testClassLoader.loadClass(CLASS_TO_TEST);
+        Object foo = fooClass.newInstance();
         Method[] methods = foo.getClass().getMethods();
-        log("Found [" + methods.length + "] methods");
+        System.out.println("Found [" + methods.length + "] methods");
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (method.getName().equals("setFoo")) {
-                log("Checking method [" + method.getName() + "]");
+                System.out.println("Checking method [" + method.getName() + "]");
                 Class[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length != 1)
-                    fail("more than 1 parameter");
-                if (!parameterTypes[0].isPrimitive()) {
-                    fail("Found [" + parameterTypes[0].getName() + "], but expected primitive!");
-                }
+                Assert.assertEquals(parameterTypes.length, 1);
+                Assert.assertTrue(parameterTypes[0].isPrimitive());
                 break;
             }
         }
-        log("TEST PASSED.");
-
     }
 
-    private static void fail(String message) {
-        throw new RuntimeException(message);
+    @BeforeTest
+    public void setUp() throws IOException {
+        // Create test directory inside scratch
+        testWorkDir = Paths.get(System.getProperty("user.dir", "."));
+        // Save its URL
+        testWorkDirUrl = testWorkDir.toUri().toURL();
+        // Get test source directory path
+        testSrcDir = Paths.get(System.getProperty("test.src", "."));
+        // Get path of xjc result folder
+        xjcResultDir = testWorkDir.resolve(TEST_PACKAGE);
+        // Copy schema document file to scratch directory
+        Files.copy(testSrcDir.resolve(XSD_FILENAME), testWorkDir.resolve(XSD_FILENAME), REPLACE_EXISTING);
     }
 
-    private static void log(String msg) {
-        System.out.println(msg);
+    // Compile schema file into java classes definitions
+    void runXjc() throws Exception {
+        // Prepare process builder to run schemagen tool and save its output
+        JDKToolLauncher xjcLauncher = JDKToolLauncher.createUsingTestJDK("xjc");
+        xjcLauncher.addToolArg(XSD_FILENAME);
+        System.out.println("Executing xjc command: " + Arrays.asList(xjcLauncher.getCommand()));
+        ProcessBuilder pb = new ProcessBuilder(xjcLauncher.getCommand());
+        // Set xjc work directory with the input java file
+        pb.directory(testWorkDir.toFile());
+        pb.inheritIO();
+        Process p = pb.start();
+        p.waitFor();
+        p.destroy();
     }
 
+    // Compile java classes with javac tool
+    void compileXjcGeneratedClasses() throws Exception {
+        JDKToolLauncher javacLauncher = JDKToolLauncher.createUsingTestJDK("javac");
+        javacLauncher.addToolArg("-addmods");
+        javacLauncher.addToolArg("java.xml.bind");
+        javacLauncher.addToolArg(xjcResultDir.resolve("Foo.java").toString());
+        System.out.println("Compiling xjc generated class: " + Arrays.asList(javacLauncher.getCommand()));
+        ProcessBuilder pb = new ProcessBuilder(javacLauncher.getCommand());
+        pb.inheritIO();
+        pb.directory(testWorkDir.toFile());
+        Process p = pb.start();
+        p.waitFor();
+        p.destroy();
+    }
+
+    // Test schema filename
+    static final String XSD_FILENAME = "optional-property-schema.xsd";
+    // Test package with generated class
+    static final String TEST_PACKAGE = "anamespace";
+    // Name of generated java class
+    static final String CLASS_TO_TEST = TEST_PACKAGE+".Foo";
+    // Test working directory
+    Path testWorkDir;
+    // Test working directory URL
+    URL testWorkDirUrl;
+    // Directory with test src
+    Path testSrcDir;
+    // Directory with java files generated by xjc
+    Path xjcResultDir;
 }

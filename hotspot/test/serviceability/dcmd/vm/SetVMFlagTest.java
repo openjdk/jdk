@@ -31,6 +31,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8054890
  * @summary Test of VM.set_flag diagnostic command
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*

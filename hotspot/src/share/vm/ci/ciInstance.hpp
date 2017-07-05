@@ -36,6 +36,7 @@
 // instance of java.lang.Object.
 class ciInstance : public ciObject {
   CI_PACKAGE_ACCESS
+  friend class ciField;
 
 protected:
   ciInstance(instanceHandle h_i) : ciObject(h_i) {
@@ -49,6 +50,8 @@ protected:
   const char* type_string() { return "ciInstance"; }
 
   void print_impl(outputStream* st);
+
+  ciConstant field_value_impl(BasicType field_btype, int offset);
 
 public:
   // If this object is a java mirror, return the corresponding type.

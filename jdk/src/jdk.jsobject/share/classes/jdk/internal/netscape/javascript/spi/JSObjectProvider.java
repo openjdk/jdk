@@ -29,6 +29,7 @@ import java.applet.Applet;
 import netscape.javascript.JSException;
 import netscape.javascript.JSObject;
 
+@SuppressWarnings("deprecation")
 public interface JSObjectProvider {
     /**
      * Return a JSObject for the window containing the given applet.
