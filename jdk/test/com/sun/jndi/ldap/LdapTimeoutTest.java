@@ -84,6 +84,10 @@ abstract class LdapTest implements Callable {
         throw new RuntimeException("Test failed");
     }
 
+    public void fail(Exception e) {
+        throw new RuntimeException("Test failed", e);
+    }
+
     boolean shutItDown(InitialContext ctx) {
         try {
             if (ctx != null) ctx.close();
@@ -232,7 +236,7 @@ class DeadServerTimeoutSSLTest extends DeadServerTest {
             // SocketTimeoutException
             pass();
         } else {
-            fail();
+            fail(e);
         }
     }
 }
@@ -269,7 +273,8 @@ class ReadServerTimeoutTest extends ReadServerTest {
     }
 
     public void handleNamingException(NamingException e, long start, long end) {
-        if (NANOSECONDS.toMillis(end - start) < 2_900) {
+        System.out.println("ReadServerTimeoutTest: end-start=" + NANOSECONDS.toMillis(end - start));
+        if (NANOSECONDS.toMillis(end - start) < 2_500) {
             fail();
         } else {
             pass();

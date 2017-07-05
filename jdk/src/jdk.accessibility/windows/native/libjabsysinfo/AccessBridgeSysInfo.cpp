@@ -37,7 +37,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDll, DWORD fdwReason, LPVOID lpvReserved) {
 
 // Determine bitness of Win OS
 JNIEXPORT jboolean JNICALL
-Java_com_sun_java_accessibility_AccessBridge_isSysWow(JNIEnv *env, jobject callingObj) {
+Java_com_sun_java_accessibility_internal_AccessBridge_isSysWow(JNIEnv *env, jobject callingObj) {
     BOOL bIsWow64 = FALSE;
     typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 

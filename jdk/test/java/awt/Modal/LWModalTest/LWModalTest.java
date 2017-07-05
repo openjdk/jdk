@@ -40,8 +40,6 @@ import java.lang.reflect.*;
 
 import javax.swing.*;
 
-import sun.awt.*;
-
 import test.java.awt.regtesthelpers.Util;
 
 public class LWModalTest

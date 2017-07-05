@@ -85,16 +85,16 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * Construct a BeanContextSupport instance
      *
      *
-     * @param peer      The peer <tt>BeanContext</tt> we are
+     * @param peer      The peer {@code BeanContext} we are
      *                  supplying an implementation for,
-     *                  or <tt>null</tt>
+     *                  or {@code null}
      *                  if this object is its own peer
      * @param lcle      The current Locale for this BeanContext. If
-     *                  <tt>lcle</tt> is <tt>null</tt>, the default locale
-     *                  is assigned to the <tt>BeanContext</tt> instance.
+     *                  {@code lcle} is {@code null}, the default locale
+     *                  is assigned to the {@code BeanContext} instance.
      * @param dTime     The initial state,
-     *                  <tt>true</tt> if in design mode,
-     *                  <tt>false</tt> if runtime.
+     *                  {@code true} if in design mode,
+     *                  {@code false} if runtime.
      * @param visible   The initial visibility.
      * @see java.util.Locale#getDefault()
      * @see java.util.Locale#setDefault(java.util.Locale)
@@ -112,15 +112,15 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * Create an instance using the specified Locale and design mode.
      *
-     * @param peer      The peer <tt>BeanContext</tt> we
+     * @param peer      The peer {@code BeanContext} we
      *                  are supplying an implementation for,
-     *                  or <tt>null</tt> if this object is its own peer
-     * @param lcle      The current Locale for this <tt>BeanContext</tt>. If
-     *                  <tt>lcle</tt> is <tt>null</tt>, the default locale
-     *                  is assigned to the <tt>BeanContext</tt> instance.
-     * @param dtime     The initial state, <tt>true</tt>
+     *                  or {@code null} if this object is its own peer
+     * @param lcle      The current Locale for this {@code BeanContext}. If
+     *                  {@code lcle} is {@code null}, the default locale
+     *                  is assigned to the {@code BeanContext} instance.
+     * @param dtime     The initial state, {@code true}
      *                  if in design mode,
-     *                  <tt>false</tt> if runtime.
+     *                  {@code false} if runtime.
      * @see java.util.Locale#getDefault()
      * @see java.util.Locale#setDefault(java.util.Locale)
      */
@@ -133,13 +133,13 @@ public class      BeanContextSupport extends BeanContextChildSupport
      *
      * @param peer      The peer BeanContext we are
      *                  supplying an implementation for,
-     *                  or <tt>null</tt> if this object
+     *                  or {@code null} if this object
      *                  is its own peer
      * @param lcle      The current Locale for this
-     *                  <tt>BeanContext</tt>. If
-     *                  <tt>lcle</tt> is <tt>null</tt>,
+     *                  {@code BeanContext}. If
+     *                  {@code lcle} is {@code null},
      *                  the default locale
-     *                  is assigned to the <tt>BeanContext</tt>
+     *                  is assigned to the {@code BeanContext}
      *                  instance.
      * @see java.util.Locale#getDefault()
      * @see java.util.Locale#setDefault(java.util.Locale)
@@ -151,9 +151,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * Create an instance using with a default locale
      *
-     * @param peer      The peer <tt>BeanContext</tt> we are
+     * @param peer      The peer {@code BeanContext} we are
      *                  supplying an implementation for,
-     *                  or <tt>null</tt> if this object
+     *                  or {@code null} if this object
      *                  is its own peer
      */
     public BeanContextSupport(BeanContext peer) {
@@ -169,7 +169,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Gets the instance of <tt>BeanContext</tt> that
+     * Gets the instance of {@code BeanContext} that
      * this object is providing the implementation for.
      * @return the BeanContext instance
      */
@@ -180,7 +180,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * The instantiateChild method is a convenience hook
      * in BeanContext to simplify
      * the task of instantiating a Bean, nested,
-     * into a <tt>BeanContext</tt>.
+     * into a {@code BeanContext}.
      * </p>
      * <p>
      * The semantics of the beanName parameter are defined by java.beans.Beans.instantiate.
@@ -213,8 +213,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Reports whether or not this
-     * <tt>BeanContext</tt> is empty.
-     * A <tt>BeanContext</tt> is considered
+     * {@code BeanContext} is empty.
+     * A {@code BeanContext} is considered
      * empty when it contains zero
      * nested children.
      * @return if there are not children
@@ -227,7 +227,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Determines whether or not the specified object
-     * is currently a child of this <tt>BeanContext</tt>.
+     * is currently a child of this {@code BeanContext}.
      * @param o the Object in question
      * @return if this object is a child
      */
@@ -239,7 +239,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Determines whether or not the specified object
-     * is currently a child of this <tt>BeanContext</tt>.
+     * is currently a child of this {@code BeanContext}.
      * @param o the Object in question
      * @return if this object is a child
      */
@@ -250,9 +250,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Gets all JavaBean or <tt>BeanContext</tt> instances
-     * currently nested in this <tt>BeanContext</tt>.
-     * @return an <tt>Iterator</tt> of the nested children
+     * Gets all JavaBean or {@code BeanContext} instances
+     * currently nested in this {@code BeanContext}.
+     * @return an {@code Iterator} of the nested children
      */
     public Iterator<Object> iterator() {
         synchronized(children) {
@@ -261,7 +261,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Gets all JavaBean or <tt>BeanContext</tt>
+     * Gets all JavaBean or {@code BeanContext}
      * instances currently nested in this BeanContext.
      */
     public Object[] toArray() {
@@ -272,7 +272,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Gets an array containing all children of
-     * this <tt>BeanContext</tt> that match
+     * this {@code BeanContext} that match
      * the types contained in arry.
      * @param arry The array of object
      * types that are of interest.
@@ -362,7 +362,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /************************************************************************/
 
     /**
-     * Adds/nests a child within this <tt>BeanContext</tt>.
+     * Adds/nests a child within this {@code BeanContext}.
      * <p>
      * Invoked as a side effect of java.beans.Beans.instantiate().
      * If the child object is not valid for adding then this method
@@ -371,7 +371,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      *
      *
      * @param targetChild The child objects to nest
-     * within this <tt>BeanContext</tt>
+     * within this {@code BeanContext}
      * @return true if the child was added successfully.
      * @see #validatePendingAdd
      */
@@ -485,12 +485,12 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * internal remove used when removal caused by
-     * unexpected <tt>setBeanContext</tt> or
-     * by <tt>remove()</tt> invocation.
+     * unexpected {@code setBeanContext} or
+     * by {@code remove()} invocation.
      * @param targetChild the JavaBean, BeanContext, or Object to be removed
      * @param callChildSetBC used to indicate that
      * the child should be notified that it is no
-     * longer nested in this <tt>BeanContext</tt>.
+     * longer nested in this {@code BeanContext}.
      * @return whether or not was present before being removed
      */
     protected boolean remove(Object targetChild, boolean callChildSetBC) {
@@ -558,13 +558,13 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Tests to see if all objects in the
-     * specified <tt>Collection</tt> are children of
-     * this <tt>BeanContext</tt>.
-     * @param c the specified <tt>Collection</tt>
+     * specified {@code Collection} are children of
+     * this {@code BeanContext}.
+     * @param c the specified {@code Collection}
      *
-     * @return <tt>true</tt> if all objects
+     * @return {@code true} if all objects
      * in the collection are children of
-     * this <tt>BeanContext</tt>, false if not.
+     * this {@code BeanContext}, false if not.
      */
     @SuppressWarnings("rawtypes")
     public boolean containsAll(Collection c) {
@@ -698,7 +698,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Sets the new design time value for this <tt>BeanContext</tt>.
+     * Sets the new design time value for this {@code BeanContext}.
      * @param dTime the new designTime value
      */
     public synchronized void setDesignTime(boolean dTime) {
@@ -713,15 +713,15 @@ public class      BeanContextSupport extends BeanContextChildSupport
     /**
      * Reports whether or not this object is in
      * currently in design time mode.
-     * @return <tt>true</tt> if in design time mode,
-     * <tt>false</tt> if not
+     * @return {@code true} if in design time mode,
+     * {@code false} if not
      */
     public synchronized boolean isDesignTime() { return designTime; }
 
     /**
      * Sets the locale of this BeanContext.
      * @param newLocale the new locale. This method call will have
-     *        no effect if newLocale is <CODE>null</CODE>.
+     *        no effect if newLocale is {@code null}.
      * @throws PropertyVetoException if the new value is rejected
      */
     public synchronized void setLocale(Locale newLocale) throws PropertyVetoException {
@@ -738,9 +738,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Gets the locale for this <tt>BeanContext</tt>.
+     * Gets the locale for this {@code BeanContext}.
      *
-     * @return the current Locale of the <tt>BeanContext</tt>
+     * @return the current Locale of the {@code BeanContext}
      */
     public synchronized Locale getLocale() { return locale; }
 
@@ -754,7 +754,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * to determine if they are either Containers, Components, or if they implement
      * Visibility and return needsGui() == true.
      * </p>
-     * @return <tt>true</tt> if the implementor needs a GUI
+     * @return {@code true} if the implementor needs a GUI
      */
     public synchronized boolean needsGui() {
         BeanContext bc = getBeanContextPeer();
@@ -823,7 +823,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Used to determine if the <tt>BeanContext</tt>
+     * Used to determine if the {@code BeanContext}
      * child is avoiding using its GUI.
      * @return is this instance avoiding using its GUI?
      * @see Visibility
@@ -833,16 +833,16 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Is this <tt>BeanContext</tt> in the
+     * Is this {@code BeanContext} in the
      * process of being serialized?
-     * @return if this <tt>BeanContext</tt> is
+     * @return if this {@code BeanContext} is
      * currently being serialized
      */
     public boolean isSerializing() { return serializing; }
 
     /**
      * Returns an iterator of all children
-     * of this <tt>BeanContext</tt>.
+     * of this {@code BeanContext}.
      * @return an iterator for all the current BCSChild values
      */
     protected Iterator<BCSChild> bcsChildren() { synchronized(children) { return children.values().iterator();  } }
@@ -895,9 +895,9 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Used by writeObject to serialize a Collection.
-     * @param oos the <tt>ObjectOutputStream</tt>
+     * @param oos the {@code ObjectOutputStream}
      * to use during serialization
-     * @param coll the <tt>Collection</tt> to serialize
+     * @param coll the {@code Collection} to serialize
      * @throws IOException if serialization failed
      */
     protected final void serialize(ObjectOutputStream oos, Collection<?> coll) throws IOException {
@@ -943,8 +943,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /**
      * Used to serialize all children of
-     * this <tt>BeanContext</tt>.
-     * @param oos the <tt>ObjectOutputStream</tt>
+     * this {@code BeanContext}.
+     * @param oos the {@code ObjectOutputStream}
      * to use during serialization
      * @throws IOException if serialization failed
      */
@@ -1375,7 +1375,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
 
     /**
-     * all accesses to the <code> protected HashMap children </code> field
+     * all accesses to the {@code protected HashMap children} field
      * shall be synchronized on that object.
      */
     protected transient HashMap<Object, BCSChild>         children;
@@ -1383,7 +1383,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     private             int             serializable  = 0; // children serializable
 
     /**
-     * all accesses to the <code> protected ArrayList bcmListeners </code> field
+     * all accesses to the {@code protected ArrayList bcmListeners} field
      * shall be synchronized on that object.
      */
     protected transient ArrayList<BeanContextMembershipListener> bcmListeners;
@@ -1396,14 +1396,14 @@ public class      BeanContextSupport extends BeanContextChildSupport
     protected           Locale          locale;
 
     /**
-     * A <tt>boolean</tt> indicating if this
+     * A {@code boolean} indicating if this
      * instance may now render a GUI.
      */
     protected           boolean         okToUseGui;
 
 
     /**
-     * A <tt>boolean</tt> indicating whether or not
+     * A {@code boolean} indicating whether or not
      * this object is currently in design time mode.
      */
     protected           boolean         designTime;

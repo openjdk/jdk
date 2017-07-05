@@ -98,7 +98,7 @@ public class PKCS10Attributes implements DerEncoder {
 
     /**
      * Encode the attributes in DER form to the stream.
-     * Implements the <code>DerEncoder</code> interface.
+     * Implements the {@code DerEncoder} interface.
      *
      * @param out the OutputStream to marshal the contents to.
      * @exception IOException on encoding errors.
@@ -157,8 +157,8 @@ public class PKCS10Attributes implements DerEncoder {
 
     /**
      * Compares this PKCS10Attributes for equality with the specified
-     * object. If the <code>other</code> object is an
-     * <code>instanceof</code> <code>PKCS10Attributes</code>, then
+     * object. If the {@code other} object is an
+     * {@code instanceof PKCS10Attributes}, then
      * all the entries are compared with the entries from this.
      *
      * @param other the object to test for equality with this PKCS10Attributes.
@@ -205,10 +205,10 @@ public class PKCS10Attributes implements DerEncoder {
     }
 
     /**
-     * Returns a string representation of this <tt>PKCS10Attributes</tt> object
+     * Returns a string representation of this {@code PKCS10Attributes} object
      * in the form of a set of entries, enclosed in braces and separated
-     * by the ASCII characters "<tt>,&nbsp;</tt>" (comma and space).
-     * <p>Overrides the <tt>toString</tt> method of <tt>Object</tt>.
+     * by the ASCII characters "<code>,&nbsp;</code>" (comma and space).
+     * <p>Overrides the {@code toString} method of {@code Object}.
      *
      * @return  a string representation of this PKCS10Attributes.
      */

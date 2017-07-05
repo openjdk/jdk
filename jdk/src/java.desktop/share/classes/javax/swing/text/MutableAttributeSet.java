@@ -30,8 +30,8 @@ import java.util.Enumeration;
  * A generic interface for a mutable collection of unique attributes.
  *
  * Implementations will probably want to provide a constructor of the
- * form:<tt>
- * public XXXAttributeSet(ConstAttributeSet source);</tt>
+ * form: <pre>{@code
+ * public XXXAttributeSet(ConstAttributeSet source);}</pre>
  *
  */
 public interface MutableAttributeSet extends AttributeSet {
@@ -55,21 +55,21 @@ public interface MutableAttributeSet extends AttributeSet {
     public void addAttributes(AttributeSet attributes);
 
     /**
-     * Removes an attribute with the given <code>name</code>.
+     * Removes an attribute with the given {@code name}.
      *
      * @param name the attribute name
      */
     public void removeAttribute(Object name);
 
     /**
-     * Removes an attribute set with the given <code>names</code>.
+     * Removes an attribute set with the given {@code names}.
      *
      * @param names the set of names
      */
     public void removeAttributes(Enumeration<?> names);
 
     /**
-     * Removes a set of attributes with the given <code>name</code>.
+     * Removes a set of attributes with the given {@code name}.
      *
      * @param attributes the set of attributes
      */
