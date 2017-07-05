@@ -211,6 +211,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class G1FreeHumongousRegionClosure;
   // Other related classes.
   friend class G1MarkSweep;
+  friend class HeapRegionClaimer;
 
 private:
   // The one and only G1CollectedHeap, so static functions can find it.
@@ -1377,38 +1378,15 @@ public:
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
-  // Divide the heap region sequence into "chunks" of some size (the number
-  // of regions divided by the number of parallel threads times some
-  // overpartition factor, currently 4).  Assumes that this will be called
-  // in parallel by ParallelGCThreads worker threads with distinct worker
-  // ids in the range [0..max(ParallelGCThreads-1, 1)], that all parallel
-  // calls will use the same "claim_value", and that that claim value is
-  // different from the claim_value of any heap region before the start of
-  // the iteration.  Applies "blk->doHeapRegion" to each of the regions, by
-  // attempting to claim the first region in each chunk, and, if
-  // successful, applying the closure to each region in the chunk (and
-  // setting the claim value of the second and subsequent regions of the
-  // chunk.)  For now requires that "doHeapRegion" always returns "false",
-  // i.e., that a closure never attempt to abort a traversal.
-  void heap_region_par_iterate_chunked(HeapRegionClosure* cl,
-                                       uint worker_id,
-                                       uint num_workers,
-                                       jint claim_value) const;
-
-  // It resets all the region claim values to the default.
-  void reset_heap_region_claim_values();
-
-  // Resets the claim values of regions in the current
-  // collection set to the default.
-  void reset_cset_heap_region_claim_values();
-
-#ifdef ASSERT
-  bool check_heap_region_claim_values(jint claim_value);
-
-  // Same as the routine above but only checks regions in the
-  // current collection set.
-  bool check_cset_heap_region_claim_values(jint claim_value);
-#endif // ASSERT
+  // Iterate over the heap regions in parallel. Assumes that this will be called
+  // in parallel by ParallelGCThreads worker threads with distinct worker ids
+  // in the range [0..max(ParallelGCThreads-1, 1)]. Applies "blk->doHeapRegion"
+  // to each of the regions, by attempting to claim the region using the
+  // HeapRegionClaimer and, if successful, applying the closure to the claimed
+  // region.
+  void heap_region_par_iterate(HeapRegionClosure* cl,
+                               uint worker_id,
+                               HeapRegionClaimer* hrclaimer) const;
 
   // Clear the cached cset start regions and (more importantly)
   // the time stamps. Called when we reset the GC time stamp.
