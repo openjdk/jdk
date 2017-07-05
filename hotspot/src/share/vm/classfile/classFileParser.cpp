@@ -39,6 +39,7 @@
 #include "memory/gcLocker.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/referenceType.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.hpp"

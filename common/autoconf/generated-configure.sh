@@ -3782,7 +3782,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1370949244
+DATE_WHEN_GENERATED=1371547824
 
 ###############################################################################
 #
@@ -7471,7 +7471,11 @@ if test "${with_devkit+set}" = set; then :
       as_fn_error $? "Cannot specify both --with-devkit and --with-tools-dir at the same time" "$LINENO" 5
     fi
     TOOLS_DIR=$with_devkit/bin
-    SYS_ROOT=$with_devkit/$host_alias/libc
+    if test -d "$with_devkit/$host_alias/libc"; then
+      SYS_ROOT=$with_devkit/$host_alias/libc
+    elif test -d "$with_devkit/$host/sys-root"; then
+      SYS_ROOT=$with_devkit/$host/sys-root
+    fi
 
 fi
 
@@ -29144,7 +29148,6 @@ CXX_FLAG_DEPS="-MMD -MF"
 
 case $COMPILER_TYPE in
   CC )
-    D_FLAG="-g"
     case $COMPILER_NAME in
       gcc )
       	case $OPENJDK_TARGET_OS in
@@ -29159,17 +29162,17 @@ case $COMPILER_TYPE in
 	    C_O_FLAG_HI="-O3"
 	    C_O_FLAG_NORM="-O2"
 	    C_O_FLAG_NONE="-O0"
-	    CFLAGS_DEBUG_SYMBOLS="-g"
-	    CXXFLAGS_DEBUG_SYMBOLS="-g"
-	    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
-	       CFLAGS_DEBUG_SYMBOLS="-g1"
-	       CXXFLAGS_DEBUG_SYMBOLS="-g1"
-	    fi
 	    ;;
 	esac
         CXX_O_FLAG_HI="$C_O_FLAG_HI"
         CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
         CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
+        CFLAGS_DEBUG_SYMBOLS="-g"
+        CXXFLAGS_DEBUG_SYMBOLS="-g"
+        if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
+            CFLAGS_DEBUG_SYMBOLS="-g1"
+            CXXFLAGS_DEBUG_SYMBOLS="-g1"
+        fi
         ;;
       ossc )
         #
@@ -29250,7 +29253,6 @@ case $COMPILER_TYPE in
     esac
     ;;
   CL )
-    D_FLAG=
     C_O_FLAG_HIGHEST="-O2"
     C_O_FLAG_HI="-O1"
     C_O_FLAG_NORM="-O1"
@@ -29388,6 +29390,28 @@ case $COMPILER_NAME in
 esac
 
 ###############################################################################
+
+# Adjust flags according to debug level.
+case $DEBUG_LEVEL in
+      fastdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NORM"
+	      C_O_FLAG_NORM="$C_O_FLAG_NORM"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NORM"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NORM"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+      slowdebug )
+              CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
+              CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
+	      C_O_FLAG_HI="$C_O_FLAG_NONE"
+	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
+	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
+	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
+              JAVAC_FLAGS="$JAVAC_FLAGS -g"
+              ;;
+esac
 
 CCXXFLAGS_JDK="$CCXXFLAGS_JDK $ADD_LP64"
 
@@ -29531,23 +29555,6 @@ else
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
     fi
 fi
-
-# Adjust flags according to debug level.
-case $DEBUG_LEVEL in
-      fastdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-      slowdebug )
-              CFLAGS="$CFLAGS $D_FLAG"
-	      C_O_FLAG_HI="$C_O_FLAG_NONE"
-	      C_O_FLAG_NORM="$C_O_FLAG_NONE"
-	      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
-	      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
-              JAVAC_FLAGS="$JAVAC_FLAGS -g"
-              ;;
-esac
-
 
 
 
@@ -29907,11 +29914,17 @@ if test "x$SYS_ROOT" != "x/"; then
   if test "x$x_includes" = xNONE; then
     if test -f "$SYS_ROOT/usr/X11R6/include/X11/Xlib.h"; then
       x_includes="$SYS_ROOT/usr/X11R6/include"
+    elif test -f "$SYS_ROOT/usr/include/X11/Xlib.h"; then
+      x_includes="$SYS_ROOT/usr/include"
     fi
   fi
   if test "x$x_libraries" = xNONE; then
     if test -f "$SYS_ROOT/usr/X11R6/lib/libX11.so"; then
       x_libraries="$SYS_ROOT/usr/X11R6/lib"
+    elif test "$SYS_ROOT/usr/lib64/libX11.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      x_libraries="$SYS_ROOT/usr/lib64"
+    elif test -f "$SYS_ROOT/usr/lib/libX11.so"; then
+      x_libraries="$SYS_ROOT/usr/lib"
     fi
   fi
 fi
@@ -30642,8 +30655,7 @@ fi
 if test "x$OPENJDK_TARGET_OS" = xlinux; then
     if test -d "$SYS_ROOT/usr/X11R6"; then
         OPENWIN_HOME="$SYS_ROOT/usr/X11R6"
-    fi
-    if test -d "$SYS_ROOT/usr/include/X11"; then
+    elif test -d "$SYS_ROOT/usr/include/X11"; then
         OPENWIN_HOME="$SYS_ROOT/usr"
     fi
 fi
@@ -31536,12 +31548,12 @@ fi
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype in some standard locations" >&5
 $as_echo_n "checking for freetype in some standard locations... " >&6; }
 
-	    if test -s /usr/X11/include/ft2build.h && test -d /usr/X11/include/freetype2/freetype; then
-	        DEFAULT_FREETYPE_CFLAGS="-I/usr/X11/include/freetype2 -I/usr/X11/include"
-	        DEFAULT_FREETYPE_LIBS="-L/usr/X11/lib -lfreetype"
+	    if test -s $SYS_ROOT/usr/X11/include/ft2build.h && test -d $SYS_ROOT/usr/X11/include/freetype2/freetype; then
+	        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/X11/include/freetype2 -I$SYS_ROOT/usr/X11/include"
+	        DEFAULT_FREETYPE_LIBS="-L$SYS_ROOT/usr/X11/lib -lfreetype"
 	    fi
-	    if test -s /usr/include/ft2build.h && test -d /usr/include/freetype2/freetype; then
-	        DEFAULT_FREETYPE_CFLAGS="-I/usr/include/freetype2"
+	    if test -s $SYS_ROOT/usr/include/ft2build.h && test -d $SYS_ROOT/usr/include/freetype2/freetype; then
+	        DEFAULT_FREETYPE_CFLAGS="-I$SYS_ROOT/usr/include/freetype2"
 	        DEFAULT_FREETYPE_LIBS="-lfreetype"
 	    fi
 
@@ -33217,6 +33229,10 @@ else
 fi
 
     if test "x$ENABLE_CCACHE" = xyes; then
+        OLD_PATH="$PATH"
+        if test "x$TOOLS_DIR" != x; then
+          PATH=$TOOLS_DIR:$PATH
+        fi
         # Extract the first word of "ccache", so it can be a program name with args.
 set dummy ccache; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -33257,6 +33273,7 @@ $as_echo "no" >&6; }
 fi
 
 
+        PATH="$OLD_PATH"
     else
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ccache" >&5
 $as_echo_n "checking for ccache... " >&6; }

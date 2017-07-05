@@ -204,47 +204,6 @@ public:
 
 ///////////////////////////////////////////////////////////////
 //
-// class VM_ChangeBreakpoints
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: none directly.
-// Note: A Helper class.
-//
-// VM_ChangeBreakpoints implements a VM_Operation for ALL modifications to the JvmtiBreakpoints class.
-//
-
-class VM_ChangeBreakpoints : public VM_Operation {
-private:
-  JvmtiBreakpoints* _breakpoints;
-  int               _operation;
-  JvmtiBreakpoint*  _bp;
-
-public:
-  enum { SET_BREAKPOINT=0, CLEAR_BREAKPOINT=1, CLEAR_ALL_BREAKPOINT=2 };
-
-  VM_ChangeBreakpoints(JvmtiBreakpoints* breakpoints, int operation) {
-    _breakpoints = breakpoints;
-    _bp = NULL;
-    _operation = operation;
-    assert(breakpoints != NULL, "breakpoints != NULL");
-    assert(operation == CLEAR_ALL_BREAKPOINT, "unknown breakpoint operation");
-  }
-  VM_ChangeBreakpoints(JvmtiBreakpoints* breakpoints, int operation, JvmtiBreakpoint *bp) {
-    _breakpoints = breakpoints;
-    _bp = bp;
-    _operation = operation;
-    assert(breakpoints != NULL, "breakpoints != NULL");
-    assert(bp != NULL, "bp != NULL");
-    assert(operation == SET_BREAKPOINT || operation == CLEAR_BREAKPOINT , "unknown breakpoint operation");
-  }
-
-  VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
-  void doit();
-  void oops_do(OopClosure* f);
-};
-
-
-///////////////////////////////////////////////////////////////
-//
 // class JvmtiBreakpoints
 // Used by              : JvmtiCurrentBreakpoints
 // Used by JVMTI methods: none directly
@@ -271,7 +230,6 @@ private:
   friend class VM_ChangeBreakpoints;
   void set_at_safepoint(JvmtiBreakpoint& bp);
   void clear_at_safepoint(JvmtiBreakpoint& bp);
-  void clearall_at_safepoint();
 
   static void do_element(GrowableElement *e);
 
@@ -286,7 +244,6 @@ public:
   int  set(JvmtiBreakpoint& bp);
   int  clear(JvmtiBreakpoint& bp);
   void clearall_in_class_at_safepoint(Klass* klass);
-  void clearall();
   void gc_epilogue();
 };
 
@@ -343,6 +300,40 @@ bool JvmtiCurrentBreakpoints::is_breakpoint(address bcp) {
     }
     return false;
 }
+
+
+///////////////////////////////////////////////////////////////
+//
+// class VM_ChangeBreakpoints
+// Used by              : JvmtiBreakpoints
+// Used by JVMTI methods: none directly.
+// Note: A Helper class.
+//
+// VM_ChangeBreakpoints implements a VM_Operation for ALL modifications to the JvmtiBreakpoints class.
+//
+
+class VM_ChangeBreakpoints : public VM_Operation {
+private:
+  JvmtiBreakpoints* _breakpoints;
+  int               _operation;
+  JvmtiBreakpoint*  _bp;
+
+public:
+  enum { SET_BREAKPOINT=0, CLEAR_BREAKPOINT=1 };
+
+  VM_ChangeBreakpoints(int operation, JvmtiBreakpoint *bp) {
+    JvmtiBreakpoints& current_bps = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
+    _breakpoints = &current_bps;
+    _bp = bp;
+    _operation = operation;
+    assert(bp != NULL, "bp != NULL");
+  }
+
+  VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
+  void doit();
+  void oops_do(OopClosure* f);
+};
+
 
 ///////////////////////////////////////////////////////////////
 // The get/set local operations must only be done by the VM thread

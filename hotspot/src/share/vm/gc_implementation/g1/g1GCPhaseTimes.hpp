@@ -38,7 +38,7 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   NOT_PRODUCT(static const T _uninitialized;)
 
   // We are caching the sum and average to only have to calculate them once.
-  // This is not done in an MT-safe way. It is intetened to allow single
+  // This is not done in an MT-safe way. It is intended to allow single
   // threaded code to call sum() and average() multiple times in any order
   // without having to worry about the cost.
   bool   _has_new_data;

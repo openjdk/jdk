@@ -162,7 +162,12 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
 	      		      [disable using ccache to speed up recompilations @<:@enabled@:>@])],
               [ENABLE_CCACHE=${enable_ccache}], [ENABLE_CCACHE=yes])
     if test "x$ENABLE_CCACHE" = xyes; then
+        OLD_PATH="$PATH"
+        if test "x$TOOLS_DIR" != x; then
+          PATH=$TOOLS_DIR:$PATH
+        fi
         AC_PATH_PROG(CCACHE, ccache)
+        PATH="$OLD_PATH"
     else
         AC_MSG_CHECKING([for ccache])
         AC_MSG_RESULT([explicitly disabled])    
