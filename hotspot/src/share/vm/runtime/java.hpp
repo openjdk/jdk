@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ extern void vm_abort(bool dump_core=true);
 extern void notify_vm_shutdown();
 
 // VM exit if error occurs during initialization of VM
+extern void vm_exit_during_initialization();
 extern void vm_exit_during_initialization(Handle exception);
 extern void vm_exit_during_initialization(Symbol* exception_name, const char* message);
 extern void vm_exit_during_initialization(const char* error, const char* message = NULL);

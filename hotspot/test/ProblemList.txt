@@ -64,21 +64,20 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
-runtime/SharedArchiveFile/BootAppendTests.java 8150683 generic-all
+runtime/SharedArchiveFile/BootAppendTests.java 8179103 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################
 
 # :hotspot_serviceability
 
-serviceability/jdwp/AllModulesCommandTest.java 8168478 generic-all
+serviceability/jdwp/AllModulesCommandTest.java 8170541 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
+serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook/MAAClassFileLoadHook.java 8173936 generic-all
 
 #############################################################################
 
 # :hotspot_misc
-
-testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
 
 #############################################################################
 

@@ -140,6 +140,8 @@
  * provide source boundary and completeness analysis to address cases like
  * those.  <code>SourceCodeAnalysis</code> also provides suggested completions
  * of input, as might be used in tab-completion.
+ *
+ * @since 9
  */
 
 

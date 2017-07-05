@@ -36,7 +36,7 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 #
 # jshell
 
-jdk/jshell/UserJdiUserRemoteTest.java                                           8173204    linux-all
+jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all   
 
 ###########################################################################
