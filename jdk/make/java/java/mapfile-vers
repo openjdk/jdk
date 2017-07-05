@@ -90,7 +90,6 @@ SUNWprivate_1.1 {
 		Java_java_io_FileSystem_getFileSystem;
 		Java_java_io_ObjectInputStream_bytesToDoubles;
 		Java_java_io_ObjectInputStream_bytesToFloats;
-		Java_java_io_ObjectInputStream_latestUserDefinedLoader;
 		Java_java_io_ObjectOutputStream_doublesToBytes;
 		Java_java_io_ObjectOutputStream_floatsToBytes;
 		Java_java_io_ObjectStreamClass_hasStaticInitializer;
@@ -275,6 +274,7 @@ SUNWprivate_1.1 {
                 Java_sun_misc_Version_getJvmVersionInfo;
                 Java_sun_misc_Version_getJvmSpecialVersion;
                 Java_sun_misc_VM_getThreadStateValues;
+		Java_sun_misc_VM_latestUserDefinedLoader;
                 Java_sun_misc_VM_initialize;
 		Java_sun_misc_VMSupport_initAgentProperties;
 

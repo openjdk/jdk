@@ -93,11 +93,17 @@ public:
   }
 };
 
-// Concurrent GC stop-the-world operations such as initial and final mark;
+// Concurrent GC stop-the-world operations such as remark and cleanup;
 // consider sharing these with CMS's counterparts.
 class VM_CGC_Operation: public VM_Operation {
   VoidClosure* _cl;
   const char* _printGCMessage;
+
+protected:
+  // java.lang.ref.Reference support
+  void acquire_pending_list_lock();
+  void release_and_notify_pending_list_lock();
+
 public:
   VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg)
     : _cl(cl), _printGCMessage(printGCMsg) { }

@@ -51,12 +51,40 @@ FPTR_SCardBeginTransaction scardBeginTransaction;
 FPTR_SCardEndTransaction scardEndTransaction;
 FPTR_SCardControl scardControl;
 
+/*
+ * Throws a Java Exception by name
+ */
+void throwByName(JNIEnv *env, const char *name, const char *msg)
+{
+    jclass cls = (*env)->FindClass(env, name);
+
+    if (cls != 0) /* Otherwise an exception has already been thrown */
+        (*env)->ThrowNew(env, cls, msg);
+}
+
+/*
+ * Throws java.lang.NullPointerException
+ */
+void throwNullPointerException(JNIEnv *env, const char *msg)
+{
+    throwByName(env, "java/lang/NullPointerException", msg);
+}
+
+/*
+ * Throws java.io.IOException
+ */
+void throwIOException(JNIEnv *env, const char *msg)
+{
+    throwByName(env, "java/io/IOException", msg);
+}
+
+
 void *findFunction(JNIEnv *env, void *hModule, char *functionName) {
     void *fAddress = dlsym(hModule, functionName);
     if (fAddress == NULL) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
-        JNU_ThrowNullPointerException(env, errorMessage);
+        throwNullPointerException(env, errorMessage);
         return NULL;
     }
     return fAddress;
@@ -69,7 +97,7 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PlatformPCSC_initialize
     (*env)->ReleaseStringUTFChars(env, jLibName, libName);
 
     if (hModule == NULL) {
-        JNU_ThrowIOException(env, dlerror());
+        throwIOException(env, dlerror());
         return;
     }
     scardEstablishContext = (FPTR_SCardEstablishContext)findFunction(env, hModule, "SCardEstablishContext");

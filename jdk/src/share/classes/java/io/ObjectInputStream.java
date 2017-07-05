@@ -2025,8 +2025,9 @@ public class ObjectInputStream
      * This method should not be removed or its signature changed without
      * corresponding modifications to the above class.
      */
-    // REMIND: change name to something more accurate?
-    private static native ClassLoader latestUserDefinedLoader();
+    private static ClassLoader latestUserDefinedLoader() {
+        return sun.misc.VM.latestUserDefinedLoader();
+    }
 
     /**
      * Default GetField implementation.

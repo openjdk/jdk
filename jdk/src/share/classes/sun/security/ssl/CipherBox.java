@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,9 +305,11 @@ final class CipherBox {
                     byte[] buf = null;
                     int limit = bb.limit();
                     if (bb.hasArray()) {
+                        int arrayOffset = bb.arrayOffset();
                         buf = bb.array();
-                        System.arraycopy(buf, pos,
-                                buf, pos + prefix.length, limit - pos);
+                        System.arraycopy(buf, arrayOffset + pos,
+                            buf, arrayOffset + pos + prefix.length,
+                            limit - pos);
                         bb.limit(limit + prefix.length);
                     } else {
                         buf = new byte[limit - pos];
@@ -491,9 +493,10 @@ final class CipherBox {
                     byte[] buf = null;
                     int limit = bb.limit();
                     if (bb.hasArray()) {
+                        int arrayOffset = bb.arrayOffset();
                         buf = bb.array();
-                        System.arraycopy(buf, pos + blockSize,
-                                         buf, pos, limit - pos - blockSize);
+                        System.arraycopy(buf, arrayOffset + pos + blockSize,
+                            buf, arrayOffset + pos, limit - pos - blockSize);
                         bb.limit(limit - blockSize);
                     } else {
                         buf = new byte[limit - pos - blockSize];
