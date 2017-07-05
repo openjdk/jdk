@@ -65,7 +65,7 @@ bool        Disassembler::_tried_to_load_library = false;
 Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = NULL;
 Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
-static const char hsdis_library_name[] = "hsdis-"HOTSPOT_LIB_ARCH;
+static const char hsdis_library_name[] = "hsdis-" HOTSPOT_LIB_ARCH;
 static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
 static const char decode_instructions_name[] = "decode_instructions";
 static bool use_new_version = true;

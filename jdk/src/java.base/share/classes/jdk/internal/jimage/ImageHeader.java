@@ -25,67 +25,76 @@
 
 package jdk.internal.jimage;
 
-import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 public final class ImageHeader {
     public static final int MAGIC = 0xCAFEDADA;
     public static final int BADMAGIC = 0xDADAFECA;
-    public static final short MAJOR_VERSION = 0;
-    public static final short MINOR_VERSION = 1;
+    public static final int MAJOR_VERSION = 1;
+    public static final int MINOR_VERSION = 0;
 
     private final int magic;
-    private final short majorVersion;
-    private final short minorVersion;
-    private final int locationCount;
+    private final int majorVersion;
+    private final int minorVersion;
+    private final int flags;
+    private final int resourceCount;
+    private final int tableLength;
     private final int locationsSize;
     private final int stringsSize;
 
-    ImageHeader(int locationCount, int locationsSize, int stringsSize) {
-        this(MAGIC, MAJOR_VERSION, MINOR_VERSION, locationCount, locationsSize, stringsSize);
+    public ImageHeader(int resourceCount, int tableCount,
+            int locationsSize, int stringsSize) {
+        this(MAGIC, MAJOR_VERSION, MINOR_VERSION, 0, resourceCount,
+                tableCount, locationsSize, stringsSize);
     }
 
-    ImageHeader(int magic, short majorVersion, short minorVersion, int locationCount,
-                int locationsSize, int stringsSize)
+    public ImageHeader(int magic, int majorVersion, int minorVersion,
+                int flags, int resourceCount,
+                int tableLength, int locationsSize, int stringsSize)
     {
         this.magic = magic;
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
-        this.locationCount = locationCount;
+        this.flags = flags;
+        this.resourceCount = resourceCount;
+        this.tableLength = tableLength;
         this.locationsSize = locationsSize;
         this.stringsSize = stringsSize;
     }
 
-    static int getHeaderSize() {
-       return 4 +
-              2 + 2 +
-              4 +
-              4 +
-              4;
+    public static int getHeaderSize() {
+       return 7 * 4;
     }
 
-    static ImageHeader readFrom(ByteOrder byteOrder, IntBuffer buffer) {
+    static ImageHeader readFrom(IntBuffer buffer) {
         int magic = buffer.get(0);
         int version = buffer.get(1);
-        short majorVersion = (short)(byteOrder == ByteOrder.BIG_ENDIAN ?
-            version >>> 16 : (version & 0xFFFF));
-        short minorVersion = (short)(byteOrder == ByteOrder.BIG_ENDIAN ?
-            (version & 0xFFFF) : version >>> 16);
-        int locationCount = buffer.get(2);
-        int locationsSize = buffer.get(3);
-        int stringsSize = buffer.get(4);
+        int majorVersion = version >>> 16;
+        int minorVersion = version & 0xFFFF;
+        int flags = buffer.get(2);
+        int resourceCount = buffer.get(3);
+        int tableLength = buffer.get(4);
+        int locationsSize = buffer.get(5);
+        int stringsSize = buffer.get(6);
 
-        return new ImageHeader(magic, majorVersion, minorVersion, locationCount,
-                               locationsSize, stringsSize);
+        return new ImageHeader(magic, majorVersion, minorVersion, flags,
+            resourceCount, tableLength, locationsSize, stringsSize);
     }
 
     void writeTo(ImageStream stream) {
-        stream.putInt(magic);
-        stream.putShort(majorVersion);
-        stream.putShort(minorVersion);
-        stream.putInt(locationCount);
-        stream.putInt(locationsSize);
-        stream.putInt(stringsSize);
+        stream.ensure(getHeaderSize());
+        writeTo(stream.getBuffer());
+    }
+
+    public void writeTo(ByteBuffer buffer) {
+        buffer.putInt(magic);
+        buffer.putInt(majorVersion << 16 | minorVersion);
+        buffer.putInt(flags);
+        buffer.putInt(resourceCount);
+        buffer.putInt(tableLength);
+        buffer.putInt(locationsSize);
+        buffer.putInt(stringsSize);
     }
 
     public int getMagic() {
@@ -100,16 +109,24 @@ public final class ImageHeader {
         return minorVersion;
     }
 
-    public int getLocationCount() {
-        return locationCount;
+    public int getFlags() {
+        return flags;
+    }
+
+    public int getResourceCount() {
+        return resourceCount;
+    }
+
+    public int getTableLength() {
+        return tableLength;
     }
 
     public int getRedirectSize() {
-        return locationCount* 4;
+        return tableLength * 4;
     }
 
     public int getOffsetsSize() {
-        return locationCount* 4;
+        return tableLength * 4;
     }
 
     public int getLocationsSize() {

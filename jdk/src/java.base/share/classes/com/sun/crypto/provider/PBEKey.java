@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Locale;
@@ -108,7 +109,7 @@ final class PBEKey implements SecretKey {
             return false;
 
         byte[] thatEncoded = that.getEncoded();
-        boolean ret = java.util.Arrays.equals(this.key, thatEncoded);
+        boolean ret = MessageDigest.isEqual(this.key, thatEncoded);
         java.util.Arrays.fill(thatEncoded, (byte)0x00);
         return ret;
     }

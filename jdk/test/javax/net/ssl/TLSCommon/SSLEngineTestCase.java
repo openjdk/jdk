@@ -749,6 +749,8 @@ abstract public class SSLEngineTestCase {
      */
     public static SSLContext getContext() {
         try {
+            java.security.Security.setProperty("jdk.tls.disabledAlgorithms", "");
+            java.security.Security.setProperty("jdk.certpath.disabledAlgorithms", "");
             KeyStore ks = KeyStore.getInstance("JKS");
             KeyStore ts = KeyStore.getInstance("JKS");
             char[] passphrase = PASSWD.toCharArray();

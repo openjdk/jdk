@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import sun.awt.AppContext;
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 public class CreatedFontTracker {
 
@@ -117,17 +117,13 @@ public class CreatedFontTracker {
             if (t == null) {
                 // Add a shutdown hook to remove the temp file.
                 AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    if (System.getSecurityManager() == null) {
-                        /* The thread must be a member of a thread group
-                         * which will not get GCed before VM exit.
-                         * Make its parent the top-level thread group.
-                         */
-                        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                        t = new Thread(rootTG, TempFileDeletionHook::runHooks);
-                    } else {
-                        /* InnocuousThread is a member of a correct TG by default */
-                        t = new InnocuousThread(TempFileDeletionHook::runHooks);
-                    }
+                    /* The thread must be a member of a thread group
+                     * which will not get GCed before VM exit.
+                     * Make its parent the top-level thread group.
+                     */
+                    ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                    t = new ManagedLocalsThread(rootTG,
+                                                TempFileDeletionHook::runHooks);
                     /* Set context class loader to null in order to avoid
                      * keeping a strong reference to an application classloader.
                      */

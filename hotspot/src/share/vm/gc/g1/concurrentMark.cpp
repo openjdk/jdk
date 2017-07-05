@@ -307,7 +307,7 @@ void CMMarkStack::expand() {
     if (PrintGCDetails && Verbose) {
       // Failed to double capacity, continue;
       gclog_or_tty->print(" (benign) Failed to expand marking stack capacity from "
-                          SIZE_FORMAT"K to " SIZE_FORMAT"K",
+                          SIZE_FORMAT "K to " SIZE_FORMAT "K",
                           _capacity / K, new_capacity / K);
     }
   }
@@ -555,7 +555,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _verbose_level = verbose_level;
 
   if (verbose_low()) {
-    gclog_or_tty->print_cr("[global] init, heap start = "PTR_FORMAT", "
+    gclog_or_tty->print_cr("[global] init, heap start = " PTR_FORMAT ", "
                            "heap end = " PTR_FORMAT, p2i(_heap_start), p2i(_heap_end));
   }
 
@@ -802,7 +802,7 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
     assert(out_of_regions(),
-           err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
+           err_msg("only way to get here: _finger: " PTR_FORMAT ", _heap_end: " PTR_FORMAT,
                    p2i(_finger), p2i(_heap_end)));
   }
 }
@@ -1424,7 +1424,7 @@ public:
 
     assert(start <= hr->end() && start <= ntams && ntams <= hr->end(),
            err_msg("Preconditions not met - "
-                   "start: "PTR_FORMAT", ntams: "PTR_FORMAT", end: "PTR_FORMAT,
+                   "start: " PTR_FORMAT ", ntams: " PTR_FORMAT ", end: " PTR_FORMAT,
                    p2i(start), p2i(ntams), p2i(hr->end())));
 
     // Find the first marked object at or after "start".
@@ -1725,10 +1725,10 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
       }
 
       assert(end_idx <= _card_bm->size(),
-             err_msg("oob: end_idx=  "SIZE_FORMAT", bitmap size= "SIZE_FORMAT,
+             err_msg("oob: end_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
                      end_idx, _card_bm->size()));
       assert(start_idx < _card_bm->size(),
-             err_msg("oob: start_idx=  "SIZE_FORMAT", bitmap size= "SIZE_FORMAT,
+             err_msg("oob: start_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
                      start_idx, _card_bm->size()));
 
       _cm->set_card_bitmap_range(_card_bm, start_idx, end_idx, true /* is_par */);
@@ -2133,7 +2133,7 @@ class G1CMKeepAliveAndDrainClosure: public OopClosure {
       oop obj = oopDesc::load_decode_heap_oop(p);
       if (_cm->verbose_high()) {
         gclog_or_tty->print_cr("\t[%u] we're looking at location "
-                               "*"PTR_FORMAT" = "PTR_FORMAT,
+                               "*" PTR_FORMAT " = " PTR_FORMAT,
                                _task->worker_id(), p2i(p), p2i((void*) obj));
       }
 
@@ -2660,9 +2660,9 @@ ConcurrentMark::claim_region(uint worker_id) {
       HeapWord*   limit         = curr_region->next_top_at_mark_start();
 
       if (verbose_low()) {
-        gclog_or_tty->print_cr("[%u] curr_region = "PTR_FORMAT" "
-                               "["PTR_FORMAT", "PTR_FORMAT"), "
-                               "limit = "PTR_FORMAT,
+        gclog_or_tty->print_cr("[%u] curr_region = " PTR_FORMAT " "
+                               "[" PTR_FORMAT ", " PTR_FORMAT "), "
+                               "limit = " PTR_FORMAT,
                                worker_id, p2i(curr_region), p2i(bottom), p2i(end), p2i(limit));
       }
 
@@ -2677,7 +2677,7 @@ ConcurrentMark::claim_region(uint worker_id) {
 
       if (limit > bottom) {
         if (verbose_low()) {
-          gclog_or_tty->print_cr("[%u] region "PTR_FORMAT" is not empty, "
+          gclog_or_tty->print_cr("[%u] region " PTR_FORMAT " is not empty, "
                                  "returning it ", worker_id, p2i(curr_region));
         }
         return curr_region;
@@ -2685,7 +2685,7 @@ ConcurrentMark::claim_region(uint worker_id) {
         assert(limit == bottom,
                "the region limit should be at bottom");
         if (verbose_low()) {
-          gclog_or_tty->print_cr("[%u] region "PTR_FORMAT" is empty, "
+          gclog_or_tty->print_cr("[%u] region " PTR_FORMAT " is empty, "
                                  "returning NULL", worker_id, p2i(curr_region));
         }
         // we return NULL and the caller should try calling
@@ -2697,13 +2697,13 @@ ConcurrentMark::claim_region(uint worker_id) {
       if (verbose_low()) {
         if (curr_region == NULL) {
           gclog_or_tty->print_cr("[%u] found uncommitted region, moving finger, "
-                                 "global finger = "PTR_FORMAT", "
-                                 "our finger = "PTR_FORMAT,
+                                 "global finger = " PTR_FORMAT ", "
+                                 "our finger = " PTR_FORMAT,
                                  worker_id, p2i(_finger), p2i(finger));
         } else {
           gclog_or_tty->print_cr("[%u] somebody else moved the finger, "
-                                 "global finger = "PTR_FORMAT", "
-                                 "our finger = "PTR_FORMAT,
+                                 "global finger = " PTR_FORMAT ", "
+                                 "our finger = " PTR_FORMAT,
                                  worker_id, p2i(_finger), p2i(finger));
         }
       }
@@ -2739,7 +2739,7 @@ private:
 
   void do_object_work(oop obj) {
     guarantee(!_g1h->obj_in_cs(obj),
-              err_msg("obj: "PTR_FORMAT" in CSet, phase: %s, info: %d",
+              err_msg("obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
                       p2i((void*) obj), phase_str(), _info));
   }
 
@@ -2800,7 +2800,7 @@ void ConcurrentMark::verify_no_cset_oops() {
     // here.
     HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
     guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
-              err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
+              err_msg("global finger: " PTR_FORMAT " region: " HR_FORMAT,
                       p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
   }
 
@@ -2814,7 +2814,7 @@ void ConcurrentMark::verify_no_cset_oops() {
       HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
       guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
                 !task_hr->in_collection_set(),
-                err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
+                err_msg("task finger: " PTR_FORMAT " region: " HR_FORMAT,
                         p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
     }
   }
@@ -2856,8 +2856,8 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
 
     assert(start <= limit && limit <= hr->top() && hr->top() <= hr->end(),
            err_msg("Preconditions not met - "
-                   "start: "PTR_FORMAT", limit: "PTR_FORMAT", "
-                   "top: "PTR_FORMAT", end: "PTR_FORMAT,
+                   "start: " PTR_FORMAT ", limit: " PTR_FORMAT ", "
+                   "top: " PTR_FORMAT ", end: " PTR_FORMAT,
                    p2i(start), p2i(limit), p2i(hr->top()), p2i(hr->end())));
 
     assert(hr->next_marked_bytes() == 0, "Precondition");
@@ -3118,7 +3118,7 @@ bool ConcurrentMark::do_yield_check(uint worker_id) {
 #ifndef PRODUCT
 // for debugging purposes
 void ConcurrentMark::print_finger() {
-  gclog_or_tty->print_cr("heap ["PTR_FORMAT", "PTR_FORMAT"), global finger = "PTR_FORMAT,
+  gclog_or_tty->print_cr("heap [" PTR_FORMAT ", " PTR_FORMAT "), global finger = " PTR_FORMAT,
                          p2i(_heap_start), p2i(_heap_end), p2i(_finger));
   for (uint i = 0; i < _max_worker_id; ++i) {
     gclog_or_tty->print("   %u: " PTR_FORMAT, i, p2i(_tasks[i]->finger()));
@@ -3203,7 +3203,7 @@ void CMTask::setup_for_region(HeapRegion* hr) {
         "claim_region() should have filtered out continues humongous regions");
 
   if (_cm->verbose_low()) {
-    gclog_or_tty->print_cr("[%u] setting up for region "PTR_FORMAT,
+    gclog_or_tty->print_cr("[%u] setting up for region " PTR_FORMAT,
                            _worker_id, p2i(hr));
   }
 
@@ -3220,7 +3220,7 @@ void CMTask::update_region_limit() {
   if (limit == bottom) {
     if (_cm->verbose_low()) {
       gclog_or_tty->print_cr("[%u] found an empty region "
-                             "["PTR_FORMAT", "PTR_FORMAT")",
+                             "[" PTR_FORMAT ", " PTR_FORMAT ")",
                              _worker_id, p2i(bottom), p2i(limit));
     }
     // The region was collected underneath our feet.
@@ -3252,7 +3252,7 @@ void CMTask::update_region_limit() {
 void CMTask::giveup_current_region() {
   assert(_curr_region != NULL, "invariant");
   if (_cm->verbose_low()) {
-    gclog_or_tty->print_cr("[%u] giving up region "PTR_FORMAT,
+    gclog_or_tty->print_cr("[%u] giving up region " PTR_FORMAT,
                            _worker_id, p2i(_curr_region));
   }
   clear_region_fields();
@@ -3374,7 +3374,7 @@ void CMTask::regular_clock_call() {
 
   if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] regular clock, interval = %1.2lfms, "
-                        "scanned = "SIZE_FORMAT"%s, refs reached = "SIZE_FORMAT"%s",
+                        "scanned = " SIZE_FORMAT "%s, refs reached = " SIZE_FORMAT "%s",
                         _worker_id, last_interval_ms,
                         _words_scanned,
                         (_words_scanned >= _words_scanned_limit) ? " (*)" : "",
@@ -3543,7 +3543,7 @@ void CMTask::drain_local_queue(bool partially) {
       statsOnly( ++_local_pops );
 
       if (_cm->verbose_high()) {
-        gclog_or_tty->print_cr("[%u] popped "PTR_FORMAT, _worker_id,
+        gclog_or_tty->print_cr("[%u] popped " PTR_FORMAT, _worker_id,
                                p2i((void*) obj));
       }
 
@@ -3900,8 +3900,8 @@ void CMTask::do_marking_step(double time_target_ms,
 
       if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%u] we're scanning part "
-                               "["PTR_FORMAT", "PTR_FORMAT") "
-                               "of region "HR_FORMAT,
+                               "[" PTR_FORMAT ", " PTR_FORMAT ") "
+                               "of region " HR_FORMAT,
                                _worker_id, p2i(_finger), p2i(_region_limit),
                                HR_FORMAT_PARAMS(_curr_region));
       }
@@ -3988,7 +3988,7 @@ void CMTask::do_marking_step(double time_target_ms,
 
         if (_cm->verbose_low()) {
           gclog_or_tty->print_cr("[%u] we successfully claimed "
-                                 "region "PTR_FORMAT,
+                                 "region " PTR_FORMAT,
                                  _worker_id, p2i(claimed_region));
         }
 
@@ -4049,7 +4049,7 @@ void CMTask::do_marking_step(double time_target_ms,
 
       if (_cm->try_stealing(_worker_id, &_hash_seed, obj)) {
         if (_cm->verbose_medium()) {
-          gclog_or_tty->print_cr("[%u] stolen "PTR_FORMAT" successfully",
+          gclog_or_tty->print_cr("[%u] stolen " PTR_FORMAT " successfully",
                                  _worker_id, p2i((void*) obj));
         }
 
@@ -4257,7 +4257,7 @@ CMTask::CMTask(uint worker_id,
 // identify them easily in a large log file.
 #define G1PPRL_LINE_PREFIX            "###"
 
-#define G1PPRL_ADDR_BASE_FORMAT    " "PTR_FORMAT"-"PTR_FORMAT
+#define G1PPRL_ADDR_BASE_FORMAT    " " PTR_FORMAT "-" PTR_FORMAT
 #ifdef _LP64
 #define G1PPRL_ADDR_BASE_H_FORMAT  " %37s"
 #else // _LP64
@@ -4267,16 +4267,16 @@ CMTask::CMTask(uint worker_id,
 // For per-region info
 #define G1PPRL_TYPE_FORMAT            "   %-4s"
 #define G1PPRL_TYPE_H_FORMAT          "   %4s"
-#define G1PPRL_BYTE_FORMAT            "  "SIZE_FORMAT_W(9)
+#define G1PPRL_BYTE_FORMAT            "  " SIZE_FORMAT_W(9)
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
 #define G1PPRL_DOUBLE_FORMAT          "  %14.1f"
 #define G1PPRL_DOUBLE_H_FORMAT        "  %14s"
 
 // For summary info
-#define G1PPRL_SUM_ADDR_FORMAT(tag)    "  "tag":"G1PPRL_ADDR_BASE_FORMAT
-#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  "tag": "SIZE_FORMAT
-#define G1PPRL_SUM_MB_FORMAT(tag)      "  "tag": %1.2f MB"
-#define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag)" / %1.2f %%"
+#define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
+#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  " tag ": " SIZE_FORMAT
+#define G1PPRL_SUM_MB_FORMAT(tag)      "  " tag ": %1.2f MB"
+#define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag) " / %1.2f %%"
 
 G1PrintRegionLivenessInfoClosure::
 G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)

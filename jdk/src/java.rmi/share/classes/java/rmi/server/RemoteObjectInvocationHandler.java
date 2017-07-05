@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,9 @@ public class RemoteObjectInvocationHandler
      * representation of the proxy.
      * </ul>
      *
+     * <p>If <code>method</code> overrides {@link Object#finalize Object.finalize},
+     * it is ignored.
+     *
      * <p>Otherwise, a remote call is made as follows:
      *
      * <ul>
@@ -144,6 +147,8 @@ public class RemoteObjectInvocationHandler
     {
         if (method.getDeclaringClass() == Object.class) {
             return invokeObjectMethod(proxy, method, args);
+        } else if ("finalize".equals(method.getName()) && method.getParameterCount() == 0) {
+            return null; // ignore
         } else {
             return invokeRemoteMethod(proxy, method, args);
         }

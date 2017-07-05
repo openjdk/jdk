@@ -75,9 +75,8 @@ static long clock_ticks_per_second;
  * Method:    initIDs
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
-  (JNIEnv *env, jclass clazz) {
-
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
     CHECK_NULL(ProcessHandleImpl_Info_commandID =
             (*env)->GetFieldID(env, clazz, "command", "Ljava/lang/String;"));
     CHECK_NULL(ProcessHandleImpl_Info_argumentsID =
@@ -88,7 +87,45 @@ JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
             (*env)->GetFieldID(env, clazz, "startTime", "J"));
     CHECK_NULL(ProcessHandleImpl_Info_userID =
             (*env)->GetFieldID(env, clazz, "user", "Ljava/lang/String;"));
-    clock_ticks_per_second = sysconf(_SC_CLK_TCK);
+}
+/**************************************************************
+ * Static method to initialize the ticks per second rate.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    initNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_initNative(JNIEnv *env, jclass clazz) {
+      clock_ticks_per_second = sysconf(_SC_CLK_TCK);
+}
+
+/*
+ * Check if a process is alive.
+ * Return the start time (ms since 1970) if it is available.
+ * If the start time is not available return 0.
+ * If the pid is invalid, return -1.
+ *
+ * Class:     java_lang_ProcessHandleImpl
+ * Method:    isAlive0
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_isAlive0(JNIEnv *env, jobject obj, jlong jpid) {
+    pid_t pid = (pid_t) jpid;
+    struct kinfo_proc kp;
+    size_t bufSize = sizeof kp;
+
+    // Read the process info for the specific pid
+    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+
+    if (sysctl(mib, 4, &kp, &bufSize, NULL, 0) < 0) {
+        return  (errno == EINVAL) ? -1 : 0;
+    } else {
+        return (bufSize == 0) ?  -1 :
+                                 (jlong) (kp.kp_proc.p_starttime.tv_sec * 1000
+                                        + kp.kp_proc.p_starttime.tv_usec / 1000);
+    }
 }
 
 /*
@@ -98,8 +135,11 @@ JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_initIDs
  * Method:    parent0
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
-(JNIEnv *env, jobject obj, jlong jpid) {
+JNIEXPORT jlong JNICALL
+Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
+                                         jobject obj,
+                                         jlong jpid,
+                                         jlong startTime) {
     pid_t pid = (pid_t) jpid;
     pid_t ppid = -1;
 
@@ -117,7 +157,14 @@ JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
                 "java/lang/RuntimeException", "sysctl failed");
             return -1;
         }
-        ppid = (bufSize > 0 && kp.kp_proc.p_pid == pid) ? kp.kp_eproc.e_ppid : -1;
+        // If the buffer is full and for the pid requested then check the start
+        if (bufSize > 0 && kp.kp_proc.p_pid == pid) {
+            jlong start = (jlong) (kp.kp_proc.p_starttime.tv_sec * 1000
+                                   + kp.kp_proc.p_starttime.tv_usec / 1000);
+            if (start == startTime || start == 0 || startTime == 0) {
+                ppid = kp.kp_eproc.e_ppid;
+            }
+        }
     }
     return (jlong) ppid;
 }
@@ -136,15 +183,20 @@ JNIEXPORT jlong JNICALL Java_java_lang_ProcessHandleImpl_parent0
  * If the array is too short, excess pids are not stored and
  * the desired length is returned.
  */
-JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
-(JNIEnv *env, jclass clazz, jlong jpid,
-    jlongArray jarray, jlongArray jparentArray)
-{
-    size_t count = 0;
+JNIEXPORT jint JNICALL
+Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
+                                                 jclass clazz,
+                                                 jlong jpid,
+                                                 jlongArray jarray,
+                                                 jlongArray jparentArray,
+                                                 jlongArray jstimesArray) {
     jlong* pids = NULL;
     jlong* ppids = NULL;
-    size_t parentArraySize = 0;
-    size_t arraySize = 0;
+    jlong* stimes = NULL;
+    jsize parentArraySize = 0;
+    jsize arraySize = 0;
+    jsize stimesSize = 0;
+    jsize count = 0;
     size_t bufSize = 0;
     pid_t pid = (pid_t) jpid;
 
@@ -155,6 +207,15 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
         JNU_CHECK_EXCEPTION_RETURN(env, -1);
 
         if (arraySize != parentArraySize) {
+            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
+            return 0;
+        }
+    }
+    if (jstimesArray != NULL) {
+        stimesSize = (*env)->GetArrayLength(env, jstimesArray);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
+
+        if (arraySize != stimesSize) {
             JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
             return 0;
         }
@@ -198,6 +259,12 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
                 break;
             }
         }
+        if (jstimesArray != NULL) {
+            stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
+            if (stimes == NULL) {
+                break;
+            }
+        }
 
         // Process each entry in the buffer
         for (i = nentries; --i >= 0; ++kp) {
@@ -208,6 +275,12 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
                     if (ppids != NULL) {
                         // Store the parentPid
                         ppids[count] = (jlong) kp->kp_eproc.e_ppid;
+                    }
+                    if (stimes != NULL) {
+                        // Store the process start time
+                        jlong startTime = kp->kp_proc.p_starttime.tv_sec * 1000 +
+                                          kp->kp_proc.p_starttime.tv_usec / 1000;
+                        stimes[count] = startTime;
                     }
                 }
                 count++; // Count to tabulate size needed
@@ -220,6 +293,9 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
     }
     if (ppids != NULL) {
         (*env)->ReleaseLongArrayElements(env, jparentArray, ppids, 0);
+    }
+    if (stimes != NULL) {
+        (*env)->ReleaseLongArrayElements(env, jstimesArray, stimes, 0);
     }
 
     free(buffer);
@@ -238,8 +314,10 @@ JNIEXPORT jint JNICALL Java_java_lang_ProcessHandleImpl_getProcessPids0
  * Method:    info0
  * Signature: (J)I
  */
-JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_info0
-  (JNIEnv *env, jobject jinfo, jlong jpid) {
+JNIEXPORT void JNICALL
+Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
+                                                 jobject jinfo,
+                                                 jlong jpid) {
     pid_t pid = (pid_t) jpid;
     getStatInfo(env, jinfo, pid);
     getCmdlineInfo(env, jinfo, pid);
@@ -251,7 +329,7 @@ JNIEXPORT void JNICALL Java_java_lang_ProcessHandleImpl_00024Info_info0
  */
 static void getStatInfo(JNIEnv *env, jobject jinfo, pid_t jpid) {
     jlong totalTime;                    // nanoseconds
-    unsigned long long startTime;       // microseconds
+    unsigned long long startTime;       // milliseconds
 
     const pid_t pid = (pid_t) jpid;
     struct kinfo_proc kp;

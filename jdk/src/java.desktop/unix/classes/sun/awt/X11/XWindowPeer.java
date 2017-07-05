@@ -682,28 +682,33 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         GraphicsConfiguration newGC = null;
         Rectangle screenBounds;
 
-        for (int i = 0; i < gds.length; i++) {
-            screenBounds = gds[i].getDefaultConfiguration().getBounds();
-            if (newBounds.intersects(screenBounds)) {
-                horizAmt = Math.min(newBounds.x + newBounds.width,
-                                    screenBounds.x + screenBounds.width) -
-                           Math.max(newBounds.x, screenBounds.x);
-                vertAmt = Math.min(newBounds.y + newBounds.height,
-                                   screenBounds.y + screenBounds.height)-
-                          Math.max(newBounds.y, screenBounds.y);
-                intAmt = horizAmt * vertAmt;
-                if (intAmt == area) {
-                    // Completely on this screen - done!
-                    newScreenNum = i;
-                    newGC = gds[i].getDefaultConfiguration();
-                    break;
-                }
-                if (intAmt > largestAmt) {
-                    largestAmt = intAmt;
-                    newScreenNum = i;
-                    newGC = gds[i].getDefaultConfiguration();
+        XToolkit.awtUnlock();
+        try {
+            for (int i = 0; i < gds.length; i++) {
+                screenBounds = gds[i].getDefaultConfiguration().getBounds();
+                if (newBounds.intersects(screenBounds)) {
+                    horizAmt = Math.min(newBounds.x + newBounds.width,
+                                        screenBounds.x + screenBounds.width) -
+                               Math.max(newBounds.x, screenBounds.x);
+                    vertAmt = Math.min(newBounds.y + newBounds.height,
+                                       screenBounds.y + screenBounds.height)-
+                              Math.max(newBounds.y, screenBounds.y);
+                    intAmt = horizAmt * vertAmt;
+                    if (intAmt == area) {
+                        // Completely on this screen - done!
+                        newScreenNum = i;
+                        newGC = gds[i].getDefaultConfiguration();
+                        break;
+                    }
+                    if (intAmt > largestAmt) {
+                        largestAmt = intAmt;
+                        newScreenNum = i;
+                        newGC = gds[i].getDefaultConfiguration();
+                    }
                 }
             }
+        } finally {
+            XToolkit.awtLock();
         }
         if (newScreenNum != curScreenNum) {
             if (log.isLoggable(PlatformLogger.Level.FINEST)) {

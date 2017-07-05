@@ -107,7 +107,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
 // more complicated solution is required.  A special return bytecode
 // is used only by Object.<init> to signal the finalization
 // registration point.  Additionally local 0 must be preserved so it's
-// available to pass to the registration function.  For simplicty we
+// available to pass to the registration function.  For simplicity we
 // require that local 0 is never overwritten so it's available as an
 // argument for registration.
 

@@ -26,6 +26,7 @@
 package java.nio;
 
 import java.util.Spliterator;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A container for data of a specific primitive type.
@@ -535,6 +536,7 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
+    @HotSpotIntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();
