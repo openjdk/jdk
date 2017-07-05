@@ -79,6 +79,11 @@ public class Mark extends VMObject {
     noHashInPlace       = db.lookupLongConstant("markOopDesc::no_hash_in_place").longValue();
     noLockInPlace       = db.lookupLongConstant("markOopDesc::no_lock_in_place").longValue();
     maxAge              = db.lookupLongConstant("markOopDesc::max_age").longValue();
+
+    /* Constants in markOop used by CMS. */
+    cmsShift            = db.lookupLongConstant("markOopDesc::cms_shift").longValue();
+    cmsMask             = db.lookupLongConstant("markOopDesc::cms_mask").longValue();
+    sizeShift           = db.lookupLongConstant("markOopDesc::size_shift").longValue();
   }
 
   // Field accessors
@@ -119,6 +124,11 @@ public class Mark extends VMObject {
   private static long noLockInPlace;
 
   private static long maxAge;
+
+  /* Constants in markOop used by CMS. */
+  private static long cmsShift;
+  private static long cmsMask;
+  private static long sizeShift;
 
   public Mark(Address addr) {
     super(addr);
@@ -290,4 +300,11 @@ public class Mark extends VMObject {
   //
   //  // Recover address of oop from encoded form used in mark
   //  inline void* decode_pointer() { return clear_lock_bits(); }
+
+  // Copy markOop methods for CMS here.
+  public boolean isCmsFreeChunk() {
+    return isUnlocked() &&
+           (Bits.maskBitsLong(value() >> cmsShift, cmsMask) & 0x1L) == 0x1L;
+  }
+  public long getSize() { return (long)(value() >> sizeShift); }
 }

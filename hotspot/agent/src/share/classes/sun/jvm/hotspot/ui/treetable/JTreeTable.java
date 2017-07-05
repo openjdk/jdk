@@ -477,9 +477,9 @@ public class JTreeTable extends JTable {
     static class TreeTableTextField extends JTextField {
         public int offset;
 
-        public void reshape(int x, int y, int w, int h) {
+        public void setBounds(int x, int y, int w, int h) {
             int newX = Math.max(x, offset);
-            super.reshape(newX, y, w - (newX - x), h);
+            super.setBounds(newX, y, w - (newX - x), h);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,7 +485,6 @@ public class DragSourceContext
 
         Cursor c = null;
 
-        targetAct = DnDConstants.ACTION_NONE;
         switch (status) {
             case ENTER:
             case OVER:
@@ -507,6 +506,10 @@ public class DragSourceContext
                     else
                         c = DragSource.DefaultCopyDrop;
                 }
+                break;
+            default:
+                targetAct = DnDConstants.ACTION_NONE;
+
         }
 
         setCursorImpl(c);
