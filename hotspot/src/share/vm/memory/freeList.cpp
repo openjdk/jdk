@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
 #include "memory/metachunk.hpp"
@@ -32,7 +32,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#include "gc/cms/freeChunk.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Free list.  A FreeList is used to access a linked list of chunks

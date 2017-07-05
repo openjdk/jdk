@@ -25,6 +25,7 @@
  * @test
  * @bug 4749938
  * @summary Bug in the parsing IPv4 literal addresses
+ * @modules java.base/sun.net.spi.nameservice
  * @compile -XDignore.symbol.file=true DummyNameService.java DummyNameServiceDescriptor.java
  * @run main/othervm -Dsun.net.spi.nameservice.provider.1=dummy,oracle textToNumericFormat
 */

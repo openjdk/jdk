@@ -23,8 +23,10 @@
 
 /*
  * @test
- *  @bug 8021788
- *  @summary JarInputStream doesn't provide certificates for some file under META-INF
+ * @bug 8021788
+ * @summary JarInputStream doesn't provide certificates for some file under META-INF
+ * @modules java.base/sun.security.tools.keytool
+ *          jdk.jartool/sun.security.tools.jarsigner
  */
 
 import java.util.jar.*;

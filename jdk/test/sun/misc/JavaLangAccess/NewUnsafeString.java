@@ -28,8 +28,9 @@ import sun.misc.SharedSecrets;
 
 /*
  * @test
- * @summary Test JavaLangAccess.newUnsafeString
  * @bug 8013528
+ * @summary Test JavaLangAccess.newUnsafeString
+ * @modules java.base/sun.misc
  * @compile -XDignore.symbol.file NewUnsafeString.java
  */
 public class NewUnsafeString {

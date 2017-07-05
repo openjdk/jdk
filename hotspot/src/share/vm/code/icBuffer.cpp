@@ -28,7 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"

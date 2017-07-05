@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4408526 6854795
+ * @modules jdk.jartool/sun.tools.jar
  * @summary Index the non-meta files in META-INF, such as META-INF/services.
  */
 

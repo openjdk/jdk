@@ -25,6 +25,7 @@
  * @test
  * @bug 6731685
  * @summary CertificateFactory.generateCertificates throws IOException on PKCS7 cert chain
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;

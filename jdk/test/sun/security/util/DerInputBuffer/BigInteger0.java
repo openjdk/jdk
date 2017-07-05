@@ -25,6 +25,7 @@
  * @test
  * @bug 4492053
  * @summary Verify invalid zero length Integer value is rejected
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;

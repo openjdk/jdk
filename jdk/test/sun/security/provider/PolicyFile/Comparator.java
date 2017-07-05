@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 5037004
- * @run main/othervm Comparator
  * @summary Frivolous ClassCastExceptions thrown by SubjectCodeSource.implies
+ * @modules java.base/sun.security.provider
+ * @run main/othervm Comparator
  *
  * Note:  if you want to see the java.security.debug output,
  *        you can not simply set the system property.

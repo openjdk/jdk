@@ -25,6 +25,7 @@
  * @test
  * @bug 6871847
  * @summary AlgorithmId.get("SHA256withECDSA") not available
+ * @modules java.base/sun.security.x509
  */
 
 import sun.security.x509.*;

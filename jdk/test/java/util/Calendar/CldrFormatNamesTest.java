@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 8004489 8006509
+ * @summary Unit test for CLDR FormatData resources
+ * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file CldrFormatNamesTest.java
  * @run main/othervm -Djava.locale.providers=CLDR CldrFormatNamesTest
- * @summary Unit test for CLDR FormatData resources
  */
 
 import java.util.*;

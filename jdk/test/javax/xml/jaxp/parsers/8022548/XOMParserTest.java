@@ -25,6 +25,10 @@
  * @test
  * @bug 8022548
  * @summary test that a parser can use DTDConfiguration
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl
+ *          java.xml/com.sun.org.apache.xerces.internal.parsers
+ *          java.xml/com.sun.org.apache.xerces.internal.util
+ *          java.xml/com.sun.org.apache.xerces.internal.xni.parser
  * @run main XOMParserTest
  */
 import com.sun.org.apache.xerces.internal.impl.Constants;

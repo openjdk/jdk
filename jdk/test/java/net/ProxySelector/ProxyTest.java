@@ -25,6 +25,7 @@
  * @test
  * @bug 4696512
  * @summary HTTP client: Improve proxy server configuration and selection
+ * @modules java.base/sun.net.www
  * @library ../../../sun/net/www/httptest/
  * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile ProxyTest.java

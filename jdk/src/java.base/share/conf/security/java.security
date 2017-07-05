@@ -179,7 +179,8 @@ policy.allowSystemProperty=true
 
 # whether or not we look into the IdentityScope for trusted Identities
 # when encountering a 1.1 signed JAR file. If the identity is found
-# and is trusted, we grant it AllPermission.
+# and is trusted, we grant it AllPermission. Note: the default policy
+# provider (sun.security.provider.PolicyFile) does not support this property.
 policy.ignoreIdentityScope=false
 
 #

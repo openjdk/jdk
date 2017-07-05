@@ -25,6 +25,8 @@
  * @test
  * @bug 8028780
  * @summary JDK KRB5 module throws OutOfMemoryError when CCache is corrupt
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  * @run main/othervm -Xmx8m CorruptedCC
  */
 import java.nio.file.Files;

@@ -25,6 +25,7 @@
  * @test
  * @bug 6427768
  * @summary FtpURLConnection doesn't close FTP connection when login fails
+ * @modules java.base/sun.net.ftp
  * @library ../www/ftptest/
  * @build FtpServer FtpCommandHandler FtpAuthHandler FtpFileSystemHandler
  * @run main/othervm/timeout=500 B6427768

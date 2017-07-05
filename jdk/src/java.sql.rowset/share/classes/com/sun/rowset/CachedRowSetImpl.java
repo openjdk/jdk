@@ -1059,7 +1059,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * (<code>acceptChanges</code>) or population. This method may also be called
      * while performing updates to the insert row.
      * <P>
-     * <code>undoUpdate</code may be called at any time during the life-time of a
+     * {@code undoUpdate} may be called at any time during the life-time of a
      * rowset, however after a synchronization has occurs this method has no
      * affect until further modification to the RowSet data occurs.
      *
@@ -2467,10 +2467,11 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @throws SQLException if (1) the given column name is not the name of
      * a column in this rowset, (2) the cursor is not on one of
      * this rowset's rows or its insert row, or (3) the designated
-     * column does not store an SQL <code>TINYINT, SMALLINT, INTEGER
-     * BIGINT, REAL, FLOAT, DOUBLE, DECIMAL, NUMERIC, BIT, <b>CHAR</b>,
-     * <b>VARCHAR</b></code> or <code>LONGVARCHAR<</code> value. The bold SQL type
-     * designates the recommended return type.
+     * column does not store an SQL {@code TINYINT, SMALLINT, INTEGER
+     * BIGINT, REAL, FLOAT, DOUBLE, DECIMAL, NUMERIC, BIT, }
+     * <b>{@code CHAR, VARCHAR}</b> or
+     * <b>{@code LONGVARCHAR}</b> value.
+     * The bold SQL type designates the recommended return type.
      */
     public String getString(String columnName) throws SQLException {
         return getString(getColIdxByName(columnName));
@@ -7748,7 +7749,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * Updates the designated column with a <code>RowId</code> value. The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow<code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnIndex the first column is 1, the second 2, ...
@@ -7764,7 +7765,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * Updates the designated column with a <code>RowId</code> value. The updater
      * methods are used to update column values in the current row or the insert
      * row. The updater methods do not update the underlying database; instead
-     * the <code>updateRow<code> or <code>insertRow</code> methods are called
+     * the {@code updateRow} or {@code insertRow} methods are called
      * to update the database.
      *
      * @param columnName the name of the column

@@ -25,6 +25,8 @@
  * @test
  * @bug 7143872
  * @summary Improve certificate extension processing
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;

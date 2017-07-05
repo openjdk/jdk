@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6434207 6442687 6984046
+ * @modules jdk.jartool/sun.tools.jar
  * @summary Ensure that jar ufm actually updates the
  * existing jar file's manifest with contents of the
  * manifest file.
