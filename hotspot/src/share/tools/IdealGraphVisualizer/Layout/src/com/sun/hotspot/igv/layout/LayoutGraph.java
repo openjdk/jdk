@@ -24,7 +24,7 @@
 package com.sun.hotspot.igv.layout;
 
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -37,9 +37,9 @@ public class LayoutGraph {
 
     private Set<? extends Link> links;
     private SortedSet<Vertex> vertices;
-    private Hashtable<Vertex, Set<Port>> inputPorts;
-    private Hashtable<Vertex, Set<Port>> outputPorts;
-    private Hashtable<Port, Set<Link>> portLinks;
+    private HashMap<Vertex, Set<Port>> inputPorts;
+    private HashMap<Vertex, Set<Port>> outputPorts;
+    private HashMap<Port, Set<Link>> portLinks;
 
     public LayoutGraph(Set<? extends Link> links) {
         this(links, new HashSet<Vertex>());
@@ -50,9 +50,9 @@ public class LayoutGraph {
         assert verify();
 
         vertices = new TreeSet<Vertex>();
-        portLinks = new Hashtable<Port, Set<Link>>();
-        inputPorts = new Hashtable<Vertex, Set<Port>>();
-        outputPorts = new Hashtable<Vertex, Set<Port>>();
+        portLinks = new HashMap<Port, Set<Link>>();
+        inputPorts = new HashMap<Vertex, Set<Port>>();
+        outputPorts = new HashMap<Vertex, Set<Port>>();
 
         for (Link l : links) {
             Port p = l.getFrom();

@@ -42,7 +42,7 @@ import java.util.Set;
  *
  * @author Thomas Wuerthinger
  */
-public class Figure extends Properties.Object implements Source.Provider, Vertex {
+public class Figure extends Properties.Entity implements Source.Provider, Vertex {
 
     public static final int INSET = 6;
     public static final int SLOT_WIDTH = 10;
