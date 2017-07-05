@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package javax.sound.sampled.spi;
+
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -77,9 +79,10 @@ public abstract class FormatConversionProvider {
      *         queried
      * @return {@code true} if the encoding is supported, otherwise
      *         {@code false}
+     * @throws NullPointerException if {@code sourceEncoding} is {@code null}
      */
     public boolean isSourceEncodingSupported(Encoding sourceEncoding) {
-
+        Objects.requireNonNull(sourceEncoding);
         Encoding sourceEncodings[] = getSourceEncodings();
 
         for(int i=0; i<sourceEncodings.length; i++) {
@@ -98,9 +101,10 @@ public abstract class FormatConversionProvider {
      *         queried
      * @return {@code true} if the encoding is supported, otherwise
      *         {@code false}
+     * @throws NullPointerException if {@code targetEncoding} is {@code null}
      */
     public boolean isTargetEncodingSupported(Encoding targetEncoding) {
-
+        Objects.requireNonNull(targetEncoding);
         Encoding targetEncodings[] = getTargetEncodings();
 
         for(int i=0; i<targetEncodings.length; i++) {
@@ -118,6 +122,7 @@ public abstract class FormatConversionProvider {
      *
      * @param  sourceFormat format of the incoming data
      * @return array of supported target format encodings
+     * @throws NullPointerException if {@code sourceFormat} is {@code null}
      */
     public abstract Encoding[] getTargetEncodings(AudioFormat sourceFormat);
 
@@ -129,10 +134,12 @@ public abstract class FormatConversionProvider {
      * @param  sourceFormat format of the incoming data
      * @return {@code true} if the conversion is supported, otherwise
      *         {@code false}
+     * @throws NullPointerException if {@code targetEncoding} or
+     *         {@code sourceFormat} are {@code null}
      */
     public boolean isConversionSupported(Encoding targetEncoding,
                                          AudioFormat sourceFormat) {
-
+        Objects.requireNonNull(targetEncoding);
         Encoding targetEncodings[] = getTargetEncodings(sourceFormat);
 
         for(int i=0; i<targetEncodings.length; i++) {
@@ -145,12 +152,14 @@ public abstract class FormatConversionProvider {
 
     /**
      * Obtains the set of target formats with the encoding specified supported
-     * by the format converter If no target formats with the specified encoding
+     * by the format converter. If no target formats with the specified encoding
      * are supported for this source format, an array of length 0 is returned.
      *
      * @param  targetEncoding desired encoding of the stream after processing
      * @param  sourceFormat format of the incoming data
      * @return array of supported target formats
+     * @throws NullPointerException if {@code targetEncoding} or
+     *         {@code sourceFormat} are {@code null}
      */
     public abstract AudioFormat[] getTargetFormats(Encoding targetEncoding,
                                                    AudioFormat sourceFormat);
@@ -163,6 +172,8 @@ public abstract class FormatConversionProvider {
      * @param  sourceFormat format of the incoming data
      * @return {@code true} if the conversion is supported, otherwise
      *         {@code false}
+     * @throws NullPointerException if {@code targetFormat} or
+     *         {@code sourceFormat} are {@code null}
      */
     public boolean isConversionSupported(AudioFormat targetFormat,
                                          AudioFormat sourceFormat) {
@@ -188,6 +199,8 @@ public abstract class FormatConversionProvider {
      *         encoding may be read
      * @throws IllegalArgumentException if the format combination supplied is
      *         not supported
+     * @throws NullPointerException if {@code targetEncoding} or
+     *         {@code sourceStream} are {@code null}
      */
     public abstract AudioInputStream getAudioInputStream(
             Encoding targetEncoding, AudioInputStream sourceStream);
@@ -203,6 +216,8 @@ public abstract class FormatConversionProvider {
      *         read
      * @throws IllegalArgumentException if the format combination supplied is
      *         not supported
+     * @throws NullPointerException if {@code targetFormat} or
+     *         {@code sourceStream} are {@code null}
      */
     public abstract AudioInputStream getAudioInputStream(
             AudioFormat targetFormat, AudioInputStream sourceStream);

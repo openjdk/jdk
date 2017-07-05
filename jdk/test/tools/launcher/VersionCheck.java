@@ -47,6 +47,10 @@ public class VersionCheck extends TestHelper {
         "java-rmi.cgi",
         "java",
         "javacpl",
+        "jaccessinspector",
+        "jaccessinspector-32",
+        "jaccesswalker",
+        "jaccesswalker-32",
         "javaw",
         "javaws",
         "jcontrol",
@@ -64,6 +68,10 @@ public class VersionCheck extends TestHelper {
     static final String[] BLACKLIST_VERSION = {
         "appletviewer",
         "controlpanel",
+        "jaccessinspector",
+        "jaccessinspector-32",
+        "jaccesswalker",
+        "jaccesswalker-32",
         "jar",
         "jarsigner",
         "java-rmi",
@@ -187,7 +195,7 @@ public class VersionCheck extends TestHelper {
 
     static boolean compareInternalStrings() {
         int failcount = 0;
-        String bStr = refVersion.substring(refVersion.lastIndexOf("build") +
+        String bStr = refVersion.substring(refVersion.indexOf("build") +
                                            "build".length() + 1,
                                            refVersion.lastIndexOf(")"));
 

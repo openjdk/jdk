@@ -495,6 +495,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   static LIR_Opr divOutOpr();
   static LIR_Opr remOutOpr();
   static LIR_Opr shiftCountOpr();
+  LIR_Opr syncLockOpr();
   LIR_Opr syncTempOpr();
   LIR_Opr atomicLockOpr();
 

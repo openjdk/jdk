@@ -123,22 +123,28 @@ public class DoubleJVMOption extends JVMOption {
     protected List<String> getValidValues() {
         List<String> validValues = new ArrayList<>();
 
-        validValues.add(formatValue(min));
-        validValues.add(formatValue(max));
-
-        if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_NEGATIVE) < 0)
-                && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_NEGATIVE) > 0)) {
-            validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_NEGATIVE));
+        if (testMinRange) {
+            validValues.add(formatValue(min));
+        }
+        if (testMaxRange) {
+            validValues.add(formatValue(max));
         }
 
-        if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_ZERO) < 0)
-                && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_ZERO) > 0)) {
-            validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_ZERO));
-        }
+        if (testMinRange) {
+            if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_NEGATIVE) < 0)
+                    && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_NEGATIVE) > 0)) {
+                validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_NEGATIVE));
+            }
 
-        if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_POSITIVE) < 0)
-                && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_POSITIVE) > 0)) {
-            validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_POSITIVE));
+            if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_ZERO) < 0)
+                    && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_ZERO) > 0)) {
+                validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_ZERO));
+            }
+
+            if ((Double.compare(min, ADDITIONAL_TEST_DOUBLE_POSITIVE) < 0)
+                    && (Double.compare(max, ADDITIONAL_TEST_DOUBLE_POSITIVE) > 0)) {
+                validValues.add(formatValue(ADDITIONAL_TEST_DOUBLE_POSITIVE));
+            }
         }
 
         return validValues;

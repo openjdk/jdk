@@ -213,8 +213,9 @@ int SharkRuntime::uncommon_trap(JavaThread* thread, int trap_request) {
   // Initiate the trap
   thread->set_last_Java_frame();
   Deoptimization::UnrollBlock *urb =
-    Deoptimization::uncommon_trap(thread, trap_request);
+    Deoptimization::uncommon_trap(thread, trap_request, Deoptimization::Unpack_uncommon_trap);
   thread->reset_last_Java_frame();
+  assert(urb->unpack_kind() == Deoptimization::Unpack_uncommon_trap, "expected Unpack_uncommon_trap");
 
   // Pop our dummy frame and the frame being deoptimized
   thread->pop_zero_frame();

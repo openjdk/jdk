@@ -140,19 +140,19 @@ LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep "more)" | wc -l`
 # 16 and 32 already covered in the first part
 # ==========================================================
 
-$KT -genkeypair -alias expired -dname CN=expired -startdate -10m
-$KT -genkeypair -alias notyetvalid -dname CN=notyetvalid -startdate +1m
-$KT -genkeypair -alias badku -dname CN=badku -ext KU=cRLSign -validity 365
-$KT -genkeypair -alias badeku -dname CN=badeku -ext EKU=sa -validity 365
-$KT -genkeypair -alias goodku -dname CN=goodku -ext KU=dig -validity 365
-$KT -genkeypair -alias goodeku -dname CN=goodeku -ext EKU=codesign -validity 365
-
-# badchain signed by ca, but ca is removed later
-$KT -genkeypair -alias badchain -dname CN=badchain -validity 365
 $KT -genkeypair -alias ca -dname CN=ca -ext bc -validity 365
-$KT -certreq -alias badchain | $KT -gencert -alias ca -validity 365 | \
-        $KT -importcert -alias badchain
-$KT -delete -alias ca
+$KT -genkeypair -alias expired -dname CN=expired
+$KT -certreq -alias expired | $KT -gencert -alias ca -startdate -10m | $KT -import -alias expired
+$KT -genkeypair -alias notyetvalid -dname CN=notyetvalid
+$KT -certreq -alias notyetvalid | $KT -gencert -alias ca -startdate +1m | $KT -import -alias notyetvalid
+$KT -genkeypair -alias badku -dname CN=badku
+$KT -certreq -alias badku | $KT -gencert -alias ca -ext KU=cRLSign -validity 365 | $KT -import -alias badku
+$KT -genkeypair -alias badeku -dname CN=badeku
+$KT -certreq -alias badeku | $KT -gencert -alias ca -ext EKU=sa -validity 365 | $KT -import -alias badeku
+$KT -genkeypair -alias goodku -dname CN=goodku
+$KT -certreq -alias goodku | $KT -gencert -alias ca -ext KU=dig -validity 365 | $KT -import -alias goodku
+$KT -genkeypair -alias goodeku -dname CN=goodeku
+$KT -certreq -alias goodeku | $KT -gencert -alias ca -ext EKU=codesign -validity 365 | $KT -import -alias goodeku
 
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar expired
 [ $? = 4 ] || exit $LINENO
@@ -172,6 +172,12 @@ $JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodku
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar goodeku
 [ $? = 0 ] || exit $LINENO
 
+# badchain signed by ca, but ca is removed later
+$KT -genkeypair -alias badchain -dname CN=badchain -validity 365
+$KT -certreq -alias badchain | $KT -gencert -alias ca -validity 365 | \
+        $KT -importcert -alias badchain
+$KT -delete -alias ca
+
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar badchain
 [ $? = 4 ] || exit $LINENO
 
@@ -182,18 +188,22 @@ $JARSIGNER -verify a.jar
 # Third part: -certchain test
 # ==========================================================
 
-# altchain signed by ca2, but ca2 is removed later
+# altchain signed by ca2
 $KT -genkeypair -alias altchain -dname CN=altchain -validity 365
 $KT -genkeypair -alias ca2 -dname CN=ca2 -ext bc -validity 365
 $KT -certreq -alias altchain | $KT -gencert -alias ca2 -validity 365 -rfc > certchain
 $KT -exportcert -alias ca2 -rfc >> certchain
-$KT -delete -alias ca2
 
-# Now altchain is still self-signed
+# Self-signed cert does not work
 $JARSIGNER -strict -keystore $KS -storepass changeit a.jar altchain
+[ $? = 4 ] || exit $LINENO
+
+# -certchain works
+$JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
 [ $? = 0 ] || exit $LINENO
 
-# If -certchain is used, then it's bad
+# but if ca2 is removed, -certchain does not work
+$KT -delete -alias ca2
 $JARSIGNER -strict -keystore $KS -storepass changeit -certchain certchain a.jar altchain
 [ $? = 4 ] || exit $LINENO
 

@@ -215,7 +215,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      */
     protected Rectangle getWindowBounds(Point origin, Dimension windowSize) {
         Rectangle globalBounds = new Rectangle(origin.x, origin.y, 0, 0);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension screenSize = graphicsConfig.getBounds().getSize();
         Rectangle res;
         res = fitWindowRight(globalBounds, windowSize, screenSize);
         if (res != null) {

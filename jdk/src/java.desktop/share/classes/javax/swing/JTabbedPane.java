@@ -2095,9 +2095,10 @@ public class JTabbedPane extends JComponent
          */
         void setDisplayedMnemonicIndex(int mnemonicIndex) {
             if (this.mnemonicIndex != mnemonicIndex) {
-                if (mnemonicIndex != -1 && (title == null ||
+                String t = getTitle();
+                if (mnemonicIndex != -1 && (t == null ||
                         mnemonicIndex < 0 ||
-                        mnemonicIndex >= title.length())) {
+                        mnemonicIndex >= t.length())) {
                     throw new IllegalArgumentException(
                                 "Invalid mnemonic index: " + mnemonicIndex);
                 }
@@ -2116,7 +2117,7 @@ public class JTabbedPane extends JComponent
 
         void updateDisplayedMnemonicIndex() {
             setDisplayedMnemonicIndex(
-                SwingUtilities.findDisplayedMnemonicIndex(title, mnemonic));
+                SwingUtilities.findDisplayedMnemonicIndex(getTitle(), mnemonic));
         }
 
         /////////////////
@@ -2133,10 +2134,9 @@ public class JTabbedPane extends JComponent
         public String getAccessibleName() {
             if (accessibleName != null) {
                 return accessibleName;
-            } else if (title != null) {
-                return title;
+            } else {
+                return getTitle();
             }
-            return null;
         }
 
         public String getAccessibleDescription() {
@@ -2156,7 +2156,7 @@ public class JTabbedPane extends JComponent
             AccessibleStateSet states;
             states = parent.getAccessibleContext().getAccessibleStateSet();
             states.add(AccessibleState.SELECTABLE);
-            int i = parent.indexOfTab(title);
+            int i = parent.indexOfTabComponent(tabComponent);
             if (i == parent.getSelectedIndex()) {
                 states.add(AccessibleState.SELECTED);
             }
@@ -2164,7 +2164,7 @@ public class JTabbedPane extends JComponent
         }
 
         public int getAccessibleIndexInParent() {
-            return parent.indexOfTab(title);
+            return parent.indexOfTabComponent(tabComponent);
         }
 
         public int getAccessibleChildrenCount() {
@@ -2272,10 +2272,8 @@ public class JTabbedPane extends JComponent
         }
 
         public Rectangle getBounds() {
-            int i = parent.indexOfTab(title);
-            // Check for no title. Even though that's a bug in the app we should
-            // inhibit an ArrayIndexOutOfBoundsException from getTabBounds.
-            return (i == -1) ? null : parent.getUI().getTabBounds(parent, i);
+            return parent.getUI().
+                getTabBounds(parent, parent.indexOfTabComponent(tabComponent));
         }
 
         public void setBounds(Rectangle r) {
@@ -2343,6 +2341,11 @@ public class JTabbedPane extends JComponent
                 return null;
             }
         }
+
+        private String getTitle() {
+            return getTitleAt(parent.indexOfComponent(component));
+        }
+
     }
 
     /**

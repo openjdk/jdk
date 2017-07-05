@@ -764,7 +764,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
         final boolean N = (SunJSSE.isFIPS() == false);
 
         /*
-         * TLS Cipher Suite Registry, as of August 2010.
+         * TLS Cipher Suite Registry, as of November 2015.
          *
          * http://www.iana.org/assignments/tls-parameters/tls-parameters.xml
          *
@@ -773,77 +773,77 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * 192-254    Specification Required    Refers to value of first byte
          * 255        Reserved for Private Use  Refers to value of first byte
          *
-         * Value      Description                               Reference
-         * 0x00,0x00  TLS_NULL_WITH_NULL_NULL                   [RFC5246]
-         * 0x00,0x01  TLS_RSA_WITH_NULL_MD5                     [RFC5246]
-         * 0x00,0x02  TLS_RSA_WITH_NULL_SHA                     [RFC5246]
-         * 0x00,0x03  TLS_RSA_EXPORT_WITH_RC4_40_MD5            [RFC4346]
-         * 0x00,0x04  TLS_RSA_WITH_RC4_128_MD5                  [RFC5246]
-         * 0x00,0x05  TLS_RSA_WITH_RC4_128_SHA                  [RFC5246]
-         * 0x00,0x06  TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5        [RFC4346]
-         * 0x00,0x07  TLS_RSA_WITH_IDEA_CBC_SHA                 [RFC5469]
-         * 0x00,0x08  TLS_RSA_EXPORT_WITH_DES40_CBC_SHA         [RFC4346]
-         * 0x00,0x09  TLS_RSA_WITH_DES_CBC_SHA                  [RFC5469]
-         * 0x00,0x0A  TLS_RSA_WITH_3DES_EDE_CBC_SHA             [RFC5246]
-         * 0x00,0x0B  TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA      [RFC4346]
-         * 0x00,0x0C  TLS_DH_DSS_WITH_DES_CBC_SHA               [RFC5469]
-         * 0x00,0x0D  TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA          [RFC5246]
-         * 0x00,0x0E  TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA      [RFC4346]
-         * 0x00,0x0F  TLS_DH_RSA_WITH_DES_CBC_SHA               [RFC5469]
-         * 0x00,0x10  TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA          [RFC5246]
-         * 0x00,0x11  TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA     [RFC4346]
-         * 0x00,0x12  TLS_DHE_DSS_WITH_DES_CBC_SHA              [RFC5469]
-         * 0x00,0x13  TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA         [RFC5246]
-         * 0x00,0x14  TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA     [RFC4346]
-         * 0x00,0x15  TLS_DHE_RSA_WITH_DES_CBC_SHA              [RFC5469]
-         * 0x00,0x16  TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA         [RFC5246]
-         * 0x00,0x17  TLS_DH_anon_EXPORT_WITH_RC4_40_MD5        [RFC4346]
-         * 0x00,0x18  TLS_DH_anon_WITH_RC4_128_MD5              [RFC5246]
-         * 0x00,0x19  TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA     [RFC4346]
-         * 0x00,0x1A  TLS_DH_anon_WITH_DES_CBC_SHA              [RFC5469]
-         * 0x00,0x1B  TLS_DH_anon_WITH_3DES_EDE_CBC_SHA         [RFC5246]
-         * 0x00,0x1C-1D Reserved to avoid conflicts with SSLv3  [RFC5246]
-         * 0x00,0x1E  TLS_KRB5_WITH_DES_CBC_SHA                 [RFC2712]
-         * 0x00,0x1F  TLS_KRB5_WITH_3DES_EDE_CBC_SHA            [RFC2712]
-         * 0x00,0x20  TLS_KRB5_WITH_RC4_128_SHA                 [RFC2712]
-         * 0x00,0x21  TLS_KRB5_WITH_IDEA_CBC_SHA                [RFC2712]
-         * 0x00,0x22  TLS_KRB5_WITH_DES_CBC_MD5                 [RFC2712]
-         * 0x00,0x23  TLS_KRB5_WITH_3DES_EDE_CBC_MD5            [RFC2712]
-         * 0x00,0x24  TLS_KRB5_WITH_RC4_128_MD5                 [RFC2712]
-         * 0x00,0x25  TLS_KRB5_WITH_IDEA_CBC_MD5                [RFC2712]
-         * 0x00,0x26  TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA       [RFC2712]
-         * 0x00,0x27  TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA       [RFC2712]
-         * 0x00,0x28  TLS_KRB5_EXPORT_WITH_RC4_40_SHA           [RFC2712]
-         * 0x00,0x29  TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5       [RFC2712]
-         * 0x00,0x2A  TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5       [RFC2712]
-         * 0x00,0x2B  TLS_KRB5_EXPORT_WITH_RC4_40_MD5           [RFC2712]
-         * 0x00,0x2C  TLS_PSK_WITH_NULL_SHA                     [RFC4785]
-         * 0x00,0x2D  TLS_DHE_PSK_WITH_NULL_SHA                 [RFC4785]
-         * 0x00,0x2E  TLS_RSA_PSK_WITH_NULL_SHA                 [RFC4785]
-         * 0x00,0x2F  TLS_RSA_WITH_AES_128_CBC_SHA              [RFC5246]
-         * 0x00,0x30  TLS_DH_DSS_WITH_AES_128_CBC_SHA           [RFC5246]
-         * 0x00,0x31  TLS_DH_RSA_WITH_AES_128_CBC_SHA           [RFC5246]
-         * 0x00,0x32  TLS_DHE_DSS_WITH_AES_128_CBC_SHA          [RFC5246]
-         * 0x00,0x33  TLS_DHE_RSA_WITH_AES_128_CBC_SHA          [RFC5246]
-         * 0x00,0x34  TLS_DH_anon_WITH_AES_128_CBC_SHA          [RFC5246]
-         * 0x00,0x35  TLS_RSA_WITH_AES_256_CBC_SHA              [RFC5246]
-         * 0x00,0x36  TLS_DH_DSS_WITH_AES_256_CBC_SHA           [RFC5246]
-         * 0x00,0x37  TLS_DH_RSA_WITH_AES_256_CBC_SHA           [RFC5246]
-         * 0x00,0x38  TLS_DHE_DSS_WITH_AES_256_CBC_SHA          [RFC5246]
-         * 0x00,0x39  TLS_DHE_RSA_WITH_AES_256_CBC_SHA          [RFC5246]
-         * 0x00,0x3A  TLS_DH_anon_WITH_AES_256_CBC_SHA          [RFC5246]
-         * 0x00,0x3B  TLS_RSA_WITH_NULL_SHA256                  [RFC5246]
-         * 0x00,0x3C  TLS_RSA_WITH_AES_128_CBC_SHA256           [RFC5246]
-         * 0x00,0x3D  TLS_RSA_WITH_AES_256_CBC_SHA256           [RFC5246]
-         * 0x00,0x3E  TLS_DH_DSS_WITH_AES_128_CBC_SHA256        [RFC5246]
-         * 0x00,0x3F  TLS_DH_RSA_WITH_AES_128_CBC_SHA256        [RFC5246]
-         * 0x00,0x40  TLS_DHE_DSS_WITH_AES_128_CBC_SHA256       [RFC5246]
-         * 0x00,0x41  TLS_RSA_WITH_CAMELLIA_128_CBC_SHA         [RFC5932]
-         * 0x00,0x42  TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA      [RFC5932]
-         * 0x00,0x43  TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA      [RFC5932]
-         * 0x00,0x44  TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA     [RFC5932]
-         * 0x00,0x45  TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA     [RFC5932]
-         * 0x00,0x46  TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA     [RFC5932]
+         * Value      Description                                   Reference
+         * 0x00,0x00  TLS_NULL_WITH_NULL_NULL                       [RFC5246]
+         * 0x00,0x01  TLS_RSA_WITH_NULL_MD5                         [RFC5246]
+         * 0x00,0x02  TLS_RSA_WITH_NULL_SHA                         [RFC5246]
+         * 0x00,0x03  TLS_RSA_EXPORT_WITH_RC4_40_MD5                [RFC4346]
+         * 0x00,0x04  TLS_RSA_WITH_RC4_128_MD5                      [RFC5246]
+         * 0x00,0x05  TLS_RSA_WITH_RC4_128_SHA                      [RFC5246]
+         * 0x00,0x06  TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5            [RFC4346]
+         * 0x00,0x07  TLS_RSA_WITH_IDEA_CBC_SHA                     [RFC5469]
+         * 0x00,0x08  TLS_RSA_EXPORT_WITH_DES40_CBC_SHA             [RFC4346]
+         * 0x00,0x09  TLS_RSA_WITH_DES_CBC_SHA                      [RFC5469]
+         * 0x00,0x0A  TLS_RSA_WITH_3DES_EDE_CBC_SHA                 [RFC5246]
+         * 0x00,0x0B  TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA          [RFC4346]
+         * 0x00,0x0C  TLS_DH_DSS_WITH_DES_CBC_SHA                   [RFC5469]
+         * 0x00,0x0D  TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA              [RFC5246]
+         * 0x00,0x0E  TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA          [RFC4346]
+         * 0x00,0x0F  TLS_DH_RSA_WITH_DES_CBC_SHA                   [RFC5469]
+         * 0x00,0x10  TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA              [RFC5246]
+         * 0x00,0x11  TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA         [RFC4346]
+         * 0x00,0x12  TLS_DHE_DSS_WITH_DES_CBC_SHA                  [RFC5469]
+         * 0x00,0x13  TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA             [RFC5246]
+         * 0x00,0x14  TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA         [RFC4346]
+         * 0x00,0x15  TLS_DHE_RSA_WITH_DES_CBC_SHA                  [RFC5469]
+         * 0x00,0x16  TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA             [RFC5246]
+         * 0x00,0x17  TLS_DH_anon_EXPORT_WITH_RC4_40_MD5            [RFC4346]
+         * 0x00,0x18  TLS_DH_anon_WITH_RC4_128_MD5                  [RFC5246]
+         * 0x00,0x19  TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA         [RFC4346]
+         * 0x00,0x1A  TLS_DH_anon_WITH_DES_CBC_SHA                  [RFC5469]
+         * 0x00,0x1B  TLS_DH_anon_WITH_3DES_EDE_CBC_SHA             [RFC5246]
+         * 0x00,0x1C-1D Reserved to avoid conflicts with SSLv3      [RFC5246]
+         * 0x00,0x1E  TLS_KRB5_WITH_DES_CBC_SHA                     [RFC2712]
+         * 0x00,0x1F  TLS_KRB5_WITH_3DES_EDE_CBC_SHA                [RFC2712]
+         * 0x00,0x20  TLS_KRB5_WITH_RC4_128_SHA                     [RFC2712]
+         * 0x00,0x21  TLS_KRB5_WITH_IDEA_CBC_SHA                    [RFC2712]
+         * 0x00,0x22  TLS_KRB5_WITH_DES_CBC_MD5                     [RFC2712]
+         * 0x00,0x23  TLS_KRB5_WITH_3DES_EDE_CBC_MD5                [RFC2712]
+         * 0x00,0x24  TLS_KRB5_WITH_RC4_128_MD5                     [RFC2712]
+         * 0x00,0x25  TLS_KRB5_WITH_IDEA_CBC_MD5                    [RFC2712]
+         * 0x00,0x26  TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA           [RFC2712]
+         * 0x00,0x27  TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA           [RFC2712]
+         * 0x00,0x28  TLS_KRB5_EXPORT_WITH_RC4_40_SHA               [RFC2712]
+         * 0x00,0x29  TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5           [RFC2712]
+         * 0x00,0x2A  TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5           [RFC2712]
+         * 0x00,0x2B  TLS_KRB5_EXPORT_WITH_RC4_40_MD5               [RFC2712]
+         * 0x00,0x2C  TLS_PSK_WITH_NULL_SHA                         [RFC4785]
+         * 0x00,0x2D  TLS_DHE_PSK_WITH_NULL_SHA                     [RFC4785]
+         * 0x00,0x2E  TLS_RSA_PSK_WITH_NULL_SHA                     [RFC4785]
+         * 0x00,0x2F  TLS_RSA_WITH_AES_128_CBC_SHA                  [RFC5246]
+         * 0x00,0x30  TLS_DH_DSS_WITH_AES_128_CBC_SHA               [RFC5246]
+         * 0x00,0x31  TLS_DH_RSA_WITH_AES_128_CBC_SHA               [RFC5246]
+         * 0x00,0x32  TLS_DHE_DSS_WITH_AES_128_CBC_SHA              [RFC5246]
+         * 0x00,0x33  TLS_DHE_RSA_WITH_AES_128_CBC_SHA              [RFC5246]
+         * 0x00,0x34  TLS_DH_anon_WITH_AES_128_CBC_SHA              [RFC5246]
+         * 0x00,0x35  TLS_RSA_WITH_AES_256_CBC_SHA                  [RFC5246]
+         * 0x00,0x36  TLS_DH_DSS_WITH_AES_256_CBC_SHA               [RFC5246]
+         * 0x00,0x37  TLS_DH_RSA_WITH_AES_256_CBC_SHA               [RFC5246]
+         * 0x00,0x38  TLS_DHE_DSS_WITH_AES_256_CBC_SHA              [RFC5246]
+         * 0x00,0x39  TLS_DHE_RSA_WITH_AES_256_CBC_SHA              [RFC5246]
+         * 0x00,0x3A  TLS_DH_anon_WITH_AES_256_CBC_SHA              [RFC5246]
+         * 0x00,0x3B  TLS_RSA_WITH_NULL_SHA256                      [RFC5246]
+         * 0x00,0x3C  TLS_RSA_WITH_AES_128_CBC_SHA256               [RFC5246]
+         * 0x00,0x3D  TLS_RSA_WITH_AES_256_CBC_SHA256               [RFC5246]
+         * 0x00,0x3E  TLS_DH_DSS_WITH_AES_128_CBC_SHA256            [RFC5246]
+         * 0x00,0x3F  TLS_DH_RSA_WITH_AES_128_CBC_SHA256            [RFC5246]
+         * 0x00,0x40  TLS_DHE_DSS_WITH_AES_128_CBC_SHA256           [RFC5246]
+         * 0x00,0x41  TLS_RSA_WITH_CAMELLIA_128_CBC_SHA             [RFC5932]
+         * 0x00,0x42  TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA          [RFC5932]
+         * 0x00,0x43  TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA          [RFC5932]
+         * 0x00,0x44  TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA         [RFC5932]
+         * 0x00,0x45  TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA         [RFC5932]
+         * 0x00,0x46  TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA         [RFC5932]
          * 0x00,0x47-4F Reserved to avoid conflicts with
          *            deployed implementations                  [Pasi_Eronen]
          * 0x00,0x50-58 Reserved to avoid conflicts             [Pasi Eronen]
@@ -852,143 +852,261 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * 0x00,0x5D-5F Unassigned
          * 0x00,0x60-66 Reserved to avoid conflicts with widely
          *            deployed implementations                  [Pasi_Eronen]
-         * 0x00,0x67  TLS_DHE_RSA_WITH_AES_128_CBC_SHA256       [RFC5246]
-         * 0x00,0x68  TLS_DH_DSS_WITH_AES_256_CBC_SHA256        [RFC5246]
-         * 0x00,0x69  TLS_DH_RSA_WITH_AES_256_CBC_SHA256        [RFC5246]
-         * 0x00,0x6A  TLS_DHE_DSS_WITH_AES_256_CBC_SHA256       [RFC5246]
-         * 0x00,0x6B  TLS_DHE_RSA_WITH_AES_256_CBC_SHA256       [RFC5246]
-         * 0x00,0x6C  TLS_DH_anon_WITH_AES_128_CBC_SHA256       [RFC5246]
-         * 0x00,0x6D  TLS_DH_anon_WITH_AES_256_CBC_SHA256       [RFC5246]
+         * 0x00,0x67  TLS_DHE_RSA_WITH_AES_128_CBC_SHA256           [RFC5246]
+         * 0x00,0x68  TLS_DH_DSS_WITH_AES_256_CBC_SHA256            [RFC5246]
+         * 0x00,0x69  TLS_DH_RSA_WITH_AES_256_CBC_SHA256            [RFC5246]
+         * 0x00,0x6A  TLS_DHE_DSS_WITH_AES_256_CBC_SHA256           [RFC5246]
+         * 0x00,0x6B  TLS_DHE_RSA_WITH_AES_256_CBC_SHA256           [RFC5246]
+         * 0x00,0x6C  TLS_DH_anon_WITH_AES_128_CBC_SHA256           [RFC5246]
+         * 0x00,0x6D  TLS_DH_anon_WITH_AES_256_CBC_SHA256           [RFC5246]
          * 0x00,0x6E-83 Unassigned
-         * 0x00,0x84  TLS_RSA_WITH_CAMELLIA_256_CBC_SHA         [RFC5932]
-         * 0x00,0x85  TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA      [RFC5932]
-         * 0x00,0x86  TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA      [RFC5932]
-         * 0x00,0x87  TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA     [RFC5932]
-         * 0x00,0x88  TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA     [RFC5932]
-         * 0x00,0x89  TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA     [RFC5932]
-         * 0x00,0x8A  TLS_PSK_WITH_RC4_128_SHA                  [RFC4279]
-         * 0x00,0x8B  TLS_PSK_WITH_3DES_EDE_CBC_SHA             [RFC4279]
-         * 0x00,0x8C  TLS_PSK_WITH_AES_128_CBC_SHA              [RFC4279]
-         * 0x00,0x8D  TLS_PSK_WITH_AES_256_CBC_SHA              [RFC4279]
-         * 0x00,0x8E  TLS_DHE_PSK_WITH_RC4_128_SHA              [RFC4279]
-         * 0x00,0x8F  TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA         [RFC4279]
-         * 0x00,0x90  TLS_DHE_PSK_WITH_AES_128_CBC_SHA          [RFC4279]
-         * 0x00,0x91  TLS_DHE_PSK_WITH_AES_256_CBC_SHA          [RFC4279]
-         * 0x00,0x92  TLS_RSA_PSK_WITH_RC4_128_SHA              [RFC4279]
-         * 0x00,0x93  TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA         [RFC4279]
-         * 0x00,0x94  TLS_RSA_PSK_WITH_AES_128_CBC_SHA          [RFC4279]
-         * 0x00,0x95  TLS_RSA_PSK_WITH_AES_256_CBC_SHA          [RFC4279]
-         * 0x00,0x96  TLS_RSA_WITH_SEED_CBC_SHA                 [RFC4162]
-         * 0x00,0x97  TLS_DH_DSS_WITH_SEED_CBC_SHA              [RFC4162]
-         * 0x00,0x98  TLS_DH_RSA_WITH_SEED_CBC_SHA              [RFC4162]
-         * 0x00,0x99  TLS_DHE_DSS_WITH_SEED_CBC_SHA             [RFC4162]
-         * 0x00,0x9A  TLS_DHE_RSA_WITH_SEED_CBC_SHA             [RFC4162]
-         * 0x00,0x9B  TLS_DH_anon_WITH_SEED_CBC_SHA             [RFC4162]
-         * 0x00,0x9C  TLS_RSA_WITH_AES_128_GCM_SHA256           [RFC5288]
-         * 0x00,0x9D  TLS_RSA_WITH_AES_256_GCM_SHA384           [RFC5288]
-         * 0x00,0x9E  TLS_DHE_RSA_WITH_AES_128_GCM_SHA256       [RFC5288]
-         * 0x00,0x9F  TLS_DHE_RSA_WITH_AES_256_GCM_SHA384       [RFC5288]
-         * 0x00,0xA0  TLS_DH_RSA_WITH_AES_128_GCM_SHA256        [RFC5288]
-         * 0x00,0xA1  TLS_DH_RSA_WITH_AES_256_GCM_SHA384        [RFC5288]
-         * 0x00,0xA2  TLS_DHE_DSS_WITH_AES_128_GCM_SHA256       [RFC5288]
-         * 0x00,0xA3  TLS_DHE_DSS_WITH_AES_256_GCM_SHA384       [RFC5288]
-         * 0x00,0xA4  TLS_DH_DSS_WITH_AES_128_GCM_SHA256        [RFC5288]
-         * 0x00,0xA5  TLS_DH_DSS_WITH_AES_256_GCM_SHA384        [RFC5288]
-         * 0x00,0xA6  TLS_DH_anon_WITH_AES_128_GCM_SHA256       [RFC5288]
-         * 0x00,0xA7  TLS_DH_anon_WITH_AES_256_GCM_SHA384       [RFC5288]
-         * 0x00,0xA8  TLS_PSK_WITH_AES_128_GCM_SHA256           [RFC5487]
-         * 0x00,0xA9  TLS_PSK_WITH_AES_256_GCM_SHA384           [RFC5487]
-         * 0x00,0xAA  TLS_DHE_PSK_WITH_AES_128_GCM_SHA256       [RFC5487]
-         * 0x00,0xAB  TLS_DHE_PSK_WITH_AES_256_GCM_SHA384       [RFC5487]
-         * 0x00,0xAC  TLS_RSA_PSK_WITH_AES_128_GCM_SHA256       [RFC5487]
-         * 0x00,0xAD  TLS_RSA_PSK_WITH_AES_256_GCM_SHA384       [RFC5487]
-         * 0x00,0xAE  TLS_PSK_WITH_AES_128_CBC_SHA256           [RFC5487]
-         * 0x00,0xAF  TLS_PSK_WITH_AES_256_CBC_SHA384           [RFC5487]
-         * 0x00,0xB0  TLS_PSK_WITH_NULL_SHA256                  [RFC5487]
-         * 0x00,0xB1  TLS_PSK_WITH_NULL_SHA384                  [RFC5487]
-         * 0x00,0xB2  TLS_DHE_PSK_WITH_AES_128_CBC_SHA256       [RFC5487]
-         * 0x00,0xB3  TLS_DHE_PSK_WITH_AES_256_CBC_SHA384       [RFC5487]
-         * 0x00,0xB4  TLS_DHE_PSK_WITH_NULL_SHA256              [RFC5487]
-         * 0x00,0xB5  TLS_DHE_PSK_WITH_NULL_SHA384              [RFC5487]
-         * 0x00,0xB6  TLS_RSA_PSK_WITH_AES_128_CBC_SHA256       [RFC5487]
-         * 0x00,0xB7  TLS_RSA_PSK_WITH_AES_256_CBC_SHA384       [RFC5487]
-         * 0x00,0xB8  TLS_RSA_PSK_WITH_NULL_SHA256              [RFC5487]
-         * 0x00,0xB9  TLS_RSA_PSK_WITH_NULL_SHA384              [RFC5487]
-         * 0x00,0xBA  TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256      [RFC5932]
-         * 0x00,0xBB  TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256   [RFC5932]
-         * 0x00,0xBC  TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256   [RFC5932]
-         * 0x00,0xBD  TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256  [RFC5932]
-         * 0x00,0xBE  TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256  [RFC5932]
-         * 0x00,0xBF  TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256  [RFC5932]
-         * 0x00,0xC0  TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256      [RFC5932]
-         * 0x00,0xC1  TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256   [RFC5932]
-         * 0x00,0xC2  TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256   [RFC5932]
-         * 0x00,0xC3  TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256  [RFC5932]
-         * 0x00,0xC4  TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256  [RFC5932]
-         * 0x00,0xC5  TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256  [RFC5932]
+         * 0x00,0x84  TLS_RSA_WITH_CAMELLIA_256_CBC_SHA             [RFC5932]
+         * 0x00,0x85  TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA          [RFC5932]
+         * 0x00,0x86  TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA          [RFC5932]
+         * 0x00,0x87  TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA         [RFC5932]
+         * 0x00,0x88  TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA         [RFC5932]
+         * 0x00,0x89  TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA         [RFC5932]
+         * 0x00,0x8A  TLS_PSK_WITH_RC4_128_SHA                      [RFC4279]
+         * 0x00,0x8B  TLS_PSK_WITH_3DES_EDE_CBC_SHA                 [RFC4279]
+         * 0x00,0x8C  TLS_PSK_WITH_AES_128_CBC_SHA                  [RFC4279]
+         * 0x00,0x8D  TLS_PSK_WITH_AES_256_CBC_SHA                  [RFC4279]
+         * 0x00,0x8E  TLS_DHE_PSK_WITH_RC4_128_SHA                  [RFC4279]
+         * 0x00,0x8F  TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA             [RFC4279]
+         * 0x00,0x90  TLS_DHE_PSK_WITH_AES_128_CBC_SHA              [RFC4279]
+         * 0x00,0x91  TLS_DHE_PSK_WITH_AES_256_CBC_SHA              [RFC4279]
+         * 0x00,0x92  TLS_RSA_PSK_WITH_RC4_128_SHA                  [RFC4279]
+         * 0x00,0x93  TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA             [RFC4279]
+         * 0x00,0x94  TLS_RSA_PSK_WITH_AES_128_CBC_SHA              [RFC4279]
+         * 0x00,0x95  TLS_RSA_PSK_WITH_AES_256_CBC_SHA              [RFC4279]
+         * 0x00,0x96  TLS_RSA_WITH_SEED_CBC_SHA                     [RFC4162]
+         * 0x00,0x97  TLS_DH_DSS_WITH_SEED_CBC_SHA                  [RFC4162]
+         * 0x00,0x98  TLS_DH_RSA_WITH_SEED_CBC_SHA                  [RFC4162]
+         * 0x00,0x99  TLS_DHE_DSS_WITH_SEED_CBC_SHA                 [RFC4162]
+         * 0x00,0x9A  TLS_DHE_RSA_WITH_SEED_CBC_SHA                 [RFC4162]
+         * 0x00,0x9B  TLS_DH_anon_WITH_SEED_CBC_SHA                 [RFC4162]
+         * 0x00,0x9C  TLS_RSA_WITH_AES_128_GCM_SHA256               [RFC5288]
+         * 0x00,0x9D  TLS_RSA_WITH_AES_256_GCM_SHA384               [RFC5288]
+         * 0x00,0x9E  TLS_DHE_RSA_WITH_AES_128_GCM_SHA256           [RFC5288]
+         * 0x00,0x9F  TLS_DHE_RSA_WITH_AES_256_GCM_SHA384           [RFC5288]
+         * 0x00,0xA0  TLS_DH_RSA_WITH_AES_128_GCM_SHA256            [RFC5288]
+         * 0x00,0xA1  TLS_DH_RSA_WITH_AES_256_GCM_SHA384            [RFC5288]
+         * 0x00,0xA2  TLS_DHE_DSS_WITH_AES_128_GCM_SHA256           [RFC5288]
+         * 0x00,0xA3  TLS_DHE_DSS_WITH_AES_256_GCM_SHA384           [RFC5288]
+         * 0x00,0xA4  TLS_DH_DSS_WITH_AES_128_GCM_SHA256            [RFC5288]
+         * 0x00,0xA5  TLS_DH_DSS_WITH_AES_256_GCM_SHA384            [RFC5288]
+         * 0x00,0xA6  TLS_DH_anon_WITH_AES_128_GCM_SHA256           [RFC5288]
+         * 0x00,0xA7  TLS_DH_anon_WITH_AES_256_GCM_SHA384           [RFC5288]
+         * 0x00,0xA8  TLS_PSK_WITH_AES_128_GCM_SHA256               [RFC5487]
+         * 0x00,0xA9  TLS_PSK_WITH_AES_256_GCM_SHA384               [RFC5487]
+         * 0x00,0xAA  TLS_DHE_PSK_WITH_AES_128_GCM_SHA256           [RFC5487]
+         * 0x00,0xAB  TLS_DHE_PSK_WITH_AES_256_GCM_SHA384           [RFC5487]
+         * 0x00,0xAC  TLS_RSA_PSK_WITH_AES_128_GCM_SHA256           [RFC5487]
+         * 0x00,0xAD  TLS_RSA_PSK_WITH_AES_256_GCM_SHA384           [RFC5487]
+         * 0x00,0xAE  TLS_PSK_WITH_AES_128_CBC_SHA256               [RFC5487]
+         * 0x00,0xAF  TLS_PSK_WITH_AES_256_CBC_SHA384               [RFC5487]
+         * 0x00,0xB0  TLS_PSK_WITH_NULL_SHA256                      [RFC5487]
+         * 0x00,0xB1  TLS_PSK_WITH_NULL_SHA384                      [RFC5487]
+         * 0x00,0xB2  TLS_DHE_PSK_WITH_AES_128_CBC_SHA256           [RFC5487]
+         * 0x00,0xB3  TLS_DHE_PSK_WITH_AES_256_CBC_SHA384           [RFC5487]
+         * 0x00,0xB4  TLS_DHE_PSK_WITH_NULL_SHA256                  [RFC5487]
+         * 0x00,0xB5  TLS_DHE_PSK_WITH_NULL_SHA384                  [RFC5487]
+         * 0x00,0xB6  TLS_RSA_PSK_WITH_AES_128_CBC_SHA256           [RFC5487]
+         * 0x00,0xB7  TLS_RSA_PSK_WITH_AES_256_CBC_SHA384           [RFC5487]
+         * 0x00,0xB8  TLS_RSA_PSK_WITH_NULL_SHA256                  [RFC5487]
+         * 0x00,0xB9  TLS_RSA_PSK_WITH_NULL_SHA384                  [RFC5487]
+         * 0x00,0xBA  TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256          [RFC5932]
+         * 0x00,0xBB  TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256       [RFC5932]
+         * 0x00,0xBC  TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256       [RFC5932]
+         * 0x00,0xBD  TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256      [RFC5932]
+         * 0x00,0xBE  TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256      [RFC5932]
+         * 0x00,0xBF  TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256      [RFC5932]
+         * 0x00,0xC0  TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256          [RFC5932]
+         * 0x00,0xC1  TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256       [RFC5932]
+         * 0x00,0xC2  TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256       [RFC5932]
+         * 0x00,0xC3  TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256      [RFC5932]
+         * 0x00,0xC4  TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256      [RFC5932]
+         * 0x00,0xC5  TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256      [RFC5932]
          * 0x00,0xC6-FE         Unassigned
-         * 0x00,0xFF  TLS_EMPTY_RENEGOTIATION_INFO_SCSV         [RFC5746]
-         * 0x01-BF,*  Unassigned
-         * 0xC0,0x01  TLS_ECDH_ECDSA_WITH_NULL_SHA              [RFC4492]
-         * 0xC0,0x02  TLS_ECDH_ECDSA_WITH_RC4_128_SHA           [RFC4492]
-         * 0xC0,0x03  TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA      [RFC4492]
-         * 0xC0,0x04  TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA       [RFC4492]
-         * 0xC0,0x05  TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA       [RFC4492]
-         * 0xC0,0x06  TLS_ECDHE_ECDSA_WITH_NULL_SHA             [RFC4492]
-         * 0xC0,0x07  TLS_ECDHE_ECDSA_WITH_RC4_128_SHA          [RFC4492]
-         * 0xC0,0x08  TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA     [RFC4492]
-         * 0xC0,0x09  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA      [RFC4492]
-         * 0xC0,0x0A  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA      [RFC4492]
-         * 0xC0,0x0B  TLS_ECDH_RSA_WITH_NULL_SHA                [RFC4492]
-         * 0xC0,0x0C  TLS_ECDH_RSA_WITH_RC4_128_SHA             [RFC4492]
-         * 0xC0,0x0D  TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA        [RFC4492]
-         * 0xC0,0x0E  TLS_ECDH_RSA_WITH_AES_128_CBC_SHA         [RFC4492]
-         * 0xC0,0x0F  TLS_ECDH_RSA_WITH_AES_256_CBC_SHA         [RFC4492]
-         * 0xC0,0x10  TLS_ECDHE_RSA_WITH_NULL_SHA               [RFC4492]
-         * 0xC0,0x11  TLS_ECDHE_RSA_WITH_RC4_128_SHA            [RFC4492]
-         * 0xC0,0x12  TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA       [RFC4492]
-         * 0xC0,0x13  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA        [RFC4492]
-         * 0xC0,0x14  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA        [RFC4492]
-         * 0xC0,0x15  TLS_ECDH_anon_WITH_NULL_SHA               [RFC4492]
-         * 0xC0,0x16  TLS_ECDH_anon_WITH_RC4_128_SHA            [RFC4492]
-         * 0xC0,0x17  TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA       [RFC4492]
-         * 0xC0,0x18  TLS_ECDH_anon_WITH_AES_128_CBC_SHA        [RFC4492]
-         * 0xC0,0x19  TLS_ECDH_anon_WITH_AES_256_CBC_SHA        [RFC4492]
-         * 0xC0,0x1A  TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA         [RFC5054]
-         * 0xC0,0x1B  TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA     [RFC5054]
-         * 0xC0,0x1C  TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA     [RFC5054]
-         * 0xC0,0x1D  TLS_SRP_SHA_WITH_AES_128_CBC_SHA          [RFC5054]
-         * 0xC0,0x1E  TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA      [RFC5054]
-         * 0xC0,0x1F  TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA      [RFC5054]
-         * 0xC0,0x20  TLS_SRP_SHA_WITH_AES_256_CBC_SHA          [RFC5054]
-         * 0xC0,0x21  TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA      [RFC5054]
-         * 0xC0,0x22  TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA      [RFC5054]
-         * 0xC0,0x23  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256   [RFC5289]
-         * 0xC0,0x24  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384   [RFC5289]
-         * 0xC0,0x25  TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256    [RFC5289]
-         * 0xC0,0x26  TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384    [RFC5289]
-         * 0xC0,0x27  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256     [RFC5289]
-         * 0xC0,0x28  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384     [RFC5289]
-         * 0xC0,0x29  TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256      [RFC5289]
-         * 0xC0,0x2A  TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384      [RFC5289]
-         * 0xC0,0x2B  TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256   [RFC5289]
-         * 0xC0,0x2C  TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384   [RFC5289]
-         * 0xC0,0x2D  TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256    [RFC5289]
-         * 0xC0,0x2E  TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384    [RFC5289]
-         * 0xC0,0x2F  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256     [RFC5289]
-         * 0xC0,0x30  TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384     [RFC5289]
-         * 0xC0,0x31  TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256      [RFC5289]
-         * 0xC0,0x32  TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384      [RFC5289]
-         * 0xC0,0x33  TLS_ECDHE_PSK_WITH_RC4_128_SHA            [RFC5489]
-         * 0xC0,0x34  TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA       [RFC5489]
-         * 0xC0,0x35  TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA        [RFC5489]
-         * 0xC0,0x36  TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA        [RFC5489]
-         * 0xC0,0x37  TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256     [RFC5489]
-         * 0xC0,0x38  TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384     [RFC5489]
-         * 0xC0,0x39  TLS_ECDHE_PSK_WITH_NULL_SHA               [RFC5489]
-         * 0xC0,0x3A  TLS_ECDHE_PSK_WITH_NULL_SHA256            [RFC5489]
-         * 0xC0,0x3B  TLS_ECDHE_PSK_WITH_NULL_SHA384            [RFC5489]
-         * 0xC0,0x3C-FF Unassigned
+         * 0x00,0xFF  TLS_EMPTY_RENEGOTIATION_INFO_SCSV             [RFC5746]
+         * 0x01-55,*  Unassigned
+         * 0x56,0x00  TLS_FALLBACK_SCSV                             [RFC7507]
+         * 0x56,0x01-0xC0,0x00  Unassigned
+         * 0xC0,0x01  TLS_ECDH_ECDSA_WITH_NULL_SHA                  [RFC4492]
+         * 0xC0,0x02  TLS_ECDH_ECDSA_WITH_RC4_128_SHA               [RFC4492]
+         * 0xC0,0x03  TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA          [RFC4492]
+         * 0xC0,0x04  TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA           [RFC4492]
+         * 0xC0,0x05  TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA           [RFC4492]
+         * 0xC0,0x06  TLS_ECDHE_ECDSA_WITH_NULL_SHA                 [RFC4492]
+         * 0xC0,0x07  TLS_ECDHE_ECDSA_WITH_RC4_128_SHA              [RFC4492]
+         * 0xC0,0x08  TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA         [RFC4492]
+         * 0xC0,0x09  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA          [RFC4492]
+         * 0xC0,0x0A  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA          [RFC4492]
+         * 0xC0,0x0B  TLS_ECDH_RSA_WITH_NULL_SHA                    [RFC4492]
+         * 0xC0,0x0C  TLS_ECDH_RSA_WITH_RC4_128_SHA                 [RFC4492]
+         * 0xC0,0x0D  TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA            [RFC4492]
+         * 0xC0,0x0E  TLS_ECDH_RSA_WITH_AES_128_CBC_SHA             [RFC4492]
+         * 0xC0,0x0F  TLS_ECDH_RSA_WITH_AES_256_CBC_SHA             [RFC4492]
+         * 0xC0,0x10  TLS_ECDHE_RSA_WITH_NULL_SHA                   [RFC4492]
+         * 0xC0,0x11  TLS_ECDHE_RSA_WITH_RC4_128_SHA                [RFC4492]
+         * 0xC0,0x12  TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA           [RFC4492]
+         * 0xC0,0x13  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA            [RFC4492]
+         * 0xC0,0x14  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA            [RFC4492]
+         * 0xC0,0x15  TLS_ECDH_anon_WITH_NULL_SHA                   [RFC4492]
+         * 0xC0,0x16  TLS_ECDH_anon_WITH_RC4_128_SHA                [RFC4492]
+         * 0xC0,0x17  TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA           [RFC4492]
+         * 0xC0,0x18  TLS_ECDH_anon_WITH_AES_128_CBC_SHA            [RFC4492]
+         * 0xC0,0x19  TLS_ECDH_anon_WITH_AES_256_CBC_SHA            [RFC4492]
+         * 0xC0,0x1A  TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA             [RFC5054]
+         * 0xC0,0x1B  TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA         [RFC5054]
+         * 0xC0,0x1C  TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA         [RFC5054]
+         * 0xC0,0x1D  TLS_SRP_SHA_WITH_AES_128_CBC_SHA              [RFC5054]
+         * 0xC0,0x1E  TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA          [RFC5054]
+         * 0xC0,0x1F  TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA          [RFC5054]
+         * 0xC0,0x20  TLS_SRP_SHA_WITH_AES_256_CBC_SHA              [RFC5054]
+         * 0xC0,0x21  TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA          [RFC5054]
+         * 0xC0,0x22  TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA          [RFC5054]
+         * 0xC0,0x23  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256       [RFC5289]
+         * 0xC0,0x24  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384       [RFC5289]
+         * 0xC0,0x25  TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256        [RFC5289]
+         * 0xC0,0x26  TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384        [RFC5289]
+         * 0xC0,0x27  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256         [RFC5289]
+         * 0xC0,0x28  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384         [RFC5289]
+         * 0xC0,0x29  TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256          [RFC5289]
+         * 0xC0,0x2A  TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384          [RFC5289]
+         * 0xC0,0x2B  TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256       [RFC5289]
+         * 0xC0,0x2C  TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384       [RFC5289]
+         * 0xC0,0x2D  TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256        [RFC5289]
+         * 0xC0,0x2E  TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384        [RFC5289]
+         * 0xC0,0x2F  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256         [RFC5289]
+         * 0xC0,0x30  TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384         [RFC5289]
+         * 0xC0,0x31  TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256          [RFC5289]
+         * 0xC0,0x32  TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384          [RFC5289]
+         * 0xC0,0x33  TLS_ECDHE_PSK_WITH_RC4_128_SHA                [RFC5489]
+         * 0xC0,0x34  TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA           [RFC5489]
+         * 0xC0,0x35  TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA            [RFC5489]
+         * 0xC0,0x36  TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA            [RFC5489]
+         * 0xC0,0x37  TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256         [RFC5489]
+         * 0xC0,0x38  TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384         [RFC5489]
+         * 0xC0,0x39  TLS_ECDHE_PSK_WITH_NULL_SHA                   [RFC5489]
+         * 0xC0,0x3A  TLS_ECDHE_PSK_WITH_NULL_SHA256                [RFC5489]
+         * 0xC0,0x3B  TLS_ECDHE_PSK_WITH_NULL_SHA384                [RFC5489]
+         * 0xC0,0x3C  TLS_RSA_WITH_ARIA_128_CBC_SHA256              [RFC6209]
+         * 0xC0,0x3D  TLS_RSA_WITH_ARIA_256_CBC_SHA384              [RFC6209]
+         * 0xC0,0x3E  TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256           [RFC6209]
+         * 0xC0,0x3F  TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384           [RFC6209]
+         * 0xC0,0x40  TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256           [RFC6209]
+         * 0xC0,0x41  TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384           [RFC6209]
+         * 0xC0,0x42  TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256          [RFC6209]
+         * 0xC0,0x43  TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384          [RFC6209]
+         * 0xC0,0x44  TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256          [RFC6209]
+         * 0xC0,0x45  TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384          [RFC6209]
+         * 0xC0,0x46  TLS_DH_anon_WITH_ARIA_128_CBC_SHA256          [RFC6209]
+         * 0xC0,0x47  TLS_DH_anon_WITH_ARIA_256_CBC_SHA384          [RFC6209]
+         * 0xC0,0x48  TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256      [RFC6209]
+         * 0xC0,0x49  TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384      [RFC6209]
+         * 0xC0,0x4A  TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256       [RFC6209]
+         * 0xC0,0x4B  TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384       [RFC6209]
+         * 0xC0,0x4C  TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256        [RFC6209]
+         * 0xC0,0x4D  TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384        [RFC6209]
+         * 0xC0,0x4E  TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256         [RFC6209]
+         * 0xC0,0x4F  TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384         [RFC6209]
+         * 0xC0,0x50  TLS_RSA_WITH_ARIA_128_GCM_SHA256              [RFC6209]
+         * 0xC0,0x51  TLS_RSA_WITH_ARIA_256_GCM_SHA384              [RFC6209]
+         * 0xC0,0x52  TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256          [RFC6209]
+         * 0xC0,0x53  TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384          [RFC6209]
+         * 0xC0,0x54  TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256           [RFC6209]
+         * 0xC0,0x55  TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384           [RFC6209]
+         * 0xC0,0x56  TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256          [RFC6209]
+         * 0xC0,0x57  TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384          [RFC6209]
+         * 0xC0,0x58  TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256           [RFC6209]
+         * 0xC0,0x59  TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384           [RFC6209]
+         * 0xC0,0x5A  TLS_DH_anon_WITH_ARIA_128_GCM_SHA256          [RFC6209]
+         * 0xC0,0x5B  TLS_DH_anon_WITH_ARIA_256_GCM_SHA384          [RFC6209]
+         * 0xC0,0x5C  TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256      [RFC6209]
+         * 0xC0,0x5D  TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384      [RFC6209]
+         * 0xC0,0x5E  TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256       [RFC6209]
+         * 0xC0,0x5F  TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384       [RFC6209]
+         * 0xC0,0x60  TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256        [RFC6209]
+         * 0xC0,0x61  TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384        [RFC6209]
+         * 0xC0,0x62  TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256         [RFC6209]
+         * 0xC0,0x63  TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384         [RFC6209]
+         * 0xC0,0x64  TLS_PSK_WITH_ARIA_128_CBC_SHA256              [RFC6209]
+         * 0xC0,0x65  TLS_PSK_WITH_ARIA_256_CBC_SHA384              [RFC6209]
+         * 0xC0,0x66  TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256          [RFC6209]
+         * 0xC0,0x67  TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384          [RFC6209]
+         * 0xC0,0x68  TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256          [RFC6209]
+         * 0xC0,0x69  TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384          [RFC6209]
+         * 0xC0,0x6A  TLS_PSK_WITH_ARIA_128_GCM_SHA256              [RFC6209]
+         * 0xC0,0x6B  TLS_PSK_WITH_ARIA_256_GCM_SHA384              [RFC6209]
+         * 0xC0,0x6C  TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256          [RFC6209]
+         * 0xC0,0x6D  TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384          [RFC6209]
+         * 0xC0,0x6E  TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256          [RFC6209]
+         * 0xC0,0x6F  TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384          [RFC6209]
+         * 0xC0,0x70  TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256        [RFC6209]
+         * 0xC0,0x71  TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384        [RFC6209]
+         * 0xC0,0x72  TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256  [RFC6367]
+         * 0xC0,0x73  TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384  [RFC6367]
+         * 0xC0,0x74  TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256   [RFC6367]
+         * 0xC0,0x75  TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384   [RFC6367]
+         * 0xC0,0x76  TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256    [RFC6367]
+         * 0xC0,0x77  TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384    [RFC6367]
+         * 0xC0,0x78  TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256     [RFC6367]
+         * 0xC0,0x79  TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384     [RFC6367]
+         * 0xC0,0x7A  TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256          [RFC6367]
+         * 0xC0,0x7B  TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384          [RFC6367]
+         * 0xC0,0x7C  TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256      [RFC6367]
+         * 0xC0,0x7D  TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384      [RFC6367]
+         * 0xC0,0x7E  TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256       [RFC6367]
+         * 0xC0,0x7F  TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384       [RFC6367]
+         * 0xC0,0x80  TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256      [RFC6367]
+         * 0xC0,0x81  TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384      [RFC6367]
+         * 0xC0,0x82  TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256       [RFC6367]
+         * 0xC0,0x83  TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384       [RFC6367]
+         * 0xC0,0x84  TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256      [RFC6367]
+         * 0xC0,0x85  TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384      [RFC6367]
+         * 0xC0,0x86  TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256  [RFC6367]
+         * 0xC0,0x87  TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384  [RFC6367]
+         * 0xC0,0x88  TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256   [RFC6367]
+         * 0xC0,0x89  TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384   [RFC6367]
+         * 0xC0,0x8A  TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256    [RFC6367]
+         * 0xC0,0x8B  TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384    [RFC6367]
+         * 0xC0,0x8C  TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256     [RFC6367]
+         * 0xC0,0x8D  TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384     [RFC6367]
+         * 0xC0,0x8E  TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256          [RFC6367]
+         * 0xC0,0x8F  TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384          [RFC6367]
+         * 0xC0,0x90  TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256      [RFC6367]
+         * 0xC0,0x91  TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384      [RFC6367]
+         * 0xC0,0x92  TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256      [RFC6367]
+         * 0xC0,0x93  TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384      [RFC6367]
+         * 0xC0,0x94  TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256          [RFC6367]
+         * 0xC0,0x95  TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384          [RFC6367]
+         * 0xC0,0x96  TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256      [RFC6367]
+         * 0xC0,0x97  TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384      [RFC6367]
+         * 0xC0,0x98  TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256      [RFC6367]
+         * 0xC0,0x99  TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384      [RFC6367]
+         * 0xC0,0x9A  TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256    [RFC6367]
+         * 0xC0,0x9B  TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384    [RFC6367]
+         * 0xC0,0x9C  TLS_RSA_WITH_AES_128_CCM                      [RFC6655]
+         * 0xC0,0x9D  TLS_RSA_WITH_AES_256_CCM                      [RFC6655]
+         * 0xC0,0x9E  TLS_DHE_RSA_WITH_AES_128_CCM                  [RFC6655]
+         * 0xC0,0x9F  TLS_DHE_RSA_WITH_AES_256_CCM                  [RFC6655]
+         * 0xC0,0xA0  TLS_RSA_WITH_AES_128_CCM_8                    [RFC6655]
+         * 0xC0,0xA1  TLS_RSA_WITH_AES_256_CCM_8                    [RFC6655]
+         * 0xC0,0xA2  TLS_DHE_RSA_WITH_AES_128_CCM_8                [RFC6655]
+         * 0xC0,0xA3  TLS_DHE_RSA_WITH_AES_256_CCM_8                [RFC6655]
+         * 0xC0,0xA4  TLS_PSK_WITH_AES_128_CCM                      [RFC6655]
+         * 0xC0,0xA5  TLS_PSK_WITH_AES_256_CCM                      [RFC6655]
+         * 0xC0,0xA6  TLS_DHE_PSK_WITH_AES_128_CCM                  [RFC6655]
+         * 0xC0,0xA7  TLS_DHE_PSK_WITH_AES_256_CCM                  [RFC6655]
+         * 0xC0,0xA8  TLS_PSK_WITH_AES_128_CCM_8                    [RFC6655]
+         * 0xC0,0xA9  TLS_PSK_WITH_AES_256_CCM_8                    [RFC6655]
+         * 0xC0,0xAA  TLS_PSK_DHE_WITH_AES_128_CCM_8                [RFC6655]
+         * 0xC0,0xAB  TLS_PSK_DHE_WITH_AES_256_CCM_8                [RFC6655]
+         * 0xC0,0xAC  TLS_ECDHE_ECDSA_WITH_AES_128_CCM              [RFC7251]
+         * 0xC0,0xAD  TLS_ECDHE_ECDSA_WITH_AES_256_CCM              [RFC7251]
+         * 0xC0,0xAE  TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8            [RFC7251]
+         * 0xC0,0xAF  TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8            [RFC7251]
+         * 0xC0,0xB0-FF  Unassigned
          * 0xC1-FD,*  Unassigned
          * 0xFE,0x00-FD Unassigned
          * 0xFE,0xFE-FF Reserved to avoid conflicts with widely
@@ -1289,149 +1407,276 @@ final class CipherSuite implements Comparable<CipherSuite> {
         // the debug output.
 
         // remaining unsupported ciphersuites defined in RFC2246.
-        add("SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5",          0x0006);
-        add("SSL_RSA_WITH_IDEA_CBC_SHA",                   0x0007);
-        add("SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",        0x000b);
-        add("SSL_DH_DSS_WITH_DES_CBC_SHA",                 0x000c);
-        add("SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA",            0x000d);
-        add("SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",        0x000e);
-        add("SSL_DH_RSA_WITH_DES_CBC_SHA",                 0x000f);
-        add("SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA",            0x0010);
+        add("SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5",           0x0006);
+        add("SSL_RSA_WITH_IDEA_CBC_SHA",                    0x0007);
+        add("SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",         0x000b);
+        add("SSL_DH_DSS_WITH_DES_CBC_SHA",                  0x000c);
+        add("SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA",             0x000d);
+        add("SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",         0x000e);
+        add("SSL_DH_RSA_WITH_DES_CBC_SHA",                  0x000f);
+        add("SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA",             0x0010);
 
         // SSL 3.0 Fortezza ciphersuites
-        add("SSL_FORTEZZA_DMS_WITH_NULL_SHA",              0x001c);
-        add("SSL_FORTEZZA_DMS_WITH_FORTEZZA_CBC_SHA",      0x001d);
+        add("SSL_FORTEZZA_DMS_WITH_NULL_SHA",               0x001c);
+        add("SSL_FORTEZZA_DMS_WITH_FORTEZZA_CBC_SHA",       0x001d);
 
         // 1024/56 bit exportable ciphersuites from expired internet draft
-        add("SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA",         0x0062);
-        add("SSL_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",     0x0063);
-        add("SSL_RSA_EXPORT1024_WITH_RC4_56_SHA",          0x0064);
-        add("SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",      0x0065);
-        add("SSL_DHE_DSS_WITH_RC4_128_SHA",                0x0066);
+        add("SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA",          0x0062);
+        add("SSL_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",      0x0063);
+        add("SSL_RSA_EXPORT1024_WITH_RC4_56_SHA",           0x0064);
+        add("SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",       0x0065);
+        add("SSL_DHE_DSS_WITH_RC4_128_SHA",                 0x0066);
 
         // Netscape old and new SSL 3.0 FIPS ciphersuites
         // see http://www.mozilla.org/projects/security/pki/nss/ssl/fips-ssl-ciphersuites.html
-        add("NETSCAPE_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",     0xffe0);
-        add("NETSCAPE_RSA_FIPS_WITH_DES_CBC_SHA",          0xffe1);
-        add("SSL_RSA_FIPS_WITH_DES_CBC_SHA",               0xfefe);
-        add("SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",          0xfeff);
+        add("NETSCAPE_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",      0xffe0);
+        add("NETSCAPE_RSA_FIPS_WITH_DES_CBC_SHA",           0xffe1);
+        add("SSL_RSA_FIPS_WITH_DES_CBC_SHA",                0xfefe);
+        add("SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",           0xfeff);
 
         // Unsupported Kerberos cipher suites from RFC 2712
-        add("TLS_KRB5_WITH_IDEA_CBC_SHA",                  0x0021);
-        add("TLS_KRB5_WITH_IDEA_CBC_MD5",                  0x0025);
-        add("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",         0x0027);
-        add("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",         0x002a);
+        add("TLS_KRB5_WITH_IDEA_CBC_SHA",                   0x0021);
+        add("TLS_KRB5_WITH_IDEA_CBC_MD5",                   0x0025);
+        add("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",          0x0027);
+        add("TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",          0x002a);
 
         // Unsupported cipher suites from RFC 4162
-        add("TLS_RSA_WITH_SEED_CBC_SHA",                   0x0096);
-        add("TLS_DH_DSS_WITH_SEED_CBC_SHA",                0x0097);
-        add("TLS_DH_RSA_WITH_SEED_CBC_SHA",                0x0098);
-        add("TLS_DHE_DSS_WITH_SEED_CBC_SHA",               0x0099);
-        add("TLS_DHE_RSA_WITH_SEED_CBC_SHA",               0x009a);
-        add("TLS_DH_anon_WITH_SEED_CBC_SHA",               0x009b);
+        add("TLS_RSA_WITH_SEED_CBC_SHA",                    0x0096);
+        add("TLS_DH_DSS_WITH_SEED_CBC_SHA",                 0x0097);
+        add("TLS_DH_RSA_WITH_SEED_CBC_SHA",                 0x0098);
+        add("TLS_DHE_DSS_WITH_SEED_CBC_SHA",                0x0099);
+        add("TLS_DHE_RSA_WITH_SEED_CBC_SHA",                0x009a);
+        add("TLS_DH_anon_WITH_SEED_CBC_SHA",                0x009b);
 
         // Unsupported cipher suites from RFC 4279
-        add("TLS_PSK_WITH_RC4_128_SHA",                    0x008a);
-        add("TLS_PSK_WITH_3DES_EDE_CBC_SHA",               0x008b);
-        add("TLS_PSK_WITH_AES_128_CBC_SHA",                0x008c);
-        add("TLS_PSK_WITH_AES_256_CBC_SHA",                0x008d);
-        add("TLS_DHE_PSK_WITH_RC4_128_SHA",                0x008e);
-        add("TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA",           0x008f);
-        add("TLS_DHE_PSK_WITH_AES_128_CBC_SHA",            0x0090);
-        add("TLS_DHE_PSK_WITH_AES_256_CBC_SHA",            0x0091);
-        add("TLS_RSA_PSK_WITH_RC4_128_SHA",                0x0092);
-        add("TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA",           0x0093);
-        add("TLS_RSA_PSK_WITH_AES_128_CBC_SHA",            0x0094);
-        add("TLS_RSA_PSK_WITH_AES_256_CBC_SHA",            0x0095);
+        add("TLS_PSK_WITH_RC4_128_SHA",                     0x008a);
+        add("TLS_PSK_WITH_3DES_EDE_CBC_SHA",                0x008b);
+        add("TLS_PSK_WITH_AES_128_CBC_SHA",                 0x008c);
+        add("TLS_PSK_WITH_AES_256_CBC_SHA",                 0x008d);
+        add("TLS_DHE_PSK_WITH_RC4_128_SHA",                 0x008e);
+        add("TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA",            0x008f);
+        add("TLS_DHE_PSK_WITH_AES_128_CBC_SHA",             0x0090);
+        add("TLS_DHE_PSK_WITH_AES_256_CBC_SHA",             0x0091);
+        add("TLS_RSA_PSK_WITH_RC4_128_SHA",                 0x0092);
+        add("TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA",            0x0093);
+        add("TLS_RSA_PSK_WITH_AES_128_CBC_SHA",             0x0094);
+        add("TLS_RSA_PSK_WITH_AES_256_CBC_SHA",             0x0095);
 
         // Unsupported cipher suites from RFC 4785
-        add("TLS_PSK_WITH_NULL_SHA",                       0x002c);
-        add("TLS_DHE_PSK_WITH_NULL_SHA",                   0x002d);
-        add("TLS_RSA_PSK_WITH_NULL_SHA",                   0x002e);
+        add("TLS_PSK_WITH_NULL_SHA",                        0x002c);
+        add("TLS_DHE_PSK_WITH_NULL_SHA",                    0x002d);
+        add("TLS_RSA_PSK_WITH_NULL_SHA",                    0x002e);
 
         // Unsupported cipher suites from RFC 5246
-        add("TLS_DH_DSS_WITH_AES_128_CBC_SHA",             0x0030);
-        add("TLS_DH_RSA_WITH_AES_128_CBC_SHA",             0x0031);
-        add("TLS_DH_DSS_WITH_AES_256_CBC_SHA",             0x0036);
-        add("TLS_DH_RSA_WITH_AES_256_CBC_SHA",             0x0037);
-        add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256",          0x003e);
-        add("TLS_DH_RSA_WITH_AES_128_CBC_SHA256",          0x003f);
-        add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256",          0x0068);
-        add("TLS_DH_RSA_WITH_AES_256_CBC_SHA256",          0x0069);
+        add("TLS_DH_DSS_WITH_AES_128_CBC_SHA",              0x0030);
+        add("TLS_DH_RSA_WITH_AES_128_CBC_SHA",              0x0031);
+        add("TLS_DH_DSS_WITH_AES_256_CBC_SHA",              0x0036);
+        add("TLS_DH_RSA_WITH_AES_256_CBC_SHA",              0x0037);
+        add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256",           0x003e);
+        add("TLS_DH_RSA_WITH_AES_128_CBC_SHA256",           0x003f);
+        add("TLS_DH_DSS_WITH_AES_256_CBC_SHA256",           0x0068);
+        add("TLS_DH_RSA_WITH_AES_256_CBC_SHA256",           0x0069);
 
         // Unsupported cipher suites from RFC 5288
-        add("TLS_DH_RSA_WITH_AES_128_GCM_SHA256",          0x00a0);
-        add("TLS_DH_RSA_WITH_AES_256_GCM_SHA384",          0x00a1);
-        add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256",          0x00a4);
-        add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384",          0x00a5);
+        add("TLS_DH_RSA_WITH_AES_128_GCM_SHA256",           0x00a0);
+        add("TLS_DH_RSA_WITH_AES_256_GCM_SHA384",           0x00a1);
+        add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256",           0x00a4);
+        add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384",           0x00a5);
 
         // Unsupported cipher suites from RFC 5487
-        add("TLS_PSK_WITH_AES_128_GCM_SHA256",             0x00a8);
-        add("TLS_PSK_WITH_AES_256_GCM_SHA384",             0x00a9);
-        add("TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",         0x00aa);
-        add("TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",         0x00ab);
-        add("TLS_RSA_PSK_WITH_AES_128_GCM_SHA256",         0x00ac);
-        add("TLS_RSA_PSK_WITH_AES_256_GCM_SHA384",         0x00ad);
-        add("TLS_PSK_WITH_AES_128_CBC_SHA256",             0x00ae);
-        add("TLS_PSK_WITH_AES_256_CBC_SHA384",             0x00af);
-        add("TLS_PSK_WITH_NULL_SHA256",                    0x00b0);
-        add("TLS_PSK_WITH_NULL_SHA384",                    0x00b1);
-        add("TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",         0x00b2);
-        add("TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",         0x00b3);
-        add("TLS_DHE_PSK_WITH_NULL_SHA256",                0x00b4);
-        add("TLS_DHE_PSK_WITH_NULL_SHA384",                0x00b5);
-        add("TLS_RSA_PSK_WITH_AES_128_CBC_SHA256",         0x00b6);
-        add("TLS_RSA_PSK_WITH_AES_256_CBC_SHA384",         0x00b7);
-        add("TLS_RSA_PSK_WITH_NULL_SHA256",                0x00b8);
-        add("TLS_RSA_PSK_WITH_NULL_SHA384",                0x00b9);
+        add("TLS_PSK_WITH_AES_128_GCM_SHA256",              0x00a8);
+        add("TLS_PSK_WITH_AES_256_GCM_SHA384",              0x00a9);
+        add("TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",          0x00aa);
+        add("TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",          0x00ab);
+        add("TLS_RSA_PSK_WITH_AES_128_GCM_SHA256",          0x00ac);
+        add("TLS_RSA_PSK_WITH_AES_256_GCM_SHA384",          0x00ad);
+        add("TLS_PSK_WITH_AES_128_CBC_SHA256",              0x00ae);
+        add("TLS_PSK_WITH_AES_256_CBC_SHA384",              0x00af);
+        add("TLS_PSK_WITH_NULL_SHA256",                     0x00b0);
+        add("TLS_PSK_WITH_NULL_SHA384",                     0x00b1);
+        add("TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",          0x00b2);
+        add("TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",          0x00b3);
+        add("TLS_DHE_PSK_WITH_NULL_SHA256",                 0x00b4);
+        add("TLS_DHE_PSK_WITH_NULL_SHA384",                 0x00b5);
+        add("TLS_RSA_PSK_WITH_AES_128_CBC_SHA256",          0x00b6);
+        add("TLS_RSA_PSK_WITH_AES_256_CBC_SHA384",          0x00b7);
+        add("TLS_RSA_PSK_WITH_NULL_SHA256",                 0x00b8);
+        add("TLS_RSA_PSK_WITH_NULL_SHA384",                 0x00b9);
 
         // Unsupported cipher suites from RFC 5932
-        add("TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",           0x0041);
-        add("TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA",        0x0042);
-        add("TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA",        0x0043);
-        add("TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA",       0x0044);
-        add("TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",       0x0045);
-        add("TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",       0x0046);
-        add("TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",           0x0084);
-        add("TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA",        0x0085);
-        add("TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA",        0x0086);
-        add("TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA",       0x0087);
-        add("TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",       0x0088);
-        add("TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",       0x0089);
-        add("TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256",        0x00ba);
-        add("TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256",     0x00bb);
-        add("TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256",     0x00bc);
-        add("TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256",    0x00bd);
-        add("TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",    0x00be);
-        add("TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",    0x00bf);
-        add("TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256",        0x00c0);
-        add("TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256",     0x00c1);
-        add("TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256",     0x00c2);
-        add("TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256",    0x00c3);
-        add("TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",    0x00c4);
-        add("TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",    0x00c5);
+        add("TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",            0x0041);
+        add("TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA",         0x0042);
+        add("TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA",         0x0043);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA",        0x0044);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",        0x0045);
+        add("TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",        0x0046);
+        add("TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",            0x0084);
+        add("TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA",         0x0085);
+        add("TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA",         0x0086);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA",        0x0087);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",        0x0088);
+        add("TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",        0x0089);
+        add("TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256",         0x00ba);
+        add("TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256",      0x00bb);
+        add("TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256",      0x00bc);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256",     0x00bd);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",     0x00be);
+        add("TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",     0x00bf);
+        add("TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256",         0x00c0);
+        add("TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256",      0x00c1);
+        add("TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256",      0x00c2);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256",     0x00c3);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",     0x00c4);
+        add("TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",     0x00c5);
+
+        // TLS Fallback Signaling Cipher Suite Value (SCSV) RFC 7507
+        add("TLS_FALLBACK_SCSV", 0x5600);
 
         // Unsupported cipher suites from RFC 5054
-        add("TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA",           0xc01a);
-        add("TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA",       0xc01b);
-        add("TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA",       0xc01c);
-        add("TLS_SRP_SHA_WITH_AES_128_CBC_SHA",            0xc01d);
-        add("TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA",        0xc01e);
-        add("TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA",        0xc01f);
-        add("TLS_SRP_SHA_WITH_AES_256_CBC_SHA",            0xc020);
-        add("TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA",        0xc021);
-        add("TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA",        0xc022);
+        add("TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA",            0xc01a);
+        add("TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA",        0xc01b);
+        add("TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA",        0xc01c);
+        add("TLS_SRP_SHA_WITH_AES_128_CBC_SHA",             0xc01d);
+        add("TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA",         0xc01e);
+        add("TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA",         0xc01f);
+        add("TLS_SRP_SHA_WITH_AES_256_CBC_SHA",             0xc020);
+        add("TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA",         0xc021);
+        add("TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA",         0xc022);
 
         // Unsupported cipher suites from RFC 5489
-        add("TLS_ECDHE_PSK_WITH_RC4_128_SHA",              0xc033);
-        add("TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA",         0xc034);
-        add("TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",          0xc035);
-        add("TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",          0xc036);
-        add("TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",       0xc037);
-        add("TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",       0xc038);
-        add("TLS_ECDHE_PSK_WITH_NULL_SHA",                 0xc039);
-        add("TLS_ECDHE_PSK_WITH_NULL_SHA256",              0xc03a);
-        add("TLS_ECDHE_PSK_WITH_NULL_SHA384",              0xc03b);
+        add("TLS_ECDHE_PSK_WITH_RC4_128_SHA",               0xc033);
+        add("TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA",          0xc034);
+        add("TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",           0xc035);
+        add("TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",           0xc036);
+        add("TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",        0xc037);
+        add("TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",        0xc038);
+        add("TLS_ECDHE_PSK_WITH_NULL_SHA",                  0xc039);
+        add("TLS_ECDHE_PSK_WITH_NULL_SHA256",               0xc03a);
+        add("TLS_ECDHE_PSK_WITH_NULL_SHA384",               0xc03b);
+
+        // Unsupported cipher suites from RFC 6209
+        add("TLS_RSA_WITH_ARIA_128_CBC_SHA256",             0xc03c);
+        add("TLS_RSA_WITH_ARIA_256_CBC_SHA384",             0xc03d);
+        add("TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256",          0xc03e);
+        add("TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384",          0xc03f);
+        add("TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256",          0xc040);
+        add("TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384",          0xc041);
+        add("TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256",         0xc042);
+        add("TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384",         0xc043);
+        add("TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256",         0xc044);
+        add("TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384",         0xc045);
+        add("TLS_DH_anon_WITH_ARIA_128_CBC_SHA256",         0xc046);
+        add("TLS_DH_anon_WITH_ARIA_256_CBC_SHA384",         0xc047);
+        add("TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256",     0xc048);
+        add("TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384",     0xc049);
+        add("TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256",      0xc04a);
+        add("TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384",      0xc04b);
+        add("TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256",       0xc04c);
+        add("TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384",       0xc04d);
+        add("TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256",        0xc04e);
+        add("TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384",        0xc04f);
+        add("TLS_RSA_WITH_ARIA_128_GCM_SHA256",             0xc050);
+        add("TLS_RSA_WITH_ARIA_256_GCM_SHA384",             0xc051);
+        add("TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256",         0xc052);
+        add("TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384",         0xc053);
+        add("TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256",          0xc054);
+        add("TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384",          0xc055);
+        add("TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256",         0xc056);
+        add("TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384",         0xc057);
+        add("TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256",          0xc058);
+        add("TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384",          0xc059);
+        add("TLS_DH_anon_WITH_ARIA_128_GCM_SHA256",         0xc05a);
+        add("TLS_DH_anon_WITH_ARIA_256_GCM_SHA384",         0xc05b);
+        add("TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256",     0xc05c);
+        add("TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384",     0xc05d);
+        add("TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256",      0xc05e);
+        add("TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384",      0xc05f);
+        add("TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256",       0xc060);
+        add("TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384",       0xc061);
+        add("TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256",        0xc062);
+        add("TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384",        0xc063);
+        add("TLS_PSK_WITH_ARIA_128_CBC_SHA256",             0xc064);
+        add("TLS_PSK_WITH_ARIA_256_CBC_SHA384",             0xc065);
+        add("TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256",         0xc066);
+        add("TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384",         0xc067);
+        add("TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256",         0xc068);
+        add("TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384",         0xc069);
+        add("TLS_PSK_WITH_ARIA_128_GCM_SHA256",             0xc06a);
+        add("TLS_PSK_WITH_ARIA_256_GCM_SHA384",             0xc06b);
+        add("TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256",         0xc06c);
+        add("TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384",         0xc06d);
+        add("TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256",         0xc06e);
+        add("TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384",         0xc06f);
+        add("TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256",       0xc070);
+        add("TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384",       0xc071);
+
+        // Unsupported cipher suites from RFC 6367
+        add("TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256", 0xc072);
+        add("TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384", 0xc073);
+        add("TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256",  0xc074);
+        add("TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384",  0xc075);
+        add("TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",   0xc076);
+        add("TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384",   0xc077);
+        add("TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256",    0xc078);
+        add("TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384",    0xc079);
+        add("TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256",         0xc07a);
+        add("TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384",         0xc07b);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",     0xc07c);
+        add("TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",     0xc07d);
+        add("TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256",      0xc07e);
+        add("TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384",      0xc07f);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256",     0xc080);
+        add("TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384",     0xc081);
+        add("TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256",      0xc082);
+        add("TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384",      0xc083);
+        add("TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256",     0xc084);
+        add("TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384",     0xc085);
+        add("TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256", 0xc086);
+        add("TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384", 0xc087);
+        add("TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256",  0xc088);
+        add("TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384",  0xc089);
+        add("TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",   0xc08a);
+        add("TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",   0xc08b);
+        add("TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256",    0xc08c);
+        add("TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384",    0xc08d);
+        add("TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256",         0xc08e);
+        add("TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384",         0xc08f);
+        add("TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256",     0xc090);
+        add("TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384",     0xc091);
+        add("TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256",     0xc092);
+        add("TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384",     0xc093);
+        add("TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256",         0xc094);
+        add("TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384",         0xc095);
+        add("TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",     0xc096);
+        add("TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",     0xc097);
+        add("TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256",     0xc098);
+        add("TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384",     0xc099);
+        add("TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",   0xc09a);
+        add("TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",   0xc09b);
+
+        // Unsupported cipher suites from RFC 6655
+        add("TLS_RSA_WITH_AES_128_CCM",                     0xc09c);
+        add("TLS_RSA_WITH_AES_256_CCM",                     0xc09d);
+        add("TLS_DHE_RSA_WITH_AES_128_CCM",                 0xc09e);
+        add("TLS_DHE_RSA_WITH_AES_256_CCM",                 0xc09f);
+        add("TLS_RSA_WITH_AES_128_CCM_8",                   0xc0A0);
+        add("TLS_RSA_WITH_AES_256_CCM_8",                   0xc0A1);
+        add("TLS_DHE_RSA_WITH_AES_128_CCM_8",               0xc0A2);
+        add("TLS_DHE_RSA_WITH_AES_256_CCM_8",               0xc0A3);
+        add("TLS_PSK_WITH_AES_128_CCM",                     0xc0A4);
+        add("TLS_PSK_WITH_AES_256_CCM",                     0xc0A5);
+        add("TLS_DHE_PSK_WITH_AES_128_CCM",                 0xc0A6);
+        add("TLS_DHE_PSK_WITH_AES_256_CCM",                 0xc0A7);
+        add("TLS_PSK_WITH_AES_128_CCM_8",                   0xc0A8);
+        add("TLS_PSK_WITH_AES_256_CCM_8",                   0xc0A9);
+        add("TLS_PSK_DHE_WITH_AES_128_CCM_8",               0xc0Aa);
+        add("TLS_PSK_DHE_WITH_AES_256_CCM_8",               0xc0Ab);
+
+        // Unsupported cipher suites from RFC 7251
+        add("TLS_ECDHE_ECDSA_WITH_AES_128_CCM",             0xc0Ac);
+        add("TLS_ECDHE_ECDSA_WITH_AES_256_CCM",             0xc0Ad);
+        add("TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8",           0xc0Ae);
+        add("TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8",           0xc0Af);
     }
 
     // ciphersuite SSL_NULL_WITH_NULL_NULL

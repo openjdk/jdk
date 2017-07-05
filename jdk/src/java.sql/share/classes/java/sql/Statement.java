@@ -1397,9 +1397,10 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @param val a character string
      * @return A string enclosed by single quotes with every single quote
      * converted to two single quotes
-     * @throws NullPointerException if val is null
+     * @throws NullPointerException if val is {@code null}
+     * @throws SQLException if a database access error occurs
      */
-     default String enquoteLiteral(String val) {
+     default String enquoteLiteral(String val)  throws SQLException {
          return "'" + val.replace("'", "''") +  "'";
     }
 
@@ -1437,7 +1438,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * The default implementation will throw a {@code SQLException} if:
      * <ul>
-     * <li>{@code identifier} contains a null character or double quote, and is not
+     * <li>{@code identifier} contains a {@code null} character or double quote and is not
      * a simple SQL identifier.</li>
      * <li>The length of {@code identifier} is less than 1 or greater than 128 characters
      * </ul>
@@ -1501,14 +1502,14 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @throws SQLException if identifier is not a valid identifier
      * @throws SQLFeatureNotSupportedException if the datasource does not support
      * delimited identifiers
-     * @throws NullPointerException if identifier is null
+     * @throws NullPointerException if identifier is {@code null}
      */
     default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
         int len = identifier.length();
         if (len < 1 || len > 128) {
             throw new SQLException("Invalid name");
         }
-        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]+").matcher(identifier).matches()) {
+        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches()) {
             return alwaysQuote ?  "\"" + identifier + "\"" : identifier;
         }
         if (identifier.matches("^\".+\"$")) {
@@ -1519,5 +1520,66 @@ public interface Statement extends Wrapper, AutoCloseable {
         } else {
             throw new SQLException("Invalid name");
         }
+    }
+
+    /**
+     * Retrieves whether {@code identifier} is a simple SQL identifier.
+     *
+     * @implSpec The default implementation uses the following criteria to
+     * determine a valid simple SQL identifier:
+     * <ul>
+     * <li>The string is not enclosed in double quotes</li>
+     * <li>The first character is an alphabetic character from a through z, or
+     * from A through Z</li>
+     * <li>The string only contains alphanumeric characters or the character
+     * "_"</li>
+     * <li>The string is between 1 and 128 characters in length inclusive</li>
+     * </ul>
+     *
+     * <blockquote>
+     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <caption>Examples of the conversion:</caption>
+     * <tr>
+     * <th>identifier</th>
+     * <th>Simple Identifier</th>
+     *
+     * <tr>
+     * <td align='center'>Hello</td>
+     * <td align='center'>true</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>G'Day</td>
+     * <td align='center'>false</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>"Bruce Wayne"</td>
+     * <td align='center'>false</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>GoodDay$</td>
+     * <td align='center'>false</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>Hello"World</td>
+     * <td align='center'>false</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>"Hello"World"</td>
+     * <td align='center'>false</td>
+     * </tr>
+     * </table>
+     * </blockquote>
+     * @implNote JDBC driver implementations may need to provide their own
+     * implementation of this method in order to meet the requirements of the
+     * underlying datasource.
+     * @param identifier a SQL identifier
+     * @return  true if  a simple SQL identifier, false otherwise
+     * @throws NullPointerException if identifier is {@code null}
+     * @throws SQLException if a database access error occurs
+     */
+    default boolean isSimpleIdentifier(String identifier) throws SQLException {
+        int len = identifier.length();
+        return len >= 1 && len <= 128
+                && Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches();
     }
 }

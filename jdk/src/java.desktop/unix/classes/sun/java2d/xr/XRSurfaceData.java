@@ -244,7 +244,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
                                                  int width, int height,
                                                  ColorModel cm, Image image,
                                                  long drawable,
-                                                 int transparency) {
+                                                 int transparency,
+                                                 boolean isTexture) {
         int depth;
         // If we have a 32 bit color model for the window it needs
         // alpha to support translucency of the window so we need
@@ -267,7 +268,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         return new XRPixmapSurfaceData
             (gc, width, height, image, getSurfaceType(gc, transparency),
              cm, drawable, transparency,
-             XRUtils.getPictureFormatForTransparency(transparency), depth);
+             XRUtils.getPictureFormatForTransparency(transparency), depth, isTexture);
     }
 
     protected XRSurfaceData(X11ComponentPeer peer, XRGraphicsConfig gc,
@@ -542,10 +543,15 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     public static class XRWindowSurfaceData extends XRSurfaceData {
+
+        protected final int scale;
+
         public XRWindowSurfaceData(X11ComponentPeer peer,
                                    XRGraphicsConfig gc, SurfaceType sType) {
             super(peer, gc, sType, peer.getColorModel(),
                   peer.getColorModel().getPixelSize(), Transparency.OPAQUE);
+
+            this.scale = gc.getScale();
 
             if (isXRDrawableValid()) {
                 // If we have a 32 bit color model for the window it needs
@@ -571,6 +577,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
         public Rectangle getBounds() {
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
+            r.width *= scale;
+            r.height *= scale;
             return r;
         }
 
@@ -596,6 +604,16 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
            super.invalidate();
        }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
+        }
     }
 
     public static class XRInternalSurfaceData extends XRSurfaceData {
@@ -627,18 +645,20 @@ public abstract class XRSurfaceData extends XSurfaceData {
         int width;
         int height;
         int transparency;
+        private final int scale;
 
         public XRPixmapSurfaceData(XRGraphicsConfig gc, int width, int height,
                                    Image image, SurfaceType sType,
                                    ColorModel cm, long drawable,
                                    int transparency, int pictFormat,
-                                   int depth) {
+                                   int depth, boolean isTexture) {
             super(null, gc, sType, cm, depth, transparency);
-            this.width = width;
-            this.height = height;
+            this.scale = isTexture ? 1 : gc.getDevice().getScaleFactor();
+            this.width = width * scale;
+            this.height = height * scale;
             offscreenImage = image;
             this.transparency = transparency;
-            initSurface(depth, width, height, drawable, pictFormat);
+            initSurface(depth, this.width, this.height, drawable, pictFormat);
 
             initXRender(pictFormat);
             makePipes();
@@ -695,6 +715,16 @@ public abstract class XRSurfaceData extends XSurfaceData {
          */
         public Object getDestination() {
             return offscreenImage;
+        }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
         }
     }
 

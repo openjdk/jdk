@@ -565,12 +565,12 @@ class LambdaFormEditor {
         if (collectorArity == 1 && !dropResult) {
             return filterArgumentForm(pos, basicType(collectorType.parameterType(0)));
         }
-        BasicType[] newTypes = BasicType.basicTypes(collectorType.parameterList());
+        byte[] newTypes = BasicType.basicTypesOrd(collectorType.parameterArray());
         Transform.Kind kind = (dropResult
                 ? Transform.Kind.COLLECT_ARGS_TO_VOID
                 : Transform.Kind.COLLECT_ARGS);
         if (dropResult && collectorArity == 0)  pos = 1;  // pure side effect
-        Transform key = Transform.of(kind, pos, collectorArity, BasicType.basicTypesOrd(newTypes));
+        Transform key = Transform.of(kind, pos, collectorArity, newTypes);
         LambdaForm form = getInCache(key);
         if (form != null) {
             assert(form.arity == lambdaForm.arity - (dropResult ? 0 : 1) + collectorArity);
@@ -680,9 +680,8 @@ class LambdaFormEditor {
                              combinerArgs, 1, combinerArity);
         } else {
             newParams = new Name[combinerArity];
-            BasicType[] newTypes = basicTypes(combinerType.parameterList());
-            for (int i = 0; i < newTypes.length; i++) {
-                newParams[i] = new Name(pos + i, newTypes[i]);
+            for (int i = 0; i < newParams.length; i++) {
+                newParams[i] = new Name(pos + i, basicType(combinerType.parameterType(i)));
             }
             System.arraycopy(newParams, 0,
                              combinerArgs, 1, combinerArity);

@@ -26,7 +26,10 @@
 package javax.sql;
 
 import java.sql.Connection;
+import java.sql.ConnectionBuilder;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.sql.Wrapper;
 
 /**
@@ -106,4 +109,35 @@ public interface DataSource  extends CommonDataSource, Wrapper {
    */
   Connection getConnection(String username, String password)
     throws SQLException;
+
+  // JDBC 4.3
+
+  /**
+   * Create a new {@code ConnectionBuilder} instance
+   * @implSpec
+   * The default implementation will throw a {@code SQLFeatureNotSupportedException}
+   * @return The ConnectionBuilder instance that was created
+   * @throws SQLException if an error occurs creating the builder
+   * @throws SQLFeatureNotSupportedException if the driver does not support sharding
+   * @since 1.9
+   * @see createConnectionBuilder
+   */
+  default ConnectionBuilder createConnectionBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException("createConnectionBuilder not implemented");
+  };
+
+  /**
+   * Create a new {@code ShardingKeyBuilder} instance
+   * @implSpec
+   * The default implementation will throw a {@code SQLFeatureNotSupportedException}
+   * @return The ShardingKeyBuilder instance that was created
+   * @throws SQLException if an error occurs creating the builder
+   * @throws SQLFeatureNotSupportedException if the driver does not support this method
+   * @since 1.9
+   * @see ShardingKeyBuilder
+   */
+  default ShardingKeyBuilder  createShardingKeyBuilder()
+          throws SQLException {
+        throw new SQLFeatureNotSupportedException("createShardingKeyBuilder not implemented");
+  };
 }

@@ -359,7 +359,14 @@ final class ProcessHandleImpl implements ProcessHandle {
 
     @Override
     public Stream<ProcessHandle> children() {
-        return children(pid);
+        // The native OS code selects based on matching the requested parent pid.
+        // If the original parent exits, the pid may have been re-used for
+        // this newer process.
+        // Processes started by the original parent (now dead) will all have
+        // start times less than the start of this newer parent.
+        // Processes started by this newer parent will have start times equal
+        // or after this parent.
+        return children(pid).filter(ph -> startTime <= ((ProcessHandleImpl)ph).startTime);
     }
 
     /**
@@ -408,11 +415,21 @@ final class ProcessHandleImpl implements ProcessHandle {
         int next = 0;       // index of next process to check
         int count = -1;     // count of subprocesses scanned
         long ppid = pid;    // start looking for this parent
+        long ppStart = 0;
+        // Find the start time of the parent
+        for (int i = 0; i < size; i++) {
+            if (pids[i] == ppid) {
+                ppStart = starttimes[i];
+                break;
+            }
+        }
         do {
-            // Scan from next to size looking for ppid
-            // if found, exchange it to index next
+            // Scan from next to size looking for ppid with child start time
+            // the same or later than the parent.
+            // If found, exchange it with index next
             for (int i = next; i < size; i++) {
-                if (ppids[i] == ppid) {
+                if (ppids[i] == ppid &&
+                        ppStart <= starttimes[i]) {
                     swap(pids, i, next);
                     swap(ppids, i, next);
                     swap(starttimes, i, next);
@@ -420,6 +437,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                 }
             }
             ppid = pids[++count];   // pick up the next pid to scan for
+            ppStart = starttimes[count];    // and its start time
         } while (count < next);
 
         final long[] cpids = pids;

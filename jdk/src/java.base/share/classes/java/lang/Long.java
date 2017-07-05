@@ -448,9 +448,7 @@ public final class Long extends Number implements Comparable<Long> {
      * @return  a string representation of the argument in base&nbsp;10.
      */
     public static String toString(long i) {
-        if (i == Long.MIN_VALUE)
-            return "-9223372036854775808";
-        int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
+        int size = stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
             getChars(i, size, buf);
@@ -481,58 +479,59 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /**
-     * Places characters representing the integer i into the
+     * Places characters representing the long i into the
      * character array buf. The characters are placed into
      * the buffer backwards starting with the least significant
      * digit at the specified index (exclusive), and working
      * backwards from there.
      *
-     * Will fail if i == Long.MIN_VALUE
+     * @implNote This method converts positive inputs into negative
+     * values, to cover the Long.MIN_VALUE case. Converting otherwise
+     * (negative to positive) will expose -Long.MIN_VALUE that overflows
+     * long.
      */
     static void getChars(long i, int index, byte[] buf) {
         long q;
         int r;
         int charPos = index;
-        char sign = 0;
 
-        if (i < 0) {
-            sign = '-';
+        boolean negative = (i < 0);
+        if (!negative) {
             i = -i;
         }
 
         // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i > Integer.MAX_VALUE) {
+        while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            // really: r = i - (q * 100);
-            r = (int)(i - ((q << 6) + (q << 5) + (q << 2)));
+            r = (int)((q * 100) - i);
             i = q;
-            buf[--charPos] = (byte)Integer.DigitOnes[r];
-            buf[--charPos] = (byte)Integer.DigitTens[r];
+            buf[--charPos] = Integer.DigitOnes[r];
+            buf[--charPos] = Integer.DigitTens[r];
         }
 
         // Get 2 digits/iteration using ints
         int q2;
         int i2 = (int)i;
-        while (i2 >= 65536) {
+        while (i2 <= -100) {
             q2 = i2 / 100;
-            // really: r = i2 - (q * 100);
-            r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
+            r  = (q2 * 100) - i2;
             i2 = q2;
-            buf[--charPos] = (byte)Integer.DigitOnes[r];
-            buf[--charPos] = (byte)Integer.DigitTens[r];
+            buf[--charPos] = Integer.DigitOnes[r];
+            buf[--charPos] = Integer.DigitTens[r];
         }
 
-        // Fall thru to fast mode for smaller numbers
-        // assert(i2 <= 65536, i2);
-        for (;;) {
-            q2 = (i2 * 52429) >>> (16+3);
-            r = i2 - ((q2 << 3) + (q2 << 1));  // r = i2-(q2*10) ...
-            buf[--charPos] = (byte)Integer.digits[r];
-            i2 = q2;
-            if (i2 == 0) break;
+        // We know there are at most two digits left at this point.
+        q2 = i2 / 10;
+        r  = (q2 * 10) - i2;
+        buf[--charPos] = (byte)('0' + r);
+
+        // Whatever left is the remaining digit.
+        if (q2 < 0) {
+            buf[--charPos] = (byte)('0' - q2);
         }
-        if (sign != 0) {
-            buf[--charPos] = (byte)sign;
+
+        if (negative) {
+            buf[--charPos] = (byte)'-';
         }
     }
 
@@ -540,18 +539,16 @@ public final class Long extends Number implements Comparable<Long> {
         long q;
         int r;
         int charPos = index;
-        char sign = 0;
 
-        if (i < 0) {
-            sign = '-';
+        boolean negative = (i < 0);
+        if (!negative) {
             i = -i;
         }
 
         // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i > Integer.MAX_VALUE) {
+        while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            // really: r = i - (q * 100);
-            r = (int)(i - ((q << 6) + (q << 5) + (q << 2)));
+            r = (int)((q * 100) - i);
             i = q;
             StringUTF16.putChar(buf, --charPos, Integer.DigitOnes[r]);
             StringUTF16.putChar(buf, --charPos, Integer.DigitTens[r]);
@@ -560,38 +557,53 @@ public final class Long extends Number implements Comparable<Long> {
         // Get 2 digits/iteration using ints
         int q2;
         int i2 = (int)i;
-        while (i2 >= 65536) {
+        while (i2 <= -100) {
             q2 = i2 / 100;
-            // really: r = i2 - (q * 100);
-            r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
+            r  = (q2 * 100) - i2;
             i2 = q2;
             StringUTF16.putChar(buf, --charPos, Integer.DigitOnes[r]);
             StringUTF16.putChar(buf, --charPos, Integer.DigitTens[r]);
         }
 
-        // Fall thru to fast mode for smaller numbers
-        // assert(i2 <= 65536, i2);
-        for (;;) {
-            q2 = (i2 * 52429) >>> (16+3);
-            r = i2 - ((q2 << 3) + (q2 << 1));  // r = i2-(q2*10) ...
-            StringUTF16.putChar(buf, --charPos, Integer.digits[r]);
-            i2 = q2;
-            if (i2 == 0) break;
+        // We know there are at most two digits left at this point.
+        q2 = i2 / 10;
+        r  = (q2 * 10) - i2;
+        StringUTF16.putChar(buf, --charPos, '0' + r);
+
+        // Whatever left is the remaining digit.
+        if (q2 < 0) {
+            StringUTF16.putChar(buf, --charPos, '0' - q2);
         }
-        if (sign != 0) {
-            StringUTF16.putChar(buf, --charPos, sign);
+
+        if (negative) {
+            StringUTF16.putChar(buf, --charPos, '-');
         }
     }
 
-    // Requires positive x
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
     static int stringSize(long x) {
-        long p = 10;
-        for (int i=1; i<19; i++) {
-            if (x < p)
-                return i;
-            p = 10*p;
+        int d = 1;
+        if (x >= 0) {
+            d = 0;
+            x = -x;
         }
-        return 19;
+        long p = -10;
+        for (int i = 1; i < 19; i++) {
+            if (x > p)
+                return i + d;
+            p = 10 * p;
+        }
+        return 19 + d;
     }
 
     /**

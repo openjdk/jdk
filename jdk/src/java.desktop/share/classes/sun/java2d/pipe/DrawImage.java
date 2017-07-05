@@ -736,9 +736,10 @@ public class DrawImage implements DrawImagePipe
         atfm.scale(m00, m11);
         atfm.translate(srcX-sx1, srcY-sy1);
 
-        final int scale = SurfaceManager.getImageScale(img);
-        final int imgW = img.getWidth(null) * scale;
-        final int imgH = img.getHeight(null) * scale;
+        final double scaleX = SurfaceManager.getImageScaleX(img);
+        final double scaleY = SurfaceManager.getImageScaleY(img);
+        final int imgW = (int) Math.ceil(img.getWidth(null) * scaleX);
+        final int imgH = (int) Math.ceil(img.getHeight(null) * scaleY);
         srcW += srcX;
         srcH += srcY;
         // Make sure we are not out of bounds

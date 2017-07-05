@@ -74,7 +74,7 @@ define add_file_to_copy
   # already has one
   ifneq ($$($1_COPY_$$($2_TARGET)), 1)
     $1_COPY_$$($2_TARGET) := 1
-    # Now we can setup the depency that will trigger the copying.
+    # Now we can setup the dependency that will trigger the copying.
     $$($1_BIN)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
 	$(CP) $$< $$@
@@ -311,22 +311,23 @@ define SetupJavaCompilationBody
   $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst \
       $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
+  $1_COMPILE_TARGET := $$($1_BIN)/_the.$1_batch
+
   ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
+    # Using sjavac to compile.
+
     ifneq (,$$($1_HEADERS))
       $1_HEADERS_ARG := -h $$($1_HEADERS)
     endif
-
-    # Using sjavac to compile.
-    $1_COMPILE_TARGETS := $$($1_BIN)/_the.$1_batch
 
     $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS) $$($1_FLAGS) \
         $$($1_HEADERS_ARG) $$($1_BIN) $$($1_EXCLUDES) $$($1_INCLUDES) \
         $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
 
-    $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
+    $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
-	$$(eval $$(call ListPathsSafely,$1_SRCS, $$($1_BIN)/_the.$1_batch.tmp))
+	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 	$(ECHO) Compiling $1
 	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_SJAVAC) \
@@ -334,14 +335,14 @@ define SetupJavaCompilationBody
 	        -j 1 \
 	        --permit-unidentified-artifacts \
 	        --permit-sources-without-package \
-	        --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
+	        --compare-found-sources $$@.tmp \
 	        --log=$(LOG_LEVEL) \
 	        --state-dir=$$($1_BIN) \
 	        $$($1_SJAVAC_ARGS) \
 	        $$($1_FLAGS) \
 	        $$($1_HEADERS_ARG) \
 	        -d $$($1_BIN)) && \
-	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch
+	$(MV) $$@.tmp $$@
         # Create a pubapi file that only changes when the pubapi changes. Dependent
         # compilations can use this file to only get recompiled when pubapi has changed.
         # Grep returns 1 if no matching lines are found. Do not fail for this.
@@ -354,14 +355,13 @@ define SetupJavaCompilationBody
 
   else
     # Using plain javac to batch compile everything.
-    $1_COMPILE_TARGETS := $$($1_BIN)/_the.$1_batch
 
     # When building in batch, put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
     ifneq (,$$($1_HEADERS))
       $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
-      $$($1_HEADERS)/_the.$1_headers: $$($1_BIN)/_the.$1_batch
+      $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
 		$(MKDIR) -p $$(@D)
 		if [ -d "$$($1_HEADERS).$1.tmp" ]; then \
 		  for f in `ls $$($1_HEADERS).$1.tmp`; do \
@@ -389,19 +389,19 @@ define SetupJavaCompilationBody
     endif
 
     # When not using sjavac, pass along all sources to javac using an @file.
-    $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
+    $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D)
-	$$(eval $$(call ListPathsSafely,$1_SRCS, $$($1_BIN)/_the.$1_batch.tmp))
-	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
+	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
+	$(ECHO) Compiling `$(WC) $$@.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
 	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
 	        -implicit:none \
-	        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp) && \
-	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch
+		-d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
+	$(MV) $$@.tmp $$@
   endif
 
   # Add all targets to main variable
-  $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_COMPILE_TARGETS) \
+  $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_COMPILE_TARGET) \
       $$($1_HEADER_TARGETS)
 
   # Check if a jar file was specified, then setup the rules for the jar.

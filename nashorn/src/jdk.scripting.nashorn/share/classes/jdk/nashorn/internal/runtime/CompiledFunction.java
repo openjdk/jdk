@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.TypeMap;

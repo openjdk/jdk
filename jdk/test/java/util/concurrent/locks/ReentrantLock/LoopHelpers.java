@@ -30,13 +30,12 @@
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
+
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Misc utilities in JSR166 performance tests
  */
-
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-
 class LoopHelpers {
 
     // Some mindless computation to do between synchronizations...
@@ -71,28 +70,6 @@ class LoopHelpers {
             x = (x * 2147483647) % 16807;
         }
         return x;
-    }
-
-    /**
-     * An actually useful random number generator, but unsynchronized.
-     * Basically same as java.util.Random.
-     */
-    public static class SimpleRandom {
-        private static final long multiplier = 0x5DEECE66DL;
-        private static final long addend = 0xBL;
-        private static final long mask = (1L << 48) - 1;
-        static final AtomicLong seq = new AtomicLong(1);
-        private long seed = System.nanoTime() + seq.getAndIncrement();
-
-        public void setSeed(long s) {
-            seed = s;
-        }
-
-        public int next() {
-            long nextseed = (seed * multiplier + addend) & mask;
-            seed = nextseed;
-            return ((int)(nextseed >>> 17)) & 0x7FFFFFFF;
-        }
     }
 
     public static class BarrierTimer implements Runnable {
