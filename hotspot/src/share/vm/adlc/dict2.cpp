@@ -34,7 +34,7 @@
 #define MAXID 20
 static char initflag = 0;       // True after 1st initialization
 static char shft[MAXID] = {1,2,3,4,5,6,7,1,2,3,4,5,6,7,1,2,3,4,5,6};
-static short xsum[MAXID + 1];
+static short xsum[MAXID];
 
 //------------------------------bucket---------------------------------------
 class bucket {
@@ -66,7 +66,7 @@ void Dict::init() {
   // Precompute table of null character hashes
   if( !initflag ) {             // Not initializated yet?
     xsum[0] = (1<<shft[0])+1;   // Initialize
-    for( i = 1; i < MAXID + 1; i++) {
+    for( i = 1; i < MAXID; i++) {
       xsum[i] = (1<<shft[i])+1+xsum[i-1];
     }
     initflag = 1;               // Never again
@@ -291,7 +291,7 @@ int hashstr(const void *t) {
     c = (c<<1)+1;               // Characters are always odd!
     sum += c + (c<<shft[k++]);  // Universal hash function
   }
-  assert( k < (MAXID + 1), "Exceeded maximum name length");
+  assert( k < (MAXID), "Exceeded maximum name length");
   return (int)((sum+xsum[k]) >> 1); // Hash key, un-modulo'd table size
 }
 
