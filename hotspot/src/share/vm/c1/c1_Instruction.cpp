@@ -369,9 +369,6 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
   _signature = new BasicTypeList(number_of_arguments() + (has_receiver() ? 1 : 0));
   if (has_receiver()) {
     _signature->append(as_BasicType(receiver()->type()));
-  } else if (is_invokedynamic()) {
-    // Add the synthetic MethodHandle argument to the signature.
-    _signature->append(T_OBJECT);
   }
   for (int i = 0; i < number_of_arguments(); i++) {
     ValueType* t = argument_at(i)->type();

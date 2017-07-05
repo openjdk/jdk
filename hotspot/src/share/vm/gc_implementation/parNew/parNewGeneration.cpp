@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
-#include "gc_implementation/parNew/parGCAllocBuffer.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/defNewGeneration.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
@@ -453,7 +453,8 @@ void ParScanThreadStateSet::flush()
     // retire the last buffer.
     par_scan_state.to_space_alloc_buffer()->
       flush_stats_and_retire(_gen.plab_stats(),
-                             false /* !retain */);
+                             true /* end_of_gc */,
+                             false /* retain */);
 
     // Every thread has its own age table.  We need to merge
     // them all into one.
