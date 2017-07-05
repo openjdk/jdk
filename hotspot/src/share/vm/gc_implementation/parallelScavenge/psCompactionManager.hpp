@@ -22,18 +22,6 @@
  *
  */
 
-//
-// psPromotionManager is used by a single thread to manage object survival
-// during a scavenge. The promotion manager contains thread local data only.
-//
-// NOTE! Be carefull when allocating the stacks on cheap. If you are going
-// to use a promotion manager in more than one thread, the stacks MUST be
-// on cheap. This can lead to memory leaks, though, as they are not auto
-// deallocated.
-//
-// FIX ME FIX ME Add a destructor, and don't rely on the user to drain/flush/deallocate!
-//
-
 // Move to some global location
 #define HAS_BEEN_MOVED 0x1501d01d
 // End move to some global location
@@ -45,8 +33,6 @@ class ParCompactionManager;
 class ObjectStartArray;
 class ParallelCompactData;
 class ParMarkBitMap;
-
-// Move to it's own file if this works out.
 
 class ParCompactionManager : public CHeapObj {
   friend class ParallelTaskTerminator;
@@ -72,14 +58,27 @@ class ParCompactionManager : public CHeapObj {
 // ------------------------  End don't putback if not needed
 
  private:
+  // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
+  #define OBJARRAY_QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
+  typedef GenericTaskQueue<ObjArrayTask, OBJARRAY_QUEUE_SIZE> ObjArrayTaskQueue;
+  typedef GenericTaskQueueSet<ObjArrayTaskQueue> ObjArrayTaskQueueSet;
+  #undef OBJARRAY_QUEUE_SIZE
+
   static ParCompactionManager** _manager_array;
   static OopTaskQueueSet*       _stack_array;
+  static ObjArrayTaskQueueSet*  _objarray_queues;
   static ObjectStartArray*      _start_array;
   static RegionTaskQueueSet*    _region_array;
   static PSOldGen*              _old_gen;
 
+private:
   OopTaskQueue                  _marking_stack;
   GrowableArray<oop>*           _overflow_stack;
+
+  typedef GrowableArray<ObjArrayTask> ObjArrayOverflowStack;
+  ObjArrayTaskQueue             _objarray_queue;
+  ObjArrayOverflowStack*        _objarray_overflow_stack;
+
   // Is there a way to reuse the _marking_stack for the
   // saving empty regions?  For now just create a different
   // type of TaskQueue.
@@ -128,8 +127,8 @@ class ParCompactionManager : public CHeapObj {
   // Pushes onto the region stack.  If the region stack is full,
   // pushes onto the region overflow stack.
   void region_stack_push(size_t region_index);
- public:
 
+public:
   Action action() { return _action; }
   void set_action(Action v) { _action = v; }
 
@@ -163,6 +162,8 @@ class ParCompactionManager : public CHeapObj {
   // Get a oop for scanning.  If returns null, no oop were found.
   oop retrieve_for_scanning();
 
+  inline void push_objarray(oop obj, size_t index);
+
   // Save region for later processing.  Must not fail.
   void save_for_processing(size_t region_index);
   // Get a region for processing.  If returns null, no region were found.
@@ -175,12 +176,17 @@ class ParCompactionManager : public CHeapObj {
     return stack_array()->steal(queue_num, seed, t);
   }
 
+  static bool steal_objarray(int queue_num, int* seed, ObjArrayTask& t) {
+    return _objarray_queues->steal(queue_num, seed, t);
+  }
+
   static bool steal(int queue_num, int* seed, RegionTask& t) {
     return region_array()->steal(queue_num, seed, t);
   }
 
-  // Process tasks remaining on any stack
-  void drain_marking_stacks(OopClosure *blk);
+  // Process tasks remaining on any marking stack
+  void follow_marking_stacks();
+  inline bool marking_stacks_empty() const;
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
@@ -199,4 +205,9 @@ inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
   assert(index >= 0 && index <= (int)ParallelGCThreads,
     "out of range manager_array access");
   return _manager_array[index];
+}
+
+bool ParCompactionManager::marking_stacks_empty() const {
+  return _marking_stack.size() == 0 && _overflow_stack->is_empty() &&
+    _objarray_queue.size() == 0 && _objarray_overflow_stack->is_empty();
 }
