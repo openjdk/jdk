@@ -288,7 +288,7 @@ static jboolean isVersionGte12x() {
                     >> JVMTI_VERSION_SHIFT_MAJOR;
         minor = (version & JVMTI_VERSION_MASK_MINOR)
                     >> JVMTI_VERSION_SHIFT_MINOR;
-        return (major > 1 || major == 1 && minor >= 2);
+        return (major > 1 || (major == 1 && minor >= 2)) ? JNI_TRUE : JNI_FALSE;
     } else {
         return JNI_FALSE;
     }

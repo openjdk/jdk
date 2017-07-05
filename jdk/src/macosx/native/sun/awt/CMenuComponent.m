@@ -51,8 +51,7 @@
     fPeer = NULL;
 
     [self cleanup];
-
-    CFRelease(self); // GC
+    [self release];
 }
 
 // The method is used by all subclasses, since the process of the creation
@@ -63,9 +62,6 @@
     [argValue removeAllObjects];
     [argValue addObject: aCMenuItem];
 }
-
-//-(void) dealloc { [super dealloc]; }
-//- (void)finalize { [super finalize]; }
 
 @end
 

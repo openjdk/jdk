@@ -120,7 +120,6 @@ public class DirectoryManager extends NamingManager {
       *</ul>
       * Service providers that implement the <tt>DirContext</tt> interface
       * should use this method, not <tt>NamingManager.getObjectInstance()</tt>.
-      *<p>
       *
       * @param refInfo The possibly null object for which to create an object.
       * @param name The name of this object relative to <code>nameCtx</code>.

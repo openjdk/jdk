@@ -54,13 +54,7 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
     static {
         // Load library here
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        sun.awt.windows.WToolkit.loadLibraries();
     }
 
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {

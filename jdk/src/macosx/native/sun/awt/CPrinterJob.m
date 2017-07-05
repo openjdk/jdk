@@ -469,8 +469,6 @@ JNF_COCOA_ENTER(env);
     //  safety is assured by the java side of this call.
 
     NSPrintInfo* printInfo = createDefaultNSPrintInfo(env, NULL);
-    if (printInfo) CFRetain(printInfo); // GC
-    [printInfo release];
 
     result = ptr_to_jlong(printInfo);
 
@@ -490,7 +488,7 @@ JNF_COCOA_ENTER(env);
     if (nsPrintInfo != -1)
     {
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(nsPrintInfo);
-        if (printInfo) CFRelease(printInfo); // GC
+        [printInfo release];
     }
 JNF_COCOA_EXIT(env);
 }

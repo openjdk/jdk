@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,6 +444,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * renderer installed on a Synth combo box is a JLabel. If this is changed,
      * then an assert will fail in SynthFileChooserUIImpl
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SynthComboBoxRenderer extends JLabel implements ListCellRenderer<Object>, UIResource {
         public SynthComboBoxRenderer() {
             super();
@@ -535,6 +536,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * are in sync. Whenever one is "over" both are. Whenever one is pressed,
      * both are.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private final class ButtonHandler extends DefaultButtonModel
             implements MouseListener, PopupMenuListener {
         /**

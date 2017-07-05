@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
 
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (params instanceof TlsRsaPremasterSecretParameterSpec == false) {
+        if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
         this.spec = (TlsRsaPremasterSecretParameterSpec)params;
@@ -67,21 +67,20 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
+    // Only can be used in client side to generate TLS RSA premaster secret.
     protected SecretKey engineGenerateKey() {
         if (spec == null) {
             throw new IllegalStateException(
                 "TlsRsaPremasterSecretGenerator must be initialized");
         }
-        byte[] b = spec.getEncodedSecret();
-        if (b == null) {
-            if (random == null) {
-                random = new SecureRandom();
-            }
-            b = new byte[48];
-            random.nextBytes(b);
-            b[0] = (byte)spec.getMajorVersion();
-            b[1] = (byte)spec.getMinorVersion();
+
+        if (random == null) {
+            random = new SecureRandom();
         }
+        byte[] b = new byte[48];
+        random.nextBytes(b);
+        b[0] = (byte)spec.getMajorVersion();
+        b[1] = (byte)spec.getMinorVersion();
 
         return new SecretKeySpec(b, "TlsRsaPremasterSecret");
     }

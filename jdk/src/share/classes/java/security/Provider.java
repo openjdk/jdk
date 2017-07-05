@@ -1332,7 +1332,7 @@ public abstract class Provider extends Properties {
         addEngine("SSLContext",                         false, null);
         addEngine("TrustManagerFactory",                false, null);
         // JGSS
-        addEngine("GssApiMechanism",                    false, null);
+        addEngine("GssApiMechanism",                    true, "sun.security.jgss.GSSCaller");
         // SASL
         addEngine("SaslClientFactory",                  false, null);
         addEngine("SaslServerFactory",                  false, null);

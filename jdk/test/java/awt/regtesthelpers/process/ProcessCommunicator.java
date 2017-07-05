@@ -81,7 +81,7 @@ public class ProcessCommunicator {
     public static ProcessResults executeChildProcess(final Class classToExecute,
                            final String [] args)
     {
-        return executeChildProcess(classToExecute, " ", args);
+        return executeChildProcess(classToExecute, System.getProperty("java.class.path"), args);
     }
 
     /**

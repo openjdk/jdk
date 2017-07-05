@@ -42,7 +42,6 @@ import javax.swing.Icon;
  * <p style="text-align:center"><img src="doc-files/paragraph.gif"
  * alt="Diagram shows SpaceAbove, FirstLineIndent, LeftIndent, RightIndent,
  *      and SpaceBelow a paragraph."></p>
- * <p>
  *
  * @author  Timothy Prinzing
  */

@@ -2550,7 +2550,7 @@ public class Window extends Container implements Accessible {
      * a non-focusable Window.
      *
      * Setting the focusability state on a visible {@code Window}
-     * can have a delayed effect on some platforms &#151; the actual
+     * can have a delayed effect on some platforms &#8212; the actual
      * change may happen only when the {@code Window} becomes
      * hidden and then visible again.  To ensure consistent behavior
      * across platforms, set the {@code Window}'s focusable state

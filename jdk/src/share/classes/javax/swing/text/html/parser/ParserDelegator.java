@@ -43,9 +43,8 @@ import java.io.Serializable;
  *
  * @author  Sunita Mani
  */
-
+@SuppressWarnings("serial") // Same-version serialization only
 public class ParserDelegator extends HTMLEditorKit.Parser implements Serializable {
-
     private static final Object DTD_KEY = new Object();
 
     protected static void setDefaultDTD() {

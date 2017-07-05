@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"

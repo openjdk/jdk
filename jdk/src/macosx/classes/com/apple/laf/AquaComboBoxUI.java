@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaCustomComboTextField extends JTextField {
+        @SuppressWarnings("serial") // anonymous class
         public AquaCustomComboTextField() {
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
@@ -286,6 +288,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         SwingUtilities.replaceUIActionMap(comboBox, actionMap);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private abstract class ComboBoxAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             if (!comboBox.isEnabled() || !comboBox.isShowing()) {
@@ -306,6 +309,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     /**
      * Hilight _but do not select_ the next item in the list.
      */
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightNextAction = new ComboBoxAction() {
         @Override
         public void performComboBoxAction(AquaComboBoxUI ui) {
@@ -322,6 +326,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     /**
      * Hilight _but do not select_ the previous item in the list.
      */
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightPreviousAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -334,6 +339,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightFirstAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -342,6 +348,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightLastAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -351,6 +358,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageUpAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -371,6 +379,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private Action highlightPageDownAction = new ComboBoxAction() {
         @Override
         void performComboBoxAction(final AquaComboBoxUI ui) {
@@ -486,12 +495,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     // This is somewhat messy.  The difference here from BasicComboBoxUI.EnterAction is that
     // arrow up or down does not automatically select the
+    @SuppressWarnings("serial") // anonymous class
     private static final Action triggerSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             triggerSelectionEvent((JComboBox)e.getSource(), e);
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private static final Action toggleSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
             final JComboBox comboBox = (JComboBox)e.getSource();
@@ -510,6 +521,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         }
     };
 
+    @SuppressWarnings("serial") // anonymous class
     private static Action hideAction = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {

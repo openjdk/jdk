@@ -36,6 +36,7 @@ import javax.security.auth.login.LoginException;
 import sun.security.jca.JCAUtil;
 
 import sun.security.pkcs11.wrapper.*;
+import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
@@ -122,6 +123,9 @@ class Token implements Serializable {
     private final static CK_MECHANISM_INFO INVALID_MECH =
         new CK_MECHANISM_INFO(0, 0, 0);
 
+    // flag indicating whether the token supports raw secret key material import
+    private Boolean supportsRawSecretKeyImport;
+
     Token(SunPKCS11 provider) throws PKCS11Exception {
         this.provider = provider;
         this.removable = provider.removable;
@@ -158,6 +162,36 @@ class Token implements Serializable {
 
     boolean isWriteProtected() {
         return writeProtected;
+    }
+
+    // return whether the token supports raw secret key material import
+    boolean supportsRawSecretKeyImport() {
+        if (supportsRawSecretKeyImport == null) {
+            SecureRandom random = JCAUtil.getSecureRandom();
+            byte[] encoded = new byte[48];
+            random.nextBytes(encoded);
+
+            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[3];
+            attributes[0] = new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY);
+            attributes[1] = new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_GENERIC_SECRET);
+            attributes[2] = new CK_ATTRIBUTE(CKA_VALUE, encoded);
+
+            Session session = null;
+            try {
+                attributes = getAttributes(O_IMPORT,
+                        CKO_SECRET_KEY, CKK_GENERIC_SECRET, attributes);
+                session = getObjSession();
+                long keyID = p11.C_CreateObject(session.id(), attributes);
+
+                supportsRawSecretKeyImport = Boolean.TRUE;
+            } catch (PKCS11Exception e) {
+                supportsRawSecretKeyImport = Boolean.FALSE;
+            } finally {
+                releaseSession(session);
+            }
+        }
+
+        return supportsRawSecretKeyImport;
     }
 
     // return whether we are logged in

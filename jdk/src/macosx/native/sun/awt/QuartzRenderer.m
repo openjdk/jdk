@@ -438,6 +438,9 @@ QUARTZ_RENDERER_INLINE SDRenderType doPolyUsingCG(JNIEnv *env, CGContextRef cgRe
 {
     SDRenderType renderType = SD_Nothing;
 
+    if (xpointsarray == NULL || ypointsarray == NULL) {
+        return SD_Nothing;
+    }
     if (npoints > 1)
     {
         if (fill == YES)
@@ -452,7 +455,14 @@ QUARTZ_RENDERER_INLINE SDRenderType doPolyUsingCG(JNIEnv *env, CGContextRef cgRe
         jint i;
 
         jint* xpoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, xpointsarray, NULL);
+        if (xpoints == NULL) {
+            return SD_Nothing;
+        }
         jint* ypoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, ypointsarray, NULL);
+        if (ypoints == NULL) {
+            (*env)->ReleasePrimitiveArrayCritical(env, xpointsarray, xpoints, 0);
+            return SD_Nothing;
+        }
 
         CGContextMoveToPoint(cgRef, xpoints[0]+offsetX, ypoints[0]+offsetY);
 

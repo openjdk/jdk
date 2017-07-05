@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/threadCritical.hpp"
-#include "thread_aix.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 // put OS-includes here
 # include <pthread.h>

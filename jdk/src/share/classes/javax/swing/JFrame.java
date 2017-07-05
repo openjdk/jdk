@@ -123,7 +123,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * has this set as the close operation and is closed in an applet,
      * a <code>SecurityException</code> may be thrown.
      * It is recommended you only use this in an application.
-     * <p>
+     *
      * @since 1.3
      */
     public static final int EXIT_ON_CLOSE = 3;

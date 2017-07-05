@@ -1,509 +1,2553 @@
-." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH java 1 "07 May 2011"
-
-.LP
-.SH "名前"
-java \- Java アプリケーション起動ツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: java
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "java" "1" "2013年11月21日" "JDK 8" "基本ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+java \- Javaアプリケーションを起動します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-    \fP\f3java\fP [ options ] class [ argument ... ]
-.fl
-    \f3java\fP [ options ] \f3\-jar\fP file.jar [ argument ... ]
-.fl
+\fIjava\fR [\fIoptions\fR] \fIclassname\fR [\fIargs\fR]
 .fi
-
-.LP
-.RS 3
-.TP 3
-options 
-コマンド行オプション。 
-.TP 3
-class 
-呼び出されるクラスの名前 
-.TP 3
-file.jar 
-呼び出される JAR ファイルの名前。必ず \f2\-jar\fP とともに使用する 
-.TP 3
-argument 
-\f3main\fP 関数に渡される引数 
+.if n \{\
 .RE
-
-.LP
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fIjava\fR [\fIoptions\fR] \fI\-jar\fR \fIfilename\fR [\fIargs\fR]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+空白で区切られたコマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIclassname\fR
+.RS 4
+起動するクラスの名前。
+.RE
+.PP
+\fIfilename\fR
+.RS 4
+呼び出されるJavaアーカイブ(JAR)ファイルの名前。\fI\-jar\fRオプションと一緒にのみ使用します。
+.RE
+.PP
+\fIargs\fR
+.RS 4
+空白で区切られた\fImain()\fRメソッドに渡される引数。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3java\fP ツールは、Java アプリケーションを起動します。java ツールは、Java Runtime Environment を起動したあと、指定されたクラスをロードし、そのクラスの \f3main\fP メソッドを呼び出すことにより、Java アプリケーションを起動します。
-.LP
-.LP
-このメソッドは、public および static として宣言する必要があります。 また、値を返してはいけません。 さらに、 \f2String\fP 配列をパラメータとして指定できなければなりません。メソッドの宣言は、次のようになっていなければなりません。
-.LP
+.PP
+\fIjava\fRコマンドはJavaアプリケーションを開始します。Java Runtime Environment (JRE)を起動した後、指定したクラスをロードし、そのクラスの\fImain()\fRメソッドを呼び出すことにより、これを行います。このメソッドは、\fIpublic\fRおよび\fIstatic\fRとして宣言する必要があります。また、値は返せません。さらに、\fIString\fR配列をパラメータとして指定できる必要があります。メソッド宣言は次の形式を含みます。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-public static void main(String args[])
-.fl
-\fP
+public static void main(String[] args)
 .fi
-
-.LP
-.LP
-デフォルトでは、コマンド行オプション以外の最初の引数が、呼び出されるクラスの名前になります。この名前には、完全指定のクラス名を使用する必要があります。\f3\-jar\fP オプションを指定した場合、コマンド行オプション以外の最初の引数が、アプリケーションのクラスファイルとリソースファイルを含む \f3JAR\fP アーカイブの名前になります。この場合、マニフェストの \f3Main\-Class\fP ヘッダーで指定されたクラスが起動クラスになります。
-.LP
-.LP
-Java Runtime は、ブートストラップクラスパス、インストール型拡張機能、およびユーザークラスパスの 3 箇所から起動クラスと他の使用されているクラスを検索します。
-.LP
-.LP
-クラス名または JAR ファイル名のあとにある、コマンド行オプション以外の引数は、\f3main\fP 関数に渡されます。
-.LP
+.if n \{\
+.RE
+.\}
+.PP
+\fIjava\fRコマンドを使用して、\fImain()\fRメソッドがあるか\fIjavafx\&.application\&.Application\fRを拡張するクラスをロードすることで、JavaFXアプリケーションを起動できます。後者の場合、起動ツールは\fIApplication\fRクラスのインスタンスを構成し、その\fIinit()\fRメソッドをコールし、\fIstart(javafx\&.stage\&.Stage)\fRメソッドをコールします。
+.PP
+デフォルトでは、\fIjava\fRコマンドのオプションではない最初の引数は、呼び出されるクラスの完全修飾名です。\fI\-jar\fRオプションを指定した場合、その引数は、アプリケーションのクラス・ファイルとリソース・ファイルを含むJARファイルの名前になります。起動クラスは、ソース・コードの\fIMain\-Class\fRマニフェスト・ヘッダーによって指定される必要があります。
+.PP
+JREは、ブートストラップ・クラス・パス、インストール済拡張機能およびユーザーのクラス・パスの3箇所から、起動クラス(およびアプリケーションで使用されている他のクラス)を検索します。
+.PP
+クラス・ファイル名またはJARファイル名の後の引数は、\fImain()\fRメソッドに渡されます。
 .SH "オプション"
-.LP
-.LP
-起動ツールには、現在の実行環境および将来のリリースでサポートされる標準オプションがあります。また、仮想マシンの現在の実装では、非標準オプションのセットもサポートされます。これは、将来のリリースで変更される可能性があります。
-.LP
-.SH "標準オプション"
-.LP
-.RS 3
-.TP 3
-\-client 
-.LP
-Java HotSpot Client VM を選択します。64 ビット対応 JDK は現時点では、このオプションを無視し、代わりに Java Hotspot Server VM を使用します。 
-.LP
-デフォルトの VM の選択については、
-.na
-\f2「サーバー \- クラスマシンの検出」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.htmlを参照してください。  
-.TP 3
-\-server 
-.LP
-Java HotSpot Server VM を選択します。64 ビット対応 JDK 上では、サポートされるのは Java Hotspot Server VM だけであるため、\-server オプションが暗黙的に選択されます。 
-.LP
-デフォルトの VM の選択については、
-.na
-\f2「サーバー \- クラスマシンの検出」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.htmlを参照してください。  
-.TP 3
-\-agentlib:libname[=options] 
-ネイティブエージェントライブラリ \f2libname\fP をロードします。たとえば次のように指定します。 
-.LP
-\-agentlib:hprof 
-.LP
-\-agentlib:jdwp=help 
-.LP
-\-agentlib:hprof=help 
-.LP
-詳細については、
-.na
-\f2「JVMTI エージェントのコマンド行オプション」\fP @
-.fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#startingを参照してください。  
-.TP 3
-\-agentpath:pathname[=options] 
-フルパス名を使用して、ネーティブエージェントライブラリをロードします。詳細については、
-.na
-\f2「JVMTI エージェントのコマンド行オプション」\fP @
-.fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#startingを参照してください。 
-.TP 3
-\-classpath classpath 
-.TP 3
-\-cp classpath 
-クラスファイルを検索するディレクトリ、JAR アーカイブ、および ZIP アーカイブのリストを指定します。クラスパスの各エントリはコロン (\f3:\fP) で区切ります。\f3\-classpath\fP または \f3\-cp\fP を指定すると、このオプションの値によって \f3CLASSPATH\fP 環境変数の設定がオーバーライドされます。 
-.LP
-\f3\-classpath\fP も \f3\-cp\fP も使用されず、\f3CLASSPATH\fP も設定されていない場合、ユーザークラスパスは現在のディレクトリ (\f4.\fP) になります。  
-.LP
-便宜上、 \f2*\fP のベース名を含むクラスパス要素は、 \f2.jar\fP または \f2.JAR\fP を拡張子に持つディレクトリ内のすべてのファイルのリストを指定するのと同等とみなされます (java プログラムはこの 2 つの呼び出しを区別できない)。
-.br
-.br
-たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。ただし、JAR ファイルの順番は未指定となります。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。* だけから成る \f2クラスパスエントリは、\fP カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。 \f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。  
-.LP
-クラスパスの詳細は、
-.na
-\f2「クラスパスの設定」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpathを参照してください。  
-.TP 3
-\-Dproperty=value 
-システムプロパティーの値を設定します。 
-.TP 3
-\-d32 
-.TP 3
-\-d64 
-それぞれ 32 ビット環境、64 ビット環境でプログラムを実行することを要求します。要求された環境がインストールされていないかサポートされていない場合は、エラーが報告されます。 
-.LP
-現在のところ、Java HotSpot Server VM だけが 64 ビットの操作をサポートしており、\-server オプションを使用する場合は、\-d64 も一緒に使用する必要があります。したがって、\-d64 使用時には「\-client」オプションは無視されます。この仕様は、将来のリリースでは変更になる可能性があります。 
-.LP
-\f3\-d32\fP と \f3\-d64\fP がどちらも指定されていない場合は、デフォルトとして、32 ビット環境で実行されます。この仕様は、将来のリリースでは変更になる可能性があります。  
-.TP 3
-\-enableassertions[:<package name>"..." | :<class name> ] 
-.TP 3
-\-ea[:<package name>"..." | :<class name> ] 
-アサーションを有効にします。アサーションは、デフォルトでは無効になっています。 
-.LP
-引数なしの \f3enableassertions\fP または \f3\-ea\fP を指定すると、アサーションが有効になります。「\f2...\fP」で終わる引数を 1 つ指定すると、指定したパッケージとそのサブパッケージ内でアサーションが有効になります。引数として「\f2...\fP」だけを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが有効になります。「\f2...\fP」で終わらない引数を 1 つ指定すると、指定したクラス内でアサーションが有効になります。 
-.LP
-単一コマンド行にこれらのスイッチのインスタンスを複数指定した場合は、指定したスイッチが順番に処理されてからクラスがロードされます。したがって、たとえば、パッケージ \f2com.wombat.fruitbat\fP (サブパッケージを含む) 内でのみアサーションを有効にしてプログラムを実行するには、次のようなコマンドを使用します。 
-.nf
-\f3
-.fl
-java \-ea:com.wombat.fruitbat... <Main Class>
-.fl
-\fP
-.fi
-.LP
-\f3\-enableassertions\fP および \f3\-ea\fP スイッチは、すべてのクラスローダおよびシステムクラスに適用されます。システムクラスにはクラスローダはありません。ただし、この規則には 1 つ例外があります。それは、引数なしの形式でこのスイッチを指定すると、その指定がシステムに適用されない、ということです。この例外を利用すれば、システムクラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。すべてのシステムクラスでアサーションを有効にするために、別のスイッチが用意されています。このあとの \f3\-enablesystemassertions\fP を参照してください。  
-.TP 3
-\-disableassertions[:<package name>"..." | :<class name> ] 
-.TP 3
-\-da[:<package name>"..." | :<class name> ] 
-アサーションを無効にします。これがデフォルトです。 
-.LP
-引数なしの \f3disableassertions\fP または \f3\-da\fP を指定すると、アサーションが無効になります。「\f2...\fP」で終わる引数を 1 つ指定すると、指定したパッケージとそのサブパッケージ内でアサーションが無効になります。引数として「\f2...\fP」だけを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが無効になります。「\f2...\fP」で終わらない引数を 1 つ指定すると、指定したクラス内でアサーションが無効になります。 
-.LP
-パッケージ \f2com.wombat.fruitbat\fP 内ではアサーションを有効にし、クラス \f2com.wombat.fruitbat.Brickbat\fP 内ではアサーションを無効にしたうえで、プログラムを実行するには、次のようなコマンドを使用します。 
-.nf
-\f3
-.fl
-java \-ea:com.wombat.fruitbat... \-da:com.wombat.fruitbat.Brickbat \fP\f4<Main Class>\fP\f3
-.fl
-\fP
-.fi
-.LP
-\f3\-disableassertions\fP および \f3\-da\fP スイッチは、すべてのクラスローダおよびシステムクラスに適用されます。システムクラスにはクラスローダはありません。ただし、この規則には 1 つ例外があります。それは、引数なしの形式でこのスイッチを指定すると、その指定がシステムに適用されない、ということです。この例外を利用すれば、システムクラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。すべてのシステムクラスでアサーションを無効にするために、別のスイッチが用意されています。このあとの \f3\-disablesystemassertions\fP を参照してください。  
-.TP 3
-\-enablesystemassertions 
-.TP 3
-\-esa 
-すべてのシステムクラス内でアサーションを有効にします。つまり、システムクラスについてアサーションのデフォルトステータスを \f2true\fP に設定します。 
-.TP 3
-\-disablesystemassertions 
-.TP 3
-\-dsa 
-すべてのシステムクラス内でアサーションを無効にします。 
-.TP 3
-\-jar 
-JAR ファイルにカプセル化されたプログラムを実行します。最初の引数は、起動クラスの名前ではなく、JAR ファイルの名前にします。このオプションが機能するには、JAR ファイルのマニフェストに\f3「Main\-Class:\fP\f4classname\fP\f3」\fPという形式の行を指定する必要があります。\f2classname\fP には、アプリケーションの開始位置として機能する \f2public\ static\ void\ main(String[]\ args)\fP メソッドを含むクラスを指定します。JAR ファイルとそのマニフェストについては、jar(1)と、
-.na
-\f2Java チュートリアル\fP @
-.fi
-http://download.oracle.com/javase/tutorial/deployment/jarの「Trail: Jar Files」を参照してください。 
-.LP
-このオプションを使用すると、指定した JAR ファイルがすべてのユーザークラスのソースになり、ユーザークラスパスのほかの設定は無視されます。 
-.LP
-Solaris 8 では、「java \-jar」オプションで実行できる JAR ファイルは、実行権限のセットを保持しています。このため、「java \-jar」を使用しないで実行することも可能です。Java Archive (JAR) ファイル
-.na
- @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/index.html  
-.TP 3
-\-javaagent:jarpath[=options] 
-Java プログラミング言語エージェントをロードします。 java.lang.instrument を参照してください。
-.na
- @
-.fi
-http://java.sun.com/javase/6/docs/api/java/lang/instrument/package\-summary.html 
-.TP 3
-\-jre\-restrict\-search 
-ユーザープライベートな JRE をバージョン検索に含めます。 
-.TP 3
-\-no\-jre\-restrict\-search 
-ユーザープライベートな JRE をバージョン検索から除外します。 
-.TP 3
-\-verbose 
-.TP 3
-\-verbose:class 
-クラスがロードされるたびにクラスに関する情報を表示します。 
-.TP 3
-\-verbose:gc 
-ガベージコレクションイベントが発生するたびに報告します。 
-.TP 3
-\-verbose:jni 
-ネイティブメソッドの使用およびその他の Java Native Interface (JNI) アクティビティーに関する情報を報告します。 
-.TP 3
-\-version 
-バージョン情報を表示して終了します。 
-.TP 3
-\-version:release 
-コマンド行に指定されたクラスまたは JAR ファイルが、\f2release\fP で指定されたバージョンを必要としていることを示します。起動された java コマンドのバージョンがこの指定内容を満たさず、かつ適切な実装がシステム上で見つかった場合には、その適切な実装が使用されます。 
-.LP
-\f2release\fP では、特定のバージョンを指定できるだけでなく、バージョン文字列と呼ばれるバージョンのリストを指定することもできます。バージョン文字列は、いくつかのバージョン範囲を空白で区切った形式の順序付きリストです。バージョン範囲は、バージョン ID、バージョン ID の後にアスタリスク (*) を付加したもの、バージョン ID の後にプラス記号 (+) を付加したもの、2 つのバージョン範囲をアンパサンド (&) で結合したもの、のいずれかになります。アスタリスクはプレフィックス一致を、プラス記号は指定されたバージョン以上を、アンパサンドは 2 つのバージョン範囲の論理積を、それぞれ意味します。次に例を示します。 
-.nf
-\f3
-.fl
-\-version:"1.6.0_13 1.6*&1.6.0_10+"
-.fl
-\fP
-.fi
-上記の意味は、バージョン 1.6.0_13、1.6 をバージョン ID プレフィックスに持つ 1.6.0_10 以上のバージョン、のいずれかをクラスまたは JAR ファイルが必要としている、ということです。バージョン文字列の厳密な構文や定義については、「Java Network Launching Protocol & API Specification (JSR\-56)」の「Appendix A」を参照してください。 
-.LP
-JAR ファイルの場合は通常、バージョン要件をコマンド行に指定するよりも、JAR ファイルのマニフェスト内に指定することが推奨されています。 
-.LP
-このオプションの使用に関する重要なポリシー情報については、後述の「注」節を参照してください。  
-.TP 3
-\-showversion 
-バージョン情報を表示して続行します。 
-.TP 3
-\-? 
-.TP 3
-\-help 
-使用法を表示して終了します。 
-.TP 3
-\-splash:imagepath 
-\f2imagepath\fP に指定された画像を含むスプラッシュ画面を表示します。 
-.TP 3
-\-X 
-非標準オプションに関する情報を表示して終了します。 
+.PP
+\fIjava\fRコマンドは、次のカテゴリに分類できる広範なオプションをサポートしています。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+標準オプション
 .RE
-
-.LP
-.SS 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 非標準オプション
-.LP
-.RS 3
-.TP 3
-\-Xint 
-インタプリタ専用モードで動作します。ネイティブコードへのコンパイルは無効になり、すべてのバイトコードがインタプリタによって実行されます。Java HotSpot VM に対応するコンパイラが提供するパフォーマンス上の利点は、このモードでは実現されません。 
-.TP 3
-\-Xbatch 
-バックグラウンドコンパイルを無効にします。通常、VM では、バックグラウンドコンパイルが終了するまで、メソッドをバックグラウンドタスクとしてコンパイルし、インタプリタモードでメソッドを実行します。\f2\-Xbatch\fP フラグを指定すると、バックグラウンドコンパイルが無効になり、すべてのメソッドのコンパイルが完了するまでフォアグラウンドタスクとして処理されます。 
-.TP 3
-\-Xbootclasspath:bootclasspath 
-ブートクラスファイルを探すディレクトリ、JAR アーカイブ、および ZIP アーカイブをコロンで区切ったリストで指定します。指定したパスに存在するブートクラスファイルが、Java プラットフォーム JDK に含まれるブートクラスファイルの代わりに使用されます。\f2注: rt.jar 内のクラスをオーバーライドする目的でこのオプションを使用するアプリケーションは、システムに配置しないでください。Java Runtime Environment バイナリコードライセンス違反になります。\fP 
-.TP 3
-\-Xbootclasspath/a:path 
-ディレクトリ、JAR アーカイブ、および ZIP アーカイブのパスをコロンで区切って指定します。パスはデフォルトのブートストラップクラスパスのあとに追加されます。 
-.TP 3
-\-Xbootclasspath/p:path 
-ディレクトリ、JAR アーカイブ、および ZIP アーカイブのパスをコロンで区切って指定します。パスはデフォルトのブートストラップクラスパスの前に追加されます。\f2注: rt.jar 内のクラスをオーバーライドする目的でこのオプションを使用するアプリケーションは、システムに配置しないでください。Java Runtime Environment バイナリコードライセンス違反になります。\fP 
-.TP 3
-\-Xcheck:jni 
-Java Native Interface (JNI) 機能に対して追加チェックを行います。具体的には、Java 仮想マシンは JNI 要求を処理する前に、JNI 関数に渡されるパラメータと、実行環境のデータを検証します。無効なデータが見つかった場合は、ネイティブコードに問題があることを示しているため、Java 仮想マシンは致命的エラーを発生して終了します。このオプションを使用すると、パフォーマンス低下が予想されます。 
-.TP 3
-\-Xfuture 
-クラスとファイルの形式を厳密にチェックします。下位互換性を保つため、JDK の仮想マシンが実行するデフォルトの形式チェックは、JDK ソフトウェアのバージョン 1.1.x が実行するチェックと同程度の厳密さになっています。\f3\-Xfuture\fP フラグを指定すると、クラスファイル形式の仕様への準拠を強化するためのより厳密なチェックが有効になります。Java アプリケーション起動ツールの将来のリリースでは、より厳密なチェックがデフォルトになるため、新しいコードを開発するときにはこのフラグを使用することをお勧めします。 
-.TP 3
-\-Xnoclassgc 
-クラスのガベージコレクションを無効にします。このオプションを使用すると、ロード済みクラスからメモリーが回復されることがなくなるため、全体的なメモリー使用量が増大します。この場合、アプリケーションによっては OutOfMemoryError がスローされる可能性があります。 
-.TP 3
-\-Xincgc 
-インクリメンタルガーベジコレクタを有効にします。インクリメンタルガベージコレクタは、デフォルトでは無効になっています。 有効にすると、プログラムの実行中にガベージコレクションによる一時停止が発生しなくなります。インクリメンタルガベージコレクタは、プログラムと同時に実行することがあり、この場合、プログラムの利用できるプロセッサ能力が低下します。 
-.TP 3
-\-Xloggc:file 
-\-verbose:gc と同様にガベージコレクションイベントが発生するたびに報告しますが、そのデータを \f2file\fP に記録します。\f2\-verbose:gc\fP を指定したときに報告される情報のほかに、報告される各イベントの先頭に、最初のガベージコレクションイベントからの経過時間 (秒単位) が付け加えられます。 
-.LP
-ネットワークの応答時間によって JVM の実行速度が低下するのを避けるため、このファイルの格納先は、常にローカルファイルシステムにしてください。ファイルシステムが満杯になると、ファイルは切り詰められ、そのファイルにデータが引き続き記録されます。このオプションと \f2\-verbose:gc\fP の両方がコマンド行に指定されている場合は、このオプションが優先されます。  
-.TP 3
-\-Xmsn 
-メモリー割り当てプールの初期サイズをバイト数で指定します。指定する値は、1M バイトより大きい 1024 の倍数にしなければなりません。キロバイトを指定するには、文字 \f2k\fP または \f2K\fP を付けます。メガバイトを指定するには、文字 \f2m\fP または \f2M\fP を付けます。デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「
-.na
-\f2HotSpot Ergonomics\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/gc\-ergonomics.html」を参照してください。 
-.LP
-例: 
-.nf
-\f3
-.fl
-       \-Xms6291456
-.fl
-       \-Xms6144k
-.fl
-       \-Xms6m
-.fl
-
-.fl
-\fP
-.fi
-.TP 3
-\-Xmxn 
-メモリー割り当てプールの最大サイズをバイト数で指定します。指定する値は、2M バイトより大きい 1024 の倍数にしなければなりません。キロバイトを指定するには、文字 \f2k\fP または \f2K\fP を付けます。メガバイトを指定するには、文字 \f2m\fP または \f2M\fP を付けます。デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「
-.na
-\f2HotSpot Ergonomics\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/gc\-ergonomics.html」を参照してください。
-.br
-例: 
-.nf
-\f3
-.fl
-       \-Xmx83886080
-.fl
-       \-Xmx81920k
-.fl
-       \-Xmx80m
-.fl
-
-.fl
-\fP
-.fi
-Solaris 7 および Solaris 8 SPARC プラットフォームの場合のこの値の上限は、およそ 4000m からオーバーヘッドの量を引いたものです。Solaris 2.6 および x86 プラットフォームの場合の上限は、およそ 2000m からオーバーヘッドの量を引いたものです。Linux プラットフォームの場合の上限は、およそ 2000m からオーバーヘッドの量を引いたものです。 
-.TP 3
-\-Xprof 
-実行中のプログラムのプロファイルを生成し、プロファイルデータを標準出力に出力します。このオプションは、プログラム開発用のユーティリティーとして提供されています。 本番稼動システムでの使用を目的としたものではありません。  
-.TP 3
-\-Xrs 
-Java 仮想マシン (JVM) によるオペレーティングシステムシグナルの使用を減らします。 
-.LP
-以前のリリースでは、Java アプリケーションを秩序正しくシャットダウンするためのシャットダウンフック機能が追加されました。この機能により、JVM が突然終了した場合でも、シャットダウン時にユーザークリーンアップコード (データベース接続のクローズなど) を実行できるようになりました。 
-.LP
-Sun の JVM は、シグナルをキャッチすることによって、JVM の異常終了のためのシャットダウンフックを実装します。JVM は、SIGHUP、SIGINT、および SIGTERM を使用して、シャットダウンフックの実行を開始します。 
-.LP
-JVM は、デバッグの目的でスレッドスタックをダンプするという、1.2 より前からある機能を実現するためにも、同様の機構を使用します。Sun の JVM は、スレッドダンプを実行するために SIGQUIT を使用します。 
-.LP
-JVM を埋め込んでいるアプリケーションが SIGINT や SIGTERM などのシグナルを頻繁にトラップする必要があると、JVM そのもののシグナルハンドラの処理に支障が出る可能性があります。\f3\-Xrs\fP コマンド行オプションを使用すると、この問題に対処できます。Sun の JVM に対して \f3\-Xrs\fP を使用すると、SIGINT、SIGTERM、SIGHUP、および SIGQUIT に対するシグナルマスクは JVM によって変更されず、これらのシグナルに対するシグナルハンドラはインストールされません。 
-.LP
-\f3\-Xrs\fP を指定した場合、次の 2 つの影響があります。 
-.RS 3
-.TP 2
-o
-SIGQUIT によるスレッドダンプを利用できない 
-.TP 2
-o
-シャットダウンフック処理の実行は、JVM が終了しようとしている時点で System.exit() を呼び出すなどして、ユーザーコード側で行う必要がある 
 .RE
-.TP 3
-\-Xssn 
-スレッドのスタックサイズを設定します。 
-.TP 3
-\-XX:+UseAltSigs 
-VM ではデフォルトで \f2SIGUSR1\fP および \f2SIGUSR2\fP を使用しますが、\f2SIGUSR1\fP および \f2SIGUSR2\fP をシグナル連鎖するアプリケーションと 競合する場合があります。\f2\-XX:+UseAltSigs\fP オプションは、VM にデフォルトとして \f2SIGUSR1\fP と \f2SIGUSR2\fP 以外のシグナルを使用させます。 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+高度なランタイム・オプション
 .RE
-
-.LP
-.SH "注"
-.LP
-.LP
-\f3\-version:\fP\f2release\fP コマンド行オプションでは、どんなに複雑にリリースを指定してもかまいません。ただし、現実的なリリース指定の限られたサブセットを使用するだけでも適切なポリシーを表現できるため、それらのサブセットのみが完全にサポートされます。それらのポリシーを次に示します。
-.LP
-.RS 3
-.TP 3
-1.
-任意のバージョン。これは、このオプションを使用しないことで表現できます。 
-.TP 3
-2.
-ある特定のバージョン ID よりも大きい任意のバージョン。次に例を示します。 
-.nf
-\f3
-.fl
-"1.6.0_10+"
-.fl
-\fP
-.fi
-この場合、 \f21.6.0_10\fP よりも大きい任意のバージョンが使用されます。これは、指定されたバージョンで特定のインタフェースが導入された (あるいはそのバグが修正された) 場合に便利です。 
-.TP 3
-3.
-ある特定のバージョン ID よりも大きいバージョン。ただし、そのリリースファミリの上限によって制限するもの。次に例を示します。 
-.nf
-\f3
-.fl
-"1.6.0_10+&1.6*"
-.fl
-\fP
-.fi
-.TP 3
-4.
-上の項目 2 と項目 3 の「OR」式。次に例を示します。 
-.nf
-\f3
-.fl
-"1.6.0_10+&1.6* 1.7+"
-.fl
-\fP
-.fi
-これは項目 2 に似ていますが、ある変更が特定のリリース (1.7) で導入されたが、その同じ変更が以前のリリースのアップデートでも利用可能になった、という場合に便利です。 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+高度なJITコンパイラ・オプション
 .RE
-
-.LP
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+高度なサービスアビリティ・オプション
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+高度なガベージ・コレクション・オプション
+.RE
+.PP
+標準のオプションは、Java Virtual Machine (JVM)のすべての実装でサポートすることが保証されます。これらは、JREのバージョンの確認、クラス・パスの設定、冗長な出力の有効化などの一般的なアクションに使用されます。
+.PP
+標準以外のオプションは、Java HotSpot仮想マシンに固有の汎用オプションであるため、すべてのJVM実装でサポートされることは保証されず、変更される可能性があります。これらのオプションは\fI\-X\fRで開始します。
+.PP
+拡張オプションは、不用意に使用しないことをお薦めします。これらは、特定のシステム要件を持つことが多く、システム構成パラメータへの特権アクセスが必要な場合があるJava HotSpot仮想マシン操作の特定の領域を調整するために使用される開発者オプションです。これらは、すべてのJVM実装でサポートされることは保証されず、変更される可能性があります。拡張オプションは\fI\-XX\fRで始まります。
+.PP
+最新リリースで非推奨または削除されるオプションを追跡するために、ドキュメントの最後に非推奨で削除されたオプションという名前のセクションがあります。
+.PP
+ブール・オプションは、デフォルトで無効になっている機能を有効にしたり、デフォルトで有効になっている機能を無効にするために使用されます。このようなオプションは、パラメータを必要としません。ブール値\fI\-XX\fRオプションは、プラス記号(\fI\-XX:+\fR\fIOptionName\fR)を使用して有効にし、マイナス記号(\fI\-XX:\-\fR\fIOptionName\fR)を使用して無効にします。
+.PP
+引数が必要なオプションの場合、引数は、オプション名を空白、コロン(:)または等号(=)で区切ったものになるか、あるいは引数がオプションの後に直接続く場合もあります(正確な構文は各オプションによって異なります)。サイズをバイト単位で指定するよう求められている場合、接尾辞を使用しないか、あるいはキロバイト(KB)には接尾辞\fIk\fRまたは\fIK\fR、メガバイト(MB)には接尾辞\fIm\fRまたは\fIM\fR、ギガバイト(GB)には接尾辞\fIg\fRまたは\fIG\fRを使用します。たとえば、サイズを8GBに設定するには、\fI8g\fR、\fI8192m\fR、\fI8388608k\fRまたは\fI8589934592\fRのいずれかを引数として指定できます。パーセントの指定が必要な場合は、0から1の数値を使用します(たとえば、25%の場合は\fI0\&.25\fRを指定します)。
+.SS "標準オプション"
+.PP
+これらは、JVMのすべての実装でサポートされる最も一般的に使用されるオプションです。
+.PP
+\-agentlib:\fIlibname\fR[=\fIoptions\fR]
+.RS 4
+指定したネイティブ・エージェント・ライブラリをロードします。ライブラリ名の後に、ライブラリに固有のオプションのカンマ区切りリストを使用できます。
+.sp
+オプション\fI\-agentlib:foo\fRを指定した場合、JVMは、\fILD_LIBRARY_PATH\fRシステム変数(OS Xでは、この変数は\fIDYLD_LIBRARY_PATH\fRになります)で指定された場所に\fIlibfoo\&.so\fRという名前のライブラリをロードしようとします。
+.sp
+次の例では、スタックの深さ3で、20ミリ秒ごとにヒープ・プロファイリング・ツール(HPROF)ライブラリをロードして、サンプルのCPU情報を取得する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-agentlib:hprof=cpu=samples,interval=20,depth=3
+.fi
+.if n \{\
+.RE
+.\}
+次の例では、メイン・クラスのロード前にJVMを一時停止して、Javaデバッグ・ワイヤ・プロトコル(JDWP)ライブラリをロードして、ポート8000でのソケット接続用にリスニングする方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-agentlib:jdwp=transport=dt_socket,server=y,address=8000
+.fi
+.if n \{\
+.RE
+.\}
+ネイティブ・エージェント・ライブラリの詳細は、次を参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.htmlにある\fIjava\&.lang\&.instrument\fRパッケージの説明
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/8/docs/platform/jvmti/jvmti\&.html#startingにあるJVMツール・インタフェース・ガイドのエージェントのコマンドライン・オプションに関する項
+.RE
+.RE
+.PP
+\-agentpath:\fIpathname\fR[=\fIoptions\fR]
+.RS 4
+絶対パス名で指定されたネイティブ・エージェント・ライブラリをロードします。このオプションは\fI\-agentlib\fRと同等ですが、ライブラリのフル・パスおよびファイル名を使用します。
+.RE
+.PP
+\-client
+.RS 4
+Java HotSpot Client VMを選択します。64ビット・バージョンのJava SE Development Kit (JDK)では、現在、このオプションは無視され、かわりにServer JVMが使用されます。
+.sp
+デフォルトのJVM選択は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.htmlにある
+サーバークラス・マシンの検出を参照してください。
+.RE
+.PP
+\-D\fIproperty\fR=\fIvalue\fR
+.RS 4
+システム・プロパティの値を設定します。\fIproperty\fR変数は、プロパティの名前を表す、空白のない文字列です。\fIvalue\fR変数は、プロパティの値を表す文字列です。\fIvalue\fRが空白を含む文字列の場合、それを引用符で囲みます(例:
+\fI\-Dfoo="foo bar"\fR)。
+.RE
+.PP
+\-d32
+.RS 4
+アプリケーションを32ビット環境で実行します。32ビット環境がインストールされていないかサポートされていない場合は、エラーが報告されます。デフォルトでは、64ビット・システムが使用されている場合を除き、アプリケーションは32ビット環境で実行されます。
+.RE
+.PP
+\-d64
+.RS 4
+アプリケーションを64ビット環境で実行します。64ビット環境がインストールされていないかサポートされていない場合は、エラーが報告されます。デフォルトでは、64ビット・システムが使用されている場合を除き、アプリケーションは32ビット環境で実行されます。
+.sp
+現在のところ、Java HotSpot Server VMのみが64ビットの操作をサポートしているため、\fI\-d64\fR使用時には\fI\-server\fRオプションが暗黙的に使用されます。\fI\-d64\fR使用時には、\fI\-client\fRオプションは無視されます。この仕様は、将来のリリースでは変更になる可能性があります。
+.RE
+.PP
+\-disableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR], \-da[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+.RS 4
+アサーションを無効にします。デフォルトでは、アサーションはすべてのパッケージおよびクラスで無効になっています。
+.sp
+引数なしの\fI\-disableassertions\fR
+(\fI\-da\fR)を指定すると、すべてのパッケージおよびクラスでアサーションが無効になります。\fI\&.\&.\&.\fRで終わる\fIpackagename\fR引数を指定すると、指定したパッケージとそのサブパッケージ内でアサーションが無効になります。引数として\fI\&.\&.\&.\fRのみを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが無効になります。\fIclassname\fR引数を指定すると、切替えによって、指定したクラス内でアサーションが無効になります。
+.sp
+\fI\-disableassertions\fR
+(\fI\-da\fR)オプションは、すべてのクラス・ローダーおよびシステム・クラスに適用されます(システム・クラスにはクラス・ローダーはありません)。このルールには1つ例外があります。オプションの引数が指定されていない場合は、システム・クラスに適用されません。これにより、システム・クラスを除くすべてのクラスでアサーションを簡単に無効にすることができます。\fI\-disablesystemassertions\fRオプションを使用すると、すべてのシステム・クラスでアサーションを無効にすることができます。
+.sp
+特定のパッケージやクラスでアサーションを明示的に有効にするには、\fI\-enableassertions\fR
+(\fI\-ea\fR)オプションを使用します。両方のオプションを同時に使用できます。たとえば、パッケージ\fIcom\&.wombat\&.fruitbat\fR
+(およびそのサブパッケージ)ではアサーションを有効にして、クラス\fIcom\&.wombat\&.fruitbat\&.Brickbat\fRではアサーションを無効にして、\fIMyClass\fRアプリケーションを実行するには、次のコマンドを使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-disablesystemassertions, \-dsa
+.RS 4
+すべてのシステム・クラス内でアサーションを無効にします。
+.RE
+.PP
+\-enableassertions[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR], \-ea[:[\fIpackagename\fR]\&.\&.\&.|:\fIclassname\fR]
+.RS 4
+アサーションを有効にします。デフォルトでは、アサーションはすべてのパッケージおよびクラスで無効になっています。
+.sp
+引数なしの\fI\-enableassertions\fR
+(\fI\-ea\fR)を指定すると、すべてのパッケージおよびクラスでアサーションが有効になります。\fI\&.\&.\&.\fRで終わる\fIpackagename\fR引数を指定すると、指定したパッケージとそのサブパッケージ内でアサーションが有効になります。引数として\fI\&.\&.\&.\fRのみを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが有効になります。\fIclassname\fR引数を指定すると、切替えによって、指定したクラス内でアサーションが有効になります。
+.sp
+\fI\-enableassertions\fR
+(\fI\-ea\fR)オプションは、すべてのクラス・ローダーおよびシステム・クラスに適用されます(システム・クラスにはクラス・ローダーはありません)。このルールには1つ例外があります。オプションの引数が指定されていない場合は、システム・クラスに適用されません。これにより、システム・クラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。\fI\-enablesystemassertions\fRオプションは、すべてのシステム・クラスでアサーションを有効にする別のスイッチを提供します。
+.sp
+特定のパッケージやクラスでアサーションを明示的に無効にするには、\fI\-disableassertions\fR
+(\fI\-da\fR)オプションを使用します。単一コマンドにこれらのスイッチのインスタンスを複数指定した場合は、指定したスイッチが順番に処理されてからクラスがロードされます。たとえば、パッケージ\fIcom\&.wombat\&.fruitbat\fR
+(およびそのサブパッケージ)でのみアサーションを有効にして、クラス\fIcom\&.wombat\&.fruitbat\&.Brickbat\fRではアサーションを無効にして、\fIMyClass\fRアプリケーションを実行するには、次のコマンドを使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-ea:com\&.wombat\&.fruitbat\&.\&.\&. \-da:com\&.wombat\&.fruitbat\&.Brickbat MyClass
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-enablesystemassertions, \-esa
+.RS 4
+すべてのシステム・クラス内でアサーションを有効にします。
+.RE
+.PP
+\-help, \-?
+.RS 4
+実際にJVMを実行せずに、\fIjava\fRコマンドの使用状況情報を表示します。
+.RE
+.PP
+\-jar \fIfilename\fR
+.RS 4
+JARファイルにカプセル化されたプログラムを実行します。\fIfilename\fR引数は、使用するアプリケーションの開始点として機能する\fIpublic static void main(String[] args)\fRメソッドを定義する、\fIMain\-Class:\fR\fIclassname\fRという形式の1行を含むマニフェストを持つJARファイルの名前です。
+.sp
+\fI\-jar\fRオプションを使用すると、指定したJARファイルがすべてのユーザー・クラスのソースになり、クラス・パスの他の設定は無視されます。
+.sp
+JARファイルの詳細は、次のリソースを参照してください。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jar/index\&.htmlにあるJavaアーカイブ(JAR)ファイルのガイド
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/tutorial/deployment/jar/index\&.htmlにある
+「レッスン: JARファイルのプログラムのパッケージ化」
+.RE
+.RE
+.PP
+\-javaagent:\fIjarpath\fR[=\fIoptions\fR]
+.RS 4
+指定したJavaプログラミング言語エージェントをロードします。Javaアプリケーションのインストゥルメントの詳細は、http://docs\&.oracle\&.com/javase/8/docs/api/java/lang/instrument/package\-summary\&.htmlにあるJava APIドキュメントの\fIjava\&.lang\&.instrument\fRパッケージの説明を参照してください。
+.RE
+.PP
+\-jre\-restrict\-search
+.RS 4
+ユーザー・プライベートなJREをバージョン検索に含めます。
+.RE
+.PP
+\-no\-jre\-restrict\-search
+.RS 4
+ユーザー・プライベートなJREをバージョン検索から除外します。
+.RE
+.PP
+\-server
+.RS 4
+Java HotSpot Server VMを選択します。64ビット・バージョンのJDKでは、Server VMのみをサポートしているため、その場合、このオプションは暗黙的です。
+.sp
+デフォルトのJVM選択は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/server\-class\&.htmlにある
+サーバークラス・マシンの検出を参照してください。
+.RE
+.PP
+\-showversion
+.RS 4
+バージョン情報を表示し、アプリケーションの実行を続行します。このオプションは\fI\-version\fRオプションと同等ですが、\-versionはバージョン情報の表示後にJVMに終了を指示する点が異なります。
+.RE
+.PP
+\-splash:\fIimgname\fR
+.RS 4
+\fIimgname\fRで指定されたイメージを含むスプラッシュ画面を表示します。たとえば、アプリケーションの起動時に\fIimages\fRディレクトリの\fIsplash\&.gif\fRファイルを表示するには、次のオプションを使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-splash:images/splash\&.gif
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-verbose:class
+.RS 4
+ロードされた各クラスに関する情報を表示します。
+.RE
+.PP
+\-verbose:gc
+.RS 4
+各ガベージ・コレクション(GC)イベントに関する情報を表示します。
+.RE
+.PP
+\-verbose:jni
+.RS 4
+ネイティブ・メソッドの使用およびその他のJava Native Interface (JNI)アクティビティに関する情報を表示します。
+.RE
+.PP
+\-version
+.RS 4
+バージョン情報を表示してから終了します。このオプションは\fI\-showversion\fRオプションと同等ですが、\-showversionはバージョン情報の表示後にJVMに終了を指示しない点が異なります。
+.RE
+.PP
+\-version:\fIrelease\fR
+.RS 4
+アプリケーションの実行に使用するリリース・バージョンを指定します。コールされた\fIjava\fRコマンドのバージョンがこの指定内容を満たさず、かつ適切な実装がシステム上で見つかった場合には、その適切な実装が使用されます。
+.sp
+\fIrelease\fR引数は、正確なバージョン文字列、または空白で区切られたバージョン文字列とバージョン範囲のリストを指定します。\fIバージョン文字列\fRは、次の形式で、開発者のバージョン番号を指定します:
+\fI1\&.\fR\fIx\fR\fI\&.0_\fR\fIu\fR
+(\fIx\fRはメジャー・バージョン番号、\fIu\fRは更新バージョン番号です)。\fIバージョン範囲\fRは、このバージョン以降を指定するにはバージョン文字列の後にプラス記号(\fI+\fR)を続けたもの、または一致する接頭辞を含む任意のバージョン文字列を指定するには一部のバージョン文字列の後にアスタリスク(\fI*\fR)を続けたもので構成されます。論理\fIOR\fRの組合せには空白、2つのバージョンの文字列/範囲の論理\fIAND\fRの組合せにはアンパサンド(\fI&\fR)を使用して、バージョン文字列とバージョン範囲を組み合せることができます。たとえば、クラスまたはJARファイルの実行にJRE 6u13 (1\&.6\&.0_13)または6u10 (1\&.6\&.0_10)以降の任意のJRE 6のいずれかを必要とする場合、次を指定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-version:"1\&.6\&.0_13 1\&.6* & 1\&.6\&.0_10+"
+.fi
+.if n \{\
+.RE
+.\}
+引用符が必要なのは、\fIrelease\fRパラメータに空白がある場合のみです。
+.sp
+JARファイルの場合は、バージョン要件をコマンドラインに指定するよりも、JARファイルのマニフェスト内に指定することが推奨されています。
+.RE
+.SS "非標準オプション"
+.PP
+これらのオプションは、Java HotSpot仮想マシンに固有の汎用オプションです。
+.PP
+\-X
+.RS 4
+使用可能なすべての\fI\-X\fRオプションのヘルプを表示します。
+.RE
+.PP
+\-Xbatch
+.RS 4
+バックグラウンド・コンパイルを無効にします。デフォルトでは、JVMでは、バックグラウンド・コンパイルが終了するまで、メソッドをバックグラウンド・タスクとしてコンパイルし、インタプリタ・モードでメソッドを実行します。\fI\-Xbatch\fRフラグを指定すると、バックグラウンド・コンパイルが無効になり、すべてのメソッドのコンパイルが完了するまでフォアグラウンド・タスクとして処理されます。
+.sp
+このオプションは\fI\-XX:\-BackgroundCompilation\fRと同等です。
+.RE
+.PP
+\-Xbootclasspath:\fIpath\fR
+.RS 4
+ブート・クラス・ファイルを検索するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。これらは、JDKに含まれるブート・クラス・ファイルのかわりに使用されます。
+.sp
+JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
+.RE
+.PP
+\-Xbootclasspath/a:\fIpath\fR
+.RS 4
+デフォルトのブートストラップ・クラス・パスの最後に追加するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。
+.sp
+JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
+.RE
+.PP
+\-Xbootclasspath/p:\fIpath\fR
+.RS 4
+デフォルトのブートストラップ・クラス・パスの先頭に追加するディレクトリ、JARファイルおよびZIPアーカイブの、コロン(:)で区切られたリストを指定します。
+.sp
+JREバイナリ・コード・ライセンスに違反するため、\fIrt\&.jar\fRでクラスをオーバーライドする目的で、このオプションを使用するアプリケーションをデプロイしないでください。
+.RE
+.PP
+\-Xboundthreads
+.RS 4
+ユーザー・レベルのスレッドをカーネル・スレッドにバインドします。
+.RE
+.PP
+\-Xcheck:jni
+.RS 4
+Java Native Interface (JNI)機能に対して追加チェックを行います。具体的には、これは、JNIリクエストを処理する前に、JNI関数に渡されるパラメータと実行環境のデータを検証します。無効なデータが見つかった場合は、ネイティブ・コードに問題があることを示しているため、JVMはリカバリ不能なエラーを発生して終了します。このオプションを使用すると、パフォーマンス低下が予想されます。
+.RE
+.PP
+\-Xcomp
+.RS 4
+最初の呼出しでJavaコードおよびコンパイル・メソッドの解釈を無効にします。デフォルトでは、JITコンパイラは、10,000の解釈されたメソッド呼出しを実行して、効率的なコンパイルのための情報を収集します。効率を犠牲にしてコンパイルのパフォーマンスを向上させるには、\fI\-Xcomp\fRフラグを使用して、解釈されたメソッド呼出しを無効にします。
+.sp
+\fI\-XX:CompileThreshold\fRオプションを使用して、コンパイルの前に、解釈されたメソッド呼出しの数を変更することもできます。
+.RE
+.PP
+\-Xdebug
+.RS 4
+何も行いません。下位互換性のために用意されています。
+.RE
+.PP
+\-Xdiag
+.RS 4
+追加の診断メッセージを表示します。
+.RE
+.PP
+\-Xfuture
+.RS 4
+クラス・ファイル形式の仕様への準拠を強化する、厳密なクラス・ファイル形式のチェックが有効になります。将来のリリースでは、より厳密なチェックがデフォルトになるため、新しいコードを開発するときには、開発者はこのフラグを使用することをお薦めします。
+.RE
+.PP
+\-Xincgc
+.RS 4
+増分GCを有効にします。
+.RE
+.PP
+\-Xint
+.RS 4
+インタプリタ専用モードでアプリケーションを実行します。ネイティブ・コードへのコンパイルは無効になり、すべてのバイトコードがインタプリタによって実行されます。ジャスト・イン・タイム(JIT)コンパイラが提供するパフォーマンス上の利点は、このモードでは実現されません。
+.RE
+.PP
+\-Xinternalversion
+.RS 4
+\fI\-version\fRオプションより詳細なJVMバージョン情報を表示してから終了します。
+.RE
+.PP
+\-Xloggc:\fIfilename\fR
+.RS 4
+詳細なGCイベント情報をロギング用にリダイレクトするファイルを設定します。このファイルに書き込まれる情報は、記録された各イベントの前に行われる最初のGCイベント以降に経過した時間を指定した\fI\-verbose:gc\fRの出力と類似しています。\fI\-Xloggc\fRオプションは\fI\-verbose:gc\fRをオーバーライドします(これらの両方が同じ\fIjava\fRコマンドで指定された場合)。
+.sp
+例:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xloggc:garbage\-collection\&.log
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-Xmaxjitcodesize=\fIsize\fR
+.RS 4
+JITコンパイルされたコードの最大コード・キャッシュ・サイズ(バイト単位)を指定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、この値は48MBに設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xmaxjitcodesize=48m
+.fi
+.if n \{\
+.RE
+.\}
+このオプションは\fI\-XX:ReservedCodeCacheSize\fRと同等です。
+.RE
+.PP
+\-Xmixed
+.RS 4
+ネイティブ・コードにコンパイルされたホット・メソッドを除き、インタプリタによってすべてのバイトコードを実行します。
+.RE
+.PP
+\-Xmn\fIsize\fR
+.RS 4
+若い世代(ナーサリ)のヒープの初期サイズおよび最大サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+.sp
+ヒープの若い世代リージョンは新しいオブジェクトに使用されます。GCは、他のリージョンよりこのリージョンで、より頻繁に実行されます。若い世代のサイズが小さすぎる場合、多数のマイナー・ガベージ・コレクションが実行されます。サイズが大きすぎる場合、フル・ガベージ・コレクションのみが実行されますが、完了までに時間がかかることがあります。若い世代のサイズは、全体のヒープ・サイズの半分から4分の1の間にしておくことをお薦めします。
+.sp
+次の例では、若い世代の初期サイズおよび最大サイズを様々な単位を使用して256MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xmn256m
+\-Xmn262144k
+\-Xmn268435456
+.fi
+.if n \{\
+.RE
+.\}
+若い世代のヒープの初期サイズと最大サイズの両方を設定する\fI\-Xmn\fRオプションのかわりに、初期サイズの設定には\fI\-XX:NewSize\fRを、最大サイズの設定には\fI\-XX:MaxNewSize\fRを使用できます。
+.RE
+.PP
+\-Xms\fIsize\fR
+.RS 4
+ヒープの初期サイズ(バイト単位)を設定します。指定する値は、1MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+.sp
+次の例では、割り当てられたメモリーのサイズを様々な単位を使用して6MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xms6291456
+\-Xms6144k
+\-Xms6m
+.fi
+.if n \{\
+.RE
+.\}
+このオプションを設定しない場合、初期サイズは、古い世代と若い世代に割り当てられたサイズの合計として設定されます。若い世代のヒープの初期サイズは、\fI\-Xmn\fRオプションまたは\fI\-XX:NewSize\fRオプションを使用して設定できます。
+.RE
+.PP
+\-Xmx\fIsize\fR
+.RS 4
+メモリー割当てプールの最大サイズ(バイト単位)を指定します。指定する値は、2MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。サーバー・デプロイメントでは、\fI\-Xms\fRおよび\fI\-Xmx\fRは通常同じ値に設定されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+.sp
+次の例では、割り当てられたメモリーの許可される最大サイズを様々な単位を使用して80MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xmx83886080
+\-Xmx81920k
+\-Xmx80m
+.fi
+.if n \{\
+.RE
+.\}
+\fI\-Xmx\fRオプションは\fI\-XX:MaxHeapSize\fRと同等です。
+.RE
+.PP
+\-Xnoclassgc
+.RS 4
+クラスのガベージ・コレクション(GC)を無効にします。これにより、GC時間を節約でき、アプリケーション実行中の中断が短縮されます。
+.sp
+起動時に\fI\-Xnoclassgc\fRを指定すると、アプリケーション内のクラス・オブジェクトは、GCの間はそのまま残り、常にライブであるとみなされます。これにより、より多くのメモリーが永久に占有されることになり、注意して使用しないと、メモリー不足の例外がスローされます。
+.RE
+.PP
+\-Xprof
+.RS 4
+実行中のプログラムのプロファイルを生成し、プロファイル・データを標準出力に送信します。このオプションは、プログラム開発用のユーティリティとして提供されています。本番稼働システムでの使用を目的としたものではありません。
+.RE
+.PP
+\-Xrs
+.RS 4
+JVMによるオペレーティング・システム・シグナルの使用を減らします。
+.sp
+シャットダウン・フックは、JVMが突然終了した場合でも、シャットダウン時にユーザー・クリーンアップ・コード(データベース接続のクローズなど)を実行することによって、Javaアプリケーションのシャットダウンを順番に有効にします。
+.sp
+JVMは、予期しない終了のシャットダウン・フックを実装するためにシグナルをキャッチします。JVMは、\fISIGHUP\fR、\fISIGINT\fRおよび\fISIGTERM\fRを使用して、シャットダウン・フックの実行を開始します。
+.sp
+JVMは、デバッグの目的でスレッド・スタックをダンプするという機能を実現するために、同様のメカニズムを使用します。JVMは、スレッド・ダンプを実行するために\fISIGQUIT\fRを使用します。
+.sp
+JVMを埋め込んでいるアプリケーションは、\fISIGINT\fRや\fISIGTERM\fRなどのシグナルを頻繁にトラップする必要があり、その結果、JVMのシグナル・ハンドラと衝突する可能性があります。\fI\-Xrs\fRオプションは、この問題に対処するために使用できます。\fI\-Xrs\fRが使用されている場合、\fISIGINT\fR、\fISIGTERM\fR、\fISIGHUP\fRおよび\fISIGQUIT\fRのシグナル・マスクはJVMによって変更されず、これらのシグナルのシグナル・ハンドラはインストールされません。
+.sp
+\fI\-Xrs\fRを指定すると、次の2つの結果が生じます:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISIGQUIT\fRによるスレッド・ダンプは使用できません。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+シャットダウン・フック処理の実行は、JVMが終了しようとしている時点で\fISystem\&.exit()\fRを呼び出すなどして、ユーザー・コード側で行う必要があります。
+.RE
+.RE
+.PP
+\-Xshare:\fImode\fR
+.RS 4
+クラス・データ共有モードを設定します。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+.PP
+auto
+.RS 4
+可能な場合、共有クラスのデータを使用します。これは、Java HotSpot 32\-Bit Client VMの場合のデフォルト値です。
+.RE
+.PP
+on
+.RS 4
+クラス・データ共有の使用が必要です。クラス・データ共有を使用できない場合、エラー・メッセージを出力して終了します。
+.RE
+.PP
+off
+.RS 4
+共有クラス・データを使用しません。これは、Java HotSpot 32\-Bit Server VM、Java HotSpot 64\-Bit Client VMおよびJava HotSpot 64\-Bit Server VMの場合のデフォルト値です。
+.RE
+.PP
+dump
+.RS 4
+クラス・データ共有アーカイブを手動で生成します。
+.RE
+.RE
+.PP
+\-XshowSettings:\fIcategory\fR
+.RS 4
+設定を表示して続行します。このオプションで使用可能な\fIcategory\fR引数は次のとおりです。
+.PP
+all
+.RS 4
+設定のすべてのカテゴリを表示します。これがデフォルト値です。
+.RE
+.PP
+locale
+.RS 4
+ロケールに関連する設定を表示します。
+.RE
+.PP
+properties
+.RS 4
+システム・プロパティに関連する設定を表示します。
+.RE
+.PP
+vm
+.RS 4
+JVMの設定を表示します。
+.RE
+.RE
+.PP
+\-Xss\fIsize\fR
+.RS 4
+スレッドのスタック・サイズ(バイト単位)を設定します。KBを示す場合は文字\fIk\fRまたは\fIK\fR、MBを示す場合は文字\fIm\fRまたは\fIM\fR、GBを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値はプラットフォームによって異なります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/ARM (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/i386 (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/x64 (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OS X (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Oracle Solaris/i386 (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Oracle Solaris/x64 (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Windows: 仮想メモリーによって異なります。
+.RE
+.sp
+次の例では、スレッド・スタック・サイズを異なる単位で1024KBに設定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-Xss1m
+\-Xss1024k
+\-Xss1048576
+.fi
+.if n \{\
+.RE
+.\}
+このオプションは\fI\-XX:ThreadStackSize\fRと同等です。
+.RE
+.PP
+\-Xusealtsigs
+.RS 4
+JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代替シグナルを使用します。このオプションは\fI\-XX:+UseAltSigs\fRと同等です。
+.RE
+.PP
+\-Xverify:\fImode\fR
+.RS 4
+バイトコード・ベリファイアのモードを設定します。バイトコードの検証は一部の問題のトラブルシューティングに役立ちますが、実行中のアプリケーションへのオーバーヘッドを増大させます。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+.PP
+none
+.RS 4
+バイトコードを検証しません。これにより、起動時間が短縮され、Javaによって提供される保護も軽減されます。
+.RE
+.PP
+remote
+.RS 4
+ネットワークを介してリモートでロードされるクラスのみを検証します。これは、\fI\-Xverify\fRオプションを指定しない場合のデフォルトの動作です。
+.RE
+.PP
+all
+.RS 4
+すべてのクラスを検証します。
+.RE
+.RE
+.SS "高度なランタイム・オプション"
+.PP
+これらのオプションは、Java HotSpot VMの実行時の動作を制御します。
+.PP
+\-XX:+DisableAttachMechanism
+.RS 4
+JVMにツールをアタッチするメカニズムを無効にするオプションを有効にします。デフォルトでは、このオプションは無効になっており、これは、アタッチ・メカニズムを有効にすると、\fIjcmd\fR、\fIjstack\fR、\fIjmap\fR、\fIjinfo\fRなどのツールを使用できることを意味します。
+.RE
+.PP
+\-XX:ErrorFile=\fIfilename\fR
+.RS 4
+リカバリ不能なエラーが発生した場合にエラー・データが書き込まれるパスおよびファイル名を指定します。デフォルトでは、このファイルは、現在の作業ディレクトリに作成され、名前は\fIhs_err_pid\fR\fIpid\fR\fI\&.log\fR
+(\fIpid\fRはエラーの原因となったプロセスの識別子)になります。次の例では、デフォルトのログ・ファイルを設定する方法を示します(プロセスの識別子は\fI%p\fRとして指定されます)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:ErrorFile=\&./hs_err_pid%p\&.log
+.fi
+.if n \{\
+.RE
+.\}
+次の例では、エラー・ログを\fI/var/log/java/java_error\&.log\fRに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:ErrorFile=/var/log/java/java_error\&.log
+.fi
+.if n \{\
+.RE
+.\}
+(領域不足、権限の問題または別の問題により)指定したディレクトリにファイルを作成できない場合、ファイルはオペレーティング・システムの一時ディレクトリに作成されます。一時ディレクトリは\fI/tmp\fRです。
+.RE
+.PP
+\-XX:LargePageSizeInBytes=\fIsize\fR
+.RS 4
+Javaヒープに使用される大きいページの最大サイズ(バイト単位)を設定します。\fIsize\fR引数は、2の累乗(2、4、8、16、\&.\&.\&.)である必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、サイズは0に設定され、これは、JVMでは大きいページのサイズが自動的に選択されていることを意味します。
+.sp
+次の例では、大きいページのサイズを4メガバイト(MB)に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:LargePageSizeInBytes=4m
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxDirectMemorySize=\fIsize\fR
+.RS 4
+新規I/O (\fIjava\&.nio\fRパッケージ)の直接バッファ割当ての最大合計サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、サイズは0に設定され、これは、JVMではNIOの直接バッファ割当てのサイズが自動的に選択されていることを意味します。
+.sp
+次の例では、NIOサイズを異なる単位で1024KBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxDirectMemorySize=1m
+\-XX:MaxDirectMemorySize=1024k
+\-XX:MaxDirectMemorySize=1048576
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:NativeMemoryTracking=\fImode\fR
+.RS 4
+JVMのネイティブ・メモリー使用状況のトラッキングのモードを指定します。このオプションで使用可能な\fImode\fR引数は次のとおりです。
+.PP
+off
+.RS 4
+JVMのネイティブ・メモリー使用状況を追跡しません。これは、\fI\-XX:NativeMemoryTracking\fRオプションを指定しない場合のデフォルトの動作です。
+.RE
+.PP
+summary
+.RS 4
+JVMサブシステム(Javaヒープ、クラス、コード、スレッドなど)によるメモリー使用状況のみ追跡します。
+.RE
+.PP
+detail
+.RS 4
+JVMサブシステムによるメモリー使用状況のトラッキングに加えて、個々の\fICallSite\fR
+(個々の仮想メモリー・リージョンおよびそのコミット済リージョン)によるメモリー使用状況を追跡します。
+.RE
+.RE
+.PP
+\-XX:OnError=\fIstring\fR
+.RS 4
+リカバリ不能なエラーが発生したときに実行する、カスタム・コマンドまたは一連のセミコロン区切りのコマンドを設定します。文字列に空白が含まれている場合は、引用符で囲む必要があります。
+.sp
+次の例では、\fI\-XX:OnError\fRオプションを使用してコア・イメージを作成するために\fIgcore\fRコマンドを実行する方法、およびリカバリ不能なエラーの場合にデバッガを起動してプロセスに接続する方法を示します(\fI%p\fRは現在のプロセスを指定します)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:OnError="gcore %p;dbx \- %p"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:OnOutOfMemoryError=\fIstring\fR
+.RS 4
+\fIOutOfMemoryError\fR例外が最初にスローされたときに実行する、カスタム・コマンドまたは一連のセミコロン区切りのコマンドを設定します。文字列に空白が含まれている場合は、引用符で囲む必要があります。コマンド文字列の例は、\fI\-XX:OnError\fRオプションの説明を参照してください。
+.RE
+.PP
+\-XX:+PrintCommandLineFlags
+.RS 4
+コマンドラインに表示された、人間工学的に選択したJVMフラグの印刷を有効にします。これは、ヒープ領域サイズや選択されたガベージ・コレクタなど、JVMによって設定されたエルゴノミック値を確認する場合に役立ちます。デフォルトでは、このオプションは無効であり、フラグは印刷されません。
+.RE
+.PP
+\-XX:+PrintNMTStatistics
+.RS 4
+ネイティブ・メモリーのトラッキングが有効な場合に、JVMの終了時に収集されたネイティブ・メモリーのトラッキング・データの印刷を有効にします(\fI\-XX:NativeMemoryTracking\fRを参照してください)。デフォルトでは、このオプションは無効であり、ネイティブ・メモリーのトラッキング・データは印刷されません。
+.RE
+.PP
+\-XX:+ShowMessageBoxOnError
+.RS 4
+JVMでリカバリ不能なエラーが発生した場合、ダイアログ・ボックスの表示を有効にします。これにより、JVMにデバッガを接続してエラーの原因を調査できるように、JVMを終了しないようにして、プロセスをアクティブなままにします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:ThreadStackSize=\fIsize\fR
+.RS 4
+スレッドのスタック・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値はプラットフォームによって異なります。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/ARM (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/i386 (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Linux/x64 (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OS X (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Oracle Solaris/i386 (32ビット): 320KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Oracle Solaris/x64 (64ビット): 1024KB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Windows: 仮想メモリーによって異なります。
+.RE
+.sp
+次の例では、スレッド・スタック・サイズを異なる単位で1024KBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:ThreadStackSize=1m
+\-XX:ThreadStackSize=1024k
+\-XX:ThreadStackSize=1048576
+.fi
+.if n \{\
+.RE
+.\}
+このオプションは\fI\-Xss\fRと同等です。
+.RE
+.PP
+\-XX:+TraceClassLoading
+.RS 4
+クラスがロードされるときのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+.RE
+.PP
+\-XX:+TraceClassLoadingPreorder
+.RS 4
+クラスが参照される順序で、ロードされたすべてのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+.RE
+.PP
+\-XX:+TraceClassResolution
+.RS 4
+定数プールの解決のトレースを有効にします。デフォルトでは、このオプションは無効であり、定数プールの解決はトレースされません。
+.RE
+.PP
+\-XX:+TraceClassUnloading
+.RS 4
+クラスがアンロードされるときのクラスのトレースを有効にします。デフォルトでは、このオプションは無効であり、クラスはトレースされません。
+.RE
+.PP
+\-XX:+TraceLoaderConstraints
+.RS 4
+ローダー制約の記録のトレースを有効にします。デフォルトでは、このオプションは無効であり、ローダー制約の記録は追跡されません。
+.RE
+.PP
+\-XX:+UseAltSigs
+.RS 4
+JVM内部シグナルの\fISIGUSR1\fRおよび\fISIGUSR2\fRのかわりに、代替シグナルの使用を有効にします。デフォルトでは、このオプションは無効であり、代替シグナルは使用されません。このオプションは\fI\-Xusealtsigs\fRと同等です。
+.RE
+.PP
+\-XX:+UseBiasedLocking
+.RS 4
+バイアス・ロックの使用を有効にします。かなりの量の非競合の同期化がある一部のアプリケーションは、このフラグを有効にすると大幅な高速化が実現しますが、特定のパターンのロックがあるアプリケーションは、速度が低下することがあります。バイアス・ロックの方法の詳細は、http://www\&.oracle\&.com/technetwork/java/tuning\-139912\&.html#section4\&.2\&.5にあるJavaチューニングのホワイト・ペーパーの例を参照してください。
+.sp
+デフォルトでは、このオプションは無効であり、バイアス・ロックは使用されません。
+.RE
+.PP
+\-XX:+UseCompressedOops
+.RS 4
+圧縮されたポインタの使用を有効にします。このオプションを有効にすると、オブジェクト参照は、64ビットのポインタではなく32ビットのオフセットとして表され、これにより、32GBより小さいJavaヒープ・サイズのアプリケーションの実行時に、通常、パフォーマンスが向上します。このオプションは、64ビットのJVMでのみ機能します。
+.sp
+デフォルトでは、このオプションは無効であり、圧縮ポインタは使用されません。
+.RE
+.PP
+\-XX:+UseLargePages
+.RS 4
+大きいページのメモリーの使用を有効にします。このオプションはデフォルトで有効になっています。大きいページのメモリーの使用を無効にするには、\fI\-XX:\-UseLargePages\fRを指定します。
+.sp
+詳細は、http://www\&.oracle\&.com/technetwork/java/javase/tech/largememory\-jsp\-137182\&.htmlにある大きいメモリー・ページ用のJavaサポートを参照してください。
+.RE
+.PP
+\-XX:+UseMembar
+.RS 4
+スレッドの状態の遷移でメンバーの発行を有効にします。このオプションは、有効になっているPower PCおよびARMサーバーを除くすべてのプラットフォーム上で、デフォルトでは無効になっています。Power PCとARMのスレッド状態遷移に対するメンバーの発行を無効にするには、\fI\-XX:\-UseMembar\fRを指定します。
+.RE
+.PP
+\-XX:+UsePerfData
+.RS 4
+\fIperfdata\fR機能を有効にします。このオプションはデフォルトで有効になっており、JVMのモニタリングおよびパフォーマンス・テストが可能になります。これを無効にすると、\fIhsperfdata_userid\fRディレクトリの作成を抑制します。\fIperfdata\fR機能を無効にするには、\fI\-XX:\-UsePerfData\fRを指定します。
+.RE
+.PP
+\-XX:+AllowUserSignalHandlers
+.RS 4
+アプリケーションによるシグナル・ハンドラのインストールを有効にします。デフォルトでは、このオプションは無効であり、アプリケーションはシグナル・ハンドラをインストールすることは許可されていません。
+.RE
+.SS "高度なJITコンパイラ・オプション"
+.PP
+これらのオプションは、Java HotSpot VMで実行される動的なjust\-in\-time (JIT)コンパイラを制御します。
+.PP
+\-XX:+AggressiveOpts
+.RS 4
+積極的なパフォーマンス最適化機能の使用を有効にします。これは今後のリリースでデフォルトになる予定です。デフォルトでは、このオプションは無効であり、試験的なパフォーマンス機能は使用されません。
+.RE
+.PP
+\-XX:AllocateInstancePrefetchLines=\fIlines\fR
+.RS 4
+インスタンス割当てポインタの前にプリフェッチする行数を設定します。デフォルトでは、プリフェッチする行数は1に設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:AllocateInstancePrefetchLines=1
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:AllocatePrefetchInstr=\fIinstruction\fR
+.RS 4
+割当てポインタの前にプリフェッチするプリフェッチ命令を設定します。使用可能な値は0から3までです。値の背後にある実際の命令は、プラットフォームによって異なります。デフォルトでは、プリフェッチ命令は0に設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:AllocatePrefetchInstr=0
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:AllocatePrefetchStepSize=\fIsize\fR
+.RS 4
+順次プリフェッチ命令のステップ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、ステップ・サイズは16バイトに設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:AllocatePrefetchStepSize=16
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+BackgroundCompilation
+.RS 4
+バックグラウンド・コンパイルを有効にします。このオプションはデフォルトで有効になっています。バックグラウンド・コンパイルを無効にするには、\fI\-XX:\-BackgroundCompilation\fRを指定します(これは\fI\-Xbatch\fRを指定するのと同等です)。
+.RE
+.PP
+\-XX:CICompilerCount=\fIthreads\fR
+.RS 4
+コンパイルに使用するコンパイラ・スレッドの数を設定します。デフォルトでは、スレッド数は、サーバーJVMの場合は2、クライアントJVMの場合は1に設定されており、層コンパイルが使用されている場合、コア数に合せて増減します。次の例では、スレッドの数を2に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CICompilerCount=2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CodeCacheMinimumFreeSpace=\fIsize\fR
+.RS 4
+コンパイルに必要な最小空き領域(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。最小空き領域より少ない領域しか残っていない場合、コンパイルは停止します。デフォルトでは、このオプションは500KBに設定されています。次の例では、最小空き領域を1024MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CodeCacheMinimumFreeSpace=1024m
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CompileCommand=\fIcommand\fR,\fImethod\fR[,\fIoption\fR]
+.RS 4
+メソッドで実行するコマンドを指定します。たとえば、コンパイル元から\fIString\fRクラスの\fIindexOf()\fRメソッドを実行するには、次を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand=exclude,java/lang/String\&.indexOf
+.fi
+.if n \{\
+.RE
+.\}
+スラッシュ(\fI/\fR)で区切られたすべてのパッケージおよびサブパッケージを含む、完全クラス名を指定します。切取りと貼付けの操作を容易にするために、\fI\-XX:+PrintCompilation\fRオプションおよび\fI\-XX:+LogCompilation\fRオプションによって生成されるメソッド名の形式を使用することもできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand=exclude,java\&.lang\&.String::indexOf
+.fi
+.if n \{\
+.RE
+.\}
+署名なしでメソッドを指定すると、コマンドは指定した名前を持つすべてのメソッドに適用されます。ただし、クラス・ファイル形式でメソッドの署名を指定することもできます。たとえば、コンパイル元から\fIString\fRクラスの\fIindexOf(String)\fRメソッドのみ除外するには、次を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand=exclude,java/lang/String\&.indexOf(Ljava/lang/String;)I
+.fi
+.if n \{\
+.RE
+.\}
+また、クラス名およびメソッド名にワイルドカードとしてアスタリスク(*)を使用できます。たとえば、コンパイル元からすべてのクラスのすべての\fIindexOf()\fRメソッドを除外するには、次を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand=exclude,*\&.indexOf
+.fi
+.if n \{\
+.RE
+.\}
+カンマとピリオドは空白の別名で、これにより、シェルを介してコンパイラ・コマンドを渡すことが容易になります。引数を引用符で囲むことで、空白をセパレータとして使用して\fI\-XX:CompileCommand\fRに引数を渡すことができます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand="exclude java/lang/String indexOf"
+.fi
+.if n \{\
+.RE
+.\}
+\fI\-XX:CompileCommand\fRオプションを使用してコマンドラインで渡されたコマンドを解析した後に、JITコンパイラは\fI\&.hotspot_compiler\fRファイルからコマンドを読み取ります。このファイルにコマンドを追加するか、または\fI\-XX:CompileCommandFile\fRオプションを使用して別のファイルを指定することができます。
+.sp
+複数のコマンドを追加するには、\fI\-XX:CompileCommand\fRオプションを複数回指定するか、または改行セパレータ(\fI\en\fR)を使用して各引数を区切ります。次のコマンドを使用できます。
+.PP
+break
+.RS 4
+指定したメソッドのコンパイルの最初に停止するために、JVMのデバッグ時のブレークポイントを設定します。
+.RE
+.PP
+compileonly
+.RS 4
+指定したメソッドを除いたすべてのメソッドを、コンパイルから除外します。別の方法として、\fI\-XX:CompileOnly\fRオプションを使用して複数のメソッドを指定できます。
+.RE
+.PP
+dontinline
+.RS 4
+指定したメソッドをインライン化しないようにします。
+.RE
+.PP
+exclude
+.RS 4
+指定したメソッドをコンパイルから除外します。
+.RE
+.PP
+help
+.RS 4
+\fI\-XX:CompileCommand\fRオプションのヘルプ・メッセージを印刷します。
+.RE
+.PP
+inline
+.RS 4
+指定したメソッドをインライン化しようとします。
+.RE
+.PP
+log
+.RS 4
+指定したメソッドを除くすべてのメソッドに対して、(\fI\-XX:+LogCompilation\fRオプションを使用して)コンパイル・ロギングを除外します。デフォルトでは、コンパイルされたすべてのメソッドにロギングが実行されます。
+.RE
+.PP
+option
+.RS 4
+このコマンドは、最後の引数(\fIoption\fR)のかわりに、指定したメソッドにJITコンパイル・オプションを渡すために使用できます。コンパイル・オプションは、メソッド名の後の末尾に設定されます。たとえば、\fIStringBuffer\fRクラスの\fIappend()\fRメソッドに対して\fIBlockLayoutByFrequency\fRオプションを有効にするには、次を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileCommand=option,java/lang/StringBuffer\&.append,BlockLayoutByFrequency
+.fi
+.if n \{\
+.RE
+.\}
+カンマまたは空白で区切って、複数のコンパイル・オプションを指定できます。
+.RE
+.PP
+print
+.RS 4
+指定したメソッドのコンパイル後に生成されたアセンブラ・コードを出力します。
+.RE
+.PP
+quiet
+.RS 4
+コンパイル・コマンドを出力しません。デフォルトでは、\fI\-XX:CompileCommand\fRオプションを使用して指定したコマンドが出力されます。たとえば、\fIString\fRクラスの\fIindexOf()\fRメソッドのコンパイルから除外する場合、次が標準出力に出力されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+CompilerOracle: exclude java/lang/String\&.indexOf
+.fi
+.if n \{\
+.RE
+.\}
+他の\fI\-XX:CompileCommand\fRオプションの前に\fI\-XX:CompileCommand=quiet\fRオプションを指定することによって、これを抑制できます。
+.RE
+.RE
+.PP
+\-XX:CompileCommandFile=\fIfilename\fR
+.RS 4
+JITコンパイラ・コマンドの読取り元のファイルを設定します。デフォルトでは、JITコンパイラによって実行されるコマンドを格納するために、\fI\&.hotspot_compiler\fRファイルが使用されます。
+.sp
+コマンド・ファイルの各行は、コマンドが使用されるコマンド、クラス名およびメソッド名を表します。たとえば、次の行は、\fIString\fRクラスの\fItoString()\fRメソッドに対してアセンブリ・コードを出力します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+print java/lang/String toString
+.fi
+.if n \{\
+.RE
+.\}
+メソッドで実行するJITコンパイラのコマンドの指定の詳細は、\fI\-XX:CompileCommand\fRオプションを参照してください。
+.RE
+.PP
+\-XX:CompileOnly=\fImethods\fR
+.RS 4
+コンパイルを制限する(カンマで区切られた)メソッドのリストを設定します。指定したメソッドのみがコンパイルされます。完全クラス名(パッケージおよびサブパッケージを含む)で各メソッドを指定します。たとえば、\fIString\fRクラスの\fIlength()\fRメソッドおよび\fIList\fRクラスの\fIsize()\fRメソッドのみをコンパイルするには、次を使用します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileOnly=java/lang/String\&.length,java/util/List\&.size
+.fi
+.if n \{\
+.RE
+.\}
+スラッシュ(\fI/\fR)で区切られたすべてのパッケージおよびサブパッケージを含む、完全クラス名を指定します。切取りと貼付けの操作を容易にするために、\fI\-XX:+PrintCompilation\fRオプションおよび\fI\-XX:+LogCompilation\fRオプションによって生成されるメソッド名の形式を使用することもできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileOnly=java\&.lang\&.String::length,java\&.util\&.List::size
+.fi
+.if n \{\
+.RE
+.\}
+ワイルドカードはサポートされていませんが、クラス名またはパッケージ名だけを指定してクラスまたはパッケージのすべてのメソッドをコンパイルすることも、メソッドだけを指定して任意のクラスのこの名前を持つメソッドをコンパイルすることもできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileOnly=java/lang/String
+\-XX:CompileOnly=java/lang
+\-XX:CompileOnly=\&.length
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CompileThreshold=\fIinvocations\fR
+.RS 4
+コンパイル前に解釈されたメソッド呼出しの数を設定します。デフォルトでは、サーバーJVMでは、JITコンパイラは、10,000の解釈されたメソッド呼出しを実行して、効率的なコンパイルのための情報を収集します。クライアントJVMの場合、デフォルト設定は1,500呼出しです。次の例では、解釈されたメソッド呼出しの数を5,000に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CompileThreshold=5000
+.fi
+.if n \{\
+.RE
+.\}
+\fI\-Xcomp\fRオプションを指定して、コンパイルの前に、Javaメソッドの解釈を完全に無効にすることができます。
+.RE
+.PP
+\-XX:+DoEscapeAnalysis
+.RS 4
+エスケープ分析の使用を有効にします。このオプションはデフォルトで有効になっています。エスケープ分析の使用を無効にするには、\fI\-XX:\-DoEscapeAnalysis\fRを指定します。
+.RE
+.PP
+\-XX:+FailOverToOldVerifier
+.RS 4
+新しいタイプ・チェッカが失敗した場合の、古いベリファイアへの自動フェイルオーバーを有効にします。デフォルトでは、このオプションは無効になっており、最近のバイトコード・バージョンを使用したクラスには、これは無視されます(つまり、無効として処理されます)。古いバージョンのバイトコードを使用したクラスには、これを有効化できます。
+.RE
+.PP
+\-XX:InitialCodeCacheSize=\fIsize\fR
+.RS 4
+初期コード・キャッシュ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は500KBに設定されています。次の例では、初期コード・キャッシュ・サイズを32KBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:InitialCodeCacheSize=32k
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+Inline
+.RS 4
+メソッドのインライン化を有効にします。このオプションは、パフォーマンスを向上させるためにデフォルトで有効になっています。メソッドのインライン化を無効にするには、\fI\-XX:\-Inline\fRを指定します。
+.RE
+.PP
+\-XX:InlineSmallCode=\fIsize\fR
+.RS 4
+インライン化が必要なコンパイルされたメソッドの最大コード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。指定したサイズより小さいサイズのコンパイルされたメソッドのみが、インライン化されます。デフォルトでは、最大コード・サイズは1000バイトに設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:InlineSmallCode=1000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+LogCompilation
+.RS 4
+現在の作業ディレクトリにある\fIhotspot\&.log\fRという名前のファイルへのコンパイル・アクティビティのロギングを有効にします。\fI\-XX:LogFile\fRオプションを使用して、異なるログ・ファイル・パスと名前を指定できます。
+.sp
+デフォルトでは、このオプションは無効であり、コンパイル・アクティビティは記録されません。\fI\-XX:+LogCompilation\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
+.sp
+\fI\-XX:+PrintCompilation\fRオプションを使用して、メソッドをコンパイルするたびに、コンソールに出力されたメッセージを含む詳細な診断出力を有効化できます。
+.RE
+.PP
+\-XX:MaxInlineSize=\fIsize\fR
+.RS 4
+インライン化するメソッドの最大バイトコード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、最大バイトコード・サイズは35バイトに設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxInlineSize=35
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxNodeLimit=\fInodes\fR
+.RS 4
+単一のメソッドのコンパイル時に使用されるノードの最大数を設定します。デフォルトでは、ノードの最大数は65,000に設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxNodeLimit=65000
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxTrivialSize=\fIsize\fR
+.RS 4
+インライン化する単純メソッドの最大バイトコード・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、単純メソッドの最大バイトコード・サイズは6バイトに設定されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxTrivialSize=6
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+OptimizeStringConcat
+.RS 4
+\fIString\fR連結操作の最適化を有効にします。このオプションはデフォルトで有効になっています。\fIString\fR連結操作の最適化を無効にするには、\fI\-XX:\-OptimizeStringConcat\fRを指定します。
+.RE
+.PP
+\-XX:+PrintAssembly
+.RS 4
+外部の\fIdisassembler\&.so\fRライブラリを使用して、バイトコード化されたネイティブのメソッドのアセンブリ・コードの出力を有効にします。これにより、生成されたコードを表示することができ、パフォーマンスの問題の診断に役立ちます。
+.sp
+デフォルトでは、このオプションは無効であり、アセンブリ・コードは印刷されません。\fI\-XX:+PrintAssembly\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
+.RE
+.PP
+\-XX:+PrintCompilation
+.RS 4
+メソッドをコンパイルするたびに、コンソールにメッセージを出力することによって、JVMからの詳細な診断出力を有効にします。これにより、実際にコンパイルされるメソッドを確認できます。デフォルトでは、このオプションは無効であり、診断出力は印刷されません。
+.sp
+\fI\-XX:+LogCompilation\fRオプションを使用して、コンパイル・アクティビティをファイルに記録することもできます。
+.RE
+.PP
+\-XX:+PrintInlining
+.RS 4
+インライン化の決定内容の出力を有効にします。これにより、インライン化されるメソッドを確認できます。
+.sp
+デフォルトでは、このオプションは無効であり、インライン化情報は出力されません。\fI\-XX:+PrintInlining\fRオプションは、診断JVMオプションのロックを解除する\fI\-XX:+UnlockDiagnosticVMOptions\fRオプションとともに使用する必要があります。
+.RE
+.PP
+\-XX:+RelaxAccessControlCheck
+.RS 4
+ベリファイア内のアクセス制御チェックの量を減らします。デフォルトでは、このオプションは無効になっており、最近のバイトコード・バージョンを使用したクラスには、これは無視されます(つまり、無効として処理されます)。古いバージョンのバイトコードを使用したクラスには、これを有効化できます。
+.RE
+.PP
+\-XX:ReservedCodeCacheSize=\fIsize\fR
+.RS 4
+JITコンパイルされたコードの最大コード・キャッシュ・サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。このオプションは\fI\-Xmaxjitcodesize\fRと同等です。
+.RE
+.PP
+\-XX:+TieredCompilation
+.RS 4
+層コンパイルの使用を有効にします。デフォルトでは、このオプションは無効であり、層コンパイルは使用されません。
+.RE
+.PP
+\-XX:+UseCodeCacheFlushing
+.RS 4
+コンパイラをシャットダウンする前に、コード・キャッシュのフラッシュを有効にします。このオプションはデフォルトで有効になっています。コンパイラをシャットダウンする前にコード・キャッシュのフラッシュを無効にするには\fI\-XX:\-UseCodeCacheFlushing\fRを指定します。
+.RE
+.PP
+\-XX:+UseCondCardMark
+.RS 4
+カード表の更新前に、カードがすでにマークされているかどうかのチェックを有効にします。このオプションは、デフォルトでは無効になっており、複数のソケットを持つマシン上でのみ使用する必要があります。これにより、同時操作にかなり依存しているJavaアプリケーションのパフォーマンスが向上します。
+.RE
+.PP
+\-XX:+UseSuperWord
+.RS 4
+スカラー演算のスーパーワード演算への変換を有効にします。このオプションはデフォルトで有効になっています。スカラー演算のスーパーワード演算への変換を無効にするには、\fI\-XX:\-UseSuperWord\fRを指定します。
+.RE
+.SS "高度なサービスアビリティ・オプション"
+.PP
+これらのオプションは、システム情報を収集し、詳細なデバッグを実行する機能を提供します。
+.PP
+\-XX:+ExtendedDTraceProbes
+.RS 4
+パフォーマンスに影響を与える追加の\fIdtrace\fRツール・プローブを有効にします。デフォルトでは、このオプションは無効になっており、\fIdtrace\fRは標準プローブのみを実行します。
+.RE
+.PP
+\-XX:+HeapDumpOnOutOfMemory
+.RS 4
+\fIjava\&.lang\&.OutOfMemoryError\fR例外がスローされた場合に、ヒープ・プロファイラ(HPROF)を使用して、現在のディレクトリ内のファイルへのJavaヒープのダンプを有効にします。\fI\-XX:HeapDumpPath\fRオプションを使用して、ヒープ・ダンプ・ファイルのパスおよび名前を明示的に設定できます。デフォルトでは、このオプションは無効であり、\fIOutOfMemoryError\fR例外がスローされた場合にヒープはダンプされません。
+.RE
+.PP
+\-XX:HeapDumpPath=\fIpath\fR
+.RS 4
+\fI\-XX:+HeapDumpOnOutOfMemoryError\fRオプションが設定されている場合、ヒープ・プロファイラ(HPROF)が提供するヒープ・ダンプを書き込むパスおよびファイル名を設定します。デフォルトでは、このファイルは、現在の作業ディレクトリに作成され、名前は\fIjava_pid\fR\fIpid\fR\fI\&.hprof\fR
+(\fIpid\fRはエラーの原因となったプロセスの識別子)になります。次の例では、デフォルトのファイルを明示的に設定する方法を示します(\fI%p\fRは現在のプロセスの識別子を表します)。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:HeapDumpPath=\&./java_pid%p\&.hprof
+.fi
+.if n \{\
+.RE
+.\}
+次の例では、ヒープ・ダンプ・ファイルを\fI/var/log/java/java_heapdump\&.hprof\fRに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:HeapDumpPath=/var/log/java/java_heapdump\&.hprof
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:LogFile=\fIpath\fR
+.RS 4
+ログ・データが書き込まれるパスおよびファイル名を設定します。デフォルトでは、ファイルは現在の作業ディレクトリに作成され、名前は\fIhotspot\&.log\fRです。
+.sp
+次の例では、ログ・ファイルを\fI/var/log/java/hotspot\&.log\fRに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:LogFile=/var/log/java/hotspot\&.log
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+PrintClassHistogram
+.RS 4
+\fI[Control]+[C]\fRイベント(\fISIGTERM\fR)後にクラス・インスタンスのヒストグラムの印刷を有効にします。デフォルトでは、このオプションは無効です。
+.sp
+このオプションを設定すると、\fIjmap \-histo\fRコマンド、または\fIjcmd \fR\fIpid\fR\fI GC\&.class_histogram\fRコマンド(\fIpid\fRは現在のJavaプロセスの識別子)を実行する場合と同じになります。
+.RE
+.PP
+\-XX:+PrintConcurrentLocks
+.RS 4
+.sp
+\fI[Control]+[C]\fRイベント(\fISIGTERM\fR)後に\fIjava\&.util\&.concurrent\fRロックの印刷を有効にします。デフォルトでは、このオプションは無効です。
+.sp
+このオプションを設定すると、\fIjstack \-l\fRコマンド、または\fIjcmd \fR\fIpid\fR\fI Thread\&.print \-l\fRコマンド(\fIpid\fRは現在のJavaプロセスの識別子)を実行する場合と同じになります。
+.RE
+.PP
+\-XX:+UnlockDiagnosticVMOptions
+.RS 4
+JVMの診断を目的としたオプションをアンロックします。デフォルトでは、このオプションは無効であり、診断オプションは使用できません。
+.RE
+.SS "高度なガベージ・コレクション・オプション"
+.PP
+これらのオプションは、ガベージ・コレクション(GC)がJava HotSpot VMによってどのように実行されるかを制御します。
+.PP
+\-XX:+AggressiveHeap
+.RS 4
+Javaヒープの最適化を有効にします。これにより、コンピュータの構成(RAMおよびCPU)に基づいて、様々なパラメータが、メモリー割当てが集中した長時間実行ジョブに最適になるように設定されます。デフォルトでは、このオプションは無効であり、ヒープは最適化されません。
+.RE
+.PP
+\-XX:AllocatePrefetchDistance=\fIsize\fR
+.RS 4
+オブジェクト割当てのプリフェッチ距離のサイズ(バイト単位)を設定します。新規オブジェクトの値で書き込もうとするメモリーは、最後に割り当てられたオブジェクトのアドレスから、この距離までプリフェッチされます。各Javaスレッドには独自の割当てポイントがあります。
+.sp
+負の値は、プリフェッチ距離はプラットフォームに基づいて選択されることを示します。正の値は、プリフェッチするバイト数です。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は\-1に設定されています。
+.sp
+次の例では、プリフェッチ距離を1024バイトに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:AllocatePrefetchDistance=1024
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:AllocatePrefetchLines=\fIlines\fR
+.RS 4
+コンパイルされたコードで生成されるプリフェッチ命令を使用して、最後のオブジェクト割当て後にロードするキャッシュ行数を設定します。最後に割り当てられたオブジェクトがインスタンスの場合は、デフォルト値は1になり、配列の場合は3になります。
+.sp
+次の例では、ロードされるキャッシュ行数を5に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:AllocatePrefetchLines=5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:AllocatePrefetchStyle=\fIstyle\fR
+.RS 4
+プリフェッチ命令に生成されるコード・スタイルを設定します。\fIstyle\fR引数は、0から3までの整数です。
+.PP
+0
+.RS 4
+プリフェッチ命令を生成しません。
+.RE
+.PP
+1
+.RS 4
+各割当ての後で、プリフェッチ命令を実行します。これはデフォルトのパラメータです。
+.RE
+.PP
+2
+.RS 4
+スレッド・ローカルな割当てブロック(TLAB)ウォーターマーク・ポインタを使用して、プリフェッチ命令を実行するタイミングを決定します。
+.RE
+.PP
+3
+.RS 4
+割当てプリフェッチ用のSPARCでBIS命令を使用します。
+.RE
+.RE
+.PP
+\-XX:+AlwaysPreTouch
+.RS 4
+JVMの初期化中にJavaヒープ上のすべてのページのタッチを有効にします。これにより、\fImain()\fRメソッドの入力前に、すべてのページがメモリーに取得されます。このオプションは、物理メモリーにマップされたすべての仮想メモリーを含む長時間実行のシステムをシミュレートするテストで使用できます。デフォルトでは、このオプションは無効になっており、JVMヒープ領域がいっぱいになると、すべてのページがコミットされます。
+.RE
+.PP
+\-XX:+CMSClassUnloadingEnabled
+.RS 4
+並行マークスイープ(CMS)ガベージ・コレクタを使用する場合に、アンロードするクラスを有効にします。このオプションはデフォルトで有効になっています。CMSガベージ・コレクタのクラス・アンロードを無効にするには、\fI\-XX:\-CMSClassUnloadingEnabled\fRを指定します。
+.RE
+.PP
+\-XX:CMSExpAvgFactor=\fIpercent\fR
+.RS 4
+並行コレクション統計の指数平均を計算する際に、現在のサンプルを重み付けするために使用される時間の割合(0から100まで)を設定します。デフォルトでは、指数平均係数は25%に設定されています。次の例では、係数を15%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSExpAvgFactor=15
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CMSIncrementalDutyCycle=\fIpercent\fR
+.RS 4
+並行コレクタの実行が許可されているマイナー・コレクション間の時間の割合(0から100まで)を設定します。\fI\-XX:+CMSIncrementalPacing\fRが有効な場合、デューティ・サイクルが自動的に設定され、このオプションは初期値のみを設定します。
+.sp
+デフォルトでは、デューティ・サイクルは10%に設定されています。次の例では、デューティ・サイクルを20%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSIncrementalDutyCycle=20
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CMSIncrementalDutyCycleMin=\fIpercent\fR
+.RS 4
+\fI\-XX:+CMSIncrementalPacing\fRが有効な場合にデューティ・サイクルの下限であるマイナー・コレクション間の時間の割合(0から100まで)を設定します。デフォルトでは、デューティ・サイクルの下限は0%に設定されています。次の例では、下限を10%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSIncrementalDutyCycleMin=10
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+CMSIncrementalMode
+.RS 4
+CMSコレクタの増分モードを有効にします。このオプションはデフォルトで無効になっており、2つ以下のGCスレッドを持つ構成にのみ有効にする必要があります。\fICMSIncremental\fRで始まるすべてのオプションは、このオプションが有効な場合のみ、適用されます。
+.RE
+.PP
+\-XX:CMSIncrementalOffset=\fIpercent\fR
+.RS 4
+増分モードのデューティ・サイクルをマイナー・コレクション間で期間内に右に移動する時間の割合(0から100まで)を設定します。デフォルトでは、オフセットは0%に設定されています。次の例では、デューティ・サイクルのオフセットを25%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSIncrementalOffset=25
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+CMSIncrementalPacing
+.RS 4
+JVMの実行中に収集された統計に基づいて、増分モードのデューティ・サイクルの自動調整を有効にします。このオプションはデフォルトで有効になっています。増分モード・デューティ・サイクルの自動調整を無効にするには、\fI\-XX:\-CMSIncrementalPacing\fRを指定します。
+.RE
+.PP
+\-XX:CMSIncrementalSafetyFactor=\fIpercent\fR
+.RS 4
+デューティ・サイクルを計算する際に、保守を追加するために使用される時間の割合(0から100まで)を設定します。デフォルトでは、安全係数は10%に設定されています。次の例では、安全係数を5%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSIncrementalSafetyFactor=5
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:CMSInitiatingOccupancyFraction=\fIpercent\fR
+.RS 4
+CMS収集サイクルを開始する古い世代の占有率(0から100まで)を設定します。デフォルト値は\-1に設定されています。負の値(デフォルトを含む)は、\fI\-XX:CMSTriggerRatio\fRが開始占有率の値を定義するために使用されることを意味します。
+.sp
+次の例では、占有率を20%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSInitiatingOccupancyFraction=20
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+CMSScavengeBeforeRemark
+.RS 4
+CMSコメント・ステップの前にスカベンジの試行を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:CMSTriggerRatio=\fIpercent\fR
+.RS 4
+CMS収集サイクルが開始する前に割り当てられる\fI\-XX:MinHeapFreeRatio\fRによって指定される値の割合(0から100まで)を設定します。デフォルト値は80%に設定されています。
+.sp
+次の例では、占有率を75%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:CMSTriggerRatio=75
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:ConcGCThreads=\fIthreads\fR
+.RS 4
+並行GCに使用されるスレッドの数を設定します。デフォルト値は、JVMに使用できるCPUの数によって異なります。
+.sp
+たとえば、並行GCのスレッド数を2に設定するには、次のオプションを指定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:ConcGCThreads=2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+DisableExplicitGC
+.RS 4
+\fISystem\&.gc()\fRの呼出しの処理を無効にするオプションを有効にします。このオプションはデフォルトで無効になっており、これは\fISystem\&.gc()\fRへの呼出しが処理されることを意味します。\fISystem\&.gc()\fRの呼出しの処理が無効になっている場合、JVMは必要に応じてGCを実行します。
+.RE
+.PP
+\-XX:+ExplicitGCInvokesConcurrent
+.RS 4
+\fISystem\&.gc()\fRリクエストを使用することによって、並行GCの呼出しを有効にします。このオプションはデフォルトで無効になっており、\fI\-XX:+UseConcMarkSweepGC\fRオプションとともに使用する場合のみ、有効にすることができます。
+.RE
+.PP
+\-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses
+.RS 4
+\fISystem\&.gc()\fRリクエストを使用し、並行GCサイクル中にクラスをアンロードすることによって、並行GCの呼出しを有効にします。このオプションはデフォルトで無効になっており、\fI\-XX:+UseConcMarkSweepGC\fRオプションとともに使用する場合のみ、有効にすることができます。
+.RE
+.PP
+\-XX:G1HeapRegionSize=\fIsize\fR
+.RS 4
+ガベージファースト(G1)コレクタを使用する際にJavaヒープを細分化するリージョンのサイズを設定します。値には、1MBから32MBまでを指定できます。デフォルトのリージョン・サイズは、ヒープ・サイズに基づいて人間工学的に決定されます。
+.sp
+次の例では、細分化されたサイズを16MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:G1HeapRegionSize=16m
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+G1PrintHeapRegions
+.RS 4
+割り当てられたリージョンおよびG1コレクタによって再要求されたものに関する情報の印刷を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:G1ReservePercent=\fIpercent\fR
+.RS 4
+G1コレクタの昇格が失敗する可能性を減らすためのfalseの上限として予約されたヒープの割合(0から50まで)を設定します。デフォルトでは、このオプションは10%に設定されています。
+.sp
+次の例では、予約されたヒープを20%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:G1ReservePercent=20
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:InitialHeapSize=\fIsize\fR
+.RS 4
+メモリー割当てプールの初期サイズ(バイト単位)を設定します。指定する値は、0、または1MBより大きい1024の倍数のいずれかにする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+.sp
+次の例では、割り当てられたメモリーのサイズを様々な単位を使用して6MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:InitialHeapSize=6291456
+\-XX:InitialHeapSize=6144k
+\-XX:InitialHeapSize=6m
+.fi
+.if n \{\
+.RE
+.\}
+このオプションを0に設定した場合、初期サイズは、古い世代と若い世代に割り当てられたサイズの合計として設定されます。若い世代のヒープのサイズは、\fI\-XX:NewSize\fRオプションを使用して設定できます。
+.RE
+.PP
+\-XX:InitialSurvivorRatio=\fIratio\fR
+.RS 4
+スループット・ガベージ・コレクタが使用するサバイバ領域の初期比を設定します(\fI\-XX:+UseParallelGC\fRおよび/または\fI\-XX:+UseParallelOldGC\fRオプションによって有効になります)。\fI\-XX:+UseParallelGC\fRオプションおよび\fI\-XX:+UseParallelOldGC\fRオプションを使用することによって、スループット・ガベージ・コレクタで適応サイズ指定をデフォルトで有効にします。初期値から始めて、アプリケーションの動作に従って、サバイバ領域がサイズ変更されます。(\fI\-XX:\-UseAdaptiveSizePolicy\fRオプションを使用して)適応サイズ指定を無効にした場合、\fI\-XX:SurvivorRatio\fRオプションを使用して、アプリケーションの実行全体のサバイバ領域のサイズを設定する必要があります。
+.sp
+次の式を使用して、若い世代のサイズ(Y)およびサバイバ領域の初期比(R)に基づいて、サバイバ領域の初期サイズ(S)を計算できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+S=Y/(R+2)
+.fi
+.if n \{\
+.RE
+.\}
+等式内の2は、2つのサバイバ領域を示します。サバイバ領域の初期比に指定する値を大きくすると、サバイバ領域の初期サイズは小さくなります。
+.sp
+デフォルトでは、サバイバ領域の初期比は8に設定されています。若い世代の領域サイズのデフォルト値(2MB)を使用した場合、サバイバ領域の初期サイズは0\&.2MBになります。
+.sp
+次の例では、サバイバ領域の初期比を4に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:InitialSurvivorRatio=4
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:InitiatingHeapOccupancyPercent=\fIpercent\fR
+.RS 4
+並行GCサイクルを開始するヒープ占有率(0から100まで)を設定します。これは、1つの世代のみ(たとえばG1ガベージ・コレクタなど)ではなく、ヒープ全体の占有に基づいて並行GCサイクルをトリガーするガベージ・コレクタによって使用されます。
+.sp
+デフォルトでは、開始値は45%に設定されています。値0は、GCサイクルが停止しないことを意味します。次の例では、開始ヒープ占有率を75%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:InitiatingHeapOccupancyPercent=75
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxGCPauseMillis=\fItime\fR
+.RS 4
+最大GC休止時間(ミリ秒単位)のターゲットを設定します。これはソフト・ゴールのため、JVMは実現のために最善の努力をします。デフォルトでは、休止時間の最大値はありません。
+.sp
+次の例では、最大ターゲット休止時間を500ミリ秒に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxGCPauseMillis=500
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxHeapSize=\fIsize\fR
+.RS 4
+メモリー割当てプールの最大サイズ(バイト単位)を設定します。指定する値は、2MBより大きい1024の倍数にする必要があります。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。デフォルト値は、実行時にシステム構成に基づいて選択されます。サーバー・デプロイメントでは、\fI\-XX:InitialHeapSize\fRおよび\fI\-XX:MaxHeapSize\fRは通常同じ値に設定されます。詳細は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/vm/gc\-ergonomics\&.htmlにあるガベージ・コレクタ・エルゴノミックを参照してください。
+.sp
+次の例では、割り当てられたメモリーの許可される最大サイズを様々な単位を使用して80MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxHeapSize=83886080
+\-XX:MaxHeapSize=81920k
+\-XX:MaxHeapSize=80m
+.fi
+.if n \{\
+.RE
+.\}
+Oracle Solaris 7およびOracle Solaris 8 SPARCプラットフォームの場合のこの値の上限は、およそ4,000MBからオーバーヘッドの量を引いたものです。Oracle Solaris 2\&.6およびx86プラットフォームの場合の上限は、およそ2,000MBからオーバーヘッドの量を引いたものです。Linuxプラットフォームの場合の上限は、およそ2,000MBからオーバーヘッドの量を引いたものです。
+.sp
+\fI\-XX:MaxHeapSize\fRオプションは\fI\-Xmx\fRと同等です。
+.RE
+.PP
+\-XX:MaxHeapFreeRatio=\fIpercent\fR
+.RS 4
+GCイベント後の空きヒープ領域の許可されている最大の割合(0から100まで)を設定します。空きヒープ領域がこの値を超えて拡大した場合、そのヒープは縮小します。デフォルトでは、この値は70%に設定されています。
+.sp
+次の例では、空きヒープの最大比率を75%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxHeapFreeRatio=75
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxMetaspaceSize=\fIsize\fR
+.RS 4
+クラス・メタデータに割り当てることができるネイティブ・メモリーの最大量を設定します。デフォルトでは、このサイズは制限されていません。アプリケーションのメタデータの量は、アプリケーション自体、他の実行中アプリケーション、およびシステムで使用可能なメモリーの量によって異なります。
+.sp
+次の例では、クラス・メタデータの最大サイズを256MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxMetaspaceSize=256m
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MaxNewSize=\fIsize\fR
+.RS 4
+若い世代(ナーサリ)のヒープの最大サイズ(バイト単位)を設定します。デフォルト値は人間工学的に設定されます。
+.RE
+.PP
+\-XX:MaxTenuringThreshold=\fIthreshold\fR
+.RS 4
+適応GCサイズ指定で使用する最大殿堂入りしきい値を設定します。最大値は15です。デフォルト値は、パラレル(スループット)コレクタの場合は15、CMSコレクタの場合は6です。
+.sp
+次の例では、最大殿堂入りしきい値を10に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MaxTenuringThreshold=10
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:MetaspaceSize=\fIsize\fR
+.RS 4
+最初に超えたときにガベージ・コレクションをトリガーする、割り当てられたクラス・メタデータ領域のサイズを設定します。このガベージ・コレクションのしきい値は、使用されるメタデータの量によって増加または減少します。デフォルトのサイズはプラットフォームによって異なります。
+.RE
+.PP
+\-XX:MinHeapFreeRatio=\fIpercent\fR
+.RS 4
+GCイベント後の空きヒープ領域の許可されている最小の割合(0から100まで)を設定します。空きヒープ領域がこの値を下回った場合、そのヒープは拡大します。デフォルトでは、この値は40%に設定されています。
+.sp
+次の例では、空きヒープの最小比率を25%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:MinHeapFreeRatio=25
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:NewRatio=\fIratio\fR
+.RS 4
+若い世代のサイズと古い世代のサイズとの比率を設定します。デフォルトでは、このオプションは2に設定されています。次の例では、若い/古いの比率を1に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:NewRatio=1
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:NewSize=\fIsize\fR
+.RS 4
+若い世代(ナーサリ)のヒープの初期サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。
+.sp
+ヒープの若い世代リージョンは新しいオブジェクトに使用されます。GCは、他のリージョンよりこのリージョンで、より頻繁に実行されます。若い世代のサイズが小さすぎる場合、多数のマイナーGCが実行されます。サイズが大きすぎる場合、フルGCのみが実行されますが、完了までに時間がかかることがあります。若い世代のサイズは、全体のヒープ・サイズの半分から4分の1の間にしておくことをお薦めします。
+.sp
+次の例では、若い世代の初期サイズを様々な単位を使用して256MBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:NewSize=256m
+\-XX:NewSize=262144k
+\-XX:NewSize=268435456
+.fi
+.if n \{\
+.RE
+.\}
+\fI\-XX:NewSize\fRオプションは\fI\-Xmn\fRと同等です。
+.RE
+.PP
+\-XX:ParallelGCThreads=\fIthreads\fR
+.RS 4
+若い世代と古い世代でパラレル・ガベージ・コレクションに使用するスレッドの数を設定します。デフォルト値は、JVMに使用できるCPUの数によって異なります。
+.sp
+たとえば、パラレルGCのスレッド数を2に設定するには、次のオプションを指定します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:ParallelGCThreads=2
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+ParallelRefProcEnabled
+.RS 4
+パラレル参照処理を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintAdaptiveSizePolicy
+.RS 4
+適応世代サイズ指定に関する情報の出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGC
+.RS 4
+GCごとのメッセージの出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGCApplicationConcurrentTime
+.RS 4
+最後の休止(たとえばGC休止など)以降に経過した時間の出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGCApplicationStoppedTime
+.RS 4
+休止(たとえばGC休止など)が継続した時間の出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX+PrintGCDateStamp
+.RS 4
+GCごとの日付スタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGCDetails
+.RS 4
+GCごとの詳細メッセージの出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGCTaskTimeStamps
+.RS 4
+個々のGCワーカー・スレッド・タスクごとのタイムスタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintGCTimeStamp
+.RS 4
+GCごとのタイムスタンプの出力を有効にします。デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+PrintTenuringDistribution
+.RS 4
+殿堂入り期間情報の出力を有効にします。次に、出力の例を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Desired survivor size 48286924 bytes, new threshold 10 (max 10)
+\- age 1: 28992024 bytes, 28992024 total
+\- age 2: 1366864 bytes, 30358888 total
+\- age 3: 1425912 bytes, 31784800 total
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+期間1オブジェクトは、最も若いサバイバです(前のスカベンジの後に作成され、最新のスカベンジで存続し、Eden領域からサバイバ領域に移動しました)。期間2オブジェクトは、2つのスカベンジで存続します(2番目のスカベンジ中に、あるサバイバ領域から次の領域にコピーされました)。このように続きます。
+.sp
+前述の例では、28,992,024バイトが1つのスカベンジで存続し、Eden領域からサバイバ領域にコピーされました。1,366,864バイトは期間2オブジェクトなどにより占有されています。各行の3番目の値は、期間n以下のオブジェクトの累積サイズです。
+.sp
+デフォルトでは、このオプションは無効です。
+.RE
+.PP
+\-XX:+ScavengeBeforeFullGC
+.RS 4
+それぞれのフルGCの前に若い世代のGCを有効にします。このオプションはデフォルトで有効になっています。フルGCの前に若い世代のスカベンジを行うと、古い世代領域から若い世代領域へのアクセスが可能なオブジェクトの数を減らすことができるため、これを無効に\fIしない\fRことをお薦めします。各フルGCの前に若い世代のGCを無効にするには、\fI\-XX:\-ScavengeBeforeFullGC\fRを指定します。
+.RE
+.PP
+\-XX:SoftRefLRUPolicyMSPerMB=\fItime\fR
+.RS 4
+ソフト・アクセスが可能なオブジェクトが最後に参照されてからヒープ上でアクティブなままになっている時間(ミリ秒単位)を設定します。デフォルト値は、ヒープ内の空きメガバイト当たりで1秒の存続期間です。\fI\-XX:SoftRefLRUPolicyMSPerMB\fRオプションは、現在のヒープ・サイズ(Java HotSpot Client VM用)または最大可能ヒープ・サイズ(Java HotSpot Server VM用)の1メガバイト当たりのミリ秒を表す整数値を受け入れます。この違いは、Client VMは、ヒープを大きくするのではなく、ソフト参照をフラッシュする傾向があるのに対し、Server VMは、ソフト参照をフラッシュするのではなく、ヒープを大きくする傾向があることを意味します。後者の場合、\fI\-Xmx\fRオプションの値は、ソフト参照がどのくらい迅速にガベージ・コレクションされるかに重要な影響を及ぼします。
+.sp
+次の例では、値を2\&.5秒に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:SoftRefLRUPolicyMSPerMB=2500
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:SurvivorRatio=\fIratio\fR
+.RS 4
+Eden領域のサイズとサバイバ領域のサイズとの比率を設定します。デフォルトでは、このオプションは8に設定されています。次の例では、Eden/サバイバ領域の比率を4に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:SurvivorRatio=4
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:TargetSurvivorRatio=\fIpercent\fR
+.RS 4
+若いガベージ・コレクションの後に使用されるサバイバ領域の目的の割合(0から100まで)を設定します。デフォルトでは、このオプションは50%に設定されています。
+.sp
+次の例では、ターゲットのサバイバ領域の比率を30%に設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:TargetSurvivorRatio=30
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:TLABSize=\fIsize\fR
+.RS 4
+スレッド・ローカルな割当てバッファ(TLAB)の初期サイズ(バイト単位)を設定します。キロバイトを示す場合は文字\fIk\fRまたは\fIK\fR、メガバイトを示す場合は文字\fIm\fRまたは\fIM\fR、ギガバイトを示す場合は文字\fIg\fRまたは\fIG\fRを追加します。このオプションが0に設定されている場合、JVMでは初期サイズが自動的に選択されます。
+.sp
+次の例では、TLABの初期サイズを512KBに設定する方法を示します。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-XX:TLABSize=512k
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\-XX:+UseAdaptiveSizePolicy
+.RS 4
+適応世代サイズ指定の使用を有効にします。このオプションはデフォルトで有効になっています。適応世代サイズ指定を無効にするには、\fI\-XX:\-UseAdaptiveSizePolicy\fRを指定し、メモリー割当てプールのサイズを明示的に設定します(\fI\-XX:SurvivorRatio\fRオプションを参考にしてください)。
+.RE
+.PP
+\-XX:+UseCMSInitiatingOccupancyOnly
+.RS 4
+CMSコレクタの開始のための唯一の基準としての占有値の使用を有効にします。デフォルトでは、このオプションは無効になっており、他の基準が使用されます。
+.RE
+.PP
+\-XX:+UseConcMarkSweepGC
+.RS 4
+古い世代へのCMSガベージ・コレクタの使用を有効にします。アプリケーションの待機時間の要件を、スループット(\fI\-XX:+UseParallelGC\fR)ガベージ・コレクタによって満たすことができない場合、CMSガベージ・コレクタを使用することをお薦めします。G1ガベージ・コレクタ(\fI\-XX:+UseG1GC\fR)は別の代替となります。
+.sp
+デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。このオプションを有効にすると、\fI\-XX:+UseParNewGC\fRオプションが自動的に設定されます。
+.RE
+.PP
+\-XX:+UseG1GC
+.RS 4
+G1ガベージ・コレクタの使用を有効にします。これはサーバー形式のガベージ・コレクタで、大量のRAMを持つマルチプロセッサ・マシンを対象としています。高い確率でGC休止時間の目標を達成し、同時に適切なスループットも維持します。G1コレクタは、GC待機時間の限定された要件(安定した予測可能な0\&.5秒未満の休止時間)を持つ、大きいヒープ(約6GB以上のサイズ)が必要なアプリケーションに推奨されます。
+.sp
+デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。
+.RE
+.PP
+\-XX:+UseGCOverheadLimit
+.RS 4
+\fIOutOfMemoryError\fR例外がスローされるまでに、GCでJVMによって要した時間の割合を制限するポリシーの使用を有効にします。デフォルトでは、このオプションは有効になっており、ガベージ・コレクションに合計時間の98%より多く費やされ、ヒープのリカバリが2%未満である場合、パラレルGCによって\fIOutOfMemoryError\fRがスローされます。ヒープが小さい場合、この機能は、アプリケーションが長期間ほとんどまたはまったく進捗なく実行している状態を回避するために使用できます。このオプションを無効にするには、\fI\-XX:\-UseGCOverheadLimit\fRを指定します。
+.RE
+.PP
+\-XX:+UseNUMA
+.RS 4
+アプリケーションで短い待機時間のメモリーの使用を増加させることで、不均一なメモリー・アーキテクチャ(NUMA)を使用したマシン上のアプリケーションのパフォーマンス最適化を有効にします。デフォルトでは、このオプションは無効になっており、NUMAに対する最適化は行われません。このオプションは、パラレル・ガベージ・コレクタ(\fI\-XX:+UseParallelGC\fR)が使用されている場合のみ使用可能です。
+.RE
+.PP
+\-XX:+UseParallelGC
+.RS 4
+複数のプロセッサを利用してアプリケーションのパフォーマンスを向上させる、パラレル・スカベンジ・ガベージ・コレクタ(スループット・コレクタとも呼ばれる)の使用を有効にします。
+.sp
+デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。これを有効にした場合、明示的に無効にしないかぎり、\fI\-XX:+UseParallelOldGC\fRオプションが自動的に有効になります。
+.RE
+.PP
+\-XX:+UseParallelOldGC
+.RS 4
+フルGCへのパラレル・ガベージ・コレクタの使用を有効にします。デフォルトでは、このオプションは無効です。これを有効にすると、\fI\-XX:+UseParallelGC\fRオプションが自動的に有効になります。
+.RE
+.PP
+\-XX:+UseParNewGC
+.RS 4
+若い世代でのコレクションへのパラレル・スレッドの使用を有効にします。デフォルトでは、このオプションは無効です。\fI\-XX:+UseConcMarkSweepGC\fRオプションを設定すると、これは自動的に有効になります。
+.RE
+.PP
+\-XX:+UseSerialGC
+.RS 4
+シリアル・ガベージ・コレクタの使用を有効にします。ガベージ・コレクションから特別な機能を必要としない、小規模で単純なアプリケーションの場合には、これは一般に最適な選択です。デフォルトでは、このオプションは無効になっており、コレクタは、マシンの構成およびJVMのタイプに基づいて、自動的に選択されます。
+.RE
+.PP
+\-XX:+UseTLAB
+.RS 4
+若い世代の領域でのスレッド・ローカルな割当てブロック(TLAB)の使用を有効にします。このオプションはデフォルトで有効になっています。TLABの使用を無効にするには、\fI\-XX:\-UseTLAB\fRを指定します。
+.RE
+.SS "非推奨で削除されたオプション"
+.PP
+これらのオプションは、以前のリリースには含まれていましたが、以降は不要とみなされています。
+.PP
+\-Xrun\fIlibname\fR
+.RS 4
+指定したデバッグ/プロファイルのライブラリをロードします。このオプションは、\fI\-agentlib\fRオプションに取って代わられました。
+.RE
+.PP
+\-XX:CMSInitiatingPermOccupancyFraction=\fIpercent\fR
+.RS 4
+GCを開始する永久世代占有率(0から100まで)を設定します。このオプションはJDK 8では非推奨で、それに代わるものはありません。
+.RE
+.PP
+\-XX:MaxPermSize=\fIsize\fR
+.RS 4
+永久世代領域の最大サイズ(バイト単位)を設定します。このオプションは、JDK 8で非推奨になり、\fI\-XX:MaxMetaspaceSize\fRオプションに取って代わられました。
+.RE
+.PP
+\-XX:PermSize=\fIsize\fR
+.RS 4
+超えた場合にはガベージ・コレクションをトリガーする、永久世代に割り当てられた領域(バイト単位)を設定します。このオプションは、JDK 8で非推奨になり、\fI\-XX:MetaspaceSize\fRオプションに取って代わられました。
+.RE
+.PP
+\-XX:+UseSplitVerifier
+.RS 4
+検証プロセスの分割を有効にします。デフォルトでは、このオプションは以前のリリースでは有効になっており、検証は、タイプ参照(コンパイラによって実行)と、タイプ・チェック(JVMランタイムによって実行)の2つのフェーズに分割されていました。このオプションはJDK 8で非推奨となり、検証はデフォルトで分割され、無効にする方法はありません。
+.RE
+.PP
+\-XX:+UseStringCache
+.RS 4
+一般に割り当てられた文字列のキャッシングを有効にします。このオプションはJDK 8から削除され、それに代わるものはありません。
+.RE
+.SH "パフォーマンス・チューニングの例"
+.PP
+次の例では、スループットの最適化またはレスポンス時間の短縮化のいずれかを行うための、試験的なチューニング・フラグの使用方法を示します。
+.PP
+\fBExample 1\fR, スループットを向上するためのチューニング
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-d64 \-server \-XX:+AggressiveOpts \-XX:+UseLargePages \-Xmn10g  \-Xms26g \-Xmx26g
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBExample 2\fR, レスポンス時間を速くするためのチューニング
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+java \-d64 \-XX:+UseG1GC \-Xms26g Xmx26g \-XX:MaxGCPauseMillis=500 \-XX:+PrintGCTimeStamp
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SH "終了ステータス"
-.LP
-.LP
-一般に、次の終了値が起動ツールから返されるのは通常、起動元が不正な引数で呼び出されたか、深刻なエラーが発生したか、あるいは Java 仮想マシンから例外がスローされた場合です。ただし Java アプリケーションは、API 呼び出し \f2System.exit(exitValue)\fP を使用して任意の値を返すことを選択することもできます。
-.LP
-.RS 3
-.TP 2
-o
-\f20\fP: 正常終了 
-.TP 2
-o
-\f2>0\fP: エラーが発生した 
+.PP
+通常、次の終了値が起動ツールから返されるのは、起動元が不正な引数で呼び出されたか、深刻なエラーが発生したか、あるいはJVMにより例外がスローされた場合です。ただし、Javaアプリケーションは、API呼出し\fISystem\&.exit(exitValue)\fRを使用して任意の値を返すことを選択することもできます。値は次のとおりです。
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI0\fR: 正常終了
 .RE
-
-.LP
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fI>0\fR: エラー発生
+.RE
 .SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-javac(1) 
-.TP 2
-o
-jdb(1) 
-.TP 2
-o
-javah(1) 
-.TP 2
-o
-jar(1) 
-.TP 2
-o
-.na
-\f2「Java 拡張機能フレームワーク」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html 
-.TP 2
-o
-.na
-\f2「セキュリティー」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/index.html 
-.TP 2
-o
-.na
-\f2「HotSpot VM Specific Options」\fP @
-.fi
-http://java.sun.com/docs/hotspot/VMOptions.html 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javac(1)
 .RE
-
-.LP
- 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jdb(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+javah(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jar(1)
+.RE
+.br
+'pl 8.5i
+'bp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ class JNILocalFrame {
         int result = m_env->PushLocalFrame(size);
         if (result < 0) {
             DASSERT(FALSE);
-            JNU_ThrowOutOfMemoryError(m_env, "Can't allocate localRefs");
+            throw std::bad_alloc();
         }
     }
     INLINE ~JNILocalFrame() { m_env->PopLocalFrame(NULL); }

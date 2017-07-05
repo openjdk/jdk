@@ -41,6 +41,7 @@ import java.beans.PropertyVetoException;
 import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
     private Color selectedTitleGradientColor;
     private Color notSelectedTitleGradientColor;
@@ -267,7 +268,8 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         systemPopupMenu = new JPopupMenu();
         addSystemMenuItems(systemPopupMenu);
         enableActions();
-        systemLabel = new JLabel(frame.getFrameIcon()) {
+        @SuppressWarnings("serial") // anonymous class
+        JLabel tmp = new JLabel(frame.getFrameIcon()) {
             protected void paintComponent(Graphics g) {
                 int x = 0;
                 int y = 0;
@@ -303,6 +305,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
                 g.dispose();
             }
         };
+        systemLabel = tmp;
         systemLabel.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2 && frame.isClosable() &&

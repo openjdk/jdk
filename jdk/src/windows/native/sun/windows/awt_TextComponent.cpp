@@ -852,9 +852,10 @@ Java_sun_awt_windows_WTextComponentPeer_initIDs(JNIEnv *env, jclass cls)
     TRY;
 
     jclass textComponentClassID = env->FindClass("java/awt/TextComponent");
+    CHECK_NULL(textComponentClassID);
+
     AwtTextComponent::canAccessClipboardMID =
-        env->GetMethodID(textComponentClassID,
-        "canAccessClipboard", "()Z");
+        env->GetMethodID(textComponentClassID, "canAccessClipboard", "()Z");
     env->DeleteLocalRef(textComponentClassID);
 
     DASSERT(AwtTextComponent::canAccessClipboardMID != NULL);

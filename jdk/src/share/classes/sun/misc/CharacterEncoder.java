@@ -190,7 +190,7 @@ public abstract class CharacterEncoder {
         try {
             encode(inStream, outStream);
             // explicit ascii->unicode conversion
-            retVal = outStream.toString("8859_1");
+            retVal = outStream.toString("ISO-8859-1");
         } catch (Exception IOException) {
             // This should never happen.
             throw new Error("CharacterEncoder.encode internal error");

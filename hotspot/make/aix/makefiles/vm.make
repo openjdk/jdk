@@ -101,7 +101,7 @@ CXXFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date.
-vm_version.o: CXXFLAGS += ${JRE_VERSION}
+CXXFLAGS/vm_version.o += ${JRE_VERSION}
 
 CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
 

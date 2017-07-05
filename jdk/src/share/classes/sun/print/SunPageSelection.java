@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.print.attribute.PrintRequestAttribute;
 /*
  * A class used to determine the range of pages to be printed.
  */
+@SuppressWarnings("serial") // JDK implementation class
 public final class SunPageSelection implements PrintRequestAttribute {
 
     public static final SunPageSelection ALL = new SunPageSelection(0);

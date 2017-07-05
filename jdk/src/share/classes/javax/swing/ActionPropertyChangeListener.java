@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.lang.ref.ReferenceQueue;
  * @author Georges Saab
  * @see AbstractButton
  */
+@SuppressWarnings("serial") // Bound of type variable  is not serializable across versions
 abstract class ActionPropertyChangeListener<T extends JComponent>
         implements PropertyChangeListener, Serializable {
     private static ReferenceQueue<JComponent> queue;

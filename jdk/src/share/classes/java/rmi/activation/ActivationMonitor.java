@@ -63,7 +63,7 @@ public interface ActivationMonitor extends Remote {
      * reference associated with <code>id</code> as a stale reference.
      * Since the reference is considered stale, a subsequent
      * <code>activate</code> call for the same activation identifier
-     * results in re-activating the remote object.<p>
+     * results in re-activating the remote object.
      *
      * @param id the object's activation identifier
      * @exception UnknownObjectException if object is unknown

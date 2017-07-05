@@ -44,11 +44,11 @@ package org.omg.CORBA;
 * OMG specifications :
 *   <ul>
 *       <li> ORB core as defined by CORBA 2.3.1
-*       (<a href="http://cgi.omg.org/cgi-bin/doc?formal/99-10-07">formal/99-10-07</a>)
+*       (<a href="http://www.omg.org/cgi-bin/doc?formal/99-10-07">formal/99-10-07</a>)
 *       </li>
 *
 *       <li> IDL/Java Language Mapping as defined in
-*       <a href="http://cgi.omg.org/cgi-bin/doc?ptc/00-01-08">ptc/00-01-08</a>
+*       <a href="http://www.omg.org/cgi-bin/doc?ptc/00-01-08">ptc/00-01-08</a>
 *       </li>
 *   </ul>
 */

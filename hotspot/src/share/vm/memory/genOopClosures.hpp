@@ -115,9 +115,6 @@ class ScanClosure: public OopsInKlassOrGenClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p);
   inline void do_oop_nv(narrowOop* p);
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_write;
-  }
 };
 
 // Closure for scanning DefNewGeneration.
@@ -137,9 +134,6 @@ class FastScanClosure: public OopsInKlassOrGenClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p);
   inline void do_oop_nv(narrowOop* p);
-  Prefetch::style prefetch_style() {
-    return Prefetch::do_write;
-  }
 };
 
 class KlassScanClosure: public KlassClosure {
