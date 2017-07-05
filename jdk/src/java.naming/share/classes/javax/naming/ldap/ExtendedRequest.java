@@ -43,7 +43,7 @@ import javax.naming.NamingException;
   * the classes that implement this interface, supplying them with
   * any information required for a particular extended operation request.
   * It would then pass such a class as an argument to the
-  * <tt>LdapContext.extendedOperation()</tt> method for performing the
+  * {@code LdapContext.extendedOperation()} method for performing the
   * LDAPv3 extended operation.
   *<p>
   * For example, suppose the LDAP server supported a 'get time' extended operation.
@@ -90,7 +90,7 @@ public interface ExtendedRequest extends java.io.Serializable {
       * Retrieves the object identifier of the request.
       *
       * @return The non-null object identifier string representing the LDAP
-      *         <tt>ExtendedRequest.requestName</tt> component.
+      *         {@code ExtendedRequest.requestName} component.
       */
     public String getID();
 
@@ -104,7 +104,7 @@ public interface ExtendedRequest extends java.io.Serializable {
       * put into the extended operation to be sent to the LDAP server.
       *
       * @return A possibly null byte array representing the ASN.1 BER encoded
-      *         contents of the LDAP <tt>ExtendedRequest.requestValue</tt>
+      *         contents of the LDAP {@code ExtendedRequest.requestValue}
       *         component.
       * @exception IllegalStateException If the encoded value cannot be retrieved
       * because the request contains insufficient or invalid data/state.

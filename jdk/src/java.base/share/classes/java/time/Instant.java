@@ -1232,10 +1232,10 @@ public final class Instant
         if (seconds < 0 && nanos > 0) {
             long millis = Math.multiplyExact(seconds+1, 1000);
             long adjustment = nanos / 1000_000 - 1000;
-            return millis + adjustment;
+            return Math.addExact(millis, adjustment);
         } else {
             long millis = Math.multiplyExact(seconds, 1000);
-            return millis + nanos / 1000_000;
+            return Math.addExact(millis, nanos / 1000_000);
         }
     }
 

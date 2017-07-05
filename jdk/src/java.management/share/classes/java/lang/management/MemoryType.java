@@ -62,8 +62,8 @@ public enum MemoryType {
     }
 
     /**
-     * Returns the string representation of this <tt>MemoryType</tt>.
-     * @return the string representation of this <tt>MemoryType</tt>.
+     * Returns the string representation of this {@code MemoryType}.
+     * @return the string representation of this {@code MemoryType}.
      */
     public String toString() {
         return description;

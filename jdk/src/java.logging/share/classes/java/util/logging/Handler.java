@@ -32,18 +32,18 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
- * A <tt>Handler</tt> object takes log messages from a <tt>Logger</tt> and
+ * A {@code Handler} object takes log messages from a {@code Logger} and
  * exports them.  It might for example, write them to a console
  * or write them to a file, or send them to a network logging service,
  * or forward them to an OS log, or whatever.
  * <p>
- * A <tt>Handler</tt> can be disabled by doing a <tt>setLevel(Level.OFF)</tt>
- * and can  be re-enabled by doing a <tt>setLevel</tt> with an appropriate level.
+ * A {@code Handler} can be disabled by doing a {@code setLevel(Level.OFF)}
+ * and can  be re-enabled by doing a {@code setLevel} with an appropriate level.
  * <p>
- * <tt>Handler</tt> classes typically use <tt>LogManager</tt> properties to set
- * default values for the <tt>Handler</tt>'s <tt>Filter</tt>, <tt>Formatter</tt>,
- * and <tt>Level</tt>.  See the specific documentation for each concrete
- * <tt>Handler</tt> class.
+ * {@code Handler} classes typically use {@code LogManager} properties to set
+ * default values for the {@code Handler}'s {@code Filter}, {@code Formatter},
+ * and {@code Level}.  See the specific documentation for each concrete
+ * {@code Handler} class.
  *
  *
  * @since 1.4
@@ -67,10 +67,10 @@ public abstract class Handler {
     private volatile String encoding;
 
     /**
-     * Default constructor.  The resulting <tt>Handler</tt> has a log
-     * level of <tt>Level.ALL</tt>, no <tt>Formatter</tt>, and no
-     * <tt>Filter</tt>.  A default <tt>ErrorManager</tt> instance is installed
-     * as the <tt>ErrorManager</tt>.
+     * Default constructor.  The resulting {@code Handler} has a log
+     * level of {@code Level.ALL}, no {@code Formatter}, and no
+     * {@code Filter}.  A default {@code ErrorManager} instance is installed
+     * as the {@code ErrorManager}.
      */
     protected Handler() {
     }
@@ -122,12 +122,12 @@ public abstract class Handler {
     }
 
     /**
-     * Publish a <tt>LogRecord</tt>.
+     * Publish a {@code LogRecord}.
      * <p>
-     * The logging request was made initially to a <tt>Logger</tt> object,
-     * which initialized the <tt>LogRecord</tt> and forwarded it here.
+     * The logging request was made initially to a {@code Logger} object,
+     * which initialized the {@code LogRecord} and forwarded it here.
      * <p>
-     * The <tt>Handler</tt>  is responsible for formatting the message, when and
+     * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
      *
      * @param  record  description of the log event. A null record is
@@ -141,28 +141,28 @@ public abstract class Handler {
     public abstract void flush();
 
     /**
-     * Close the <tt>Handler</tt> and free all associated resources.
+     * Close the {@code Handler} and free all associated resources.
      * <p>
-     * The close method will perform a <tt>flush</tt> and then close the
-     * <tt>Handler</tt>.   After close has been called this <tt>Handler</tt>
+     * The close method will perform a {@code flush} and then close the
+     * {@code Handler}.   After close has been called this {@code Handler}
      * should no longer be used.  Method calls may either be silently
      * ignored or may throw runtime exceptions.
      *
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public abstract void close() throws SecurityException;
 
     /**
-     * Set a <tt>Formatter</tt>.  This <tt>Formatter</tt> will be used
-     * to format <tt>LogRecords</tt> for this <tt>Handler</tt>.
+     * Set a {@code Formatter}.  This {@code Formatter} will be used
+     * to format {@code LogRecords} for this {@code Handler}.
      * <p>
-     * Some <tt>Handlers</tt> may not use <tt>Formatters</tt>, in
-     * which case the <tt>Formatter</tt> will be remembered, but not used.
+     * Some {@code Handlers} may not use {@code Formatters}, in
+     * which case the {@code Formatter} will be remembered, but not used.
      *
-     * @param newFormatter the <tt>Formatter</tt> to use (may not be null)
+     * @param newFormatter the {@code Formatter} to use (may not be null)
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public synchronized void setFormatter(Formatter newFormatter) throws SecurityException {
         checkPermission();
@@ -170,23 +170,23 @@ public abstract class Handler {
     }
 
     /**
-     * Return the <tt>Formatter</tt> for this <tt>Handler</tt>.
-     * @return the <tt>Formatter</tt> (may be null).
+     * Return the {@code Formatter} for this {@code Handler}.
+     * @return the {@code Formatter} (may be null).
      */
     public Formatter getFormatter() {
         return formatter;
     }
 
     /**
-     * Set the character encoding used by this <tt>Handler</tt>.
+     * Set the character encoding used by this {@code Handler}.
      * <p>
-     * The encoding should be set before any <tt>LogRecords</tt> are written
-     * to the <tt>Handler</tt>.
+     * The encoding should be set before any {@code LogRecords} are written
+     * to the {@code Handler}.
      *
      * @param encoding  The name of a supported character encoding.
      *        May be null, to indicate the default platform encoding.
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      * @exception  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
@@ -206,7 +206,7 @@ public abstract class Handler {
     }
 
     /**
-     * Return the character encoding for this <tt>Handler</tt>.
+     * Return the character encoding for this {@code Handler}.
      *
      * @return  The encoding name.  May be null, which indicates the
      *          default encoding should be used.
@@ -216,15 +216,15 @@ public abstract class Handler {
     }
 
     /**
-     * Set a <tt>Filter</tt> to control output on this <tt>Handler</tt>.
+     * Set a {@code Filter} to control output on this {@code Handler}.
      * <P>
-     * For each call of <tt>publish</tt> the <tt>Handler</tt> will call
-     * this <tt>Filter</tt> (if it is non-null) to check if the
-     * <tt>LogRecord</tt> should be published or discarded.
+     * For each call of {@code publish} the {@code Handler} will call
+     * this {@code Filter} (if it is non-null) to check if the
+     * {@code LogRecord} should be published or discarded.
      *
-     * @param   newFilter  a <tt>Filter</tt> object (may be null)
+     * @param   newFilter  a {@code Filter} object (may be null)
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public synchronized void setFilter(Filter newFilter) throws SecurityException {
         checkPermission();
@@ -232,9 +232,9 @@ public abstract class Handler {
     }
 
     /**
-     * Get the current <tt>Filter</tt> for this <tt>Handler</tt>.
+     * Get the current {@code Filter} for this {@code Handler}.
      *
-     * @return  a <tt>Filter</tt> object (may be null)
+     * @return  a {@code Filter} object (may be null)
      */
     public Filter getFilter() {
         return filter;
@@ -248,7 +248,7 @@ public abstract class Handler {
      *
      * @param em  the new ErrorManager
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public synchronized void setErrorManager(ErrorManager em) {
         checkPermission();
@@ -263,7 +263,7 @@ public abstract class Handler {
      *
      * @return the ErrorManager for this Handler
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public ErrorManager getErrorManager() {
         checkPermission();
@@ -291,16 +291,16 @@ public abstract class Handler {
 
     /**
      * Set the log level specifying which message levels will be
-     * logged by this <tt>Handler</tt>.  Message levels lower than this
+     * logged by this {@code Handler}.  Message levels lower than this
      * value will be discarded.
      * <p>
      * The intention is to allow developers to turn on voluminous
      * logging, but to limit the messages that are sent to certain
-     * <tt>Handlers</tt>.
+     * {@code Handlers}.
      *
      * @param newLevel   the new value for the log level
      * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
+     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public synchronized void setLevel(Level newLevel) throws SecurityException {
         if (newLevel == null) {
@@ -312,7 +312,7 @@ public abstract class Handler {
 
     /**
      * Get the log level specifying which messages will be
-     * logged by this <tt>Handler</tt>.  Message levels lower
+     * logged by this {@code Handler}.  Message levels lower
      * than this level will be discarded.
      * @return  the level of messages being logged.
      */
@@ -321,16 +321,16 @@ public abstract class Handler {
     }
 
     /**
-     * Check if this <tt>Handler</tt> would actually log a given <tt>LogRecord</tt>.
+     * Check if this {@code Handler} would actually log a given {@code LogRecord}.
      * <p>
-     * This method checks if the <tt>LogRecord</tt> has an appropriate
-     * <tt>Level</tt> and  whether it satisfies any <tt>Filter</tt>.  It also
-     * may make other <tt>Handler</tt> specific checks that might prevent a
-     * handler from logging the <tt>LogRecord</tt>. It will return false if
-     * the <tt>LogRecord</tt> is null.
+     * This method checks if the {@code LogRecord} has an appropriate
+     * {@code Level} and  whether it satisfies any {@code Filter}.  It also
+     * may make other {@code Handler} specific checks that might prevent a
+     * handler from logging the {@code LogRecord}. It will return false if
+     * the {@code LogRecord} is null.
      *
-     * @param record  a <tt>LogRecord</tt>
-     * @return true if the <tt>LogRecord</tt> would be logged.
+     * @param record  a {@code LogRecord}
+     * @return true if the {@code LogRecord} would be logged.
      *
      */
     public boolean isLoggable(LogRecord record) {

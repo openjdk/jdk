@@ -33,7 +33,7 @@ import sun.management.MonitorInfoCompositeData;
  * when entering a synchronization block or method on that object.
  *
  * <h3>MXBean Mapping</h3>
- * <tt>MonitorInfo</tt> is mapped to a {@link CompositeData CompositeData}
+ * {@code MonitorInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in
  * the {@link #from from} method.
  *
@@ -46,7 +46,7 @@ public class MonitorInfo extends LockInfo {
     private StackTraceElement stackFrame;
 
     /**
-     * Construct a <tt>MonitorInfo</tt> object.
+     * Construct a {@code MonitorInfo} object.
      *
      * @param className the fully qualified name of the class of the lock object.
      * @param identityHashCode the {@link System#identityHashCode
@@ -55,9 +55,9 @@ public class MonitorInfo extends LockInfo {
      *                   was locked.
      * @param stackFrame the stack frame that locked the object monitor.
      * @throws IllegalArgumentException if
-     *    <tt>stackDepth</tt> &ge; 0 but <tt>stackFrame</tt> is <tt>null</tt>,
-     *    or <tt>stackDepth</tt> &lt; 0 but <tt>stackFrame</tt> is not
-     *       <tt>null</tt>.
+     *    {@code stackDepth} &ge; 0 but {@code stackFrame} is {@code null},
+     *    or {@code stackDepth} &lt; 0 but {@code stackFrame} is not
+     *       {@code null}.
      */
     public MonitorInfo(String className,
                        int identityHashCode,
@@ -78,7 +78,7 @@ public class MonitorInfo extends LockInfo {
 
     /**
      * Returns the depth in the stack trace where the object monitor
-     * was locked.  The depth is the index to the <tt>StackTraceElement</tt>
+     * was locked.  The depth is the index to the {@code StackTraceElement}
      * array returned in the {@link ThreadInfo#getStackTrace} method.
      *
      * @return the depth in the stack trace where the object monitor
@@ -91,17 +91,17 @@ public class MonitorInfo extends LockInfo {
     /**
      * Returns the stack frame that locked the object monitor.
      *
-     * @return <tt>StackTraceElement</tt> that locked the object monitor,
-     *         or <tt>null</tt> if not available.
+     * @return {@code StackTraceElement} that locked the object monitor,
+     *         or {@code null} if not available.
      */
     public StackTraceElement getLockedStackFrame() {
         return stackFrame;
     }
 
     /**
-     * Returns a <tt>MonitorInfo</tt> object represented by the
-     * given <tt>CompositeData</tt>.
-     * The given <tt>CompositeData</tt> must contain the following attributes
+     * Returns a {@code MonitorInfo} object represented by the
+     * given {@code CompositeData}.
+     * The given {@code CompositeData} must contain the following attributes
      * as well as the attributes specified in the
      * <a href="LockInfo.html#MappedType">
      * mapped type</a> for the {@link LockInfo} class:
@@ -113,28 +113,28 @@ public class MonitorInfo extends LockInfo {
      * </tr>
      * <tr>
      *   <td>lockedStackFrame</td>
-     *   <td><tt>CompositeData as specified in the
+     *   <td><code>CompositeData as specified in the
      *       <a href="ThreadInfo.html#StackTrace">stackTrace</a>
      *       attribute defined in the {@link ThreadInfo#from
      *       ThreadInfo.from} method.
-     *       </tt></td>
+     *       </code></td>
      * </tr>
      * <tr>
      *   <td>lockedStackDepth</td>
-     *   <td><tt>java.lang.Integer</tt></td>
+     *   <td>{@code java.lang.Integer}</td>
      * </tr>
      * </table>
      * </blockquote>
      *
-     * @param cd <tt>CompositeData</tt> representing a <tt>MonitorInfo</tt>
+     * @param cd {@code CompositeData} representing a {@code MonitorInfo}
      *
-     * @throws IllegalArgumentException if <tt>cd</tt> does not
-     *   represent a <tt>MonitorInfo</tt> with the attributes described
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code MonitorInfo} with the attributes described
      *   above.
 
-     * @return a <tt>MonitorInfo</tt> object represented
-     *         by <tt>cd</tt> if <tt>cd</tt> is not <tt>null</tt>;
-     *         <tt>null</tt> otherwise.
+     * @return a {@code MonitorInfo} object represented
+     *         by {@code cd} if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
      */
     public static MonitorInfo from(CompositeData cd) {
         if (cd == null) {

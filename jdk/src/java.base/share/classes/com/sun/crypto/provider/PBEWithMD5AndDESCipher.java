@@ -80,7 +80,7 @@ public final class PBEWithMD5AndDESCipher extends CipherSpi {
      * Sets the padding mechanism of this cipher. This algorithm only uses
      * PKCS #5 padding.
      *
-     * @param padding the padding mechanism
+     * @param paddingScheme the padding mechanism
      *
      * @exception NoSuchPaddingException if the requested padding mechanism
      * is invalid

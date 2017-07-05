@@ -38,7 +38,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 EncKrbPrivPart type.
  *
- * <xmp>
+ * <pre>{@code
  * EncKrbPrivPart  ::= [APPLICATION 28] SEQUENCE {
  *         user-data       [0] OCTET STRING,
  *         timestamp       [1] KerberosTime OPTIONAL,
@@ -47,7 +47,7 @@ import java.math.BigInteger;
  *         s-address       [4] HostAddress -- sender's addr --,
  *         r-address       [5] HostAddress OPTIONAL -- recip's addr
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

@@ -70,7 +70,7 @@ public interface OpenMBeanInfo {
 
     /**
      * Returns the fully qualified Java class name of the open MBean
-     * instances this <tt>OpenMBeanInfo</tt> describes.
+     * instances this {@code OpenMBeanInfo} describes.
      *
      * @return the class name.
      */
@@ -78,19 +78,19 @@ public interface OpenMBeanInfo {
 
     /**
      * Returns a human readable description of the type of open MBean
-     * instances this <tt>OpenMBeanInfo</tt> describes.
+     * instances this {@code OpenMBeanInfo} describes.
      *
      * @return the description.
      */
     public String getDescription() ;
 
     /**
-     * Returns an array of <tt>OpenMBeanAttributeInfo</tt> instances
+     * Returns an array of {@code OpenMBeanAttributeInfo} instances
      * describing each attribute in the open MBean described by this
-     * <tt>OpenMBeanInfo</tt> instance.  Each instance in the returned
+     * {@code OpenMBeanInfo} instance.  Each instance in the returned
      * array should actually be a subclass of
-     * <tt>MBeanAttributeInfo</tt> which implements the
-     * <tt>OpenMBeanAttributeInfo</tt> interface (typically {@link
+     * {@code MBeanAttributeInfo} which implements the
+     * {@code OpenMBeanAttributeInfo} interface (typically {@link
      * OpenMBeanAttributeInfoSupport}).
      *
      * @return the attribute array.
@@ -98,12 +98,12 @@ public interface OpenMBeanInfo {
     public MBeanAttributeInfo[] getAttributes() ;
 
     /**
-     * Returns an array of <tt>OpenMBeanOperationInfo</tt> instances
+     * Returns an array of {@code OpenMBeanOperationInfo} instances
      * describing each operation in the open MBean described by this
-     * <tt>OpenMBeanInfo</tt> instance.  Each instance in the returned
+     * {@code OpenMBeanInfo} instance.  Each instance in the returned
      * array should actually be a subclass of
-     * <tt>MBeanOperationInfo</tt> which implements the
-     * <tt>OpenMBeanOperationInfo</tt> interface (typically {@link
+     * {@code MBeanOperationInfo} which implements the
+     * {@code OpenMBeanOperationInfo} interface (typically {@link
      * OpenMBeanOperationInfoSupport}).
      *
      * @return the operation array.
@@ -111,12 +111,12 @@ public interface OpenMBeanInfo {
     public MBeanOperationInfo[] getOperations() ;
 
     /**
-     * Returns an array of <tt>OpenMBeanConstructorInfo</tt> instances
+     * Returns an array of {@code OpenMBeanConstructorInfo} instances
      * describing each constructor in the open MBean described by this
-     * <tt>OpenMBeanInfo</tt> instance.  Each instance in the returned
+     * {@code OpenMBeanInfo} instance.  Each instance in the returned
      * array should actually be a subclass of
-     * <tt>MBeanConstructorInfo</tt> which implements the
-     * <tt>OpenMBeanConstructorInfo</tt> interface (typically {@link
+     * {@code MBeanConstructorInfo} which implements the
+     * {@code OpenMBeanConstructorInfo} interface (typically {@link
      * OpenMBeanConstructorInfoSupport}).
      *
      * @return the constructor array.
@@ -124,9 +124,9 @@ public interface OpenMBeanInfo {
     public MBeanConstructorInfo[] getConstructors() ;
 
     /**
-     * Returns an array of <tt>MBeanNotificationInfo</tt> instances
+     * Returns an array of {@code MBeanNotificationInfo} instances
      * describing each notification emitted by the open MBean
-     * described by this <tt>OpenMBeanInfo</tt> instance.
+     * described by this {@code OpenMBeanInfo} instance.
      *
      * @return the notification array.
      */
@@ -137,50 +137,51 @@ public interface OpenMBeanInfo {
     //
 
     /**
-     * Compares the specified <var>obj</var> parameter with this <code>OpenMBeanInfo</code> instance for equality.
+     * Compares the specified <var>obj</var> parameter with this {@code OpenMBeanInfo} instance for equality.
      * <p>
-     * Returns <tt>true</tt> if and only if all of the following statements are true:
+     * Returns {@code true} if and only if all of the following statements are true:
      * <ul>
      * <li><var>obj</var> is non null,</li>
-     * <li><var>obj</var> also implements the <code>OpenMBeanInfo</code> interface,</li>
+     * <li><var>obj</var> also implements the {@code OpenMBeanInfo} interface,</li>
      * <li>their class names are equal</li>
      * <li>their infos on attributes, constructors, operations and notifications are equal</li>
      * </ul>
-     * This ensures that this <tt>equals</tt> method works properly for <var>obj</var> parameters which are
-     * different implementations of the <code>OpenMBeanInfo</code> interface.
-     * <br>&nbsp;
-     * @param  obj  the object to be compared for equality with this <code>OpenMBeanInfo</code> instance;
+     * This ensures that this {@code equals} method works properly for <var>obj</var> parameters which are
+     * different implementations of the {@code OpenMBeanInfo} interface.
      *
-     * @return  <code>true</code> if the specified object is equal to this <code>OpenMBeanInfo</code> instance.
+     * @param  obj  the object to be compared for equality with this {@code OpenMBeanInfo} instance;
+     *
+     * @return  {@code true} if the specified object is equal to this {@code OpenMBeanInfo} instance.
      */
     public boolean equals(Object obj);
 
     /**
-     * Returns the hash code value for this <code>OpenMBeanInfo</code> instance.
+     * Returns the hash code value for this {@code OpenMBeanInfo} instance.
      * <p>
-     * The hash code of an <code>OpenMBeanInfo</code> instance is the sum of the hash codes
-     * of all elements of information used in <code>equals</code> comparisons
+     * The hash code of an {@code OpenMBeanInfo} instance is the sum of the hash codes
+     * of all elements of information used in {@code equals} comparisons
      * (ie: its class name, and its infos on attributes, constructors, operations and notifications,
      * where the hashCode of each of these arrays is calculated by a call to
-     *  <tt>new java.util.HashSet(java.util.Arrays.asList(this.getSignature)).hashCode()</tt>).
+     * {@code new java.util.HashSet(java.util.Arrays.asList(this.getSignature)).hashCode()}).
      * <p>
-     * This ensures that <code> t1.equals(t2) </code> implies that <code> t1.hashCode()==t2.hashCode() </code>
-     * for any two <code>OpenMBeanInfo</code> instances <code>t1</code> and <code>t2</code>,
+     * This ensures that {@code t1.equals(t2)} implies that {@code t1.hashCode()==t2.hashCode()}
+     * for any two {@code OpenMBeanInfo} instances {@code t1} and {@code t2},
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
      *
-     * @return  the hash code value for this <code>OpenMBeanInfo</code> instance
+     * @return  the hash code value for this {@code OpenMBeanInfo} instance
      */
     public int hashCode();
 
     /**
-     * Returns a string representation of this <code>OpenMBeanInfo</code> instance.
+     * Returns a string representation of this {@code OpenMBeanInfo} instance.
      * <p>
-     * The string representation consists of the name of this class (ie <code>javax.management.openmbean.OpenMBeanInfo</code>),
-     * the MBean class name,
-     * and the string representation of infos on attributes, constructors, operations and notifications of the described MBean.
+     * The string representation consists of the name of this class
+     * (ie {@code javax.management.openmbean.OpenMBeanInfo}), the MBean class name,
+     * and the string representation of infos on attributes, constructors,
+     * operations and notifications of the described MBean.
      *
-     * @return  a string representation of this <code>OpenMBeanInfo</code> instance
+     * @return  a string representation of this {@code OpenMBeanInfo} instance
      */
     public String toString();
 

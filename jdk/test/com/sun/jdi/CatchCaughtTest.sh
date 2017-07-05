@@ -29,6 +29,7 @@
 #  @summary TTY: 'catch caught' with no class pattern throws NullPointerException
 #  @author Tim Bell
 #
+#  @key intermittent
 #  @run shell CatchCaughtTest.sh
 #
 classname=CatchCaughtTestTarg

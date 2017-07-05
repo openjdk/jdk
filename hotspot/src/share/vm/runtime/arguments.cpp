@@ -788,9 +788,11 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("VM Arguments:");
   if (num_jvm_flags() > 0) {
     st->print("jvm_flags: "); print_jvm_flags_on(st);
+    st->cr();
   }
   if (num_jvm_args() > 0) {
     st->print("jvm_args: "); print_jvm_args_on(st);
+    st->cr();
   }
   st->print_cr("java_command: %s", java_command() ? java_command() : "<unknown>");
   if (_java_class_path != NULL) {
@@ -800,12 +802,32 @@ void Arguments::print_on(outputStream* st) {
   st->print_cr("Launcher Type: %s", _sun_java_launcher);
 }
 
+void Arguments::print_summary_on(outputStream* st) {
+  // Print the command line.  Environment variables that are helpful for
+  // reproducing the problem are written later in the hs_err file.
+  // flags are from setting file
+  if (num_jvm_flags() > 0) {
+    st->print_raw("Settings File: ");
+    print_jvm_flags_on(st);
+    st->cr();
+  }
+  // args are the command line and environment variable arguments.
+  st->print_raw("Command Line: ");
+  if (num_jvm_args() > 0) {
+    print_jvm_args_on(st);
+  }
+  // this is the classfile and any arguments to the java program
+  if (java_command() != NULL) {
+    st->print("%s", java_command());
+  }
+  st->cr();
+}
+
 void Arguments::print_jvm_flags_on(outputStream* st) {
   if (_num_jvm_flags > 0) {
     for (int i=0; i < _num_jvm_flags; i++) {
       st->print("%s ", _jvm_flags_array[i]);
     }
-    st->cr();
   }
 }
 
@@ -814,7 +836,6 @@ void Arguments::print_jvm_args_on(outputStream* st) {
     for (int i=0; i < _num_jvm_args; i++) {
       st->print("%s ", _jvm_args_array[i]);
     }
-    st->cr();
   }
 }
 
@@ -1203,32 +1224,6 @@ void Arguments::set_tiered_flags() {
     FLAG_SET_ERGO(intx, Tier4CompileThreshold, scaled_compile_threshold(Tier4CompileThreshold));
     FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
-}
-
-/**
- * Returns the minimum number of compiler threads needed to run the JVM. The following
- * configurations are possible.
- *
- * 1) The JVM is build using an interpreter only. As a result, the minimum number of
- *    compiler threads is 0.
- * 2) The JVM is build using the compiler(s) and tiered compilation is disabled. As
- *    a result, either C1 or C2 is used, so the minimum number of compiler threads is 1.
- * 3) The JVM is build using the compiler(s) and tiered compilation is enabled. However,
- *    the option "TieredStopAtLevel < CompLevel_full_optimization". As a result, only
- *    C1 can be used, so the minimum number of compiler threads is 1.
- * 4) The JVM is build using the compilers and tiered compilation is enabled. The option
- *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
- *    the minimum number of compiler threads is 2.
- */
-int Arguments::get_min_number_of_compiler_threads() {
-#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
-  return 0;   // case 1
-#else
-  if (!TieredCompilation || (TieredStopAtLevel < CompLevel_full_optimization)) {
-    return 1; // case 2 or case 3
-  }
-  return 2;   // case 4 (tiered)
-#endif
 }
 
 #if INCLUDE_ALL_GCS
@@ -2177,10 +2172,6 @@ bool Arguments::check_vm_args_consistency() {
                 (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
     status = false;
   }
-
-  int min_number_of_compiler_threads = get_min_number_of_compiler_threads();
-  // The default CICompilerCount's value is CI_COMPILER_COUNT.
-  assert(min_number_of_compiler_threads <= CI_COMPILER_COUNT, "minimum should be less or equal default number");
 
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
@@ -3989,10 +3980,10 @@ jint Arguments::adjust_after_os() {
   return JNI_OK;
 }
 
-// Any custom code post the final range and constraint check
+// Any custom code post the 'CommandLineFlagConstraint::AfterErgo' constraint check
 // can be done here. We pass a flag that specifies whether
 // the check passed successfully
-void Arguments::post_final_range_and_constraint_check(bool check_passed) {
+void Arguments::post_after_ergo_constraint_check(bool check_passed) {
   // This does not set the flag itself, but stores the value in a safe place for later usage.
   _min_heap_free_ratio = MinHeapFreeRatio;
   _max_heap_free_ratio = MaxHeapFreeRatio;

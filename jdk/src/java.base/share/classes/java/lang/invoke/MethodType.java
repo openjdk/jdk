@@ -746,7 +746,7 @@ class MethodType implements java.io.Serializable {
 
     /**
      * Compares the specified object with this type for equality.
-     * That is, it returns <tt>true</tt> if and only if the specified object
+     * That is, it returns {@code true} if and only if the specified object
      * is also a method type with exactly the same parameters and return type.
      * @param x object to compare
      * @see Object#equals(Object)

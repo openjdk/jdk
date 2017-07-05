@@ -45,8 +45,8 @@ import java.util.TreeSet;
 
 
 /**
- * The <tt>CompositeDataSupport</tt> class is the <i>open data</i> class which
- * implements the <tt>CompositeData</tt> interface.
+ * The {@code CompositeDataSupport} class is the <i>open data</i> class which
+ * implements the {@code CompositeData} interface.
  *
  *
  * @since 1.5
@@ -70,15 +70,15 @@ public class CompositeDataSupport
     private final CompositeType compositeType;
 
     /**
-     * <p>Constructs a <tt>CompositeDataSupport</tt> instance with the specified
-     * <tt>compositeType</tt>, whose item values
-     * are specified by <tt>itemValues[]</tt>, in the same order as in
-     * <tt>itemNames[]</tt>.
-     * As a <tt>CompositeType</tt> does not specify any order on its items,
-     * the <tt>itemNames[]</tt> parameter is used
-     * to specify the order in which the values are given in <tt>itemValues[]</tt>.
-     * The items contained in this <tt>CompositeDataSupport</tt> instance are
-     * internally stored in a <tt>TreeMap</tt>,
+     * <p>Constructs a {@code CompositeDataSupport} instance with the specified
+     * {@code compositeType}, whose item values
+     * are specified by {@code itemValues[]}, in the same order as in
+     * {@code itemNames[]}.
+     * As a {@code CompositeType} does not specify any order on its items,
+     * the {@code itemNames[]} parameter is used
+     * to specify the order in which the values are given in {@code itemValues[]}.
+     * The items contained in this {@code CompositeDataSupport} instance are
+     * internally stored in a {@code TreeMap},
      * thus sorted in ascending lexicographic order of their names, for faster
      * retrieval of individual item values.</p>
      *
@@ -89,28 +89,28 @@ public class CompositeDataSupport
      * @param compositeType the <i>composite type </i> of this <i>composite
      * data</i> instance; must not be null.
      *
-     * @param itemNames <tt>itemNames</tt> must list, in any order, all the
-     * item names defined in <tt>compositeType</tt>; the order in which the
-     * names are listed, is used to match values in <tt>itemValues[]</tt>; must
+     * @param itemNames {@code itemNames} must list, in any order, all the
+     * item names defined in {@code compositeType}; the order in which the
+     * names are listed, is used to match values in {@code itemValues[]}; must
      * not be null or empty.
      *
      * @param itemValues the values of the items, listed in the same order as
-     * their respective names in <tt>itemNames</tt>; each item value can be
+     * their respective names in {@code itemNames}; each item value can be
      * null, but if it is non-null it must be a valid value for the open type
-     * defined in <tt>compositeType</tt> for the corresponding item; must be of
-     * the same size as <tt>itemNames</tt>; must not be null or empty.
+     * defined in {@code compositeType} for the corresponding item; must be of
+     * the same size as {@code itemNames}; must not be null or empty.
      *
-     * @throws IllegalArgumentException <tt>compositeType</tt> is null, or
-     * <tt>itemNames[]</tt> or <tt>itemValues[]</tt> is null or empty, or one
-     * of the elements in <tt>itemNames[]</tt> is a null or empty string, or
-     * <tt>itemNames[]</tt> and <tt>itemValues[]</tt> are not of the same size.
+     * @throws IllegalArgumentException {@code compositeType} is null, or
+     * {@code itemNames[]} or {@code itemValues[]} is null or empty, or one
+     * of the elements in {@code itemNames[]} is a null or empty string, or
+     * {@code itemNames[]} and {@code itemValues[]} are not of the same size.
      *
-     * @throws OpenDataException <tt>itemNames[]</tt> or
-     * <tt>itemValues[]</tt>'s size differs from the number of items defined in
-     * <tt>compositeType</tt>, or one of the elements in <tt>itemNames[]</tt>
-     * does not exist as an item name defined in <tt>compositeType</tt>, or one
-     * of the elements in <tt>itemValues[]</tt> is not a valid value for the
-     * corresponding item as defined in <tt>compositeType</tt>.
+     * @throws OpenDataException {@code itemNames[]} or
+     * {@code itemValues[]}'s size differs from the number of items defined in
+     * {@code compositeType}, or one of the elements in {@code itemNames[]}
+     * does not exist as an item name defined in {@code compositeType}, or one
+     * of the elements in {@code itemValues[]} is not a valid value for the
+     * corresponding item as defined in {@code compositeType}.
      */
     public CompositeDataSupport(
             CompositeType compositeType, String[] itemNames, Object[] itemValues)
@@ -147,28 +147,29 @@ public class CompositeDataSupport
 
     /**
      * <p>
-     * Constructs a <tt>CompositeDataSupport</tt> instance with the specified <tt>compositeType</tt>, whose item names and corresponding values
-     * are given by the mappings in the map <tt>items</tt>.
+     * Constructs a {@code CompositeDataSupport} instance with the specified {@code compositeType},
+     * whose item names and corresponding values
+     * are given by the mappings in the map {@code items}.
      * This constructor converts the keys to a string array and the values to an object array and calls
-     * <tt>CompositeDataSupport(javax.management.openmbean.CompositeType, java.lang.String[], java.lang.Object[])</tt>.
+     * {@code CompositeDataSupport(javax.management.openmbean.CompositeType, java.lang.String[], java.lang.Object[])}.
      *
      * @param  compositeType  the <i>composite type </i> of this <i>composite data</i> instance;
      *                        must not be null.
      * @param  items  the mappings of all the item names to their values;
-     *                <tt>items</tt> must contain all the item names defined in <tt>compositeType</tt>;
+     *                {@code items} must contain all the item names defined in {@code compositeType};
      *                must not be null or empty.
      *
-     * @throws IllegalArgumentException <tt>compositeType</tt> is null, or
-     * <tt>items</tt> is null or empty, or one of the keys in <tt>items</tt> is a null
+     * @throws IllegalArgumentException {@code compositeType} is null, or
+     * {@code items} is null or empty, or one of the keys in {@code items} is a null
      * or empty string.
-     * @throws OpenDataException <tt>items</tt>' size differs from the
-     * number of items defined in <tt>compositeType</tt>, or one of the
-     * keys in <tt>items</tt> does not exist as an item name defined in
-     * <tt>compositeType</tt>, or one of the values in <tt>items</tt>
+     * @throws OpenDataException {@code items}' size differs from the
+     * number of items defined in {@code compositeType}, or one of the
+     * keys in {@code items} does not exist as an item name defined in
+     * {@code compositeType}, or one of the values in {@code items}
      * is not a valid value for the corresponding item as defined in
-     * <tt>compositeType</tt>.
-     * @throws ArrayStoreException one or more keys in <tt>items</tt> is not of
-     * the class <tt>java.lang.String</tt>.
+     * {@code compositeType}.
+     * @throws ArrayStoreException one or more keys in {@code items} is not of
+     * the class {@code java.lang.String}.
      */
     public CompositeDataSupport(CompositeType compositeType,
                                 Map<String,?> items)
@@ -253,12 +254,12 @@ public class CompositeDataSupport
     }
 
     /**
-     * Returns the value of the item whose name is <tt>key</tt>.
+     * Returns the value of the item whose name is {@code key}.
      *
-     * @throws IllegalArgumentException  if <tt>key</tt> is a null or empty String.
+     * @throws IllegalArgumentException  if {@code key} is a null or empty String.
      *
-     * @throws InvalidKeyException  if <tt>key</tt> is not an existing item name for
-     * this <tt>CompositeData</tt> instance.
+     * @throws InvalidKeyException  if {@code key} is not an existing item name for
+     * this {@code CompositeData} instance.
      */
     public Object get(String key) {
 
@@ -273,13 +274,13 @@ public class CompositeDataSupport
 
     /**
      * Returns an array of the values of the items whose names are specified by
-     * <tt>keys</tt>, in the same order as <tt>keys</tt>.
+     * {@code keys}, in the same order as {@code keys}.
      *
-     * @throws IllegalArgumentException  if an element in <tt>keys</tt> is a null
+     * @throws IllegalArgumentException  if an element in {@code keys} is a null
      * or empty String.
      *
-     * @throws InvalidKeyException  if an element in <tt>keys</tt> is not an existing
-     * item name for this <tt>CompositeData</tt> instance.
+     * @throws InvalidKeyException  if an element in {@code keys} is not an existing
+     * item name for this {@code CompositeData} instance.
      */
     public Object[] getAll(String[] keys) {
 
@@ -294,9 +295,9 @@ public class CompositeDataSupport
     }
 
     /**
-     * Returns <tt>true</tt> if and only if this <tt>CompositeData</tt> instance contains
-     * an item whose name is <tt>key</tt>.
-     * If <tt>key</tt> is a null or empty String, this method simply returns false.
+     * Returns {@code true} if and only if this {@code CompositeData} instance contains
+     * an item whose name is {@code key}.
+     * If {@code key} is a null or empty String, this method simply returns false.
      */
     public boolean containsKey(String key) {
 
@@ -307,9 +308,9 @@ public class CompositeDataSupport
     }
 
     /**
-     * Returns <tt>true</tt> if and only if this <tt>CompositeData</tt> instance
+     * Returns {@code true} if and only if this {@code CompositeData} instance
      * contains an item
-     * whose value is <tt>value</tt>.
+     * whose value is {@code value}.
      */
     public boolean containsValue(Object value) {
 
@@ -318,7 +319,7 @@ public class CompositeDataSupport
 
     /**
      * Returns an unmodifiable Collection view of the item values contained in this
-     * <tt>CompositeData</tt> instance.
+     * {@code CompositeData} instance.
      * The returned collection's iterator will return the values in the ascending
      * lexicographic order of the corresponding
      * item names.
@@ -332,7 +333,7 @@ public class CompositeDataSupport
      * Compares the specified <var>obj</var> parameter with this
      * <code>CompositeDataSupport</code> instance for equality.
      * <p>
-     * Returns <tt>true</tt> if and only if all of the following statements are true:
+     * Returns {@code true} if and only if all of the following statements are true:
      * <ul>
      * <li><var>obj</var> is non null,</li>
      * <li><var>obj</var> also implements the <code>CompositeData</code> interface,</li>
@@ -344,11 +345,11 @@ public class CompositeDataSupport
      * {@code Arrays.equals(e1,e2)} for arrays of primitive types</li>
      * </ul>
      * <p>
-     * This ensures that this <tt>equals</tt> method works properly for
+     * This ensures that this {@code equals} method works properly for
      * <var>obj</var> parameters which are different implementations of the
      * <code>CompositeData</code> interface, with the restrictions mentioned in the
      * {@link java.util.Collection#equals(Object) equals}
-     * method of the <tt>java.util.Collection</tt> interface.
+     * method of the {@code java.util.Collection} interface.
      *
      * @param  obj  the object to be compared for equality with this
      * <code>CompositeDataSupport</code> instance.

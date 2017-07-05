@@ -35,13 +35,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getOperatingSystemMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * the operating system within an MBeanServer is:
  * <blockquote>
  *    {@link ManagementFactory#OPERATING_SYSTEM_MXBEAN_NAME
- *      <tt>java.lang:type=OperatingSystem</tt>}
+ *      java.lang:type=OperatingSystem}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -63,7 +63,7 @@ package java.lang.management;
 public interface OperatingSystemMXBean extends PlatformManagedObject {
     /**
      * Returns the operating system name.
-     * This method is equivalent to <tt>System.getProperty("os.name")</tt>.
+     * This method is equivalent to {@code System.getProperty("os.name")}.
      *
      * @return the operating system name.
      *
@@ -78,7 +78,7 @@ public interface OperatingSystemMXBean extends PlatformManagedObject {
 
     /**
      * Returns the operating system architecture.
-     * This method is equivalent to <tt>System.getProperty("os.arch")</tt>.
+     * This method is equivalent to {@code System.getProperty("os.arch")}.
      *
      * @return the operating system architecture.
      *
@@ -93,7 +93,7 @@ public interface OperatingSystemMXBean extends PlatformManagedObject {
 
     /**
      * Returns the operating system version.
-     * This method is equivalent to <tt>System.getProperty("os.version")</tt>.
+     * This method is equivalent to {@code System.getProperty("os.version")}.
      *
      * @return the operating system version.
      *

@@ -1477,7 +1477,7 @@ public interface RowSet extends ResultSet {
 
   /**
      * Sets the designated parameter to a <code>InputStream</code> object.
-     * The "{@code InputStream} must contain  the number
+     * The {@code InputStream} must contain  the number
      * of characters specified by length, otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>

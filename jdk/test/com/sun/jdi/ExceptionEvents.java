@@ -28,6 +28,7 @@
  *
  *  @author Robert Field
  *
+ *  @key intermittent
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection
  *  @run compile -g ExceptionEvents.java

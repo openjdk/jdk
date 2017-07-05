@@ -53,7 +53,7 @@ import sun.nio.cs.StreamEncoder;
  * </pre>
  *
  * <p> A <i>surrogate pair</i> is a character represented by a sequence of two
- * <tt>char</tt> values: A <i>high</i> surrogate in the range '&#92;uD800' to
+ * {@code char} values: A <i>high</i> surrogate in the range '&#92;uD800' to
  * '&#92;uDBFF' followed by a <i>low</i> surrogate in the range '&#92;uDC00' to
  * '&#92;uDFFF'.
  *
@@ -161,7 +161,7 @@ public class OutputStreamWriter extends Writer {
      * <p> If this instance was created with the {@link
      * #OutputStreamWriter(OutputStream, String)} constructor then the returned
      * name, being unique for the encoding, may differ from the name passed to
-     * the constructor.  This method may return <tt>null</tt> if the stream has
+     * the constructor.  This method may return {@code null} if the stream has
      * been closed. </p>
      *
      * @return The historical name of this encoding, or possibly

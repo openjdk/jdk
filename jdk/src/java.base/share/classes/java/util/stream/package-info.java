@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@
  * is a necessary, but not sufficient, condition for the processing of an infinite
  * stream to terminate normally in finite time.
  *
- * <h3>Parallelism</h3>
+ * <h3><a name="Parallelism">Parallelism</a></h3>
  *
  * <p>Processing elements with an explicit {@code for-}loop is inherently serial.
  * Streams facilitate parallel execution by reframing the computation as a pipeline of
@@ -184,15 +184,15 @@
  *
  * <p>The only difference between the serial and parallel versions of this
  * example is the creation of the initial stream, using "{@code parallelStream()}"
- * instead of "{@code stream()}".  When the terminal operation is initiated,
- * the stream pipeline is executed sequentially or in parallel depending on the
- * orientation of the stream on which it is invoked.  Whether a stream will execute in serial or
- * parallel can be determined with the {@code isParallel()} method, and the
- * orientation of a stream can be modified with the
+ * instead of "{@code stream()}". The stream pipeline is executed sequentially or
+ * in parallel depending on the mode of the stream on which the terminal operation
+ * is invoked. The sequential or parallel mode of a stream can be determined with the
+ * {@link java.util.stream.BaseStream#isParallel()} method, and the
+ * stream's mode can be modified with the
  * {@link java.util.stream.BaseStream#sequential()} and
- * {@link java.util.stream.BaseStream#parallel()} operations.  When the terminal
- * operation is initiated, the stream pipeline is executed sequentially or in
- * parallel depending on the mode of the stream on which it is invoked.
+ * {@link java.util.stream.BaseStream#parallel()} operations.
+ * The most recent sequential or parallel mode setting applies to the
+ * execution of the entire stream pipeline.
  *
  * <p>Except for operations identified as explicitly nondeterministic, such
  * as {@code findAny()}, whether a stream executes sequentially or in parallel
@@ -280,7 +280,7 @@
  * parameters to stream operations entirely; there is usually a way to
  * restructure the stream pipeline to avoid statefulness.
  *
- * <h3>Side-effects</h3>
+ * <h3><a name="SideEffects">Side-effects</a></h3>
  *
  * Side-effects in behavioral parameters to stream operations are, in general,
  * discouraged, as they can often lead to unwitting violations of the

@@ -24,22 +24,12 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/java.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
-#ifdef COMPILER1
-#include "c1/c1_LIR.hpp"
-#include "c1/c1_LIRGenerator.hpp"
-#endif
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
@@ -68,12 +58,7 @@ CardTableModRefBS::CardTableModRefBS(
   _committed(NULL),
   _cur_covered_regions(0),
   _byte_map(NULL),
-  byte_map_base(NULL),
-  // LNC functionality
-  _lowest_non_clean(NULL),
-  _lowest_non_clean_chunk_size(NULL),
-  _lowest_non_clean_base_chunk_index(NULL),
-  _last_LNC_resizing_collection(NULL)
+  byte_map_base(NULL)
 {
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
@@ -130,25 +115,6 @@ void CardTableModRefBS::initialize() {
                             !ExecMem, "card table last card");
   *guard_card = last_card;
 
-  _lowest_non_clean =
-    NEW_C_HEAP_ARRAY(CardArr, _max_covered_regions, mtGC);
-  _lowest_non_clean_chunk_size =
-    NEW_C_HEAP_ARRAY(size_t, _max_covered_regions, mtGC);
-  _lowest_non_clean_base_chunk_index =
-    NEW_C_HEAP_ARRAY(uintptr_t, _max_covered_regions, mtGC);
-  _last_LNC_resizing_collection =
-    NEW_C_HEAP_ARRAY(int, _max_covered_regions, mtGC);
-  if (_lowest_non_clean == NULL
-      || _lowest_non_clean_chunk_size == NULL
-      || _lowest_non_clean_base_chunk_index == NULL
-      || _last_LNC_resizing_collection == NULL)
-    vm_exit_during_initialization("couldn't allocate an LNC array.");
-  for (int i = 0; i < _max_covered_regions; i++) {
-    _lowest_non_clean[i] = NULL;
-    _lowest_non_clean_chunk_size[i] = 0;
-    _last_LNC_resizing_collection[i] = -1;
-  }
-
   if (TraceCardTableModRefBS) {
     gclog_or_tty->print_cr("CardTableModRefBS::CardTableModRefBS: ");
     gclog_or_tty->print_cr("  "
@@ -170,22 +136,6 @@ CardTableModRefBS::~CardTableModRefBS() {
   if (_committed) {
     delete[] _committed;
     _committed = NULL;
-  }
-  if (_lowest_non_clean) {
-    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
-    _lowest_non_clean = NULL;
-  }
-  if (_lowest_non_clean_chunk_size) {
-    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
-    _lowest_non_clean_chunk_size = NULL;
-  }
-  if (_lowest_non_clean_base_chunk_index) {
-    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
-    _lowest_non_clean_base_chunk_index = NULL;
-  }
-  if (_last_LNC_resizing_collection) {
-    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
-    _last_LNC_resizing_collection = NULL;
   }
 }
 
@@ -437,32 +387,6 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool relea
 }
 
 
-void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
-                                                                 MemRegion mr,
-                                                                 OopsInGenClosure* cl,
-                                                                 CardTableRS* ct,
-                                                                 uint n_threads) {
-  if (!mr.is_empty()) {
-    if (n_threads > 0) {
-#if INCLUDE_ALL_GCS
-      non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
-#else  // INCLUDE_ALL_GCS
-      fatal("Parallel gc not supported here.");
-#endif // INCLUDE_ALL_GCS
-    } else {
-      // clear_cl finds contiguous dirty ranges of cards to process and clear.
-
-      // This is the single-threaded version used by DefNew.
-      const bool parallel = false;
-
-      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary(), parallel);
-      ClearNoncleanCardWrapper clear_cl(dcto_cl, ct, parallel);
-
-      clear_cl.do_MemRegion(mr);
-    }
-  }
-}
-
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
   assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
@@ -623,15 +547,3 @@ void CardTableModRefBS::print_on(outputStream* st) const {
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(byte_map_base));
 }
 
-bool CardTableModRefBSForCTRS::card_will_be_scanned(jbyte cv) {
-  return
-    CardTableModRefBS::card_will_be_scanned(cv) ||
-    _rs->is_prev_nonclean_card_val(cv);
-};
-
-bool CardTableModRefBSForCTRS::card_may_have_been_dirty(jbyte cv) {
-  return
-    cv != clean_card &&
-    (CardTableModRefBS::card_may_have_been_dirty(cv) ||
-     CardTableRS::youngergen_may_have_been_dirty(cv));
-};
