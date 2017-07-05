@@ -38,6 +38,7 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,      false); // Not needed on x86.
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs passed to check cast
 
+define_pd_global(uintx, CodeCacheSegmentSize,    64 TIERED_ONLY(+64)); // Tiered compilation has large code-entry alignment.
 // See 4827828 for this change. There is no globals_core_i486.hpp. I can't
 // assign a different value for C2 without touching a number of files. Use
 // #ifdef to minimize the change as it's late in Mantis. -- FIXME.

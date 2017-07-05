@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159470
+ * @bug 8159470 8166974
  * @summary Test that MethodHandle constants are checked
  * @modules java.base/jdk.internal.misc
  * @compile WithConfiguration.jcod
@@ -33,12 +33,13 @@ public class TestMethodHandleConstant {
 
     public static void main(String[] args) {
         try {
-          // This interface has bad constant pool entry for MethodHandle -> Method
-          String URI_DEFAULT
-            = WithConfiguration.autoDetect().getLocation();
-          throw new RuntimeException("FAILED, ICCE not thrown");
-        } catch (BootstrapMethodError icce) {
-          System.out.println("PASSED, expecting ICCE" + icce.getMessage());
+            // This interface has bad constant pool entry for MethodHandle -> Method
+            String URI_DEFAULT
+                    = WithConfiguration.autoDetect().getLocation();
+            throw new RuntimeException("FAILED, IncompatibleClassChangeError not thrown");
+        }
+        catch (IncompatibleClassChangeError icce) {
+            System.out.println("PASSED, expecting IncompatibleClassChangeError" + icce.getMessage());
         }
     }
 }
