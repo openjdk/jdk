@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,42 +129,66 @@ static bool process_get_lwp_info(struct ps_prochandle *ph, lwpid_t lwp_id, void 
   return (errno == 0)? true: false;
 }
 
+static bool ptrace_continue(pid_t pid, int signal) {
+  // pass the signal to the process so we don't swallow it
+  if (ptrace(PTRACE_CONT, pid, NULL, signal) < 0) {
+    print_debug("ptrace(PTRACE_CONT, ..) failed for %d\n", pid);
+    return false;
+  }
+  return true;
+}
+
+// waits until the ATTACH has stopped the process
+// by signal SIGSTOP
+static bool ptrace_waitpid(pid_t pid) {
+  int ret;
+  int status;
+  do {
+    // Wait for debuggee to stop.
+    ret = waitpid(pid, &status, 0);
+    if (ret >= 0) {
+      if (WIFSTOPPED(status)) {
+        // Any signal will stop the thread, make sure it is SIGSTOP. Otherwise SIGSTOP
+        // will still be pending and delivered when the process is DETACHED and the process
+        // will go to sleep.
+        if (WSTOPSIG(status) == SIGSTOP) {
+          // Debuggee stopped by SIGSTOP.
+          return true;
+        }
+        if (!ptrace_continue(pid, WSTOPSIG(status))) {
+          print_error("Failed to correctly attach to VM. VM might HANG! [PTRACE_CONT failed, stopped by %d]\n", WSTOPSIG(status));
+          return false;
+        }
+      } else {
+        print_debug("waitpid(): Child process exited/terminated (status = 0x%x)\n", status);
+        return false;
+      }
+    } else {
+      switch (errno) {
+        case EINTR:
+          continue;
+          break;
+        case ECHILD:
+          print_debug("waitpid() failed. Child process pid (%d) does not exist \n", pid);
+          break;
+        case EINVAL:
+          print_debug("waitpid() failed. Invalid options argument.\n");
+          break;
+        default:
+          print_debug("waitpid() failed. Unexpected error %d\n",errno);
+      }
+      return false;
+    }
+  } while(true);
+}
+
 // attach to a process/thread specified by "pid"
 static bool ptrace_attach(pid_t pid) {
   if (ptrace(PT_ATTACH, pid, NULL, 0) < 0) {
     print_debug("ptrace(PTRACE_ATTACH, ..) failed for %d\n", pid);
     return false;
   } else {
-    int ret;
-    int status;
-    do {
-      // Wait for debuggee to stop.
-      ret = waitpid(pid, &status, 0);
-      if (ret >= 0) {
-        if (WIFSTOPPED(status)) {
-          // Debuggee stopped.
-          return true;
-        } else {
-          print_debug("waitpid(): Child process exited/terminated (status = 0x%x)\n", status);
-          return false;
-        }
-      } else {
-        switch (errno) {
-          case EINTR:
-            continue;
-            break;
-          case ECHILD:
-            print_debug("waitpid() failed. Child process pid (%d) does not exist \n", pid);
-            break;
-          case EINVAL:
-            print_debug("waitpid() failed. Invalid options argument.\n");
-            break;
-          default:
-            print_debug("waitpid() failed. Unexpected error %d\n",errno);
-        }
-        return false;
-      }
-    } while(true);
+    return ptrace_waitpid(pid);
   }
 }
 
