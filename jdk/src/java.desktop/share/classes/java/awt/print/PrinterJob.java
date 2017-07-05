@@ -79,13 +79,12 @@ public abstract class PrinterJob {
             public PrinterJob run() {
                 String nm = System.getProperty("java.awt.printerjob", null);
                 try {
-                    return (PrinterJob)Class.forName(nm).newInstance();
+                    return (PrinterJob)Class.forName(nm).
+                                             getConstructor().newInstance();
                 } catch (ClassNotFoundException e) {
                     throw new AWTError("PrinterJob not found: " + nm);
-                } catch (InstantiationException e) {
+                } catch (ReflectiveOperationException e) {
                  throw new AWTError("Could not instantiate PrinterJob: " + nm);
-                } catch (IllegalAccessException e) {
-                    throw new AWTError("Could not access PrinterJob: " + nm);
                 }
             }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,15 @@ public abstract class VolatileSurfaceManager
     protected SunVolatileImage vImg;
 
     /**
+     * A reference to the AffineTransform corresponding to the graphics
+     * configuration of the volatile image. Affine Transformation is usually
+     * derived from the screen device. During the displayChanged() callback,
+     * the existing transform is compared with the updated screen transform to
+     * determine whether the software backed surface needs to be re-created
+     */
+    protected AffineTransform atCurrent;
+
+    /**
      * The accelerated SurfaceData object.
      */
     protected SurfaceData sdAccel;
@@ -93,6 +102,7 @@ public abstract class VolatileSurfaceManager
     protected VolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         this.vImg = vImg;
         this.context = context;
+        this.atCurrent = vImg.getGraphicsConfig().getDefaultTransform();
 
         GraphicsEnvironment ge =
             GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -210,6 +220,10 @@ public abstract class VolatileSurfaceManager
             sdCurrent = getBackupSurface();
             sdAccel = null;
             returnCode = VolatileImage.IMAGE_RESTORED;
+        } else if (lostSurfaceTmp) {
+            // A software surface has been restored. This could be due to
+            // display mode change on a non-accelerated volatile image.
+            returnCode = VolatileImage.IMAGE_RESTORED;
         }
 
         if ((returnCode != VolatileImage.IMAGE_INCOMPATIBLE) &&
@@ -326,9 +340,6 @@ public abstract class VolatileSurfaceManager
      * method in the rendering process to recreate the surface.
      */
     public void displayChanged() {
-        if (!isAccelerationEnabled()) {
-            return;
-        }
         lostSurface = true;
         if (sdAccel != null) {
             // First, nullify the software surface.  This guards against
@@ -345,6 +356,28 @@ public abstract class VolatileSurfaceManager
         // Update graphicsConfig for the vImg in case it changed due to
         // this display change event
         vImg.updateGraphicsConfig();
+
+        // Compare the Graphics configuration transforms to determine
+        // whether the software backed surface needs to be invalidated.
+        AffineTransform atUpdated = vImg.getGraphicsConfig()
+                                        .getDefaultTransform();
+        if (!isAccelerationEnabled()) {
+            if (!atUpdated.equals(atCurrent)) {
+                // Ideally there is no need to re-create a software surface.
+                // But some OSs allow changes to display state at runtime. Such
+                // a provision would cause mismatch in graphics configuration of
+                // the display and the surface. Hence we re-create the software
+                // surface as well.
+                sdBackup = null;
+                sdCurrent = getBackupSurface();
+            } else {
+                // Software backed surface was not invalidated.
+                lostSurface = false;
+            }
+        }
+
+        // Update the AffineTransformation backing the volatile image
+        atCurrent = atUpdated;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
+import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -1209,40 +1210,165 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * is the number of bits in the set state, equal to the value
      * returned by the {@link #cardinality()} method.
      *
-     * <p>The bit set must remain constant during the execution of the
-     * terminal stream operation.  Otherwise, the result of the terminal
-     * stream operation is undefined.
+     * <p>The stream binds to this bit set when the terminal stream operation
+     * commences (specifically, the spliterator for the stream is
+     * <a href="../Spliterator.html#binding"><em>late-binding</em></a>).  If the
+     * bit set is modified during that operation then the result is undefined.
      *
      * @return a stream of integers representing set indices
      * @since 1.8
      */
     public IntStream stream() {
-        class BitSetIterator implements PrimitiveIterator.OfInt {
-            int next = nextSetBit(0);
+        class BitSetSpliterator implements Spliterator.OfInt {
+            private int index; // current bit index for a set bit
+            private int fence; // -1 until used; then one past last bit index
+            private int est;   // size estimate
+            private boolean root; // true if root and not split
+            // root == true then size estimate is accurate
+            // index == -1 or index >= fence if fully traversed
+            // Special case when the max bit set is Integer.MAX_VALUE
 
-            @Override
-            public boolean hasNext() {
-                return next != -1;
+            BitSetSpliterator(int origin, int fence, int est, boolean root) {
+                this.index = origin;
+                this.fence = fence;
+                this.est = est;
+                this.root = root;
+            }
+
+            private int getFence() {
+                int hi;
+                if ((hi = fence) < 0) {
+                    // Round up fence to maximum cardinality for allocated words
+                    // This is sufficient and cheap for sequential access
+                    // When splitting this value is lowered
+                    hi = fence = (wordsInUse >= wordIndex(Integer.MAX_VALUE))
+                                 ? Integer.MAX_VALUE
+                                 : wordsInUse << ADDRESS_BITS_PER_WORD;
+                    est = cardinality();
+                    index = nextSetBit(0);
+                }
+                return hi;
             }
 
             @Override
-            public int nextInt() {
-                if (next != -1) {
-                    int ret = next;
-                    next = (next == Integer.MAX_VALUE) ? -1 : nextSetBit(next+1);
-                    return ret;
-                } else {
-                    throw new NoSuchElementException();
+            public boolean tryAdvance(IntConsumer action) {
+                Objects.requireNonNull(action);
+
+                int hi = getFence();
+                int i = index;
+                if (i < 0 || i >= hi) {
+                    // Check if there is a final bit set for Integer.MAX_VALUE
+                    if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
+                        index = -1;
+                        action.accept(Integer.MAX_VALUE);
+                        return true;
+                    }
+                    return false;
+                }
+
+                index = nextSetBit(i + 1, wordIndex(hi - 1));
+                action.accept(i);
+                return true;
+            }
+
+            @Override
+            public void forEachRemaining(IntConsumer action) {
+                Objects.requireNonNull(action);
+
+                int hi = getFence();
+                int i = index;
+                int v = wordIndex(hi - 1);
+                index = -1;
+                while (i >= 0 && i < hi) {
+                    action.accept(i);
+                    i = nextSetBit(i + 1, v);
+                }
+                // Check if there is a final bit set for Integer.MAX_VALUE
+                if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
+                    action.accept(Integer.MAX_VALUE);
                 }
             }
-        }
 
-        return StreamSupport.intStream(
-                () -> Spliterators.spliterator(
-                        new BitSetIterator(), cardinality(),
-                        Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED),
-                Spliterator.SIZED | Spliterator.SUBSIZED |
-                        Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED,
-                false);
+            @Override
+            public OfInt trySplit() {
+                int hi = getFence();
+                int lo = index;
+                if (lo < 0) {
+                    return null;
+                }
+
+                // Lower the fence to be the upper bound of last bit set
+                // The index is the first bit set, thus this spliterator
+                // covers one bit and cannot be split, or two or more
+                // bits
+                hi = fence = (hi < Integer.MAX_VALUE || !get(Integer.MAX_VALUE))
+                        ? previousSetBit(hi - 1) + 1
+                        : Integer.MAX_VALUE;
+
+                // Find the mid point
+                int mid = (lo + hi) >>> 1;
+                if (lo >= mid) {
+                    return null;
+                }
+
+                // Raise the index of this spliterator to be the next set bit
+                // from the mid point
+                index = nextSetBit(mid, wordIndex(hi - 1));
+                root = false;
+
+                // Don't lower the fence (mid point) of the returned spliterator,
+                // traversal or further splitting will do that work
+                return new BitSetSpliterator(lo, mid, est >>>= 1, false);
+            }
+
+            @Override
+            public long estimateSize() {
+                getFence(); // force init
+                return est;
+            }
+
+            @Override
+            public int characteristics() {
+                // Only sized when root and not split
+                return (root ? Spliterator.SIZED : 0) |
+                    Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED;
+            }
+
+            @Override
+            public Comparator<? super Integer> getComparator() {
+                return null;
+            }
+        }
+        return StreamSupport.intStream(new BitSetSpliterator(0, -1, 0, true), false);
     }
+
+    /**
+     * Returns the index of the first bit that is set to {@code true}
+     * that occurs on or after the specified starting index and up to and
+     * including the specified word index
+     * If no such bit exists then {@code -1} is returned.
+     *
+     * @param  fromIndex the index to start checking from (inclusive)
+     * @param  toWordIndex the last word index to check (inclusive)
+     * @return the index of the next set bit, or {@code -1} if there
+     *         is no such bit
+     */
+    private int nextSetBit(int fromIndex, int toWordIndex) {
+        int u = wordIndex(fromIndex);
+        // Check if out of bounds
+        if (u > toWordIndex)
+            return -1;
+
+        long word = words[u] & (WORD_MASK << fromIndex);
+
+        while (true) {
+            if (word != 0)
+                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+            // Check if out of bounds
+            if (++u > toWordIndex)
+                return -1;
+            word = words[u];
+        }
+    }
+
 }

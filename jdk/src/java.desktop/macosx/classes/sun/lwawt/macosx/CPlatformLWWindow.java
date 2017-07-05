@@ -196,7 +196,8 @@ public class CPlatformLWWindow extends CPlatformWindow {
                                   getLocalGraphicsEnvironment();
 
         LWLightweightFramePeer peer = (LWLightweightFramePeer)getPeer();
-        int scale = ((LightweightFrame)peer.getTarget()).getScaleFactor();
+        int scale =(int) Math.round(((LightweightFrame)peer.getTarget())
+                                                            .getScaleFactorX());
 
         Rectangle bounds = ((LightweightFrame)peer.getTarget()).getHostBounds();
         for (GraphicsDevice d : ge.getScreenDevices()) {

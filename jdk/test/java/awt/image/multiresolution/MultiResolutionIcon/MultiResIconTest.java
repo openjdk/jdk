@@ -24,9 +24,10 @@
 /**
  * @test
  * @key headful
- * @bug 8149371
+ * @bug 8149371 8169043
  * @summary multi-res. image: -Dsun.java2d.uiScale does not work for Window
  * icons (some ambiguity for Window.setIconImages()?)
+ * @requires (os.family == "windows")
  * @run main/othervm/manual -Dsun.java2d.uiScale=2 MultiResIconTest
  */
 import java.awt.Color;
@@ -58,6 +59,7 @@ public class MultiResIconTest {
     private static JDialog f;
     private static CountDownLatch latch;
     private static TestFrame frame;
+    private static boolean testPassed;
 
     private static BufferedImage generateImage(int x, Color c) {
 
@@ -70,12 +72,13 @@ public class MultiResIconTest {
         return img;
     }
 
-    public MultiResIconTest() {
-        try {
-            latch = new CountDownLatch(1);
-            createUI();
-            latch.await();
-        } catch (Exception ex) {
+    public MultiResIconTest() throws Exception {
+        latch = new CountDownLatch(1);
+        createUI();
+        latch.await();
+
+        if (!testPassed) {
+            throw new RuntimeException("User Pressed Failed Button");
         }
     }
 
@@ -89,7 +92,10 @@ public class MultiResIconTest {
             resultButtonPanel = new JPanel(layout);
             GridBagConstraints gbc = new GridBagConstraints();
             String instructions
-                    = "<html>    INSTRUCTIONS:<br><br>"
+                    = "<html>    INSTRUCTIONS:<br>"
+                    + "This test is for Windows OS only.<br>"
+                    + "Make sure that 'Use Small Icons' setting is not set<br>"
+                    + "on Windows Taskbar Properties <br>"
                     + "1) Test frame title icon and frame color should be green."
                     + "<br>"
                     + "2) Test frame task bar icon should be blue<br>"
@@ -106,6 +112,7 @@ public class MultiResIconTest {
             passButton = new JButton("Pass");
             passButton.setActionCommand("Pass");
             passButton.addActionListener((ActionEvent e) -> {
+                testPassed = true;
                 latch.countDown();
                 f.dispose();
                 frame.dispose();
@@ -115,6 +122,7 @@ public class MultiResIconTest {
             failButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    testPassed = false;
                     latch.countDown();
                     f.dispose();
                     frame.dispose();
@@ -140,6 +148,7 @@ public class MultiResIconTest {
             f.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
+                    testPassed = false;
                     latch.countDown();
                     f.dispose();
                     frame.dispose();
@@ -191,7 +200,7 @@ public class MultiResIconTest {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new MultiResIconTest();
     }
 }

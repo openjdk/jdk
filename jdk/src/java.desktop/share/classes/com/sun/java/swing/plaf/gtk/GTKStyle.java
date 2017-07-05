@@ -1125,6 +1125,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.methodName = methodName;
         }
 
+        @SuppressWarnings("deprecation")
         public Object createValue(UIDefaults table) {
             try {
                 Class<?> c = Class.forName(className, true,Thread.currentThread().
@@ -1136,11 +1137,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 Method m = c.getMethod(methodName, (Class<?>[])null);
 
                 return m.invoke(c, (Object[])null);
-            } catch (ClassNotFoundException cnfe) {
-            } catch (IllegalAccessException iae) {
-            } catch (InvocationTargetException ite) {
-            } catch (NoSuchMethodException nsme) {
-            } catch (InstantiationException ie) {
+            } catch (ReflectiveOperationException e) {
             }
             return null;
         }
