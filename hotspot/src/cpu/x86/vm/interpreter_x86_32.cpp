@@ -67,45 +67,6 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 }
 
 
-//
-// Various method entries (that c++ and asm interpreter agree upon)
-//------------------------------------------------------------------------------------------------------------------------
-//
-//
-
-// Empty method, generate a very fast return.
-
-address InterpreterGenerator::generate_empty_entry(void) {
-
-  // rbx,: Method*
-  // rcx: receiver (unused)
-  // rsi: previous interpreter state (C++ interpreter) must preserve
-  // rsi: sender sp must set sp to this value on return
-
-  if (!UseFastEmptyMethods) return NULL;
-
-  address entry_point = __ pc();
-
-  // If we need a safepoint check, generate full interpreter entry.
-  Label slow_path;
-  ExternalAddress state(SafepointSynchronize::address_of_state());
-  __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-           SafepointSynchronize::_not_synchronized);
-  __ jcc(Assembler::notEqual, slow_path);
-
-  // do nothing for empty methods (do not even increment invocation counter)
-  // Code: _return
-  // _return
-  // return w/o popping parameters
-  __ pop(rax);
-  __ mov(rsp, rsi);
-  __ jmp(rax);
-
-  __ bind(slow_path);
-  (void) generate_normal_entry(false);
-  return entry_point;
-}
-
 address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // rbx,: Method*
@@ -211,36 +172,6 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   __ pop(rdi);                               // get return address
   __ mov(rsp, rsi);                          // set sp to sender sp
   __ jmp(rdi);
-
-  return entry_point;
-}
-
-
-// Abstract method entry
-// Attempt to execute abstract method. Throw exception
-address InterpreterGenerator::generate_abstract_entry(void) {
-
-  // rbx,: Method*
-  // rcx: receiver (unused)
-  // rsi: previous interpreter state (C++ interpreter) must preserve
-
-  // rsi: sender SP
-
-  address entry_point = __ pc();
-
-  // abstract method entry
-
-#ifndef CC_INTERP
-  //  pop return address, reset last_sp to NULL
-  __ empty_expression_stack();
-  __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
-  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-#endif
-
-  // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
-  // the call_VM checks for exception, so we should never return here.
-  __ should_not_reach_here();
 
   return entry_point;
 }

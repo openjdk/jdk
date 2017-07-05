@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ echo "TESTSRC=${TESTSRC}"
 ## Adding common setup Variables for running shell tests.
 . ${TESTSRC}/../../test_env.sh
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Xinternalversion | sed 's/amd64/x86/' | grep "x86" | grep "Server VM" | grep "debug"
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xinternalversion | sed 's/amd64/x86/' | grep "x86" | grep "Server VM" | grep "debug"
 
 # Only test fastdebug Server VM on x86
 if [ $? != 0 ]
@@ -43,7 +43,7 @@ then
 fi
 
 # grep for support integer multiply vectors (cpu with SSE4.1)
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -XX:+PrintMiscellaneous -XX:+Verbose -version | grep "cores per cpu" | grep "sse4.1"
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -XX:+PrintMiscellaneous -XX:+Verbose -version | grep "cores per cpu" | grep "sse4.1"
 
 if [ $? != 0 ]
 then
@@ -55,7 +55,7 @@ fi
 cp ${TESTSRC}${FS}TestIntVect.java .
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} -d . TestIntVect.java
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+PrintCompilation -XX:+TraceNewVectors TestIntVect > test.out 2>&1
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+PrintCompilation -XX:+TraceNewVectors TestIntVect > test.out 2>&1
 
 COUNT=`grep AddVI test.out | wc -l | awk '{print $1}'`
 if [ $COUNT -lt 4 ]

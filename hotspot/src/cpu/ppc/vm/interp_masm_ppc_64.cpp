@@ -119,9 +119,15 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     // Call the Interpreter::remove_activation_preserving_args_entry()
     // func to get the address of the same-named entrypoint in the
     // generated interpreter code.
+#if defined(ABI_ELFv2)
+    call_c(CAST_FROM_FN_PTR(address,
+                            Interpreter::remove_activation_preserving_args_entry),
+           relocInfo::none);
+#else
     call_c(CAST_FROM_FN_PTR(FunctionDescriptor*,
                             Interpreter::remove_activation_preserving_args_entry),
            relocInfo::none);
+#endif
 
     // Jump to Interpreter::_remove_activation_preserving_args_entry.
     mtctr(R3_RET);
@@ -331,22 +337,22 @@ void InterpreterMacroAssembler::empty_expression_stack() {
 void InterpreterMacroAssembler::get_2_byte_integer_at_bcp(int         bcp_offset,
                                                           Register    Rdst,
                                                           signedOrNot is_signed) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (bcp_offset) {
+    load_const_optimized(Rdst, bcp_offset);
+    lhbrx(Rdst, R14_bcp, Rdst);
+  } else {
+    lhbrx(Rdst, R14_bcp);
+  }
+  if (is_signed == Signed) {
+    extsh(Rdst, Rdst);
+  }
+#else
   // Read Java big endian format.
   if (is_signed == Signed) {
     lha(Rdst, bcp_offset, R14_bcp);
   } else {
     lhz(Rdst, bcp_offset, R14_bcp);
-  }
-#if 0
-  assert(Rtmp != Rdst, "need separate temp register");
-  Register Rfirst = Rtmp;
-  lbz(Rfirst, bcp_offset, R14_bcp); // first byte
-  lbz(Rdst, bcp_offset+1, R14_bcp); // second byte
-
-  // Rdst = ((Rfirst<<8) & 0xFF00) | (Rdst &~ 0xFF00)
-  rldimi(/*RA=*/Rdst, /*RS=*/Rfirst, /*sh=*/8, /*mb=*/48);
-  if (is_signed == Signed) {
-    extsh(Rdst, Rdst);
   }
 #endif
 }
@@ -354,6 +360,17 @@ void InterpreterMacroAssembler::get_2_byte_integer_at_bcp(int         bcp_offset
 void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(int         bcp_offset,
                                                           Register    Rdst,
                                                           signedOrNot is_signed) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (bcp_offset) {
+    load_const_optimized(Rdst, bcp_offset);
+    lwbrx(Rdst, R14_bcp, Rdst);
+  } else {
+    lwbrx(Rdst, R14_bcp);
+  }
+  if (is_signed == Signed) {
+    extsw(Rdst, Rdst);
+  }
+#else
   // Read Java big endian format.
   if (bcp_offset & 3) { // Offset unaligned?
     load_const_optimized(Rdst, bcp_offset);
@@ -369,7 +386,9 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(int         bcp_offset
       lwz(Rdst, bcp_offset, R14_bcp);
     }
   }
+#endif
 }
+
 
 // Load the constant pool cache index from the bytecode stream.
 //
@@ -377,10 +396,16 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(int         bcp_offset
 //   - Rdst, Rscratch
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
+  // Cache index is always in the native format, courtesy of Rewriter.
   if (index_size == sizeof(u2)) {
-    get_2_byte_integer_at_bcp(bcp_offset, Rdst, Unsigned);
+    lhz(Rdst, bcp_offset, R14_bcp);
   } else if (index_size == sizeof(u4)) {
-    get_4_byte_integer_at_bcp(bcp_offset, Rdst, Signed);
+    if (bcp_offset & 3) {
+      load_const_optimized(Rdst, bcp_offset);
+      lwax(Rdst, R14_bcp, Rdst);
+    } else {
+      lwa(Rdst, bcp_offset, R14_bcp);
+    }
     assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
     nand(Rdst, Rdst, Rdst); // convert to plain index
   } else if (index_size == sizeof(u1)) {
@@ -395,6 +420,29 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, int b
   get_cache_index_at_bcp(cache, bcp_offset, index_size);
   sldi(cache, cache, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
   add(cache, R27_constPoolCache, cache);
+}
+
+// Load 4-byte signed or unsigned integer in Java format (that is, big-endian format)
+// from (Rsrc)+offset.
+void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
+                                       signedOrNot is_signed) {
+#if defined(VM_LITTLE_ENDIAN)
+  if (offset) {
+    load_const_optimized(Rdst, offset);
+    lwbrx(Rdst, Rdst, Rsrc);
+  } else {
+    lwbrx(Rdst, Rsrc);
+  }
+  if (is_signed == Signed) {
+    extsw(Rdst, Rdst);
+  }
+#else
+  if (is_signed == Signed) {
+    lwa(Rdst, offset, Rsrc);
+  } else {
+    lwz(Rdst, offset, Rsrc);
+  }
+#endif
 }
 
 // Load object from cpool->resolved_references(index).

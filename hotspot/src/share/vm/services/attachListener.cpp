@@ -320,6 +320,25 @@ static jint set_uint64_t_flag(const char* name, AttachOperation* op, outputStrea
   return res? JNI_OK : JNI_ERR;
 }
 
+// set a size_t global flag using value from AttachOperation
+static jint set_size_t_flag(const char* name, AttachOperation* op, outputStream* out) {
+  size_t value;
+  const char* arg1;
+  if ((arg1 = op->arg(1)) != NULL) {
+    int n = sscanf(arg1, SIZE_FORMAT, &value);
+    if (n != 1) {
+      out->print_cr("flag value must be an unsigned integer");
+      return JNI_ERR;
+    }
+  }
+  bool res = CommandLineFlags::size_tAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
+  if (! res) {
+    out->print_cr("setting flag %s failed", name);
+  }
+
+  return res? JNI_OK : JNI_ERR;
+}
+
 // set a string global flag using value from AttachOperation
 static jint set_ccstr_flag(const char* name, AttachOperation* op, outputStream* out) {
   const char* value;
@@ -356,6 +375,8 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
       return set_uintx_flag(name, op, out);
     } else if (f->is_uint64_t()) {
       return set_uint64_t_flag(name, op, out);
+    } else if (f->is_size_t()) {
+      return set_size_t_flag(name, op, out);
     } else if (f->is_ccstr()) {
       return set_ccstr_flag(name, op, out);
     } else {

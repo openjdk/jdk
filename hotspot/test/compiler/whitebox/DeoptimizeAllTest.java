@@ -28,6 +28,7 @@
  * @ignore 8046268
  * @build DeoptimizeAllTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* DeoptimizeAllTest
  * @summary testing of WB::deoptimizeAll()
  * @author igor.ignatyev@oracle.com

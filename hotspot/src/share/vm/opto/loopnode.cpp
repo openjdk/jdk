@@ -133,7 +133,7 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   // Return earliest legal location
   assert(early == find_non_split_ctrl(early), "unexpected early control");
 
-  if (n->is_expensive()) {
+  if (n->is_expensive() && !_verify_only && !_verify_me) {
     assert(n->in(0), "should have control input");
     early = get_early_ctrl_for_expensive(n, early);
   }
@@ -226,8 +226,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
   }
 
   if (ctl != n->in(0)) {
-    _igvn.hash_delete(n);
-    n->set_req(0, ctl);
+    _igvn.replace_input_of(n, 0, ctl);
     _igvn.hash_insert(n);
   }
 
@@ -521,8 +520,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     assert(check_iff->in(1)->Opcode() == Op_Conv2B &&
            check_iff->in(1)->in(1)->Opcode() == Op_Opaque1, "");
     Node* opq = check_iff->in(1)->in(1);
-    _igvn.hash_delete(opq);
-    opq->set_req(1, bol);
+    _igvn.replace_input_of(opq, 1, bol);
     // Update ctrl.
     set_ctrl(opq, check_iff->in(0));
     set_ctrl(check_iff->in(1), check_iff->in(0));
@@ -690,7 +688,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   incr->set_req(2,stride);
   incr = _igvn.register_new_node_with_optimizer(incr);
   set_early_ctrl( incr );
-  _igvn.hash_delete(phi);
+  _igvn.rehash_node_delayed(phi);
   phi->set_req_X( LoopNode::LoopBackControl, incr, &_igvn );
 
   // If phi type is more restrictive than Int, raise to
@@ -743,8 +741,8 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     iffalse = iff2;
     iftrue  = ift2;
   } else {
-    _igvn.hash_delete(iffalse);
-    _igvn.hash_delete(iftrue);
+    _igvn.rehash_node_delayed(iffalse);
+    _igvn.rehash_node_delayed(iftrue);
     iffalse->set_req_X( 0, le, &_igvn );
     iftrue ->set_req_X( 0, le, &_igvn );
   }
@@ -1257,6 +1255,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       _head->del_req(i);
     }
   }
+  igvn.rehash_node_delayed(_head);
   // Transform landing pad
   igvn.register_new_node_with_optimizer(landing_pad, _head);
   // Insert landing pad into the header
@@ -1397,7 +1396,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
   igvn.register_new_node_with_optimizer(r, _head);
   // Plug region into end of loop _head, followed by hot_tail
   while( _head->req() > 3 ) _head->del_req( _head->req()-1 );
-  _head->set_req(2, r);
+  igvn.replace_input_of(_head, 2, r);
   if( hot_idx ) _head->add_req(hot_tail);
 
   // Split all the Phis up between '_head' loop and the Region 'r'
@@ -1419,7 +1418,7 @@ void IdealLoopTree::merge_many_backedges( PhaseIdealLoop *phase ) {
       igvn.register_new_node_with_optimizer(phi, n);
       // Add the merge phi to the old Phi
       while( n->req() > 3 ) n->del_req( n->req()-1 );
-      n->set_req(2, phi);
+      igvn.replace_input_of(n, 2, phi);
       if( hot_idx ) n->add_req(hot_phi);
     }
   }
@@ -1495,13 +1494,14 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
   if( fall_in_cnt > 1 ) {
     // Since I am just swapping inputs I do not need to update def-use info
     Node *tmp = _head->in(1);
+    igvn.rehash_node_delayed(_head);
     _head->set_req( 1, _head->in(fall_in_cnt) );
     _head->set_req( fall_in_cnt, tmp );
     // Swap also all Phis
     for (DUIterator_Fast imax, i = _head->fast_outs(imax); i < imax; i++) {
       Node* phi = _head->fast_out(i);
       if( phi->is_Phi() ) {
-        igvn.hash_delete(phi); // Yank from hash before hacking edges
+        igvn.rehash_node_delayed(phi); // Yank from hash before hacking edges
         tmp = phi->in(1);
         phi->set_req( 1, phi->in(fall_in_cnt) );
         phi->set_req( fall_in_cnt, tmp );
@@ -2905,6 +2905,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           uint k = 0;             // Probably cfg->in(0)
           while( cfg->in(k) != m ) k++; // But check incase cfg is a Region
           cfg->set_req( k, if_t ); // Now point to NeverBranch
+          _igvn._worklist.push(cfg);
 
           // Now create the never-taken loop exit
           Node *if_f = new CProjNode( iff, 1 );
