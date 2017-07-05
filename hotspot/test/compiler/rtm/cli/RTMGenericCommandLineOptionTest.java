@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-import jdk.test.lib.*;
-import jdk.test.lib.cli.*;
+package compiler.rtm.cli;
+
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cli.CommandLineOptionTest;
 
 import java.util.function.BooleanSupplier;
 
@@ -89,7 +92,7 @@ public abstract class RTMGenericCommandLineOptionTest
     @Override
     public void runTestCases() throws Throwable {
         if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
-            if (Platform.isServer() && !Platform.isEmbedded()) {
+            if (Platform.isServer()) {
                 runX86SupportedVMTestCases();
             } else {
                 runX86UnsupportedVMTestCases();

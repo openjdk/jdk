@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6735293
  * @summary javax.swing.text.NavigationFilter.getNextVisualPositionFrom() not always throws BadLocationException
  * @author Pavel Porvatov

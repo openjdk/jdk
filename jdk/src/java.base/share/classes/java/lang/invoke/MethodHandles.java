@@ -29,6 +29,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
@@ -104,6 +105,7 @@ public class MethodHandles {
      * @return a lookup object for the caller of this method, with private access
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
         return new Lookup(Reflection.getCallerClass());
     }

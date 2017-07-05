@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8146276
  * @summary Right aligned toolbar component does not appear
  * @run main NimbusGlueTest

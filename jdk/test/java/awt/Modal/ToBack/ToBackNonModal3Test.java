@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8054143
  * @summary Check whether a non-modal dialog having a hidden Frame constructor
  *          goes behind other windows when toBack is called for it.

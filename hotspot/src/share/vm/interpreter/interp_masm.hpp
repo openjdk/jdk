@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,8 @@
 #define SHARE_VM_INTERPRETER_INTERP_MASM_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "utilities/macros.hpp"
 
-#if defined INTERP_MASM_MD_HPP
-# include INTERP_MASM_MD_HPP
-#elif defined TARGET_ARCH_x86
-# include "interp_masm_x86.hpp"
-#elif defined TARGET_ARCH_MODEL_sparc
-# include "interp_masm_sparc.hpp"
-#elif defined TARGET_ARCH_MODEL_zero
-# include "interp_masm_zero.hpp"
-#elif defined TARGET_ARCH_MODEL_ppc_64
-# include "interp_masm_ppc_64.hpp"
-#elif defined TARGET_ARCH_MODEL_aarch64
-# include "interp_masm_aarch64.hpp"
-#endif
+#include CPU_HEADER(interp_masm)
 
 #endif // SHARE_VM_INTERPRETER_INTERP_MASM_HPP

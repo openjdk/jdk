@@ -57,8 +57,9 @@
 
 package compiler.stable;
 
-import java.lang.reflect.InvocationTargetException;
 import jdk.internal.vm.annotation.Stable;
+
+import java.lang.reflect.InvocationTargetException;
 
 public class TestStableChar {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;

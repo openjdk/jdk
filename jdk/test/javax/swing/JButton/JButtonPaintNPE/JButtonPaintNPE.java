@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8009919
  * @author Sergey Bylokhov
  * @library ../../../../lib/testlibrary/

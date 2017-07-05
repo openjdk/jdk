@@ -30,6 +30,7 @@ import java.util.Vector;
 
 /*
  * @test
+ * @key headful
  * @summary Display a dialog with a parent, the dialog contains all awt components
  *          added to it & each components are setted with different cursors types.
  *          Dispose the parent & collect GC. Garbage collection should happen

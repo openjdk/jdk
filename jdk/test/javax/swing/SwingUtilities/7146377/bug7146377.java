@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 7146377
-   @summary closed/javax/swing/DataTransfer/4876520/bug4876520.java failed since b08 in jdk 8
-   @author Pavel Porvatov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7146377
+ * @summary closed/javax/swing/DataTransfer/4876520/bug4876520.java failed since b08 in jdk 8
+ * @author Pavel Porvatov
+ */
 
 import javax.swing.*;
 import java.awt.*;

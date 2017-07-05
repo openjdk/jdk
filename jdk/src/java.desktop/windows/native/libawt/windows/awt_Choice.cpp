@@ -345,7 +345,7 @@ jobject AwtChoice::PreferredItemSize(JNIEnv *env)
      * drop down item height.
      */
     env->SetIntField(dimension, AwtDimension::heightID,
-                       GetFontHeight(env));
+                       ScaleUpY(GetFontHeight(env)));
     return dimension;
 }
 

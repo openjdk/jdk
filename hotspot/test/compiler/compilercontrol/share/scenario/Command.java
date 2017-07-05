@@ -24,6 +24,7 @@
 package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.processors.LogProcessor;
+
 import java.util.Arrays;
 
 /**

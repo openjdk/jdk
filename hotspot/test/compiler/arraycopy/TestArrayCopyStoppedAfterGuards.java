@@ -25,9 +25,15 @@
  * @test
  * @bug 8075921
  * @summary control becomes top after arraycopy guards and confuses tighly coupled allocation logic
- * @run main/othervm -Xcomp -XX:CompileOnly=TestArrayCopyStoppedAfterGuards.test,System.arraycopy TestArrayCopyStoppedAfterGuards
+ *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,java.lang.System::arraycopy
+ *      -XX:CompileCommand=compileonly,compiler.arraycopy.TestArrayCopyStoppedAfterGuards::test
+ *      compiler.arraycopy.TestArrayCopyStoppedAfterGuards
  *
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCopyStoppedAfterGuards {
 

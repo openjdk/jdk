@@ -221,7 +221,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) return 1000;
+  if (DebugVtables || CountCompiledCalls || VerifyOops) return 1000;
   else {
     const int slop = 2*BytesPerInstWord; // sethi;add  (needed for long offsets)
     if (is_vtable_stub) {

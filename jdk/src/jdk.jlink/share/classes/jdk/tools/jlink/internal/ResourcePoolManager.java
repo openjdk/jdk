@@ -83,8 +83,8 @@ public class ResourcePoolManager {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
-            if (!path.startsWith("/" + name)) {
-                path = "/" + name + path;
+            if (!path.startsWith("/" + name + "/")) {
+                path = "/" + name + path; // path already starts with '/'
             }
             return Optional.ofNullable(moduleContent.get(path));
         }
@@ -213,7 +213,6 @@ public class ResourcePoolManager {
 
     private final Map<String, ResourcePoolEntry> resources = new LinkedHashMap<>();
     private final Map<String, ResourcePoolModule> modules = new LinkedHashMap<>();
-    private final ResourcePoolModuleImpl fileCopierModule = new ResourcePoolModuleImpl(FileCopierPlugin.FAKE_MODULE);
     private final ByteOrder order;
     private final StringTable table;
     private final ResourcePool poolImpl;
@@ -272,11 +271,6 @@ public class ResourcePoolManager {
         }
         String modulename = data.moduleName();
         ResourcePoolModuleImpl m = (ResourcePoolModuleImpl)modules.get(modulename);
-        // ## TODO: FileCopierPlugin should not add content to a module
-        // FAKE_MODULE is not really a module to be added in the image
-        if (FileCopierPlugin.FAKE_MODULE.equals(modulename)) {
-            m = fileCopierModule;
-        }
         if (m == null) {
             m = new ResourcePoolModuleImpl(modulename);
             modules.put(modulename, m);

@@ -25,8 +25,14 @@
  * @test
  * @bug 8078262
  * @summary Tests correct dominator information after loop peeling.
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestLoopPeeling::test* TestLoopPeeling
+ *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
+ *      compiler.loopopts.TestLoopPeeling
  */
+
+package compiler.loopopts;
+
 public class TestLoopPeeling {
 
     public int[] array = new int[100];

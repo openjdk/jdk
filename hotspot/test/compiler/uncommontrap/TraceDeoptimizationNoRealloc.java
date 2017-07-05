@@ -25,9 +25,13 @@
  * @test
  * @bug 8067144
  * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceDeoptimization TraceDeoptimizationNoRealloc
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceDeoptimization
+ *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
  */
+
+package compiler.uncommontrap;
 
 public class TraceDeoptimizationNoRealloc {
 

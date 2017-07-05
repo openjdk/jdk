@@ -20,14 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 4417601
-   @summary JMenus with no items paint a tiny menu.
-   @author Alexander Potochkin
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @run main bug4417601
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 4417601
+ * @summary JMenus with no items paint a tiny menu.
+ * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug4417601
+ */
 
 import javax.swing.*;
 import java.awt.event.*;

@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8132136
-   @summary [PIT] RTL orientation in JEditorPane is broken
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8132136
+ * @summary [PIT] RTL orientation in JEditorPane is broken
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;

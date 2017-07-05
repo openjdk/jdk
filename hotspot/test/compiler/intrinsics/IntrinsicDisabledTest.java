@@ -26,9 +26,10 @@
  * @bug 8138651
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
- * @build IntrinsicDisabledTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @build compiler.intrinsics.IntrinsicDisabledTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -36,15 +37,16 @@
  *                   -XX:DisableIntrinsic=_putIntVolatile
  *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt
  *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile
- *                   IntrinsicDisabledTest
+ *                   compiler.intrinsics.IntrinsicDisabledTest
  */
+
+package compiler.intrinsics;
+
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Executable;
 import java.util.Objects;
-
-import sun.hotspot.WhiteBox;
-
-import jdk.test.lib.Platform;
 
 public class IntrinsicDisabledTest {
 

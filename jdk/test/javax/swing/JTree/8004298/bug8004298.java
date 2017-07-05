@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8004298
  * @summary NPE in WindowsTreeUI.ensureRowsAreVisible
  * @author Alexander Scherbatiy

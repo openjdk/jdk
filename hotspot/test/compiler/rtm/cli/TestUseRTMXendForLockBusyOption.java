@@ -26,12 +26,15 @@
  * @test
  * @bug 8031320
  * @summary Verify processing of UseRTMXendForLockBusy option.
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseRTMXendForLockBusyOption
- * @run main/othervm TestUseRTMXendForLockBusyOption
+ *
+ * @build compiler.rtm.cli.TestUseRTMXendForLockBusyOption
+ * @run main/othervm compiler.rtm.cli.TestUseRTMXendForLockBusyOption
  */
+
+package compiler.rtm.cli;
 
 public class TestUseRTMXendForLockBusyOption
         extends RTMGenericCommandLineOptionTest {

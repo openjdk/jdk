@@ -27,36 +27,43 @@
  * @test
  * @bug 8148490
  * @summary Test correct saving and restoring of vector registers at safepoints.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,TestRegisterRestoring::main -XX:+SafepointALot TestRegisterRestoring
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation
+ *                   -XX:+SafepointALot
+ *                   -XX:CompileCommand=exclude,compiler.runtime.safepoints.TestRegisterRestoring::main
+ *                   compiler.runtime.safepoints.TestRegisterRestoring
  */
-public class TestRegisterRestoring {
-  public static void main(String args[]) throws Exception {
-    // Initialize
-    float[] array = new float[100];
-    for (int i = 0; i < array.length; ++i) {
-      array[i] = 0;
-    }
-    // Test
-    for (int j = 0; j < 20_000; ++j) {
-      increment(array);
-      // Check result
-      for (int i = 0; i < array.length; i++) {
-        if (array[i] != 10_000) {
-          throw new RuntimeException("Test failed: array[" + i + "] = " + array[i] + " but should be 10.000");
-        }
-        array[i] = 0;
-      }
-    }
-  }
 
-  static void increment(float[] array) {
-    // Loop with safepoint
-    for (long l = 0; l < 10_000; l++) {
-      // Vectorized loop
-      for (int i = 0; i < array.length; ++i) {
-        array[i] += 1;
-      }
+package compiler.runtime.safepoints;
+
+public class TestRegisterRestoring {
+    public static void main(String args[]) throws Exception {
+        // Initialize
+        float[] array = new float[100];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = 0;
+        }
+        // Test
+        for (int j = 0; j < 20_000; ++j) {
+            increment(array);
+            // Check result
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] != 10_000) {
+                    throw new RuntimeException("Test failed: array[" + i + "] = " + array[i] + " but should be 10.000");
+                }
+                array[i] = 0;
+            }
+        }
     }
-  }
+
+    static void increment(float[] array) {
+        // Loop with safepoint
+        for (long l = 0; l < 10_000; l++) {
+            // Vectorized loop
+            for (int i = 0; i < array.length; ++i) {
+                array[i] += 1;
+            }
+        }
+    }
 }
 

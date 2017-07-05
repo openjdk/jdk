@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8052012
  * @summary Check whether a document modal Dialog created with null Dialog
  *          constructor follows normal Z order.

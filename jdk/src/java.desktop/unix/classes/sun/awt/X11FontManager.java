@@ -742,28 +742,20 @@ public final class X11FontManager extends FcFontManager {
     protected FontConfiguration createFontConfiguration() {
         /* The logic here decides whether to use a preconfigured
          * fontconfig.properties file, or synthesise one using platform APIs.
-         * On Solaris (as opposed to OpenSolaris) we try to use the
+         * On Solaris we try to use the
          * pre-configured ones, but if the files it specifies are missing
          * we fail-safe to synthesising one. This might happen if Solaris
          * changes its fonts.
-         * For OpenSolaris I don't expect us to ever create fontconfig files,
-         * so it will always synthesise. Note that if we misidentify
-         * OpenSolaris as Solaris, then the test for the presence of
-         * Solaris-only font files will correct this.
          * For Linux we require an exact match of distro and version to
-         * use the preconfigured file, and also that it points to
-         * existent fonts.
+         * use the preconfigured file.
          * If synthesising fails, we fall back to any preconfigured file
          * and do the best we can. For the commercial JDK this will be
          * fine as it includes the Lucida fonts. OpenJDK should not hit
          * this as the synthesis should always work on its platforms.
          */
         FontConfiguration mFontConfig = new MFontConfiguration(this);
-        if (FontUtilities.isOpenSolaris ||
-            (FontUtilities.isLinux &&
-             (!mFontConfig.foundOsSpecificFile() ||
-              !mFontConfig.fontFilesArePresent()) ||
-             (FontUtilities.isSolaris && !mFontConfig.fontFilesArePresent()))) {
+        if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile()) ||
+            (FontUtilities.isSolaris && !mFontConfig.fontFilesArePresent())) {
             FcFontConfiguration fcFontConfig =
                 new FcFontConfiguration(this);
             if (fcFontConfig.init()) {
@@ -773,6 +765,7 @@ public final class X11FontManager extends FcFontManager {
         mFontConfig.init();
         return mFontConfig;
     }
+
     public FontConfiguration
         createFontConfiguration(boolean preferLocaleFonts,
                                 boolean preferPropFonts) {

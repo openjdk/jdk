@@ -388,16 +388,6 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
-  // Compute the new number of arguments in the signature if 32 bit ints
-  // must be converted to longs. Needed if CCallingConventionRequiresIntsAsLongs
-  // is true.
-  static int  convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt);
-  // Adapt a method's signature if it contains 32 bit integers that must
-  // be converted to longs. Needed if CCallingConventionRequiresIntsAsLongs
-  // is true.
-  static void convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
-                                       BasicType*& in_sig_bt, VMRegPair*& in_regs);
-
   static size_t trampoline_size();
 
   static void generate_trampoline(MacroAssembler *masm, address destination);

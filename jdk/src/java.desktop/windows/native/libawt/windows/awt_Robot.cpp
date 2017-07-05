@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,17 @@ void AwtRobot::DoKeyEvent( jint jkey, DWORD dwFlags )
     } else {
         // get the scancode from the virtual key
         scancode = ::MapVirtualKey(vkey, 0);
-        if (vkey == VK_RMENU) {
+        if (vkey == VK_RMENU ||
+            vkey == VK_DELETE ||
+            vkey == VK_INSERT ||
+            vkey == VK_NEXT ||
+            vkey == VK_PRIOR ||
+            vkey == VK_HOME ||
+            vkey == VK_END ||
+            vkey == VK_LEFT ||
+            vkey == VK_RIGHT ||
+            vkey == VK_UP ||
+            vkey == VK_DOWN) {
             dwFlags |= KEYEVENTF_EXTENDEDKEY;
         }
         keybd_event(vkey, scancode, dwFlags, 0);

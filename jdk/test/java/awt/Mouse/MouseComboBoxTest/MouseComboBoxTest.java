@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8032872
  * @summary Tests JComboBox selection via the mouse
  * @author Dmitry Markov

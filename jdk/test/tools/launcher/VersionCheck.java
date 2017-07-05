@@ -93,7 +93,6 @@ public class VersionCheck extends TestHelper {
         "jps",
         "jrunscript",
         "jjs",
-        "jsadebugd",
         "jstack",
         "jstat",
         "jstatd",

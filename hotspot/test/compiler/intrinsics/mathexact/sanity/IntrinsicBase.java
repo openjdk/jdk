@@ -21,22 +21,21 @@
  * questions.
  */
 
+package compiler.intrinsics.mathexact.sanity;
+
+import compiler.testlibrary.intrinsics.Verifier;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Platform;
 
 import java.io.FileOutputStream;
 import java.lang.reflect.Executable;
 import java.util.Properties;
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-import compiler.testlibrary.intrinsics.Verifier;
-
 public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
-    protected String javaVmName;
     protected String useMathExactIntrinsics;
 
     protected IntrinsicBase(TestCase testCase) {
         super(testCase);
-        javaVmName = System.getProperty("java.vm.name");
         useMathExactIntrinsics = getVMOption("UseMathExactIntrinsics");
     }
 
@@ -45,39 +44,32 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
         //java.lang.Math should be loaded to allow a compilation of the methods that use Math's method
         System.out.println("class java.lang.Math should be loaded. Proof: " + Math.class);
         printEnvironmentInfo();
+        if (Platform.isInt()) {
+            throw new Error("TESTBUG: test can not be run in interpreter");
+        }
 
         int expectedIntrinsicCount = 0;
 
-        switch (MODE) {
-            case "compiled mode":
-            case "mixed mode":
-                if (isServerVM()) {
-                    if (TIERED_COMPILATION) {
-                        int max_level = TIERED_STOP_AT_LEVEL;
-                        expectedIntrinsicCount = (max_level == COMP_LEVEL_MAX) ? 1 : 0;
-                        for (int i = CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE; i <= max_level; ++i) {
-                            deoptimize();
-                            compileAtLevel(i);
-                        }
-                    } else {
-                        expectedIntrinsicCount = 1;
-                        deoptimize();
-                        compileAtLevel(CompilerWhiteBoxTest.COMP_LEVEL_MAX);
-                    }
-                } else {
+        if (Platform.isServer()) {
+            if (TIERED_COMPILATION) {
+                int max_level = TIERED_STOP_AT_LEVEL;
+                expectedIntrinsicCount = (max_level == COMP_LEVEL_MAX) ? 1 : 0;
+                for (int i = CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE; i <= max_level; ++i) {
                     deoptimize();
-                    compileAtLevel(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
+                    compileAtLevel(i);
                 }
+            } else {
+                expectedIntrinsicCount = 1;
+                deoptimize();
+                compileAtLevel(CompilerWhiteBoxTest.COMP_LEVEL_MAX);
+            }
+        } else {
+            deoptimize();
+            compileAtLevel(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
+        }
 
-                if (!isIntrinsicAvailable()) {
-                    expectedIntrinsicCount = 0;
-                }
-                break;
-            case "interpreted mode": //test is not applicable in this mode;
-                System.err.println("Warning: This test is not applicable in mode: " + MODE);
-                break;
-            default:
-                throw new RuntimeException("Test bug, unknown VM mode: " + MODE);
+        if (!isIntrinsicAvailable()) {
+            expectedIntrinsicCount = 0;
         }
 
         System.out.println("Expected intrinsic count is " + expectedIntrinsicCount + " name " + getIntrinsicId());
@@ -92,9 +84,8 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     }
 
     protected void printEnvironmentInfo() {
-        System.out.println("java.vm.name=" + javaVmName);
         System.out.println("os.arch=" + Platform.getOsArch());
-        System.out.println("java.vm.info=" + MODE);
+        System.out.println("java.vm.info=" + Platform.vmInfo);
         System.out.println("useMathExactIntrinsics=" + useMathExactIntrinsics);
     }
 
@@ -123,10 +114,6 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     protected abstract boolean isIntrinsicAvailable();
 
     protected abstract String getIntrinsicId();
-
-    protected boolean isServerVM() {
-        return javaVmName.toLowerCase().contains("server");
-    }
 
     static class IntTest extends IntrinsicBase {
 

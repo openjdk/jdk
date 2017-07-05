@@ -40,7 +40,7 @@ public class ClassesListInFile extends PathHandler {
 
     @Override
     public void process() {
-        System.out.println("# list: " + root);
+        CompileTheWorld.OUT.println("# list: " + root);
         if (!Files.exists(root)) {
             return;
         }

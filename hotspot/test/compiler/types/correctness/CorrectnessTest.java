@@ -24,47 +24,62 @@
 /*
  * @test CorrectnessTest
  * @bug 8038418
- * @library /testlibrary /test/lib
+ * @summary Tests correctness of type usage with type profiling and speculations
+ * @requires vm.flavor == "server"
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
  * @ignore 8066173
- * @compile execution/TypeConflict.java execution/TypeProfile.java
- *          execution/MethodHandleDelegate.java
- * @build CorrectnessTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build compiler.types.correctness.CorrectnessTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation
- *                   -XX:CompileCommand=exclude,execution/*::methodNotToCompile
- *                   -XX:CompileCommand=dontinline,scenarios/Scenario::collectReturnType
- *                   CorrectnessTest RETURN
+ *                   -XX:CompileCommand=exclude,compiler.types.correctness.execution.*::methodNotToCompile
+ *                   -XX:CompileCommand=dontinline,compiler.types.correctness.scenarios.Scenario::collectReturnType
+ *                   compiler.types.correctness.CorrectnessTest RETURN
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation
- *                   -XX:CompileCommand=exclude,execution/*::methodNotToCompile
- *                   -XX:CompileCommand=dontinline,scenarios/Scenario::collectReturnType
- *                   CorrectnessTest PARAMETERS
+ *                   -XX:CompileCommand=exclude,compiler.types.correctness.execution.*::methodNotToCompile
+ *                   -XX:CompileCommand=dontinline,compiler.types.correctness.scenarios.Scenario::collectReturnType
+ *                   compiler.types.correctness.CorrectnessTest PARAMETERS
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation
- *                   -XX:CompileCommand=exclude,execution/*::methodNotToCompile
- *                   -XX:CompileCommand=dontinline,scenarios/Scenario::collectReturnType
- *                   CorrectnessTest ARGUMENTS
- * @summary Tests correctness of type usage with type profiling and speculations
+ *                   -XX:CompileCommand=exclude,compiler.types.correctness.execution.*::methodNotToCompile
+ *                   -XX:CompileCommand=dontinline,compiler.types.correctness.scenarios.Scenario::collectReturnType
+ *                   compiler.types.correctness.CorrectnessTest ARGUMENTS
  */
 
+package compiler.types.correctness;
+
+import compiler.types.correctness.execution.Execution;
+import compiler.types.correctness.execution.MethodHandleDelegate;
+import compiler.types.correctness.execution.TypeConflict;
+import compiler.types.correctness.execution.TypeProfile;
+import compiler.types.correctness.hierarchies.DefaultMethodInterface;
+import compiler.types.correctness.hierarchies.DefaultMethodInterface2;
+import compiler.types.correctness.hierarchies.Linear;
+import compiler.types.correctness.hierarchies.Linear2;
+import compiler.types.correctness.hierarchies.NullableType;
+import compiler.types.correctness.hierarchies.OneRank;
+import compiler.types.correctness.hierarchies.TypeHierarchy;
+import compiler.types.correctness.scenarios.ArrayCopy;
+import compiler.types.correctness.scenarios.ArrayReferenceStore;
+import compiler.types.correctness.scenarios.CheckCast;
+import compiler.types.correctness.scenarios.ClassIdentity;
+import compiler.types.correctness.scenarios.ClassInstanceOf;
+import compiler.types.correctness.scenarios.ClassIsInstance;
+import compiler.types.correctness.scenarios.ProfilingType;
+import compiler.types.correctness.scenarios.ReceiverAtInvokes;
+import compiler.types.correctness.scenarios.Scenario;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import execution.Execution;
-import execution.MethodHandleDelegate;
-import execution.TypeConflict;
-import execution.TypeProfile;
-import hierarchies.*;
-import scenarios.*;
 import sun.hotspot.WhiteBox;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +90,7 @@ public class CorrectnessTest {
 
     public static void main(String[] args) {
         if (!Platform.isServer()) {
-            System.out.println("ALL TESTS SKIPPED");
+            throw new Error("TESTBUG: Not server VM");
         }
         Asserts.assertGTE(args.length, 1);
         ProfilingType profilingType = ProfilingType.valueOf(args[0]);

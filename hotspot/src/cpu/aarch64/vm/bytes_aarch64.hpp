@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,9 +67,6 @@ class Bytes: AllStatic {
 
 
 // The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
-
-#ifdef TARGET_OS_ARCH_linux_aarch64
-# include "bytes_linux_aarch64.inline.hpp"
-#endif
+#include OS_CPU_HEADER_INLINE(bytes)
 
 #endif // CPU_AARCH64_VM_BYTES_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "utilities/macros.hpp"
 
 // Interface for updating the instruction cache.  Whenever the VM modifies
 // code, part of the processor instruction cache potentially has to be flushed.
@@ -68,26 +69,7 @@ class AbstractICache : AllStatic {
 // Must be included before the definition of ICacheStubGenerator
 // because ICacheStubGenerator uses ICache definitions.
 
-#ifdef TARGET_ARCH_x86
-# include "icache_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "icache_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "icache_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "icache_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "icache_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "icache_aarch64.hpp"
-#endif
-
-
+#include CPU_HEADER(icache)
 
 class ICacheStubGenerator : public StubCodeGenerator {
  public:

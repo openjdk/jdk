@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Tests directive json parser
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @run driver compiler.compilercontrol.parser.DirectiveParserTest
  */
 
@@ -35,7 +36,6 @@ package compiler.compilercontrol.parser;
 import compiler.compilercontrol.share.JSONFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
 
 public class DirectiveParserTest {

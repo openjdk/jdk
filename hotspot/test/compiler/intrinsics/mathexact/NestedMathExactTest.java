@@ -25,10 +25,11 @@
  * @test
  * @bug 8027444
  * @summary Test nested loops
- * @compile NestedMathExactTest.java
- * @run main NestedMathExactTest
  *
+ * @run main compiler.intrinsics.mathexact.NestedMathExactTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class NestedMathExactTest {
     public static final int LIMIT = 100;
