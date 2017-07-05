@@ -1,7 +1,7 @@
                          Solaris 10 3/05 s10_74L2a SPARC
-           Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
-                        Use is subject to license terms.
-                            Assembled 22 January 2005
+
+                      (copyright from `uname -a` goes here)
+
 SunOS deltas4 5.10 Generic_118833-03 sun4u sparc SUNW,Sun-Blade-2500
 
 OS Locale:  C

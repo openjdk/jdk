@@ -26,6 +26,8 @@
 package javax.swing.colorchooser;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.beans.PropertyChangeEvent;
@@ -54,6 +56,21 @@ final class ColorChooserPanel extends AbstractColorChooserPanel implements Prope
         this.text = new JFormattedTextField();
         this.label = new JLabel(null, null, SwingConstants.RIGHT);
         ValueFormatter.init(6, true, this.text);
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setEnabled(this, enabled);
+    }
+
+    private static void setEnabled(Container container, boolean enabled) {
+        for (Component component : container.getComponents()) {
+            component.setEnabled(enabled);
+            if (component instanceof Container) {
+                setEnabled((Container) component, enabled);
+            }
+        }
     }
 
     @Override

@@ -39,6 +39,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
@@ -1252,7 +1253,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     Double#toString(double)} respectively, then the value will be rounded
  *     using the {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
- *     For a canonical representation of the value,use {@link
+ *     For a canonical representation of the value, use {@link
  *     Float#toString(float)} or {@link Double#toString(double)} as
  *     appropriate.
  *
@@ -3569,15 +3570,23 @@ public final class Formatter implements Closeable, Flushable {
                 // Create a new BigDecimal with the desired precision.
                 int prec = (precision == -1 ? 6 : precision);
                 int scale = value.scale();
-                int compPrec = value.precision();
-                if (scale > prec)
-                    compPrec -= (scale - prec);
-                MathContext mc = new MathContext(compPrec);
-                BigDecimal v
-                    = new BigDecimal(value.unscaledValue(), scale, mc);
 
-                BigDecimalLayout bdl
-                    = new BigDecimalLayout(v.unscaledValue(), v.scale(),
+                if (scale > prec) {
+                    // more "scale" digits than the requested "precision
+                    int compPrec = value.precision();
+                    if (compPrec <= scale) {
+                        // case of 0.xxxxxx
+                        value = value.setScale(prec, RoundingMode.HALF_UP);
+                    } else {
+                        compPrec -= (scale - prec);
+                        value = new BigDecimal(value.unscaledValue(),
+                                               scale,
+                                               new MathContext(compPrec));
+                    }
+                }
+                BigDecimalLayout bdl = new BigDecimalLayout(
+                                           value.unscaledValue(),
+                                           value.scale(),
                                            BigDecimalLayoutForm.DECIMAL_FLOAT);
 
                 char mant[] = bdl.mantissa();

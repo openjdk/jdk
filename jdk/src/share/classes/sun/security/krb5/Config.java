@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class Config {
     private String defaultRealm;   // default kdc realm.
 
     // used for native interface
-    private static native String getWindowsDirectory();
+    private static native String getWindowsDirectory(boolean isSystem);
 
 
     /**
@@ -661,38 +661,37 @@ public class Config {
     }
 
     /**
-     * Gets the default configuration file name. The file will be searched
-     * in a list of possible loations in the following order:
-     * 1. the location and file name defined by system property
-     * "java.security.krb5.conf",
-     * 2. at Java home lib\security directory with "krb5.conf" name,
-     * 3. "krb5.ini" at Java home,
-     * 4. at windows directory with the name of "krb5.ini" for Windows,
-     * /etc/krb5/krb5.conf for Solaris, /etc/krb5.conf for Linux.
+     * Gets the default configuration file name. This method will never
+     * return null.
+     *
+     * If the system property "java.security.krb5.conf" is defined, we'll
+     * use its value, no matter if the file exists or not. Otherwise,
+     * the file will be searched in a list of possible loations in the
+     * following order:
+     *
+     * 1. at Java home lib\security directory with "krb5.conf" name,
+     * 2. at windows directory with the name of "krb5.ini" for Windows,
+     * /etc/krb5/krb5.conf for Solaris, /etc/krb5.conf otherwise.
+     *
+     * Note: When the Terminal Service is started in Windows (from 2003),
+     * there are two kinds of Windows directories: A system one (say,
+     * C:\Windows), and a user-private one (say, C:\Users\Me\Windows).
+     * We will first look for krb5.ini in the user-private one. If not
+     * found, try the system one instead.
      */
     private String getFileName() {
         String name =
             java.security.AccessController.doPrivileged(
                                 new sun.security.action.
                                 GetPropertyAction("java.security.krb5.conf"));
-        if (name != null) {
-            boolean temp =
-                java.security.AccessController.doPrivileged(
-                                new FileExistsAction(name));
-            if (temp)
-                return name;
-        } else {
+        if (name == null) {
             name = java.security.AccessController.doPrivileged(
                         new sun.security.action.
                         GetPropertyAction("java.home")) + File.separator +
                                 "lib" + File.separator + "security" +
                                 File.separator + "krb5.conf";
-            boolean temp =
-                java.security.AccessController.doPrivileged(
-                                new FileExistsAction(name));
-            if (temp) {
-                return name;
-            } else {
+            if (!fileExists(name)) {
+                name = null;
                 String osname =
                         java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("os.name"));
@@ -703,19 +702,35 @@ public class Config {
                         // ignore exceptions
                     }
                     if (Credentials.alreadyLoaded) {
-                        if ((name = getWindowsDirectory()) == null) {
-                            name = "c:\\winnt\\krb5.ini";
-                        } else if (name.endsWith("\\")) {
-                            name += "krb5.ini";
-                        } else {
-                            name += "\\krb5.ini";
+                        String path = getWindowsDirectory(false);
+                        if (path != null) {
+                            if (path.endsWith("\\")) {
+                                path = path + "krb5.ini";
+                            } else {
+                                path = path + "\\krb5.ini";
+                            }
+                            if (fileExists(path)) {
+                                name = path;
+                            }
                         }
-                    } else {
+                        if (name == null) {
+                            path = getWindowsDirectory(true);
+                            if (path != null) {
+                                if (path.endsWith("\\")) {
+                                    path = path + "krb5.ini";
+                                } else {
+                                    path = path + "\\krb5.ini";
+                                }
+                                name = path;
+                            }
+                        }
+                    }
+                    if (name == null) {
                         name = "c:\\winnt\\krb5.ini";
                     }
                 } else if (osname.startsWith("SunOS")) {
                     name =  "/etc/krb5/krb5.conf";
-                } else if (osname.startsWith("Linux")) {
+                } else {
                     name =  "/etc/krb5.conf";
                 }
             }
@@ -1169,6 +1184,11 @@ public class Config {
             }
         }
         return kdcs;
+    }
+
+    private boolean fileExists(String name) {
+        return java.security.AccessController.doPrivileged(
+                                new FileExistsAction(name));
     }
 
     static class FileExistsAction
