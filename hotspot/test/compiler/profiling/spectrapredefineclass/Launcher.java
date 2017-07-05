@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8038636
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
- * @build compiler.profiling.spectrapredefineclass_classloaders.Agent
+ * @build compiler.profiling.spectrapredefineclass.Agent
  * @run driver ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
@@ -39,23 +39,33 @@
 
 package compiler.profiling.spectrapredefineclass;
 
-import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputAnalyzer;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 public class Launcher {
+    private static final String MANIFEST = "MANIFEST.MF";
     public static void main(String[] args) throws Exception  {
+        try (PrintWriter pw = new PrintWriter(MANIFEST)) {
+            pw.println("Agent-Class: " + Agent.class.getName());
+            pw.println("Can-Retransform-Classes: true");
+        }
 
-      PrintWriter pw = new PrintWriter("MANIFEST.MF");
-      pw.println("Agent-Class: " + Launcher.class.getPackage().getName() +".Agent");
-      pw.println("Can-Retransform-Classes: true");
-      pw.close();
+        JDKToolLauncher jar = JDKToolLauncher.create("jar")
+                .addToolArg("cmf")
+                .addToolArg(MANIFEST)
+                .addToolArg(Agent.AGENT_JAR)
+                .addToolArg(Agent.class.getName().replace('.', File.separatorChar) + ".class");
 
-      ProcessBuilder pb = new ProcessBuilder();
-      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF",
-              System.getProperty("test.classes",".") + "/agent.jar",
-              "compiler/profiling/spectrapredefineclass/Agent.class".replace('/', File.separatorChar)});
-      pb.start().waitFor();
+        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
+        try {
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
+        } catch (IOException ex) {
+            throw new Error("TESTBUG: jar failed.", ex);
+        }
     }
 }

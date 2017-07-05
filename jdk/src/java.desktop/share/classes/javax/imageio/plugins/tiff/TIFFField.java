@@ -412,7 +412,7 @@ public class TIFFField implements Cloneable {
 
     /**
      * Creates a {@code TIFFField} from a TIFF native image
-     * metadata node. If the value of the <tt>"number"</tt> attribute
+     * metadata node. If the value of the {@code "number"} attribute
      * of the node is not found in {@code tagSet} then a new
      * {@code TIFFTag} with name {@code TIFFTag.UNKNOWN_TAG_NAME}
      * will be created and assigned to the field.
@@ -420,20 +420,22 @@ public class TIFFField implements Cloneable {
      * @param tagSet The {@code TIFFTagSet} to which the
      * {@code TIFFTag} of the field belongs.
      * @param node A native TIFF image metadata {@code TIFFField} node.
-     * @throws NullPointerException if {@code node} is
-     * {@code null}.
-     * @throws IllegalArgumentException if the name of the node is not
-     * {@code "TIFFField"}.
-     * @throws NullPointerException if the node does not contain any data.
-     * @throws IllegalArgumentException if the combination of node attributes
-     * and data is not legal per the {@link #TIFFField(TIFFTag,int,int,Object)}
-     * constructor specification.
+     * @throws IllegalArgumentException If the {@code Node} parameter content
+     * does not adhere to the {@code TIFFField} element structure defined by
+     * the <a href="../../metadata/doc-files/tiff_metadata.html#ImageMetadata">
+     * TIFF native image metadata format specification</a>, or if the
+     * combination of node attributes and data is not legal per the
+     * {@link #TIFFField(TIFFTag,int,int,Object)} constructor specification.
+     * Note that a cause might be set on such an exception.
      * @return A new {@code TIFFField}.
      */
     public static TIFFField createFromMetadataNode(TIFFTagSet tagSet,
                                                    Node node) {
         if (node == null) {
-            throw new NullPointerException("node == null!");
+            // This method is specified to throw only IllegalArgumentExceptions
+            // so we create an IAE with a NullPointerException as its cause.
+            throw new IllegalArgumentException(new NullPointerException
+                ("node == null!"));
         }
         String name = node.getNodeName();
         if (!name.equals("TIFFField")) {
@@ -487,7 +489,17 @@ public class TIFFField implements Cloneable {
             tag = new TIFFTag(TIFFTag.UNKNOWN_TAG_NAME, tagNumber, 1 << type);
         }
 
-        return new TIFFField(tag, type, count, data);
+        TIFFField field;
+        try {
+            field = new TIFFField(tag, type, count, data);
+        } catch (NullPointerException npe) {
+            // This method is specified to throw only IllegalArgumentExceptions
+            // so we catch the NullPointerException and set it as the cause of
+            // the IAE which is thrown.
+            throw new IllegalArgumentException(npe);
+        }
+
+        return field;
     }
 
     /**

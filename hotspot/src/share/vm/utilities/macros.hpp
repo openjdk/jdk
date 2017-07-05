@@ -486,4 +486,24 @@
 #define OS_CPU_HEADER(basename)        XSTR(OS_CPU_HEADER_STEM(basename).hpp)
 #define OS_CPU_HEADER_INLINE(basename) XSTR(OS_CPU_HEADER_STEM(basename).inline.hpp)
 
+// To use Atomic::inc(jshort* dest) and Atomic::dec(jshort* dest), the address must be specially
+// aligned, such that (*dest) occupies the upper 16 bits of an aligned 32-bit word. The best way to
+// achieve is to place your short value next to another short value, which doesn't need atomic ops.
+//
+// Example
+//  ATOMIC_SHORT_PAIR(
+//    volatile short _refcount,  // needs atomic operation
+//    unsigned short _length     // number of UTF8 characters in the symbol (does not need atomic op)
+//  );
+
+#ifdef VM_LITTLE_ENDIAN
+  #define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl)  \
+    non_atomic_decl;                                       \
+    atomic_decl
+#else
+  #define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl)  \
+    atomic_decl;                                           \
+    non_atomic_decl
+#endif
+
 #endif // SHARE_VM_UTILITIES_MACROS_HPP

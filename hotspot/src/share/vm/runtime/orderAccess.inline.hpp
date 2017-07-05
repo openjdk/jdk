@@ -26,7 +26,7 @@
 #ifndef SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
 #define SHARE_VM_RUNTIME_ORDERACCESS_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/macros.hpp"
 

@@ -45,7 +45,8 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
 
     if (awt->version != JAWT_VERSION_1_3
         && awt->version != JAWT_VERSION_1_4
-        && awt->version != JAWT_VERSION_1_7) {
+        && awt->version != JAWT_VERSION_1_7
+        && awt->version != JAWT_VERSION_9) {
         return JNI_FALSE;
     }
 
@@ -55,6 +56,11 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
         awt->Lock = awt_Lock;
         awt->Unlock = awt_Unlock;
         awt->GetComponent = awt_GetComponent;
+        if (awt->version >= JAWT_VERSION_9) {
+            awt->CreateEmbeddedFrame = awt_CreateEmbeddedFrame;
+            awt->SetBounds = awt_SetBounds;
+            awt->SynthesizeWindowActivation = awt_SynthesizeWindowActivation;
+        }
     }
 
     return JNI_TRUE;

@@ -25,13 +25,13 @@
  * @test UsageThresholdNotExceededTest
  * @summary verifying that usage threshold not exceeded while allocating less
  *     than usage threshold
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @build compiler.codecache.jmx.UsageThresholdNotExceededTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
  *     -XX:CompileCommand=compileonly,null::*

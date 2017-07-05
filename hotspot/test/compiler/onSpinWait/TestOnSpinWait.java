@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Azul Systems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
  * @test TestOnSpinWait
  * @summary (x86 only) checks that java.lang.Thread.onSpinWait is intrinsified
  * @bug 8147844
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
  * @run driver compiler.onSpinWait.TestOnSpinWait
@@ -34,8 +34,8 @@
 
 package compiler.onSpinWait;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestOnSpinWait {
 

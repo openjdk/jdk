@@ -1132,7 +1132,7 @@ BOOL AwtPrintControl::getDevmode( HANDLE hPrinter,
 
     if (dwRet != IDOK)  {
         /* if failure, cleanup and return failure */
-        GlobalFree(pDevMode);
+        GlobalFree(*pDevMode);
         *pDevMode = NULL;
         return FALSE;
     }

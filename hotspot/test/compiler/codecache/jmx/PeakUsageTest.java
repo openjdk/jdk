@@ -23,12 +23,11 @@
 
 /*
  * @test PeakUsageTest
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @ignore 8151345
- * @build ompiler.codecache.jmx.PeakUsageTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -69,9 +68,17 @@ public class PeakUsageTest {
         bean.resetPeakUsage();
         long addr = CodeCacheUtils.WB.allocateCodeBlob(
                 CodeCacheUtils.ALLOCATION_SIZE, btype.id);
-        long newPeakUsage = bean.getPeakUsage().getUsed();
+
         try {
-            CodeCacheUtils.assertEQorGTE(btype, newPeakUsage, bean.getUsage().getUsed(),
+            /*
+            Always save peakUsage after saving currentUsage. Reversing the order
+            can lead to inconsistent results (currentUsage > peakUsage) because
+            of intermediate allocations.
+            */
+            long currUsage = bean.getUsage().getUsed();
+            long peakUsage = bean.getPeakUsage().getUsed();
+            CodeCacheUtils.assertEQorLTE(btype, currUsage,
+                    peakUsage,
                     "Peak usage does not match usage after allocation for "
                     + bean.getName());
         } finally {
@@ -79,19 +86,21 @@ public class PeakUsageTest {
                 CodeCacheUtils.WB.freeCodeBlob(addr);
             }
         }
-        CodeCacheUtils.assertEQorGTE(btype, newPeakUsage, bean.getPeakUsage().getUsed(),
-                "Code cache peak usage has changed after usage decreased for "
-                + bean.getName());
         bean.resetPeakUsage();
-        CodeCacheUtils.assertEQorGTE(btype, bean.getPeakUsage().getUsed(),
-                bean.getUsage().getUsed(),
+        long currUsage = bean.getUsage().getUsed();
+        long peakUsage = bean.getPeakUsage().getUsed();
+        CodeCacheUtils.assertEQorLTE(btype, currUsage,
+                peakUsage,
                 "Code cache peak usage is not equal to usage after reset for "
                 + bean.getName());
         long addr2 = CodeCacheUtils.WB.allocateCodeBlob(
                 CodeCacheUtils.ALLOCATION_SIZE, btype.id);
         try {
-            CodeCacheUtils.assertEQorGTE(btype, bean.getPeakUsage().getUsed(),
-                    bean.getUsage().getUsed(),
+            currUsage = bean.getUsage().getUsed();
+            peakUsage = bean.getPeakUsage().getUsed();
+
+            CodeCacheUtils.assertEQorLTE(btype, currUsage,
+                    peakUsage,
                     "Code cache peak usage is not equal to usage after fresh "
                     + "allocation for " + bean.getName());
         } finally {

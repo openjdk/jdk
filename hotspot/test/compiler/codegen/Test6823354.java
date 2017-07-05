@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6823354
  * @summary These methods can be instrinsified by using bit scan, bit test, and population count instructions.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  *
  * @run main/othervm -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.codegen.Test6823354::lzcomp

@@ -54,6 +54,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1015,7 +1016,14 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
   // so making them eagerly shouldn't be too expensive.
   AdapterHandlerEntry* adapter = AdapterHandlerLibrary::get_adapter(mh);
   if (adapter == NULL ) {
-    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
+    if (!is_init_completed()) {
+      // Don't throw exceptions during VM initialization because java.lang.* classes
+      // might not have been initialized, causing problems when constructing the
+      // Java exception object.
+      vm_exit_during_initialization("Out of space in CodeCache for adapters");
+    } else {
+      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
+    }
   }
 
   if (mh->is_shared()) {
