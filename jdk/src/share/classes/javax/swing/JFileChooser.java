@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,7 +770,8 @@ public class JFileChooser extends JComponent implements Accessible {
      * @since 1.4
      */
     protected JDialog createDialog(Component parent) throws HeadlessException {
-        String title = getUI().getDialogTitle(this);
+        FileChooserUI ui = getUI();
+        String title = ui.getDialogTitle(this);
         putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,
                           title);
 
@@ -794,6 +795,7 @@ public class JFileChooser extends JComponent implements Accessible {
                 dialog.getRootPane().setWindowDecorationStyle(JRootPane.FILE_CHOOSER_DIALOG);
             }
         }
+        dialog.getRootPane().setDefaultButton(ui.getDefaultButton(this));
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
 

@@ -347,30 +347,30 @@ public class QueryParseTest {
 
         // LIKE
 
-        "A like 'b%m'",
+        "A like 'b*m'",
         expectTrue("blim"), expectTrue("bm"),
         expectFalse(""), expectFalse("blimmo"), expectFalse("mmm"),
 
-        "A not like 'b%m'",
+        "A not like 'b*m'",
         expectFalse("blim"), expectFalse("bm"),
         expectTrue(""), expectTrue("blimmo"), expectTrue("mmm"),
 
-        "A like 'b_m'",
+        "A like 'b?m'",
         expectTrue("bim"), expectFalse("blim"),
 
-        "A like '%can''t%'",
+        "A like '*can''t*'",
         expectTrue("can't"),
         expectTrue("I'm sorry Dave, I'm afraid I can't do that"),
         expectFalse("cant"), expectFalse("can''t"),
 
-        "A like '\\%%\\%'",
-        expectTrue("%blim%"), expectTrue("%%"),
-        expectFalse("blim"), expectFalse("%asdf"), expectFalse("asdf%"),
+        "A like '\\**\\*'",
+        expectTrue("*blim*"), expectTrue("**"),
+        expectFalse("blim"), expectFalse("*asdf"), expectFalse("asdf*"),
 
-        "A LIKE '*%?_'",
-        expectTrue("*blim?!"), expectTrue("*?_"),
-        expectFalse("blim"), expectFalse("blim?"),
-        expectFalse("?*"), expectFalse("??"), expectFalse(""), expectFalse("?"),
+        "A LIKE '%*_?'",
+        expectTrue("%blim_?"), expectTrue("%_?"), expectTrue("%blim_!"),
+        expectFalse("blim"), expectFalse("blim_"),
+        expectFalse("_%"), expectFalse("??"), expectFalse(""), expectFalse("?"),
 
         Query.toString(
                 Query.initialSubString(Query.attr("A"), Query.value("*?%_"))),
@@ -483,7 +483,7 @@ public class QueryParseTest {
         // note the little {} at the end which means this is a subclass
         // and therefore QualifiedAttributeValue should return false.
 
-        MBeanServerDelegate.class.getName() + "#SpecificationName LIKE '%'",
+        MBeanServerDelegate.class.getName() + "#SpecificationName LIKE '*'",
         new Wrapped(new MBeanServerDelegate(), true),
         new Tester(new String[] {"SpecificationName"}, new Object[] {"JMX"}, false),
 
@@ -497,7 +497,7 @@ public class QueryParseTest {
         "A.class.name = 'java.lang.String'",
         expectTrue("blim"), expectFalse(95), expectFalse((Object) null),
 
-        "A.canonicalName like 'JMImpl%:%'",
+        "A.canonicalName like 'JMImpl*:*'",
         expectTrue(MBeanServerDelegate.DELEGATE_NAME),
         expectFalse(ObjectName.WILDCARD),
 
@@ -544,12 +544,15 @@ public class QueryParseTest {
         "a in b, c", "a in 23", "a in (2, 3", "a in (2, 3x)",
         "a like \"foo\"", "a like b", "a like 23",
         "like \"foo\"", "like b", "like 23", "like 'a:b'",
-        "5 like 'a'", "'a' like '%'",
+        "5 like 'a'", "'a' like '*'",
         "a not= b", "a not = b", "a not b", "a not b c",
         "a = +b", "a = +'b'", "a = +true", "a = -b", "a = -'b'",
         "a#5 = b", "a#'b' = c",
         "a instanceof b", "a instanceof 17", "a instanceof",
-        "a like 'oops\\'", "a like '[oops'",
+        // "a like 'oops\\'", "a like '[oops'",
+        // We don't check the above because Query.match doesn't.  If LIKE
+        // rejected bad patterns then there would be some QueryExp values
+        // that could not be converted to a string and back.
 
         // Check that -Long.MIN_VALUE is an illegal constant.  This is one more
         // than Long.MAX_VALUE and, like the Java language, we only allow it
