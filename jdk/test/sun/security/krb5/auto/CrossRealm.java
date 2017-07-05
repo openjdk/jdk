@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6706974
  * @summary Add krb5 test infrastructure
  */
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Security;
@@ -50,17 +51,20 @@ public class CrossRealm implements CallbackHandler {
         KDC kdc1 = KDC.create("RABBIT.HOLE");
         kdc1.addPrincipal("dummy", "bogus".toCharArray());
         kdc1.addPrincipalRandKey("krbtgt/RABBIT.HOLE");
-        kdc1.addPrincipal("krbtgt/SNAKE.HOLE", "sharedsec".toCharArray());
+        kdc1.addPrincipal("krbtgt/SNAKE.HOLE@RABBIT.HOLE",
+                "rabbit->snake".toCharArray());
 
         KDC kdc2 = KDC.create("SNAKE.HOLE");
         kdc2.addPrincipalRandKey("krbtgt/SNAKE.HOLE");
-        kdc2.addPrincipal("krbtgt/RABBIT.HOLE", "sharedsec".toCharArray());
+        kdc2.addPrincipal("krbtgt/SNAKE.HOLE@RABBIT.HOLE",
+                "rabbit->snake".toCharArray());
         kdc2.addPrincipalRandKey("host/www.snake.hole");
 
         KDC.saveConfig("krb5-localkdc.conf", kdc1, kdc2,
                 "forwardable=true",
                 "[domain_realm]",
                 ".snake.hole=SNAKE.HOLE");
+        new File("krb5-localkdc.conf").deleteOnExit();
         System.setProperty("java.security.krb5.conf", "krb5-localkdc.conf");
     }
 
@@ -68,6 +72,7 @@ public class CrossRealm implements CallbackHandler {
         Security.setProperty("auth.login.defaultCallbackHandler", "CrossRealm");
         System.setProperty("java.security.auth.login.config", "jaas-localkdc.conf");
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+        new File("jaas-localkdc.conf").deleteOnExit();
         FileOutputStream fos = new FileOutputStream("jaas-localkdc.conf");
         fos.write(("com.sun.security.jgss.krb5.initiate {\n" +
                 "    com.sun.security.auth.module.Krb5LoginModule\n" +

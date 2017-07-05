@@ -23,27 +23,20 @@
  * have any questions.
  */
 
-
 package sun.io;
 
-import sun.nio.cs.ext.EUC_KR;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to EUC_KR
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteEUC_KR extends CharToByteDBCS_ASCII {
 
-public class CharToByteEUC_KR extends CharToByteDoubleByte {
-
-    private final static EUC_KR nioCoder = new EUC_KR();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new EUC_KR().newEncoder();
 
     public String getCharacterEncoding() {
         return "EUC_KR";
     }
 
     public CharToByteEUC_KR() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

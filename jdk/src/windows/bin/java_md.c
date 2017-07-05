@@ -49,6 +49,7 @@ static jboolean GetPublicJREHome(char *path, jint pathsize);
 static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
 static jboolean GetJREPath(char *path, jint pathsize);
+static void EnsureJreInstallation(const char *jrepath);
 
 static jboolean _isjavaw = JNI_FALSE;
 
@@ -108,6 +109,9 @@ CreateExecutionEnvironment(int *_argc,
         exit(1);
     }
 
+    /* Do this before we read jvm.cfg */
+    EnsureJreInstallation(jrepath);
+
     /* Find out where the JRE is that we will be using. */
     if (!GetJREPath(jrepath, so_jrepath)) {
         JLI_ReportErrorMessage(JRE_ERROR1);
@@ -128,6 +132,103 @@ CreateExecutionEnvironment(int *_argc,
     }
     /* If we got here, jvmpath has been correctly initialized. */
 
+}
+
+
+static jboolean
+LoadMSVCRT()
+{
+    // Only do this once
+    static int loaded = 0;
+    char crtpath[MAXPATHLEN];
+
+    if (!loaded) {
+        /*
+         * The Microsoft C Runtime Library needs to be loaded first.  A copy is
+         * assumed to be present in the "JRE path" directory.  If it is not found
+         * there (or "JRE path" fails to resolve), skip the explicit load and let
+         * nature take its course, which is likely to be a failure to execute.
+         */
+#ifdef _MSC_VER
+#if _MSC_VER < 1400
+#define CRT_DLL "msvcr71.dll"
+#endif
+#ifdef CRT_DLL
+        if (GetJREPath(crtpath, MAXPATHLEN)) {
+            (void)JLI_StrCat(crtpath, "\\bin\\" CRT_DLL);   /* Add crt dll */
+            JLI_TraceLauncher("CRT path is %s\n", crtpath);
+            if (_access(crtpath, 0) == 0) {
+                if (LoadLibrary(crtpath) == 0) {
+                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    return JNI_FALSE;
+                }
+            }
+        }
+#endif /* CRT_DLL */
+#endif /* _MSC_VER */
+        loaded = 1;
+    }
+    return JNI_TRUE;
+}
+
+/*
+ * The preJVMStart is a function in the jkernel.dll, which
+ * performs the final step of synthesizing back the decomposed
+ * modules  (partial install) to the full JRE. Any tool which
+ * uses the  JRE must peform this step to ensure the complete synthesis.
+ * The EnsureJreInstallation function calls preJVMStart based on
+ * the conditions outlined below, noting that the operation
+ * will fail silently if any of conditions are not met.
+ * NOTE: this call must be made before jvm.dll is loaded, or jvm.cfg
+ * is read, since jvm.cfg will be modified by the preJVMStart.
+ * 1. Are we on a supported platform.
+ * 2. Find the location of the JRE or the Kernel JRE.
+ * 3. check existence of JREHOME/lib/bundles
+ * 4. check jkernel.dll and invoke the entry-point
+ */
+typedef VOID (WINAPI *PREJVMSTART)();
+
+static void
+EnsureJreInstallation(const char* jrepath)
+{
+    HINSTANCE handle;
+    char tmpbuf[MAXPATHLEN];
+    PREJVMSTART PreJVMStart;
+    struct stat s;
+
+    /* 32 bit windows only please */
+    if (strcmp(GetArch(), "i386") != 0 ) {
+        return;
+    }
+    /* Does our bundle directory exist ? */
+    strcpy(tmpbuf, jrepath);
+    strcat(tmpbuf, "\\lib\\bundles");
+    if (stat(tmpbuf, &s) != 0) {
+        return;
+    }
+    /* Does our jkernel dll exist ? */
+    strcpy(tmpbuf, jrepath);
+    strcat(tmpbuf, "\\bin\\jkernel.dll");
+    if (stat(tmpbuf, &s) != 0) {
+        return;
+    }
+    /* The Microsoft C Runtime Library needs to be loaded first. */
+    if (!LoadMSVCRT()) {
+        return;
+    }
+    /* Load the jkernel.dll */
+    if ((handle = LoadLibrary(tmpbuf)) == 0) {
+        return;
+    }
+    /* Get the function address */
+    PreJVMStart = (PREJVMSTART)GetProcAddress(handle, "preJVMStart");
+    if (PreJVMStart == NULL) {
+        FreeLibrary(handle);
+        return;
+    }
+    PreJVMStart();
+    FreeLibrary(handle);
+    return;
 }
 
 /*
@@ -196,7 +297,6 @@ jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 {
     HINSTANCE handle;
-    char crtpath[MAXPATHLEN];
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
@@ -206,26 +306,8 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      * there (or "JRE path" fails to resolve), skip the explicit load and let
      * nature take its course, which is likely to be a failure to execute.
      *
-     * (NOTE: the above statement is only true for Visual Studio 2003 and
-     *  msvcr71.dll.)
      */
-#ifdef _MSC_VER
-#if _MSC_VER < 1400
-#define CRT_DLL "msvcr71.dll"
-#endif
-#ifdef CRT_DLL
-    if (GetJREPath(crtpath, MAXPATHLEN)) {
-        (void)JLI_StrCat(crtpath, "\\bin\\" CRT_DLL);   /* Add crt dll */
-        JLI_TraceLauncher("CRT path is %s\n", crtpath);
-        if (_access(crtpath, 0) == 0) {
-            if (LoadLibrary(crtpath) == 0) {
-                JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
-                return JNI_FALSE;
-            }
-        }
-    }
-#endif /* CRT_DLL */
-#endif /* _MSC_VER */
+    LoadMSVCRT();
 
     /* Load the Java VM DLL */
     if ((handle = LoadLibrary(jvmpath)) == 0) {

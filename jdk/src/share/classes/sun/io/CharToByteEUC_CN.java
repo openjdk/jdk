@@ -25,24 +25,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.EUC_CN;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to EUC_CN
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteEUC_CN extends CharToByteDBCS_ASCII {
 
-public class CharToByteEUC_CN extends CharToByteDoubleByte {
-
-    private final static EUC_CN nioCoder = new EUC_CN();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new EUC_CN().newEncoder();
 
     public String getCharacterEncoding() {
         return "EUC_CN";
     }
 
     public CharToByteEUC_CN() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

@@ -76,7 +76,7 @@ class WindowsLinkSupport {
             if (!followLinks || !fs.supportsLinks())
                 return input.getPathForWin32Calls();
 
-            // if file is a sym link then don't need final path
+            // if file is not a sym link then don't need final path
             if (!WindowsFileAttributes.get(input, false).isSymbolicLink()) {
                 return input.getPathForWin32Calls();
             }

@@ -26,24 +26,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.GBK;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to GBK
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteGBK extends CharToByteDBCS_ASCII {
 
-public class CharToByteGBK extends CharToByteDoubleByte {
-
-    private final static GBK nioCoder = new GBK();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new GBK().newEncoder();
 
     public String getCharacterEncoding() {
         return "GBK";
     }
 
     public CharToByteGBK() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

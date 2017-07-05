@@ -125,6 +125,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XFree;
         Java_sun_awt_X11_XlibWrapper_ServerVendor;
         Java_sun_awt_X11_XlibWrapper_VendorRelease;
+        Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior;
         Java_sun_awt_X11_XlibWrapper_SetToolkitErrorHandler;
         Java_sun_awt_X11_XlibWrapper_XSetErrorHandler;
         Java_sun_awt_X11_XlibWrapper_CallErrorHandler;

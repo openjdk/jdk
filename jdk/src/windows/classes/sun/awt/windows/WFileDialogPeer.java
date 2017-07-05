@@ -237,4 +237,11 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     public void setOpacity(float opacity) {}
     public void setOpaque(boolean isOpaque) {}
     public void updateWindow(java.awt.image.BufferedImage backBuffer) {}
+
+    // the file/print dialogs are native dialogs and
+    // the native system does their own rendering
+    @Override
+    public void createScreenSurface(boolean isResize) {}
+    @Override
+    public void replaceSurfaceData() {}
 }

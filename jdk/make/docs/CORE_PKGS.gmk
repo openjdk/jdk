@@ -217,6 +217,7 @@ CORE_PKGS =                                      \
   javax.swing.plaf.basic                         \
   javax.swing.plaf.metal                         \
   javax.swing.plaf.multi                         \
+  javax.swing.plaf.nimbus                        \
   javax.swing.plaf.synth                         \
   javax.tools                                    \
   javax.transaction                              \

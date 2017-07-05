@@ -56,11 +56,11 @@ class UnixFileAttributeViews {
                 return null;    // keep compiler happy
             }
         }
+
         @Override
-        public void setTimes(Long lastModifiedTime,
-                             Long lastAccessTime,
-                             Long createTime,
-                             TimeUnit unit) throws IOException
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) throws IOException
         {
             // null => don't change
             if (lastModifiedTime == null && lastAccessTime == null) {
@@ -68,53 +68,49 @@ class UnixFileAttributeViews {
                 return;
             }
 
+            // permission check
             file.checkWrite();
 
             int fd = file.openForAttributeAccess(followLinks);
             try {
-                UnixFileAttributes attrs = null;
-
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
-                        attrs = UnixFileAttributes.get(fd);
+                        UnixFileAttributes attrs = UnixFileAttributes.get(fd);
+                        if (lastModifiedTime == null)
+                            lastModifiedTime = attrs.lastModifiedTime();
+                        if (lastAccessTime == null)
+                            lastAccessTime = attrs.lastAccessTime();
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }
                 }
 
-                // modified time = existing, now, or new value
-                long modTime;
-                if (lastModifiedTime == null) {
-                    modTime = attrs.lastModifiedTime();
-                } else {
-                    if (lastModifiedTime >= 0L) {
-                        modTime = TimeUnit.MILLISECONDS.convert(lastModifiedTime, unit);
-                    } else {
-                        if (lastModifiedTime != -1L)
-                            throw new IllegalArgumentException();
-                        modTime = System.currentTimeMillis();
-                    }
-                }
+                // uptime times
+                long modValue = lastModifiedTime.to(TimeUnit.MICROSECONDS);
+                long accessValue= lastAccessTime.to(TimeUnit.MICROSECONDS);
 
-                // access time = existing, now, or new value
-                long accTime;
-                if (lastAccessTime == null) {
-                    accTime = attrs.lastAccessTime();
-                } else {
-                    if (lastAccessTime >= 0L) {
-                        accTime = TimeUnit.MILLISECONDS.convert(lastAccessTime, unit);
-                    } else {
-                        if (lastAccessTime != -1L)
-                            throw new IllegalArgumentException();
-                        accTime = System.currentTimeMillis();
-                    }
-                }
-
+                boolean retry = false;
                 try {
-                    futimes(fd, accTime, modTime);
+                    futimes(fd, accessValue, modValue);
                 } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
+                    // if futimes fails with EINVAL and one/both of the times is
+                    // negative then we adjust the value to the epoch and retry.
+                    if (x.errno() == UnixConstants.EINVAL &&
+                        (modValue < 0L || accessValue < 0L)) {
+                        retry = true;
+                    } else {
+                        x.rethrowAsIOException(file);
+                    }
+                }
+                if (retry) {
+                    if (modValue < 0L) modValue = 0L;
+                    if (accessValue < 0L) accessValue= 0L;
+                    try {
+                        futimes(fd, accessValue, modValue);
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(file);
+                    }
                 }
             } finally {
                 close(fd);
@@ -199,10 +195,10 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,?> readAttributes(String first, String[] rest)
+        public Map<String,?> readAttributes(String[] attributes)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(first, rest);
+            AttributesBuilder builder = AttributesBuilder.create(attributes);
             PosixFileAttributes attrs = readAttributes();
             addBasicAttributesToBuilder(attrs, builder);
             addPosixAttributesToBuilder(attrs, builder);
@@ -297,6 +293,7 @@ class UnixFileAttributeViews {
         private static final String INO_NAME = "ino";
         private static final String DEV_NAME = "dev";
         private static final String RDEV_NAME = "rdev";
+        private static final String NLINK_NAME = "nlink";
         private static final String UID_NAME = "uid";
         private static final String GID_NAME = "gid";
         private static final String CTIME_NAME = "ctime";
@@ -320,6 +317,8 @@ class UnixFileAttributeViews {
                 return readAttributes().dev();
             if (attribute.equals(RDEV_NAME))
                 return readAttributes().rdev();
+            if (attribute.equals(NLINK_NAME))
+                return readAttributes().nlink();
             if (attribute.equals(UID_NAME))
                 return readAttributes().uid();
             if (attribute.equals(GID_NAME))
@@ -349,10 +348,10 @@ class UnixFileAttributeViews {
         }
 
         @Override
-        public Map<String,?> readAttributes(String first, String[] rest)
+        public Map<String,?> readAttributes(String[] attributes)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(first, rest);
+            AttributesBuilder builder = AttributesBuilder.create(attributes);
             UnixFileAttributes attrs = readAttributes();
             addBasicAttributesToBuilder(attrs, builder);
             addPosixAttributesToBuilder(attrs, builder);
@@ -364,6 +363,8 @@ class UnixFileAttributeViews {
                 builder.add(DEV_NAME, attrs.dev());
             if (builder.match(RDEV_NAME))
                 builder.add(RDEV_NAME, attrs.rdev());
+            if (builder.match(NLINK_NAME))
+                builder.add(NLINK_NAME, attrs.nlink());
             if (builder.match(UID_NAME))
                 builder.add(UID_NAME, attrs.uid());
             if (builder.match(GID_NAME))
@@ -374,19 +375,19 @@ class UnixFileAttributeViews {
         }
     }
 
-    static BasicFileAttributeView createBasicView(UnixPath file, boolean followLinks) {
+    static Basic createBasicView(UnixPath file, boolean followLinks) {
         return new Basic(file, followLinks);
     }
 
-    static PosixFileAttributeView createPosixView(UnixPath file, boolean followLinks) {
+    static Posix createPosixView(UnixPath file, boolean followLinks) {
         return new Posix(file, followLinks);
     }
 
-    static PosixFileAttributeView createUnixView(UnixPath file, boolean followLinks) {
+    static Unix createUnixView(UnixPath file, boolean followLinks) {
         return new Unix(file, followLinks);
     }
 
-    static FileOwnerAttributeView createOwnerView(UnixPath file, boolean followLinks) {
+    static FileOwnerAttributeViewImpl createOwnerView(UnixPath file, boolean followLinks) {
         return new FileOwnerAttributeViewImpl(createPosixView(file, followLinks));
     }
 }
