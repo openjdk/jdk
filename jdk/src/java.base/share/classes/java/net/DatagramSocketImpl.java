@@ -278,7 +278,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      *
      * @throws NullPointerException if name is {@code null}
      * @throws IOException if an I/O problem occurs while attempting to set the option
-     * @since 1.9
+     * @since 9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
         if (name == StandardSocketOptions.SO_SNDBUF) {
@@ -319,7 +319,7 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * @throws NullPointerException if name is {@code null}
      * @throws IOException if an I/O problem occurs while attempting to set the option
      *
-     * @since 1.9
+     * @since 9
      */
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {

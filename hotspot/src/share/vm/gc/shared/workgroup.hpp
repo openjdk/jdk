@@ -379,42 +379,29 @@ public:
 };
 
 // Represents a set of free small integer ids.
-class FreeIdSet : public CHeapObj<mtInternal> {
+class FreeIdSet : public CHeapObj<mtGC> {
   enum {
-    end_of_list = -1,
-    claimed = -2
+    end_of_list = UINT_MAX,
+    claimed = UINT_MAX - 1
   };
 
-  int _sz;
+  uint _size;
   Monitor* _mon;
 
-  int* _ids;
-  int _hd;
-  int _waiters;
-  int _claimed;
-
-  static bool _safepoint;
-  typedef FreeIdSet* FreeIdSetPtr;
-  static const int NSets = 10;
-  static FreeIdSetPtr _sets[NSets];
-  static bool _stat_init;
-  int _index;
+  uint* _ids;
+  uint _hd;
+  uint _waiters;
+  uint _claimed;
 
 public:
-  FreeIdSet(int sz, Monitor* mon);
+  FreeIdSet(uint size, Monitor* mon);
   ~FreeIdSet();
 
-  static void set_safepoint(bool b);
-
-  // Attempt to claim the given id permanently.  Returns "true" iff
-  // successful.
-  bool claim_perm_id(int i);
-
   // Returns an unclaimed parallel id (waiting for one to be released if
-  // necessary).  Returns "-1" if a GC wakes up a wait for an id.
-  int claim_par_id();
+  // necessary).
+  uint claim_par_id();
 
-  void release_par_id(int id);
+  void release_par_id(uint id);
 };
 
 #endif // SHARE_VM_GC_SHARED_WORKGROUP_HPP

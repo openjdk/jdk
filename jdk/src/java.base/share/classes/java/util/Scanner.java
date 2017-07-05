@@ -2684,7 +2684,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      *
      * @return a sequential stream of token strings
      * @throws IllegalStateException if this scanner is closed
-     * @since 1.9
+     * @since 9
      */
     public Stream<String> tokens() {
         ensureOpen();
@@ -2770,7 +2770,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @return a sequential stream of match results
      * @throws NullPointerException if pattern is null
      * @throws IllegalStateException if this scanner is closed
-     * @since 1.9
+     * @since 9
      */
     public Stream<MatchResult> findAll(Pattern pattern) {
         Objects.requireNonNull(pattern);
@@ -2792,7 +2792,7 @@ public final class Scanner implements Iterator<String>, Closeable {
      * @throws NullPointerException if patString is null
      * @throws IllegalStateException if this scanner is closed
      * @throws PatternSyntaxException if the regular expression's syntax is invalid
-     * @since 1.9
+     * @since 9
      * @see java.util.regex.Pattern
      */
     public Stream<MatchResult> findAll(String patString) {

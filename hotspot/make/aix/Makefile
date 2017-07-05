@@ -1,6 +1,6 @@
 #
 # Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2012, 2013 SAP AG. All rights reserved.
+# Copyright 2012, 2015 SAP AG. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ ifndef CC_INTERP
   ifndef FORCE_TIERED
     FORCE_TIERED=1
   endif
-endif
-# C1 is not ported on ppc64(le), so we cannot build a tiered VM:
-ifneq (,$(filter $(ARCH),ppc64 pp64le))
-  FORCE_TIERED=0
 endif
 
 ifdef LP64

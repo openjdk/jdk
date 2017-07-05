@@ -31,7 +31,8 @@
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -251,14 +252,6 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
 
   cm->set_region_stack_index(which_stack_index);
   cm->set_region_stack(ParCompactionManager::region_list(which_stack_index));
-  if (TraceDynamicGCThreads) {
-    gclog_or_tty->print_cr("StealRegionCompactionTask::do_it "
-                           "region_stack_index %d region_stack = " PTR_FORMAT " "
-                           " empty (%d) use all workers %d",
-    which_stack_index, p2i(ParCompactionManager::region_list(which_stack_index)),
-    cm->region_stack()->is_empty(),
-    use_all_workers);
-  }
 
   // Has to drain stacks first because there may be regions on
   // preloaded onto the stack and this thread may never have
@@ -323,14 +316,6 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
   }
 
   cm->set_region_stack(ParCompactionManager::region_list(which_stack_index));
-  if (TraceDynamicGCThreads) {
-    gclog_or_tty->print_cr("DrainStacksCompactionTask::do_it which = %d "
-                           "which_stack_index = %d/empty(%d) "
-                           "use all workers %d",
-                           which, which_stack_index,
-                           cm->region_stack()->is_empty(),
-                           use_all_workers);
-  }
 
   cm->set_region_stack_index(which_stack_index);
 
@@ -345,13 +330,6 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
            ParCompactionManager::region_list(cm->region_stack_index()),
            "region_stack and region_stack_index are inconsistent");
     ParCompactionManager::push_recycled_stack_index(cm->region_stack_index());
-
-    if (TraceDynamicGCThreads) {
-      void* old_region_stack = (void*) cm->region_stack();
-      int old_region_stack_index = cm->region_stack_index();
-      gclog_or_tty->print_cr("Pushing region stack " PTR_FORMAT "/%d",
-        p2i(old_region_stack), old_region_stack_index);
-    }
 
     cm->set_region_stack(NULL);
     cm->set_region_stack_index((uint)max_uintx);

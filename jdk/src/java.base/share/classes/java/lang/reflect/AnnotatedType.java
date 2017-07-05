@@ -60,7 +60,7 @@ public interface AnnotatedType extends AnnotatedElement {
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason
      *
-     * @since 1.9
+     * @since 9
      */
     default AnnotatedType getAnnotatedOwnerType() {
         return null;

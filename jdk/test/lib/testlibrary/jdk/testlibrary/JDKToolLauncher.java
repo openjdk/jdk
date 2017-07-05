@@ -38,8 +38,7 @@ import java.util.List;
  * <pre>
  * {@code
  * JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
- *                                       .addVMArg("-XX:+PrintGC");
- *                                       .addVMArg("-XX:+PrintGCDetails")
+ *                                       .addVMArg("-Xlog:gc*=debug")
  *                                       .addToolArg("-heap")
  *                                       .addToolArg(pid);
  * ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());

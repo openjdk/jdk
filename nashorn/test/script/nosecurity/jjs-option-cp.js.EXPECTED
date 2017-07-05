@@ -1,0 +1,6 @@
+-cp flag positive test:
+flag test PASSED
+functionality test PASSED
+-cp flag negative test:
+flag test PASSED
+functionality test PASSED

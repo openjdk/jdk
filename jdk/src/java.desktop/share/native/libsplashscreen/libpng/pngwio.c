@@ -54,7 +54,7 @@
  * writes to a file pointer.  Note that this routine sometimes gets called
  * with very small lengths, so you should implement some kind of simple
  * buffering if you are using unbuffered writes.  This should never be asked
- * to write more than 64K on a 16 bit machine.
+ * to write more than 64K on a 16-bit machine.
  */
 
 void /* PRIVATE */

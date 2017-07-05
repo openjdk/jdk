@@ -41,7 +41,7 @@ import javax.crypto.spec.IvParameterSpec;
 /**
  * Internal class for context resource clean up.
  *
- * @since 1.9
+ * @since 9
  */
 final class CipherContextRef extends PhantomReference<NativeCipher>
     implements Comparable<CipherContextRef> {

@@ -33,7 +33,7 @@ inline void HeapRegionSetBase::add(HeapRegion* hr) {
   assert_heap_region_set(hr->next() == NULL, "should not already be linked");
   assert_heap_region_set(hr->prev() == NULL, "should not already be linked");
 
-  _count.increment(1u, hr->capacity());
+  _length++;
   hr->set_containing_set(this);
   verify_region(hr);
 }
@@ -45,8 +45,8 @@ inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   assert_heap_region_set(hr->prev() == NULL, "should already be unlinked");
 
   hr->set_containing_set(NULL);
-  assert_heap_region_set(_count.length() > 0, "pre-condition");
-  _count.decrement(1u, hr->capacity());
+  assert_heap_region_set(_length > 0, "pre-condition");
+  _length--;
 }
 
 inline void FreeRegionList::add_ordered(HeapRegion* hr) {

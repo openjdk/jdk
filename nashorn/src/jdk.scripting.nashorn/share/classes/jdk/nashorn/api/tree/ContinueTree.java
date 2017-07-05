@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *   continue <em>label</em> ;
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ContinueTree extends GotoTree {
     /**

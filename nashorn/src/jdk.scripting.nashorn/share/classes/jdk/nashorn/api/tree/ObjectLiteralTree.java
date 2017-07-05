@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Represents ECMAScript object literal expression.
  *
- * @since 1.9
+ * @since 9
  */
 public interface ObjectLiteralTree extends ExpressionTree {
     /**

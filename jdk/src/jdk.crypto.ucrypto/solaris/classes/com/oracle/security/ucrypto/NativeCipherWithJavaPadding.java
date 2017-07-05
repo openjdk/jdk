@@ -59,7 +59,7 @@ import javax.crypto.spec.IvParameterSpec;
  * - AES/CBC/PKCS5PADDING
  * - AES/CFB128/PKCS5PADDING
  *
- * @since 1.9
+ * @since 9
  */
 public class NativeCipherWithJavaPadding extends CipherSpi {
 

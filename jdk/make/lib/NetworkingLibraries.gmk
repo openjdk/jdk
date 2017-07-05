@@ -52,7 +52,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
         -D "JDK_INTERNAL_NAME=net" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBNET): $(BUILD_LIBJAVA)
 

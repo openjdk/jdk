@@ -37,7 +37,7 @@ import java.util.List;
  *   }
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface SwitchTree extends StatementTree {
     /**

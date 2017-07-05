@@ -36,7 +36,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 /**
  * Represents nashorn ECMAScript parser instance.
  *
- * @since 1.9
+ * @since 9
  */
 public interface Parser {
     /**

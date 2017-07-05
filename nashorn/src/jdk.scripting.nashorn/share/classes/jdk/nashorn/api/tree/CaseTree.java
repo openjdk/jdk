@@ -39,7 +39,7 @@ import java.util.List;
  *       <em>statements</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface CaseTree extends Tree {
     /**

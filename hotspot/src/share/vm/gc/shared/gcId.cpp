@@ -26,6 +26,7 @@
 #include "gc/shared/gcId.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadLocalStorage.hpp"
 
 uint GCId::_next_id = 0;
 
@@ -38,6 +39,10 @@ const uint GCId::create() {
   return _next_id++;
 }
 
+const uint GCId::peek() {
+  return _next_id;
+}
+
 const uint GCId::current() {
   assert(currentNamedthread()->gc_id() != undefined(), "Using undefined GC id.");
   return current_raw();
@@ -45,6 +50,18 @@ const uint GCId::current() {
 
 const uint GCId::current_raw() {
   return currentNamedthread()->gc_id();
+}
+
+size_t GCId::print_prefix(char* buf, size_t len) {
+  if (ThreadLocalStorage::is_initialized() && ThreadLocalStorage::thread()->is_Named_thread()) {
+    uint gc_id = current_raw();
+    if (gc_id != undefined()) {
+      int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
+      assert(ret > 0, "Failed to print prefix. Log buffer too small?");
+      return (size_t)ret;
+    }
+  }
+  return 0;
 }
 
 GCIdMark::GCIdMark() : _gc_id(GCId::create()) {

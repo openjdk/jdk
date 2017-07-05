@@ -28,7 +28,7 @@ package jdk.security.jarsigner;
 /**
  * This exception is thrown when {@link JarSigner#sign} fails.
  *
- * @since 1.9
+ * @since 9
  */
 public class JarSignerException extends RuntimeException {
 

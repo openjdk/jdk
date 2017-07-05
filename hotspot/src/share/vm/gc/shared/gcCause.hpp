@@ -125,36 +125,4 @@ class GCCause : public AllStatic {
   static const char* to_string(GCCause::Cause cause);
 };
 
-// Helper class for doing logging that includes the GC Cause
-// as a string.
-class GCCauseString : StackObj {
- private:
-   static const int _length = 128;
-   char _buffer[_length];
-   int _position;
-
- public:
-   GCCauseString(const char* prefix, GCCause::Cause cause) {
-     if (PrintGCCause) {
-      _position = jio_snprintf(_buffer, _length, "%s (%s) ", prefix, GCCause::to_string(cause));
-     } else {
-      _position = jio_snprintf(_buffer, _length, "%s ", prefix);
-     }
-     assert(_position >= 0 && _position <= _length,
-            "Need to increase the buffer size in GCCauseString? %d", _position);
-   }
-
-   GCCauseString& append(const char* str) {
-     int res = jio_snprintf(_buffer + _position, _length - _position, "%s", str);
-     _position += res;
-     assert(res >= 0 && _position <= _length,
-            "Need to increase the buffer size in GCCauseString? %d", res);
-     return *this;
-   }
-
-   operator const char*() {
-     return _buffer;
-   }
-};
-
 #endif // SHARE_VM_GC_SHARED_GCCAUSE_HPP

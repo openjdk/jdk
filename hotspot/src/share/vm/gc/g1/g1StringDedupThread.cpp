@@ -24,12 +24,12 @@
 
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
-#include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/g1/g1StringDedupTable.hpp"
 #include "gc/g1/g1StringDedupThread.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 
@@ -129,7 +129,7 @@ void G1StringDedupThread::run() {
 
       // Print statistics
       total_stat.add(stat);
-      print(gclog_or_tty, stat, total_stat);
+      print(stat, total_stat);
     }
   }
 
@@ -152,14 +152,14 @@ void G1StringDedupThread::stop() {
   }
 }
 
-void G1StringDedupThread::print(outputStream* st, const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
-  if (G1Log::fine() || PrintStringDeduplicationStatistics) {
-    G1StringDedupStat::print_summary(st, last_stat, total_stat);
-    if (PrintStringDeduplicationStatistics) {
-      G1StringDedupStat::print_statistics(st, last_stat, false);
-      G1StringDedupStat::print_statistics(st, total_stat, true);
-      G1StringDedupTable::print_statistics(st);
-      G1StringDedupQueue::print_statistics(st);
+void G1StringDedupThread::print(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
+  if (log_is_enabled(Info, gc, stringdedup)) {
+    G1StringDedupStat::print_summary(last_stat, total_stat);
+    if (log_is_enabled(Debug, gc, stringdedup)) {
+      G1StringDedupStat::print_statistics(last_stat, false);
+      G1StringDedupStat::print_statistics(total_stat, true);
+      G1StringDedupTable::print_statistics();
+      G1StringDedupQueue::print_statistics();
     }
   }
 }

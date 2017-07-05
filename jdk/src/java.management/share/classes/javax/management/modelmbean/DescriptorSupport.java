@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -283,7 +284,7 @@ public class DescriptorSupport
             throw new RuntimeOperationsException(iae, msg);
         }
 
-        final String lowerInStr = inStr.toLowerCase();
+        final String lowerInStr = inStr.toLowerCase(Locale.ENGLISH);
         if (!lowerInStr.startsWith("<descriptor>")
             || !lowerInStr.endsWith("</descriptor>")) {
             throw new XMLParseException("No <descriptor>, </descriptor> pair");

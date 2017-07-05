@@ -168,6 +168,7 @@ JVMCI_ONLY(public:)
   // This is only a CheapObj to ease debugging after a deopt failure
   class UnrollBlock : public CHeapObj<mtCompiler> {
     friend class VMStructs;
+    friend class JVMCIVMStructs;
    private:
     int       _size_of_deoptimized_frame; // Size, in bytes, of current deoptimized frame
     int       _caller_adjustment;         // Adjustment, in bytes, to caller's SP by initial interpreted frame

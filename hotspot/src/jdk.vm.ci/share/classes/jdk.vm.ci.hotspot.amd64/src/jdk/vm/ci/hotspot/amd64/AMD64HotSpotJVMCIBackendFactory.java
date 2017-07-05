@@ -49,79 +49,79 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     protected EnumSet<AMD64.CPUFeature> computeFeatures(HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         EnumSet<AMD64.CPUFeature> features = EnumSet.noneOf(AMD64.CPUFeature.class);
-        if ((config.x86CPUFeatures & config.cpu3DNOWPREFETCH) != 0) {
+        if ((config.vmVersionFeatures & config.amd643DNOWPREFETCH) != 0) {
             features.add(AMD64.CPUFeature.AMD_3DNOW_PREFETCH);
         }
         assert config.useSSE >= 2 : "minimum config for x64";
         features.add(AMD64.CPUFeature.SSE);
         features.add(AMD64.CPUFeature.SSE2);
-        if ((config.x86CPUFeatures & config.cpuSSE3) != 0) {
+        if ((config.vmVersionFeatures & config.amd64SSE3) != 0) {
             features.add(AMD64.CPUFeature.SSE3);
         }
-        if ((config.x86CPUFeatures & config.cpuSSSE3) != 0) {
+        if ((config.vmVersionFeatures & config.amd64SSSE3) != 0) {
             features.add(AMD64.CPUFeature.SSSE3);
         }
-        if ((config.x86CPUFeatures & config.cpuSSE4A) != 0) {
+        if ((config.vmVersionFeatures & config.amd64SSE4A) != 0) {
             features.add(AMD64.CPUFeature.SSE4A);
         }
-        if ((config.x86CPUFeatures & config.cpuSSE41) != 0) {
+        if ((config.vmVersionFeatures & config.amd64SSE41) != 0) {
             features.add(AMD64.CPUFeature.SSE4_1);
         }
-        if ((config.x86CPUFeatures & config.cpuSSE42) != 0) {
+        if ((config.vmVersionFeatures & config.amd64SSE42) != 0) {
             features.add(AMD64.CPUFeature.SSE4_2);
         }
-        if ((config.x86CPUFeatures & config.cpuPOPCNT) != 0) {
+        if ((config.vmVersionFeatures & config.amd64POPCNT) != 0) {
             features.add(AMD64.CPUFeature.POPCNT);
         }
-        if ((config.x86CPUFeatures & config.cpuLZCNT) != 0) {
+        if ((config.vmVersionFeatures & config.amd64LZCNT) != 0) {
             features.add(AMD64.CPUFeature.LZCNT);
         }
-        if ((config.x86CPUFeatures & config.cpuERMS) != 0) {
+        if ((config.vmVersionFeatures & config.amd64ERMS) != 0) {
             features.add(AMD64.CPUFeature.ERMS);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX) != 0) {
             features.add(AMD64.CPUFeature.AVX);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX2) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX2) != 0) {
             features.add(AMD64.CPUFeature.AVX2);
         }
-        if ((config.x86CPUFeatures & config.cpuAES) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AES) != 0) {
             features.add(AMD64.CPUFeature.AES);
         }
-        if ((config.x86CPUFeatures & config.cpu3DNOWPREFETCH) != 0) {
+        if ((config.vmVersionFeatures & config.amd643DNOWPREFETCH) != 0) {
             features.add(AMD64.CPUFeature.AMD_3DNOW_PREFETCH);
         }
-        if ((config.x86CPUFeatures & config.cpuBMI1) != 0) {
+        if ((config.vmVersionFeatures & config.amd64BMI1) != 0) {
             features.add(AMD64.CPUFeature.BMI1);
         }
-        if ((config.x86CPUFeatures & config.cpuBMI2) != 0) {
+        if ((config.vmVersionFeatures & config.amd64BMI2) != 0) {
             features.add(AMD64.CPUFeature.BMI2);
         }
-        if ((config.x86CPUFeatures & config.cpuRTM) != 0) {
+        if ((config.vmVersionFeatures & config.amd64RTM) != 0) {
             features.add(AMD64.CPUFeature.RTM);
         }
-        if ((config.x86CPUFeatures & config.cpuADX) != 0) {
+        if ((config.vmVersionFeatures & config.amd64ADX) != 0) {
             features.add(AMD64.CPUFeature.ADX);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512F) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512F) != 0) {
             features.add(AMD64.CPUFeature.AVX512F);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512DQ) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512DQ) != 0) {
             features.add(AMD64.CPUFeature.AVX512DQ);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512PF) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512PF) != 0) {
             features.add(AMD64.CPUFeature.AVX512PF);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512ER) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512ER) != 0) {
             features.add(AMD64.CPUFeature.AVX512ER);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512CD) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512CD) != 0) {
             features.add(AMD64.CPUFeature.AVX512CD);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512BW) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512BW) != 0) {
             features.add(AMD64.CPUFeature.AVX512BW);
         }
-        if ((config.x86CPUFeatures & config.cpuAVX512VL) != 0) {
+        if ((config.vmVersionFeatures & config.amd64AVX512VL) != 0) {
             features.add(AMD64.CPUFeature.AVX512VL);
         }
         return features;

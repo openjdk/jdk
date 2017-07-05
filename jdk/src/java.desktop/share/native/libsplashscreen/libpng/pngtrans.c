@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.15 [November 20, 2014]
- * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.18 [July 23, 2015]
+ * Copyright (c) 1998-2015 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -58,7 +58,7 @@ png_set_bgr(png_structrp png_ptr)
 #endif
 
 #if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
-/* Turn on 16 bit byte swapping */
+/* Turn on 16-bit byte swapping */
 void PNGAPI
 png_set_swap(png_structrp png_ptr)
 {
@@ -341,7 +341,7 @@ png_do_invert(png_row_infop row_info, png_bytep row)
 
 #ifdef PNG_16BIT_SUPPORTED
 #if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
-/* Swaps byte order on 16 bit depth images */
+/* Swaps byte order on 16-bit depth images */
 void /* PRIVATE */
 png_do_swap(png_row_infop row_info, png_bytep row)
 {
@@ -732,7 +732,7 @@ png_do_check_palette_indexes(png_structrp png_ptr, png_row_infop row_info)
              */
             for (; rp > png_ptr->row_buf; rp--)
             {
-              if (*rp >> padding != 0)
+              if ((*rp >> padding) != 0)
                  png_ptr->num_palette_max = 1;
               padding = 0;
             }

@@ -39,7 +39,7 @@ package jdk.nashorn.api.tree;
  *       <em>elseStatement</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface IfTree extends StatementTree {
     /**
