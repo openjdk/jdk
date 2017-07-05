@@ -34,7 +34,7 @@ import jdk.vm.ci.meta.Value;
  * where to find the local variables, operand stack values and locked objects of the bytecode
  * frame(s).
  */
-public class BytecodeFrame extends BytecodePosition {
+public final class BytecodeFrame extends BytecodePosition {
 
     /**
      * An array of values representing how to reconstruct the state of the Java frame. This is array
@@ -65,14 +65,18 @@ public class BytecodeFrame extends BytecodePosition {
      * <p>
      * Note that the number of locals and the number of stack slots may be smaller than the maximum
      * number of locals and stack slots as specified in the compiled method.
+     *
+     * This field is intentionally exposed as a mutable array that a compiler may modify (e.g.
+     * during register allocation).
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "field is intentionally mutable")//
     public final JavaValue[] values;
 
     /**
-     * An array describing the Java kind of the {@link #values}. It records a kind for the locals
-     * and the operand stack.
+     * An array describing the Java kinds in {@link #values}. It records a kind for the locals and
+     * the operand stack.
      */
-    public final JavaKind[] slotKinds;
+    private final JavaKind[] slotKinds;
 
     /**
      * The number of locals in the values array.
@@ -99,8 +103,8 @@ public class BytecodeFrame extends BytecodePosition {
     public final boolean rethrowException;
 
     /**
-     * Specifies if this object represents a frame state in the middle of executing a call. If
-     * true, the arguments to the call have been popped from the stack and the return value (for a
+     * Specifies if this object represents a frame state in the middle of executing a call. If true,
+     * the arguments to the call have been popped from the stack and the return value (for a
      * non-void call) has not yet been pushed.
      */
     public final boolean duringCall;
@@ -178,11 +182,14 @@ public class BytecodeFrame extends BytecodePosition {
      * @param bci a BCI within the method
      * @param rethrowException specifies if the VM should re-throw the pending exception when
      *            deopt'ing using this frame
-     * @param values the frame state {@link #values}
+     * @param values the frame state {@link #values}.
+     * @param slotKinds the kinds in {@code values}. This array is now owned by this object and must
+     *            not be mutated by the caller.
      * @param numLocals the number of local variables
      * @param numStack the depth of the stack
      * @param numLocks the number of locked objects
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `slotKinds`")
     public BytecodeFrame(BytecodeFrame caller, ResolvedJavaMethod method, int bci, boolean rethrowException, boolean duringCall, JavaValue[] values, JavaKind[] slotKinds, int numLocals, int numStack,
                     int numLocks) {
         super(caller, method, bci);
@@ -219,12 +226,44 @@ public class BytecodeFrame extends BytecodePosition {
     }
 
     /**
+     * Gets the kind of a local variable.
+     *
+     * @param i the local variable to query
+     * @return the kind of local variable {@code i}
+     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
+     */
+    public JavaKind getLocalValueKind(int i) {
+        if (i < 0 || i >= numLocals) {
+            throw new IndexOutOfBoundsException();
+        }
+        return slotKinds[i];
+    }
+
+    /**
+     * Gets the kind of a stack slot.
+     *
+     * @param i the local variable to query
+     * @return the kind of stack slot {@code i}
+     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
+     */
+    public JavaKind getStackValueKind(int i) {
+        if (i < 0 || i >= numStack) {
+            throw new IndexOutOfBoundsException();
+        }
+        return slotKinds[i + numLocals];
+    }
+
+    /**
      * Gets the value representing the specified local variable.
      *
      * @param i the local variable index
      * @return the value that can be used to reconstruct the local's current value
+     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocals}
      */
     public JavaValue getLocalValue(int i) {
+        if (i < 0 || i >= numLocals) {
+            throw new IndexOutOfBoundsException();
+        }
         return values[i];
     }
 
@@ -233,8 +272,12 @@ public class BytecodeFrame extends BytecodePosition {
      *
      * @param i the stack index
      * @return the value that can be used to reconstruct the stack slot's current value
+     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numStack}
      */
     public JavaValue getStackValue(int i) {
+        if (i < 0 || i >= numStack) {
+            throw new IndexOutOfBoundsException();
+        }
         return values[i + numLocals];
     }
 
@@ -243,8 +286,12 @@ public class BytecodeFrame extends BytecodePosition {
      *
      * @param i the lock index
      * @return the value that can be used to reconstruct the lock's current value
+     * @throw {@link IndexOutOfBoundsException} if {@code i < 0 || i >= this.numLocks}
      */
     public JavaValue getLockValue(int i) {
+        if (i < 0 || i >= numLocks) {
+            throw new IndexOutOfBoundsException();
+        }
         return values[i + numLocals + numStack];
     }
 
@@ -255,6 +302,11 @@ public class BytecodeFrame extends BytecodePosition {
      */
     public BytecodeFrame caller() {
         return (BytecodeFrame) getCaller();
+    }
+
+    @Override
+    public int hashCode() {
+        return (numLocals + 1) ^ (numStack + 11) ^ (numLocks + 7);
     }
 
     @Override

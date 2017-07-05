@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,11 +351,14 @@ public final class TypeAnnotationParser {
             new LinkedHashMap<>();
         for (TypeAnnotation t : typeAnnos) {
             Annotation a = t.getAnnotation();
-            Class<? extends Annotation> klass = a.annotationType();
-            AnnotationType type = AnnotationType.getInstance(klass);
-            if (type.retention() == RetentionPolicy.RUNTIME)
-                if (result.put(klass, a) != null)
+            if (a != null) {
+                Class<? extends Annotation> klass = a.annotationType();
+                AnnotationType type = AnnotationType.getInstance(klass);
+                if (type.retention() == RetentionPolicy.RUNTIME &&
+                    result.put(klass, a) != null) {
                     throw new AnnotationFormatError("Duplicate annotation for class: "+klass+": " + a);
+                }
+            }
         }
         return result;
     }

@@ -60,6 +60,11 @@ public abstract class ValueKind<K extends ValueKind<K>> {
         public IllegalValueKind changeType(PlatformKind newPlatformKind) {
             return this;
         }
+
+        @Override
+        public String toString() {
+            return "ILLEGAL";
+        }
     }
 
     /**
@@ -82,4 +87,13 @@ public abstract class ValueKind<K extends ValueKind<K>> {
      * override this to preserve the additional information added by the compiler.
      */
     public abstract K changeType(PlatformKind newPlatformKind);
+
+    /**
+     * Returns a String representation of the kind, which will be included at the end of
+     * {@link Value#toString()} implementation. Defaults to {@link #toString()} but can be
+     * overridden to provide something more specific.
+     */
+    public String getKindSuffix() {
+        return toString();
+    }
 }

@@ -39,11 +39,11 @@ import java.util.List;
 import static org.testng.Assert.*;
 
 public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
-    static final long static_final_v = 1L;
+    static final long static_final_v = 0x0123456789ABCDEFL;
 
     static long static_v;
 
-    final long final_v = 1L;
+    final long final_v = 0x0123456789ABCDEFL;
 
     long v;
 
@@ -121,148 +121,148 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestMethodHandleAccessLong recv, Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.SET).invokeExact(recv, 1L);
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, 2L);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(recv, 0xCAFEBABECAFEBABEL);
             long x = (long) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(recv);
-            assertEquals(x, 2L, "setVolatile long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "setVolatile long value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, 1L);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(recv, 0x0123456789ABCDEFL);
             long x = (long) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(recv);
-            assertEquals(x, 1L, "setRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "setRelease long value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, 2L);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(recv, 0xCAFEBABECAFEBABEL);
             long x = (long) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(recv);
-            assertEquals(x, 2L, "setOpaque long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "setOpaque long value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(recv, 1L);
+        hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
 
         // Compare
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 1L, 2L);
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             assertEquals(r, true, "success compareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "success compareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSet long value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 1L, 3L);
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(recv, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, false, "failing compareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "failing compareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSet long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeVolatile long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchange long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "success compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchange long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(recv, 2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeVolatile long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchange long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "failing compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchange long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 1L, 2L);
-            assertEquals(r, 1L, "success compareAndExchangeAcquire long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+            assertEquals(r, 0x0123456789ABCDEFL, "success compareAndExchangeAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "success compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndExchangeAcquire long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 1L, 3L);
-            assertEquals(r, 2L, "failing compareAndExchangeAcquire long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(recv, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "failing compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeRelease long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "success compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeRelease long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeRelease long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "failing compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 1L, 2L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "weakCompareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2L, 1L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "weakCompareAndSetAcquire long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetAcquire long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1L, 2L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSetRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "weakCompareAndSetRelease long");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetRelease long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(recv, 2L, 1L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(recv, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSetVolatile long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1L, "weakCompareAndSetVolatile long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long");
         }
 
         // Compare set and get
         {
-            long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 2L);
-            assertEquals(o, 1L, "getAndSet long");
+            long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 0xCAFEBABECAFEBABEL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2L, "getAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "getAndSet long value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(recv, 1L);
+        hs.get(TestAccessMode.SET).invokeExact(recv, 0x0123456789ABCDEFL);
 
         // get and add, add and get
         {
-            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 3L);
-            assertEquals(o, 1L, "getAndAdd long");
-            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 3L);
-            assertEquals(c, 1L + 3L + 3L, "getAndAdd long value");
+            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(recv, 0xDEADBEEFDEADBEEFL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
+            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(recv, 0xDEADBEEFDEADBEEFL);
+            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
         }
     }
 
@@ -274,148 +274,148 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
     static void testStaticField(Handles hs) throws Throwable {
         // Plain
         {
-            hs.get(TestAccessMode.SET).invokeExact(1L);
+            hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "set long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "set long value");
         }
 
 
         // Volatile
         {
-            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(2L);
+            hs.get(TestAccessMode.SET_VOLATILE).invokeExact(0xCAFEBABECAFEBABEL);
             long x = (long) hs.get(TestAccessMode.GET_VOLATILE).invokeExact();
-            assertEquals(x, 2L, "setVolatile long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "setVolatile long value");
         }
 
         // Lazy
         {
-            hs.get(TestAccessMode.SET_RELEASE).invokeExact(1L);
+            hs.get(TestAccessMode.SET_RELEASE).invokeExact(0x0123456789ABCDEFL);
             long x = (long) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact();
-            assertEquals(x, 1L, "setRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "setRelease long value");
         }
 
         // Opaque
         {
-            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(2L);
+            hs.get(TestAccessMode.SET_OPAQUE).invokeExact(0xCAFEBABECAFEBABEL);
             long x = (long) hs.get(TestAccessMode.GET_OPAQUE).invokeExact();
-            assertEquals(x, 2L, "setOpaque long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "setOpaque long value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(1L);
+        hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
 
         // Compare
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(1L, 2L);
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             assertEquals(r, true, "success compareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "success compareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSet long value");
         }
 
         {
-            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(1L, 3L);
+            boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, false, "failing compareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "failing compareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSet long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeVolatile long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchange long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "success compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchange long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeVolatile long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchange long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "failing compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchange long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(1L, 2L);
-            assertEquals(r, 1L, "success compareAndExchangeAcquire long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+            assertEquals(r, 0x0123456789ABCDEFL, "success compareAndExchangeAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "success compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndExchangeAcquire long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(1L, 3L);
-            assertEquals(r, 2L, "failing compareAndExchangeAcquire long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "failing compareAndExchangeAcquire long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(2L, 1L);
-            assertEquals(r, 2L, "success compareAndExchangeRelease long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "success compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeRelease long value");
         }
 
         {
-            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(2L, 3L);
-            assertEquals(r, 1L, "failing compareAndExchangeRelease long");
+            long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "failing compareAndExchangeRelease long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(1L, 2L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "weakCompareAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2L, 1L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "weakCompareAndSetAcquire long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetAcquire long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1L, 2L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
             assertEquals(success, true, "weakCompareAndSetRelease long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "weakCompareAndSetRelease long");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetRelease long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(2L, 1L);
+                success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
             assertEquals(success, true, "weakCompareAndSetVolatile long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1L, "weakCompareAndSetVolatile long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long");
         }
 
         // Compare set and get
         {
-            long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact( 2L);
-            assertEquals(o, 1L, "getAndSet long");
+            long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact( 0xCAFEBABECAFEBABEL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndSet long");
             long x = (long) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2L, "getAndSet long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "getAndSet long value");
         }
 
-        hs.get(TestAccessMode.SET).invokeExact(1L);
+        hs.get(TestAccessMode.SET).invokeExact(0x0123456789ABCDEFL);
 
         // get and add, add and get
         {
-            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( 3L);
-            assertEquals(o, 1L, "getAndAdd long");
-            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(3L);
-            assertEquals(c, 1L + 3L + 3L, "getAndAdd long value");
+            long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact( 0xDEADBEEFDEADBEEFL);
+            assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
+            long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(0xDEADBEEFDEADBEEFL);
+            assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
         }
     }
 
@@ -430,148 +430,148 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                hs.get(TestAccessMode.SET).invokeExact(array, i, 1L);
+                hs.get(TestAccessMode.SET).invokeExact(array, i, 0x0123456789ABCDEFL);
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "get long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "get long value");
             }
 
 
             // Volatile
             {
-                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, 2L);
+                hs.get(TestAccessMode.SET_VOLATILE).invokeExact(array, i, 0xCAFEBABECAFEBABEL);
                 long x = (long) hs.get(TestAccessMode.GET_VOLATILE).invokeExact(array, i);
-                assertEquals(x, 2L, "setVolatile long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "setVolatile long value");
             }
 
             // Lazy
             {
-                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, 1L);
+                hs.get(TestAccessMode.SET_RELEASE).invokeExact(array, i, 0x0123456789ABCDEFL);
                 long x = (long) hs.get(TestAccessMode.GET_ACQUIRE).invokeExact(array, i);
-                assertEquals(x, 1L, "setRelease long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "setRelease long value");
             }
 
             // Opaque
             {
-                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, 2L);
+                hs.get(TestAccessMode.SET_OPAQUE).invokeExact(array, i, 0xCAFEBABECAFEBABEL);
                 long x = (long) hs.get(TestAccessMode.GET_OPAQUE).invokeExact(array, i);
-                assertEquals(x, 2L, "setOpaque long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "setOpaque long value");
             }
 
-            hs.get(TestAccessMode.SET).invokeExact(array, i, 1L);
+            hs.get(TestAccessMode.SET).invokeExact(array, i, 0x0123456789ABCDEFL);
 
             // Compare
             {
-                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 1L, 2L);
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 assertEquals(r, true, "success compareAndSet long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "success compareAndSet long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSet long value");
             }
 
             {
-                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 1L, 3L);
+                boolean r = (boolean) hs.get(TestAccessMode.COMPARE_AND_SET).invokeExact(array, i, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
                 assertEquals(r, false, "failing compareAndSet long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "failing compareAndSet long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSet long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2L, 1L);
-                assertEquals(r, 2L, "success compareAndExchangeVolatile long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchange long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "success compareAndExchangeVolatile long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchange long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_VOLATILE).invokeExact(array, i, 2L, 3L);
-                assertEquals(r, 1L, "failing compareAndExchangeVolatile long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+                assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchange long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "failing compareAndExchangeVolatile long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchange long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 1L, 2L);
-                assertEquals(r, 1L, "success compareAndExchangeAcquire long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                assertEquals(r, 0x0123456789ABCDEFL, "success compareAndExchangeAcquire long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "success compareAndExchangeAcquire long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndExchangeAcquire long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 1L, 3L);
-                assertEquals(r, 2L, "failing compareAndExchangeAcquire long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_ACQUIRE).invokeExact(array, i, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+                assertEquals(r, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "failing compareAndExchangeAcquire long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 2L, 1L);
-                assertEquals(r, 2L, "success compareAndExchangeRelease long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeRelease long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "success compareAndExchangeRelease long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeRelease long value");
             }
 
             {
-                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 2L, 3L);
-                assertEquals(r, 1L, "failing compareAndExchangeRelease long");
+                long r = (long) hs.get(TestAccessMode.COMPARE_AND_EXCHANGE_RELEASE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+                assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "failing compareAndExchangeRelease long value");
+                assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long value");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 1L, 2L);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 }
                 assertEquals(success, true, "weakCompareAndSet long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "weakCompareAndSet long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSet long value");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2L, 1L);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 }
                 assertEquals(success, true, "weakCompareAndSetAcquire long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "weakCompareAndSetAcquire long");
+                assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetAcquire long");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1L, 2L);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 }
                 assertEquals(success, true, "weakCompareAndSetRelease long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "weakCompareAndSetRelease long");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetRelease long");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(array, i, 2L, 1L);
+                    success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_VOLATILE).invokeExact(array, i, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 }
                 assertEquals(success, true, "weakCompareAndSetVolatile long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1L, "weakCompareAndSetVolatile long");
+                assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetVolatile long");
             }
 
             // Compare set and get
             {
-                long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, 2L);
-                assertEquals(o, 1L, "getAndSet long");
+                long o = (long) hs.get(TestAccessMode.GET_AND_SET).invokeExact(array, i, 0xCAFEBABECAFEBABEL);
+                assertEquals(o, 0x0123456789ABCDEFL, "getAndSet long");
                 long x = (long) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2L, "getAndSet long value");
+                assertEquals(x, 0xCAFEBABECAFEBABEL, "getAndSet long value");
             }
 
-            hs.get(TestAccessMode.SET).invokeExact(array, i, 1L);
+            hs.get(TestAccessMode.SET).invokeExact(array, i, 0x0123456789ABCDEFL);
 
             // get and add, add and get
             {
-                long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 3L);
-                assertEquals(o, 1L, "getAndAdd long");
-                long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 3L);
-                assertEquals(c, 1L + 3L + 3L, "getAndAdd long value");
+                long o = (long) hs.get(TestAccessMode.GET_AND_ADD).invokeExact(array, i, 0xDEADBEEFDEADBEEFL);
+                assertEquals(o, 0x0123456789ABCDEFL, "getAndAdd long");
+                long c = (long) hs.get(TestAccessMode.ADD_AND_GET).invokeExact(array, i, 0xDEADBEEFDEADBEEFL);
+                assertEquals(c, (long)(0x0123456789ABCDEFL + 0xDEADBEEFDEADBEEFL + 0xDEADBEEFDEADBEEFL), "getAndAdd long value");
             }
         }
     }
@@ -597,31 +597,31 @@ public class VarHandleTestMethodHandleAccessLong extends VarHandleBaseTest {
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
                 checkIOOBE(am, () -> {
-                    hs.get(am).invokeExact(array, ci, 1L);
+                    hs.get(am).invokeExact(array, ci, 0x0123456789ABCDEFL);
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
                 checkIOOBE(am, () -> {
-                    boolean r = (boolean) hs.get(am).invokeExact(array, ci, 1L, 2L);
+                    boolean r = (boolean) hs.get(am).invokeExact(array, ci, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
                 checkIOOBE(am, () -> {
-                    long r = (long) hs.get(am).invokeExact(array, ci, 2L, 1L);
+                    long r = (long) hs.get(am).invokeExact(array, ci, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
                 checkIOOBE(am, () -> {
-                    long o = (long) hs.get(am).invokeExact(array, ci, 1L);
+                    long o = (long) hs.get(am).invokeExact(array, ci, 0x0123456789ABCDEFL);
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
                 checkIOOBE(am, () -> {
-                    long o = (long) hs.get(am).invokeExact(array, ci, 3L);
+                    long o = (long) hs.get(am).invokeExact(array, ci, 0xDEADBEEFDEADBEEFL);
                 });
             }
         }

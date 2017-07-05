@@ -207,12 +207,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       tnameserv.1 \
       unpack200.1
 
-  ifndef OPENJDK
-    ifneq ($(OPENJDK_TARGET_OS), solaris)
-      JRE_MAN_PAGES += javaws.1
-    endif
-  endif
-
   JDK_MAN_PAGES += \
       $(JRE_MAN_PAGES) \
       appletviewer.1 \

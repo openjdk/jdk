@@ -27,7 +27,7 @@ import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
 import jdk.test.lib.cli.predicate.NotPredicate;
-import sha.predicate.IntrinsicPredicates;
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 /**
  * Test case specific to UseSHA*Intrinsics options targeted to SPARC and AArch64
