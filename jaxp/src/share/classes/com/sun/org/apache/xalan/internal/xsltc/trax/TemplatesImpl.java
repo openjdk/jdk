@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: TemplatesImpl.java,v 1.2.4.1 2005/09/06 12:19:26 pvedula Exp $
+ * $Id: TemplatesImpl.java,v 1.8 2007/03/26 20:12:27 spericas Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;

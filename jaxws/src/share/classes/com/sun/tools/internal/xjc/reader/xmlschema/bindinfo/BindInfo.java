@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.io.FilterWriter;
@@ -30,9 +29,12 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlMixed;
@@ -44,14 +46,17 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import com.sun.codemodel.internal.JDocComment;
+import com.sun.tools.internal.xjc.SchemaCache;
 import com.sun.tools.internal.xjc.model.CCustomizations;
 import com.sun.tools.internal.xjc.model.CPluginCustomization;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.xml.internal.bind.annotation.XmlLocation;
+import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.bind.marshaller.MinimumEscapeHandler;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.xsom.XSComponent;
 
 import org.w3c.dom.Element;
@@ -304,4 +309,40 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     /** An instance with the empty contents. */
     public final static BindInfo empty = new BindInfo();
 
+    /**
+     * Lazily prepared {@link JAXBContext}.
+     */
+    private static JAXBContextImpl customizationContext;
+
+    public static JAXBContextImpl getJAXBContext() {
+        synchronized(AnnotationParserFactoryImpl.class) {
+            try {
+                if(customizationContext==null)
+                    customizationContext = new JAXBContextImpl(
+                        new Class[] {
+                            BindInfo.class, // for xs:annotation
+                            BIClass.class,
+                            BIConversion.User.class,
+                            BIConversion.UserAdapter.class,
+                            BIDom.class,
+                            BIXDom.class,
+                            BIXSubstitutable.class,
+                            BIEnum.class,
+                            BIEnumMember.class,
+                            BIGlobalBinding.class,
+                            BIProperty.class,
+                            BISchemaBinding.class
+                        }, Collections.<TypeReference>emptyList(),
+                            Collections.<Class,Class>emptyMap(), null, false, null, false, false);
+                return customizationContext;
+            } catch (JAXBException e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
+    /**
+     * Lazily parsed schema for the binding file.
+     */
+    public static final SchemaCache bindingFileSchema = new SchemaCache(BindInfo.class.getResource("binding.xsd"));
 }

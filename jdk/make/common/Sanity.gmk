@@ -92,7 +92,8 @@ sanity-all:: sanity-base \
     sane-ld_run_path \
     sane-alt_bootdir \
     sane-bootdir \
-    sane-alsa-headers
+    sane-alsa-headers \
+    sane-jibx
 
 ifdef OPENJDK
 sanity-all:: sane-freetype 

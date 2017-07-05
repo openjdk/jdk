@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,242 +25,157 @@
 
 package com.sun.xml.internal.ws.transport.http.client;
 
+import com.sun.xml.internal.ws.api.EndpointAddress;
+import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.client.BindingProviderProperties;
 import static com.sun.xml.internal.ws.client.BindingProviderProperties.*;
 import com.sun.xml.internal.ws.client.ClientTransportException;
-import com.sun.xml.internal.ws.client.BindingProviderProperties;
-import com.sun.xml.internal.ws.transport.WSConnectionImpl;
-import com.sun.xml.internal.ws.util.ByteArrayBuffer;
+import com.sun.xml.internal.ws.resources.ClientMessages;
+import com.sun.xml.internal.ws.transport.Headers;
+import com.sun.xml.internal.ws.developer.JAXWSProperties;
+import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.NotNull;
 
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.WebServiceException;
-import javax.xml.ws.http.HTTPBinding;
-import javax.xml.ws.handler.MessageContext;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.MimeHeader;
-import javax.xml.soap.MimeHeaders;
-import javax.xml.soap.SOAPConstants;
-import static javax.xml.ws.BindingProvider.ENDPOINT_ADDRESS_PROPERTY;
 import static javax.xml.ws.BindingProvider.SESSION_MAINTAIN_PROPERTY;
-import javax.xml.ws.soap.SOAPBinding;
+import javax.xml.ws.WebServiceException;
+import javax.xml.ws.handler.MessageContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 
 /**
+ * TODO: this class seems to be pointless. Just merge it with {@link HttpTransportPipe}.
+ *
  * @author WS Development Team
  */
-public class HttpClientTransport extends WSConnectionImpl {
+final class HttpClientTransport {
 
+    // Need to use JAXB first to register DatatypeConverter
+    static {
+        try {
+            JAXBContext.newInstance().createUnmarshaller();
+        } catch(JAXBException je) {
+            // Nothing much can be done. Intentionally left empty
+        }
+    }
     private static String LAST_ENDPOINT = "";
     private static boolean redirect = true;
     private static final int START_REDIRECT_COUNT = 3;
     private static int redirectCount = START_REDIRECT_COUNT;
-    int statusCode;
+
+    /*package*/ int statusCode;
+    private final Map<String, List<String>> reqHeaders;
     private Map<String, List<String>> respHeaders = null;
 
-    public HttpClientTransport() {
-        this(null, new HashMap<String, Object>());
-    }
+    private OutputStream outputStream;
+    private boolean https;
+    private HttpURLConnection httpConnection = null;
+    private EndpointAddress endpoint = null;
+    private Packet context = null;
+    private CookieJar cookieJar = null;
+    private boolean isFailure = false;
+    private final Integer chunkSize;
 
-    public HttpClientTransport(OutputStream logStream, Map<String, Object> context) {
-        this.context = context;
-        _logStream = logStream;
 
-        String bindingId = (String) context.get(BINDING_ID_PROPERTY);
-        try {
-            if (bindingId == null)
-                bindingId = SOAPBinding.SOAP11HTTP_BINDING;
-
-            if (bindingId.equals(SOAPBinding.SOAP12HTTP_BINDING))
-                _messageFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
-            else
-                _messageFactory = MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL);
-
-            endpoint = (String) context.get(ENDPOINT_ADDRESS_PROPERTY);
-        } catch (Exception e) {
-            throw new ClientTransportException("http.client.cannotCreateMessageFactory");
-        }
+    public HttpClientTransport(@NotNull Packet packet, @NotNull Map<String,List<String>> reqHeaders) {
+        endpoint = packet.endpointAddress;
+        context = packet;
+        this.reqHeaders = reqHeaders;
+        chunkSize = (Integer)context.invocationProperties.get(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE);
     }
 
     /**
      * Prepare the stream for HTTP request
      */
-    @Override
     public OutputStream getOutput() {
         try {
-            httpConnection = createHttpConnection(endpoint, context);
-            cookieJar = sendCookieAsNeeded();
-
-            // how to incorporate redirect processing: message dispatcher does not seem to tbe right place
-            String requestMethod = httpConnection.getRequestMethod();
-            boolean skipOut = ("GET".equalsIgnoreCase(requestMethod) ||
-                "HEAD".equalsIgnoreCase(requestMethod) ||
-                "DELETE".equalsIgnoreCase(requestMethod));
-            if (!skipOut)
+            createHttpConnection();
+            sendCookieAsNeeded();
+            // for "GET" request no need to get outputStream
+            if (requiresOutputStream()) {
                 outputStream = httpConnection.getOutputStream();
-            //if use getOutputStream method set as "POST"
-            //but for "Get" request no need to get outputStream
-            connectForResponse();
-
+                if (chunkSize != null) {
+                    outputStream = new WSChunkedOuputStream(outputStream, chunkSize);
+                }
+                List<String> contentEncoding = reqHeaders.get("Content-Encoding");
+                // TODO need to find out correct encoding based on q value - RFC 2616
+                if (contentEncoding != null && contentEncoding.get(0).contains("gzip")) {
+                    outputStream = new GZIPOutputStream(outputStream);
+                }
+            }
+            httpConnection.connect();
         } catch (Exception ex) {
-            throw new ClientTransportException("http.client.failed", ex);
+            throw new ClientTransportException(
+                ClientMessages.localizableHTTP_CLIENT_FAILED(ex),ex);
         }
 
         return outputStream;
     }
 
+    public void closeOutput() throws IOException {
+        if (outputStream != null) {
+            outputStream.close();
+            outputStream = null;
+        }
+    }
+
     /**
      * Get the response from HTTP connection and prepare the input stream for response
      */
-    @Override
     public InputStream getInput() {
         // response processing
 
         InputStream in;
         try {
             in = readResponse();
+            String contentEncoding = httpConnection.getContentEncoding();
+            if (contentEncoding != null && contentEncoding.contains("gzip")) {
+                in = new GZIPInputStream(in);
+            }
         } catch (IOException e) {
             if (statusCode == HttpURLConnection.HTTP_NO_CONTENT
                 || (isFailure
                 && statusCode != HttpURLConnection.HTTP_INTERNAL_ERROR)) {
                 try {
-                    throw new ClientTransportException("http.status.code",
-                        statusCode, httpConnection.getResponseMessage());
+                    throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(
+                        statusCode, httpConnection.getResponseMessage()));
                 } catch (IOException ex) {
-                    throw new ClientTransportException("http.status.code",
-                        statusCode, ex);
+                    throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(
+                        statusCode, ex));
                 }
             }
-            throw new ClientTransportException("http.client.failed",
-                e.getMessage());
+            throw new ClientTransportException(ClientMessages.localizableHTTP_CLIENT_FAILED(e),e);
         }
-        httpConnection = null;
-
         return in;
     }
 
-    @Override
-    public OutputStream getDebug() {
-        return _logStream;
-    }
-
-    @Override
     public Map<String, List<String>> getHeaders() {
         if (respHeaders != null) {
             return respHeaders;
         }
-        try {
-            isFailure = checkResponseCode();
-
-            respHeaders = collectResponseMimeHeaders();
-
-            saveCookieAsNeeded(cookieJar);
-            setHeaders(respHeaders);
-
-            return respHeaders;
-        } catch (IOException e) {
-            if (statusCode == HttpURLConnection.HTTP_NO_CONTENT
-                || (isFailure
-                && statusCode != HttpURLConnection.HTTP_INTERNAL_ERROR)) {
-                try {
-                    throw new ClientTransportException("http.status.code",
-                        new Object[]{
-                            statusCode,
-                            httpConnection.getResponseMessage()});
-                } catch (IOException ex) {
-                    throw new ClientTransportException("http.status.code",
-                        new Object[]{
-                            statusCode,
-                            ex});
-                }
-            }
-            throw new ClientTransportException("http.client.failed",
-                e.getMessage());
-        }
-
+        respHeaders = new Headers();
+        respHeaders.putAll(httpConnection.getHeaderFields());
+        return respHeaders;
     }
 
-//    public void invoke(String endpoint, SOAPMessageContext context)
-//            throws ClientTransportException {
-
-//        try {
-//            int statusCode = httpConnection.getResponseCode();
-//
-//            //http URL redirection does not redirect http requests
-//            //to an https endpoint probably due to a bug in the jdk
-//            //or by intent - to workaround this if an error code
-//            //of HTTP_MOVED_TEMP or HTTP_MOVED_PERM is received then
-//            //the jaxws client will reinvoke the original request
-//            //to the new endpoint - kw bug 4890118
-//            if (checkForRedirect(statusCode)) {
-//                redirectRequest(httpConnection, context);
-//                return;
-//            }
-//    }
-
-    protected InputStream readResponse()
-        throws IOException {
-        InputStream contentIn =
-            (isFailure
+    protected InputStream readResponse() throws IOException {
+        return (isFailure
                 ? httpConnection.getErrorStream()
                 : httpConnection.getInputStream());
-
-        ByteArrayBuffer bab = new ByteArrayBuffer();
-        if (contentIn != null) { // is this really possible?
-            bab.write(contentIn);
-            bab.close();
-        }
-
-        int length =
-            httpConnection.getContentLength() == -1
-                ? bab.size()
-                : httpConnection.getContentLength();
-
-        return bab.newInputStream(0, length);
-    }
-
-    protected Map<String, List<String>> collectResponseMimeHeaders() {
-        /*
-        MimeHeaders mimeHeaders = new MimeHeaders();
-        for (int i = 1; ; ++i) {
-            String key = httpConnection.getHeaderFieldKey(i);
-            if (key == null) {
-                break;
-            }
-            String value = httpConnection.getHeaderField(i);
-            try {
-                mimeHeaders.addHeader(key, value);
-            } catch (IllegalArgumentException e) {
-                // ignore headers that are illegal in MIME
-            }
-        }
-
-        Map<String, List<String>> headers = new HashMap<String, List<String>>();
-        for (Iterator iter = mimeHeaders.getAllHeaders(); iter.hasNext();) {
-            MimeHeader header = (MimeHeader)iter.next();
-            List<String> h = new ArrayList<String>();
-            h.add(header.getValue());
-            headers.put (header.getName (), h);
-        }
-        return headers;
-         */
-        return httpConnection.getHeaderFields();
-    }
-
-    protected void connectForResponse()
-        throws IOException {
-
-        httpConnection.connect();
     }
 
     /*
@@ -268,13 +183,10 @@ public class HttpClientTransport extends WSConnectionImpl {
      * return message to be processed (i.e., in the case of an UNAUTHORIZED
      * response from the servlet or 404 not found)
      */
-    protected boolean checkResponseCode()
-        throws IOException {
-        boolean isFailure = false;
+    /*package*/void checkResponseCode() {
         try {
 
             statusCode = httpConnection.getResponseCode();
-            setStatus(statusCode);
 
             if ((httpConnection.getResponseCode()
                 == HttpURLConnection.HTTP_INTERNAL_ERROR)) {
@@ -285,51 +197,39 @@ public class HttpClientTransport extends WSConnectionImpl {
                     == HttpURLConnection.HTTP_UNAUTHORIZED) {
 
                 // no soap message returned, so skip reading message and throw exception
-                throw new ClientTransportException("http.client.unauthorized",
-                    httpConnection.getResponseMessage());
+                throw new ClientTransportException(
+                    ClientMessages.localizableHTTP_CLIENT_UNAUTHORIZED(httpConnection.getResponseMessage()));
             } else if (
                 httpConnection.getResponseCode()
                     == HttpURLConnection.HTTP_NOT_FOUND) {
 
                 // no message returned, so skip reading message and throw exception
-                throw new ClientTransportException("http.not.found",
-                    httpConnection.getResponseMessage());
+                throw new ClientTransportException(
+                    ClientMessages.localizableHTTP_NOT_FOUND(httpConnection.getResponseMessage()));
             } else if (
                 (statusCode == HttpURLConnection.HTTP_MOVED_TEMP) ||
                     (statusCode == HttpURLConnection.HTTP_MOVED_PERM)) {
                 isFailure = true;
 
                 if (!redirect || (redirectCount <= 0)) {
-                    throw new ClientTransportException("http.status.code",
-                        new Object[]{
-                            statusCode,
-                            getStatusMessage(httpConnection)});
+                    throw new ClientTransportException(
+                        ClientMessages.localizableHTTP_STATUS_CODE(statusCode,getStatusMessage()));
                 }
             } else if (
                 statusCode < 200 || (statusCode >= 303 && statusCode < 500)) {
-                throw new ClientTransportException("http.status.code",
-                    new Object[]{
-                        statusCode,
-                        getStatusMessage(httpConnection)});
+                throw new ClientTransportException(
+                    ClientMessages.localizableHTTP_STATUS_CODE(statusCode,getStatusMessage()));
             } else if (statusCode >= 500) {
                 isFailure = true;
             }
         } catch (IOException e) {
             throw new WebServiceException(e);
-            // on JDK1.3.1_01, we end up here, but then getResponseCode() succeeds!
-//            if (httpConnection.getResponseCode()
-//                    == HttpURLConnection.HTTP_INTERNAL_ERROR) {
-//                isFailure = true;
-//            } else {
-//                throw e;
-//            }
         }
-
-        return isFailure;
+        // Hack for now
+        saveCookieAsNeeded();
     }
 
-    protected String getStatusMessage(HttpURLConnection httpConnection)
-        throws IOException {
+    private String getStatusMessage() throws IOException {
         int statusCode = httpConnection.getResponseCode();
         String message = httpConnection.getResponseMessage();
         if (statusCode == HttpURLConnection.HTTP_CREATED
@@ -343,108 +243,117 @@ public class HttpClientTransport extends WSConnectionImpl {
         return message;
     }
 
-    protected CookieJar sendCookieAsNeeded() {
+    protected void sendCookieAsNeeded() {
         Boolean shouldMaintainSessionProperty =
-            (Boolean) context.get(SESSION_MAINTAIN_PROPERTY);
-        if (shouldMaintainSessionProperty == null) {
-            return null;
-        }
-        if (shouldMaintainSessionProperty.booleanValue()) {
-            CookieJar cookieJar = (CookieJar) context.get(HTTP_COOKIE_JAR);
+            (Boolean) context.invocationProperties.get(SESSION_MAINTAIN_PROPERTY);
+        if (shouldMaintainSessionProperty != null && shouldMaintainSessionProperty) {
+            cookieJar = (CookieJar) context.invocationProperties.get(HTTP_COOKIE_JAR);
             if (cookieJar == null) {
                 cookieJar = new CookieJar();
 
                 // need to store in binding's context so it is not lost
-                BindingProvider bp =
-                    (BindingProvider) context.get(JAXWS_CLIENT_HANDLE_PROPERTY);
-                bp.getRequestContext().put(HTTP_COOKIE_JAR, cookieJar);
+                context.proxy.getRequestContext().put(HTTP_COOKIE_JAR, cookieJar);
             }
             cookieJar.applyRelevantCookies(httpConnection);
-            return cookieJar;
-        } else {
-            return null;
         }
     }
 
-    protected void saveCookieAsNeeded(CookieJar cookieJar) {
+    private void saveCookieAsNeeded() {
         if (cookieJar != null) {
             cookieJar.recordAnyCookies(httpConnection);
         }
     }
 
-    protected HttpURLConnection createHttpConnection(String endpoint,
-                                                     Map<String, Object> context)
-        throws IOException {
 
-        boolean verification = false;
-        // does the client want client hostname verification by the service
-        String verificationProperty =
-            (String) context.get(HOSTNAME_VERIFICATION_PROPERTY);
-        if (verificationProperty != null) {
-            if (verificationProperty.equalsIgnoreCase("true"))
-                verification = true;
-        }
+    private void createHttpConnection() throws IOException {
 
         // does the client want request redirection to occur
         String redirectProperty =
-            (String) context.get(REDIRECT_REQUEST_PROPERTY);
+            (String) context.invocationProperties.get(REDIRECT_REQUEST_PROPERTY);
         if (redirectProperty != null) {
             if (redirectProperty.equalsIgnoreCase("false"))
                 redirect = false;
         }
 
-        checkEndpoints(endpoint);
+        checkEndpoints();
 
-        HttpURLConnection httpConnection = createConnection(endpoint);
+        httpConnection = (HttpURLConnection) endpoint.openConnection();
+        if (httpConnection instanceof HttpsURLConnection) {
+            https = true;
 
-        if (!verification) {
-            // for https hostname verification  - turn off by default
-            if (httpConnection instanceof HttpsURLConnection) {
+            boolean verification = false;
+            // does the client want client hostname verification by the service
+            String verificationProperty =
+                (String) context.invocationProperties.get(HOSTNAME_VERIFICATION_PROPERTY);
+            if (verificationProperty != null) {
+                if (verificationProperty.equalsIgnoreCase("true"))
+                    verification = true;
+            }
+            if (!verification) {
                 ((HttpsURLConnection) httpConnection).setHostnameVerifier(new HttpClientVerifier());
             }
+
+            // Set application's HostNameVerifier for this connection
+            HostnameVerifier verifier =
+                (HostnameVerifier) context.invocationProperties.get(JAXWSProperties.HOSTNAME_VERIFIER);
+            if (verifier != null) {
+                ((HttpsURLConnection) httpConnection).setHostnameVerifier(verifier);
+            }
+
+            // Set application's SocketFactory for this connection
+            SSLSocketFactory sslSocketFactory =
+                (SSLSocketFactory) context.invocationProperties.get(JAXWSProperties.SSL_SOCKET_FACTORY);
+            if (sslSocketFactory != null) {
+                ((HttpsURLConnection) httpConnection).setSSLSocketFactory(sslSocketFactory);
+            }
+
         }
+
+
+        writeBasicAuthAsNeeded(context, reqHeaders);
 
         // allow interaction with the web page - user may have to supply
         // username, password id web page is accessed from web browser
         httpConnection.setAllowUserInteraction(true);
+
         // enable input, output streams
         httpConnection.setDoOutput(true);
         httpConnection.setDoInput(true);
-        // the soap message is always sent as a Http POST
-        // HTTP Get is disallowed by BP 1.0
-        // needed for XML/HTTPBinding and SOAP12Binding
-        // for xml/http binding other methods are allowed.
-        // for Soap 1.2 "GET" is allowed.
-        String method = "POST";
-        String requestMethod = (String) context.get(MessageContext.HTTP_REQUEST_METHOD);
-        if (context.get(BindingProviderProperties.BINDING_ID_PROPERTY).equals(HTTPBinding.HTTP_BINDING)){
+
+        String requestMethod = (String) context.invocationProperties.get(MessageContext.HTTP_REQUEST_METHOD);
+        String method = (requestMethod != null) ? requestMethod : "POST";
+        httpConnection.setRequestMethod(method);
+
+        //this code or something similiar needs t be moved elsewhere for error checking
+        /*if (context.invocationProperties.get(BindingProviderProperties.BINDING_ID_PROPERTY).equals(HTTPBinding.HTTP_BINDING)){
             method = (requestMethod != null)?requestMethod:method;
         } else if
-            (context.get(BindingProviderProperties.BINDING_ID_PROPERTY).equals(SOAPBinding.SOAP12HTTP_BINDING) &&
+            (context.invocationProperties.get(BindingProviderProperties.BINDING_ID_PROPERTY).equals(SOAPBinding.SOAP12HTTP_BINDING) &&
             "GET".equalsIgnoreCase(requestMethod)) {
-            method = (requestMethod != null)?requestMethod:method;
         }
-        ((HttpURLConnection)httpConnection).setRequestMethod(method);
+       */
 
-        Integer reqTimeout = (Integer)context.get(BindingProviderProperties.REQUEST_TIMEOUT);
+        Integer reqTimeout = (Integer)context.invocationProperties.get(BindingProviderProperties.REQUEST_TIMEOUT);
         if (reqTimeout != null) {
             httpConnection.setReadTimeout(reqTimeout);
         }
 
-        // set the properties on HttpURLConnection
-        for (Map.Entry entry : super.getHeaders().entrySet()) {
-            httpConnection.addRequestProperty((String) entry.getKey(), ((List<String>) entry.getValue()).get(0));
+        Integer chunkSize = (Integer)context.invocationProperties.get(JAXWSProperties.HTTP_CLIENT_STREAMING_CHUNK_SIZE);
+        if (chunkSize != null) {
+            httpConnection.setChunkedStreamingMode(chunkSize);
         }
 
-        return httpConnection;
+        // set the properties on HttpURLConnection
+        for (Map.Entry<String, List<String>> entry : reqHeaders.entrySet()) {
+            httpConnection.addRequestProperty(entry.getKey(), entry.getValue().get(0));
+        }
     }
 
-    private java.net.HttpURLConnection createConnection(String endpoint)
-        throws IOException {
-        return (HttpURLConnection) new URL(endpoint).openConnection();
+    public boolean isSecure() {
+        return https;
     }
 
-//    private void redirectRequest(HttpURLConnection httpConnection, SOAPMessageContext context) {
+    //    private void redirectRequest(HttpURLConnection httpConnection, SOAPMessageContext context) {
 //        String redirectEndpoint = httpConnection.getHeaderField("Location");
 //        if (redirectEndpoint != null) {
 //            httpConnection.disconnect();
@@ -457,26 +366,94 @@ public class HttpClientTransport extends WSConnectionImpl {
         return (((statusCode == 301) || (statusCode == 302)) && redirect && (redirectCount-- > 0));
     }
 
-    private void checkEndpoints(String currentEndpoint) {
-        if (!LAST_ENDPOINT.equalsIgnoreCase(currentEndpoint)) {
+    private void checkEndpoints() {
+        if (!LAST_ENDPOINT.equalsIgnoreCase(endpoint.toString())) {
             redirectCount = START_REDIRECT_COUNT;
-            LAST_ENDPOINT = currentEndpoint;
+            LAST_ENDPOINT = endpoint.toString();
         }
+    }
+
+
+    private void writeBasicAuthAsNeeded(Packet context, Map<String, List<String>> reqHeaders) {
+        String user = (String) context.invocationProperties.get(BindingProvider.USERNAME_PROPERTY);
+        if (user != null) {
+            String pw = (String) context.invocationProperties.get(BindingProvider.PASSWORD_PROPERTY);
+            if (pw != null) {
+                StringBuffer buf = new StringBuffer(user);
+                buf.append(":");
+                buf.append(pw);
+                String creds = printBase64Binary(buf.toString().getBytes());
+                reqHeaders.put("Authorization", Collections.singletonList("Basic "+creds));
+            }
+        }
+    }
+
+    private boolean requiresOutputStream() {
+        return !(httpConnection.getRequestMethod().equalsIgnoreCase("GET") ||
+                httpConnection.getRequestMethod().equalsIgnoreCase("HEAD") ||
+                httpConnection.getRequestMethod().equalsIgnoreCase("DELETE"));
+    }
+
+    public @Nullable String getContentType() {
+        return httpConnection.getContentType();
     }
 
     // overide default SSL HttpClientVerifier to always return true
     // effectively overiding Hostname client verification when using SSL
-    static class HttpClientVerifier implements HostnameVerifier {
+    private static class HttpClientVerifier implements HostnameVerifier {
         public boolean verify(String s, SSLSession sslSession) {
             return true;
         }
     }
 
-    private MessageFactory _messageFactory;
-    HttpURLConnection httpConnection = null;
-    String endpoint = null;
-    Map<String, Object> context = null;
-    CookieJar cookieJar = null;
-    boolean isFailure = false;
-    OutputStream _logStream = null;
+    /**
+     * HttpURLConnection.getOuputStream() returns sun.net.www.http.ChunkedOuputStream in chunked
+     * streaming mode. If you call ChunkedOuputStream.write(byte[20MB], int, int), then the whole data
+     * is kept in memory. This wraps the ChunkedOuputStream so that it writes only small
+     * chunks.
+     */
+    private static final class WSChunkedOuputStream extends OutputStream {
+        final OutputStream actual;
+        final int chunkSize;
+
+        WSChunkedOuputStream(OutputStream actual, int chunkSize) {
+            this.actual = actual;
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public void write(byte b[], int off, int len) throws IOException {
+            int sent = 0;
+            while(sent < len) {
+                int chunk = len-sent;
+                if (chunk > chunkSize) {
+                    chunk = chunkSize;
+                }
+                actual.write(b, off, chunk);
+                off += chunk;
+                sent += chunk;
+            }
+        }
+
+        @Override
+        public void write(byte b[]) throws IOException {
+            write(b, 0, b.length);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            actual.write(b);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            actual.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            actual.close();
+        }
+    }
+
 }

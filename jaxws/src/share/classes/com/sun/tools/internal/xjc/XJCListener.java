@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc;
 
 import java.io.PrintStream;
@@ -93,4 +92,27 @@ public abstract class XJCListener implements ErrorListener {
      *      never null. this is the root object that represents the code generation strategy.
      */
     public void compiled(Outline outline) {}
+
+    /**
+     * XJC will periodically invoke this method to see if it should cancel a compilation.
+     *
+     * <p>
+     * As long as this method returns false, XJC will keep going. If this method ever returns
+     * true, XJC will abort the processing right away and
+     * returns non-zero from {@link Driver#run(String[], XJCListener)}.
+     * Note that XJC will not report an abortion through the {@link #message(String)} method.
+     *
+     * <p>
+     * Note that despite all the efforts to check this method frequently, XJC may still fail to
+     * invoke this method for a long time. Such scenario would include network related problems
+     * or other I/O block (you can't even interrupt the thread while I/O is blocking.)
+     * So just beware that this is not a cure-all.
+     *
+     * @return
+     *      true if the {@link XJCListener} wants to abort the processing.
+     * @since 2.1
+     */
+    public boolean isCanceled() {
+        return false;
+    }
 }

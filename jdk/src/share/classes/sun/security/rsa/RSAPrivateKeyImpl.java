@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     RSAPrivateKeyImpl(BigInteger n, BigInteger d) throws InvalidKeyException {
         this.n = n;
         this.d = d;
-        RSAKeyFactory.checkKeyLength(n);
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), null);
         // generate the encoding
         algid = RSAPrivateCrtKeyImpl.rsaId;
         try {

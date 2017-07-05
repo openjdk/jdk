@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
@@ -415,45 +414,38 @@ public abstract class JaxBeanInfo<BeanT> {
      */
     protected final void setLifecycleFlags() {
         try {
-            Method m;
-
-            // beforeUnmarshal
-            try {
-                m = jaxbType.getDeclaredMethod("beforeUnmarshal", unmarshalEventParams);
-                cacheLifecycleMethod(m, FLAG_HAS_BEFORE_UNMARSHAL_METHOD);
-            } catch (NoSuchMethodException e) {
-                // no-op, look for the next method
-            }
-
-            // afterUnmarshal
-            try {
-                m = jaxbType.getDeclaredMethod("afterUnmarshal", unmarshalEventParams);
-                cacheLifecycleMethod(m, FLAG_HAS_AFTER_UNMARSHAL_METHOD);
-            } catch (NoSuchMethodException e) {
-                // no-op, look for the next method
-            }
-
-            // beforeMarshal
-            try {
-                m = jaxbType.getDeclaredMethod("beforeMarshal", marshalEventParams);
-                cacheLifecycleMethod(m, FLAG_HAS_BEFORE_MARSHAL_METHOD);
-            } catch (NoSuchMethodException e) {
-                // no-op, look for the next method
-            }
-
-            // afterMarshal
-            try {
-                m = jaxbType.getDeclaredMethod("afterMarshal", marshalEventParams);
-                cacheLifecycleMethod(m, FLAG_HAS_AFTER_MARSHAL_METHOD);
-            } catch (NoSuchMethodException e) {
-                // no-op
+            for( Method m : jaxbType.getDeclaredMethods() ) {
+                String name = m.getName();
+                if(name.equals("beforeUnmarshal")) {
+                    if(match(m,unmarshalEventParams)) {
+                        cacheLifecycleMethod(m, FLAG_HAS_BEFORE_UNMARSHAL_METHOD);
+                    }
+                } else
+                if(name.equals("afterUnmarshal")) {
+                    if(match(m,unmarshalEventParams)) {
+                        cacheLifecycleMethod(m, FLAG_HAS_AFTER_UNMARSHAL_METHOD);
+                    }
+                } else
+                if(name.equals("beforeMarshal")) {
+                    if(match(m,marshalEventParams)) {
+                        cacheLifecycleMethod(m, FLAG_HAS_BEFORE_MARSHAL_METHOD);
+                    }
+                } else
+                if(name.equals("afterMarshal")) {
+                    if(match(m,marshalEventParams)) {
+                        cacheLifecycleMethod(m, FLAG_HAS_AFTER_MARSHAL_METHOD);
+                    }
+                }
             }
         } catch(SecurityException e) {
             // this happens when we don't have enough permission.
             logger.log( Level.WARNING, Messages.UNABLE_TO_DISCOVER_EVENTHANDLER.format(
-                jaxbType.getName(),
-                e ));
+                jaxbType.getName(), e ));
         }
+    }
+
+    private boolean match(Method m, Class[] params) {
+        return Arrays.equals(m.getParameterTypes(),params);
     }
 
     /**
@@ -477,16 +469,16 @@ public abstract class JaxBeanInfo<BeanT> {
 
         switch (lifecycleFlag) {
         case FLAG_HAS_BEFORE_UNMARSHAL_METHOD:
-            lcm.setBeforeUnmarshal(m);
+            lcm.beforeUnmarshal = m;
             break;
         case FLAG_HAS_AFTER_UNMARSHAL_METHOD:
-            lcm.setAfterUnmarshal(m);
+            lcm.afterUnmarshal = m;
             break;
         case FLAG_HAS_BEFORE_MARSHAL_METHOD:
-            lcm.setBeforeMarshal(m);
+            lcm.beforeMarshal = m;
             break;
         case FLAG_HAS_AFTER_MARSHAL_METHOD:
-            lcm.setAfterMarshal(m);
+            lcm.afterMarshal = m;
             break;
         }
     }
@@ -504,7 +496,7 @@ public abstract class JaxBeanInfo<BeanT> {
      * Invokes the beforeUnmarshal method if applicable.
      */
     public final void invokeBeforeUnmarshalMethod(UnmarshallerImpl unm, Object child, Object parent) throws SAXException {
-        Method m = getLifecycleMethods().getBeforeUnmarshal();
+        Method m = getLifecycleMethods().beforeUnmarshal;
         invokeUnmarshallCallback(m, child, unm, parent);
     }
 
@@ -512,7 +504,7 @@ public abstract class JaxBeanInfo<BeanT> {
      * Invokes the afterUnmarshal method if applicable.
      */
     public final void invokeAfterUnmarshalMethod(UnmarshallerImpl unm, Object child, Object parent) throws SAXException {
-        Method m = getLifecycleMethods().getAfterUnmarshal();
+        Method m = getLifecycleMethods().afterUnmarshal;
         invokeUnmarshallCallback(m, child, unm, parent);
     }
 

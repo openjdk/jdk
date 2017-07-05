@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,34 +26,35 @@ package com.sun.xml.internal.ws.transport.http.server;
 
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import com.sun.xml.internal.ws.server.ServerRtException;
+
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
-import javax.net.ssl.SSLContext;
 
 /**
  * Manages all the WebService HTTP servers created by JAXWS runtime.
  *
- * @author WS Development Team
+ * @author Jitendra Kotamraju
  */
-public class ServerMgr {
+final class ServerMgr {
 
     private static final ServerMgr serverMgr = new ServerMgr();
     private static final Logger logger =
         Logger.getLogger(
             com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".server.http");
-    private Map<InetSocketAddress, ServerState> servers = new HashMap();
+    private final Map<InetSocketAddress,ServerState> servers = new HashMap<InetSocketAddress,ServerState>();
 
-    protected ServerMgr() {
-    }
+    private ServerMgr() {}
 
+    /**
+     * Gets the singleton instance.
+     */
     public static ServerMgr getInstance() {
         return serverMgr;
     }
@@ -65,24 +66,24 @@ public class ServerMgr {
      */
     public HttpContext createContext(String address) {
         try {
-            HttpServer server = null;
-            ServerState state = null;
-            boolean started = false;
+            HttpServer server;
+            ServerState state;
             URL url = new URL(address);
             int port = url.getPort();
             if (port == -1) {
                 port = url.getDefaultPort();
             }
             InetSocketAddress inetAddress = new InetSocketAddress(url.getHost(),
-                    url.getPort());
+                port);
             synchronized(servers) {
                 state = servers.get(inetAddress);
                 if (state == null) {
                     logger.fine("Creating new HTTP Server at "+inetAddress);
                     server = HttpServer.create(inetAddress, 5);
                     server.setExecutor(Executors.newFixedThreadPool(5));
-                    logger.fine("Creating HTTP Context at = "+url.getPath());
-                    HttpContext context = server.createContext(url.getPath());
+                    String path = url.toURI().getPath();
+                    logger.fine("Creating HTTP Context at = "+path);
+                    HttpContext context = server.createContext(path);
                     server.start();
                     logger.fine("HTTP server started = "+inetAddress);
                     state = new ServerState(server);
@@ -120,8 +121,8 @@ public class ServerMgr {
         }
     }
 
-    private static class ServerState {
-        private HttpServer server;
+    private static final class ServerState {
+        private final HttpServer server;
         private int instances;
 
         ServerState(HttpServer server) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.xml.namespace.QName;
@@ -30,6 +29,7 @@ import javax.xml.namespace.QName;
 import com.sun.xml.internal.bind.DatatypeConverterImpl;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.runtime.JaxBeanInfo;
+import com.sun.istack.internal.Nullable;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -52,7 +52,7 @@ public class XsiTypeLoader extends Loader {
     }
 
     public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
-        JaxBeanInfo beanInfo = parseXsiType(state, ea);
+        JaxBeanInfo beanInfo = parseXsiType(state,ea,defaultBeanInfo);
         if(beanInfo==null)
             beanInfo = defaultBeanInfo;
 
@@ -61,7 +61,7 @@ public class XsiTypeLoader extends Loader {
         loader.startElement(state,ea);
     }
 
-    /*pacakge*/ static JaxBeanInfo parseXsiType(UnmarshallingContext.State state, TagName ea) throws SAXException {
+    /*pacakge*/ static JaxBeanInfo parseXsiType(UnmarshallingContext.State state, TagName ea, @Nullable JaxBeanInfo defaultBeanInfo) throws SAXException {
         UnmarshallingContext context = state.getContext();
         JaxBeanInfo beanInfo = null;
 
@@ -78,6 +78,15 @@ public class XsiTypeLoader extends Loader {
             if(type==null) {
                 reportError(Messages.NOT_A_QNAME.format(value),true);
             } else {
+                if(defaultBeanInfo!=null && defaultBeanInfo.getTypeNames().contains(type))
+                    // if this xsi:type is something that the default type can already handle,
+                    // let it do so. This is added as a work around to bug https://jax-ws.dev.java.net/issues/show_bug.cgi?id=195
+                    // where a redundant xsi:type="xs:dateTime" causes JAXB to unmarshal XMLGregorianCalendar,
+                    // where Date is expected.
+                    // this is not a complete fix, as we still won't be able to handle simple type substitution in general,
+                    // but none-the-less
+                    return defaultBeanInfo;
+
                 beanInfo = context.getJAXBContext().getGlobalType(type);
                 if(beanInfo==null) {
                     String nearest = context.getJAXBContext().getNearestTypeName(type);

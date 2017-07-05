@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.lang.reflect.Constructor;
@@ -40,9 +39,15 @@ import org.xml.sax.SAXException;
 /**
  * Reads XML from StAX {@link XMLStreamReader} and
  * feeds events to {@link XmlVisitor}.
+ * <p>
+ * TODO:
+ * Finding the optimized FI implementations is a bit hacky and not very
+ * extensible. Can we use the service provider mechnism in general for
+ * concrete implementations of StAXConnector.
  *
  * @author Ryan.Shoemaker@Sun.COM
  * @author Kohsuke Kawaguchi
+ * @version JAXB 2.0
  */
 class StAXStreamConnector extends StAXConnector {
 
@@ -53,26 +58,59 @@ class StAXStreamConnector extends StAXConnector {
      */
     public static StAXConnector create(XMLStreamReader reader, XmlVisitor visitor) {
         // try optimized codepath
-        if (reader.getClass()==FI_STAX_READER_CLASS && FI_CONNECTOR_CTOR!=null) {
+        final Class readerClass = reader.getClass();
+        if (FI_STAX_READER_CLASS != null && FI_STAX_READER_CLASS.isAssignableFrom(readerClass) && FI_CONNECTOR_CTOR!=null) {
             try {
                 return FI_CONNECTOR_CTOR.newInstance(reader,visitor);
             } catch (Exception t) {
             }
         }
-        if (STAX_EX_READER!=null && STAX_EX_READER.isAssignableFrom(reader.getClass())) {
+
+        // Quick hack until SJSXP fixes 6270116
+        boolean isZephyr = readerClass.getName().equals("com.sun.xml.internal.stream.XMLReaderImpl");
+        if(isZephyr)
+            ; // no need for interning
+        else
+        if(checkImplementaionNameOfSjsxp(reader))
+            ; // no need for interning
+        if(getBoolProp(reader,"org.codehaus.stax2.internNames")
+        && getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
+            ; // no need for interning.
+        else
+            visitor = new InterningXmlVisitor(visitor);
+
+        if (STAX_EX_READER_CLASS!=null && STAX_EX_READER_CLASS.isAssignableFrom(readerClass)) {
             try {
                 return STAX_EX_CONNECTOR_CTOR.newInstance(reader,visitor);
             } catch (Exception t) {
             }
         }
 
-        // Quick hack until SJSXP fixes 6270116
-        boolean isZephyr = reader.getClass().getName().equals("com.sun.xml.internal.stream.XMLReaderImpl");
-        if(!isZephyr)
-            visitor = new InterningXmlVisitor(visitor);
         return new StAXStreamConnector(reader,visitor);
     }
 
+    private static boolean checkImplementaionNameOfSjsxp(XMLStreamReader reader) {
+        try {
+            Object name = reader.getProperty("http://java.sun.com/xml/stream/properties/implementation-name");
+            return name!=null && name.equals("sjsxp");
+        } catch (Exception e) {
+            // be defensive against broken StAX parsers since javadoc is not clear
+            // about when an error happens
+            return false;
+        }
+    }
+
+    private static boolean getBoolProp(XMLStreamReader r, String n) {
+        try {
+            Object o = r.getProperty(n);
+            if(o instanceof Boolean)    return (Boolean)o;
+            return false;
+        } catch (Exception e) {
+            // be defensive against broken StAX parsers since javadoc is not clear
+            // about when an error happens
+            return false;
+        }
+    }
 
 
     // StAX event source
@@ -296,7 +334,15 @@ class StAXStreamConnector extends StAXConnector {
 
     private static Class initFIStAXReaderClass() {
         try {
-            return UnmarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser");
+            Class fisr = UnmarshallerImpl.class.getClassLoader().
+                    loadClass("com.sun.xml.internal.org.jvnet.fastinfoset.stax.FastInfosetStreamReader");
+            Class sdp = UnmarshallerImpl.class.getClassLoader().
+                    loadClass("com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser");
+            // Check if StAXDocumentParser implements FastInfosetStreamReader
+            if (fisr.isAssignableFrom(sdp))
+                return sdp;
+            else
+                return null;
         } catch (Throwable e) {
             return null;
         }
@@ -304,23 +350,26 @@ class StAXStreamConnector extends StAXConnector {
 
     private static Constructor<? extends StAXConnector> initFastInfosetConnectorClass() {
         try {
-            Class c = UnmarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.bind.v2.runtime.unmarshaller.FastInfosetConnector");
+            if (FI_STAX_READER_CLASS == null)
+                return null;
+
+            Class c = UnmarshallerImpl.class.getClassLoader().loadClass(
+                    "com.sun.xml.internal.bind.v2.runtime.unmarshaller.FastInfosetConnector");
             return c.getConstructor(FI_STAX_READER_CLASS,XmlVisitor.class);
         } catch (Throwable e) {
             return null;
         }
     }
 
-
     //
     // reference to StAXEx classes
     //
-    private static final Class STAX_EX_READER = initStAXExReader();
+    private static final Class STAX_EX_READER_CLASS = initStAXExReader();
     private static final Constructor<? extends StAXConnector> STAX_EX_CONNECTOR_CTOR = initStAXExConnector();
 
     private static Class initStAXExReader() {
         try {
-            return UnmarshallerImpl.class.getClassLoader().loadClass("org.jvnet.staxex.XMLStreamReaderEx");
+            return UnmarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.org.jvnet.staxex.XMLStreamReaderEx");
         } catch (Throwable e) {
             return null;
         }
@@ -329,7 +378,7 @@ class StAXStreamConnector extends StAXConnector {
     private static Constructor<? extends StAXConnector> initStAXExConnector() {
         try {
             Class c = UnmarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.bind.v2.runtime.unmarshaller.StAXExConnector");
-            return c.getConstructor(STAX_EX_READER,XmlVisitor.class);
+            return c.getConstructor(STAX_EX_READER_CLASS,XmlVisitor.class);
         } catch (Throwable e) {
             return null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.Collections;
@@ -63,7 +62,7 @@ abstract class SingleTypePropertyInfoImpl<T,C,F,M>
             if(getAdapter()!=null && !isCollection())
                 // adapter for a single-value property is handled by accessor.
                 // adapter for a collection property is handled by lister.
-                rawAcc = rawAcc.adapt(getAdapter());
+                rawAcc = rawAcc.adapt(((RuntimePropertyInfo)this).getAdapter());
             this.acc = rawAcc;
         } else
             this.acc = null;

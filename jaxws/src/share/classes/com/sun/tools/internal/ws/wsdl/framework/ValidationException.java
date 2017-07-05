@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.internal.ws.wsdl.framework;
 
 import com.sun.xml.internal.ws.util.exception.JAXWSExceptionBase;
-import com.sun.xml.internal.ws.util.localization.Localizable;
 
 /**
  * An exception signalling that validation of an entity failed.
@@ -43,7 +42,7 @@ public class ValidationException extends JAXWSExceptionBase {
         super(throwable);
     }
 
-    public String getResourceBundleName() {
+    public String getDefaultResourceBundleName() {
         return "com.sun.tools.internal.ws.resources.wsdl";
     }
 }

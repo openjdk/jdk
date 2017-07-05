@@ -2,6 +2,32 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
+/*
+ * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
+ */
 package com.sun.tools.internal.xjc.reader.internalizer;
 
 import java.util.Iterator;
@@ -45,6 +71,7 @@ final class NamespaceContextImpl implements NamespaceContext {
     public String getNamespaceURI(String prefix) {
         Node parent = e;
         String namespace = null;
+        final String prefixColon = prefix + ':';
 
         if (prefix.equals("xml")) {
             namespace = WellKnownNamespace.XML_NAMESPACE_URI;
@@ -55,7 +82,7 @@ final class NamespaceContextImpl implements NamespaceContext {
                     && (((type = parent.getNodeType()) == Node.ELEMENT_NODE)
                     || (type == Node.ENTITY_REFERENCE_NODE))) {
                 if (type == Node.ELEMENT_NODE) {
-                    if (parent.getNodeName().indexOf(prefix + ':') == 0)
+                    if (parent.getNodeName().startsWith(prefixColon))
                         return parent.getNamespaceURI();
                     NamedNodeMap nnm = parent.getAttributes();
 
@@ -81,6 +108,8 @@ final class NamespaceContextImpl implements NamespaceContext {
             }
         }
 
+        if(prefix.equals(""))
+            return "";  // default namespace
         return namespace;
     }
 

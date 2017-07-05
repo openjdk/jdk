@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.internalizer;
 
 import java.io.IOException;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -83,8 +83,13 @@ public abstract class AbstractReferenceFinderImpl extends XMLFilterImpl {
             // but don't mark this document as a root.
             parent.parse(ref,false);
         } catch( URISyntaxException e ) {
+            String msg = e.getMessage();
+            if(new File(relativeRef).exists()) {
+                msg = Messages.format(Messages.ERR_FILENAME_IS_NOT_URI)+' '+msg;
+            }
+
             SAXParseException spe = new SAXParseException2(
-                Messages.format(Messages.ERR_UNABLE_TO_PARSE,relativeRef,e.getMessage()),
+                Messages.format(Messages.ERR_UNABLE_TO_PARSE,relativeRef, msg),
                 locator, e );
 
             fatalError(spe);

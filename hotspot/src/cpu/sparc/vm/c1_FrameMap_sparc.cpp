@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ void FrameMap::init () {
 
 
 Address FrameMap::make_new_address(ByteSize sp_offset) const {
-  return Address(SP, 0, STACK_BIAS + in_bytes(sp_offset));
+  return Address(SP, STACK_BIAS + in_bytes(sp_offset));
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,9 @@ public abstract class FileFont extends PhysicalFont {
         return true;
     }
 
-    void setFileToRemove(File file) {
+    void setFileToRemove(File file, CreatedFontTracker tracker) {
         Disposer.addObjectRecord(this,
-                                 new CreatedFontFileDisposerRecord(file));
+                         new CreatedFontFileDisposerRecord(file, tracker));
     }
 
     /* This is called when a font scaler is determined to
@@ -246,12 +246,16 @@ public abstract class FileFont extends PhysicalFont {
         return getScaler().getUnitsPerEm();
     }
 
-    private static class CreatedFontFileDisposerRecord implements DisposerRecord {
+    private static class CreatedFontFileDisposerRecord
+        implements DisposerRecord {
 
         File fontFile = null;
+        CreatedFontTracker tracker;
 
-        private CreatedFontFileDisposerRecord(File file) {
+        private CreatedFontFileDisposerRecord(File file,
+                                              CreatedFontTracker tracker) {
             fontFile = file;
+            this.tracker = tracker;
         }
 
         public void dispose() {
@@ -260,6 +264,9 @@ public abstract class FileFont extends PhysicalFont {
                       public Object run() {
                           if (fontFile != null) {
                               try {
+                                  if (tracker != null) {
+                                      tracker.subBytes((int)fontFile.length());
+                                  }
                                   /* REMIND: is it possible that the file is
                                    * still open? It will be closed when the
                                    * font2D is disposed but could this code

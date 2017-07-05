@@ -1,9 +1,5 @@
 /*
- * $Id: Fault1_1Impl.java,v 1.20 2006/01/27 12:49:41 vj135062 Exp $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: Fault1_1Impl.java,v 1.1.1.1 2006/01/27 13:10:57 kumarjayanti Exp $
+ */
+
+
 
 /**
 *
@@ -301,4 +302,17 @@ public class Fault1_1Impl extends FaultImpl {
         }
         return super.addChildElement(element);
     }
+
+    protected FaultElementImpl createSOAPFaultElement(QName qname) {
+         return new FaultElement1_1Impl(
+                       ((SOAPDocument) getOwnerDocument()).getDocument(),
+                       qname);
+    }
+
+    protected FaultElementImpl createSOAPFaultElement(Name qname) {
+         return new FaultElement1_1Impl(
+                       ((SOAPDocument) getOwnerDocument()).getDocument(),
+                       (NameImpl)qname);
+    }
+
 }

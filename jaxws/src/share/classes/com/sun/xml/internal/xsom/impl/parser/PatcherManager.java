@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
  */
 public interface PatcherManager {
     void addPatcher( Patch p );
+    void addErrorChecker( Patch p );
     /**
      * Reports an error during the parsing.
      *

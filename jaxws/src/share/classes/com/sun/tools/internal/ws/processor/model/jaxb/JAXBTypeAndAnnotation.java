@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
  */
 package com.sun.tools.internal.ws.processor.model.jaxb;
 
-import com.sun.tools.internal.xjc.api.TypeAndAnnotation;
-import com.sun.codemodel.internal.JType;
 import com.sun.codemodel.internal.JAnnotatable;
+import com.sun.codemodel.internal.JType;
+import com.sun.tools.internal.xjc.api.TypeAndAnnotation;
 
 /**
  * Holds JAXB JType and TypeAndAnnotation. This provides abstration over

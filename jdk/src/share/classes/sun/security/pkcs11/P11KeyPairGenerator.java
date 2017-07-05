@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
+import sun.security.rsa.RSAKeyFactory;
+
 /**
  * KeyPairGenerator implementation class. This class currently supports
  * RSA, DSA, DH, and EC.
@@ -66,7 +68,7 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
     private AlgorithmParameterSpec params;
 
     // for RSA, selected or default value of public exponent, always valid
-    private BigInteger rsaPublicExponent;
+    private BigInteger rsaPublicExponent = RSAKeyGenParameterSpec.F4;
 
     // SecureRandom instance, if specified in init
     private SecureRandom random;
@@ -88,19 +90,19 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
     public void initialize(int keySize, SecureRandom random) {
         token.ensureValid();
         try {
-            checkKeySize(keySize);
+            checkKeySize(keySize, null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new InvalidParameterException(e.getMessage());
         }
         this.keySize = keySize;
         this.params = null;
         this.random = random;
-        this.rsaPublicExponent = RSAKeyGenParameterSpec.F4;
         if (algorithm.equals("EC")) {
             params = P11ECKeyFactory.getECParameterSpec(keySize);
             if (params == null) {
-                throw new InvalidParameterException
-                ("No EC parameters available for key size " + keySize + " bits");
+                throw new InvalidParameterException(
+                    "No EC parameters available for key size "
+                    + keySize + " bits");
             }
         }
     }
@@ -115,8 +117,10 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                         ("DHParameterSpec required for Diffie-Hellman");
             }
             DHParameterSpec dhParams = (DHParameterSpec)params;
-            this.keySize = dhParams.getP().bitLength();
-            this.params = params;
+            int tmpKeySize = dhParams.getP().bitLength();
+            checkKeySize(tmpKeySize, dhParams);
+            this.keySize = tmpKeySize;
+            this.params = dhParams;
             // XXX sanity check params
         } else if (algorithm.equals("RSA")) {
             if (params instanceof RSAKeyGenParameterSpec == false) {
@@ -124,7 +128,9 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                         ("RSAKeyGenParameterSpec required for RSA");
             }
             RSAKeyGenParameterSpec rsaParams = (RSAKeyGenParameterSpec)params;
-            this.keySize = rsaParams.getKeysize();
+            int tmpKeySize = rsaParams.getKeysize();
+            checkKeySize(tmpKeySize, rsaParams);
+            this.keySize = tmpKeySize;
             this.params = null;
             this.rsaPublicExponent = rsaParams.getPublicExponent();
             // XXX sanity check params
@@ -134,13 +140,16 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                         ("DSAParameterSpec required for DSA");
             }
             DSAParameterSpec dsaParams = (DSAParameterSpec)params;
-            this.keySize = dsaParams.getP().bitLength();
-            this.params = params;
+            int tmpKeySize = dsaParams.getP().bitLength();
+            checkKeySize(tmpKeySize, dsaParams);
+            this.keySize = tmpKeySize;
+            this.params = dsaParams;
             // XXX sanity check params
         } else if (algorithm.equals("EC")) {
             ECParameterSpec ecParams;
             if (params instanceof ECParameterSpec) {
-                ecParams = P11ECKeyFactory.getECParameterSpec((ECParameterSpec)params);
+                ecParams = P11ECKeyFactory.getECParameterSpec(
+                    (ECParameterSpec)params);
                 if (ecParams == null) {
                     throw new InvalidAlgorithmParameterException
                         ("Unsupported curve: " + params);
@@ -156,16 +165,17 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                 throw new InvalidAlgorithmParameterException
                     ("ECParameterSpec or ECGenParameterSpec required for EC");
             }
-            this.keySize = ecParams.getCurve().getField().getFieldSize();
+            int tmpKeySize = ecParams.getCurve().getField().getFieldSize();
+            checkKeySize(tmpKeySize, ecParams);
+            this.keySize = tmpKeySize;
             this.params = ecParams;
         } else {
             throw new ProviderException("Unknown algorithm: " + algorithm);
         }
         this.random = random;
-        checkKeySize(keySize);
     }
 
-    private void checkKeySize(int keySize)
+    private void checkKeySize(int keySize, AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
         if (algorithm.equals("EC")) {
             if (keySize < 112) {
@@ -178,13 +188,28 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                     ("Key size must be at most 2048 bit");
             }
             return;
+        } else if (algorithm.equals("RSA")) {
+            BigInteger tmpExponent = rsaPublicExponent;
+            if (params != null) {
+                // Already tested for instanceof RSAKeyGenParameterSpec above
+                tmpExponent =
+                    ((RSAKeyGenParameterSpec)params).getPublicExponent();
+            }
+            try {
+                // This provider supports 64K or less.
+                RSAKeyFactory.checkKeyLengths(keySize, tmpExponent,
+                    512, 64 * 1024);
+            } catch (InvalidKeyException e) {
+                throw new InvalidAlgorithmParameterException(e.getMessage());
+            }
+            return;
         }
+
         if (keySize < 512) {
             throw new InvalidAlgorithmParameterException
                 ("Key size must be at least 512 bit");
         }
-        if (algorithm.equals("RSA") ||
-                (algorithm.equals("DH") && (params != null))) {
+        if (algorithm.equals("DH") && (params != null)) {
             // sanity check, nobody really wants keys this large
             if (keySize > 64 * 1024) {
                 throw new InvalidAlgorithmParameterException

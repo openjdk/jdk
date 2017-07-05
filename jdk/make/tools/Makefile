@@ -51,6 +51,7 @@ SUBDIRS =                   \
   makeclasslist             \
   strip_properties          \
   spp                       \
+  swing-nimbus              \
   CharsetMapping
 
 all build clean clobber::

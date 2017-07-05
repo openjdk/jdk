@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
@@ -118,7 +117,7 @@ public final class CEnumLeafInfo implements EnumLeafInfo<NType,NClass>, NClass, 
                          Locator _sourceLocator) {
         this.model = model;
         this.parent = container;
-        this.shortName = shortName;
+        this.shortName = model.allocator.assignClassName(parent,shortName);
         this.base = base;
         this.members = _members;
         this.source = source;
@@ -232,15 +231,18 @@ public final class CEnumLeafInfo implements EnumLeafInfo<NType,NClass>, NClass, 
         return null;
     }
 
+    @Deprecated
     public boolean isCollection() {
         return false;
     }
 
+    @Deprecated
     public CAdapter getAdapterUse() {
         return null;
     }
 
-    public CTypeInfo getInfo() {
+    @Deprecated
+    public CNonElement getInfo() {
         return this;
     }
 

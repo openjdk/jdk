@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,29 +65,14 @@ class Messages
     static final String EXPERIMENTAL_LANGUAGE_WARNING = // 2 arg
         "Driver.ExperimentalLanguageWarning";
 
-    static final String MISSING_CLASSPATH = // 0 args
-        "Driver.MissingClassPath";
-
-    static final String MISSING_DIR = // 0 args
-        "Driver.MissingDir";
-
     static final String NON_EXISTENT_DIR = // 1 arg
         "Driver.NonExistentDir";
-
-    static final String MISSING_FILENAME = // 0 args
-        "Driver.MissingFileName";
-
-    static final String MISSING_PACKAGENAME = // 0 args
-        "Driver.MissingPackageName";
 
     static final String MISSING_RUNTIME_PACKAGENAME = // 0 args
         "Driver.MissingRuntimePackageName";
 
     static final String MISSING_MODE_OPERAND = // 0 args
         "Driver.MissingModeOperand";
-
-    static final String MISSING_CATALOG = // 0 args
-        "Driver.MissingCatalog";
 
     static final String MISSING_COMPATIBILITY_OPERAND = // 0 args
         "Driver.MissingCompatibilityOperand";
@@ -103,6 +88,12 @@ class Messages
 
     static final String ILLEGAL_PROXY = // 1 arg
         "Driver.ILLEGAL_PROXY";
+
+    static final String ILLEGAL_TARGET_VERSION = // 1 arg
+        "Driver.ILLEGAL_TARGET_VERSION";
+
+    static final String MISSING_OPERAND = // 1 arg
+        "Driver.MissingOperand";
 
     static final String MISSING_PROXYHOST = // 0 args
         "Driver.MissingProxyHost";
@@ -170,9 +161,6 @@ class Messages
     static final String ERR_BINDING_FILE_NOT_SUPPORTED_FOR_RNC = // 0 args
         "ModelLoader.BindingFileNotSupportedForRNC";
 
-     static final String MISSING_VERSION = // 0 args
-        "Driver.MissingVersion";
-
     static final String DEFAULT_VERSION = // 0 args
         "Driver.DefaultVersion";
 
@@ -190,5 +178,10 @@ class Messages
         "FIELD_RENDERER_CONFLICT";
 
     static final String NAME_CONVERTER_CONFLICT = // 2 args
-            "NAME_CONVERTER_CONFLICT";
+        "NAME_CONVERTER_CONFLICT";
+    static final String FAILED_TO_LOAD = // 2 args
+        "FAILED_TO_LOAD";
+
+    static final String PLUGIN_LOAD_FAILURE = // 1 arg
+        "PLUGIN_LOAD_FAILURE";
 }

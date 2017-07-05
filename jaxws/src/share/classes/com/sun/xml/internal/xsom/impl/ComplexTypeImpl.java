@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@ import com.sun.xml.internal.xsom.XSType;
 import com.sun.xml.internal.xsom.XSWildcard;
 import com.sun.xml.internal.xsom.impl.parser.DelayedRef;
 import com.sun.xml.internal.xsom.impl.parser.SchemaDocumentImpl;
-import com.sun.xml.internal.xsom.impl.util.ConcatIterator;
-import com.sun.xml.internal.xsom.impl.util.FilterIterator;
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import com.sun.xml.internal.xsom.visitor.XSFunction;
 import com.sun.xml.internal.xsom.visitor.XSVisitor;
 import org.xml.sax.Locator;
@@ -214,16 +213,16 @@ public class ComplexTypeImpl extends AttributesHolder implements XSComplexType, 
         return o;
     }
 
-    public Iterator iterateAttributeUses() {
+    public Iterator<XSAttributeUse> iterateAttributeUses() {
 
         XSComplexType baseType = getBaseType().asComplexType();
 
         if( baseType==null )    return super.iterateAttributeUses();
 
-        return new ConcatIterator(
-            new FilterIterator(baseType.iterateAttributeUses()) {
-                protected boolean allows( Object o ) {
-                    XSAttributeDecl u = ((XSAttributeUse)o).getDecl();
+        return new Iterators.Union<XSAttributeUse>(
+            new Iterators.Filter<XSAttributeUse>(baseType.iterateAttributeUses()) {
+                protected boolean matches(XSAttributeUse value) {
+                    XSAttributeDecl u = value.getDecl();
                     UName n = new UName(u.getTargetNamespace(),u.getName());
                     return !prohibitedAtts.contains(n);
                 }

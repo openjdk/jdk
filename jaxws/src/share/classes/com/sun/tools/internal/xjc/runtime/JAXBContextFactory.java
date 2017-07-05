@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.runtime;
 
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public class JAXBContextFactory {
 
                 // if we find one, tell the real JAXB provider to
                 // load foo.bar.impl.ObjectFactory
-                name = name.substring(name.length()-DOT_OBJECT_FACTORY.length())+IMPL_DOT_OBJECT_FACTORY;
+                name = name.substring(0,name.length()-DOT_OBJECT_FACTORY.length())+IMPL_DOT_OBJECT_FACTORY;
 
                 try {
                     c = c.getClassLoader().loadClass(name);

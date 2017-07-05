@@ -1,10 +1,4 @@
 /*
- * $Id: AttachmentPart.java,v 1.11 2005/08/17 08:13:01 vj135062 Exp $
- * $Revision: 1.11 $
- * $Date: 2005/08/17 08:13:01 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: AttachmentPart.java,v 1.12 2005/09/08 14:19:50 vj135062 Exp $
+ * $Revision: 1.12 $
+ * $Date: 2005/09/08 14:19:50 $
+ */
+
+
 package javax.xml.soap;
 
 import java.io.InputStream;

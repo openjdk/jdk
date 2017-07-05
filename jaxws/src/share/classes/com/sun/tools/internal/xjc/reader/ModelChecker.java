@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import javax.xml.namespace.QName;
 
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.model.CClassInfo;
@@ -54,6 +57,7 @@ public final class ModelChecker {
 
     private void check( CClassInfo ci ) {
         List<CPropertyInfo> props = ci.getProperties();
+        Map<QName,CPropertyInfo> collisionTable = new HashMap<QName,CPropertyInfo>();
 
         OUTER:
         for( int i=0; i<props.size(); i++ ) {
@@ -62,6 +66,13 @@ public final class ModelChecker {
             if(p1.getName(true).equals("Class")) {
                 errorReceiver.error(p1.locator,Messages.PROPERTY_CLASS_IS_RESERVED.format());
                 continue;
+            }
+
+            QName n = p1.collectElementNames(collisionTable);
+            if(n!=null) {
+                CPropertyInfo p2 = collisionTable.get(n);
+                errorReceiver.error(p1.locator,Messages.DUPLICATE_ELEMENT.format(n));
+                errorReceiver.error(p2.locator,Messages.ERR_RELEVANT_LOCATION.format());
             }
 
             for( int j=i+1; j<props.size(); j++ ) {

@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPMessage.java,v 1.21 2005/06/21 17:49:12 mk125090 Exp $
- * $Revision: 1.21 $
- * $Date: 2005/06/21 17:49:12 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPMessage.java,v 1.22 2005/08/17 08:13:01 vj135062 Exp $
+ * $Revision: 1.22 $
+ * $Date: 2005/08/17 08:13:01 $
+ */
+
+
 package javax.xml.soap;
 import java.io.OutputStream;
 import java.io.IOException;

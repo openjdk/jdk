@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.core;
 
 import java.util.Collection;
@@ -84,6 +83,14 @@ public interface ReferencePropertyInfo<T,C> extends PropertyInfo<T,C> {
      * This method is only used when this property is a collection.
      */
     boolean isCollectionNillable();
+
+    /**
+     * Checks if the wrapper element is required.
+     *
+     * @return
+     *      Always false if {@link #getXmlName()}==null.
+     */
+    boolean isCollectionRequired();
 
     /**
      * Returns true if this property can hold {@link String}s to represent

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc;
 
 import java.io.File;
@@ -122,7 +121,7 @@ public class SchemaGenerator {
         }
 
         Class schemagenRunner = classLoader.loadClass(Runner.class.getName());
-        Method mainMethod = schemagenRunner.getDeclaredMethod("main",String[].class);
+        Method mainMethod = schemagenRunner.getDeclaredMethod("main",String[].class,File.class);
 
         List<String> aptargs = new ArrayList<String>();
 
@@ -150,7 +149,7 @@ public class SchemaGenerator {
         aptargs.addAll(options.arguments);
 
         String[] argsarray = aptargs.toArray(new String[aptargs.size()]);
-        return (Integer)mainMethod.invoke(null,new Object[]{argsarray});
+        return (Integer)mainMethod.invoke(null,new Object[]{argsarray,options.episodeFile});
     }
 
     /**
@@ -204,11 +203,15 @@ public class SchemaGenerator {
     }
 
     public static final class Runner {
-        public static int main(String[] args) throws Exception {
+        public static int main(String[] args, File episode) throws Exception {
             ClassLoader cl = Runner.class.getClassLoader();
             Class apt = cl.loadClass("com.sun.tools.apt.Main");
             Method processMethod = apt.getMethod("process",AnnotationProcessorFactory.class, String[].class);
-            return (Integer) processMethod.invoke(null, new com.sun.tools.internal.jxc.apt.SchemaGenerator(), args);
+
+            com.sun.tools.internal.jxc.apt.SchemaGenerator r = new com.sun.tools.internal.jxc.apt.SchemaGenerator();
+            if(episode!=null)
+                r.setEpisodeFile(episode);
+            return (Integer) processMethod.invoke(null, r, args);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Bi-directional map between elements, inner peers,
@@ -62,8 +61,8 @@ public final class AssociationMap<XmlNode> {
         }
     }
 
-    private final Map<XmlNode,Entry<XmlNode>> byElement = new HashMap<XmlNode,Entry<XmlNode>>();
-    private final Map<Object,Entry<XmlNode>> byPeer = new HashMap<Object,Entry<XmlNode>>();
+    private final Map<XmlNode,Entry<XmlNode>> byElement = new IdentityHashMap<XmlNode,Entry<XmlNode>>();
+    private final Map<Object,Entry<XmlNode>> byPeer = new IdentityHashMap<Object,Entry<XmlNode>>();
     private final Set<XmlNode> usedNodes = new HashSet<XmlNode>();
 
     /** Records the new element&lt;->inner peer association. */

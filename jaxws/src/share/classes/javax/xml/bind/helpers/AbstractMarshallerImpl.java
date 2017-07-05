@@ -37,6 +37,11 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.validation.Schema;
 import java.io.UnsupportedEncodingException;
+import java.io.File;
+import java.io.OutputStream;
+import java.io.FileOutputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 // J2SE1.4 feature
 // import java.nio.charset.Charset;
 // import java.nio.charset.UnsupportedCharsetException;
@@ -55,6 +60,7 @@ import java.io.UnsupportedEncodingException;
  * {@link Marshaller#marshal(Object, javax.xml.transform.Result) marshal(Object, javax.xml.stream.XMLEventWriter)}.
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision$ $Date$
  * @see javax.xml.bind.Marshaller
  * @since JAXB1.0
  */
@@ -87,6 +93,20 @@ public abstract class AbstractMarshallerImpl implements Marshaller
 
         checkNotNull( obj, "obj", os, "os" );
         marshal( obj, new StreamResult(os) );
+    }
+
+    public void marshal(Object jaxbElement, File output) throws JAXBException {
+        checkNotNull(jaxbElement, "jaxbElement", output, "output" );
+        try {
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(output));
+            try {
+                marshal( jaxbElement, new StreamResult(os) );
+            } finally {
+                os.close();
+            }
+        } catch (IOException e) {
+            throw new JAXBException(e);
+        }
     }
 
     public final void marshal( Object obj, java.io.Writer w )
@@ -422,18 +442,13 @@ public abstract class AbstractMarshallerImpl implements Marshaller
                 Messages.format( Messages.MUST_NOT_BE_NULL, o2Name ) );
         }
     }
-    /* (non-Javadoc)
-     * @see javax.xml.bind.Marshaller#marshal(java.lang.Object, javax.xml.stream.XMLEventWriter)
-     */
+
     public void marshal(Object obj, XMLEventWriter writer)
         throws JAXBException {
 
         throw new UnsupportedOperationException();
     }
 
-    /* (non-Javadoc)
-     * @see javax.xml.bind.Marshaller#marshal(java.lang.Object, javax.xml.stream.XMLStreamWriter)
-     */
     public void marshal(Object obj, XMLStreamWriter writer)
         throws JAXBException {
 

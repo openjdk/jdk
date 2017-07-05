@@ -1,10 +1,4 @@
 /*
- * $Id: MessageFactory.java,v 1.9 2004/04/02 01:24:17 ofung Exp $
- * $Revision: 1.9 $
- * $Date: 2004/04/02 01:24:17 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: MessageFactory.java,v 1.10 2005/04/05 22:28:13 mk125090 Exp $
+ * $Revision: 1.10 $
+ * $Date: 2005/04/05 22:28:13 $
+ */
+
+
 package javax.xml.soap;
 
 

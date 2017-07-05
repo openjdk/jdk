@@ -94,7 +94,7 @@ import static java.lang.annotation.ElementType.METHOD;
  * <p>See "Package Specification" in javax.xml.bind.package javadoc for
  * additional common information.</p>
  *
- * <p><b>Example 1: Ant Task Example</b></p>
+ * <p><b>Example 1: </b>Ant Task Example</b></p>
  * The following Java class hierarchy models an Ant build
  * script.  An Ant task corresponds to a class in the class
  * hierarchy. The XML element name of an Ant task is indicated by the

@@ -25,12 +25,10 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.text.View;
+import java.awt.Graphics;
+import javax.swing.AbstractButton;
+import javax.swing.JComponent;
+import javax.swing.plaf.ComponentUI;
 
 /**
  * Synth's ToggleButtonUI.
@@ -45,15 +43,21 @@ class SynthToggleButtonUI extends SynthButtonUI {
         return new SynthToggleButtonUI();
     }
 
+    @Override
     protected String getPropertyPrefix() {
         return "ToggleButton.";
     }
 
+    @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
-        context.getPainter().paintToggleButtonBackground(context, g, 0, 0,
-                                                c.getWidth(), c.getHeight());
+        if (((AbstractButton) c).isContentAreaFilled()) {
+            int x = 0, y = 0, w = c.getWidth(), h = c.getHeight();
+            SynthPainter painter = context.getPainter();
+            painter.paintToggleButtonBackground(context, g, x, y, w, h);
+        }
     }
 
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintToggleButtonBorder(context, g, x, y, w, h);

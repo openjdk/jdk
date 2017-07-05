@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api;
 
 import javax.xml.stream.XMLStreamException;
@@ -96,6 +95,16 @@ public interface SchemaCompiler {
      *      Its system Id must be set to an absolute URI.
      */
     void parseSchema( InputSource source );
+
+    /**
+     * Specifies the target spec version for this compilaion.
+     *
+     * @param version
+     *      If null, XJC will generate the source code that
+     *      takes advantage of the latest JAXB spec that it understands.
+     * @since 2.1 EA2
+     */
+    void setTargetVersion( SpecVersion version );
 
     /**
      * Parses a schema or an external binding file
@@ -201,6 +210,13 @@ public interface SchemaCompiler {
      * @see ClassNameAllocator
      */
     void setClassNameAllocator( ClassNameAllocator allocator );
+
+    /**
+     * Clears all the schema files parsed so far.
+     *
+     * @since 2.1.1
+     */
+    void resetSchema();
 
     /**
      * Obtains the compiled schema object model.

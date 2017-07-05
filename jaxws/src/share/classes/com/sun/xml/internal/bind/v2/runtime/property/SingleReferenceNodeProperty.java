@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -61,12 +61,12 @@ final class SingleReferenceNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT
     private final DomHandler domHandler;
     private final WildcardMode wcMode;
 
-    public SingleReferenceNodeProperty(JAXBContextImpl p, RuntimeReferencePropertyInfo prop) {
-        super(p,prop);
-        acc = prop.getAccessor().optimize();
+    public SingleReferenceNodeProperty(JAXBContextImpl context, RuntimeReferencePropertyInfo prop) {
+        super(context,prop);
+        acc = prop.getAccessor().optimize(context);
 
         for (RuntimeElement e : prop.getElements()) {
-            expectedElements.put( e.getElementName(), p.getOrCreate(e) );
+            expectedElements.put( e.getElementName(), context.getOrCreate(e) );
         }
 
         if(prop.getWildcard()!=null) {
@@ -136,7 +136,15 @@ final class SingleReferenceNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT
 
                     public void set(BeanT bean, Object value) throws AccessorException {
                         if(value!=null) {
-                            value = ebi.createInstanceFromValue(value);
+                            try {
+                                value = ebi.createInstanceFromValue(value);
+                            } catch (IllegalAccessException e) {
+                                throw new AccessorException(e);
+                            } catch (InvocationTargetException e) {
+                                throw new AccessorException(e);
+                            } catch (InstantiationException e) {
+                                throw new AccessorException(e);
+                            }
                         }
                         acc.set(bean,(ValueT)value);
                     }

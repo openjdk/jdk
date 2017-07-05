@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
 import sun.security.jca.JCAUtil;
+import sun.security.rsa.RSAKeyFactory;
 
 /**
  * RSA keypair generator.
@@ -43,8 +44,8 @@ import sun.security.jca.JCAUtil;
 public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     // Supported by Microsoft Base, Strong and Enhanced Cryptographic Providers
-    private static final int KEY_SIZE_MIN = 512; // disallow MSCAPI min. of 384
-    private static final int KEY_SIZE_MAX = 16384;
+    static final int KEY_SIZE_MIN = 512; // disallow MSCAPI min. of 384
+    static final int KEY_SIZE_MAX = 16384;
     private static final int KEY_SIZE_DEFAULT = 1024;
 
     // size of the key to generate, KEY_SIZE_MIN <= keySize <= KEY_SIZE_MAX
@@ -59,7 +60,14 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // random is always ignored
     public void initialize(int keySize, SecureRandom random) {
 
-        checkKeySize(keySize);
+        try {
+            RSAKeyFactory.checkKeyLengths(keySize, null,
+                KEY_SIZE_MIN, KEY_SIZE_MAX);
+        } catch (InvalidKeyException e) {
+            throw new InvalidParameterException(e.getMessage());
+        }
+
+        this.keySize = keySize;
     }
 
     // second initialize method. See JCA doc
@@ -67,21 +75,31 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
 
+        int tmpSize;
         if (params == null) {
-            checkKeySize(KEY_SIZE_DEFAULT);
-
+            tmpSize = KEY_SIZE_DEFAULT;
         } else if (params instanceof RSAKeyGenParameterSpec) {
 
             if (((RSAKeyGenParameterSpec) params).getPublicExponent() != null) {
                 throw new InvalidAlgorithmParameterException
                     ("Exponent parameter is not supported");
             }
-            checkKeySize(((RSAKeyGenParameterSpec) params).getKeysize());
+            tmpSize = ((RSAKeyGenParameterSpec) params).getKeysize();
 
         } else {
             throw new InvalidAlgorithmParameterException
                 ("Params must be an instance of RSAKeyGenParameterSpec");
         }
+
+        try {
+            RSAKeyFactory.checkKeyLengths(tmpSize, null,
+                KEY_SIZE_MIN, KEY_SIZE_MAX);
+        } catch (InvalidKeyException e) {
+            throw new InvalidAlgorithmParameterException(
+                "Invalid Key sizes", e);
+        }
+
+        this.keySize = tmpSize;
     }
 
     // generate the keypair. See JCA doc
@@ -93,18 +111,6 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
                 "{" + UUID.randomUUID().toString() + "}");
 
         return new KeyPair(keys.getPublic(), keys.getPrivate());
-    }
-
-    private void checkKeySize(int keySize) throws InvalidParameterException {
-        if (keySize < KEY_SIZE_MIN) {
-            throw new InvalidParameterException
-                ("Key size must be at least " + KEY_SIZE_MIN + " bits");
-        }
-        if (keySize > KEY_SIZE_MAX) {
-            throw new InvalidParameterException
-                ("Key size must be " + KEY_SIZE_MAX + " bits or less");
-        }
-        this.keySize = keySize;
     }
 
     private static native RSAKeyPair generateRSAKeyPair(int keySize,

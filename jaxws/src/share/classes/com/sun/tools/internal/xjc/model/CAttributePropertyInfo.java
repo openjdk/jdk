@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import javax.xml.namespace.QName;
@@ -32,6 +31,7 @@ import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.xml.internal.bind.v2.model.core.AttributePropertyInfo;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
 import com.sun.xml.internal.xsom.XSComponent;
+import com.sun.istack.internal.Nullable;
 
 import org.xml.sax.Locator;
 
@@ -45,9 +45,16 @@ public final class CAttributePropertyInfo extends CSingleTypePropertyInfo implem
     private final QName attName;
     private final boolean isRequired;
 
+    /**
+     * @param type
+     *      Represents the bound type of this attribute.
+     * @param typeName
+     *      XML Schema type name of this attribute. Optional for other schema languages.
+     */
     public CAttributePropertyInfo(String name, XSComponent source, CCustomizations customizations,
-                                  Locator locator, QName attName, TypeUse type, boolean required ) {
-        super(name, type, source, customizations, locator);
+                                  Locator locator, QName attName, TypeUse type, @Nullable QName typeName,
+                                  boolean required ) {
+        super(name, type, typeName, source, customizations, locator);
         isRequired = required;
         this.attName = attName;
     }

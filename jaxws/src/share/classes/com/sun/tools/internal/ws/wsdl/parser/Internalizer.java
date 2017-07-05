@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,28 @@
  */
 package com.sun.tools.internal.ws.wsdl.parser;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.io.UnsupportedEncodingException;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.SAXParseException2;
+import com.sun.tools.internal.ws.resources.WsdlMessages;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+import com.sun.tools.internal.ws.wscompile.WsimportOptions;
+import com.sun.tools.internal.ws.wsdl.document.jaxws.JAXWSBindingsConstants;
+import com.sun.tools.internal.xjc.util.DOMUtils;
+import com.sun.xml.internal.bind.v2.util.EditDistance;
+import com.sun.xml.internal.ws.util.JAXWSUtils;
+import com.sun.xml.internal.ws.util.DOMUtil;
+import org.w3c.dom.*;
+import org.xml.sax.SAXParseException;
 
-import javax.xml.namespace.QName;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.sun.tools.internal.xjc.util.DOMUtils;
-import com.sun.tools.internal.ws.processor.util.ProcessorEnvironment;
-import com.sun.xml.internal.ws.util.JAXWSUtils;
-import com.sun.xml.internal.ws.util.JAXWSUtils;
-import com.sun.xml.internal.ws.util.localization.Localizable;
-import com.sun.xml.internal.ws.util.localization.LocalizableMessageFactory;
-import com.sun.tools.internal.ws.wsdl.document.jaxws.JAXWSBindingsConstants;
-import com.sun.tools.internal.ws.util.xml.XmlUtil;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
 
 
 /**
@@ -64,33 +53,27 @@ import com.sun.tools.internal.ws.util.xml.XmlUtil;
  * @author Vivek Pandey
  */
 public class Internalizer {
-    private Map<String, Document> wsdlDocuments;
-    private Map<String, Document> jaxwsBindings;
     private static final XPathFactory xpf = XPathFactory.newInstance();
     private final XPath xpath = xpf.newXPath();
-    private final  LocalizableMessageFactory messageFactory = new LocalizableMessageFactory("com.sun.tools.internal.ws.resources.wsdl");;
-    private ProcessorEnvironment env;
-    public  void transform(Map<String, Document> jaxwsBindings, Map<String, Document> wsdlDocuments, ProcessorEnvironment env) {
-        if(jaxwsBindings == null)
-            return;
-        this.env = env;
-        this.wsdlDocuments = wsdlDocuments;
-        this.jaxwsBindings = jaxwsBindings;
-        Map targetNodes = new HashMap<Element, Node>();
+    private final WsimportOptions options;
+    private final DOMForest forest;
+    private final ErrorReceiver errorReceiver;
 
-        // identify target nodes for all <JAXWS:bindings>
-        for(Map.Entry<String, Document> jaxwsBinding : jaxwsBindings.entrySet()) {
-            Element e = jaxwsBinding.getValue().getDocumentElement();
-            // initially, the inherited context is itself
-            buildTargetNodeMap( e, e, targetNodes );
+
+    public Internalizer(DOMForest forest, WsimportOptions options, ErrorReceiver errorReceiver) {
+        this.forest = forest;
+        this.options = options;
+        this.errorReceiver = errorReceiver;
+    }
+
+    public void transform(){
+        Map<Element,Node> targetNodes = new HashMap<Element,Node>();
+        for(Element jaxwsBinding : forest.outerMostBindings){
+            buildTargetNodeMap(jaxwsBinding, jaxwsBinding, targetNodes );
         }
-
-        // then move them to their respective positions.
-        for(Map.Entry<String, Document> jaxwsBinding : jaxwsBindings.entrySet()) {
-            Element e = jaxwsBinding.getValue().getDocumentElement();
-            move( e, targetNodes );
+        for(Element jaxwsBinding : forest.outerMostBindings){
+            move(jaxwsBinding, targetNodes );
         }
-
     }
 
     /**
@@ -112,47 +95,6 @@ public class Internalizer {
     }
 
     /**
-     * Gets the DOM tree associated with the specified system ID,
-     * or null if none is found.
-     */
-    public Document get( String systemId ) {
-        Document doc = wsdlDocuments.get(systemId);
-
-        if( doc==null && systemId.startsWith("file:/") && !systemId.startsWith("file://") ) {
-            // As of JDK1.4, java.net.URL.toExternal method returns URLs like
-            // "file:/abc/def/ghi" which is an incorrect file protocol URL according to RFC1738.
-            // Some other correctly functioning parts return the correct URLs ("file:///abc/def/ghi"),
-            // and this descripancy breaks DOM look up by system ID.
-
-            // this extra check solves this problem.
-            doc = wsdlDocuments.get( "file://"+systemId.substring(5) );
-        }
-
-        if( doc==null && systemId.startsWith("file:") ) {
-            // on Windows, filenames are case insensitive.
-            // perform case-insensitive search for improved user experience
-            String systemPath = getPath(systemId);
-            for (String key : wsdlDocuments.keySet()) {
-                if(key.startsWith("file:") && getPath(key).equalsIgnoreCase(systemPath)) {
-                    doc = wsdlDocuments.get(key);
-                    break;
-                }
-            }
-        }
-        return doc;
-    }
-
-    /**
-     * Strips off the leading 'file:///' portion from an URL.
-     */
-    private String getPath(String key) {
-        key = key.substring(5); // skip 'file:'
-        while(key.length()>0 && key.charAt(0)=='/')
-            key = key.substring(1);
-        return key;
-    }
-
-    /**
      * Determines the target node of the "bindings" element
      * by using the inherited target node, then put
      * the result into the "result" map.
@@ -171,26 +113,49 @@ public class Internalizer {
                 // absolutize this URI.
                 // TODO: use the URI class
                 // TODO: honor xml:base
-                wsdlLocation = new URL(new URL(getSystemId(bindings.getOwnerDocument())),
+                wsdlLocation = new URL(new URL(forest.getSystemId(bindings.getOwnerDocument())),
                         wsdlLocation ).toExternalForm();
             } catch( MalformedURLException e ) {
                 wsdlLocation = JAXWSUtils.absolutize(JAXWSUtils.getFileOrURLName(wsdlLocation));
             }
 
-            target = get(wsdlLocation);
+            //target = wsdlDocuments.get(wsdlLocation);
+            target = forest.get(wsdlLocation);
             if(target==null) {
-                error("internalizer.targetNotFound", new Object[]{wsdlLocation});
+                reportError(bindings, WsdlMessages.INTERNALIZER_INCORRECT_SCHEMA_REFERENCE(wsdlLocation, EditDistance.findNearest(wsdlLocation, forest.listSystemIDs())));
                 return; // abort processing this <JAXWS:bindings>
             }
         }
 
+        //if the target node is xs:schema, declare the jaxb version on it as latter on it will be
+        //required by the inlined schema bindings
+
+        Element element = DOMUtil.getFirstElementChild(target);
+        if (element != null && element.getNamespaceURI().equals(Constants.NS_WSDL) && element.getLocalName().equals("definitions")) {
+            //get all schema elements
+            Element type = DOMUtils.getFirstChildElement(element, Constants.NS_WSDL, "types");
+            if(type != null){
+                for (Element schemaElement : DOMUtils.getChildElements(type, Constants.NS_XSD, "schema")) {
+                    if (!schemaElement.hasAttributeNS(Constants.NS_XMLNS, "jaxb")) {
+                        schemaElement.setAttributeNS(Constants.NS_XMLNS, "xmlns:jaxb", JAXWSBindingsConstants.NS_JAXB_BINDINGS);
+                    }
+
+                    //add jaxb:bindings version info. Lets put it to 1.0, may need to change latter
+                    if (!schemaElement.hasAttributeNS(JAXWSBindingsConstants.NS_JAXB_BINDINGS, "version")) {
+                        schemaElement.setAttributeNS(JAXWSBindingsConstants.NS_JAXB_BINDINGS, "jaxb:version", JAXWSBindingsConstants.JAXB_BINDING_VERSION);
+                    }
+                }
+            }
+        }
+
+
         boolean hasNode = true;
-        if(isJAXWSBindings(bindings) && bindings.getAttributeNode("node")!=null ) {
-            target = evaluateXPathNode(target, bindings.getAttribute("node"), new NamespaceContextImpl(bindings));
+        if((isJAXWSBindings(bindings) || isJAXBBindings(bindings)) && bindings.getAttributeNode("node")!=null ) {
+            target = evaluateXPathNode(bindings, target, bindings.getAttribute("node"), new NamespaceContextImpl(bindings));
         }else if(isJAXWSBindings(bindings) && (bindings.getAttributeNode("node")==null) && !isTopLevelBinding(bindings)) {
             hasNode = false;
         }else if(isGlobalBinding(bindings) && !isWSDLDefinition(target) && isTopLevelBinding(bindings.getParentNode())){
-            target = getWSDLDefintionNode(target);
+            target = getWSDLDefintionNode(bindings, target);
         }
 
         //if target is null it means the xpath evaluation has some problem,
@@ -203,14 +168,14 @@ public class Internalizer {
             result.put( bindings, target );
 
         // look for child <JAXWS:bindings> and process them recursively
-        Element[] children = getChildElements( bindings, JAXWSBindingsConstants.NS_JAXWS_BINDINGS);
-        for( int i=0; i<children.length; i++ )
-            buildTargetNodeMap( children[i], target, result );
+        Element[] children = getChildElements( bindings);
+        for (Element child : children)
+            buildTargetNodeMap(child, target, result);
     }
 
-    private Node getWSDLDefintionNode(Node target){
-        return evaluateXPathNode(target, "wsdl:definitions",
-            new javax.xml.namespace.NamespaceContext(){
+    private Node getWSDLDefintionNode(Node bindings, Node target){
+        return evaluateXPathNode(bindings, target, "wsdl:definitions",
+            new NamespaceContext(){
                 public String getNamespaceURI(String prefix){
                     return "http://schemas.xmlsoap.org/wsdl/";
                 }
@@ -227,11 +192,7 @@ public class Internalizer {
             return false;
         String localName = target.getLocalName();
         String nsURI = target.getNamespaceURI();
-        if(((localName != null) && localName.equals("definitions")) &&
-            (nsURI != null && nsURI.equals("http://schemas.xmlsoap.org/wsdl/")))
-            return true;
-        return false;
-
+        return fixNull(localName).equals("definitions") && fixNull(nsURI).equals("http://schemas.xmlsoap.org/wsdl/");
     }
 
     private boolean isTopLevelBinding(Node node){
@@ -244,9 +205,13 @@ public class Internalizer {
         return (bindings.getNamespaceURI().equals(JAXWSBindingsConstants.NS_JAXWS_BINDINGS) && bindings.getLocalName().equals("bindings"));
     }
 
+    private boolean isJAXBBindings(Node bindings){
+        return (bindings.getNamespaceURI().equals(JAXWSBindingsConstants.NS_JAXB_BINDINGS) && bindings.getLocalName().equals("bindings"));
+    }
+
     private boolean isGlobalBinding(Node bindings){
-        if((bindings.getNamespaceURI() == null)){
-            warn("invalid.customization.namespace", new Object[]{bindings.getLocalName()});
+        if(bindings.getNamespaceURI() == null){
+            errorReceiver.warning(forest.locatorTable.getStartLocation((Element) bindings), WsdlMessages.INVALID_CUSTOMIZATION_NAMESPACE(bindings.getLocalName()));
             return false;
         }
         return  (bindings.getNamespaceURI().equals(JAXWSBindingsConstants.NS_JAXWS_BINDINGS) &&
@@ -257,47 +222,46 @@ public class Internalizer {
                 bindings.getLocalName().equals("enableMIMEContent")));
     }
 
-    private static Element[] getChildElements(Element parent, String nsUri) {
-        ArrayList a = new ArrayList();
+    private static Element[] getChildElements(Element parent) {
+        ArrayList<Element> a = new ArrayList<Element>();
         NodeList children = parent.getChildNodes();
         for( int i=0; i<children.getLength(); i++ ) {
             Node item = children.item(i);
             if(!(item instanceof Element ))     continue;
 
-            if(nsUri.equals(item.getNamespaceURI()))
-                a.add(item);
+            if(JAXWSBindingsConstants.NS_JAXWS_BINDINGS.equals(item.getNamespaceURI()) ||
+                    JAXWSBindingsConstants.NS_JAXB_BINDINGS.equals(item.getNamespaceURI()))
+                a.add((Element)item);
         }
-        return (Element[]) a.toArray(new Element[a.size()]);
+        return a.toArray(new Element[a.size()]);
     }
 
-    private Node evaluateXPathNode(Node target, String expression, NamespaceContext namespaceContext) {
+    private Node evaluateXPathNode(Node bindings, Node target, String expression, NamespaceContext namespaceContext) {
         NodeList nlst;
         try {
             xpath.setNamespaceContext(namespaceContext);
             nlst = (NodeList)xpath.evaluate(expression, target, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
-            error("internalizer.XPathEvaluationError", new Object[]{e.getMessage()});
-            if(env.verbose())
-                e.printStackTrace();
+            reportError((Element) bindings, WsdlMessages.INTERNALIZER_X_PATH_EVALUATION_ERROR(e.getMessage()), e);
             return null; // abort processing this <jaxb:bindings>
         }
 
         if( nlst.getLength()==0 ) {
-            error("internalizer.XPathEvaluatesToNoTarget", new Object[]{expression});
+            reportError((Element) bindings, WsdlMessages.INTERNALIZER_X_PATH_EVALUATES_TO_NO_TARGET(expression));
             return null; // abort
         }
 
         if( nlst.getLength()!=1 ) {
-            error("internalizer.XPathEvaulatesToTooManyTargets", new Object[]{expression, nlst.getLength()});
+            reportError((Element) bindings, WsdlMessages.INTERNALIZER_X_PATH_EVAULATES_TO_TOO_MANY_TARGETS(expression, nlst.getLength()));
             return null; // abort
         }
 
         Node rnode = nlst.item(0);
         if(!(rnode instanceof Element )) {
-            error("internalizer.XPathEvaluatesToNonElement", new Object[]{expression});
+            reportError((Element) bindings, WsdlMessages.INTERNALIZER_X_PATH_EVALUATES_TO_NON_ELEMENT(expression));
             return null; // abort
         }
-        return (Element)rnode;
+        return rnode;
     }
 
     /**
@@ -330,15 +294,11 @@ public class Internalizer {
     }
 
     private boolean isJAXBBindingElement(Element e){
-        if((e.getNamespaceURI() != null ) && e.getNamespaceURI().equals(JAXWSBindingsConstants.NS_JAXB_BINDINGS))
-            return true;
-        return false;
+        return fixNull(e.getNamespaceURI()).equals(JAXWSBindingsConstants.NS_JAXB_BINDINGS);
     }
 
     private boolean isJAXWSBindingElement(Element e){
-        if((e.getNamespaceURI() != null ) && e.getNamespaceURI().equals(JAXWSBindingsConstants.NS_JAXWS_BINDINGS))
-            return true;
-        return false;
+        return fixNull(e.getNamespaceURI()).equals(JAXWSBindingsConstants.NS_JAXWS_BINDINGS);
     }
 
     /**
@@ -366,6 +326,19 @@ public class Internalizer {
                 target.setAttributeNS(JAXWSBindingsConstants.NS_JAXB_BINDINGS, "jaxb:version", JAXWSBindingsConstants.JAXB_BINDING_VERSION);
             }
 
+            // HACK: allow XJC extension all the time. This allows people to specify
+            // the <xjc:someExtension> in the external bindings. Otherwise users lack the ability
+            // to specify jaxb:extensionBindingPrefixes, so it won't work.
+            //
+            // the current workaround is still problematic in the sense that
+            // it can't support user-defined extensions. This needs more careful thought.
+
+            //JAXB doesn't allow writing jaxb:extensionbindingPrefix anywhere other than root element so lets write only on <xs:schema>
+            if(target.getLocalName().equals("schema") && target.getNamespaceURI().equals(Constants.NS_XSD)&& !target.hasAttributeNS(JAXWSBindingsConstants.NS_JAXB_BINDINGS, "extensionBindingPrefixes")){
+                target.setAttributeNS(JAXWSBindingsConstants.NS_JAXB_BINDINGS, "jaxb:extensionBindingPrefixes", "xjc");
+                target.setAttributeNS(Constants.NS_XMLNS, "xmlns:xjc", JAXWSBindingsConstants.NS_XJC_BINDINGS);
+            }
+
             //insert xs:annotation/xs:appinfo where in jaxb:binding will be put
             target = refineSchemaTarget(target);
             copyInscopeNSAttributes(decl);
@@ -385,7 +358,6 @@ public class Internalizer {
         // finally move the declaration to the target node.
         if( target.getOwnerDocument()!=decl.getOwnerDocument() ) {
             // if they belong to different DOM documents, we need to clone them
-            Element original = decl;
             decl = (Element)target.getOwnerDocument().importNode(decl,true);
 
         }
@@ -400,7 +372,7 @@ public class Internalizer {
      */
     private void copyInscopeNSAttributes(Element e){
         Element p = e;
-        Set inscopes = new HashSet();
+        Set<String> inscopes = new HashSet<String>();
         while(true) {
             NamedNodeMap atts = p.getAttributes();
             for( int i=0; i<atts.getLength(); i++ ) {
@@ -502,37 +474,25 @@ public class Internalizer {
         return child;
     }
 
-    private String getSystemId(Document doc){
-        for(Map.Entry<String, Document> e:jaxwsBindings.entrySet()){
-            if (e.getValue() == doc)
-                return e.getKey();
-        }
-        return null;
-    }
-
-    protected void warn(Localizable msg) {
-        env.warn(msg);
+    private static @NotNull String fixNull(@Nullable String s) {
+        if(s==null) return "";
+        else        return s;
     }
 
 
-    protected void error(String key, Object[] args) {
-        env.error(messageFactory.getMessage(key, args));
+    private void reportError( Element errorSource, String formattedMsg ) {
+        reportError( errorSource, formattedMsg, null );
     }
 
-    protected void warn(String key) {
-        env.warn(messageFactory.getMessage(key));
+    private void reportError( Element errorSource,
+        String formattedMsg, Exception nestedException ) {
+
+        SAXParseException e = new SAXParseException2( formattedMsg,
+            forest.locatorTable.getStartLocation(errorSource),
+            nestedException );
+        errorReceiver.error(e);
     }
 
-    protected void warn(String key, Object[] args) {
-        env.warn(messageFactory.getMessage(key, args));
-    }
 
-    protected void info(String key) {
-        env.info(messageFactory.getMessage(key));
-    }
-
-    protected void info(String key, String arg) {
-        env.info(messageFactory.getMessage(key, arg));
-    }
 
 }

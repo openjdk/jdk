@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.generator.bean.field;
 
 import java.util.ArrayList;
@@ -50,6 +49,7 @@ import com.sun.tools.internal.xjc.generator.annotation.spec.XmlElementRefWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlElementRefsWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlElementWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlElementsWriter;
+import com.sun.tools.internal.xjc.generator.annotation.spec.XmlSchemaTypeWriter;
 import com.sun.tools.internal.xjc.generator.bean.ClassOutlineImpl;
 import com.sun.tools.internal.xjc.model.CAttributePropertyInfo;
 import com.sun.tools.internal.xjc.model.CElement;
@@ -142,6 +142,12 @@ abstract class AbstractField implements FieldOutline {
         }
 
         outline.parent().generateAdapterIfNecessary(prop,field);
+
+        QName st = prop.getSchemaType();
+        if(st!=null)
+            field.annotate2(XmlSchemaTypeWriter.class)
+                .name(st.getLocalPart())
+                .namespace(st.getNamespaceURI());
     }
 
     private void annotateReference(JAnnotatable field) {

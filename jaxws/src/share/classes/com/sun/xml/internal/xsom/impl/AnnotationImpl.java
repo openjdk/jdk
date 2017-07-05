@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,18 @@ package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSAnnotation;
 import org.xml.sax.Locator;
+import org.xml.sax.helpers.LocatorImpl;
 
 public class AnnotationImpl implements XSAnnotation
 {
-    private final Object annotation;
+    private Object annotation;
     public Object getAnnotation() { return annotation; }
+
+    public Object setAnnotation(Object o) {
+        Object r = this.annotation;
+        this.annotation = o;
+        return r;
+    }
 
     private final Locator locator;
     public Locator getLocator() { return locator; }
@@ -39,4 +46,11 @@ public class AnnotationImpl implements XSAnnotation
         this.annotation = o;
         this.locator = _loc;
     }
+
+    public AnnotationImpl() {
+        locator = NULL_LOCATION;
+    }
+
+
+    private static final LocatorImpl NULL_LOCATION = new LocatorImpl();
 }

@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPElementFactory.java,v 1.4.2.7 2004/08/27 19:00:36 goodwin Exp $
- * $Revision: 1.4.2.7 $
- * $Date: 2004/08/27 19:00:36 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPElementFactory.java,v 1.11 2005/04/05 22:42:05 mk125090 Exp $
+ * $Revision: 1.11 $
+ * $Date: 2005/04/05 22:42:05 $
+ */
+
+
 
 package javax.xml.soap;
 

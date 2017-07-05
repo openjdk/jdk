@@ -1,11 +1,5 @@
 /*
- * $Id: FastInfosetDataContentHandler.java,v 1.1.1.1 2006/01/27 13:10:56 kumarjayanti Exp $
- * $Revision: 1.1.1.1 $
- * $Date: 2006/01/27 13:10:56 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: FastInfosetDataContentHandler.java,v 1.1.1.1 2006/01/27 13:10:56 kumarjayanti Exp $
+ * $Revision: 1.1.1.1 $
+ * $Date: 2006/01/27 13:10:56 $
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap;
 
 import java.awt.datatransfer.DataFlavor;

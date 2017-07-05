@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,17 @@ public class JMods implements JGenerable {
         = JMod.FINAL;
 
     private static int FIELD
-        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
-           | JMod.STATIC | JMod.FINAL
-           | JMod.TRANSIENT | JMod.VOLATILE);
+    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
+       | JMod.STATIC | JMod.FINAL
+       | JMod.TRANSIENT | JMod.VOLATILE);
 
     private static int METHOD
-        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL
-           | JMod.ABSTRACT | JMod.STATIC | JMod.NATIVE | JMod.SYNCHRONIZED);
+    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED | JMod.FINAL
+       | JMod.ABSTRACT | JMod.STATIC | JMod.NATIVE | JMod.SYNCHRONIZED);
 
     private static int CLASS
-        = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
-           | JMod.STATIC | JMod.FINAL | JMod.ABSTRACT );
+    = (JMod.PUBLIC | JMod.PRIVATE | JMod.PROTECTED
+       | JMod.STATIC | JMod.FINAL | JMod.ABSTRACT );
 
     private static int INTERFACE = JMod.PUBLIC;
 

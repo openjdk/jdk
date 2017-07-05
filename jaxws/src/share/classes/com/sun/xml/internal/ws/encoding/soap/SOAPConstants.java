@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 
 package com.sun.xml.internal.ws.encoding.soap;
 
-import javax.xml.namespace.QName;
-
 import com.sun.xml.internal.ws.encoding.soap.streaming.SOAPNamespaceConstants;
+
+import javax.xml.namespace.QName;
 
 /**
  *
@@ -52,8 +52,6 @@ public class SOAPConstants {
     public final static QName QNAME_SOAP_FAULT_STRING             = new QName("", "faultstring");
     public final static QName QNAME_SOAP_FAULT_ACTOR             = new QName("", "faultactor");
     public final static QName QNAME_SOAP_FAULT_DETAIL             = new QName("", "detail");
-    public final static QName FAULT_CODE_CLIENT            = new QName(URI_ENVELOPE, "Client");
-    public final static QName FAULT_CODE_SERVER            = new QName(URI_ENVELOPE, "Server");
     public final static QName FAULT_CODE_MUST_UNDERSTAND   = new QName(URI_ENVELOPE, "MustUnderstand");
 
     public final static QName FAULT_CODE_VERSION_MISMATCH  = new QName(URI_ENVELOPE, "VersionMismatch");

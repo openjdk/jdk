@@ -1,11 +1,5 @@
 /*
- * $Id: ElementImpl.java,v 1.1.1.1 2006/01/27 13:10:57 kumarjayanti Exp $
- * $Revision: 1.1.1.1 $
- * $Date: 2006/01/27 13:10:57 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: ElementImpl.java,v 1.6 2006/11/16 16:01:14 kumarjayanti Exp $
+ * $Revision: 1.6 $
+ * $Date: 2006/11/16 16:01:14 $
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
 import java.util.*;
@@ -184,16 +185,24 @@ public class ElementImpl
         } else if (prefix != null) {
             // Find if there's an ancester whose name contains this prefix
             org.w3c.dom.Node currentAncestor = this;
+
+//            String uri = currentAncestor.lookupNamespaceURI(prefix);
+//            return uri;
             while (currentAncestor != null &&
                    !(currentAncestor instanceof Document)) {
-                /*
-                if (prefix.equals(currentAncestor.getPrefix())) {
+
+               /* if (prefix.equals(currentAncestor.getPrefix())) {
                     String uri = currentAncestor.getNamespaceURI();
                     // this is because the javadoc says getNamespaceURI() is not a computed value
                     // and URI for a non-empty prefix cannot be null
                     if (uri != null)
                         return uri;
                 }*/
+                //String uri = currentAncestor.lookupNamespaceURI(prefix);
+                //if (uri != null) {
+                //    return uri;
+                //}
+
                 if (((Element) currentAncestor).hasAttributeNS(
                         NamespaceContext.XMLNS_URI, prefix)) {
                     return ((Element) currentAncestor).getAttributeNS(
@@ -500,7 +509,8 @@ public class ElementImpl
         } else {
             setAttributeNS(NamespaceContext.XMLNS_URI, "xmlns", uri);
         }
-        tryToFindEncodingStyleAttributeName();
+        //Fix for CR:6474641
+        //tryToFindEncodingStyleAttributeName();
         return this;
     }
 
@@ -932,8 +942,9 @@ public class ElementImpl
         if (parent != null) {
             parent.removeChild(this);
         }
-        encodingStyleAttribute.clearName();
-        tryToFindEncodingStyleAttributeName();
+        encodingStyleAttribute.clearNameAndValue();
+        // Fix for CR: 6474641
+        //tryToFindEncodingStyleAttributeName();
     }
 
     public void tryToFindEncodingStyleAttributeName() {
@@ -973,6 +984,13 @@ public class ElementImpl
         public String getValue() {
             return attributeValue;
         }
+
+        /** Note: to be used only in detachNode method */
+        public void clearNameAndValue() {
+            attributeName = null;
+            attributeValue = null;
+        }
+
         private void reconcileAttribute() throws SOAPException {
             if (attributeName != null) {
                 removeAttribute(attributeName);
@@ -1211,7 +1229,18 @@ public class ElementImpl
             prefix = qualifiedName.substring(0, index);
             localName = qualifiedName.substring(index + 1);
         }
-                super.setAttributeNS(namespaceURI,qualifiedName,value);
+
+        // Workaround for bug 6467808 - This needs to be fixed in JAXP
+
+        // Rolling back this fix, this is a wrong fix, infact its causing other regressions in JAXWS tck and
+        // other tests, because of this change the namespace declarations on soapenv:Fault element are never
+        // picked up. The fix for bug 6467808 should be in JAXP.
+//        if(elementQName.getLocalPart().equals("Fault") &&
+//                (SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE.equals(value) ||
+//                SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(value)))
+//            return;
+
+        super.setAttributeNS(namespaceURI,qualifiedName,value);
         //String tmpLocalName = this.getLocalName();
         String tmpURI = this.getNamespaceURI();
         boolean isIDNS = false;

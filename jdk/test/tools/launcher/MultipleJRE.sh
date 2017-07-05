@@ -1,14 +1,14 @@
 # @test MultipleJRE.sh
-# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069
+# @bug 4811102 4953711 4955505 4956301 4991229 4998210 5018605 6387069 6733959
 # @build PrintVersion
 # @build UglyPrintVersion
+# @build ZipMeUp
 # @run shell MultipleJRE.sh
 # @summary Verify Multiple JRE version support
 # @author Joseph E. Kowalski
 
-
 #
-# Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,24 @@ then
   exit 1
 fi
 
+JAVAEXE="$TESTJAVA/bin/java"
 JAVA="$TESTJAVA/bin/java -classpath $TESTCLASSES"
 JAR="$TESTJAVA/bin/jar"
 OS=`uname -s`;
+
+#
+# Tests whether we are on windows (true) or not.
+#
+IsWindows() {
+    case "$OS" in
+        Windows* | CYGWIN* )
+            printf "true"
+	;;
+	* )
+            printf "false"
+	;;
+    esac
+}
 
 #
 # Shell routine to test for the proper rejection of syntactically incorrect
@@ -138,7 +153,6 @@ CreateUglyJar() {
 	$JAR $2cmf META-INF/MANIFEST.MF PrintVersion \
 	    $PACKAGE/UglyPrintVersion.class
 }
-
 
 #
 # Constructs a jar file with a fair number of "zip directory" entries and
@@ -262,6 +276,29 @@ LaunchVM() {
 	fi
 }
 
+# Tests very long Main-Class attribute in the jar
+TestLongMainClass() {
+    JVER=$1
+    if [ "$JVER" = "mklink" ]; then
+        JVER=XX
+        JDKXX=jdk/j2re$JVER
+        rm -rf jdk
+        mkdir jdk
+        ln -s $TESTJAVA $JDKXX
+        JAVA_VERSION_PATH="`pwd`/jdk"
+        export JAVA_VERSION_PATH
+    fi
+    $JAVAEXE -cp $TESTCLASSES ZipMeUp UglyBetty.jar 4097 
+    message="`$JAVAEXE -version:$JVER -jar UglyBetty.jar 2>&1`"
+    echo $message | grep "Error: main-class: attribute exceeds system limits" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        printf "Long manifest test did not get expected error"
+        exit 1
+    fi
+    unset JAVA_VERSION_PATH
+    rm -rf jdk
+}
+
 #
 # Main test sequence starts here
 #
@@ -280,14 +317,11 @@ CreateJar "" ""
 LaunchVM "" "${RELEASE}"
 CreateJar "" "0"
 LaunchVM "" "${RELEASE}"
-case "$OS" in
-	Windows* | CYGWIN* )
-		MAXIMUM_PATH=255;
-	;;
-	*)
-		MAXIMUM_PATH=1024;
-	;;
-esac
+if [ `IsWindows` = "true" ]; then
+    MAXIMUM_PATH=255;
+else
+    MAXIMUM_PATH=1024;
+fi
 
 PATH_LENGTH=`printf "%s" "$UGLYCLASS" | wc -c`
 if [ ${PATH_LENGTH} -lt ${MAXIMUM_PATH} ]; then
@@ -346,7 +380,6 @@ if [ -x /usr/bin/zipnote ]; then
 	LaunchVM "" "${RELEASE}"
 fi
 
-
 #
 # Throw some syntactically challenged (illegal) version specifiers at
 # the interface.  Failure (of the launcher) is success for the test.
@@ -357,15 +390,28 @@ TestSyntax "1.2.3-"				# Ends with a separator
 TestSyntax "1.2+.3"				# Embedded modifier
 TestSyntax "1.2.4+&1.2*&1++"			# Long and invalid
 
+# On windows we see if there is another jre installed, usually
+# there is, then we test using that, otherwise links are created
+# to get through to SelectVersion.
+if [ `IsWindows` = "false" ]; then
+   TestLongMainClass "mklink"
+else
+    $JAVAEXE -version:1.0+
+    if [ $? -eq 0 ]; then
+        TestLongMainClass "1.0+"
+    else
+        printf  "Warning: TestLongMainClass skipped as there is no"
+	printf  "viable MJRE installed.\n"
+    fi
+fi
+
 #
 # Because scribbling in the registry can be rather destructive, only a
 # subset of the tests are run on Windows.
 #
-case "$OS" in
-	Windows* | CYGWIN* )
-		exit 0;
-	;;
-esac
+if [ `IsWindows` = "true" ]; then
+    exit 0;
+fi
 
 #
 # Additional version specifiers containing spaces.  (Sigh, unable to

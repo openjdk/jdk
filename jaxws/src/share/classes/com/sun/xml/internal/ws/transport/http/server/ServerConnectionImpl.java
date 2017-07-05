@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,231 +25,204 @@
 
 package com.sun.xml.internal.ws.transport.http.server;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-
-import com.sun.xml.internal.ws.pept.ept.EPTFactory;
-import com.sun.xml.internal.ws.transport.WSConnectionImpl;
+import com.sun.istack.internal.NotNull;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpsExchange;
+import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
+import com.sun.xml.internal.ws.api.server.WebServiceContextDelegate;
+import com.sun.xml.internal.ws.transport.http.HttpAdapter;
+import com.sun.xml.internal.ws.transport.http.WSHTTPConnection;
 
-import java.net.HttpURLConnection;
+import javax.xml.ws.handler.MessageContext;
+import java.io.*;
+import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
 /**
- * <code>com.sun.xml.internal.ws.spi.runtime.WSConnection</code> used with Java SE endpoints
+ * {@link WSHTTPConnection} used with Java SE endpoints. It provides connection
+ * implementation using {@link HttpExchange} object.
  *
- * @author WS Development Team
+ * @author Jitendra Kotamraju
  */
-public class ServerConnectionImpl extends WSConnectionImpl {
+final class ServerConnectionImpl extends WSHTTPConnection implements WebServiceContextDelegate {
 
-    private HttpExchange httpExchange;
+    private final HttpExchange httpExchange;
     private int status;
-    private Map<String,List<String>> requestHeaders;
-    private Map<String,List<String>> responseHeaders;
-    private NoCloseInputStream is;
-    private NoCloseOutputStream out;
-    private boolean closedInput;
-    private boolean closedOutput;
+    private final HttpAdapter adapter;
+    private boolean outputWritten;
 
-    public ServerConnectionImpl(HttpExchange httpTransaction) {
-        this.httpExchange = httpTransaction;
+
+    public ServerConnectionImpl(@NotNull HttpAdapter adapter, @NotNull HttpExchange httpExchange) {
+        this.adapter = adapter;
+        this.httpExchange = httpExchange;
     }
 
-    public Map<String,List<String>> getHeaders() {
+    @Override
+    @Property(value = {MessageContext.HTTP_REQUEST_HEADERS, Packet.INBOUND_TRANSPORT_HEADERS})
+    public @NotNull Map<String,List<String>> getRequestHeaders() {
         return httpExchange.getRequestHeaders();
     }
 
-    /**
-     * sets response headers.
-     */
-    public void setHeaders(Map<String,List<String>> headers) {
-        responseHeaders = headers;
+    @Override
+    public String getRequestHeader(String headerName) {
+        return httpExchange.getRequestHeaders().getFirst(headerName);
     }
 
+    @Override
+    public void setResponseHeaders(Map<String,List<String>> headers) {
+        Headers r = httpExchange.getResponseHeaders();
+        r.clear();
+        for(Map.Entry <String, List<String>> entry : headers.entrySet()) {
+            String name = entry.getKey();
+            List<String> values = entry.getValue();
+            if (name.equalsIgnoreCase("Content-Length") || name.equalsIgnoreCase("Content-Type")) {
+                continue;  // ignore headers that interfere with our correct operations
+            } else {
+                r.put(name,new ArrayList<String>(values));
+            }
+        }
+    }
+    @Override
+    @Property({MessageContext.HTTP_RESPONSE_HEADERS,Packet.OUTBOUND_TRANSPORT_HEADERS})
+    public Map<String,List<String>> getResponseHeaders() {
+        return httpExchange.getResponseHeaders();
+    }
+
+    @Override
+    public void setContentTypeResponseHeader(@NotNull String value) {
+        httpExchange.getResponseHeaders().set("Content-Type",value);
+    }
+
+    @Override
     public void setStatus(int status) {
         this.status = status;
     }
 
-    /**
-     * sets HTTP status code
-     */
+    @Override
+    @Property(MessageContext.HTTP_RESPONSE_CODE)
     public int getStatus() {
-        if (status == 0) {
-            status = HttpURLConnection.HTTP_INTERNAL_ERROR;
-        }
         return status;
     }
 
-    public InputStream getInput() {
-        if (is == null) {
-            is = new NoCloseInputStream(httpExchange.getRequestBody());
-        }
-        return is;
-    }
-
-    public OutputStream getOutput() {
-        if (out == null) {
-            try {
-                closeInput();
-                int len = 0;
-                if (responseHeaders != null) {
-                    for(Map.Entry <String, List<String>> entry : responseHeaders.entrySet()) {
-                        String name = entry.getKey();
-                        List<String> values = entry.getValue();
-                        if (name.equals("Content-Length")) {
-                            // No need to add this header
-                            len = Integer.valueOf(values.get(0));
-                        } else {
-                            for(String value : values) {
-                                httpExchange.getResponseHeaders().add(name, value);
-                            }
-                        }
-                    }
+    public @NotNull InputStream getInput() {
+        // Light weight http server's InputStream.close() throws exception if
+        // all the bytes are not read. Work around until it is fixed.
+        return new FilterInputStream(httpExchange.getRequestBody()) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    while (read() != -1);
+                } catch(IOException e) {
+                    //Ignore
                 }
-
-                // write HTTP status code, and headers
-                httpExchange.sendResponseHeaders(getStatus(), len);
-                out = new NoCloseOutputStream(httpExchange.getResponseBody());
-            } catch(IOException ioe) {
-                ioe.printStackTrace();
+                super.close();
             }
-        }
-        return out;
+        };
     }
 
-    public void closeOutput() {
-        if (out != null) {
-            try {
-                out.getOutputStream().close();
-                closedOutput = true;
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-        out = null;
-    }
+    public @NotNull OutputStream getOutput() throws IOException {
+        assert !outputWritten;
+        outputWritten = true;
 
-    public void closeInput() {
-        if (is != null) {
-            try {
-                // Read everything from request and close it
-                byte[] buf = new byte[1024];
-                while (is.read(buf) != -1) {
+        List<String> lenHeader = httpExchange.getResponseHeaders().get("Content-Length");
+        int length = (lenHeader != null) ? Integer.parseInt(lenHeader.get(0)) : 0;
+        httpExchange.sendResponseHeaders(getStatus(), length);
+
+        // Light weight http server's OutputStream.close() throws exception if
+        // all the bytes are not read on the client side(StreamMessage on the client
+        // side doesn't read all bytes.
+        return new FilterOutputStream(httpExchange.getResponseBody()) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } catch(IOException ioe) {
+                    // Ignoring purposefully.
                 }
-                is.getInputStream().close();
-                closedInput = true;
-            } catch (IOException ex) {
-                ex.printStackTrace();
             }
-        }
-        is = null;
+        };
     }
 
-    public void close() {
-        httpExchange.close();
+    public @NotNull WebServiceContextDelegate getWebServiceContextDelegate() {
+        return this;
     }
 
-    private static class NoCloseInputStream extends InputStream {
-        private InputStream is;
-
-        public NoCloseInputStream(InputStream is) {
-            this.is = is;
-        }
-
-        @Override
-        public int read() throws IOException {
-            return is.read();
-        }
-
-        @Override
-        public void close() throws IOException {
-            // Intentionally left empty. use closeInput() to close
-        }
-
-        public InputStream getInputStream() {
-            return is;
-        }
-
-        @Override
-        public int read(byte b[]) throws IOException {
-            return is.read(b);
-        }
-
-        @Override
-        public int read(byte b[], int off, int len) throws IOException {
-            return is.read(b, off, len);
-        }
-
-        @Override
-        public long skip(long n) throws IOException {
-            return is.skip(n);
-        }
-
-        @Override
-        public int available() throws IOException {
-            return is.available();
-        }
-
-        @Override
-        public void mark(int readlimit) {
-            is.mark(readlimit);
-        }
-
-
-        @Override
-        public void reset() throws IOException {
-            is.reset();
-        }
-
-        @Override
-        public boolean markSupported() {
-            return is.markSupported();
-        }
+    public Principal getUserPrincipal(Packet request) {
+        return httpExchange.getPrincipal();
     }
 
-    private static class NoCloseOutputStream extends OutputStream {
-        private OutputStream out;
-
-        public NoCloseOutputStream(OutputStream out) {
-            this.out = out;
-        }
-
-        @Override
-        public void write(int ch) throws IOException {
-            out.write(ch);
-        }
-
-        @Override
-        public void close() throws IOException {
-            // Intentionally left empty. use closeOutput() to close
-        }
-
-        @Override
-        public void write(byte b[]) throws IOException {
-            out.write(b);
-        }
-
-        @Override
-        public void write(byte b[], int off, int len) throws IOException {
-            out.write(b, off, len);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            out.flush();
-        }
-
-        public OutputStream getOutputStream() {
-            return out;
-        }
+    public boolean isUserInRole(Packet request, String role) {
+        return false;
     }
 
+    public @NotNull String getEPRAddress(Packet request, WSEndpoint endpoint) {
+        return WSHttpHandler.getRequestAddress(httpExchange);
+    }
+
+    public String getWSDLAddress(@NotNull Packet request, @NotNull WSEndpoint endpoint) {
+        String eprAddress = getEPRAddress(request,endpoint);
+        if(adapter.getEndpoint().getPort() != null)
+            return eprAddress+"?wsdl";
+        else
+            return null;
+    }
+
+    @Override
+    public boolean isSecure() {
+        return (httpExchange instanceof HttpsExchange);
+    }
+
+    @Override
+    @Property(MessageContext.HTTP_REQUEST_METHOD)
+    public @NotNull String getRequestMethod() {
+        return httpExchange.getRequestMethod();
+    }
+
+    @Override
+    @Property(MessageContext.QUERY_STRING)
+    public String getQueryString() {
+        URI requestUri = httpExchange.getRequestURI();
+        String query = requestUri.getQuery();
+        if (query != null)
+            return query;
+        return null;
+    }
+
+    @Override
+    @Property(MessageContext.PATH_INFO)
+    public String getPathInfo() {
+        URI requestUri = httpExchange.getRequestURI();
+        String reqPath = requestUri.getPath();
+        String ctxtPath = httpExchange.getHttpContext().getPath();
+        if (reqPath.length() > ctxtPath.length()) {
+            return reqPath.substring(ctxtPath.length());
+        }
+        return null;
+    }
+
+    @Override
+    public String getProtocol() {
+        return httpExchange.getProtocol();
+    }
+
+    @Override
+    public void setContentLengthResponseHeader(int value) {
+        httpExchange.getResponseHeaders().set("Content-Length", ""+value);
+    }
+
+    protected PropertyMap getPropertyMap() {
+        return model;
+    }
+
+    private static final PropertyMap model;
+
+    static {
+        model = parse(ServerConnectionImpl.class);
+    }
 }

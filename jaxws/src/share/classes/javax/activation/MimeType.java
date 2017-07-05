@@ -25,10 +25,8 @@
 
 package javax.activation;
 
-import java.io.ObjectOutput;
-import java.io.ObjectInput;
-import java.io.IOException;
 import java.io.*;
+import java.util.Locale;
 
 /**
  * A Multipurpose Internet Mail Extension (MIME) type, as defined
@@ -77,14 +75,14 @@ public class MimeType implements Externalizable {
     public MimeType(String primary, String sub) throws MimeTypeParseException {
         //    check to see if primary is valid
         if (isValidToken(primary)) {
-            primaryType = primary.toLowerCase();
+            primaryType = primary.toLowerCase(Locale.ENGLISH);
         } else {
             throw new MimeTypeParseException("Primary type is invalid.");
         }
 
         //    check to see if sub is valid
         if (isValidToken(sub)) {
-            subType = sub.toLowerCase();
+            subType = sub.toLowerCase(Locale.ENGLISH);
         } else {
             throw new MimeTypeParseException("Sub type is invalid.");
         }
@@ -108,14 +106,17 @@ public class MimeType implements Externalizable {
             throw new MimeTypeParseException("Unable to find a sub type.");
         } else if ((slashIndex >= 0) && (semIndex < 0)) {
             //    we have a primary and sub type but no parameter list
-            primaryType = rawdata.substring(0, slashIndex).trim().toLowerCase();
-            subType = rawdata.substring(slashIndex + 1).trim().toLowerCase();
+            primaryType = rawdata.substring(0, slashIndex).trim().
+                                                toLowerCase(Locale.ENGLISH);
+            subType = rawdata.substring(slashIndex + 1).trim().
+                                                toLowerCase(Locale.ENGLISH);
             parameters = new MimeTypeParameterList();
         } else if (slashIndex < semIndex) {
             //    we have all three items in the proper sequence
-            primaryType = rawdata.substring(0, slashIndex).trim().toLowerCase();
-            subType = rawdata.substring(slashIndex + 1,
-                                                semIndex).trim().toLowerCase();
+            primaryType = rawdata.substring(0, slashIndex).trim().
+                                                toLowerCase(Locale.ENGLISH);
+            subType = rawdata.substring(slashIndex + 1, semIndex).trim().
+                                                toLowerCase(Locale.ENGLISH);
             parameters = new MimeTypeParameterList(rawdata.substring(semIndex));
         } else {
             // we have a ';' lexically before a '/' which means we
@@ -154,7 +155,7 @@ public class MimeType implements Externalizable {
         //    check to see if primary is valid
         if (!isValidToken(primaryType))
             throw new MimeTypeParseException("Primary type is invalid.");
-        primaryType = primary.toLowerCase();
+        primaryType = primary.toLowerCase(Locale.ENGLISH);
     }
 
     /**
@@ -177,7 +178,7 @@ public class MimeType implements Externalizable {
         //    check to see if sub is valid
         if (!isValidToken(subType))
             throw new MimeTypeParseException("Sub type is invalid.");
-        subType = sub.toLowerCase();
+        subType = sub.toLowerCase(Locale.ENGLISH);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc.gen.config;
 
 import java.text.MessageFormat;
@@ -51,6 +50,7 @@ import org.xml.sax.SAXParseException;
  *
  *  <li>TODO: provide support for interleaving.
  *
+ * @version $Id: NGCCRuntime.java,v 1.16 2003/03/23 02:47:46 okajima Exp $
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */
 public class NGCCRuntime implements ContentHandler, NGCCEventSource {

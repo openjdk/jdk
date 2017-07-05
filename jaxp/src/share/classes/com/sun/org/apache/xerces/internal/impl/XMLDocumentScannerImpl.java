@@ -62,6 +62,10 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentScanner;
  * @author Arnaud  Le Hors, IBM
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, Sun Microsystems
+ *
+ * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
+ * related to property SupportDTD.
+ * @author Joe Wang, Sun Microsystems
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{
@@ -185,9 +189,6 @@ public class XMLDocumentScannerImpl
     /** Load external DTD. */
     protected boolean fLoadExternalDTD = true;
 
-    /** Disallow doctype declaration. */
-    protected boolean fDisallowDoctype = false;
-
     // state
 
     /** Seen doctype declaration. */
@@ -227,8 +228,8 @@ public class XMLDocumentScannerImpl
     /** String. */
     private XMLString fString = new XMLString();
 
-    public static final char [] DOCTYPE = {'D','O','C','T','Y','P','E'};
-    public static final char [] COMMENTSTRING = {'-','-'};
+    private static final char [] DOCTYPE = {'D','O','C','T','Y','P','E'};
+    private static final char [] COMMENTSTRING = {'-','-'};
 
     //
     // Constructors
@@ -708,6 +709,12 @@ public class XMLDocumentScannerImpl
     //
     // Private methods
     //
+    /** Set the scanner state after scanning DTD */
+    protected void setEndDTDScanState() {
+        setScannerState(SCANNER_STATE_PROLOG);
+        setDriver(fPrologDriver);
+        fEntityManager.setEntityHandler(XMLDocumentScannerImpl.this);
+    }
 
     /** Returns the scanner state name. */
     protected String getScannerStateName(int state) {
@@ -930,19 +937,20 @@ public class XMLDocumentScannerImpl
                             reportFatalError("AlreadySeenDoctype", null);
                         }
                         fSeenDoctypeDecl = true;
-                        if(fDTDDriver == null){
-                            fDTDDriver = new DTDDriver();
-                        }
-
                         // scanDoctypeDecl() sends XNI doctypeDecl event that
                         // in SAX is converted to startDTD() event.
                         if (scanDoctypeDecl(fDisallowDoctype)) {
+                            //allow parsing of entity decls to continue in order to stay well-formed
                             setScannerState(SCANNER_STATE_DTD_INTERNAL_DECLS);
                             fSeenInternalSubset = true;
+                            if(fDTDDriver == null){
+                                fDTDDriver = new DTDDriver();
+                            }
                             setDriver(fContentDriver);
-                            int dtdEvent = fDTDDriver.next();
+                            //always return DTD event, the event however, will not contain any entities
+                            return fDTDDriver.next();
                             // If no DTD support, ignore and continue parsing
-                            return fDisallowDoctype ? next() : dtdEvent;
+                            //return fDisallowDoctype ? next() : dtdEvent;
                         }
 
                         /** xxx:check this part again
@@ -955,17 +963,17 @@ public class XMLDocumentScannerImpl
                         }
                          */
 
-                        if (fDisallowDoctype) {
-                            setScannerState(SCANNER_STATE_PROLOG);
-                            return next();
-                        }
-
                         // handle external subset
                         if (fDoctypeSystemId != null) {
                             if (((fValidation || fLoadExternalDTD)
                                 && (fValidationManager == null || !fValidationManager.isCachedDTD()))) {
-                                setScannerState(SCANNER_STATE_DTD_EXTERNAL);
+                                if (!fDisallowDoctype)
+                                    setScannerState(SCANNER_STATE_DTD_EXTERNAL);
+                                else
+                                    setScannerState(SCANNER_STATE_PROLOG);
                                 setDriver(fContentDriver);
+                                if(fDTDDriver == null)
+                                    fDTDDriver = new DTDDriver();
                                 return fDTDDriver.next();
 
                             }
@@ -976,8 +984,13 @@ public class XMLDocumentScannerImpl
                                 // This handles the case of a DOCTYPE that had neither an internal subset or an external subset.
                                 fDTDScanner.setInputSource(fExternalSubsetSource);
                                 fExternalSubsetSource = null;
-                                setScannerState(SCANNER_STATE_DTD_EXTERNAL_DECLS);
+                                if (!fDisallowDoctype)
+                                    setScannerState(SCANNER_STATE_DTD_EXTERNAL_DECLS);
+                                else
+                                    setScannerState(SCANNER_STATE_PROLOG);
                                 setDriver(fContentDriver);
+                                if(fDTDDriver == null)
+                                    fDTDDriver = new DTDDriver();
                                 return fDTDDriver.next();
                             }
                         }
@@ -1117,19 +1130,21 @@ public class XMLDocumentScannerImpl
                                 }
                                 fMarkupDepth--;
 
-                                // scan external subset next
-                                if (!XMLDocumentScannerImpl.this.fDisallowDoctype &&
-                                        fDoctypeSystemId != null && (fValidation || fLoadExternalDTD)) {
-                                    setScannerState(SCANNER_STATE_DTD_EXTERNAL);
+                                if (fDisallowDoctype) {
+                                    //simply reset the entity store without having to mess around
+                                    //with the DTD Scanner code
+                                    fEntityStore = fEntityManager.getEntityStore();
+                                    fEntityStore.reset();
+                                } else {
+                                    // scan external subset next unless we are ignoring DTDs
+                                    if (fDoctypeSystemId != null && (fValidation || fLoadExternalDTD)) {
+                                        setScannerState(SCANNER_STATE_DTD_EXTERNAL);
+                                        break;
+                                    }
                                 }
 
-                                // break out of here
-                                else {
-                                    setScannerState(SCANNER_STATE_PROLOG);
-                                    setDriver(fPrologDriver);
-                                    fEntityManager.setEntityHandler(XMLDocumentScannerImpl.this);
-                                    return true;
-                                }
+                                setEndDTDScanState();
+                                return true;
                             }
                             break;
                         }
@@ -1160,12 +1175,15 @@ public class XMLDocumentScannerImpl
                             boolean completeDTD = true;
                             boolean moreToScan = fDTDScanner.scanDTDExternalSubset(completeDTD);
                             if (!moreToScan) {
-                                setScannerState(SCANNER_STATE_PROLOG);
-                                setDriver(fPrologDriver);
-                                fEntityManager.setEntityHandler(XMLDocumentScannerImpl.this);
+                                setEndDTDScanState();
                                 return true;
                             }
                             break;
+                        }
+                        case SCANNER_STATE_PROLOG : {
+                            // skip entity decls
+                            setEndDTDScanState();
+                            return true;
                         }
                         default: {
                             throw new XNIException("DTDDriver#dispatch: scanner state="+fScannerState+" ("+getScannerStateName(fScannerState)+')');

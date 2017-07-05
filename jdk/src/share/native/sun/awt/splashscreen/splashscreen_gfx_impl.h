@@ -31,7 +31,7 @@
 /* here come some very simple macros */
 
 /* advance a pointer p by sizeof(type)*n bytes */
-#define INCPN(type,p,n) ((p) = (type*)(p)+n)
+#define INCPN(type,p,n) ((p) = (type*)(p)+(n))
 
 /* advance a pointer by sizeof(type) */
 #define INCP(type,p) INCPN(type,(p),1)

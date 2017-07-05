@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import java.io.IOException;
@@ -45,9 +44,11 @@ import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.OptimizedTransducedAccessorFactory;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Patcher;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.LocatorEx;
 
 import org.xml.sax.SAXException;
 
@@ -136,7 +137,7 @@ public abstract class TransducedAccessor<BeanT> {
      * <p>
      * This allows the implementation to use an optimized code.
      */
-    public static <T> TransducedAccessor<T> get(RuntimeNonElementRef ref) {
+    public static <T> TransducedAccessor<T> get(JAXBContextImpl context, RuntimeNonElementRef ref) {
         Transducer xducer = RuntimeModelBuilder.createTransducer(ref);
         RuntimePropertyInfo prop = ref.getSource();
 
@@ -149,15 +150,15 @@ public abstract class TransducedAccessor<BeanT> {
         if(prop.id()==ID.IDREF)
             return new IDREFTransducedAccessorImpl(prop.getAccessor());
 
-        if(xducer.isDefault()) {
+        if(xducer.isDefault() && !context.fastBoot) {
             TransducedAccessor xa = OptimizedTransducedAccessorFactory.get(prop);
             if(xa!=null)    return xa;
         }
 
         if(xducer.useNamespace())
-            return new CompositeContextDependentTransducedAccessorImpl( xducer, prop.getAccessor() );
+            return new CompositeContextDependentTransducedAccessorImpl( context, xducer, prop.getAccessor() );
         else
-            return new CompositeTransducedAccessorImpl( xducer, prop.getAccessor() );
+            return new CompositeTransducedAccessorImpl( context, xducer, prop.getAccessor() );
     }
 
     /**
@@ -178,8 +179,8 @@ public abstract class TransducedAccessor<BeanT> {
     public abstract void writeText(XMLSerializer w, BeanT o, String fieldName) throws AccessorException, SAXException, IOException, XMLStreamException;
 
     static class CompositeContextDependentTransducedAccessorImpl<BeanT,ValueT> extends CompositeTransducedAccessorImpl<BeanT,ValueT> {
-        public CompositeContextDependentTransducedAccessorImpl(Transducer<ValueT> xducer, Accessor<BeanT,ValueT> acc) {
-            super(xducer, acc);
+        public CompositeContextDependentTransducedAccessorImpl(JAXBContextImpl context,Transducer<ValueT> xducer, Accessor<BeanT,ValueT> acc) {
+            super(context,xducer,acc);
             assert xducer.useNamespace();
         }
 
@@ -213,9 +214,9 @@ public abstract class TransducedAccessor<BeanT> {
         protected final Transducer<ValueT> xducer;
         protected final Accessor<BeanT,ValueT> acc;
 
-        public CompositeTransducedAccessorImpl(Transducer<ValueT> xducer, Accessor<BeanT,ValueT> acc) {
+        public CompositeTransducedAccessorImpl(JAXBContextImpl context, Transducer<ValueT> xducer, Accessor<BeanT,ValueT> acc) {
             this.xducer = xducer;
-            this.acc = acc.optimize();
+            this.acc = acc.optimize(context);
         }
 
         public CharSequence print(BeanT bean) throws AccessorException {
@@ -291,7 +292,8 @@ public abstract class TransducedAccessor<BeanT> {
 
             final Callable callable = context.getObjectFromId(idref,acc.valueType);
             if(callable==null) {
-                context.errorUnresolvedIDREF(bean,idref);
+                // the IDResolver decided to abort it now
+                context.errorUnresolvedIDREF(bean,idref,context.getLocator());
                 return;
             }
 
@@ -309,12 +311,13 @@ public abstract class TransducedAccessor<BeanT> {
                 assign(bean,t,context);
             } else {
                 // try again later
+                final LocatorEx loc = new LocatorEx.Snapshot(context.getLocator());
                 context.addPatcher(new Patcher() {
                     public void run() throws SAXException {
                         try {
                             TargetT t = (TargetT)callable.call();
                             if(t==null) {
-                                context.errorUnresolvedIDREF(bean,idref);
+                                context.errorUnresolvedIDREF(bean,idref,loc);
                             } else {
                                 assign(bean,t,context);
                             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model.nav;
 
 import java.lang.reflect.Type;
@@ -308,7 +307,7 @@ public final class NavigatorImpl implements Navigator<NType,NClass,Void,Void> {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isOverriding(Void method) {
+    public boolean isOverriding(Void method,NClass clazz) {
         throw new UnsupportedOperationException();
     }
 
@@ -317,6 +316,10 @@ public final class NavigatorImpl implements Navigator<NType,NClass,Void,Void> {
     }
 
     public boolean isTransient(Void f) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isInnerClass(NClass clazz) {
         throw new UnsupportedOperationException();
     }
 }

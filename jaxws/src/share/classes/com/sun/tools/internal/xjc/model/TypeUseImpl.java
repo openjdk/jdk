@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import javax.activation.MimeType;
@@ -43,14 +42,14 @@ import com.sun.xml.internal.xsom.XmlString;
  * @author Kohsuke Kawaguchi
  */
 final class TypeUseImpl implements TypeUse {
-    private final CTypeInfo coreType;
+    private final CNonElement coreType;
     private final boolean collection;
     private final CAdapter adapter;
     private final ID id;
     private final MimeType expectedMimeType;
 
 
-    public TypeUseImpl(CTypeInfo itemType, boolean collection, ID id, MimeType expectedMimeType, CAdapter adapter) {
+    public TypeUseImpl(CNonElement itemType, boolean collection, ID id, MimeType expectedMimeType, CAdapter adapter) {
         this.coreType = itemType;
         this.collection = collection;
         this.id = id;
@@ -62,7 +61,7 @@ final class TypeUseImpl implements TypeUse {
         return collection;
     }
 
-    public CTypeInfo getInfo() {
+    public CNonElement getInfo() {
         return coreType;
     }
 

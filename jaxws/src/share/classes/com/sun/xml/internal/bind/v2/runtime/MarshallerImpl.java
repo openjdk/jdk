@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.BufferedWriter;
@@ -151,7 +150,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
     }
 
     public void marshal(Object obj, XMLStreamWriter writer) throws JAXBException {
-        write(obj, XMLStreamWriterOutput.create(writer), new StAXPostInitAction(writer,serializer));
+        write(obj, XMLStreamWriterOutput.create(writer,context), new StAXPostInitAction(writer,serializer));
     }
 
     public void marshal(Object obj, XMLEventWriter writer) throws JAXBException {
@@ -195,7 +194,16 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
                         fileURL = fileURL.substring(8);
                     else
                         fileURL = fileURL.substring(7);
-                } // otherwise assume that it's a file name
+                }
+                if (fileURL.startsWith("file:/")) {
+                    // some people use broken URLs like "file:/c:/abc/def/ghi.txt"
+                    // so let's make it work with that
+                    if (fileURL.substring(6).indexOf(":") > 0)
+                        fileURL = fileURL.substring(6);
+                    else
+                        fileURL = fileURL.substring(5);
+                }
+                // otherwise assume that it's a file name
 
                 try {
                     FileOutputStream fos = new FileOutputStream(fileURL);
@@ -247,7 +255,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
                         serializer.childAsXsiType(obj,"root",bi);
                 }
                 serializer.endElement();
-                postwrite(out);
+                postwrite();
             } catch( SAXException e ) {
                 throw new MarshalException(e);
             } catch (IOException e) {
@@ -296,7 +304,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
             try {
                 prewrite(out,isFragment(),postInitAction);
                 serializer.childAsRoot(obj);
-                postwrite(out);
+                postwrite();
             } catch( SAXException e ) {
                 throw new MarshalException(e);
             } catch (IOException e) {
@@ -348,10 +356,9 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
         serializer.setPrefixMapper(prefixMapper);
     }
 
-    private void postwrite(XmlOutput out) throws IOException, SAXException, XMLStreamException {
+    private void postwrite() throws IOException, SAXException, XMLStreamException {
         serializer.endDocument();
         serializer.reconcileID();   // extra check
-        out.flush();
     }
 
 
@@ -444,7 +451,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
     public Object getProperty(String name) throws PropertyException {
         if( INDENT_STRING.equals(name) )
             return indent;
-        if( ENCODING_HANDLER.equals(name) )
+        if( ENCODING_HANDLER.equals(name) || ENCODING_HANDLER2.equals(name) )
             return escapeHandler;
         if( PREFIX_MAPPER.equals(name) )
             return prefixMapper;
@@ -454,6 +461,9 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
             return header;
         if( C14N.equals(name) )
             return c14nSupport;
+        if ( OBJECT_IDENTITY_CYCLE_DETECTION.equals(name))
+                return serializer.getObjectIdentityCycleDetection();
+;
 
         return super.getProperty(name);
     }
@@ -464,7 +474,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
             indent = (String)value;
             return;
         }
-        if( ENCODING_HANDLER.equals(name) ) {
+        if( ENCODING_HANDLER.equals(name) || ENCODING_HANDLER2.equals(name)) {
             if(!(value instanceof CharacterEscapeHandler))
                 throw new PropertyException(
                     Messages.MUST_BE_X.format(
@@ -499,6 +509,11 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
         if( C14N.equals(name) ) {
             checkBoolean(name,value);
             c14nSupport = (Boolean)value;
+            return;
+        }
+        if (OBJECT_IDENTITY_CYCLE_DETECTION.equals(name)) {
+                checkBoolean(name,value);
+            serializer.setObjectIdentityCycleDetection((Boolean)value);
             return;
         }
 
@@ -585,7 +600,9 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
     protected static final String INDENT_STRING = "com.sun.xml.internal.bind.indentString";
     protected static final String PREFIX_MAPPER = "com.sun.xml.internal.bind.namespacePrefixMapper";
     protected static final String ENCODING_HANDLER = "com.sun.xml.internal.bind.characterEscapeHandler";
+    protected static final String ENCODING_HANDLER2 = "com.sun.xml.internal.bind.marshaller.CharacterEscapeHandler";
     protected static final String XMLDECLARATION = "com.sun.xml.internal.bind.xmlDeclaration";
     protected static final String XML_HEADERS = "com.sun.xml.internal.bind.xmlHeaders";
     protected static final String C14N = JAXBRIContext.CANONICALIZATION_SUPPORT;
+    protected static final String OBJECT_IDENTITY_CYCLE_DETECTION = "com.sun.xml.internal.bind.objectIdentitityCycleDetection";
 }

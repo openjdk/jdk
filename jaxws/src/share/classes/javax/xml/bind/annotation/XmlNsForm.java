@@ -40,8 +40,8 @@ package javax.xml.bind.annotation;
  * <table border="1" cellpadding="4" cellspacing="3">
  *   <tbody>
  *     <tr>
- *       <td><b>Enum Value</b></td>
- *       <td><b>XML Schema Value</b></td>
+ *       <td><b>Enum Value<b></td>
+ *       <td><b>XML Schema Value<b></td>
  *     </tr>
  *
  *     <tr valign="top">
@@ -62,5 +62,6 @@ package javax.xml.bind.annotation;
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since JAXB2.0
+ * @version $Revision: 1.1 $
  */
 public enum XmlNsForm {UNQUALIFIED, QUALIFIED, UNSET}

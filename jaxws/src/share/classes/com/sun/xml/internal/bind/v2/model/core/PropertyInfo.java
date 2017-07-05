@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.core;
 
 import java.util.Collection;
@@ -35,6 +34,7 @@ import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.namespace.QName;
 
 import com.sun.istack.internal.Nullable;
+import com.sun.xml.internal.bind.v2.model.annotation.AnnotationSource;
 
 /**
  * Information about a JAXB-bound property.
@@ -48,7 +48,7 @@ import com.sun.istack.internal.Nullable;
  *
  * @author Kohsuke Kawaguchi
  */
-public interface PropertyInfo<T,C> {
+public interface PropertyInfo<T,C> extends AnnotationSource {
 
     /**
      * Gets the {@link ClassInfo} or {@link ElementInfo} to which this property belongs.

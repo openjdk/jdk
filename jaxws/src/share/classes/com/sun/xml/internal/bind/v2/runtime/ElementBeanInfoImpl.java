@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -66,6 +67,12 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
     public final Class expectedType;
     private final Class scope;
 
+    /**
+     * If non-null, use this to create an instance.
+     * It takes one value.
+     */
+    private final Constructor<? extends JAXBElement> constructor;
+
     ElementBeanInfoImpl(JAXBContextImpl grammar, RuntimeElementInfo rei) {
         super(grammar,rei,(Class<JAXBElement>)rei.getType(),true,false,true);
 
@@ -74,6 +81,19 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
         tagName = rei.getElementName();
         expectedType = Navigator.REFLECTION.erasure(rei.getContentInMemoryType());
         scope = rei.getScope()==null ? JAXBElement.GlobalScope.class : rei.getScope().getClazz();
+
+        Class type = Navigator.REFLECTION.erasure(rei.getType());
+        if(type==JAXBElement.class)
+            constructor = null;
+        else {
+            try {
+                constructor = type.getConstructor(expectedType);
+            } catch (NoSuchMethodException e) {
+                NoSuchMethodError x = new NoSuchMethodError("Failed to find the constructor for " + type + " with " + expectedType);
+                x.initCause(e);
+                throw x;
+            }
+        }
     }
 
     /**
@@ -89,6 +109,7 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
         tagName = null;
         expectedType = null;
         scope = null;
+        constructor = null;
 
         this.property = new Property<JAXBElement>() {
             public void reset(JAXBElement o) {
@@ -238,12 +259,15 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
         return loader;
     }
 
-    public final JAXBElement createInstance(UnmarshallingContext context) {
+    public final JAXBElement createInstance(UnmarshallingContext context) throws IllegalAccessException, InvocationTargetException, InstantiationException {
         return createInstanceFromValue(null);
     }
 
-    public final JAXBElement createInstanceFromValue(Object o) {
-        return new JAXBElement(tagName,expectedType,scope,o);
+    public final JAXBElement createInstanceFromValue(Object o) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        if(constructor==null)
+            return new JAXBElement(tagName,expectedType,scope,o);
+        else
+            return constructor.newInstance(o);
     }
 
     public boolean reset(JAXBElement e, UnmarshallingContext context) {

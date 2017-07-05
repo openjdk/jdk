@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /**
  *
- * <P>This document describes the SPI for the JAX-WS 2.0 tools.
+ * <P>This document describes the SPI for the JAX-WS 2.0.1 tools.
  *  The WSToolsObjectFactory is used to create instances of WsGen
  *  and WsImport that other applications can use.
 */

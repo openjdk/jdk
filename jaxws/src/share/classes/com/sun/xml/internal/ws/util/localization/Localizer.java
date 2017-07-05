@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,11 @@ public class Localizer {
     }
 
     public String localize(Localizable l) {
+        String key = l.getKey();
+        if (key == Localizable.NOT_LOCALIZABLE) {
+            // this message is not localizable
+            return (String) l.getArguments()[0];
+        }
         String bundlename = l.getResourceBundleName();
 
         try {
@@ -95,13 +100,6 @@ public class Localizer {
             if (bundle == null) {
                 return getDefaultMessage(l);
             }
-
-            String key = l.getKey();
-            if(key==Localizable.NOT_LOCALIZABLE) {
-                // this message is not localizable
-                return (String)l.getArguments()[0];
-            }
-
 
             if (key == null)
                 key = "undefined";

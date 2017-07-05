@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,6 @@
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
  */
 
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
- */
 
 
 package com.sun.xml.internal.fastinfoset;
@@ -61,7 +34,6 @@ import com.sun.xml.internal.org.jvnet.fastinfoset.RestrictedAlphabet;
 
 public final class EncodingConstants {
     static {
-        initiateCharacterTables();
         initiateXMLDeclarationValues();
     }
 
@@ -69,14 +41,11 @@ public final class EncodingConstants {
     public static final int XML_NAMESPACE_PREFIX_LENGTH = XML_NAMESPACE_PREFIX.length();
     public static final String XML_NAMESPACE_NAME = "http://www.w3.org/XML/1998/namespace";
     public static final int XML_NAMESPACE_NAME_LENGTH = XML_NAMESPACE_NAME.length();
-    public static final char[] XML_NAMESPACE_NAME_CHARS = XML_NAMESPACE_NAME.toCharArray();
 
     public static final String XMLNS_NAMESPACE_PREFIX = "xmlns";
     public static final int XMLNS_NAMESPACE_PREFIX_LENGTH = XMLNS_NAMESPACE_PREFIX.length();
-    public static final char[] XMLNS_NAMESPACE_PREFIX_CHARS = XMLNS_NAMESPACE_PREFIX.toCharArray();
     public static final String XMLNS_NAMESPACE_NAME = "http://www.w3.org/2000/xmlns/";
     public static final int XMLNS_NAMESPACE_NAME_LENGTH = XMLNS_NAMESPACE_NAME.length();
-    public static final char[] XMLNS_NAMESPACE_NAME_CHARS = XMLNS_NAMESPACE_NAME.toCharArray();
 
     public static final QualifiedName DEFAULT_NAMESPACE_DECLARATION = new QualifiedName(
             "",
@@ -194,7 +163,7 @@ public final class EncodingConstants {
     public static final int OCTET_STRING_LENGTH_2ND_BIT_LARGE_FLAG = 0x60;
     public static final int OCTET_STRING_LENGTH_2ND_BIT_SMALL_MASK = 0x1F;
 
-    public static final int[] OCTET_STRING_LENGTH_2ND_BIT_VALUES = {
+    /* package */ static final int[] OCTET_STRING_LENGTH_2ND_BIT_VALUES = {
         OCTET_STRING_LENGTH_2ND_BIT_SMALL_LIMIT,
         OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_LIMIT,
         OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_FLAG,
@@ -210,7 +179,7 @@ public final class EncodingConstants {
     public static final int OCTET_STRING_LENGTH_5TH_BIT_LARGE_FLAG = 0x0C;
     public static final int OCTET_STRING_LENGTH_5TH_BIT_SMALL_MASK = 0x07;
 
-    public static final int[] OCTET_STRING_LENGTH_5TH_BIT_VALUES = {
+    /* package */ static final int[] OCTET_STRING_LENGTH_5TH_BIT_VALUES = {
         OCTET_STRING_LENGTH_5TH_BIT_SMALL_LIMIT,
         OCTET_STRING_LENGTH_5TH_BIT_MEDIUM_LIMIT,
         OCTET_STRING_LENGTH_5TH_BIT_MEDIUM_FLAG,
@@ -226,7 +195,7 @@ public final class EncodingConstants {
     public static final int OCTET_STRING_LENGTH_7TH_BIT_LARGE_FLAG = 0x03;
     public static final int OCTET_STRING_LENGTH_7TH_BIT_SMALL_MASK = 0x01;
 
-    public static final int[] OCTET_STRING_LENGTH_7TH_BIT_VALUES = {
+    /* package */ static final int[] OCTET_STRING_LENGTH_7TH_BIT_VALUES = {
         OCTET_STRING_LENGTH_7TH_BIT_SMALL_LIMIT,
         OCTET_STRING_LENGTH_7TH_BIT_MEDIUM_LIMIT,
         OCTET_STRING_LENGTH_7TH_BIT_MEDIUM_FLAG,
@@ -257,7 +226,7 @@ public final class EncodingConstants {
     public static final int INTEGER_2ND_BIT_MEDIUM_MASK = 0x1F;
     public static final int INTEGER_2ND_BIT_LARGE_MASK = 0x0F;
 
-    public static final int[] INTEGER_2ND_BIT_VALUES = {
+    /* package */ static final int[] INTEGER_2ND_BIT_VALUES = {
         INTEGER_2ND_BIT_SMALL_LIMIT,
         INTEGER_2ND_BIT_MEDIUM_LIMIT,
         INTEGER_2ND_BIT_LARGE_LIMIT,
@@ -280,7 +249,7 @@ public final class EncodingConstants {
     public static final int INTEGER_3RD_BIT_LARGE_MASK = 0x07;
     public static final int INTEGER_3RD_BIT_LARGE_LARGE_MASK = 0x0F;
 
-    public static final int[] INTEGER_3RD_BIT_VALUES = {
+    /* package */ static final int[] INTEGER_3RD_BIT_VALUES = {
         INTEGER_3RD_BIT_SMALL_LIMIT,
         INTEGER_3RD_BIT_MEDIUM_LIMIT,
         INTEGER_3RD_BIT_LARGE_LIMIT,
@@ -302,7 +271,7 @@ public final class EncodingConstants {
     public static final int INTEGER_4TH_BIT_MEDIUM_MASK = 0x03;
     public static final int INTEGER_4TH_BIT_LARGE_MASK = 0x03;
 
-    public static final int[] INTEGER_4TH_BIT_VALUES = {
+    /* package */ static final int[] INTEGER_4TH_BIT_VALUES = {
         INTEGER_4TH_BIT_SMALL_LIMIT,
         INTEGER_4TH_BIT_MEDIUM_LIMIT,
         INTEGER_4TH_BIT_LARGE_LIMIT,
@@ -311,44 +280,9 @@ public final class EncodingConstants {
         INTEGER_4TH_BIT_LARGE_LARGE_FLAG
     };
 
+    /* package */ static final byte[] BINARY_HEADER = {(byte)0xE0, 0, 0, 1};
 
-    public static int[] NUMERIC_CHARACTERS_TABLE;
-
-    public static int[] DATE_TIME_CHARACTERS_TABLE;
-
-    private static void initiateCharacterTables() {
-        NUMERIC_CHARACTERS_TABLE = new int[maxCharacter(RestrictedAlphabet.NUMERIC_CHARACTERS) + 1];
-        DATE_TIME_CHARACTERS_TABLE = new int[maxCharacter(RestrictedAlphabet.DATE_TIME_CHARACTERS) + 1];
-
-        for (int i = 0; i < NUMERIC_CHARACTERS_TABLE.length ; i++) {
-            NUMERIC_CHARACTERS_TABLE[i] = -1;
-        }
-        for (int i = 0; i < DATE_TIME_CHARACTERS_TABLE.length ; i++) {
-            DATE_TIME_CHARACTERS_TABLE[i] = -1;
-        }
-
-        for (int i = 0; i < RestrictedAlphabet.NUMERIC_CHARACTERS.length() ; i++) {
-            NUMERIC_CHARACTERS_TABLE[RestrictedAlphabet.NUMERIC_CHARACTERS.charAt(i)] = i;
-        }
-        for (int i = 0; i < RestrictedAlphabet.DATE_TIME_CHARACTERS.length() ; i++) {
-            DATE_TIME_CHARACTERS_TABLE[RestrictedAlphabet.DATE_TIME_CHARACTERS.charAt(i)] = i;
-        }
-    }
-
-    private static int maxCharacter(String alphabet) {
-        int c = 0;
-        for (int i = 0; i < alphabet.length() ; i++) {
-            if (c < alphabet.charAt(i)) {
-                c = alphabet.charAt(i);
-            }
-        }
-
-        return c;
-    }
-
-    public static final byte[] BINARY_HEADER = {(byte)0xE0, 0, 0, 1};
-
-    public static byte[][] XML_DECLARATION_VALUES;
+    /* package */ static byte[][] XML_DECLARATION_VALUES;
 
     private static void initiateXMLDeclarationValues() {
 

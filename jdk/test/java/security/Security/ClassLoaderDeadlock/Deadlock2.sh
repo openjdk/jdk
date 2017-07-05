@@ -26,6 +26,7 @@
 
 # @test
 # @bug 6440846
+# @ignore until 6203816 is dealt with.
 # @summary make sure we do not deadlock between ExtClassLoader and AppClassLoader
 # @author Valerie Peng
 # @run shell/timeout=20 Deadlock2.sh

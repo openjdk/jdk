@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,17 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import javax.activation.MimeType;
 
-import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.JExpression;
+import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.xml.internal.xsom.XSComponent;
 import com.sun.xml.internal.xsom.XmlString;
-import com.sun.tools.internal.xjc.outline.Outline;
 
 /**
  * Partial implementation of {@link CTypeInfo}.
@@ -67,10 +65,6 @@ abstract class AbstractCTypeInfoImpl implements CTypeInfo {
 
     public final CAdapter getAdapterUse() {
         return null;
-    }
-
-    public final CTypeInfo getInfo() {
-        return this;
     }
 
     public final ID idUse() {

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 package com.sun.xml.internal.ws.util.exception;
 
 import com.sun.xml.internal.ws.util.localization.Localizable;
+import com.sun.xml.internal.ws.util.localization.LocalizableImpl;
 import com.sun.xml.internal.ws.util.localization.Localizer;
+import com.sun.xml.internal.ws.util.localization.NullLocalizable;
 
 import javax.xml.ws.WebServiceException;
 
@@ -39,23 +41,42 @@ import javax.xml.ws.WebServiceException;
 public abstract class JAXWSExceptionBase
     extends WebServiceException implements Localizable {
 
-    private final String key;
-    private final Object[] args;
+    private final Localizable msg;
 
+    /**
+     * @deprecated
+     *      Should use the localizable constructor instead.
+     */
     protected JAXWSExceptionBase(String key, Object... args) {
         super(findNestedException(args));
-        if(args==null)  args = new Object[0];
-        this.key = key;
-        this.args = args;
+        this.msg = new LocalizableImpl(key,fixNull(args),getDefaultResourceBundleName());
+    }
+
+
+    protected JAXWSExceptionBase(String message) {
+        super(message);
+        msg=null;
+    }
+
+    private static Object[] fixNull(Object[] x) {
+        if(x==null)     return new Object[0];
+        else            return x;
     }
 
     /**
      * Creates a new exception that wraps the specified exception.
      */
     protected JAXWSExceptionBase(Throwable throwable) {
-        super(throwable);
-        this.key = Localizable.NOT_LOCALIZABLE;
-        this.args = new Object[]{throwable.toString()};
+        this(new NullLocalizable(throwable.toString()),throwable);
+    }
+
+    protected JAXWSExceptionBase(Localizable msg) {
+        this.msg = msg;
+    }
+
+    protected JAXWSExceptionBase(Localizable msg, Throwable cause) {
+        super(cause);
+        this.msg = msg;
     }
 
     private static Throwable findNestedException(Object[] args) {
@@ -68,22 +89,29 @@ public abstract class JAXWSExceptionBase
         return null;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public Object[] getArguments() {
-        return args;
-    }
-
-    public String toString() {
-        // for debug purposes only
-        //return getClass().getName() + " (" + getKey() + ")";
-        return getMessage();
-    }
-
     public String getMessage() {
         Localizer localizer = new Localizer();
         return localizer.localize(this);
+    }
+
+    /**
+     * Gets the default resource bundle name for this kind of exception.
+     * Used for {@link #JAXWSExceptionBase(String, Object[])}.
+     */
+    protected abstract String getDefaultResourceBundleName();
+
+//
+// Localizable delegation
+//
+    public final String getKey() {
+        return msg.getKey();
+    }
+
+    public final Object[] getArguments() {
+        return msg.getArguments();
+    }
+
+    public final String getResourceBundleName() {
+        return msg.getResourceBundleName();
     }
 }

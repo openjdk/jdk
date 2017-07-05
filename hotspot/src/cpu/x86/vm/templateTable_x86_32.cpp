@@ -206,12 +206,12 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bytecode, Register bc,
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::set_original_bytecode_at), scratch, rsi, bc);
 #ifndef ASSERT
     __ jmpb(patch_done);
-    __ bind(fast_patch);
-  }
 #else
     __ jmp(patch_done);
+#endif
     __ bind(fast_patch);
   }
+#ifdef ASSERT
   Label okay;
   __ load_unsigned_byte(scratch, at_bcp(0));
   __ cmpl(scratch, (int)Bytecodes::java_code(bytecode));
@@ -2105,6 +2105,7 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constrain
 
 void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Register index) {
   assert(byte_no == 1 || byte_no == 2, "byte_no out of range");
+  bool is_invokedynamic = (bytecode() == Bytecodes::_invokedynamic);
 
   Register temp = rbx;
 
@@ -2112,16 +2113,19 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
 
   const int shift_count = (1 + byte_no)*BitsPerByte;
   Label resolved;
-  __ get_cache_and_index_at_bcp(Rcache, index, 1);
-  __ movl(temp, Address(Rcache,
-                          index,
-                          Address::times_ptr,
-                          constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
-  __ shrl(temp, shift_count);
-  // have we resolved this bytecode?
-  __ andptr(temp, 0xFF);
-  __ cmpl(temp, (int)bytecode());
-  __ jcc(Assembler::equal, resolved);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
+  if (is_invokedynamic) {
+    // we are resolved if the f1 field contains a non-null CallSite object
+    __ cmpptr(Address(Rcache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f1_offset()), (int32_t) NULL_WORD);
+    __ jcc(Assembler::notEqual, resolved);
+  } else {
+    __ movl(temp, Address(Rcache, index, Address::times_4, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
+    __ shrl(temp, shift_count);
+    // have we resolved this bytecode?
+    __ andl(temp, 0xFF);
+    __ cmpl(temp, (int)bytecode());
+    __ jcc(Assembler::equal, resolved);
+  }
 
   // resolve first time through
   address entry;
@@ -2134,12 +2138,13 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
     case Bytecodes::_invokespecial  : // fall through
     case Bytecodes::_invokestatic   : // fall through
     case Bytecodes::_invokeinterface: entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invoke);  break;
+    case Bytecodes::_invokedynamic  : entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_invokedynamic); break;
     default                         : ShouldNotReachHere();                                 break;
   }
   __ movl(temp, (int)bytecode());
   __ call_VM(noreg, entry, temp);
   // Update registers with resolved info
-  __ get_cache_and_index_at_bcp(Rcache, index, 1);
+  __ get_cache_and_index_at_bcp(Rcache, index, 1, is_invokedynamic);
   __ bind(resolved);
 }
 
@@ -2884,18 +2889,25 @@ void TemplateTable::count_calls(Register method, Register temp) {
 }
 
 
-void TemplateTable::prepare_invoke(Register method, Register index, int byte_no, Bytecodes::Code code) {
+void TemplateTable::prepare_invoke(Register method, Register index, int byte_no) {
+  bool is_invdyn_bootstrap = (byte_no < 0);
+  if (is_invdyn_bootstrap)  byte_no = -byte_no;
+
   // determine flags
+  Bytecodes::Code code = bytecode();
   const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
+  const bool is_invokedynamic    = code == Bytecodes::_invokedynamic;
   const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
   const bool is_invokespecial    = code == Bytecodes::_invokespecial;
-  const bool load_receiver       = code != Bytecodes::_invokestatic;
+  const bool load_receiver      = (code != Bytecodes::_invokestatic && code != Bytecodes::_invokedynamic);
   const bool receiver_null_check = is_invokespecial;
   const bool save_flags = is_invokeinterface || is_invokevirtual;
   // setup registers & access constant pool cache
   const Register recv   = rcx;
   const Register flags  = rdx;
   assert_different_registers(method, index, recv, flags);
+
+  assert(!is_invdyn_bootstrap || is_invokedynamic, "byte_no<0 hack only for invdyn");
 
   // save 'interpreter return address'
   __ save_bcp();
@@ -2907,8 +2919,13 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no,
     __ movl(recv, flags);
     __ andl(recv, 0xFF);
     // recv count is 0 based?
-    __ movptr(recv, Address(rsp, recv, Interpreter::stackElementScale(), -Interpreter::expr_offset_in_bytes(1)));
-    __ verify_oop(recv);
+    Address recv_addr(rsp, recv, Interpreter::stackElementScale(), -Interpreter::expr_offset_in_bytes(1));
+    if (is_invokedynamic) {
+      __ lea(recv, recv_addr);
+    } else {
+      __ movptr(recv, recv_addr);
+      __ verify_oop(recv);
+    }
   }
 
   // do null check if needed
@@ -2926,8 +2943,14 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no,
   ConstantPoolCacheEntry::verify_tosBits();
   // load return address
   {
-    ExternalAddress table(is_invokeinterface ? (address)Interpreter::return_5_addrs_by_index_table() :
-                                               (address)Interpreter::return_3_addrs_by_index_table());
+    address table_addr;
+    if (is_invdyn_bootstrap)
+      table_addr = (address)Interpreter::return_5_unbox_addrs_by_index_table();
+    else if (is_invokeinterface || is_invokedynamic)
+      table_addr = (address)Interpreter::return_5_addrs_by_index_table();
+    else
+      table_addr = (address)Interpreter::return_3_addrs_by_index_table();
+    ExternalAddress table(table_addr);
     __ movptr(flags, ArrayAddress(table, Address(noreg, flags, Address::times_ptr)));
   }
 
@@ -2990,7 +3013,7 @@ void TemplateTable::invokevirtual_helper(Register index, Register recv,
 
 void TemplateTable::invokevirtual(int byte_no) {
   transition(vtos, vtos);
-  prepare_invoke(rbx, noreg, byte_no, bytecode());
+  prepare_invoke(rbx, noreg, byte_no);
 
   // rbx,: index
   // rcx: receiver
@@ -3002,7 +3025,7 @@ void TemplateTable::invokevirtual(int byte_no) {
 
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
-  prepare_invoke(rbx, noreg, byte_no, bytecode());
+  prepare_invoke(rbx, noreg, byte_no);
   // do the call
   __ verify_oop(rbx);
   __ profile_call(rax);
@@ -3012,7 +3035,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
-  prepare_invoke(rbx, noreg, byte_no, bytecode());
+  prepare_invoke(rbx, noreg, byte_no);
   // do the call
   __ verify_oop(rbx);
   __ profile_call(rax);
@@ -3028,7 +3051,7 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 
 void TemplateTable::invokeinterface(int byte_no) {
   transition(vtos, vtos);
-  prepare_invoke(rax, rbx, byte_no, bytecode());
+  prepare_invoke(rax, rbx, byte_no);
 
   // rax,: Interface
   // rbx,: index
@@ -3100,6 +3123,84 @@ void TemplateTable::invokeinterface(int byte_no) {
                    InterpreterRuntime::throw_IncompatibleClassChangeError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
+}
+
+void TemplateTable::invokedynamic(int byte_no) {
+  transition(vtos, vtos);
+
+  if (!EnableInvokeDynamic) {
+    // We should not encounter this bytecode if !EnableInvokeDynamic.
+    // The verifier will stop it.  However, if we get past the verifier,
+    // this will stop the thread in a reasonable way, without crashing the JVM.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_IncompatibleClassChangeError));
+    // the call_VM checks for exception, so we should never return here.
+    __ should_not_reach_here();
+    return;
+  }
+
+  prepare_invoke(rax, rbx, byte_no);
+
+  // rax: CallSite object (f1)
+  // rbx: unused (f2)
+  // rcx: receiver address
+  // rdx: flags (unused)
+
+  if (ProfileInterpreter) {
+    Label L;
+    // %%% should make a type profile for any invokedynamic that takes a ref argument
+    // profile this call
+    __ profile_call(rsi);
+  }
+
+  Label handle_unlinked_site;
+  __ movptr(rcx, Address(rax, __ delayed_value(sun_dyn_CallSiteImpl::target_offset_in_bytes, rcx)));
+  __ testptr(rcx, rcx);
+  __ jcc(Assembler::zero, handle_unlinked_site);
+
+  __ prepare_to_jump_from_interpreted();
+  __ jump_to_method_handle_entry(rcx, rdx);
+
+  // Initial calls come here...
+  __ bind(handle_unlinked_site);
+  __ pop(rcx);                 // remove return address pushed by prepare_invoke
+
+  // box stacked arguments into an array for the bootstrap method
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::bootstrap_invokedynamic);
+  __ restore_bcp();      // rsi must be correct for call_VM
+  __ call_VM(rax, entry, rax);
+  __ movl(rdi, rax);            // protect bootstrap MH from prepare_invoke
+
+  // recompute return address
+  __ restore_bcp();      // rsi must be correct for prepare_invoke
+  prepare_invoke(rax, rbx, -byte_no);  // smashes rcx, rdx
+  // rax: CallSite object (f1)
+  // rbx: unused (f2)
+  // rdi: bootstrap MH
+  // rdx: flags
+
+  // now load up the arglist, which has been neatly boxed
+  __ get_thread(rcx);
+  __ movptr(rdx, Address(rcx, JavaThread::vm_result_2_offset()));
+  __ movptr(Address(rcx, JavaThread::vm_result_2_offset()), NULL_WORD);
+  __ verify_oop(rdx);
+  // rdx = arglist
+
+  // save SP now, before we add the bootstrap call to the stack
+  // We must preserve a fiction that the original arguments are outgoing,
+  // because the return sequence will reset the stack to this point
+  // and then pop all those arguments.  It seems error-prone to use
+  // a different argument list size just for bootstrapping.
+  __ prepare_to_jump_from_interpreted();
+
+  // Now let's play adapter, pushing the real arguments on the stack.
+  __ pop(rbx);                  // return PC
+  __ push(rdi);                 // boot MH
+  __ push(rax);                 // call site
+  __ push(rdx);                 // arglist
+  __ push(rbx);                 // return PC, again
+  __ mov(rcx, rdi);
+  __ jump_to_method_handle_entry(rcx, rdx);
 }
 
 //----------------------------------------------------------------------------------------------------

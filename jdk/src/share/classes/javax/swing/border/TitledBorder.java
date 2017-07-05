@@ -133,7 +133,7 @@ public class TitledBorder extends AbstractBorder
      * @param title  the title the border should display
      */
     public TitledBorder(String title)     {
-        this(null, title, LEADING, TOP, null, null);
+        this(null, title, LEADING, DEFAULT_POSITION, null, null);
     }
 
     /**
@@ -143,7 +143,7 @@ public class TitledBorder extends AbstractBorder
      * @param border  the border
      */
     public TitledBorder(Border border)       {
-        this(border, "", LEADING, TOP, null, null);
+        this(border, "", LEADING, DEFAULT_POSITION, null, null);
     }
 
     /**
@@ -154,7 +154,7 @@ public class TitledBorder extends AbstractBorder
      * @param title  the title the border should display
      */
     public TitledBorder(Border border, String title) {
-        this(border, title, LEADING, TOP, null, null);
+        this(border, title, LEADING, DEFAULT_POSITION, null, null);
     }
 
     /**
@@ -502,7 +502,33 @@ public class TitledBorder extends AbstractBorder
     /**
      * Returns the title-position of the titled border.
      */
-    public int getTitlePosition()   {       return titlePosition;   }
+    public int getTitlePosition() {
+        if (titlePosition == DEFAULT_POSITION) {
+            Object value = UIManager.get("TitledBorder.position");
+            if (value instanceof String) {
+                String s = (String)value;
+                if ("ABOVE_TOP".equalsIgnoreCase(s)) {
+                    return ABOVE_TOP;
+                } else if ("TOP".equalsIgnoreCase(s)) {
+                    return TOP;
+                } else if ("BELOW_TOP".equalsIgnoreCase(s)) {
+                    return BELOW_TOP;
+                } else if ("ABOVE_BOTTOM".equalsIgnoreCase(s)) {
+                    return ABOVE_BOTTOM;
+                } else if ("BOTTOM".equalsIgnoreCase(s)) {
+                    return BOTTOM;
+                } else if ("BELOW_BOTTOM".equalsIgnoreCase(s)) {
+                    return BELOW_BOTTOM;
+                }
+            } else if (value instanceof Integer) {
+                int i = (Integer)value;
+                if (i >= 0 && i <= 6) {
+                    return i;
+                }
+            }
+        }
+        return titlePosition;
+    }
 
     /**
      * Returns the title-justification of the titled border.
@@ -613,7 +639,7 @@ public class TitledBorder extends AbstractBorder
         Font font = getFont(c);
         FontMetrics fm = c.getFontMetrics(font);
         JComponent jc = (c instanceof JComponent) ? (JComponent)c : null;
-        switch (titlePosition) {
+        switch (getTitlePosition()) {
           case ABOVE_TOP:
           case BELOW_BOTTOM:
               minSize.width = Math.max(SwingUtilities2.stringWidth(jc, fm,

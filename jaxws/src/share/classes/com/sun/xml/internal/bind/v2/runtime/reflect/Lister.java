@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import java.lang.ref.WeakReference;
@@ -51,6 +50,7 @@ import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Patcher;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.LocatorEx;
 
 import org.xml.sax.SAXException;
 
@@ -138,7 +138,7 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
         return l;
     }
 
-    private static Class getImplClass(Class fieldType) {
+    private static Class getImplClass(Class<?> fieldType) {
         return ClassFactory.inferImplClass(fieldType,ClassFactory.COLLECTION_IMPL_CLASSES);
     }
 
@@ -274,6 +274,8 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
             T collection = acc.get(bean);
             if(collection==null) {
                 collection = ClassFactory.create(implClass);
+                if(!acc.isAdapted())
+                    acc.set(bean,collection);
             }
             collection.clear();
             return collection;
@@ -286,12 +288,21 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
         public void endPacking( T collection, BeanT bean, Accessor<BeanT,T> acc ) throws AccessorException {
             // this needs to be done in the endPacking, because
             // sometimes the accessor uses an adapter, and the adapter needs to see
-            // the whole thing
-            acc.set(bean,collection);
+            // the whole thing.
+
+            // but always doing so causes a problem when this collection property
+            // is getter-only
+
+            if(acc.isAdapted())
+                acc.set(bean,collection);
         }
 
         public void reset(BeanT bean, Accessor<BeanT, T> acc) throws AccessorException {
-            acc.get(bean).clear();
+            T collection = acc.get(bean);
+            if(collection == null) {
+                return;
+            }
+            collection.clear();
         }
     }
 
@@ -339,11 +350,13 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
             private final List<String> idrefs = new ArrayList<String>();
             private final UnmarshallingContext context;
             private final Accessor<BeanT,PropT> acc;
+            private final LocatorEx location;
 
             public Pack(BeanT bean, Accessor<BeanT,PropT> acc) {
                 this.bean = bean;
                 this.acc = acc;
                 this.context = UnmarshallingContext.getInstance();
+                this.location = new LocatorEx.Snapshot(context.getLocator());
                 context.addPatcher(this);
             }
 
@@ -371,7 +384,7 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
                         }
 
                         if(t==null) {
-                            context.errorUnresolvedIDREF(bean,id);
+                            context.errorUnresolvedIDREF(bean,id,location);
                         } else {
                             TODO.prototype(); // TODO: check if the type of t is proper.
                             core.addToPack(pack,t);
@@ -425,8 +438,13 @@ public abstract class Lister<BeanT,PropT,ItemT,PackT> {
     }
 
     /**
-     * Special {@link Lister} used to recover from an error.
+     * Gets the special {@link Lister} used to recover from an error.
      */
+    @SuppressWarnings("unchecked")
+    public static <A,B,C,D> Lister<A,B,C,D> getErrorInstance() {
+        return ERROR;
+    }
+
     public static final Lister ERROR = new Lister() {
         public ListIterator iterator(Object o, XMLSerializer context) {
             return EMPTY_ITERATOR;

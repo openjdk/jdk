@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6822643 6830721
  * @summary Unit test for AsynchronousFileChannel
  */
 
@@ -51,7 +51,6 @@ public class Basic {
         // run tests
         testUsingCompletionHandlers(ch);
         testUsingWaitOnResult(ch);
-        testLocking(ch);
         testInterruptHandlerThread(ch);
 
         // close channel and invoke test that expects channel to be closed
@@ -59,6 +58,7 @@ public class Basic {
         testClosedChannel(ch);
 
         // these tests open the file themselves
+        testLocking(blah.toPath());
         testCustomThreadPool(blah.toPath());
         testAsynchronousClose(blah.toPath());
         testCancel(blah.toPath());
@@ -160,47 +160,54 @@ public class Basic {
     }
 
     // exercise lock methods
-    static void testLocking(AsynchronousFileChannel ch)
-        throws IOException
-    {
+    static void testLocking(Path file) throws IOException {
         System.out.println("testLocking");
 
-        // test 1 - acquire lock and check that tryLock throws
-        // OverlappingFileLockException
+        AsynchronousFileChannel ch = AsynchronousFileChannel
+            .open(file, READ, WRITE);
         FileLock fl;
         try {
-            fl = ch.lock().get();
-        } catch (ExecutionException x) {
-            throw new RuntimeException(x);
-        } catch (InterruptedException x) {
-            throw new RuntimeException("Should not be interrupted");
-        }
-        if (!fl.acquiredBy().equals(ch))
-            throw new RuntimeException("FileLock#acquiredBy returned incorrect channel");
-        try {
-            ch.tryLock();
-            throw new RuntimeException("OverlappingFileLockException expected");
-        } catch (OverlappingFileLockException x) {
-        }
-        fl.release();
+            // test 1 - acquire lock and check that tryLock throws
+            // OverlappingFileLockException
+            try {
+                fl = ch.lock().get();
+            } catch (ExecutionException x) {
+                throw new RuntimeException(x);
+            } catch (InterruptedException x) {
+                throw new RuntimeException("Should not be interrupted");
+            }
+            if (!fl.acquiredBy().equals(ch))
+                throw new RuntimeException("FileLock#acquiredBy returned incorrect channel");
+            try {
+                ch.tryLock();
+                throw new RuntimeException("OverlappingFileLockException expected");
+            } catch (OverlappingFileLockException x) {
+            }
+            fl.release();
 
-        // test 2 - acquire try and check that lock throws OverlappingFileLockException
-        fl = ch.tryLock();
-        if (fl == null)
-            throw new RuntimeException("Unable to acquire lock");
-        try {
-            ch.lock(null, new CompletionHandler<FileLock,Void> () {
-                public void completed(FileLock result, Void att) {
-                }
-                public void failed(Throwable exc, Void att) {
-                }
-                public void cancelled(Void att) {
-                }
-            });
-            throw new RuntimeException("OverlappingFileLockException expected");
-        } catch (OverlappingFileLockException x) {
+            // test 2 - acquire try and check that lock throws OverlappingFileLockException
+            fl = ch.tryLock();
+            if (fl == null)
+                throw new RuntimeException("Unable to acquire lock");
+            try {
+                ch.lock(null, new CompletionHandler<FileLock,Void> () {
+                    public void completed(FileLock result, Void att) {
+                    }
+                    public void failed(Throwable exc, Void att) {
+                    }
+                    public void cancelled(Void att) {
+                    }
+                });
+                throw new RuntimeException("OverlappingFileLockException expected");
+            } catch (OverlappingFileLockException x) {
+            }
+        } finally {
+            ch.close();
         }
-        fl.release();
+
+        // test 3 - channel is closed so FileLock should no longer be valid
+        if (fl.isValid())
+            throw new RuntimeException("FileLock expected to be invalid");
     }
 
     // interrupt should not close channel
@@ -424,10 +431,11 @@ public class Basic {
                 throw new RuntimeException("isCancelled not consistent");
             try {
                 res.get();
-                if (!cancelled)
+                if (cancelled)
                     throw new RuntimeException("CancellationException expected");
             } catch (CancellationException x) {
-                // expected
+                if (!cancelled)
+                    throw new RuntimeException("CancellationException not expected");
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (InterruptedException x) {
@@ -435,9 +443,11 @@ public class Basic {
             }
             try {
                 res.get(1, TimeUnit.SECONDS);
-                throw new RuntimeException("CancellationException expected");
+                if (cancelled)
+                    throw new RuntimeException("CancellationException expected");
             } catch (CancellationException x) {
-                // expected
+                if (!cancelled)
+                    throw new RuntimeException("CancellationException not expected");
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (TimeoutException x) {

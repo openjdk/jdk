@@ -36,7 +36,7 @@ import static java.lang.annotation.RetentionPolicy.*;
 /**
  * <p> Controls the ordering of fields and properties in a class. </p>
  *
- * <p> <b> Usage </b> </p>
+ * <h3>Usage </h3>
  *
  * <p> <tt> @XmlAccessorOrder </tt> annotation can be used with the following
  * program elements:</p>
@@ -46,33 +46,23 @@ import static java.lang.annotation.RetentionPolicy.*;
  *   <li> a top level class </li>
  * </ul>
  *
- * <p> See "Package Specification" in javax.xml.bind.package javadoc for
+ * <p> See "Package Specification" in <tt>javax.xml.bind</tt> package javadoc for
  * additional common information.</p>
  *
- * <p>The annotation <tt> @XmlAccessorOrder </tt> on a package applies to
- * all classes in a package. The following inheritance semantics apply:
+ * <p>The effective {@link XmlAccessOrder} on a class is determined
+ * as follows:
  *
  * <ul>
  *   <li> If there is a <tt>@XmlAccessorOrder</tt> on a class, then
  *        it is used. </li>
  *   <li> Otherwise, if a <tt>@XmlAccessorOrder </tt> exists on one of
- *        its super classes, then it is inherited.
- *   <li> Otherwise, the <tt>@XmlAccessorOrder </tt> on a package is
- *        inherited.
+ *        its super classes, then it is inherited (by the virtue of
+ *        {@link Inherited})
+ *   <li> Otherwise, the <tt>@XmlAccessorOrder</tt> on the package
+ *        of the class is used, if it's there.
+ *   <li> Otherwise {@link XmlAccessOrder#UNDEFINED}.
  * </ul>
- * <p> <b> Defaulting Rules: </b> </p>
  *
- * <p>By default, if <tt>@XmlAccessorOrder </tt> on a package is absent,
- * then the following package level annotation is assumed.</p>
- *<pre>
- *    &#64;XmlAccessorType(XmlAccessOrder.UNDEFINED)
- *</pre>
- * <p> By default, if <tt>@XmlAccessorOrder</tt> on a class is absent
- * and none of super classes is annotated with <tt> XmlAccessorOrder
- * </tt>, then the following default on the class is assumed: </p>
- *<pre>
- *    &#64;XmlAccessorType(XmlAccessOrder.UNDEFINED)
- *</pre>
  * <p>This annotation can be used with the following annotations:
  *    {@link XmlType}, {@link XmlRootElement}, {@link XmlAccessorType},
  *    {@link XmlSchema}, {@link XmlSchemaType}, {@link XmlSchemaTypes},
@@ -81,6 +71,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since JAXB2.0
+ * @version  $Revision: 1.11 $
  * @see XmlAccessOrder
  */
 

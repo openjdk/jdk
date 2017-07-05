@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api.impl.j2s;
 
 import java.io.IOException;
@@ -37,6 +36,7 @@ import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
+import javax.xml.transform.Result;
 
 import com.sun.mirror.declaration.FieldDeclaration;
 import com.sun.mirror.declaration.MethodDeclaration;
@@ -57,6 +57,7 @@ import com.sun.xml.internal.bind.v2.model.core.Ref;
 import com.sun.xml.internal.bind.v2.model.core.TypeInfoSet;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.schemagen.XmlSchemaGenerator;
+import com.sun.xml.internal.txw2.output.ResultFactory;
 
 /**
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
@@ -70,6 +71,11 @@ final class JAXBModelImpl implements J2SJAXBModel {
     private final TypeInfoSet<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration> types;
 
     private final AnnotationReader<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration> reader;
+
+    /**
+     * Lazily created schema generator.
+     */
+    private XmlSchemaGenerator<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration> xsdgen;
 
     /**
      * Look up table from an externally visible {@link Reference} object
@@ -160,21 +166,29 @@ final class JAXBModelImpl implements J2SJAXBModel {
     }
 
     public void generateSchema(SchemaOutputResolver outputResolver, ErrorListener errorListener) throws IOException {
-        XmlSchemaGenerator<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration> xsdgen
-            = new XmlSchemaGenerator<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration>( types.getNavigator(), types );
+        getSchemaGenerator().write(outputResolver,errorListener);
+    }
 
-        for (Map.Entry<QName,Reference> e : additionalElementDecls.entrySet()) {
-            Reference value = e.getValue();
-            if(value!=null) {
-                NonElement<TypeMirror, TypeDeclaration> typeInfo = refMap.get(value);
-                if(typeInfo==null)
-                    throw new IllegalArgumentException(e.getValue()+" was not specified to JavaCompiler.bind");
-                xsdgen.add(e.getKey(),!(value.type instanceof PrimitiveType),typeInfo);
-            } else {
-                xsdgen.add(e.getKey(),false,null);
+    public void generateEpisodeFile(Result output) {
+        getSchemaGenerator().writeEpisodeFile(ResultFactory.createSerializer(output));
+    }
+
+    private synchronized XmlSchemaGenerator<TypeMirror, TypeDeclaration, FieldDeclaration, MethodDeclaration> getSchemaGenerator() {
+        if(xsdgen==null) {
+            xsdgen = new XmlSchemaGenerator<TypeMirror,TypeDeclaration,FieldDeclaration,MethodDeclaration>( types.getNavigator(), types );
+
+            for (Map.Entry<QName, Reference> e : additionalElementDecls.entrySet()) {
+                Reference value = e.getValue();
+                if(value!=null) {
+                    NonElement<TypeMirror, TypeDeclaration> typeInfo = refMap.get(value);
+                    if(typeInfo==null)
+                        throw new IllegalArgumentException(e.getValue()+" was not specified to JavaCompiler.bind");
+                    xsdgen.add(e.getKey(),!(value.type instanceof PrimitiveType),typeInfo);
+                } else {
+                    xsdgen.add(e.getKey(),false,null);
+                }
             }
         }
-
-        xsdgen.write(outputResolver);
+        return xsdgen;
     }
 }

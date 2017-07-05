@@ -348,7 +348,7 @@ public class MailcapCommandMap extends CommandMap {
     public synchronized CommandInfo[] getPreferredCommands(String mimeType) {
         List cmdList = new ArrayList();
         if (mimeType != null)
-            mimeType = mimeType.toLowerCase();
+            mimeType = mimeType.toLowerCase(Locale.ENGLISH);
 
         for (int i = 0; i < DB.length; i++) {
             if (DB[i] == null)
@@ -414,7 +414,7 @@ public class MailcapCommandMap extends CommandMap {
     public synchronized CommandInfo[] getAllCommands(String mimeType) {
         List cmdList = new ArrayList();
         if (mimeType != null)
-            mimeType = mimeType.toLowerCase();
+            mimeType = mimeType.toLowerCase(Locale.ENGLISH);
 
         for (int i = 0; i < DB.length; i++) {
             if (DB[i] == null)
@@ -468,7 +468,7 @@ public class MailcapCommandMap extends CommandMap {
     public synchronized CommandInfo getCommand(String mimeType,
                                                         String cmdName) {
         if (mimeType != null)
-            mimeType = mimeType.toLowerCase();
+            mimeType = mimeType.toLowerCase(Locale.ENGLISH);
 
         for (int i = 0; i < DB.length; i++) {
             if (DB[i] == null)
@@ -535,7 +535,7 @@ public class MailcapCommandMap extends CommandMap {
             LogSupport.log(
                 "MailcapCommandMap: createDataContentHandler for " + mimeType);
         if (mimeType != null)
-            mimeType = mimeType.toLowerCase();
+            mimeType = mimeType.toLowerCase(Locale.ENGLISH);
 
         for (int i = 0; i < DB.length; i++) {
             if (DB[i] == null)
@@ -652,7 +652,7 @@ public class MailcapCommandMap extends CommandMap {
     public synchronized String[] getNativeCommands(String mimeType) {
         List cmdList = new ArrayList();
         if (mimeType != null)
-            mimeType = mimeType.toLowerCase();
+            mimeType = mimeType.toLowerCase(Locale.ENGLISH);
 
         for (int i = 0; i < DB.length; i++) {
             if (DB[i] == null)

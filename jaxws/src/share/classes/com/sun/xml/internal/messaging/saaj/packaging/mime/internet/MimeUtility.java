@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)MimeUtility.java       1.45 03/03/10
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
@@ -108,6 +113,7 @@ import com.sun.xml.internal.messaging.saaj.packaging.mime.util.*;
  * mail messages is different than the charset used for files stored on
  * the system, this property should be set.
  *
+ * @version 1.45, 03/03/10
  * @author  John Mani
  * @author  Bill Shannon
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,6 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
 
     private java.lang.Object runObj = new java.lang.Object();
     private java.lang.Object shutdownObj = new java.lang.Object();
-    private java.lang.Object waitForCompletionObj = new java.lang.Object();
     private static final byte STATUS_OPERATING = 1;
     private static final byte STATUS_SHUTTING_DOWN = 2;
     private static final byte STATUS_SHUTDOWN = 3;
@@ -194,7 +193,6 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
 
     // XXX Should we move invocation tracking to the first level server dispatcher?
     private java.lang.Object invocationObj = new java.lang.Object();
-    private int numInvocations = 0;
 
     // thread local variable to store a boolean to detect deadlock in
     // ORB.shutdown(true).
@@ -1245,37 +1243,48 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
 
     public void shutdown(boolean wait_for_completion)
     {
-        synchronized (this) {
-            checkShutdownState();
+        // to wait for completion, we would deadlock, so throw a standard
+        // OMG exception.
+        if (wait_for_completion && ((Boolean)isProcessingInvocation.get()).booleanValue()) {
+            throw omgWrapper.shutdownWaitForCompletionDeadlock() ;
         }
 
-        // Avoid more than one thread performing shutdown at a time.
-        synchronized (shutdownObj) {
-            checkShutdownState();
-            // This is to avoid deadlock
-            if (wait_for_completion &&
-                isProcessingInvocation.get() == Boolean.TRUE) {
-                throw omgWrapper.shutdownWaitForCompletionDeadlock() ;
-            }
+        boolean doShutdown = false ;
 
-            status = STATUS_SHUTTING_DOWN;
-            // XXX access to requestDispatcherRegistry should be protected
-            // by the ORBImpl instance monitor, but is not here in the
-            // shutdownServants call.
-            shutdownServants(wait_for_completion);
-            if (wait_for_completion) {
-                synchronized ( waitForCompletionObj ) {
-                    while (numInvocations > 0) {
-                        try {
-                            waitForCompletionObj.wait();
-                        } catch (InterruptedException ex) {}
-                    }
+        synchronized (this) {
+            checkShutdownState() ;
+
+            if (status == STATUS_SHUTTING_DOWN) {
+                if (!wait_for_completion)
+                // If we are already shutting down and don't want
+                // to wait, nothing to do: return.
+                return ;
+            } else {
+                // The ORB status was STATUS_OPERATING, so start the shutdown.
+                status = STATUS_SHUTTING_DOWN ;
+                doShutdown = true ;
+            }
+        }
+
+        // At this point, status is SHUTTING_DOWN.
+        // All shutdown calls with wait_for_completion == true must synchronize
+        // here.  Only the first call will be made with doShutdown == true.
+        synchronized (shutdownObj) {
+            if (doShutdown) {
+                // shutdownServants will set all POAManagers into the
+                // INACTIVE state, causing request to be rejected.
+                // If wait_for_completion is true, this will not return until
+                // all invocations have completed.
+                shutdownServants(wait_for_completion);
+
+                synchronized (runObj) {
+                    runObj.notifyAll();
+                }
+
+                synchronized (this) {
+                    status = STATUS_SHUTDOWN;
                 }
             }
-            synchronized ( runObj ) {
-                runObj.notifyAll();
-            }
-            status = STATUS_SHUTDOWN;
         }
     }
 
@@ -1314,23 +1323,13 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     {
         synchronized (invocationObj) {
             isProcessingInvocation.set(Boolean.TRUE);
-            numInvocations++;
         }
     }
 
     public void finishedDispatch()
     {
         synchronized (invocationObj) {
-            numInvocations--;
             isProcessingInvocation.set(Boolean.FALSE);
-            if (numInvocations == 0) {
-                synchronized (waitForCompletionObj) {
-                    waitForCompletionObj.notifyAll();
-                }
-            } else if (numInvocations < 0) {
-                throw wrapper.numInvocationsAlreadyZero(
-                    CompletionStatus.COMPLETED_YES ) ;
-            }
         }
     }
 
@@ -1341,12 +1340,24 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
      */
     public synchronized void destroy()
     {
-        if (status == STATUS_OPERATING) {
+        boolean shutdownFirst = false ;
+
+        synchronized (this) {
+            shutdownFirst = (status == STATUS_OPERATING) ;
+        }
+
+        if (shutdownFirst) {
             shutdown(true);
         }
-        getCorbaTransportManager().close();
-        getPIHandler().destroyInterceptors() ;
-        status = STATUS_DESTROYED;
+
+        synchronized (this) {
+            if (status < STATUS_DESTROYED) {
+                getCorbaTransportManager().close();
+                getPIHandler().destroyInterceptors() ;
+                status = STATUS_DESTROYED;
+            }
+        }
+
     }
 
     /**

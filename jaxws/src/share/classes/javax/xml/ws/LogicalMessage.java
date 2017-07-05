@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,17 @@ public interface LogicalMessage {
 
   /** Gets the message payload as an XML source, may be called
    *  multiple times on the same LogicalMessage instance, always
-   *  returns a new Source that may be used to retrieve the entire
+   *  returns a new <code>Source</code> that may be used to retrieve the entire
    *  message payload.
    *
-   *  <p>If the returned Source is an instance of DOMSource, then
+   *  <p>If the returned <code>Source</code> is an instance of
+   *  <code>DOMSource</code>, then
    *  modifications to the encapsulated DOM tree change the message
    *  payload in-place, there is no need to susequently call
-   *  <code>setPayload</code>. Other types of Source provide only
+   *  <code>setPayload</code>. Other types of <code>Source</code> provide only
    *  read access to the message payload.
    *
-   *  @return The contained message payload; returns null if no
+   *  @return The contained message payload; returns <code>null</code> if no
    *          payload is present in this message.
   **/
   public Source getPayload();
@@ -68,7 +69,7 @@ public interface LogicalMessage {
    *
    *  @param  context The JAXBContext that should be used to unmarshall
    *          the message payload
-   *  @return The contained message payload; returns null if no
+   *  @return The contained message payload; returns <code>null</code> if no
    *          payload is present in this message
    *  @throws WebServiceException If an error occurs when using a supplied
    *     JAXBContext to unmarshall the payload. The cause of

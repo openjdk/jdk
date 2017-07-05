@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import com.sun.codemodel.internal.JClass;
@@ -40,13 +39,9 @@ import com.sun.xml.internal.xsom.XmlString;
  * {@link TypeInfo} at the compile-time.
  * Either {@link CClassInfo}, {@link CBuiltinLeafInfo}, or {@link CElementInfo}.
  *
- * <p>
- * This interface implements {@link TypeUse} so that a {@link CTypeInfo}
- * instance can be used as a {@link TypeUse} instance.
- *
  * @author Kohsuke Kawaguchi
  */
-public interface CTypeInfo extends TypeInfo<NType,NClass>, TypeUse, CCustomizable {
+public interface CTypeInfo extends TypeInfo<NType,NClass>, CCustomizable {
 
     /**
      * Returns the {@link JClass} that represents the class being bound,

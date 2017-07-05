@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPElement.java,v 1.18 2005/12/07 07:25:37 vj135062 Exp $
- * $Revision: 1.18 $
- * $Date: 2005/12/07 07:25:37 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPElement.java,v 1.19 2005/12/13 09:20:25 vj135062 Exp $
+ * $Revision: 1.19 $
+ * $Date: 2005/12/13 09:20:25 $
+ */
+
+
 package javax.xml.soap;
 
 import java.util.Iterator;

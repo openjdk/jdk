@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd.bindinfo;
 
 import java.util.ArrayList;
@@ -75,7 +74,7 @@ public final class BIEnumeration implements BIConversion
                 CBuiltinLeafInfo.STRING,
                 buildMemberList(parent.model,dom),
                 null, null/*TODO*/,
-                DOM4JLocator.getLocationInfo(dom)));
+                DOMLocator.getLocationInfo(dom)));
     }
 
     /** Creates an element-local enumeration declaration. */
@@ -91,7 +90,7 @@ public final class BIEnumeration implements BIConversion
                 CBuiltinLeafInfo.STRING,
                 buildMemberList(parent.parent.model,dom),
                 null, null/*TODO*/,
-                DOM4JLocator.getLocationInfo(dom) ));
+                DOMLocator.getLocationInfo(dom) ));
     }
 
     private static List<CEnumConstant> buildMemberList( Model model, Element dom ) {

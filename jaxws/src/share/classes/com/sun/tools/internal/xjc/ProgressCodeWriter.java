@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc;
 
 import java.io.File;
@@ -67,6 +66,8 @@ final class ProgressCodeWriter extends FilterCodeWriter {
         if(name.length()!=0)    name +=     File.separatorChar;
         name += fileName;
 
+        if(progress.isCanceled())
+            throw new AbortException();
         progress.generatedFile(name,current++,totalFileCount);
     }
 }

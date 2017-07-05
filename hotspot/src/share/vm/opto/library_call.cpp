@@ -3055,9 +3055,7 @@ bool LibraryCallKit::inline_native_newArray() {
     // Normal case:  The array type has been cached in the java.lang.Class.
     // The following call works fine even if the array type is polymorphic.
     // It could be a dynamic mix of int[], boolean[], Object[], etc.
-    _sp += nargs;  // set original stack for use by uncommon_trap
-    Node* obj = new_array(klass_node, count_val);
-    _sp -= nargs;
+    Node* obj = new_array(klass_node, count_val, nargs);
     result_reg->init_req(_normal_path, control());
     result_val->init_req(_normal_path, obj);
     result_io ->init_req(_normal_path, i_o());
@@ -3179,9 +3177,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     Node* orig_tail = _gvn.transform( new(C, 3) SubINode(orig_length, start) );
     Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-    _sp += nargs;  // set original stack for use by uncommon_trap
-    Node* newcopy = new_array(klass_node, length);
-    _sp -= nargs;
+    Node* newcopy = new_array(klass_node, length, nargs);
 
     // Generate a direct call to the right arraycopy function(s).
     // We know the copy is disjoint but we might not know if the
@@ -3903,10 +3899,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     set_control(array_ctl);
     Node* obj_length = load_array_length(obj);
     Node* obj_size = NULL;
-    _sp += nargs;  // set original stack for use by uncommon_trap
-    Node* alloc_obj = new_array(obj_klass, obj_length,
+    Node* alloc_obj = new_array(obj_klass, obj_length, nargs,
                                 raw_mem_only, &obj_size);
-    _sp -= nargs;
     assert(obj_size != NULL, "");
     Node* raw_obj = alloc_obj->in(1);
     assert(raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");

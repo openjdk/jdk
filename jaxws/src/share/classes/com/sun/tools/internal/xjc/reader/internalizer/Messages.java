@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,20 @@ class Messages
         "Internalizer.XPathEvaluatesToNonElement";
     static final String XPATH_EVAL_TO_NON_SCHEMA_ELEMENT = // arg:2
         "Internalizer.XPathEvaluatesToNonSchemaElement";
+    static final String SCD_NOT_ENABLED = // arg:0
+        "SCD_NOT_ENABLED";
+    static final String ERR_SCD_EVAL = // arg: 1
+        "ERR_SCD_EVAL";
+    static final String ERR_SCD_EVALUATED_EMPTY = // arg:1
+        "ERR_SCD_EVALUATED_EMPTY";
+    static final String ERR_SCD_MATCHED_MULTIPLE_NODES = // arg:2
+        "ERR_SCD_MATCHED_MULTIPLE_NODES";
+    static final String ERR_SCD_MATCHED_MULTIPLE_NODES_FIRST = // arg:1
+        "ERR_SCD_MATCHED_MULTIPLE_NODES_FIRST";
+    static final String ERR_SCD_MATCHED_MULTIPLE_NODES_SECOND = // arg:1
+        "ERR_SCD_MATCHED_MULTIPLE_NODES_SECOND";
     static final String CONTEXT_NODE_IS_NOT_ELEMENT = // arg:0
         "Internalizer.ContextNodeIsNotElement";
-    static final String NO_CONTEXT_NODE_SPECIFIED = // arg:0
-            "Internalizer.NoContextNodeSpecified";
     static final String ERR_INCORRECT_VERSION = // arg:0
         "Internalizer.IncorrectVersion";
     static final String ERR_VERSION_NOT_FOUND = // arg:0
@@ -65,6 +75,8 @@ class Messages
         "Internalizer.OrphanedCustomization";
     static final String ERR_UNABLE_TO_PARSE = // arg:2
         "AbstractReferenceFinderImpl.UnableToParse";
+    static final String ERR_FILENAME_IS_NOT_URI = // arg:0
+        "ERR_FILENAME_IS_NOT_URI";
     static final String ERR_GENERAL_SCHEMA_CORRECTNESS_ERROR = // arg:1
         "ERR_GENERAL_SCHEMA_CORRECTNESS_ERROR";
 }

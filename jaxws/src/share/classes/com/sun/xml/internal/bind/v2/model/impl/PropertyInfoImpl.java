@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.Collection;
+import java.lang.annotation.Annotation;
 
 import javax.activation.MimeType;
 import javax.xml.bind.annotation.XmlAttachmentRef;
@@ -38,6 +38,7 @@ import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapters;
+import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.namespace.QName;
 
 import com.sun.xml.internal.bind.v2.TODO;
@@ -81,7 +82,16 @@ abstract class PropertyInfoImpl<T,C,F,M>
     protected PropertyInfoImpl(ClassInfoImpl<T,C,F,M> parent, PropertySeed<T,C,F,M> spi) {
         this.seed = spi;
         this.parent = parent;
-        this.id = calcId();
+
+        if(parent==null)
+            /*
+                Various people reported a bug where this parameter is somehow null.
+                In an attempt to catch the error better, let's do an explicit check here.
+
+                http://forums.java.net/jive/thread.jspa?threadID=18479
+                http://forums.java.net/jive/thread.jspa?messageID=165946
+             */
+            throw new AssertionError();
 
         MimeType mt = Util.calcExpectedMediaType(seed,parent.builder);
         if(mt!=null && !kind().canHaveXmlMimeType) {
@@ -97,21 +107,46 @@ abstract class PropertyInfoImpl<T,C,F,M>
                 getIndividualType(),this);
 
         T t = seed.getRawType();
-        this.isCollection = nav().isSubClassOf(t, nav().ref(Collection.class))
-                         || nav().isArrayButNotByteArray(t);
 
-        XmlJavaTypeAdapter xjta = getApplicableAdapter(getIndividualType());
-        if(xjta==null) {
-            // ugly ugly hack, but we implement swaRef as adapter
-            XmlAttachmentRef xsa = seed.readAnnotation(XmlAttachmentRef.class);
-            if(xsa!=null) {
-                adapter = new Adapter<T,C>(nav().asDecl(SwaRefAdapter.class),nav());
-            } else {
-                adapter = null;
-            }
-        } else {
+        // check if there's an adapter applicable to the whole property
+        XmlJavaTypeAdapter xjta = getApplicableAdapter(t);
+        if(xjta!=null) {
+            isCollection = false;
             adapter = new Adapter<T,C>(xjta,reader(),nav());
+        } else {
+            // check if the adapter is applicable to the individual item in the property
+
+            this.isCollection = nav().isSubClassOf(t, nav().ref(Collection.class))
+                             || nav().isArrayButNotByteArray(t);
+
+            xjta = getApplicableAdapter(getIndividualType());
+            if(xjta==null) {
+                // ugly ugly hack, but we implement swaRef as adapter
+                XmlAttachmentRef xsa = seed.readAnnotation(XmlAttachmentRef.class);
+                if(xsa!=null) {
+                    parent.builder.hasSwaRef = true;
+                    adapter = new Adapter<T,C>(nav().asDecl(SwaRefAdapter.class),nav());
+                } else {
+                    adapter = null;
+
+                    // if this field has adapter annotation but not applicable,
+                    // that must be an error of the user
+                    xjta = seed.readAnnotation(XmlJavaTypeAdapter.class);
+                    if(xjta!=null) {
+                        T adapter = reader().getClassValue(xjta,"value");
+                        parent.builder.reportError(new IllegalAnnotationException(
+                            Messages.UNMATCHABLE_ADAPTER.format(
+                                    nav().getTypeName(adapter), nav().getTypeName(t)),
+                            xjta
+                        ));
+                    }
+                }
+            } else {
+                adapter = new Adapter<T,C>(xjta,reader(),nav());
+            }
         }
+
+        this.id = calcId();
     }
 
 
@@ -159,13 +194,21 @@ abstract class PropertyInfoImpl<T,C,F,M>
         if(jta==null)   return false;
 
         T type = reader().getClassValue(jta,"type");
-        return declaredType.equals(type);
+        if(declaredType.equals(type))
+            return true;    // for types explicitly marked in XmlJavaTypeAdapter.type()
 
+        T adapter = reader().getClassValue(jta,"value");
+        T ba = nav().getBaseClass(adapter, nav().asDecl(XmlAdapter.class));
+        if(!nav().isParameterizedType(ba))
+            return true;   // can't check type applicability. assume Object, which means applicable to any.
+        T inMemType = nav().getTypeArgument(ba, 1);
+
+        return nav().isSubClassOf(declaredType,inMemType);
     }
 
     private XmlJavaTypeAdapter getApplicableAdapter(T type) {
         XmlJavaTypeAdapter jta = seed.readAnnotation(XmlJavaTypeAdapter.class);
-        if(jta!=null)
+        if(jta!=null && isApplicable(jta,type))
             return jta;
 
         // check the applicable adapters on the package
@@ -181,10 +224,10 @@ abstract class PropertyInfoImpl<T,C,F,M>
             return jta;
 
         // then on the target class
-        C refType = nav().asDecl(seed.getRawType());
+        C refType = nav().asDecl(type);
         if(refType!=null) {
             jta = reader().getClassAnnotation(XmlJavaTypeAdapter.class, refType, seed );
-            if(jta!=null) // the one on the type always apply.
+            if(jta!=null && isApplicable(jta,type)) // the one on the type always apply.
                 return jta;
         }
 
@@ -211,7 +254,7 @@ abstract class PropertyInfoImpl<T,C,F,M>
     private ID calcId() {
         if(seed.hasAnnotation(XmlID.class)) {
             // check the type
-            if(!seed.getRawType().equals(nav().ref(String.class)))
+            if(!getIndividualType().equals(nav().ref(String.class)))
                 parent.builder.reportError(new IllegalAnnotationException(
                     Messages.ID_MUST_BE_STRING.format(getName()), seed )
                 );
@@ -330,5 +373,13 @@ abstract class PropertyInfoImpl<T,C,F,M>
 
     public int compareTo(PropertyInfoImpl that) {
         return this.getName().compareTo(that.getName());
+    }
+
+    public final <A extends Annotation> A readAnnotation(Class<A> annotationType) {
+        return seed.readAnnotation(annotationType);
+    }
+
+    public final boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+        return seed.hasAnnotation(annotationType);
     }
 }

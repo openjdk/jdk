@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.tools.internal.xjc.reader;
 
 import java.text.MessageFormat;
@@ -32,8 +31,9 @@ import java.util.ResourceBundle;
 /**
  * Formats error messages.
  */
-enum Messages {
+public enum Messages {
     DUPLICATE_PROPERTY, // 1 arg
+    DUPLICATE_ELEMENT, // 1 arg
 
     ERR_UNDECLARED_PREFIX,
     ERR_UNEXPECTED_EXTENSION_BINDING_PREFIXES,

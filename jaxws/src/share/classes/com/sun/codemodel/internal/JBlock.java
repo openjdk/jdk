@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,16 +220,14 @@ public final class JBlock implements JGenerable, JStatement {
      * @return Newly generated JInvocation
      */
     public JInvocation invoke(JExpression expr, JMethod method) {
-        return invoke(expr, method.name());
+        return insert(new JInvocation(expr, method));
     }
 
     /**
      * Creates a static invocation statement.
      */
     public JInvocation staticInvoke(JClass type, String method) {
-        JInvocation i = new JInvocation(type, method);
-        insert(i);
-        return i;
+        return insert(new JInvocation(type, method));
     }
 
     /**
@@ -241,9 +239,7 @@ public final class JBlock implements JGenerable, JStatement {
      * @return Newly generated JInvocation
      */
     public JInvocation invoke(String method) {
-        JInvocation i = new JInvocation((JExpression)null, method);
-        insert(i);
-        return i;
+        return insert(new JInvocation((JExpression)null, method));
     }
 
     /**
@@ -255,7 +251,7 @@ public final class JBlock implements JGenerable, JStatement {
      * @return Newly generated JInvocation
      */
     public JInvocation invoke(JMethod method) {
-        return invoke(method.name());
+        return insert(new JInvocation((JExpression)null, method));
     }
 
     /**

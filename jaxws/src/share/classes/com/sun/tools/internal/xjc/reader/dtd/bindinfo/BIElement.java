@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd.bindinfo;
 
 import java.util.ArrayList;
@@ -115,7 +114,7 @@ public final class BIElement
      * Gets the source location where this element is declared.
      */
     public Locator getLocation() {
-        return DOM4JLocator.getLocationInfo(e);
+        return DOMLocator.getLocationInfo(e);
     }
 
 
@@ -268,6 +267,6 @@ public final class BIElement
 
     /** Gets the location where this declaration is declared. */
     public Locator getSourceLocation() {
-        return DOM4JLocator.getLocationInfo(e);
+        return DOMLocator.getLocationInfo(e);
     }
 }

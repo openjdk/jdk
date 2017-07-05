@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 import java.lang.annotation.Annotation;
@@ -48,6 +47,10 @@ public final class RuntimeInlineAnnotationReader extends AbstractInlineAnnotatio
 
     public boolean hasFieldAnnotation(Class<? extends Annotation> annotationType, Field field) {
         return field.isAnnotationPresent(annotationType);
+    }
+
+    public boolean hasClassAnnotation(Class clazz, Class<? extends Annotation> annotationType) {
+        return clazz.isAnnotationPresent(annotationType);
     }
 
     public Annotation[] getAllFieldAnnotations(Field field, Locatable srcPos) {
@@ -116,6 +119,20 @@ public final class RuntimeInlineAnnotationReader extends AbstractInlineAnnotatio
     public Class getClassValue(Annotation a, String name) {
         try {
             return (Class)a.annotationType().getMethod(name).invoke(a);
+        } catch (IllegalAccessException e) {
+            // impossible
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            // impossible
+            throw new InternalError(e.getMessage());
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        }
+    }
+
+    public Class[] getClassArrayValue(Annotation a, String name) {
+        try {
+            return (Class[])a.annotationType().getMethod(name).invoke(a);
         } catch (IllegalAccessException e) {
             // impossible
             throw new IllegalAccessError(e.getMessage());

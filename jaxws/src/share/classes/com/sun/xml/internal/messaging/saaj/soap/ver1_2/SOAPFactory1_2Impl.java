@@ -1,9 +1,5 @@
 /*
- * $Id: SOAPFactory1_2Impl.java,v 1.4 2006/01/27 12:49:48 vj135062 Exp $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPFactory1_2Impl.java,v 1.1.1.1 2006/01/27 13:10:57 kumarjayanti Exp $
+ */
+
+
 
 /**
 *
@@ -53,6 +54,12 @@ public class SOAPFactory1_2Impl extends SOAPFactoryImpl {
 
     public SOAPFault createFault(String reasonText, QName faultCode)
         throws SOAPException {
+         if (faultCode == null) {
+            throw new IllegalArgumentException("faultCode argument for createFault was passed NULL");
+        }
+        if (reasonText == null) {
+            throw new IllegalArgumentException("reasonText argument for createFault was passed NULL");
+        }
         Fault1_2Impl fault = new Fault1_2Impl(createDocument(), null);
         fault.setFaultString(reasonText);
         fault.setFaultCode(faultCode);

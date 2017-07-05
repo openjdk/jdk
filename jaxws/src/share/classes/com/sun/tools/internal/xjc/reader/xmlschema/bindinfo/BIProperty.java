@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.util.Collection;
@@ -280,7 +279,7 @@ public final class BIProperty extends AbstractDeclarationImpl {
     }
 
     public CValuePropertyInfo createValueProperty(String defaultName,boolean forConstant,
-        XSComponent source,TypeUse tu) {
+        XSComponent source,TypeUse tu, QName typeName) {
 
         markAsAcknowledged();
         constantPropertyErrorCheck();
@@ -292,7 +291,7 @@ public final class BIProperty extends AbstractDeclarationImpl {
                 name = JJavaName.getPluralForm(name);
         }
 
-        return wrapUp(new CValuePropertyInfo(name, source,getCustomizations(source),source.getLocator(), tu ),source);
+        return wrapUp(new CValuePropertyInfo(name, source,getCustomizations(source),source.getLocator(), tu, typeName ),source);
     }
 
     public CAttributePropertyInfo createAttributeProperty( XSAttributeUse use, TypeUse tu ) {
@@ -312,12 +311,12 @@ public final class BIProperty extends AbstractDeclarationImpl {
                 name = JJavaName.getPluralForm(name);
         }
 
-        QName n = new QName(use.getDecl().getTargetNamespace(),use.getDecl().getName());
-
         markAsAcknowledged();
         constantPropertyErrorCheck();
 
-        return wrapUp(new CAttributePropertyInfo(name,use,getCustomizations(use),use.getLocator(), n, tu, use.isRequired() ),use);
+        return wrapUp(new CAttributePropertyInfo(name,use,getCustomizations(use),use.getLocator(),
+                BGMBuilder.getName(use.getDecl()), tu,
+                BGMBuilder.getName(use.getDecl().getType()), use.isRequired() ),use);
     }
 
     /**

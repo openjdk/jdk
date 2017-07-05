@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,28 @@
 
 package com.sun.tools.internal.ws.wsdl.document;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.xml.namespace.QName;
-
+import com.sun.codemodel.internal.JClass;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLOperation;
 import com.sun.tools.internal.ws.wsdl.framework.Entity;
 import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
 import com.sun.tools.internal.ws.wsdl.framework.ExtensibilityHelper;
-import com.sun.tools.internal.ws.wsdl.framework.Extensible;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
+import java.util.*;
 
 /**
  * Entity corresponding to the "operation" child element of a "portType" WSDL element.
  *
  * @author WS Development Team
  */
-public class Operation extends Entity implements Extensible{
+public class Operation extends Entity implements TWSDLOperation {
 
-    public Operation() {
-        _faults = new ArrayList();
+    public Operation(Locator locator) {
+        super(locator);
+        _faults = new ArrayList<Fault>();
         _helper = new ExtensibilityHelper();
     }
 
@@ -117,8 +118,8 @@ public class Operation extends Entity implements Extensible{
         _faults.add(f);
     }
 
-    public Iterator faults() {
-        return _faults.iterator();
+    public Iterable<Fault> faults() {
+        return _faults;
     }
 
     public String getParameterOrder() {
@@ -150,8 +151,8 @@ public class Operation extends Entity implements Extensible{
         if (_output != null) {
             action.perform(_output);
         }
-        for (Iterator iter = _faults.iterator(); iter.hasNext();) {
-            action.perform((Entity) iter.next());
+        for (Fault _fault : _faults) {
+            action.perform(_fault);
         }
         _helper.withAllSubEntitiesDo(action);
     }
@@ -164,8 +165,8 @@ public class Operation extends Entity implements Extensible{
         if (_output != null) {
             _output.accept(visitor);
         }
-        for (Iterator iter = _faults.iterator(); iter.hasNext();) {
-            ((Fault) iter.next()).accept(visitor);
+        for (Fault _fault : _faults) {
+            _fault.accept(visitor);
         }
         visitor.postVisit(this);
     }
@@ -189,9 +190,6 @@ public class Operation extends Entity implements Extensible{
             if (_faults != null && _faults.size() != 0) {
                 failValidation("validation.invalidSubEntity", "fault");
             }
-            if (_parameterOrder != null) {
-                failValidation("validation.invalidAttribute", "parameterOrder");
-            }
         } else if (_style == OperationStyle.NOTIFICATION) {
             if (_parameterOrder != null) {
                 failValidation("validation.invalidAttribute", "parameterOrder");
@@ -199,29 +197,59 @@ public class Operation extends Entity implements Extensible{
         }
     }
 
+    public String getNameValue() {
+        return getName();
+    }
+
+    public String getNamespaceURI() {
+        return parent.getNamespaceURI();
+    }
+
+    public QName getWSDLElementName() {
+        return getElementName();
+    }
+
     /* (non-Javadoc)
-     * @see Extensible#addExtension(Extension)
-     */
-    public void addExtension(Extension e) {
+    * @see TWSDLExtensible#addExtension(ExtensionImpl)
+    */
+    public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
 
     }
 
     /* (non-Javadoc)
-     * @see Extensible#extensions()
+     * @see TWSDLExtensible#extensions()
      */
-    public Iterator extensions() {
+    public Iterable<? extends TWSDLExtension> extensions() {
         return _helper.extensions();
     }
 
+    public TWSDLExtensible getParent() {
+        return parent;
+    }
 
+    public void setParent(TWSDLExtensible parent) {
+        this.parent = parent;
+    }
+
+    public Map<String, JClass> getFaults() {
+        return unmodifiableFaultClassMap;
+    }
+
+    public void putFault(String faultName, JClass exception){
+        faultClassMap.put(faultName, exception);
+    }
+
+    private TWSDLExtensible parent;
     private Documentation _documentation;
     private String _name;
     private Input _input;
     private Output _output;
-    private List _faults;
+    private List<Fault> _faults;
     private OperationStyle _style;
     private String _parameterOrder;
     private String _uniqueKey;
     private ExtensibilityHelper _helper;
+    private final Map<String, JClass> faultClassMap = new HashMap<String, JClass>();
+    private final Map<String, JClass> unmodifiableFaultClassMap = Collections.unmodifiableMap(faultClassMap);
 }

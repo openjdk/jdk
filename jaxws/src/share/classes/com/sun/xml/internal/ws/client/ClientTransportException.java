@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,19 @@ import com.sun.xml.internal.ws.util.localization.Localizable;
  * @author WS Development Team
  */
 public class ClientTransportException extends JAXWSExceptionBase {
-    public ClientTransportException(String key, Object... args) {
-        super(key, args);
+    public ClientTransportException(Localizable msg) {
+        super(msg);
+    }
+
+    public ClientTransportException(Localizable msg, Throwable cause) {
+        super(msg, cause);
     }
 
     public ClientTransportException(Throwable throwable) {
         super(throwable);
     }
 
-    public String getResourceBundleName() {
+    public String getDefaultResourceBundleName() {
         return "com.sun.xml.internal.ws.resources.client";
     }
 }

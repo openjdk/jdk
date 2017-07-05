@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  * have any questions.
  */
 
+/*
+ * @(#)$Id: Discarder.java,v 1.4 2005/09/10 19:07:43 kohsuke Exp $
+ */
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 

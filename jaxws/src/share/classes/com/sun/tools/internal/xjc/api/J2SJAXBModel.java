@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api;
 
 import java.io.IOException;
 
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.namespace.QName;
+import javax.xml.transform.Result;
 
 /**
  * {@link JAXBModel} that exposes additional information available
@@ -56,20 +56,6 @@ public interface J2SJAXBModel extends JAXBModel {
     /**
      * Generates the schema documents from the model.
      *
-     * <p>
-     * The caller can use the additionalElementDecls parameter to
-     * add element declarations to the generate schema.
-     * For example, if the JAX-RPC passes in the following entry:
-     *
-     * {foo}bar -> DeclaredType for java.lang.String
-     *
-     * then JAXB generates the following element declaration (in the schema
-     * document for the namespace "foo")"
-     *
-     * &lt;xs:element name="bar" type="xs:string" />
-     *
-     * This can be used for generating schema components necessary for WSDL.
-     *
      * @param outputResolver
      *      this object controls the output to which schemas
      *      will be sent.
@@ -78,4 +64,18 @@ public interface J2SJAXBModel extends JAXBModel {
      *      if {@link SchemaOutputResolver} throws an {@link IOException}.
      */
     void generateSchema(SchemaOutputResolver outputResolver, ErrorListener errorListener) throws IOException;
+
+    /**
+     * Generates the episode file from the model.
+     *
+     * <p>
+     * The "episode file" is really just a JAXB customization file (but with vendor extensions,
+     * at this point), that can be used later with a schema compilation to support separate
+     * compilation.
+     *
+     * @param output
+     *      This receives the generated episode file.
+     * @since 2.1
+     */
+    void generateEpisodeFile(Result output);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,22 +153,22 @@ public class ObjectStreamClass implements java.io.Serializable {
                 desc = new ObjectStreamClass(cl, superdesc,
                                              serializable, externalizable);
             }
+            // Must always call init.  See bug 4488137.  This code was
+            // incorrectly changed to return immediately on a non-null
+            // cache result.  That allowed threads to gain access to
+            // unintialized instances.
+            //
+            // History: Note, the following init() call was originally within
+            // the synchronization block, as it currently is now. Later, the
+            // init() call was moved outside the synchronization block, and
+            // the init() method used a private member variable lock, to
+            // avoid performance problems. See bug 4165204. But that lead to
+            // a deadlock situation, see bug 5104239. Hence, the init() method
+            // has now been moved back into the synchronization block. The
+            // right approach to solving these problems would be to rewrite
+            // this class, based on the latest java.io.ObjectStreamClass.
+            desc.init();
         }
-
-        // Must always call init.  See bug 4488137.  This code was
-        // incorrectly changed to return immediately on a non-null
-        // cache result.  That allowed threads to gain access to
-        // unintialized instances.
-        //
-        // All threads must sync on the member variable lock
-        // and check the initialization state.
-        //
-        // Another possibility is to continue to synchronize on the
-        // descriptorFor array, but that leads to poor performance
-        // (see bug 4165204 "ObjectStreamClass can hold global lock
-        // for a very long time").
-        desc.init();
-
         return desc;
     }
 

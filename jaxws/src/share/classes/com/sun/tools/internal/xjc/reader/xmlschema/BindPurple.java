@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CDefaultValue;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.TypeUse;
+import com.sun.tools.internal.xjc.model.CClass;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIProperty;
 import com.sun.xml.internal.xsom.XSAttGroupDecl;
@@ -103,7 +103,7 @@ public class BindPurple extends ColorBinder {
 
 
     public void complexType(XSComplexType ct) {
-        CClassInfo ctBean = selector.bindToType(ct, false);
+        CClass ctBean = selector.bindToType(ct,null,false);
         if(getCurrentBean()!=ctBean)
             // in some case complex type and element binds to the same class
             // don't make it has-a. Just make it is-a.
