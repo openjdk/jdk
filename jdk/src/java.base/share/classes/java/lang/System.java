@@ -901,7 +901,7 @@ public final class System {
      * being thrown.  If no exception is thrown the value of the
      * variable <code>name</code> is returned.
      *
-     * <p><a name="EnvironmentVSSystemProperties"><i>System
+     * <p><a id="EnvironmentVSSystemProperties"><i>System
      * properties</i> and <i>environment variables</i></a> are both
      * conceptually mappings between names and values.  Both
      * mechanisms can be used to pass user-defined information to a

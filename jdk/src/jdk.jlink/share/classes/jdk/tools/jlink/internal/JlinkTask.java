@@ -40,7 +40,20 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -331,11 +344,6 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
-        if (options.addMods.isEmpty()) {
-            throw taskHelper.newBadArgs("err.mods.must.be.specified", "--add-modules")
-                .showUsage(true);
-        }
-
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
@@ -368,6 +376,10 @@ public class JlinkTask {
     private void createImage(JlinkConfiguration config) throws Exception {
         if (options.output == null) {
             throw taskHelper.newBadArgs("err.output.must.be.specified").showUsage(true);
+        }
+        if (options.addMods.isEmpty()) {
+            throw taskHelper.newBadArgs("err.mods.must.be.specified", "--add-modules")
+                            .showUsage(true);
         }
 
         // First create the image provider
@@ -430,7 +442,7 @@ public class JlinkTask {
             // print modules to be linked in
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
-              .forEach(rm -> log.format("module %s (%s)%n",
+              .forEach(rm -> log.format("%s %s%n",
                                         rm.name(), rm.reference().location().get()));
 
             // print provider info
@@ -505,16 +517,22 @@ public class JlinkTask {
 
     /*
      * Returns a map of each service type to the modules that use it
+     * It will include services that are provided by a module but may not used
+     * by any of the observable modules.
      */
     private static Map<String, Set<String>> uses(Set<ModuleReference> modules) {
         // collects the services used by the modules and print uses
-        Map<String, Set<String>> uses = new HashMap<>();
+        Map<String, Set<String>> services = new HashMap<>();
         modules.stream()
                .map(ModuleReference::descriptor)
-               .forEach(md -> md.uses().forEach(s ->
-                   uses.computeIfAbsent(s, _k -> new HashSet<>()).add(md.name()))
-               );
-        return uses;
+               .forEach(md -> {
+                   // include services that may not be used by any observable modules
+                   md.provides().forEach(p ->
+                       services.computeIfAbsent(p.service(), _k -> new HashSet<>()));
+                   md.uses().forEach(s -> services.computeIfAbsent(s, _k -> new HashSet<>())
+                                                  .add(md.name()));
+               });
+        return services;
     }
 
     private static void printProviders(PrintWriter log,
@@ -524,17 +542,16 @@ public class JlinkTask {
     }
 
     /*
-     * Prints the providers that are used by the services specified in
-     * the given modules.
+     * Prints the providers that are used by the specified services.
      *
-     * The specified uses maps a service type name to the modules
-     * using the service type and that may or may not be present
-     * the given modules.
+     * The specified services maps a service type name to the modules
+     * using the service type which may be empty if no observable module uses
+     * that service.
      */
     private static void printProviders(PrintWriter log,
                                        String header,
                                        Set<ModuleReference> modules,
-                                       Map<String, Set<String>> uses) {
+                                       Map<String, Set<String>> serviceToUses) {
         if (modules.isEmpty())
             return;
 
@@ -544,7 +561,7 @@ public class JlinkTask {
             .map(ModuleReference::descriptor)
             .forEach(md -> {
                 md.provides().stream()
-                  .filter(p -> uses.containsKey(p.service()))
+                  .filter(p -> serviceToUses.containsKey(p.service()))
                   .forEach(p -> providers.computeIfAbsent(p.service(), _k -> new HashSet<>())
                                          .add(md));
             });
@@ -564,11 +581,18 @@ public class JlinkTask {
                  .forEach(md ->
                      md.provides().stream()
                        .filter(p -> p.service().equals(service))
-                       .forEach(p -> log.format("  module %s provides %s, used by %s%n",
-                                                md.name(), p.service(),
-                                                uses.get(p.service()).stream()
-                                                    .sorted()
-                                                    .collect(Collectors.joining(","))))
+                       .forEach(p -> {
+                           String usedBy;
+                           if (serviceToUses.get(p.service()).isEmpty()) {
+                               usedBy = "not used by any observable module";
+                           } else {
+                               usedBy = serviceToUses.get(p.service()).stream()
+                                            .sorted()
+                                            .collect(Collectors.joining(",", "used by ", ""));
+                           }
+                           log.format("  %s provides %s %s%n",
+                                      md.name(), p.service(), usedBy);
+                       })
                  );
             });
     }
@@ -589,25 +613,21 @@ public class JlinkTask {
 
         ModuleFinder finder = config.finder();
         if (args.isEmpty()) {
-            // print providers used by the modules resolved without service binding
-            Configuration cf = config.resolve();
-            Set<ModuleReference> mrefs = cf.modules().stream()
-                .map(ResolvedModule::reference)
-                .collect(Collectors.toSet());
-
+            // print providers used by the observable modules without service binding
+            Set<ModuleReference> mrefs = finder.findAll();
             // print uses of the modules that would be linked into the image
             mrefs.stream()
                  .sorted(Comparator.comparing(mref -> mref.descriptor().name()))
                  .forEach(mref -> {
                      ModuleDescriptor md = mref.descriptor();
-                     log.format("module %s located (%s)%n", md.name(),
+                     log.format("%s %s%n", md.name(),
                                 mref.location().get());
                      md.uses().stream().sorted()
                        .forEach(s -> log.format("    uses %s%n", s));
                  });
 
             String msg = String.format("%n%s:", taskHelper.getMessage("suggested.providers.header"));
-            printProviders(log, msg, finder.findAll(), uses(mrefs));
+            printProviders(log, msg, mrefs, uses(mrefs));
 
         } else {
             // comma-separated service types, if specified
@@ -620,17 +640,22 @@ public class JlinkTask {
                                     .anyMatch(names::contains))
                 .collect(Collectors.toSet());
 
-            // the specified services may or may not be in the modules that
-            // would be linked in.  So find uses declared in all observable modules
-            Map<String, Set<String>> uses = uses(finder.findAll());
+            // find the modules that uses the specified services
+            Map<String, Set<String>> uses = new HashMap<>();
+            names.forEach(s -> uses.computeIfAbsent(s, _k -> new HashSet<>()));
+            finder.findAll().stream()
+                  .map(ModuleReference::descriptor)
+                  .forEach(md -> md.uses().stream()
+                                   .filter(names::contains)
+                                   .forEach(s -> uses.get(s).add(md.name())));
 
-            // check if any name given on the command line are unused service
+            // check if any name given on the command line are not provided by any module
             mrefs.stream()
                  .flatMap(mref -> mref.descriptor().provides().stream()
                                       .map(ModuleDescriptor.Provides::service))
                  .forEach(names::remove);
             if (!names.isEmpty()) {
-                log.println(taskHelper.getMessage("warn.unused.services",
+                log.println(taskHelper.getMessage("warn.provider.notfound",
                                                   toString(names)));
             }
 

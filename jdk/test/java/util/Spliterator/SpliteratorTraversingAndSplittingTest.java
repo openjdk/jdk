@@ -25,7 +25,8 @@
  * @test
  * @summary Spliterator traversing and splitting tests
  * @library ../stream/bootlib
- * @build java.base/java.util.SpliteratorTestHelper
+ * @build java.base/java.util.SpliteratorOfIntDataBuilder
+ *        java.base/java.util.SpliteratorTestHelper
  * @run testng SpliteratorTraversingAndSplittingTest
  * @bug 8020016 8071477 8072784 8169838
  */
@@ -40,7 +41,6 @@ import java.util.AbstractSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,6 +59,7 @@ import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.Spliterator;
+import java.util.SpliteratorOfIntDataBuilder;
 import java.util.SpliteratorTestHelper;
 import java.util.Spliterators;
 import java.util.Stack;
@@ -84,9 +85,6 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
-
-import static java.util.stream.Collectors.toList;
 
 public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper {
 
@@ -713,34 +711,6 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
     }
 
     //
-
-    private static class SpliteratorOfIntDataBuilder {
-        List<Object[]> data;
-
-        List<Integer> exp;
-
-        SpliteratorOfIntDataBuilder(List<Object[]> data, List<Integer> exp) {
-            this.data = data;
-            this.exp = exp;
-        }
-
-        void add(String description, List<Integer> expected, Supplier<Spliterator.OfInt> s) {
-            description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
-        }
-
-        void add(String description, Supplier<Spliterator.OfInt> s) {
-            add(description, exp, s);
-        }
-
-        StringBuilder joiner(String description) {
-            return new StringBuilder(description).
-                    append(" {").
-                    append("size=").append(exp.size()).
-                    append("}");
-        }
-    }
-
     private static class SpliteratorOfIntCharDataBuilder {
         List<Object[]> data;
 
@@ -884,30 +854,6 @@ public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper
             cdb.add("CharBuffer.wrap(\"%s\".toCharArray())", s -> CharBuffer.wrap(s.toCharArray()));
         }
 
-
-        Object[][] bitStreamTestcases = new Object[][] {
-                { "none", IntStream.empty().toArray() },
-                { "index 0", IntStream.of(0).toArray() },
-                { "index 255", IntStream.of(255).toArray() },
-                { "index 0 and 255", IntStream.of(0, 255).toArray() },
-                { "every bit", IntStream.range(0, 255).toArray() },
-                { "step 2", IntStream.range(0, 255).map(f -> f * 2).toArray() },
-                { "step 3", IntStream.range(0, 255).map(f -> f * 3).toArray() },
-                { "step 5", IntStream.range(0, 255).map(f -> f * 5).toArray() },
-                { "step 7", IntStream.range(0, 255).map(f -> f * 7).toArray() },
-                { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000).toArray() },
-        };
-        for (Object[] tc : bitStreamTestcases) {
-            String description = (String)tc[0];
-            int[] exp = (int[])tc[1];
-            SpliteratorOfIntDataBuilder db = new SpliteratorOfIntDataBuilder(
-                    data, IntStream.of(exp).boxed().collect(toList()));
-
-            db.add("BitSet.stream.spliterator() {" + description + "}", () ->
-                IntStream.of(exp).collect(BitSet::new, BitSet::set, BitSet::or).
-                        stream().spliterator()
-            );
-        }
         return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
     }
 

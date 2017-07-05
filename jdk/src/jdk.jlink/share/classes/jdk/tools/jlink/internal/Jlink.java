@@ -158,7 +158,7 @@ public final class Jlink {
          *
          * @param output Output directory, must not exist.
          * @param modulepaths Modules paths
-         * @param modules Root modules to resolve
+         * @param modules The possibly-empty set of root modules to resolve
          * @param limitmods Limit the universe of observable modules
          * @param endian Jimage byte order. Native order by default
          */
@@ -170,13 +170,10 @@ public final class Jlink {
             if (Objects.requireNonNull(modulepaths).isEmpty()) {
                 throw new IllegalArgumentException("Empty module path");
             }
-            if (Objects.requireNonNull(modules).isEmpty()) {
-                throw new IllegalArgumentException("Empty modules");
-            }
 
             this.output = output;
             this.modulepaths = modulepaths;
-            this.modules = modules;
+            this.modules = Objects.requireNonNull(modules);
             this.limitmods = Objects.requireNonNull(limitmods);
             this.endian = Objects.requireNonNull(endian);
             this.finder = moduleFinder();

@@ -992,8 +992,6 @@ public class Desktop {
     /**
      * Sets the default menu bar to use when there are no active frames.
      *
-     * @implNote Aqua Look and Feel should be active to support this on Mac OS.
-     *
      * @param menuBar to use when no other frames are active
      * @throws SecurityException if a security manager exists and it denies the
      * {@code RuntimePermission("canProcessApplicationEvents")} permission.

@@ -361,7 +361,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                         ((struct sockaddr_in6*)addrP->addr)->sin6_addr);
                     jbyte caddr[16];
                     int i;
+                    unsigned int scopeid;
                     getInet6Address_ipaddress(env, iaObj, (char *)caddr);
+                    scopeid = (unsigned int)getInet6Address_scopeid(env, iaObj);
+                    if (scopeid != 0 && scopeid != ((struct sockaddr_in6*)addrP->addr)->sin6_scope_id)
+                        break;
                     i = 0;
                     while (i < 16) {
                         if (caddr[i] != bytes[i]) {
