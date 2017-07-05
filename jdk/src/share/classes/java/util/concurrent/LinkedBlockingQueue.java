@@ -73,7 +73,6 @@ import java.util.NoSuchElementException;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
- *
  */
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
@@ -135,13 +134,13 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     private final int capacity;
 
     /** Current number of elements */
-    private final AtomicInteger count = new AtomicInteger(0);
+    private final AtomicInteger count = new AtomicInteger();
 
     /**
      * Head of linked list.
      * Invariant: head.item == null
      */
-    private transient Node<E> head;
+    transient Node<E> head;
 
     /**
      * Tail of linked list.
@@ -291,7 +290,6 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
-
     // this doc comment is overridden to remove the reference to collections
     // greater in size than Integer.MAX_VALUE
     /**
@@ -429,7 +427,6 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             signalNotEmpty();
         return c >= 0;
     }
-
 
     public E take() throws InterruptedException {
         E x;
@@ -630,8 +627,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * The following code can be used to dump the queue into a newly
      * allocated array of {@code String}:
      *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
+     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
@@ -777,7 +773,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * @return an iterator over the elements in this queue in proper sequence
      */
     public Iterator<E> iterator() {
-      return new Itr();
+        return new Itr();
     }
 
     private class Itr implements Iterator<E> {
@@ -860,12 +856,11 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Save the state to a stream (that is, serialize it).
+     * Saves this queue to a stream (that is, serializes it).
      *
      * @serialData The capacity is emitted (int), followed by all of
      * its elements (each an {@code Object}) in the proper order,
      * followed by a null
-     * @param s the stream
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -887,10 +882,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Reconstitute this queue instance from a stream (that is,
-     * deserialize it).
-     *
-     * @param s the stream
+     * Reconstitutes this queue from a stream (that is, deserializes it).
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {

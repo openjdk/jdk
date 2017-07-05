@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2008 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -329,9 +329,9 @@ cmsUInt8Number Word2Byte(cmsUInt16Number w)
 static
 cmsUInt8Number L2Byte(cmsUInt16Number w)
 {
-        int ww = w + 0x0080;
+    int ww = w + 0x0080;
 
-        if (ww > 0xFFFF) return 0xFF;
+    if (ww > 0xFFFF) return 0xFF;
 
     return (cmsUInt8Number) ((cmsUInt16Number) (ww >> 8) & 0xFF);
 }
@@ -498,6 +498,7 @@ void Emit1Gamma(cmsIOHANDLER* m, cmsToneCurve* Table)
     cmsUInt32Number i;
     cmsFloat64Number gamma;
 
+    if (Table == NULL) return; // Error
 
     if (Table ->nEntries <= 0) return;  // Empty table
 
@@ -577,6 +578,8 @@ void EmitNGamma(cmsIOHANDLER* m, int n, cmsToneCurve* g[])
 
     for( i=0; i < n; i++ )
     {
+        if (g[i] == NULL) return; // Error
+
         if (i > 0 && GammaTableEquals(g[i-1]->Table16, g[i]->Table16, g[i]->nEntries)) {
 
             _cmsIOPrintf(m, "dup ");
@@ -673,6 +676,7 @@ int OutputValueSampler(register const cmsUInt16Number In[], register cmsUInt16Nu
 
           cmsUInt16Number wWordOut = Out[i];
           cmsUInt8Number wByteOut;           // Value as byte
+
 
           // We always deal with Lab4
 
@@ -771,9 +775,9 @@ int EmitCIEBasedABC(cmsIOHANDLER* m, cmsFloat64Number* Matrix, cmsToneCurve** Cu
 
     for( i=0; i < 3; i++ ) {
 
-        _cmsIOPrintf(m, "%.6f %.6f %.6f ", Matrix[0 + 3*i],
-                     Matrix[1 + 3*i],
-                     Matrix[2 + 3*i]);
+        _cmsIOPrintf(m, "%.6f %.6f %.6f ", Matrix[i + 3*0],
+                                           Matrix[i + 3*1],
+                                           Matrix[i + 3*2]);
     }
 
 
@@ -857,21 +861,23 @@ int EmitCIEBasedDEF(cmsIOHANDLER* m, cmsPipeline* Pipeline, int Intent, cmsCIEXY
 // Generates a curve from a gray profile
 
 static
-cmsToneCurve* ExtractGray2Y(cmsContext ContextID, cmsHPROFILE hProfile, int Intent)
+    cmsToneCurve* ExtractGray2Y(cmsContext ContextID, cmsHPROFILE hProfile, int Intent)
 {
     cmsToneCurve* Out = cmsBuildTabulatedToneCurve16(ContextID, 256, NULL);
     cmsHPROFILE hXYZ  = cmsCreateXYZProfile();
     cmsHTRANSFORM xform = cmsCreateTransformTHR(ContextID, hProfile, TYPE_GRAY_8, hXYZ, TYPE_XYZ_DBL, Intent, cmsFLAGS_NOOPTIMIZE);
     int i;
 
-    for (i=0; i < 256; i++) {
+    if (Out != NULL) {
+        for (i=0; i < 256; i++) {
 
-      cmsUInt8Number Gray = (cmsUInt8Number) i;
-      cmsCIEXYZ XYZ;
+            cmsUInt8Number Gray = (cmsUInt8Number) i;
+            cmsCIEXYZ XYZ;
 
-        cmsDoTransform(xform, &Gray, &XYZ, 1);
+            cmsDoTransform(xform, &Gray, &XYZ, 1);
 
-        Out ->Table16[i] =_cmsQuickSaturateWord(XYZ.Y * 65535.0);
+            Out ->Table16[i] =_cmsQuickSaturateWord(XYZ.Y * 65535.0);
+        }
     }
 
     cmsDeleteTransform(xform);
@@ -924,7 +930,7 @@ int WriteInputLUT(cmsIOHANDLER* m, cmsHPROFILE hProfile, int Intent, cmsUInt32Nu
     switch (nChannels) {
 
     case 1: {
-        cmsToneCurve* Gray2Y = ExtractGray2Y(m ->ContextID, hProfile, Intent);
+            cmsToneCurve* Gray2Y = ExtractGray2Y(m ->ContextID, hProfile, Intent);
             EmitCIEBasedA(m, Gray2Y, &BlackPointAdaptedToD50);
             cmsFreeToneCurve(Gray2Y);
             }
@@ -932,7 +938,7 @@ int WriteInputLUT(cmsIOHANDLER* m, cmsHPROFILE hProfile, int Intent, cmsUInt32Nu
 
     case 3:
     case 4: {
-        cmsUInt32Number OutFrm = TYPE_Lab_16;
+            cmsUInt32Number OutFrm = TYPE_Lab_16;
             cmsPipeline* DeviceLink;
             _cmsTRANSFORM* v = (_cmsTRANSFORM*) xform;
 
@@ -984,14 +990,23 @@ int WriteInputMatrixShaper(cmsIOHANDLER* m, cmsHPROFILE hProfile, cmsStage* Matr
     if (ColorSpace == cmsSigGrayData) {
 
         cmsToneCurve** ShaperCurve = _cmsStageGetPtrToCurveSet(Shaper);
-            rc = EmitCIEBasedA(m, ShaperCurve[0], &BlackPointAdaptedToD50);
+        rc = EmitCIEBasedA(m, ShaperCurve[0], &BlackPointAdaptedToD50);
 
     }
     else
         if (ColorSpace == cmsSigRgbData) {
 
-            rc = EmitCIEBasedABC(m,  GetPtrToMatrix(Matrix),
-                                 _cmsStageGetPtrToCurveSet(Shaper),
+            cmsMAT3 Mat;
+            int i, j;
+
+            memmove(&Mat, GetPtrToMatrix(Matrix), sizeof(Mat));
+
+            for (i=0; i < 3; i++)
+                for (j=0; j < 3; j++)
+                    Mat.v[i].n[j] *= MAX_ENCODEABLE_XYZ;
+
+            rc = EmitCIEBasedABC(m,  (cmsFloat64Number *) &Mat,
+                                _cmsStageGetPtrToCurveSet(Shaper),
                                  &BlackPointAdaptedToD50);
         }
         else  {
@@ -1000,7 +1015,7 @@ int WriteInputMatrixShaper(cmsIOHANDLER* m, cmsHPROFILE hProfile, cmsStage* Matr
             return 0;
         }
 
-    return rc;
+        return rc;
 }
 
 
@@ -1084,8 +1099,8 @@ cmsUInt32Number GenerateCSA(cmsContext ContextID,
         if (ColorSpace != cmsSigXYZData &&
             ColorSpace != cmsSigLabData) {
 
-            cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "Invalid output color space");
-            goto Error;
+                cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "Invalid output color space");
+                goto Error;
         }
 
 
@@ -1101,8 +1116,8 @@ cmsUInt32Number GenerateCSA(cmsContext ContextID,
 
         }
         else {
-            // We need a LUT for the rest
-            if (!WriteInputLUT(mem, hProfile, Intent, dwFlags)) goto Error;
+           // We need a LUT for the rest
+           if (!WriteInputLUT(mem, hProfile, Intent, dwFlags)) goto Error;
         }
     }
 
@@ -1211,7 +1226,7 @@ void EmitPQRStage(cmsIOHANDLER* m, cmsHPROFILE hProfile, int DoBPC, int lIsAbsol
                       "{0.9642 mul %g div exch pop exch pop exch pop exch pop} bind\n"
                       "{1.0000 mul %g div exch pop exch pop exch pop exch pop} bind\n"
                       "{0.8249 mul %g div exch pop exch pop exch pop exch pop} bind\n]\n",
-                         White.X, White.Y, White.Z);
+                      White.X, White.Y, White.Z);
             return;
         }
 
@@ -1534,24 +1549,25 @@ cmsUInt32Number  GenerateCRD(cmsContext ContextID,
 
 
 cmsUInt32Number CMSEXPORT cmsGetPostScriptColorResource(cmsContext ContextID,
-                                                        cmsPSResourceType Type,
-                                                        cmsHPROFILE hProfile,
-                                                        cmsUInt32Number Intent,
-                                                        cmsUInt32Number dwFlags,
-                                                        cmsIOHANDLER* io)
+                                                               cmsPSResourceType Type,
+                                                               cmsHPROFILE hProfile,
+                                                               cmsUInt32Number Intent,
+                                                               cmsUInt32Number dwFlags,
+                                                               cmsIOHANDLER* io)
 {
     cmsUInt32Number  rc;
 
 
     switch (Type) {
 
-      case cmsPS_RESOURCE_CSA:
-          rc = GenerateCSA(ContextID, hProfile, Intent, dwFlags, io);
-          break;
-      default:
-      case cmsPS_RESOURCE_CRD:
-          rc = GenerateCRD(ContextID, hProfile, Intent, dwFlags, io);
-          break;
+        case cmsPS_RESOURCE_CSA:
+            rc = GenerateCSA(ContextID, hProfile, Intent, dwFlags, io);
+            break;
+
+        default:
+        case cmsPS_RESOURCE_CRD:
+            rc = GenerateCRD(ContextID, hProfile, Intent, dwFlags, io);
+            break;
     }
 
     return rc;
@@ -1560,7 +1576,7 @@ cmsUInt32Number CMSEXPORT cmsGetPostScriptColorResource(cmsContext ContextID,
 
 
 cmsUInt32Number CMSEXPORT cmsGetPostScriptCRD(cmsContext ContextID,
-                                              cmsHPROFILE hProfile,
+                              cmsHPROFILE hProfile,
                               cmsUInt32Number Intent, cmsUInt32Number dwFlags,
                               void* Buffer, cmsUInt32Number dwBufferLen)
 {

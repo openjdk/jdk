@@ -114,5 +114,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 };
 
 CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
+#ifndef DONT_USE_REGISTER_DEFINES
+#define noreg ((Register)(noreg_RegisterEnumValue))
+#endif
 
 #endif // CPU_ZERO_VM_REGISTER_ZERO_HPP

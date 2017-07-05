@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,36 +361,5 @@ final class CipherForKeyProtector extends javax.crypto.Cipher {
                                     Provider provider,
                                     String transformation) {
         super(cipherSpi, provider, transformation);
-    }
-}
-
-final class SealedObjectForKeyProtector extends javax.crypto.SealedObject {
-
-    static final long serialVersionUID = -3650226485480866989L;
-
-    SealedObjectForKeyProtector(Serializable object, Cipher c)
-        throws IOException, IllegalBlockSizeException {
-        super(object, c);
-    }
-
-    SealedObjectForKeyProtector(SealedObject so) {
-        super(so);
-    }
-
-    AlgorithmParameters getParameters() {
-        AlgorithmParameters params = null;
-        if (super.encodedParams != null) {
-            try {
-                params = AlgorithmParameters.getInstance("PBE", "SunJCE");
-                params.init(super.encodedParams);
-            } catch (NoSuchProviderException nspe) {
-                // eat.
-            } catch (NoSuchAlgorithmException nsae) {
-                //eat.
-            } catch (IOException ioe) {
-                //eat.
-            }
-        }
-        return params;
     }
 }

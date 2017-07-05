@@ -111,7 +111,7 @@ public class ScreenUpdateManager {
                                                    SurfaceData oldsd)
     {
         SurfaceData surfaceData = peer.getSurfaceData();
-        if (surfaceData.isValid()) {
+        if (surfaceData == null || surfaceData.isValid()) {
             return surfaceData;
         }
         peer.replaceSurfaceData();

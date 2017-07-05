@@ -245,7 +245,6 @@ public class AtomicInteger extends Number implements java.io.Serializable {
         return Integer.toString(get());
     }
 
-
     /**
      * Returns the value of this {@code AtomicInteger} as an {@code int}.
      */

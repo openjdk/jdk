@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6319046
+ * @compile -XDignore.symbol.file ParseConfig.java
  * @run main/othervm ParseConfig
  * @summary Problem with parsing krb5.conf
  */
@@ -37,7 +38,7 @@ public class ParseConfig {
 
         String sample = "kdc.example.com kdc2.example.com";
         for ( int i = 0; i < 4; i++ ) {
-            String expected = config.getDefault("kdc", "EXAMPLE_" + i + ".COM");
+            String expected = config.getAll("realms", "EXAMPLE_" + i + ".COM", "kdc");
             if (!sample.equals(expected)) {
                 throw new Exception("krb5.conf: unexpected kdc value \"" +
                         expected + "\"");

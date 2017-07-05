@@ -105,12 +105,12 @@ cmsUInt32Number CMSEXPORT  _cmsAdjustEndianess32(cmsUInt32Number DWord)
 // 1 2 3 4 5 6 7 8
 // 8 7 6 5 4 3 2 1
 
-void CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number QWord)
+void CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* QWord)
 {
 
 #ifndef CMS_USE_BIG_ENDIAN
 
-    cmsUInt8Number* pIn  = (cmsUInt8Number*) &QWord;
+    cmsUInt8Number* pIn  = (cmsUInt8Number*) QWord;
     cmsUInt8Number* pOut = (cmsUInt8Number*) Result;
 
     _cmsAssert(Result != NULL);
@@ -128,7 +128,7 @@ void CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number Q
 
     _cmsAssert(Result != NULL);
 
-    *Result = QWord;
+    *Result = *QWord;
 #endif
 }
 
@@ -218,7 +218,7 @@ cmsBool CMSEXPORT   _cmsReadUInt64Number(cmsIOHANDLER* io, cmsUInt64Number* n)
     if (io -> Read(io, &tmp, sizeof(cmsUInt64Number), 1) != 1)
             return FALSE;
 
-    if (n != NULL) _cmsAdjustEndianess64(n, tmp);
+    if (n != NULL) _cmsAdjustEndianess64(n, &tmp);
     return TRUE;
 }
 
@@ -340,7 +340,7 @@ cmsBool CMSEXPORT  _cmsWriteFloat32Number(cmsIOHANDLER* io, cmsFloat32Number n)
     return TRUE;
 }
 
-cmsBool CMSEXPORT  _cmsWriteUInt64Number(cmsIOHANDLER* io, cmsUInt64Number n)
+cmsBool CMSEXPORT  _cmsWriteUInt64Number(cmsIOHANDLER* io, cmsUInt64Number* n)
 {
     cmsUInt64Number tmp;
 
@@ -568,7 +568,7 @@ cmsBool CMSEXPORT cmsPlugin(void* Plug_in)
 
             if (Plugin ->ExpectedVersion > LCMS_VERSION) {
                 cmsSignalError(0, cmsERROR_UNKNOWN_EXTENSION, "plugin needs Little CMS %d, current  version is %d",
-                               Plugin ->ExpectedVersion, LCMS_VERSION);
+                    Plugin ->ExpectedVersion, LCMS_VERSION);
                 return FALSE;
             }
 
@@ -610,6 +610,10 @@ cmsBool CMSEXPORT cmsPlugin(void* Plug_in)
                     if (!_cmsRegisterOptimizationPlugin(Plugin)) return FALSE;
                     break;
 
+                case cmsPluginTransformSig:
+                    if (!_cmsRegisterTransformPlugin(Plugin)) return FALSE;
+                    break;
+
                 default:
                     cmsSignalError(0, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin type '%X'", Plugin -> Type);
                     return FALSE;
@@ -633,6 +637,7 @@ void CMSEXPORT cmsUnregisterPlugins(void)
     _cmsRegisterParametricCurvesPlugin(NULL);
     _cmsRegisterMultiProcessElementPlugin(NULL);
     _cmsRegisterOptimizationPlugin(NULL);
+    _cmsRegisterTransformPlugin(NULL);
 
     if (PluginPool != NULL)
         _cmsSubAllocDestroy(PluginPool);

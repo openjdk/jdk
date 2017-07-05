@@ -496,9 +496,7 @@ public:
     }
   }
 
-  bool steal_1_random(uint queue_num, int* seed, E& t);
   bool steal_best_of_2(uint queue_num, int* seed, E& t);
-  bool steal_best_of_all(uint queue_num, int* seed, E& t);
 
   void register_queue(uint i, T* q);
 
@@ -535,46 +533,6 @@ GenericTaskQueueSet<T, F>::steal(uint queue_num, int* seed, E& t) {
   }
   TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal(false));
   return false;
-}
-
-template<class T, MEMFLAGS F> bool
-GenericTaskQueueSet<T, F>::steal_best_of_all(uint queue_num, int* seed, E& t) {
-  if (_n > 2) {
-    int best_k;
-    uint best_sz = 0;
-    for (uint k = 0; k < _n; k++) {
-      if (k == queue_num) continue;
-      uint sz = _queues[k]->size();
-      if (sz > best_sz) {
-        best_sz = sz;
-        best_k = k;
-      }
-    }
-    return best_sz > 0 && _queues[best_k]->pop_global(t);
-  } else if (_n == 2) {
-    // Just try the other one.
-    int k = (queue_num + 1) % 2;
-    return _queues[k]->pop_global(t);
-  } else {
-    assert(_n == 1, "can't be zero.");
-    return false;
-  }
-}
-
-template<class T, MEMFLAGS F> bool
-GenericTaskQueueSet<T, F>::steal_1_random(uint queue_num, int* seed, E& t) {
-  if (_n > 2) {
-    uint k = queue_num;
-    while (k == queue_num) k = TaskQueueSetSuper::randomParkAndMiller(seed) % _n;
-    return _queues[2]->pop_global(t);
-  } else if (_n == 2) {
-    // Just try the other one.
-    int k = (queue_num + 1) % 2;
-    return _queues[k]->pop_global(t);
-  } else {
-    assert(_n == 1, "can't be zero.");
-    return false;
-  }
 }
 
 template<class T, MEMFLAGS F> bool
