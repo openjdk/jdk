@@ -31,7 +31,6 @@
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 
-define_pd_global(bool, ConvertSleepToYield,      true);
 define_pd_global(bool, ShareVtableStubs,         true);
 define_pd_global(bool, NeedsDeoptSuspend,        false); // only register window machines need this
 

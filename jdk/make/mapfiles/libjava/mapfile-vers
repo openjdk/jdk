@@ -229,12 +229,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_Throwable_fillInStackTrace;
                 Java_java_lang_Throwable_getStackTraceDepth;
                 Java_java_lang_Throwable_getStackTraceElement;
-                Java_java_nio_Bits_copyFromShortArray;
-                Java_java_nio_Bits_copyToShortArray;
-                Java_java_nio_Bits_copyFromIntArray;
-                Java_java_nio_Bits_copyToIntArray;
-                Java_java_nio_Bits_copyFromLongArray;
-                Java_java_nio_Bits_copyToLongArray;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2;
 		Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2;

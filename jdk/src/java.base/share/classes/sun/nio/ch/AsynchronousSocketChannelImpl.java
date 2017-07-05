@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,6 +508,9 @@ abstract class AsynchronousSocketChannelImpl
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_KEEPALIVE);
             set.add(StandardSocketOptions.SO_REUSEADDR);
+            if (Net.isReusePortAvailable()) {
+                set.add(StandardSocketOptions.SO_REUSEPORT);
+            }
             set.add(StandardSocketOptions.TCP_NODELAY);
             if (ExtendedOptionsImpl.flowSupported()) {
                 set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);

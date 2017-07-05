@@ -99,10 +99,10 @@ bool YoungList::check_list_well_formed() {
   HeapRegion* last = NULL;
   while (curr != NULL) {
     if (!curr->is_young()) {
-      log_info(gc, verify)("### YOUNG REGION " PTR_FORMAT "-" PTR_FORMAT " "
-                           "incorrectly tagged (y: %d, surv: %d)",
-                           p2i(curr->bottom()), p2i(curr->end()),
-                           curr->is_young(), curr->is_survivor());
+      log_error(gc, verify)("### YOUNG REGION " PTR_FORMAT "-" PTR_FORMAT " "
+                            "incorrectly tagged (y: %d, surv: %d)",
+                            p2i(curr->bottom()), p2i(curr->end()),
+                            curr->is_young(), curr->is_survivor());
       ret = false;
     }
     ++length;
@@ -112,8 +112,8 @@ bool YoungList::check_list_well_formed() {
   ret = ret && (length == _length);
 
   if (!ret) {
-    log_info(gc, verify)("### YOUNG LIST seems not well formed!");
-    log_info(gc, verify)("###   list has %u entries, _length is %u", length, _length);
+    log_error(gc, verify)("### YOUNG LIST seems not well formed!");
+    log_error(gc, verify)("###   list has %u entries, _length is %u", length, _length);
   }
 
   return ret;
@@ -123,19 +123,19 @@ bool YoungList::check_list_empty(bool check_sample) {
   bool ret = true;
 
   if (_length != 0) {
-    log_info(gc, verify)("### YOUNG LIST should have 0 length, not %u", _length);
+    log_error(gc, verify)("### YOUNG LIST should have 0 length, not %u", _length);
     ret = false;
   }
   if (check_sample && _last_sampled_rs_lengths != 0) {
-    log_info(gc, verify)("### YOUNG LIST has non-zero last sampled RS lengths");
+    log_error(gc, verify)("### YOUNG LIST has non-zero last sampled RS lengths");
     ret = false;
   }
   if (_head != NULL) {
-    log_info(gc, verify)("### YOUNG LIST does not have a NULL head");
+    log_error(gc, verify)("### YOUNG LIST does not have a NULL head");
     ret = false;
   }
   if (!ret) {
-    log_info(gc, verify)("### YOUNG LIST does not seem empty");
+    log_error(gc, verify)("### YOUNG LIST does not seem empty");
   }
 
   return ret;

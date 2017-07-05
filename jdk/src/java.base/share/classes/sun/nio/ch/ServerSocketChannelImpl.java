@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
 import sun.net.NetHooks;
-
 
 /**
  * An implementation of ServerSocketChannels
@@ -185,6 +184,9 @@ class ServerSocketChannelImpl
             HashSet<SocketOption<?>> set = new HashSet<>(2);
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_REUSEADDR);
+            if (Net.isReusePortAvailable()) {
+                set.add(StandardSocketOptions.SO_REUSEPORT);
+            }
             set.add(StandardSocketOptions.IP_TOS);
             return Collections.unmodifiableSet(set);
         }

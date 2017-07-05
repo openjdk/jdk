@@ -141,6 +141,7 @@ public class LogManagerAppContextDeadlock {
         t1.setDaemon(true);
         t1.start();
         Thread t2 = new Thread() {
+            public Object logger;
             public void run() {
                 sem3.release();
                 try {
@@ -151,7 +152,10 @@ public class LogManagerAppContextDeadlock {
                     Thread.interrupted();
                 }
                 System.out.println("Logger.getLogger(name).info(name)");
-                Logger.getLogger(test.name());//.info(name);
+                // stick the logger in an instance variable to prevent it
+                // from being garbage collected before the main thread
+                // calls LogManager.getLogger() below.
+                logger = Logger.getLogger(test.name());//.info(name);
                 System.out.println("Done: Logger.getLogger(name).info(name)");
             }
         };

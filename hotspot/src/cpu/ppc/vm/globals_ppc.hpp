@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 
-define_pd_global(bool, ConvertSleepToYield,   true);
 define_pd_global(bool, ShareVtableStubs,      false); // Improves performance markedly for mtrt and compress.
 define_pd_global(bool, NeedsDeoptSuspend,     false); // Only register window machines need this.
 
