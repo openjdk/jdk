@@ -126,16 +126,6 @@ public class WindowsAttachProvider extends HotSpotAttachProvider {
      * of the process list.
      */
     private List<VirtualMachineDescriptor> listJavaProcesses() {
-        // ensure that process status helper is loaded (psapi.dll)
-        if (!isProcessStatusHelperInitialized) {
-            synchronized (WindowsAttachProvider.class) {
-                if (!isProcessStatusHelperInitialized) {
-                    initializeProcessStatusHelper();
-                    isProcessStatusHelperInitialized = true;
-                }
-            }
-        }
-
         ArrayList<VirtualMachineDescriptor> list =
             new ArrayList<VirtualMachineDescriptor>();
 
@@ -171,12 +161,6 @@ public class WindowsAttachProvider extends HotSpotAttachProvider {
 
         return list;
     }
-
-    // indicates if psapi.dll has been initialized
-    private static volatile boolean isProcessStatusHelperInitialized;
-
-    // loads psapi
-    private static native void initializeProcessStatusHelper();
 
     // enumerates processes using psapi's EnumProcesses
     private static native int enumProcesses(int[] processes, int max);
