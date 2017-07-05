@@ -107,7 +107,7 @@ void ConcurrentMarkThread::run() {
       if (PrintGC) {
         gclog_or_tty->date_stamp(PrintGCDateStamps);
         gclog_or_tty->stamp(PrintGCTimeStamps);
-        tty->print_cr("[GC concurrent-mark-start]");
+        gclog_or_tty->print_cr("[GC concurrent-mark-start]");
       }
 
       if (!g1_policy->in_young_gc_mode()) {
@@ -320,8 +320,6 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   set_in_progress();
   clear_started();
   if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-starting");
-
-  return;
 }
 
 // Note: this method, although exported by the ConcurrentMarkSweepThread,

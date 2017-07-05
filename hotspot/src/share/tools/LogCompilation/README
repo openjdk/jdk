@@ -1,0 +1,18 @@
+This is a very rough tool for parsing -XX:+LogCompilation output.
+It's main purpose is to recreate output similar to
+-XX:+PrintCompilation -XX:+PrintInlining output from a debug JVM.  It
+requires a 1.5 JDK to build and simply typing make should build it.
+
+It produces a jar file, logc.jar, that can be run on the
+hotspot.log from LogCompilation output like this:
+
+  java -jar logc.jar hotspot.log
+
+This will produce something like the normal PrintCompilation output.
+Adding the -i option with also report inlining like PrintInlining.
+
+More information about the LogCompilation output can be found at 
+
+http://wikis.sun.com/display/HotSpotInternals/LogCompilation+overview
+http://wikis.sun.com/display/HotSpotInternals/PrintCompilation
+http://wikis.sun.com/display/HotSpotInternals/LogCompilation+tool

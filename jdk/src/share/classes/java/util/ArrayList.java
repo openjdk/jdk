@@ -179,7 +179,6 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
         int oldCapacity = elementData.length;
         if (minCapacity > oldCapacity) {
-            Object oldData[] = elementData;
             int newCapacity = (oldCapacity * 3)/2 + 1;
             if (newCapacity < minCapacity)
                 newCapacity = minCapacity;

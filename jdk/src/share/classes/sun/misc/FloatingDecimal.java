@@ -1867,10 +1867,16 @@ public class FloatingDecimal{
      * Grammar is compatible with hexadecimal floating-point constants
      * described in section 6.4.4.2 of the C99 specification.
      */
-    private static Pattern hexFloatPattern = Pattern.compile(
+    private static Pattern hexFloatPattern = null;
+    private static synchronized Pattern getHexFloatPattern() {
+        if (hexFloatPattern == null) {
+           hexFloatPattern = Pattern.compile(
                    //1           234                   56                7                   8      9
                     "([-+])?0[xX](((\\p{XDigit}+)\\.?)|((\\p{XDigit}*)\\.(\\p{XDigit}+)))[pP]([-+])?(\\p{Digit}+)[fFdD]?"
                     );
+        }
+        return hexFloatPattern;
+    }
 
     /*
      * Convert string s to a suitable floating decimal; uses the
@@ -1880,7 +1886,7 @@ public class FloatingDecimal{
    static FloatingDecimal parseHexString(String s) {
         // Verify string is a member of the hexadecimal floating-point
         // string language.
-        Matcher m = hexFloatPattern.matcher(s);
+        Matcher m = getHexFloatPattern().matcher(s);
         boolean validInput = m.matches();
 
         if (!validInput) {

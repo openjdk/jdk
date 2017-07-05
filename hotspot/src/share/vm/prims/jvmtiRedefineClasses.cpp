@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -831,6 +831,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
   ResourceMark rm(THREAD);
 
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
+  // state can only be NULL if the current thread is exiting which
+  // should not happen since we're trying to do a RedefineClasses
+  guarantee(state != NULL, "exiting thread calling load_new_class_versions");
   for (int i = 0; i < _class_count; i++) {
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
     // classes for primitives cannot be redefined
@@ -1349,39 +1352,39 @@ bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
 
   // rewrite constant pool references in the methods:
   if (!rewrite_cp_refs_in_methods(scratch_class, THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
   // rewrite constant pool references in the class_annotations:
   if (!rewrite_cp_refs_in_class_annotations(scratch_class, THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
   // rewrite constant pool references in the fields_annotations:
   if (!rewrite_cp_refs_in_fields_annotations(scratch_class, THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
   // rewrite constant pool references in the methods_annotations:
   if (!rewrite_cp_refs_in_methods_annotations(scratch_class, THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
   // rewrite constant pool references in the methods_parameter_annotations:
   if (!rewrite_cp_refs_in_methods_parameter_annotations(scratch_class,
          THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
   // rewrite constant pool references in the methods_default_annotations:
   if (!rewrite_cp_refs_in_methods_default_annotations(scratch_class,
          THREAD)) {
-    // propogate failure back to caller
+    // propagate failure back to caller
     return false;
   }
 
@@ -1600,7 +1603,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotations_typeArray(
            byte_i_ref, THREAD)) {
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("bad annotation_struct at %d", calc_num_annotations));
-      // propogate failure back to caller
+      // propagate failure back to caller
       return false;
     }
   }
@@ -1666,7 +1669,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
            byte_i_ref, THREAD)) {
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("bad element_value at %d", calc_num_element_value_pairs));
-      // propogate failure back to caller
+      // propagate failure back to caller
       return false;
     }
   } // end for each component
@@ -1815,7 +1818,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
       // field. This is a nested annotation.
       if (!rewrite_cp_refs_in_annotation_struct(annotations_typeArray,
              byte_i_ref, THREAD)) {
-        // propogate failure back to caller
+        // propagate failure back to caller
         return false;
       }
       break;
@@ -1842,7 +1845,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
                annotations_typeArray, byte_i_ref, THREAD)) {
           RC_TRACE_WITH_THREAD(0x02000000, THREAD,
             ("bad nested element_value at %d", calc_num_values));
-          // propogate failure back to caller
+          // propagate failure back to caller
           return false;
         }
       }
@@ -1886,7 +1889,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
            THREAD)) {
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("bad field_annotations at %d", i));
-      // propogate failure back to caller
+      // propagate failure back to caller
       return false;
     }
   }
@@ -1923,7 +1926,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
            THREAD)) {
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("bad method_annotations at %d", i));
-      // propogate failure back to caller
+      // propagate failure back to caller
       return false;
     }
   }
@@ -1991,7 +1994,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
              method_parameter_annotations, byte_i, THREAD)) {
         RC_TRACE_WITH_THREAD(0x02000000, THREAD,
           ("bad method_parameter_annotations at %d", calc_num_parameters));
-        // propogate failure back to caller
+        // propagate failure back to caller
         return false;
       }
     }
@@ -2041,7 +2044,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
            method_default_annotations, byte_i, THREAD)) {
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("bad default element_value at %d", i));
-      // propogate failure back to caller
+      // propagate failure back to caller
       return false;
     }
   }

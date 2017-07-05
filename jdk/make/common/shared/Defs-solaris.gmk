@@ -91,14 +91,14 @@ endif
 ifneq "$(origin ALT_COMPILER_PATH)" "undefined"
   COMPILER_PATH :=$(call PrefixPath,$(ALT_COMPILER_PATH))
 else
-  # Careful here, COMPILER_VERSION may not be defined yet (see Compiler.gmk)
+  # Careful here, REQUIRED_COMPILER_VERSION may not be defined yet (see Defs-versions.gmk)
   # If the place where we keep a set of Sun Studio compilers doesn't exist,
   #  try and use /opt/SUNWspro, the default location for the SS compilers.
   #  (DirExists checks for this path twice, an automount double check)
   _SUNSTUDIO_SET_ROOT=$(JDK_DEVTOOLS_DIR)/$(ARCH_FAMILY)/SUNWspro
   SUNSTUDIO_SET_ROOT:=$(call DirExists,$(_SUNSTUDIO_SET_ROOT),$(_SUNSTUDIO_SET_ROOT),)
   ifneq ($(SUNSTUDIO_SET_ROOT),)
-    COMPILER_PATH =$(SUNSTUDIO_SET_ROOT)/$(COMPILER_VERSION)/bin/
+    COMPILER_PATH =$(SUNSTUDIO_SET_ROOT)/$(REQUIRED_COMPILER_VERSION)/bin/
   else
     COMPILER_PATH =/opt/SUNWspro/bin/
   endif

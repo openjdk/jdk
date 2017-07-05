@@ -24,7 +24,7 @@
 
 #ifdef CC_INTERP
 
-// This file contains the platform-independant parts
+// This file contains the platform-independent parts
 // of the c++ interpreter
 
 class CppInterpreter: public AbstractInterpreter {
