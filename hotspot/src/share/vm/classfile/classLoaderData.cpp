@@ -105,6 +105,7 @@ void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool m
 void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     klass_closure->do_klass(k);
+    assert(k != k->next_link(), "no loops!");
   }
 }
 
@@ -113,6 +114,7 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
     if (k->oop_is_instance()) {
       f(InstanceKlass::cast(k));
     }
+    assert(k != k->next_link(), "no loops!");
   }
 }
 
@@ -258,6 +260,7 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
       return;
     }
     prev = k;
+    assert(k != k->next_link(), "no loops!");
   }
   ShouldNotReachHere();   // should have found this class!!
 }
@@ -439,6 +442,7 @@ void ClassLoaderData::dump(outputStream * const out) {
     while (k != NULL) {
       out->print_cr("klass "PTR_FORMAT", %s, CT: %d, MUT: %d", k, k->name()->as_C_string(),
           k->has_modified_oops(), k->has_accumulated_modified_oops());
+      assert(k != k->next_link(), "no loops!");
       k = k->next_link();
     }
   }
@@ -465,6 +469,7 @@ void ClassLoaderData::verify() {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     guarantee(k->class_loader_data() == this, "Must be the same");
     k->verify();
+    assert(k != k->next_link(), "no loops!");
   }
 }
 
