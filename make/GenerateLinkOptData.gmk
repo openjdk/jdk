@@ -31,7 +31,6 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include Tools.gmk
 include JarArchive.gmk
 
 ################################################################################
@@ -48,9 +47,9 @@ TARGETS += $(CLASSLIST_JAR)
 
 ################################################################################
 
-CLASSLIST_FILE := $(SUPPORT_OUTPUTDIR)/classlist/classlist
-
-JLI_TRACE_FILE := $(SUPPORT_OUTPUTDIR)/classlist/jli_trace.out
+LINK_OPT_DIR := $(SUPPORT_OUTPUTDIR)/link_opt
+CLASSLIST_FILE := $(LINK_OPT_DIR)/classlist
+JLI_TRACE_FILE := $(LINK_OPT_DIR)/jli_trace.out
 
 # If an external buildjdk has been supplied, we don't build a separate interim
 # image, so just use the external build jdk instead.
@@ -59,15 +58,30 @@ ifeq ($(EXTERNAL_BUILDJDK), true)
 endif
 
 $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
-	$(call MakeDir, $(@D))
-	$(call LogInfo, Generating lib/classlist)
+	$(call MakeDir, $(LINK_OPT_DIR))
+	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@ \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    build.tools.classlist.HelloClasslist \
 	    $(LOG_DEBUG) 2>&1 > $(JLI_TRACE_FILE)
 
-TARGETS += $(CLASSLIST_FILE)
+# The jli trace is created by the same recipe as classlist. By declaring these
+# dependencies, make will correctly rebuild both jli trace and classlist
+# incrementally using the single recpie above.
+$(CLASSLIST_FILE): $(JLI_TRACE_FILE)
+$(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
+
+TARGETS += $(CLASSLIST_FILE) $(JLI_TRACE_FILE)
+
+# Copy the classlist file into java.base libs
+$(eval $(call SetupCopyFiles, COPY_CLASSLIST, \
+    FILES := $(CLASSLIST_FILE), \
+    DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
+))
+
+TARGETS += $(COPY_CLASSLIST)
 
 ################################################################################
 

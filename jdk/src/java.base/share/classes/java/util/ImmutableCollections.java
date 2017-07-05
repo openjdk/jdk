@@ -53,7 +53,8 @@ class ImmutableCollections {
      */
     static final int SALT;
     static {
-        SALT = new Random().nextInt();
+        long nt = System.nanoTime();
+        SALT = (int)((nt >>> 32) ^ nt);
     }
 
     /** No instances. */
@@ -63,7 +64,7 @@ class ImmutableCollections {
      * The reciprocal of load factor. Given a number of elements
      * to store, multiply by this factor to get the table size.
      */
-    static final double EXPAND_FACTOR = 2.0;
+    static final int EXPAND_FACTOR = 2;
 
     static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
 
@@ -84,7 +85,14 @@ class ImmutableCollections {
     }
 
     static final class List0<E> extends AbstractImmutableList<E> {
-        List0() { }
+        private static final List0<?> INSTANCE = new List0<>();
+
+        @SuppressWarnings("unchecked")
+        static <T> List0<T> instance() {
+            return (List0<T>) INSTANCE;
+        }
+
+        private List0() { }
 
         @Override
         public int size() {
@@ -214,7 +222,14 @@ class ImmutableCollections {
     }
 
     static final class Set0<E> extends AbstractImmutableSet<E> {
-        Set0() { }
+        private static final Set0<?> INSTANCE = new Set0<>();
+
+        @SuppressWarnings("unchecked")
+        static <T> Set0<T> instance() {
+            return (Set0<T>) INSTANCE;
+        }
+
+        private Set0() { }
 
         @Override
         public int size() {
@@ -351,7 +366,7 @@ class ImmutableCollections {
         SetN(E... input) {
             size = input.length; // implicit nullcheck of input
 
-            elements = (E[])new Object[(int)Math.ceil(EXPAND_FACTOR * input.length)];
+            elements = (E[])new Object[EXPAND_FACTOR * input.length];
             for (int i = 0; i < input.length; i++) {
                 E e = Objects.requireNonNull(input[i]);
                 int idx = probe(e);
@@ -450,7 +465,14 @@ class ImmutableCollections {
     }
 
     static final class Map0<K,V> extends AbstractImmutableMap<K,V> {
-        Map0() { }
+        private static final Map0<?,?> INSTANCE = new Map0<>();
+
+        @SuppressWarnings("unchecked")
+        static <K,V> Map0<K,V> instance() {
+            return (Map0<K,V>) INSTANCE;
+        }
+
+        private Map0() { }
 
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
@@ -529,7 +551,7 @@ class ImmutableCollections {
             }
             size = input.length >> 1;
 
-            int len = (int)Math.ceil(EXPAND_FACTOR * input.length);
+            int len = EXPAND_FACTOR * input.length;
             len = (len + 1) & ~1; // ensure table is even length
             table = new Object[len];
 
@@ -789,7 +811,7 @@ final class CollSer implements Serializable {
                     return Set.of(array);
                 case IMM_MAP:
                     if (array.length == 0) {
-                        return new ImmutableCollections.Map0<>();
+                        return ImmutableCollections.Map0.instance();
                     } else if (array.length == 2) {
                         return new ImmutableCollections.Map1<>(array[0], array[1]);
                     } else {

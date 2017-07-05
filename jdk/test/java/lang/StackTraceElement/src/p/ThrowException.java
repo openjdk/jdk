@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.util.stream;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+package p;
 
-public final class ThowableHelper {
+import java.lang.StackWalker.StackFrame;
 
-    public static void checkException(Class<? extends Exception> ce, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        } catch (Exception e) {
-            caught = e;
-        }
-
-        assertNotNull(caught);
-        assertTrue(ce.isInstance(caught));
-    }
-
-    public static void checkNPE(Runnable r) {
-        checkException(NullPointerException.class, r);
-    }
-
-    public static void checkISE(Runnable r) {
-        checkException(IllegalStateException.class, r);
+public class ThrowException {
+    public static void throwError() {
+        throw new Error("testing");
     }
 }
