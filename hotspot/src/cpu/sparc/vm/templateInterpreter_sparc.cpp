@@ -190,9 +190,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register size  = G1_scratch;
   if (EnableInvokeDynamic) {
     __ ldub(Address(Lbcp, 0), G1_scratch);  // Load current bytecode.
-    __ cmp(G1_scratch, Bytecodes::_invokedynamic);
-    __ br(Assembler::equal, false, Assembler::pn, L_giant_index);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G1_scratch, Bytecodes::_invokedynamic, Assembler::equal, Assembler::pn, L_giant_index);
   }
   __ get_cache_and_index_at_bcp(cache, G1_scratch, 1);
   __ bind(L_got_cache);
@@ -207,8 +205,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (EnableInvokeDynamic) {
     __ bind(L_giant_index);
     __ get_cache_and_index_at_bcp(cache, G1_scratch, 1, sizeof(u4));
-    __ ba(false, L_got_cache);
-    __ delayed()->nop();
+    __ ba_short(L_got_cache);
   }
 
   return entry;
@@ -221,9 +218,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   { Label L;
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     __ ld_ptr(exception_addr, Gtemp);  // Load pending exception.
-    __ tst(Gtemp);
-    __ brx(Assembler::equal, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_null_short(Gtemp, Assembler::pt, L);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_pending_exception));
     __ should_not_reach_here();
     __ bind(L);
@@ -304,8 +299,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
     if (ProfileInterpreter) {
       // If no method data exists, go to profile_continue.
       __ ld_ptr(Lmethod, methodOopDesc::method_data_offset(), G4_scratch);
-      __ br_null(G4_scratch, false, Assembler::pn, no_mdo);
-      __ delayed()->nop();
+      __ br_null_short(G4_scratch, Assembler::pn, no_mdo);
       // Increment counter
       Address mdo_invocation_counter(G4_scratch,
                                      in_bytes(methodDataOopDesc::invocation_counter_offset()) +
@@ -313,8 +307,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
       __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
                                  G3_scratch, Lscratch,
                                  Assembler::zero, overflow);
-      __ ba(false, done);
-      __ delayed()->nop();
+      __ ba_short(done);
     }
 
     // Increment counter in methodOop
@@ -340,9 +333,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
       // Test to see if we should create a method data oop
       AddressLiteral profile_limit((address)&InvocationCounter::InterpreterProfileLimit);
       __ load_contents(profile_limit, G3_scratch);
-      __ cmp(O0, G3_scratch);
-      __ br(Assembler::lessUnsigned, false, Assembler::pn, *profile_method_continue);
-      __ delayed()->nop();
+      __ cmp_and_br_short(O0, G3_scratch, Assembler::lessUnsigned, Assembler::pn, *profile_method_continue);
 
       // if no method data exists, go to profile_method
       __ test_method_data_pointer(*profile_method);
@@ -351,7 +342,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
     AddressLiteral invocation_limit((address)&InvocationCounter::InterpreterInvocationLimit);
     __ load_contents(invocation_limit, G3_scratch);
     __ cmp(O0, G3_scratch);
-    __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow);
+    __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow); // Far distance
     __ delayed()->nop();
   }
 
@@ -410,19 +401,14 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 
   assert_different_registers(Rframe_size, Rscratch, Rscratch2);
 
-  __ set( page_size,   Rscratch );
-  __ cmp( Rframe_size, Rscratch );
-
-  __ br( Assembler::lessEqual, false, Assembler::pt, after_frame_check );
-  __ delayed()->nop();
+  __ set(page_size, Rscratch);
+  __ cmp_and_br_short(Rframe_size, Rscratch, Assembler::lessEqual, Assembler::pt, after_frame_check);
 
   // get the stack base, and in debug, verify it is non-zero
   __ ld_ptr( G2_thread, Thread::stack_base_offset(), Rscratch );
 #ifdef ASSERT
   Label base_not_zero;
-  __ cmp( Rscratch, G0 );
-  __ brx( Assembler::notEqual, false, Assembler::pn, base_not_zero );
-  __ delayed()->nop();
+  __ br_notnull_short(Rscratch, Assembler::pn, base_not_zero);
   __ stop("stack base is zero in generate_stack_overflow_check");
   __ bind(base_not_zero);
 #endif
@@ -432,9 +418,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
   __ ld_ptr( G2_thread, Thread::stack_size_offset(), Rscratch2 );
 #ifdef ASSERT
   Label size_not_zero;
-  __ cmp( Rscratch2, G0 );
-  __ brx( Assembler::notEqual, false, Assembler::pn, size_not_zero );
-  __ delayed()->nop();
+  __ br_notnull_short(Rscratch2, Assembler::pn, size_not_zero);
   __ stop("stack size is zero in generate_stack_overflow_check");
   __ bind(size_not_zero);
 #endif
@@ -450,9 +434,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 
   // the frame is greater than one page in size, so check against
   // the bottom of the stack
-  __ cmp( SP, Rscratch );
-  __ brx( Assembler::greater, false, Assembler::pt, after_frame_check );
-  __ delayed()->nop();
+  __ cmp_and_brx_short(SP, Rscratch, Assembler::greater, Assembler::pt, after_frame_check);
 
   // Save the return address as the exception pc
   __ st_ptr(O7, saved_exception_pc);
@@ -624,9 +606,7 @@ address InterpreterGenerator::generate_empty_entry(void) {
     // If we need a safepoint check, generate full interpreter entry.
     AddressLiteral sync_state(SafepointSynchronize::address_of_state());
     __ set(sync_state, G3_scratch);
-    __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
-    __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G3_scratch, SafepointSynchronize::_not_synchronized, Assembler::notEqual, Assembler::pn, slow_path);
 
     // Code: _return
     __ retl();
@@ -664,14 +644,12 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     AddressLiteral sync_state(SafepointSynchronize::address_of_state());
     __ load_contents(sync_state, G3_scratch);
     __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
-    __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G3_scratch, SafepointSynchronize::_not_synchronized, Assembler::notEqual, Assembler::pn, slow_path);
 
     // Check if local 0 != NULL
     __ ld_ptr(Gargs, G0, Otos_i ); // get local 0
-    __ tst(Otos_i);  // check if local 0 == NULL and go the slow path
-    __ brx(Assembler::zero, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
+    // check if local 0 == NULL and go the slow path
+    __ br_null_short(Otos_i, Assembler::pn, slow_path);
 
 
     // read first instruction word and extract bytecode @ 1 and index @ 2
@@ -697,9 +675,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::indices_offset(), G1_scratch);
     __ srl(G1_scratch, 2*BitsPerByte, G1_scratch);
     __ and3(G1_scratch, 0xFF, G1_scratch);
-    __ cmp(G1_scratch, Bytecodes::_getfield);
-    __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G1_scratch, Bytecodes::_getfield, Assembler::notEqual, Assembler::pn, slow_path);
 
     // Get the type and return field offset from the constant pool cache
     __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), G1_scratch);
@@ -787,9 +763,8 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
     // Check if local 0 != NULL
     // If the receiver is null then it is OK to jump to the slow path.
     __ ld_ptr(Gargs, G0, Otos_i ); // get local 0
-    __ tst(Otos_i);  // check if local 0 == NULL and go the slow path
-    __ brx(Assembler::zero, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
+    // check if local 0 == NULL and go the slow path
+    __ cmp_and_brx_short(Otos_i, 0, Assembler::equal, Assembler::pn, slow_path);
 
 
     // Load the value of the referent field.
@@ -952,9 +927,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   { Label L;
     Address signature_handler(Lmethod, methodOopDesc::signature_handler_offset());
     __ ld_ptr(signature_handler, G3_scratch);
-    __ tst(G3_scratch);
-    __ brx(Assembler::notZero, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_notnull_short(G3_scratch, Assembler::pt, L);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), Lmethod);
     __ ld_ptr(signature_handler, G3_scratch);
     __ bind(L);
@@ -1019,9 +992,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     if (!PrintSignatureHandlers)  // do not dirty the output with this
     { Label L;
-      __ tst(O1);
-      __ brx(Assembler::notZero, false, Assembler::pt, L);
-      __ delayed()->nop();
+      __ br_notnull_short(O1, Assembler::pt, L);
       __ stop("mirror is missing");
       __ bind(L);
     }
@@ -1038,9 +1009,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
 #ifdef ASSERT
   { Label L;
-    __ tst(O0);
-    __ brx(Assembler::notZero, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_notnull_short(O0, Assembler::pt, L);
     __ stop("native entry point is missing");
     __ bind(L);
   }
@@ -1079,9 +1048,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
   { Label L;
     __ ld(thread_state, G3_scratch);
-    __ cmp(G3_scratch, _thread_in_Java);
-    __ br(Assembler::equal, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G3_scratch, _thread_in_Java, Assembler::equal, Assembler::pt, L);
     __ stop("Wrong thread state in native stub");
     __ bind(L);
   }
@@ -1134,9 +1101,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L;
     __ br(Assembler::notEqual, false, Assembler::pn, L);
     __ delayed()->ld(G2_thread, JavaThread::suspend_flags_offset(), G3_scratch);
-    __ cmp(G3_scratch, 0);
-    __ br(Assembler::equal, false, Assembler::pt, no_block);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G3_scratch, 0, Assembler::equal, Assembler::pt, no_block);
     __ bind(L);
 
     // Block.  Save any potential method result value before the operation and
@@ -1185,9 +1150,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     Label no_oop, store_result;
 
     __ set((intptr_t)AbstractInterpreter::result_handler(T_OBJECT), G3_scratch);
-    __ cmp(G3_scratch, Lscratch);
-    __ brx(Assembler::notEqual, false, Assembler::pt, no_oop);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(G3_scratch, Lscratch, Assembler::notEqual, Assembler::pt, no_oop);
     __ addcc(G0, O0, O0);
     __ brx(Assembler::notZero, true, Assembler::pt, store_result);     // if result is not NULL:
     __ delayed()->ld_ptr(O0, 0, O0);                                   // unbox it
@@ -1206,9 +1169,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   { Label L;
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     __ ld_ptr(exception_addr, Gtemp);
-    __ tst(Gtemp);
-    __ brx(Assembler::equal, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_null_short(Gtemp, Assembler::pt, L);
     // Note: This could be handled more efficiently since we know that the native
     //       method doesn't have an exception handler. We could directly return
     //       to the exception handler for the caller.
@@ -1245,9 +1206,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
   {
     Label ok;
-    __ cmp(I5_savedSP, FP);
-    __ brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, ok);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(I5_savedSP, FP, Assembler::greaterEqualUnsigned, Assembler::pt, ok);
     __ stop("bad I5_savedSP value");
     __ should_not_reach_here();
     __ bind(ok);
@@ -1429,8 +1388,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
       __ set_method_data_pointer_for_bcp();
-      __ ba(false, profile_method_continue);
-      __ delayed()->nop();
+      __ ba_short(profile_method_continue);
     }
 
     // handle invocation counter overflow
@@ -1856,9 +1814,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // adapter frames in C2.
     Label caller_not_deoptimized;
     __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), I7);
-    __ tst(O0);
-    __ brx(Assembler::notEqual, false, Assembler::pt, caller_not_deoptimized);
-    __ delayed()->nop();
+    __ br_notnull_short(O0, Assembler::pt, caller_not_deoptimized);
 
     const Register Gtmp1 = G3_scratch;
     const Register Gtmp2 = G1_scratch;
@@ -1992,10 +1948,10 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
 void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t, address& bep, address& cep, address& sep, address& aep, address& iep, address& lep, address& fep, address& dep, address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc(); __ push_ptr(); __ ba(false, L); __ delayed()->nop();
-  fep = __ pc(); __ push_f();   __ ba(false, L); __ delayed()->nop();
-  dep = __ pc(); __ push_d();   __ ba(false, L); __ delayed()->nop();
-  lep = __ pc(); __ push_l();   __ ba(false, L); __ delayed()->nop();
+  aep = __ pc(); __ push_ptr(); __ ba_short(L);
+  fep = __ pc(); __ push_f();   __ ba_short(L);
+  dep = __ pc(); __ push_d();   __ ba_short(L);
+  lep = __ pc(); __ push_l();   __ ba_short(L);
   iep = __ pc(); __ push_i();
   bep = cep = sep = iep;                        // there aren't any
   vep = __ pc(); __ bind(L);                    // fall through

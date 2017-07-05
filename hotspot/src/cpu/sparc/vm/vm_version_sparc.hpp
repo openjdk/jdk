@@ -31,44 +31,46 @@
 class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
-    v8_instructions    = 0,
-    hardware_mul32     = 1,
-    hardware_div32     = 2,
-    hardware_fsmuld    = 3,
-    hardware_popc      = 4,
-    v9_instructions    = 5,
-    vis1_instructions  = 6,
-    vis2_instructions  = 7,
-    sun4v_instructions = 8,
+    v8_instructions      = 0,
+    hardware_mul32       = 1,
+    hardware_div32       = 2,
+    hardware_fsmuld      = 3,
+    hardware_popc        = 4,
+    v9_instructions      = 5,
+    vis1_instructions    = 6,
+    vis2_instructions    = 7,
+    sun4v_instructions   = 8,
     blk_init_instructions = 9,
-    fmaf_instructions  = 10,
-    fmau_instructions  = 11,
-    vis3_instructions  = 12,
-    sparc64_family     = 13,
-    T_family           = 14,
-    T1_model           = 15
+    fmaf_instructions    = 10,
+    fmau_instructions    = 11,
+    vis3_instructions    = 12,
+    sparc64_family       = 13,
+    T_family             = 14,
+    T1_model             = 15,
+    cbcond_instructions  = 16
   };
 
   enum Feature_Flag_Set {
     unknown_m           = 0,
     all_features_m      = -1,
 
-    v8_instructions_m   = 1 << v8_instructions,
-    hardware_mul32_m    = 1 << hardware_mul32,
-    hardware_div32_m    = 1 << hardware_div32,
-    hardware_fsmuld_m   = 1 << hardware_fsmuld,
-    hardware_popc_m     = 1 << hardware_popc,
-    v9_instructions_m   = 1 << v9_instructions,
-    vis1_instructions_m = 1 << vis1_instructions,
-    vis2_instructions_m = 1 << vis2_instructions,
-    sun4v_m             = 1 << sun4v_instructions,
+    v8_instructions_m       = 1 << v8_instructions,
+    hardware_mul32_m        = 1 << hardware_mul32,
+    hardware_div32_m        = 1 << hardware_div32,
+    hardware_fsmuld_m       = 1 << hardware_fsmuld,
+    hardware_popc_m         = 1 << hardware_popc,
+    v9_instructions_m       = 1 << v9_instructions,
+    vis1_instructions_m     = 1 << vis1_instructions,
+    vis2_instructions_m     = 1 << vis2_instructions,
+    sun4v_m                 = 1 << sun4v_instructions,
     blk_init_instructions_m = 1 << blk_init_instructions,
-    fmaf_instructions_m = 1 << fmaf_instructions,
-    fmau_instructions_m = 1 << fmau_instructions,
-    vis3_instructions_m = 1 << vis3_instructions,
-    sparc64_family_m    = 1 << sparc64_family,
-    T_family_m          = 1 << T_family,
-    T1_model_m          = 1 << T1_model,
+    fmaf_instructions_m     = 1 << fmaf_instructions,
+    fmau_instructions_m     = 1 << fmau_instructions,
+    vis3_instructions_m     = 1 << vis3_instructions,
+    sparc64_family_m        = 1 << sparc64_family,
+    T_family_m              = 1 << T_family,
+    T1_model_m              = 1 << T1_model,
+    cbcond_instructions_m   = 1 << cbcond_instructions,
 
     generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
     generic_v9_m        = generic_v8_m | v9_instructions_m,
@@ -111,25 +113,35 @@ public:
   static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
   static bool has_vis3()                { return (_features & vis3_instructions_m) != 0; }
   static bool has_blk_init()            { return (_features & blk_init_instructions_m) != 0; }
+  static bool has_cbcond()              { return (_features & cbcond_instructions_m) != 0; }
 
   static bool supports_compare_and_exchange()
                                         { return has_v9(); }
 
-  static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m; }
-  static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
   // Returns true if the platform is in the niagara line (T series)
   // and newer than the niagara1.
   static bool is_niagara_plus()         { return is_T_family(_features) && !is_T1_model(_features); }
+  static bool is_T4()                   { return is_T_family(_features) && has_cbcond(); }
+
   // Fujitsu SPARC64
   static bool is_sparc64()              { return (_features & sparc64_family_m) != 0; }
+
+  static bool is_sun4v()                { return (_features & sun4v_m) != 0; }
+  static bool is_ultra3()               { return (_features & ultra3_m) == ultra3_m && !is_sun4v() && !is_sparc64(); }
 
   static bool has_fast_fxtof()          { return is_niagara() || is_sparc64() || has_v9() && !is_ultra3(); }
   static bool has_fast_idiv()           { return is_niagara_plus() || is_sparc64(); }
 
+  // T4 and newer Sparc have fast RDPC instruction.
+  static bool has_fast_rdpc()           { return is_T4(); }
+
+  // T4 and newer Sparc have Most-Recently-Used (MRU) BIS.
+  static bool has_mru_blk_init()        { return has_blk_init() && is_T4(); }
+
   static const char* cpu_features()     { return _features_str; }
 
-  static intx L1_data_cache_line_size()  {
-    return 64;  // default prefetch block size on sparc
+  static intx prefetch_data_size()  {
+    return is_T4() ? 32 : 64;  // default prefetch block size on sparc
   }
 
   // Prefetch
