@@ -250,6 +250,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return compFont;
     }
 
+    @SuppressWarnings("deprecation")
     protected synchronized void finalize() {
         if (nativeFontPtr != 0) {
             disposeNativeFont(nativeFontPtr);

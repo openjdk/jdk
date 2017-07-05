@@ -43,7 +43,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.lang.reflect.ReflectPermission;
 import java.nio.ByteOrder;
 import java.security.AccessController;
@@ -668,11 +667,11 @@ public class MethodHandles {
          *  The value is {@code 0x20}, which does not correspond meaningfully to
          *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
          *  A {@code Lookup} with this lookup mode assumes {@linkplain
-         *  java.lang.reflect.Module#canRead(java.lang.reflect.Module) readability}.
+         *  java.lang.Module#canRead(java.lang.Module) readability}.
          *  In conjunction with the {@code PUBLIC} modifier bit, a {@code Lookup}
          *  with this lookup mode can access all public members of public types
          *  of all modules where the type is in a package that is {@link
-         *  java.lang.reflect.Module#isExported(String) exported unconditionally}.
+         *  java.lang.Module#isExported(String) exported unconditionally}.
          *  @since 9
          *  @spec JPMS
          *  @see #publicLookup()

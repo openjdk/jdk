@@ -35,7 +35,6 @@
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -44,7 +43,6 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ArrayDequeTest extends JSR166TestCase {
     public static void main(String[] args) {

@@ -322,7 +322,7 @@ public interface ObjectInputFilter {
          * Other patterns match or reject class or package name
          * as returned from {@link Class#getName() Class.getName()} and
          * if an optional module name is present
-         * {@link java.lang.reflect.Module#getName() class.getModule().getName()}.
+         * {@link Module#getName() class.getModule().getName()}.
          * Note that for arrays the element type is used in the pattern,
          * not the array type.
          * <ul>
