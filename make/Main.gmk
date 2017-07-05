@@ -341,15 +341,15 @@ ALL_TARGETS += source-tips create-hgtip-files bootcycle-images zip-security \
 # Docs targets
 
 docs-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javadoc)
 
-docs-jvmtidoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk jvmtidocs)
+docs-copy:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-copy)
 
-zip-docs:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk zip-docs)
+docs-zip:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
 
-ALL_TARGETS += docs-javadoc docs-jvmtidoc zip-docs
+ALL_TARGETS += docs-javadoc docs-copy docs-zip
 
 ################################################################################
 # Cross compilation support
@@ -683,9 +683,10 @@ else
 
   docs-javadoc: $(GENSRC_TARGETS) rmic
 
-  docs-jvmtidoc: hotspot
+  # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
+  docs-copy: hotspot jdk.jdi-gensrc
 
-  zip-docs: docs-javadoc docs-jvmtidoc
+  docs-zip: docs-javadoc docs-copy
 
   test: jdk-image test-image
 
@@ -812,7 +813,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-javadoc docs-jvmtidoc
+docs-image: docs-javadoc docs-copy
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
@@ -860,7 +861,7 @@ CLEAN_SUPPORT_DIRS += demos
 CLEAN_SUPPORT_DIR_TARGETS := $(addprefix clean-, $(CLEAN_SUPPORT_DIRS))
 CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native lib
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
-CLEAN_PHASES := gensrc java native include docs
+CLEAN_PHASES := gensrc java native include
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))
 CLEAN_MODULE_TARGETS := $(addprefix clean-, $(ALL_MODULES))
 # Construct targets of the form clean-$module-$phase
@@ -871,6 +872,9 @@ CLEAN_MODULE_PHASE_TARGETS := $(addprefix clean-, $(foreach m, $(ALL_MODULES), \
 clean: $(CLEAN_DIR_TARGETS)
 	($(CD) $(OUTPUT_ROOT) && $(RM) -r build*.log*)
 	$(ECHO) Cleaned all build artifacts.
+
+clean-docs:
+	$(call CleanDocs)
 
 $(CLEAN_DIR_TARGETS):
 	$(call CleanDir,$(patsubst clean-%, %, $@))
@@ -911,7 +915,7 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_SUPPORT_DIR_TARGETS) \
+ALL_TARGETS += clean clean-docs dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_SUPPORT_DIR_TARGETS) \
     $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) $(CLEAN_MODULE_TARGETS) \
     $(CLEAN_MODULE_PHASE_TARGETS)
 
