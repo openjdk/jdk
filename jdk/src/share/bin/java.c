@@ -93,6 +93,7 @@ static int numOptions, maxOptions;
  * Prototypes for functions internal to launcher.
  */
 static void SetClassPath(const char *s);
+static void SetModulesBootClassPath(const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
 static jboolean ParseArguments(int *pargc, char ***pargv, char **pjarfile,
                                char **pclassname, int *pret, const char *jvmpath);
@@ -276,6 +277,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     if (!ParseArguments(&argc, &argv, &jarfile, &classname, &ret, jvmpath)) {
         return(ret);
     }
+
+    /* Set bootclasspath for modules */
+    SetModulesBootClassPath(jrepath);
 
     /* Override class path if -jar flag was specified */
     if (jarfile != 0) {
@@ -684,6 +688,44 @@ SetClassPath(const char *s)
     const char *orig = s;
     static const char format[] = "-Djava.class.path=%s";
     s = JLI_WildcardExpandClasspath(s);
+    def = JLI_MemAlloc(sizeof(format)
+                       - 2 /* strlen("%s") */
+                       + JLI_StrLen(s));
+    sprintf(def, format, s);
+    AddOption(def, NULL);
+    if (s != orig)
+        JLI_MemFree((char *) s);
+}
+
+/*
+ * Set the bootclasspath for modules.
+ * A temporary workaround until jigsaw is integrated into JDK 7.
+ */
+static void
+SetModulesBootClassPath(const char *jrepath)
+{
+    char *def, *s;
+    char pathname[MAXPATHLEN];
+    const char separator[] = { FILE_SEPARATOR, '\0' };
+    const char *orig = jrepath;
+    static const char format[] = "-Xbootclasspath/p:%s";
+    struct stat statbuf;
+
+    /* return if jre/lib/rt.jar exists */
+    sprintf(pathname, "%s%slib%srt.jar", jrepath, separator, separator);
+    if (stat(pathname, &statbuf) == 0) {
+        return;
+    }
+
+    /* return if jre/classes exists */
+    sprintf(pathname, "%s%sclasses", jrepath, separator);
+    if (stat(pathname, &statbuf) == 0) {
+        return;
+    }
+
+    /* modularized jre */
+    sprintf(pathname, "%s%slib%s*", jrepath, separator, separator);
+    s = (char *) JLI_WildcardExpandClasspath(pathname);
     def = JLI_MemAlloc(sizeof(format)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s));

@@ -38,6 +38,26 @@ public class BasicDouble
     extends Basic
 {
 
+    private static final double[] VALUES = {
+        Double.MIN_VALUE,
+        (double) -1,
+        (double) 0,
+        (double) 1,
+        Double.MAX_VALUE,
+
+
+
+
+
+
+
+        Double.NEGATIVE_INFINITY,
+        Double.POSITIVE_INFINITY,
+        Double.NaN,
+        (double) -0.0,
+
+    };
+
     private static void relGet(DoubleBuffer b) {
         int n = b.capacity();
         double v;
@@ -309,6 +329,12 @@ public class BasicDouble
 
 
 
+    private static void fail(String problem,
+                             DoubleBuffer xb, DoubleBuffer yb,
+                             double x, double y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicDouble
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (double x : VALUES) {
+            DoubleBuffer xb = DoubleBuffer.wrap(new double[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (double y : VALUES) {
+                DoubleBuffer yb = DoubleBuffer.wrap(new double[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Double.compare(x, y)) {
+
+
+
+
+                    if (x == 0.0 && y == 0.0) continue;
+
+                    fail("Incorrect results for DoubleBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for DoubleBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

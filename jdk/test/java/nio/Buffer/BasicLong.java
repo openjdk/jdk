@@ -38,6 +38,26 @@ public class BasicLong
     extends Basic
 {
 
+    private static final long[] VALUES = {
+        Long.MIN_VALUE,
+        (long) -1,
+        (long) 0,
+        (long) 1,
+        Long.MAX_VALUE,
+
+
+
+
+
+
+
+
+
+
+
+
+    };
+
     private static void relGet(LongBuffer b) {
         int n = b.capacity();
         long v;
@@ -309,6 +329,12 @@ public class BasicLong
 
 
 
+    private static void fail(String problem,
+                             LongBuffer xb, LongBuffer yb,
+                             long x, long y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicLong
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (long x : VALUES) {
+            LongBuffer xb = LongBuffer.wrap(new long[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (long y : VALUES) {
+                LongBuffer yb = LongBuffer.wrap(new long[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Long.compare(x, y)) {
+
+
+
+
+
+
+                    fail("Incorrect results for LongBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for LongBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

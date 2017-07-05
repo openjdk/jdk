@@ -95,18 +95,6 @@ Java_java_lang_StrictMath_cbrt(JNIEnv *env, jclass unused, jdouble d)
 }
 
 JNIEXPORT jdouble JNICALL
-Java_java_lang_StrictMath_ceil(JNIEnv *env, jclass unused, jdouble d)
-{
-    return (jdouble) jceil((double)d);
-}
-
-JNIEXPORT jdouble JNICALL
-Java_java_lang_StrictMath_floor(JNIEnv *env, jclass unused, jdouble d)
-{
-    return (jdouble) jfloor((double)d);
-}
-
-JNIEXPORT jdouble JNICALL
 Java_java_lang_StrictMath_atan2(JNIEnv *env, jclass unused, jdouble d1, jdouble d2)
 {
     return (jdouble) jatan2((double)d1, (double)d2);

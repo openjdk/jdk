@@ -642,37 +642,71 @@ public class BigIntegerTest {
 
         for(int i = 0; i < bitPatterns.length; i++) {
             BigInteger b1 = new BigInteger(bitPatterns[i], 16);
+            BigInteger b2 = null;
 
             File f = new File("serialtest");
             FileOutputStream fos = new FileOutputStream(f);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(b1);
-            oos.flush();
-            oos.close();
-            FileInputStream fis = new FileInputStream(f);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            BigInteger b2 = (BigInteger)ois.readObject();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                try {
+                    oos.writeObject(b1);
+                    oos.flush();
+                } finally {
+                    oos.close();
+                }
 
-            if (!b1.equals(b2) ||
-                !b1.equals(b1.or(b2))) {
-                failCount++;
-                System.err.println("Serialized failed for hex " +
-                                   b1.toString(16));
+                FileInputStream fis = new FileInputStream(f);
+                try {
+                    ObjectInputStream ois = new ObjectInputStream(fis);
+                    try {
+                        b2 = (BigInteger)ois.readObject();
+                    } finally {
+                        ois.close();
+                    }
+                } finally {
+                    fis.close();
+                }
+
+                if (!b1.equals(b2) ||
+                    !b1.equals(b1.or(b2))) {
+                    failCount++;
+                    System.err.println("Serialized failed for hex " +
+                                       b1.toString(16));
+                }
+            } finally {
+                fos.close();
             }
             f.delete();
         }
 
         for(int i=0; i<10; i++) {
             BigInteger b1 = fetchNumber(rnd.nextInt(100));
+            BigInteger b2 = null;
             File f = new File("serialtest");
             FileOutputStream fos = new FileOutputStream(f);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(b1);
-            oos.flush();
-            oos.close();
-            FileInputStream fis = new FileInputStream(f);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            BigInteger b2 = (BigInteger)ois.readObject();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                try {
+                    oos.writeObject(b1);
+                    oos.flush();
+                } finally {
+                    oos.close();
+                }
+
+                FileInputStream fis = new FileInputStream(f);
+                try {
+                    ObjectInputStream ois = new ObjectInputStream(fis);
+                    try {
+                        b2 = (BigInteger)ois.readObject();
+                    } finally {
+                        ois.close();
+                    }
+                } finally {
+                    fis.close();
+                }
+            } finally {
+                fos.close();
+            }
 
             if (!b1.equals(b2) ||
                 !b1.equals(b1.or(b2)))

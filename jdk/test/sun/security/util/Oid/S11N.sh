@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
 # have any questions.
 #
 # @test
-# @bug 4811968
-# @summary Serialization compatibility with old versions
+# @bug 4811968 6908628
+# @summary Serialization compatibility with old versions (and fix)
 # @author Weijun Wang
 #
 # set a few environment variables so that the shell-script can run stand-alone
@@ -99,7 +99,8 @@ esac
 
 # the test code
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}SerialTest.java || exit 10
+${TESTJAVA}${FS}bin${FS}javac -target 1.4 -source 1.4 \
+        -d . ${TESTSRC}${FS}SerialTest.java || exit 10
 
 OLDJAVA="
     /java/re/j2se/1.6.0/latest/binaries/${PF}
@@ -160,5 +161,11 @@ done
 rm -f tmp.oid.serial
 rm -f tmp.oid.serial.old
 rm -f SerialTest.class
+
+for oldj in ${OLDJAVA}; do
+    if [ ! -d ${oldj} ]; then
+        echo WARNING: ${oldj} is missing. Test incomplete! > /dev/stderr
+    fi
+done
 
 exit 0

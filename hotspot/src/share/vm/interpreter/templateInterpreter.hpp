@@ -110,14 +110,12 @@ class TemplateInterpreter: public AbstractInterpreter {
 #endif // !PRODUCT
   static EntryPoint _return_entry[number_of_return_entries];    // entry points to return to from a call
   static EntryPoint _earlyret_entry;                            // entry point to return early from a call
-  static EntryPoint _return_unbox_entry;                        // entry point to unbox a return value from a call
   static EntryPoint _deopt_entry[number_of_deopt_entries];      // entry points to return to from a deoptimization
   static EntryPoint _continuation_entry;
   static EntryPoint _safept_entry;
 
   static address    _return_3_addrs_by_index[number_of_return_addrs];     // for invokevirtual   return entries
   static address    _return_5_addrs_by_index[number_of_return_addrs];     // for invokeinterface return entries
-  static address    _return_5_unbox_addrs_by_index[number_of_return_addrs]; // for invokedynamic bootstrap methods
 
   static DispatchTable _active_table;                           // the active    dispatch table (used by the interpreter for dispatch)
   static DispatchTable _normal_table;                           // the normal    dispatch table (used to set the active table in normal mode)
@@ -159,12 +157,10 @@ class TemplateInterpreter: public AbstractInterpreter {
   // Support for invokes
   static address*   return_3_addrs_by_index_table()             { return _return_3_addrs_by_index; }
   static address*   return_5_addrs_by_index_table()             { return _return_5_addrs_by_index; }
-  static address*   return_5_unbox_addrs_by_index_table()       { return _return_5_unbox_addrs_by_index; }
   static int        TosState_as_index(TosState state);          // computes index into return_3_entry_by_index table
 
   static address    return_entry  (TosState state, int length);
   static address    deopt_entry   (TosState state, int length);
-  static address    return_unbox_entry(TosState state, int length);
 
   // Safepoint support
   static void       notice_safepoints();                        // stops the thread when reaching a safepoint

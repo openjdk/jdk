@@ -25,8 +25,11 @@
 # Rules to build signal interposition library, used by vm.make
 
 # libjsig[_g].so: signal interposition library
-JSIG = jsig$(G_SUFFIX)
+JSIG = jsig
 LIBJSIG = lib$(JSIG).so
+
+JSIG_G    = $(JSIG)$(G_SUFFIX)
+LIBJSIG_G = lib$(JSIG_G).so
 
 JSIGSRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/vm
 
@@ -50,6 +53,7 @@ $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) -o $@ $< -ldl
+	$(QUIETLY) [ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
 
 install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"

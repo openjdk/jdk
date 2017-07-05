@@ -109,7 +109,6 @@ dirtyCardQueue.cpp                      atomic.hpp
 dirtyCardQueue.cpp                      dirtyCardQueue.hpp
 dirtyCardQueue.cpp			heapRegionRemSet.hpp
 dirtyCardQueue.cpp                      mutexLocker.hpp
-dirtyCardQueue.cpp                      ptrQueue.inline.hpp
 dirtyCardQueue.cpp                      safepoint.hpp
 dirtyCardQueue.cpp                      thread.hpp
 dirtyCardQueue.cpp                      thread_<os_family>.inline.hpp
@@ -222,6 +221,15 @@ g1MarkSweep.hpp                         oop.hpp
 g1MarkSweep.hpp                         timer.hpp
 g1MarkSweep.hpp                         universe.hpp
 
+g1MemoryPool.cpp                        heapRegion.hpp
+g1MemoryPool.cpp                        g1CollectedHeap.inline.hpp
+g1MemoryPool.cpp                        g1CollectedHeap.hpp
+g1MemoryPool.cpp                        g1CollectorPolicy.hpp
+g1MemoryPool.cpp                        g1MemoryPool.hpp
+
+g1MemoryPool.hpp                        memoryUsage.hpp
+g1MemoryPool.hpp                        memoryPool.hpp
+
 g1OopClosures.inline.hpp		concurrentMark.hpp
 g1OopClosures.inline.hpp		g1OopClosures.hpp
 g1OopClosures.inline.hpp		g1CollectedHeap.hpp
@@ -303,12 +311,13 @@ heapRegionSeq.inline.hpp                heapRegionSeq.hpp
 
 klass.hpp				g1OopClosures.hpp
 
+memoryService.cpp                       g1MemoryPool.hpp
+
 ptrQueue.cpp                            allocation.hpp
 ptrQueue.cpp                            allocation.inline.hpp
 ptrQueue.cpp                            mutex.hpp
 ptrQueue.cpp                            mutexLocker.hpp
 ptrQueue.cpp                            ptrQueue.hpp
-ptrQueue.cpp                            ptrQueue.inline.hpp
 ptrQueue.cpp                            thread_<os_family>.inline.hpp
 
 ptrQueue.hpp                            allocation.hpp
@@ -318,7 +327,6 @@ ptrQueue.inline.hpp                     ptrQueue.hpp
 
 satbQueue.cpp                           allocation.inline.hpp
 satbQueue.cpp                           mutexLocker.hpp
-satbQueue.cpp                           ptrQueue.inline.hpp
 satbQueue.cpp                           satbQueue.hpp
 satbQueue.cpp                           sharedHeap.hpp
 satbQueue.cpp                           thread.hpp

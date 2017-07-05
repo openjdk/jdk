@@ -314,6 +314,20 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
       break;
     }
 
+   case Bytecodes::_invokedynamic: {
+      Thread *thread = Thread::current();
+      ResourceMark rm(thread);
+      methodHandle mh(thread, method);
+      type = Bytecode_invoke_at(mh, bci)->result_type(thread);
+      // since the cache entry might not be initialized:
+      // (NOT needed for the old calling convension)
+      if (!is_top_frame) {
+        int index = Bytes::get_native_u4(bcp+1);
+        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+      }
+      break;
+    }
+
     case Bytecodes::_ldc   :
       type = constant_pool_type( method, *(bcp+1) );
       break;

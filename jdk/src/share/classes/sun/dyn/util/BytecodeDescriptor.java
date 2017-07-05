@@ -33,9 +33,9 @@ import java.util.List;
  * Utility routines for dealing with bytecode-level signatures.
  * @author jrose
  */
-public class BytecodeSignature {
+public class BytecodeDescriptor {
 
-    private BytecodeSignature() { }  // cannot instantiate
+    private BytecodeDescriptor() { }  // cannot instantiate
 
     public static List<Class<?>> parseMethod(String bytecodeSignature, ClassLoader loader) {
         return parseMethod(bytecodeSignature, 0, bytecodeSignature.length(), loader);

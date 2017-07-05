@@ -57,6 +57,13 @@ class CallGenerator : public ResourceObj {
   // is_trap: Does not return to the caller.  (E.g., uncommon trap.)
   virtual bool      is_trap() const             { return false; }
 
+  // is_late_inline: supports conversion of call into an inline
+  virtual bool      is_late_inline() const      { return false; }
+  // Replace the call with an inline version of the code
+  virtual void do_late_inline() { ShouldNotReachHere(); }
+
+  virtual CallStaticJavaNode* call_node() const { ShouldNotReachHere(); return NULL; }
+
   // Note:  It is possible for a CG to be both inline and virtual.
   // (The hashCode intrinsic does a vtable check and an inlined fast path.)
 
@@ -92,8 +99,11 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_osr(ciMethod* m, int osr_bci);
 
   // How to generate vanilla out-of-line call sites:
-  static CallGenerator* for_direct_call(ciMethod* m);   // static, special
+  static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
+
+  // How to generate a replace a direct call with an inline version
+  static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);
 
   // How to make a call but defer the decision whether to inline or not.
   static CallGenerator* for_warm_call(WarmCallInfo* ci,

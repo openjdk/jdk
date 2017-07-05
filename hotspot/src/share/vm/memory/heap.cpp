@@ -464,7 +464,7 @@ void CodeHeap::verify() {
   }
 
   // Verify that freelist contains the right amount of free space
-  guarantee(len == _free_segments, "wrong freelist");
+  //  guarantee(len == _free_segments, "wrong freelist");
 
   // Verify that the number of free blocks is not out of hand.
   static int free_block_threshold = 10000;
@@ -479,5 +479,5 @@ void CodeHeap::verify() {
   for(HeapBlock *h = first_block(); h != NULL; h = next_block(h)) {
     if (h->free()) count--;
   }
-  guarantee(count == 0, "missing free blocks");
+  //  guarantee(count == 0, "missing free blocks");
 }

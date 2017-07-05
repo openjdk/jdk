@@ -25,7 +25,8 @@
 # Rules to build gamma launcher, used by vm.make
 
 # gamma[_g]: launcher
-LAUNCHER = gamma$(G_SUFFIX)
+LAUNCHER   = gamma
+LAUNCHER_G = $(LAUNCHER)$(G_SUFFIX)
 
 LAUNCHERDIR   = $(GAMMADIR)/src/os/$(Platform_os_family)/launcher
 LAUNCHERFLAGS = $(ARCHFLAG) \
@@ -88,5 +89,6 @@ $(LAUNCHER): $(LAUNCHER.o) $(LIBJVM) $(LAUNCHER_MAPFILE)
 	    $(LINK_LAUNCHER/PRE_HOOK) \
 	    $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(LAUNCHER.o) $(LIBS_LAUNCHER); \
 	    $(LINK_LAUNCHER/POST_HOOK) \
+	    [ -f $(LAUNCHER_G) ] || { ln -s $@ $(LAUNCHER_G); }; \
 	    ;; \
 	esac
