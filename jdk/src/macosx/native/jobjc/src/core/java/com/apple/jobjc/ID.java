@@ -29,6 +29,10 @@ import java.lang.reflect.Constructor;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ID extends Pointer<Void>{
     static native String getNativeDescription(final long objPtr);
 

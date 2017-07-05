@@ -32,6 +32,10 @@ default: all
 
 include Tools.gmk
 
+#
+# This makefile...so that altering will trigger rebuilding include/exclude-lists => jars
+#
+MAKEFILE=$(JDK_TOPDIR)/makefiles/CreateJars.gmk
 
 MAINMANIFEST := $(JDK_TOPDIR)/make/tools/manifest.mf
 BEANMANIFEST := $(JDK_TOPDIR)/make/javax/swing/beaninfo/manifest
@@ -46,7 +50,7 @@ JCONSOLE_JAR_DEPS := \
 
 $(eval $(call SetupArchive,BUILD_JCONSOLE_JAR,$(JCONSOLE_JAR_DEPS),\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
-		SUFFIXES:=.class .gif .png,\
+		SUFFIXES:=.class .gif .png .properties,\
 		INCLUDES:=sun/tools/jconsole com/sun/tools/jconsole,\
 		JARMAIN:=sun.tools.jconsole.JConsole,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/jconsole.jar,\
@@ -242,12 +246,35 @@ RT_JAR_EXCLUDES := \
 	sun/swing/BeanInfoUtils.class \
 	$(LOCALEDATA_INCLUDES)
 
-ifndef OPENJDK
-ifndef JAVASE_EMBEDDED
+# These files should never be put into rt.jar
+# but due to a misstake...some are put there if embedded
+#
+ifneq ($(JAVASE_EMBEDDED), true)
+# normal (correct) case
 RT_JAR_EXCLUDES += \
 	com/oracle/jrockit/jfr \
 	oracle/jrockit/jfr
+else
+# embedded (broken) case
+RT_JAR_EXCLUDES += \
+  oracle/jrockit/jfr/parser \
+  oracle/jrockit/jfr/tools \
+  oracle/jrockit/jfr/NativeOptions.class \
+  oracle/jrockit/jfr/RepositoryChunkHandler.class
 endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+        RT_JAR_EXCLUDES += com/sun/nio/sctp \
+                           sun/nio/ch/sctp \
+                           sun/jdbc \
+                           sun/nio/ch/DevPollArrayWrapper\$$$$Updator.class \
+                           sun/nio/ch/DevPollArrayWrapper.class \
+                           sun/nio/ch/DevPollSelectorImpl.class \
+                           sun/nio/ch/DevPollSelectorProvider.class \
+                           sun/nio/ch/EPollArrayWrapper\$$$$Updator.class \
+                           sun/nio/ch/EPollArrayWrapper.class \
+                           sun/nio/ch/EPollSelectorImpl.class \
+                           sun/nio/ch/EPollSelectorProvider.class
 endif
 
 # Find all files in the classes dir to use as dependencies. This could be more fine granular.
@@ -271,12 +298,19 @@ $(RESOURCE_JAR_MANIFEST_FILE): $(MAINMANIFEST)
 	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
 	       $(MAINMANIFEST) >> $@
 
-$(JDK_OUTPUTDIR)/lib/_the.jars.exclude:
+$(JDK_OUTPUTDIR)/lib/_the.jars.exclude: $(MAKEFILE)
 	$(MKDIR) -p $(@D)
 	$(call ListPathsSafely,RT_JAR_EXCLUDES,\n, >> $@)
 
+$(JDK_OUTPUTDIR)/lib/classlist : $(JDK_TOPDIR)/make/tools/sharing/classlist.$(OPENJDK_TARGET_OS) \
+  $(MAKEFILE)
+	$(MKDIR) -p $(@D)
+	$(RM) -f $@.temp
+	$(TOOL_ADDJSUM) $< $@.temp
+	$(MV) $@.temp $@
+
 $(JDK_OUTPUTDIR)/lib/_the.jars.contents: $(BUILD_TOOLS) $(JDK_OUTPUTDIR)/lib/_the.jars.exclude \
-					 $(ALL_FILES_IN_CLASSES)
+					 $(ALL_FILES_IN_CLASSES) $(JDK_OUTPUTDIR)/lib/classlist
 	$(MKDIR) -p $(@D)
 	$(RM) $@.temp
 	($(CD) $(JDK_OUTPUTDIR)/classes && \
@@ -290,17 +324,22 @@ $(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents: $(JDK_OUTPUTDIR)/lib/_the.jars.conten
 $(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents: $(JDK_OUTPUTDIR)/lib/_the.jars.contents
 	$(GREP) -v -e '\.class$$' -e '/_the\.*' -e '^_the\.*' $(JDK_OUTPUTDIR)/lib/_the.jars.contents > $@
 
+RT_JAR_CREATE_OPTIONS := c0fm
+ifeq ($(COMPRESS_JARS), true)
+    RT_JAR_CREATE_OPTIONS := cfm
+endif
+
 $(JDK_OUTPUTDIR)/lib/rt.jar: $(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents $(RT_JAR_MANIFEST_FILE)
 	$(ECHO) Creating rt.jar
 	$(CD) $(JDK_OUTPUTDIR)/classes && \
-	    $(JAR) cfm $@ $(RT_JAR_MANIFEST_FILE) \
+	    $(JAR) $(RT_JAR_CREATE_OPTIONS) $@ $(RT_JAR_MANIFEST_FILE) \
 	        @$(JDK_OUTPUTDIR)/lib/_the.rt.jar.contents
 
 $(JDK_OUTPUTDIR)/lib/resources.jar: $(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents \
 				    $(RESOURCE_JAR_MANIFEST_FILE)
 	$(ECHO) Creating resources.jar
 	$(CD) $(JDK_OUTPUTDIR)/classes && \
-	    $(JAR) cfm $@ $(RESOURCE_JAR_MANIFEST_FILE) \
+	    $(JAR) $(RT_JAR_CREATE_OPTIONS) $@ $(RESOURCE_JAR_MANIFEST_FILE) \
 	        @$(JDK_OUTPUTDIR)/lib/_the.resources.jar.contents
 
 JARS+=$(JDK_OUTPUTDIR)/lib/rt.jar $(JDK_OUTPUTDIR)/lib/resources.jar
@@ -309,7 +348,7 @@ JARS+=$(JDK_OUTPUTDIR)/lib/rt.jar $(JDK_OUTPUTDIR)/lib/resources.jar
 
 CHARSETS_JAR_DEPS :=
 
-ifneq ($(HOST_OS), windows)
+ifneq ($(OPENJDK_TARGET_OS), windows)
     CHARSETS_EXTRA_FILES:=sun/awt/motif/X11GBK.class \
                           sun/awt/motif/X11GB2312\$$$$Decoder.class \
                           sun/awt/motif/X11GB2312.class \
@@ -328,20 +367,22 @@ $(eval $(call SetupArchive,BUILD_CHARSETS_JAR,$(CHARSETS_JAR_DEPS),\
 			       $(CHARSETS_EXTRA_FILES) \
                                META-INF/services/java.nio.charset.spi.CharsetProvider, \
 		JAR:=$(JDK_OUTPUTDIR)/lib/charsets.jar, \
-		SKIP_METAINF := true))
+		SKIP_METAINF := true, \
+                CHECK_COMPRESS_JAR:=true))
 
 JARS+=$(JDK_OUTPUTDIR)/lib/charsets.jar
 
 ##########################################################################################
 
-ifndef OPENJDK
+ifeq ($(ENABLE_JFR), true)
     $(eval $(call SetupArchive,BUILD_JFR_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
 		INCLUDES:=com/oracle/jrockit/jfr \
 			  oracle/jrockit/jfr,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/jfr.jar,\
 		SKIP_METAINF:=true,\
-		MANIFEST:=$(MAINMANIFEST)))
+		MANIFEST:=$(MAINMANIFEST), \
+                CHECK_COMPRESS_JAR:=true))
 
     JARS+=$(JDK_OUTPUTDIR)/lib/jfr.jar
 endif
@@ -356,13 +397,14 @@ $(eval $(call SetupArchive,BUILD_JSSE_JAR,,\
 			  com/sun/net/ssl/internal/ssl,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/jsse.jar,\
 		SKIP_METAINF:=true,\
-		MANIFEST:=$(MAINMANIFEST)))
+		MANIFEST:=$(MAINMANIFEST), \
+                CHECK_COMPRESS_JAR:=true))
 
 JARS+=$(JDK_OUTPUTDIR)/lib/jsse.jar
 
 ##########################################################################################
 
-ifneq ($(PLATFORM)-$(ARCH_DATA_MODEL),windows-64)
+ifneq ($(OPENJDK_TARGET_OS)-$(ARCH_DATA_MODEL),windows-64)
     SUNPKCS11_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 
     ifndef OPENJDK
@@ -544,7 +586,7 @@ endif
 
 ##########################################################################################
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(OPENJDK_TARGET_OS),windows)
 
 SUNMSCAPI_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunmscapi.jar
 
@@ -574,7 +616,7 @@ endif
 
 ##########################################################################################
 
-ifeq ($(PLATFORM),solaris)
+ifeq ($(OPENJDK_TARGET_OS),solaris)
 ifndef OPENJDK
 
 UCRYPTO_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/ucrypto.jar
@@ -661,7 +703,8 @@ $(eval $(call SetupArchive,BUILD_TOOLS_JAR,$(TOOLS_JAR_DEPS),\
 			     META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
 			     META-INF/services/com.sun.tools.internal.xjc.Plugin,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/tools.jar,\
-		SKIP_METAINF:=true))
+		SKIP_METAINF:=true, \
+                CHECK_COMPRESS_JAR:=true))
 
 JARS+=$(JDK_OUTPUTDIR)/lib/tools.jar
 
@@ -696,6 +739,7 @@ EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
                         com.oracle.nio
 
 $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(JDK_OUTPUTDIR)/lib/rt.jar
+	$(RM) -rf $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
 	$(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols/META-INF/sym
 	$(JAVA) \
 		-Xbootclasspath/a:$(JDK_OUTPUTDIR)/classes \
@@ -711,7 +755,8 @@ MAKE_SURE_DIR_EXISTS_DUMMY := $(shell $(MKDIR) -p $(IMAGES_OUTPUTDIR)/symbols)
 $(eval $(call SetupArchive,BUILD_CT_SYM,$(IMAGES_OUTPUTDIR)/symbols/_the.symbols,\
 		SRCS:=$(IMAGES_OUTPUTDIR)/symbols,\
 		INCLUDES:=META-INF/sym,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/ct.sym))
+		JAR:=$(JDK_OUTPUTDIR)/lib/ct.sym, \
+		CHECK_COMPRESS_JAR:=true))
 
 JARS+=$(JDK_OUTPUTDIR)/lib/ct.sym
 
@@ -765,7 +810,7 @@ SRC_ZIP_INCLUDES = \
 	org/xml/sax			\
 	sunw
 
-SRC_ZIP_SRCS = $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes
+SRC_ZIP_SRCS = $(JDK_TOPDIR)/src/share/classes $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/gensrc
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/impsrc
 SRC_ZIP_SRCS += $(JDK_OUTPUTDIR)/gendocsrc_rmic
@@ -776,16 +821,16 @@ endif
 # Need to copy launcher src files into desired directory structure
 # before zipping the sources.
 LAUNCHER_SRC_FILES := $(wildcard $(JDK_TOPDIR)/src/share/bin/*) \
-                      $(wildcard $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin/java_md*)
+                      $(wildcard $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin/java_md*)
 LAUNCHER_ZIP_SRC := $(patsubst $(JDK_TOPDIR)/src/share/bin/%,$(IMAGES_OUTPUTDIR)/src/launcher/%,\
-		    $(patsubst $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin/%,$(IMAGES_OUTPUTDIR)/src/launcher/%,\
+		    $(patsubst $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin/%,$(IMAGES_OUTPUTDIR)/src/launcher/%,\
 			$(LAUNCHER_SRC_FILES)))
 
 $(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/share/bin/%
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 
-$(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/bin/%
+$(IMAGES_OUTPUTDIR)/src/launcher/%: $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/bin/%
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@
 

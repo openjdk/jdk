@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -955,7 +955,11 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_UNIXProcess_destroyProcess(JNIEnv *env, jobject junk, jint pid)
+Java_java_lang_UNIXProcess_destroyProcess(JNIEnv *env,
+                                          jobject junk,
+                                          jint pid,
+                                          jboolean force)
 {
-    kill(pid, SIGTERM);
+    int sig = (force == JNI_TRUE) ? SIGKILL : SIGTERM;
+    kill(pid, sig);
 }

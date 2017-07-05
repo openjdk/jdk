@@ -140,8 +140,16 @@
     <!-- Compile PrimitiveCoder first to work around javac bug. -->
     <javac srcdir="${core.src}" destdir="${core.bin}" source="1.5" target="1.5" debug="${compile.debug}"
            includes="**/PrimitiveCoder.java"
-           includeantruntime="false" />
-    <javac srcdir="${core.src}" destdir="${core.bin}" source="1.5" target="1.5" debug="${compile.debug}" includeantruntime="false" />
+           includeantruntime="false">
+      <classpath>
+        <path location="${obj}/../langtools/dist/lib/classes.jar"/>
+      </classpath>
+    </javac>
+    <javac srcdir="${core.src}" destdir="${core.bin}" source="1.5" target="1.5" debug="${compile.debug}" includeantruntime="false">
+      <classpath>
+        <path location="${obj}/../langtools/dist/lib/classes.jar"/>
+      </classpath>
+    </javac>
 
     <exec executable="/usr/bin/perl" outputproperty="core.classes" failonerror="true">
       <arg value="${src}/extract_classes.pl"/>

@@ -23,11 +23,13 @@
 # questions.
 #
 
-function prepare_help_system {
+AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
+[
     AC_CHECK_PROGS(PKGHANDLER, apt-get yum port pkgutil pkgadd)
-}
-	
-function help_on_build_dependency {
+])
+
+AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
+[
     # Print a helpful message on how to acquire the necessary build dependency.
     # $1 is the help tag: freetyp2, cups, pulse, alsa etc
     MISSING_DEPENDENCY=$1
@@ -51,9 +53,9 @@ function help_on_build_dependency {
     if test "x$PKGHANDLER_COMMAND" != x; then
         HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
     fi
-}
+])
 
-function apt_help {
+apt_help() {
     case $1 in
     devkit)
         PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
@@ -76,7 +78,7 @@ function apt_help {
     esac
 }
 
-function yum_help {
+yum_help() {
     case $1 in
     devkit)
         PKGHANDLER_COMMAND="sudo yum groupinstall \"Development Tools\"" ;;
@@ -99,14 +101,97 @@ function yum_help {
     esac
 }
 
-function port_help {
+port_help() {
     PKGHANDLER_COMMAND=""
 }
 
-function pkgutil_help {
+pkgutil_help() {
     PKGHANDLER_COMMAND=""
 }
 
-function pkgadd_help {
+pkgadd_help() {
     PKGHANDLER_COMMAND=""
 }
+
+AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
+[
+# Finally output some useful information to the user
+
+if test "x$CCACHE_FOUND" != x; then
+	if  test "x$HAS_GOOD_CCACHE" = x; then
+		CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
+		CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
+	else
+		CCACHE_STATUS="installed and in use"
+	fi
+else
+	if test "x$GCC" = xyes; then
+		CCACHE_STATUS="not installed (consider installing)"
+		CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
+	else
+		CCACHE_STATUS="not available for your system"
+	fi
+fi
+
+printf "\n"
+printf "====================================================\n"
+printf "A new configuration has been successfully created in\n"
+printf "$OUTPUT_ROOT\n"
+if test "x$CONFIGURE_COMMAND_LINE" != x; then
+	printf "using configure arguments '$CONFIGURE_COMMAND_LINE'.\n"
+else
+	printf "using default settings.\n"
+fi
+
+printf "\n"
+printf "Configuration summary:\n"
+printf "* Debug level:    $DEBUG_LEVEL\n"
+printf "* JDK variant:    $JDK_VARIANT\n"
+printf "* JVM variants:   $with_jvm_variants\n"
+printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
+printf "* Boot JDK:       $BOOT_JDK\n"
+
+printf "\n"
+printf "Build performance summary:\n"
+printf "* Cores to use:   $NUM_CORES\n"
+printf "* Memory limit:   $MEMORY_SIZE MB\n"
+printf "* ccache status:  $CCACHE_STATUS\n"
+printf "\n"
+
+if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; then
+	printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
+	printf "$CCACHE_HELP_MSG\n"
+	HELP_MSG_MISSING_DEPENDENCY([ccache])
+	printf "$HELP_MSG\n"
+	printf "\n"
+fi
+
+if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
+	printf "NOTE: You have requested to build more than one version of the JVM, which\n"
+	printf "will result in longer build times.\n"
+	printf "\n"
+fi
+
+if test "x$FOUND_ALT_VARIABLES" != "x"; then
+	printf "WARNING: You have old-style ALT_ environment variables set.\n"
+	printf "These are not respected, and will be ignored. It is recommended\n"
+	printf "that you clean your environment. The following variables are set:\n"
+	printf "$FOUND_ALT_VARIABLES\n"
+	printf "\n"
+fi
+
+if test "x$OUTPUT_DIR_IS_LOCAL" != "xyes"; then
+	printf "WARNING: Your build output directory is not on a local disk.\n"
+	printf "This will severely degrade build performance!\n"
+	printf "It is recommended that you create an output directory on a local disk,\n"
+	printf "and run the configure script again from that directory.\n"
+	printf "\n"
+fi
+
+if test "x$IS_RECONFIGURE" = "xyes"; then
+	printf "WARNING: The result of this configuration has overridden an older\n"
+	printf "configuration. You *should* run 'make clean' to make sure you get a\n"
+	printf "proper build. Failure to do so might result in strange build problems.\n"
+	printf "\n"
+fi
+])

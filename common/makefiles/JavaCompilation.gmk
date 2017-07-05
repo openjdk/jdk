@@ -94,6 +94,7 @@ define SetupJavaCompiler
     $(if $7,$1_$(strip $7))
     $(if $8,$1_$(strip $8))
     $(if $9,$1_$(strip $9))
+    $(if $(10),$(error Internal makefile error: Too many arguments to SetupJavaCompiler, please update JavaCompilation.gmk))
 
     ifeq ($$($1_MODE),MULTI_CORE_CONCURRENT)
 	ifneq (,$$($1_SERVER_DIR))
@@ -130,6 +131,7 @@ define SetupArchive
     #    SKIP_METAINF:=Set to prevent contents of an META-INF directory to be automatically 
     #                  added to the archive.
     #    EXTRA_MANIFEST_ATTR:=Extra attribute to add to manifest.
+    #    CHECK_COMPRESS_JAR Check the COMPRESS_JAR variable
     $(if $3,$1_$(strip $3))
     $(if $4,$1_$(strip $4))
     $(if $5,$1_$(strip $5))
@@ -143,6 +145,7 @@ define SetupArchive
     $(if $(13),$1_$(strip $(13)))
     $(if $(14),$1_$(strip $(14)))
     $(if $(15),$1_$(strip $(15)))
+    $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
 
     $1_JARMAIN:=$(strip $$($1_JARMAIN))
     $1_JARNAME:=$$(notdir $$($1_JAR))
@@ -243,6 +246,16 @@ define SetupArchive
                     ($(FIND) $$(src) -name _the.package -exec $(TOUCH) -r $$($1_JAR) \{\} \; ; true) &&)
     # Use a slightly shorter name for logging, but with enough path to identify this jar.
     $1_NAME:=$$(subst $$(OUTPUT_ROOT)/,,$$($1_JAR))
+
+    ifneq (,$$($1_CHECK_COMPRESS_JAR))
+        $1_JAR_CREATE_OPTIONS := c0fm
+        ifeq ($(COMPRESS_JARS), true)
+            $1_JAR_CREATE_OPTIONS := cfm
+        endif
+    else
+        $1_JAR_CREATE_OPTIONS := cfm
+    endif
+
     # Here is the rule that creates/updates the jar file.
     $$($1_JAR) : $2 $$($1_ALL_SRC)
 	$(MKDIR) -p $$($1_BIN)
@@ -283,7 +296,7 @@ define SetupArchive
 			$$(foreach src,$$($1_SRCS),($(FIND) $$(src) -name _the.package.api.notify $(FIND_DELETE); true) &&) true ; \
 		fi ; \
 	else \
-		$(ECHO) Creating $$($1_NAME) && $(JAR) cfm $$@ $$($1_MANIFEST_FILE) && \
+		$(ECHO) Creating $$($1_NAME) && $(JAR) $$($1_JAR_CREATE_OPTIONS) $$@ $$($1_MANIFEST_FILE) && \
 	        $$($1_SCAPTURE_CONTENTS) \
 		$$($1_SCAPTURE_METAINF) \
 		$$($1_SUPDATE_CONTENTS) \
@@ -311,6 +324,7 @@ define SetupZipArchive
     $(if $7,$1_$(strip $7))
     $(if $8,$1_$(strip $8))
     $(if $9,$1_$(strip $9))
+    $(if $(10),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
 
     # Find all files in the source tree.
     $1_SUFFIX_FILTER := $$(patsubst %,-o -name $(DQUOTE)*%$(DQUOTE),$$($1_SUFFIXES))
@@ -648,6 +662,7 @@ define SetupJavaCompilation
     $(if $(12),$1_$(strip $(12)))
     $(if $(13),$1_$(strip $(13)))
     $(if $(14),$1_$(strip $(14)))
+    $(if $(15),$(error Internal makefile error: Too many arguments to SetupJavaCompilation, please update JavaCompilation.gmk))
 
 # Extract the info from the java compiler setup.
 $1_MODE := $$($$($1_SETUP)_MODE)
@@ -687,6 +702,12 @@ $1_BINS     := $$(shell $(FIND) $$($1_BIN) -name "*.class")
 
 # Now we have a list of all java files to compile: $$($1_SRCS)
 # and we have a list of all existing class files: $$($1_BINS)
+
+# Create the corresponding smart javac wrapper command line.
+$1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix .*,$$(subst /,.,$$($1_EXCLUDES)))) \
+$$(addprefix -i ,$$(addsuffix .*,$$(subst /,.,$$($1_INCLUDES)))) \
+$$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
+$$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) -src $$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))
 
 # Prepend the source/bin path to the filter expressions.
 ifneq ($$($1_INCLUDES),)
@@ -799,6 +820,12 @@ ifeq ($$($1_MODE),SINGLE_THREADED_BATCH)
 	$(RM) $$($1_BIN)/_the.batch $$($1_BIN)/_the.batch.tmp
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.batch.tmp)
 	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files in batch $1
+ifeq ($$($1_NOSJAVAC),)
+ifeq ($$(ENABLE_SJAVAC),yes)
+	mkdir -p $$($1_BIN)_sjavac
+	$$($1_JVM) $$(word 1,$$($1_JAVAC)) com.sun.tools.javac.smart.Main $$($1_SJAVAC_ARGS) -mfl $$($1_BIN)/_the.batch.tmp -d $$($1_BIN)_sjavac
+endif
+endif
 	($$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) -implicit:none -sourcepath "$$($1_SRCROOTSC)" -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.batch.tmp && \
          $(MV) $$($1_BIN)/_the.batch.tmp $$($1_BIN)/_the.batch)
 else
@@ -890,5 +917,3 @@ ifneq (,$$($1_SRCZIP))
 endif
 
 endef
-
-
