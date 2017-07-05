@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class TestCurves extends PKCS11Test {
             kp2 = kpg.generateKeyPair();
 
             testSigning(p, "SHA1withECDSA", data, kp1, kp2);
+            testSigning(p, "SHA224withECDSA", data, kp1, kp2);
             testSigning(p, "SHA256withECDSA", data, kp1, kp2);
             testSigning(p, "SHA384withECDSA", data, kp1, kp2);
             testSigning(p, "SHA512withECDSA", data, kp1, kp2);

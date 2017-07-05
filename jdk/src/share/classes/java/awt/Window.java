@@ -506,7 +506,7 @@ public class Window extends Container implements Accessible {
 
         modalExclusionType = Dialog.ModalExclusionType.NO_EXCLUDE;
 
-        SunToolkit.checkAndSetPolicy(this, false);
+        SunToolkit.checkAndSetPolicy(this);
     }
 
     /**
@@ -2568,7 +2568,7 @@ public class Window extends Container implements Accessible {
                     }
                 }
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                clearGlobalFocusOwner();
+                clearGlobalFocusOwnerPriv();
         }
     }
 

@@ -60,9 +60,12 @@ public class NoConsoleOutput {
             File.separatorChar + "logging.properties";
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        // We instantiate a JavaVM that should not produce any console output
+        // (neither on standard output, nor on standard err streams).
         JavaVM vm = new JavaVM(DoRMIStuff.class.getName(),
             "-Djava.util.logging.config.file=" + loggingPropertiesFile,
-                               "", out, err);
+                               "", out, err, false);
         vm.start();
         vm.getVM().waitFor();
 

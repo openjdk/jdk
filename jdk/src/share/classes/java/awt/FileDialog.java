@@ -147,8 +147,8 @@ public class FileDialog extends Dialog {
     static {
         AWTAccessor.setFileDialogAccessor(
             new AWTAccessor.FileDialogAccessor() {
-                public void setFiles(FileDialog fileDialog, String directory, String files[]) {
-                    fileDialog.setFiles(directory, files);
+                public void setFiles(FileDialog fileDialog, File files[]) {
+                    fileDialog.setFiles(files);
                 }
                 public void setFile(FileDialog fileDialog, String file) {
                     fileDialog.file = ("".equals(file)) ? null : file;
@@ -446,13 +446,9 @@ public class FileDialog extends Dialog {
      * @see #getFiles
      * @since 1.7
      */
-    private void setFiles(String directory, String files[]) {
+    private void setFiles(File files[]) {
         synchronized (getObjectLock()) {
-            int filesNumber = (files != null) ? files.length : 0;
-            this.files = new File[filesNumber];
-            for (int i = 0; i < filesNumber; i++) {
-                this.files[i] = new File(directory, files[i]);
-            }
+            this.files = files;
         }
     }
 
