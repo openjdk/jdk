@@ -1911,15 +1911,9 @@
           <Elem>IDE_ALT_BOOTDIR</Elem>
         </envVariables>
         <transientMacros>
-          <Elem>FULL_VERSION="version"</Elem>
           <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
           <Elem>HOTSPOT_BUILD_USER="user"</Elem>
           <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
-          <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-          <Elem>JDK_MAJOR_VERSION="version"</Elem>
-          <Elem>JDK_MICRO_VERSION="version"</Elem>
-          <Elem>JDK_MINOR_VERSION="minor"</Elem>
-          <Elem>JRE_RELEASE_VERSION="version"</Elem>
         </transientMacros>
       </codeAssistance>
       <makefileType>
@@ -4534,7 +4528,6 @@
             flavor2="0">
         <ccTool>
           <preprocessorList>
-            <Elem>JRE_RELEASE_VERSION="version"</Elem>
           </preprocessorList>
         </ccTool>
       </item>
@@ -4857,15 +4850,12 @@
           <preprocessorList>
             <Elem>AMD64</Elem>
             <Elem>ARCH="amd64"</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>GAMMA</Elem>
             <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
             <Elem>HOTSPOT_BUILD_USER="user"</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
             <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
             <Elem>HOTSPOT_VM_DISTRO="OpenJDK"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_TYPE="gamma"</Elem>
             <Elem>LINK_INTO_LIBJVM</Elem>
             <Elem>PRODUCT</Elem>
@@ -5346,10 +5336,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -5399,10 +5385,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Finalizer.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -5429,10 +5411,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Array.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -5488,10 +5466,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Bits.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -5525,10 +5499,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="AccessController.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -5569,10 +5539,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -6141,10 +6107,6 @@
           <preprocessorList>
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LINUX</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -6198,10 +6160,6 @@
           <preprocessorList>
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LINUX</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -6577,10 +6535,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jdk_util_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -6623,10 +6577,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -6652,10 +6602,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ProcessEnvironment_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -6711,10 +6657,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="FileSystemPreferences.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -7037,10 +6979,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="HostLocaleProviderAdapter_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -7135,15 +7073,9 @@
           <Elem>IDE_ALT_BOOTDIR</Elem>
         </envVariables>
         <transientMacros>
-          <Elem>FULL_VERSION="version"</Elem>
           <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
           <Elem>HOTSPOT_BUILD_USER="user"</Elem>
           <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
-          <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-          <Elem>JDK_MAJOR_VERSION="version"</Elem>
-          <Elem>JDK_MICRO_VERSION="version"</Elem>
-          <Elem>JDK_MINOR_VERSION="minor"</Elem>
-          <Elem>JRE_RELEASE_VERSION="version"</Elem>
         </transientMacros>
       </codeAssistance>
       <makefileType>
@@ -9822,7 +9754,6 @@
             flavor2="0">
         <ccTool>
           <preprocessorList>
-            <Elem>JRE_RELEASE_VERSION="version"</Elem>
           </preprocessorList>
         </ccTool>
       </item>
@@ -10483,10 +10414,7 @@
           </incDir>
           <preprocessorList>
             <Elem>EXPAND_CLASSPATH_WILDCARDS</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>JAVA_ARGS={ "-J-ms8m", "com.sun.tools.javac.Main", }</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_NAME="openjdk"</Elem>
             <Elem>NEVER_ACT_AS_SERVER_CLASS_MACHINE</Elem>
             <Elem>PROGNAME="javac"</Elem>
@@ -11349,10 +11277,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="check_version.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11382,10 +11306,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jdk_util.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11415,10 +11335,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jio.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11448,10 +11364,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jni_util.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11481,10 +11393,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="verify_stub.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11569,10 +11477,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Class.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11602,10 +11506,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ClassLoader.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11635,10 +11535,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Compiler.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11668,10 +11564,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Double.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11701,10 +11593,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Float.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11734,10 +11622,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Object.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11767,10 +11651,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Package.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11800,10 +11680,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ResourceBundle.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11833,10 +11709,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Runtime.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11866,10 +11738,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="SecurityManager.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11899,10 +11767,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Shutdown.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11932,10 +11796,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="StrictMath.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11965,10 +11825,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="String.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -11998,10 +11854,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="System.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -12031,10 +11883,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Thread.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -12064,10 +11912,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Throwable.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -12804,10 +12648,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="TimeZone.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -20853,15 +20693,12 @@
           <preprocessorList>
             <Elem>AMD64</Elem>
             <Elem>ARCH="amd64"</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>GAMMA</Elem>
             <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
             <Elem>HOTSPOT_BUILD_USER="user"</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
             <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
             <Elem>HOTSPOT_VM_DISTRO="OpenJDK"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_TYPE="gamma"</Elem>
             <Elem>LINK_INTO_LIBJVM</Elem>
             <Elem>LINUX</Elem>
@@ -20919,15 +20756,12 @@
           <preprocessorList>
             <Elem>AMD64</Elem>
             <Elem>ARCH="amd64"</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>GAMMA</Elem>
             <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
             <Elem>HOTSPOT_BUILD_USER="user"</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
             <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
             <Elem>HOTSPOT_VM_DISTRO="OpenJDK"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_TYPE="gamma"</Elem>
             <Elem>LINK_INTO_LIBJVM</Elem>
             <Elem>LINUX</Elem>
@@ -21824,10 +21658,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -21877,10 +21707,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Finalizer.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -21907,10 +21733,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Array.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -21966,10 +21788,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Bits.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -22003,10 +21821,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="AccessController.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -22047,10 +21861,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -22619,10 +22429,6 @@
           <preprocessorList>
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LINUX</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -22676,10 +22482,6 @@
           <preprocessorList>
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LINUX</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -23055,10 +22857,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jdk_util_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -23101,10 +22899,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -23130,10 +22924,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ProcessEnvironment_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -23189,10 +22979,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="FileSystemPreferences.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -23515,10 +23301,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="HostLocaleProviderAdapter_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -23613,15 +23395,9 @@
           <Elem>IDE_ALT_BOOTDIR</Elem>
         </envVariables>
         <transientMacros>
-          <Elem>FULL_VERSION="version"</Elem>
           <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
           <Elem>HOTSPOT_BUILD_USER="user"</Elem>
           <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
-          <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-          <Elem>JDK_MAJOR_VERSION="version"</Elem>
-          <Elem>JDK_MICRO_VERSION="version"</Elem>
-          <Elem>JDK_MINOR_VERSION="minor"</Elem>
-          <Elem>JRE_RELEASE_VERSION="version"</Elem>
         </transientMacros>
       </codeAssistance>
       <makefileType>
@@ -27454,7 +27230,6 @@
             flavor2="0">
         <ccTool>
           <preprocessorList>
-            <Elem>JRE_RELEASE_VERSION="version"</Elem>
           </preprocessorList>
         </ccTool>
       </item>
@@ -28130,11 +27905,8 @@
           </incDir>
           <preprocessorList>
             <Elem>EXPAND_CLASSPATH_WILDCARDS</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>HAVE_GETHRTIME</Elem>
             <Elem>JAVA_ARGS={ "-J-ms8m", "com.sun.tools.javac.Main", }</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_NAME="openjdk"</Elem>
             <Elem>NEVER_ACT_AS_SERVER_CLASS_MACHINE</Elem>
             <Elem>PROGNAME="javac"</Elem>
@@ -28961,10 +28733,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="check_version.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -28994,10 +28762,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jdk_util.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29027,10 +28791,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jio.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29060,10 +28820,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="jni_util.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29093,10 +28849,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="verify_stub.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29181,10 +28933,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Class.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29214,10 +28962,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ClassLoader.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29247,10 +28991,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Compiler.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29280,10 +29020,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Double.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29313,10 +29049,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Float.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29346,10 +29078,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Object.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29379,10 +29107,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Package.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29412,10 +29136,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ResourceBundle.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29445,10 +29165,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Runtime.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29478,10 +29194,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="SecurityManager.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29511,10 +29223,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Shutdown.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29544,10 +29252,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="StrictMath.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29577,10 +29281,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="String.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29610,10 +29310,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="System.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29643,10 +29339,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Thread.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -29676,10 +29368,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Throwable.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -30416,10 +30104,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="TimeZone.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -38550,15 +38234,12 @@
           <preprocessorList>
             <Elem>AMD64</Elem>
             <Elem>ARCH="amd64"</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>GAMMA</Elem>
             <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
             <Elem>HOTSPOT_BUILD_USER="user"</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
             <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
             <Elem>HOTSPOT_VM_DISTRO="OpenJDK"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_TYPE="gamma"</Elem>
             <Elem>LINK_INTO_LIBJVM</Elem>
             <Elem>PRODUCT</Elem>
@@ -38723,15 +38404,12 @@
           <preprocessorList>
             <Elem>AMD64</Elem>
             <Elem>ARCH="amd64"</Elem>
-            <Elem>FULL_VERSION="version"</Elem>
             <Elem>GAMMA</Elem>
             <Elem>HOTSPOT_BUILD_TARGET="target"</Elem>
             <Elem>HOTSPOT_BUILD_USER="user"</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
             <Elem>HOTSPOT_RELEASE_VERSION="version"</Elem>
             <Elem>HOTSPOT_VM_DISTRO="OpenJDK"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>LAUNCHER_TYPE="gamma"</Elem>
             <Elem>LINK_INTO_LIBJVM</Elem>
             <Elem>PRODUCT</Elem>
@@ -39575,10 +39253,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -39628,10 +39302,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Finalizer.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -39658,10 +39328,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Array.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -39717,10 +39383,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="Bits.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -39754,10 +39416,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="AccessController.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -39798,10 +39456,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -40381,10 +40035,6 @@
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
             <Elem>BREAKPTS</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>MACRO_MEMSYS_OPS</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -40441,10 +40091,6 @@
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
             <Elem>BREAKPTS</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>MACRO_MEMSYS_OPS</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -40916,10 +40562,6 @@
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
             <Elem>BREAKPTS</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>MACRO_MEMSYS_OPS</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
@@ -40986,10 +40628,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
           </preprocessorList>
         </cTool>
       </folder>
@@ -41015,10 +40653,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="ProcessEnvironment_md.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -41074,10 +40708,6 @@
           </incDir>
           <preprocessorList>
             <Elem>ARCHPROPNAME="amd64"</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>THIS_FILE="FileSystemPreferences.c"</Elem>
           </preprocessorList>
         </cTool>
@@ -41528,10 +41158,6 @@
             <Elem>ARCH="amd64"</Elem>
             <Elem>ARCHPROPNAME="amd64"</Elem>
             <Elem>BREAKPTS</Elem>
-            <Elem>JDK_BUILD_NUMBER="nn"</Elem>
-            <Elem>JDK_MAJOR_VERSION="version"</Elem>
-            <Elem>JDK_MICRO_VERSION="version"</Elem>
-            <Elem>JDK_MINOR_VERSION="minor"</Elem>
             <Elem>MACRO_MEMSYS_OPS</Elem>
             <Elem>NDEBUG</Elem>
             <Elem>RELEASE=""</Elem>
