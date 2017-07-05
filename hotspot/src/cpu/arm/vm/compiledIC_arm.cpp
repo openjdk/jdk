@@ -85,16 +85,16 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 }
 #undef __
 
-// size of C2 call stub, compiled java to interpretor
-int CompiledStaticCall::to_interp_stub_size() {
-  return 8 * NativeInstruction::instruction_size;
-}
-
 // Relocation entries for call stub, compiled java to interpreter.
 int CompiledStaticCall::reloc_to_interp_stub() {
   return 10;  // 4 in emit_to_interp_stub + 1 in Java_Static_Call
 }
 #endif // COMPILER2 || JVMCI
+
+// size of C2 call stub, compiled java to interpretor
+int CompiledStaticCall::to_interp_stub_size() {
+  return 8 * NativeInstruction::instruction_size;
+}
 
 void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub(/*is_aot*/ false);
@@ -124,6 +124,8 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   // Update stub.
   method_holder->set_data((intptr_t)callee());
   jump->set_jump_destination(entry);
+
+  ICache::invalidate_range(stub, to_interp_stub_size());
 
   // Update jump to call.
   set_destination_mt_safe(stub);

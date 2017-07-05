@@ -48,6 +48,7 @@ import java.io.IOException;
  *
  * @author      Amy Fowler
  * @author      Alexander Gerasimov
+ * @since 1.1
  */
 public class Clipboard {
 

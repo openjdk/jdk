@@ -26,7 +26,7 @@
  * @bug 4796780
  * @summary The class MLetContentTest becomes public
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean MLetContentTest
  * @run build MLetContentTest
  * @run main MLetContentTest

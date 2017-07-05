@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,14 @@ package com.sun.jdi;
  * <P>
  * The following table illustrates which subinterfaces of Type
  * are used to mirror types in the target VM --
- * <TABLE BORDER=1 SUMMARY="Maps each type declared in target to a mirrored
- *  instance of a subinterface of PrimitiveType or ReferenceType">
- * <TR BGCOLOR="#EEEEFF">
+ * <TABLE BORDER="1">
+ * <CAPTION style="display:none">Maps each type declared in target to a mirrored
+ *  instance of a subinterface of PrimitiveType or ReferenceType"</CAPTION>
+ * <TR style="background-color:#EEEEFF">
  *   <TH id="primtype" colspan=3>Subinterfaces of {@link PrimitiveType}</TH>
- * <TR BGCOLOR="#EEEEFF">
- *   <TH id="declared" align="left" colspan=2>Type declared in target as</TH>
- *   <TH id="mirrored" align="left">Is mirrored as an instance of</TH>
+ * <TR style="background-color:#EEEEFF">
+ *   <TH id="declared" style="text-align:left" colspan=2>Type declared in target as</TH>
+ *   <TH id="mirrored" style="text-align:left">Is mirrored as an instance of</TH>
  * <TR>
  *   <TD headers="primtype declared" colspan=2><CODE>boolean</CODE></TD>
  *   <TD headers="primtype mirrored"> {@link BooleanType}</TD>
@@ -79,12 +80,12 @@ package com.sun.jdi;
  * <TR>
  *   <TD headers="primtype declared" colspan=2><CODE>void</CODE></TD>
  *   <TD headers="primtype mirrored">{@link VoidType}</TD>
- * <TR BGCOLOR="#EEEEFF">
+ * <TR style="background-color:#EEEEFF">
  *   <TH id="reftype"  colspan=3>Subinterfaces of {@link ReferenceType}</TH>
- * <TR BGCOLOR="#EEEEFF">
- *   <TH id="declared2" align="left">Type declared in target as</TH>
- *   <TH id="example2"  align="left">For example</TH>
- *   <TH id="mirrored2" align="left">Is mirrored as an instance of</TH>
+ * <TR style="background-color:#EEEEFF">
+ *   <TH id="declared2"style="text-align:left">Type declared in target as</TH>
+ *   <TH id="example2"  style="text-align:left">For example</TH>
+ *   <TH id="mirrored2" style="text-align:left">Is mirrored as an instance of</TH>
  * <TR>
  *   <TD headers="reftype declared2"><I>a class</I></TD>
  *   <TD headers="reftype example2"><CODE>Date</CODE></TD>

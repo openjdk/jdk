@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,15 @@ import sun.security.util.Debug;
  * <p>In case the client does not explicitly initialize the KeyGenerator
  * (via a call to an {@code init} method), each provider must
  * supply (and document) a default initialization.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the KeyGenerator defaults used by
+ * JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * KeyGenerator instead of relying on provider-specific defaults.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code KeyGenerator} algorithms with the keysizes in
@@ -95,9 +104,9 @@ import sun.security.util.Debug;
  * <li>{@code HmacSHA256}</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
+ * "{@docRoot}/../specs/security/standard-names.html#keygenerator-algorithms">
  * KeyGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -216,8 +225,8 @@ public class KeyGenerator {
      *
      * @param algorithm the standard name of the requested key algorithm.
      * See the KeyGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keygenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code KeyGenerator} object
@@ -250,8 +259,8 @@ public class KeyGenerator {
      *
      * @param algorithm the standard name of the requested key algorithm.
      * See the KeyGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keygenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -293,8 +302,8 @@ public class KeyGenerator {
      *
      * @param algorithm the standard name of the requested key algorithm.
      * See the KeyGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keygenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
