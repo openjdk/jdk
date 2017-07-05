@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class CodeCache {
     virtualConstructor.addMapping("BufferBlob", BufferBlob.class);
     virtualConstructor.addMapping("nmethod", NMethod.class);
     virtualConstructor.addMapping("RuntimeStub", RuntimeStub.class);
+    virtualConstructor.addMapping("RicochetBlob", RicochetBlob.class);
+    virtualConstructor.addMapping("AdapterBlob", AdapterBlob.class);
     virtualConstructor.addMapping("SafepointBlob", SafepointBlob.class);
     virtualConstructor.addMapping("DeoptimizationBlob", DeoptimizationBlob.class);
     if (VM.getVM().isServerCompiler()) {

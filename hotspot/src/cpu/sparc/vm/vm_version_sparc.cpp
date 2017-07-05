@@ -144,6 +144,18 @@ void VM_Version::initialize() {
   // buf is started with ", " or is empty
   _features_str = strdup(strlen(buf) > 2 ? buf + 2 : buf);
 
+  // UseVIS is set to the smallest of what hardware supports and what
+  // the command line requires.  I.e., you cannot set UseVIS to 3 on
+  // older UltraSparc which do not support it.
+  if (UseVIS > 3) UseVIS=3;
+  if (UseVIS < 0) UseVIS=0;
+  if (!has_vis3()) // Drop to 2 if no VIS3 support
+    UseVIS = MIN2((intx)2,UseVIS);
+  if (!has_vis2()) // Drop to 1 if no VIS2 support
+    UseVIS = MIN2((intx)1,UseVIS);
+  if (!has_vis1()) // Drop to 0 if no VIS1 support
+    UseVIS = 0;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print("Allocation: ");

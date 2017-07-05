@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,24 @@ else
   # store symbolic links as the link
   ZIPFLAGS=-q -y
 endif
+
+jprt_build_productEmb:
+	$(MAKE) JAVASE_EMBEDDED=true jprt_build_product
+
+jprt_build_debugEmb:
+	$(MAKE) JAVASE_EMBEDDED=true jprt_build_debug
+
+jprt_build_fastdebugEmb:
+	$(MAKE) JAVASE_EMBEDDED=true jprt_build_fastdebug
+
+jprt_build_productOpen:
+	$(MAKE) OPENJDK=true jprt_build_product
+
+jprt_build_debugOpen:
+	$(MAKE) OPENJDK=true jprt_build_debug
+
+jprt_build_fastdebugOpen:
+	$(MAKE) OPENJDK=true jprt_build_fastdebug
 
 jprt_build_product: all_product copy_product_jdk export_product_jdk
 	( $(CD) $(JDK_IMAGE_DIR) && \

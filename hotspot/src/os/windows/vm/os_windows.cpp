@@ -1720,6 +1720,10 @@ void os::print_os_info(outputStream* st) {
   st->cr();
 }
 
+void os::pd_print_cpu_info(outputStream* st) {
+  // Nothing to do for now.
+}
+
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %dk page", os::vm_page_size()>>10);

@@ -761,6 +761,7 @@ void os::print_cpu_info(outputStream* st) {
   // st->print("(active %d)", os::active_processor_count());
   st->print(" %s", VM_Version::cpu_features());
   st->cr();
+  pd_print_cpu_info(st);
 }
 
 void os::print_date_and_time(outputStream *st) {

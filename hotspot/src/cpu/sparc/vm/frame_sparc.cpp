@@ -513,6 +513,8 @@ frame frame::sender(RegisterMap* map) const {
   // interpreted but its pc is in the code cache (for c1 -> osr_frame_return_id stub), so it must be
   // explicitly recognized.
 
+  if (is_ricochet_frame())    return sender_for_ricochet_frame(map);
+
   bool frame_is_interpreted = is_interpreted_frame();
   if (frame_is_interpreted) {
     map->make_integer_regs_unsaved();

@@ -891,6 +891,7 @@ public:
   virtual void record_collection_pause_end_G1_strong_roots();
 
   virtual void record_collection_pause_end();
+  void print_heap_transition();
 
   // Record the fact that a full collection occurred.
   virtual void record_full_collection_start();
@@ -1178,6 +1179,11 @@ protected:
 
   // The limit on the number of regions allocated for survivors.
   size_t _max_survivor_regions;
+
+  // For reporting purposes.
+  size_t _eden_bytes_before_gc;
+  size_t _survivor_bytes_before_gc;
+  size_t _capacity_before_gc;
 
   // The amount of survor regions after a collection.
   size_t _recorded_survivor_regions;
