@@ -357,7 +357,7 @@ public class ScrollPane extends Container implements Accessible {
      */
     public void setScrollPosition(int x, int y) {
         synchronized (getTreeLock()) {
-            if (ncomponents <= 0) {
+            if (getComponentCount()==0) {
                 throw new NullPointerException("child is null");
             }
             hAdjustable.setValue(x);
@@ -393,10 +393,12 @@ public class ScrollPane extends Container implements Accessible {
      */
     @Transient
     public Point getScrollPosition() {
-        if (ncomponents <= 0) {
-            throw new NullPointerException("child is null");
+        synchronized (getTreeLock()) {
+            if (getComponentCount()==0) {
+                throw new NullPointerException("child is null");
+            }
+            return new Point(hAdjustable.getValue(), vAdjustable.getValue());
         }
-        return new Point(hAdjustable.getValue(), vAdjustable.getValue());
     }
 
     /**
@@ -486,26 +488,27 @@ public class ScrollPane extends Container implements Accessible {
      */
     @Deprecated
     public void layout() {
-        if (ncomponents > 0) {
-            Component c = getComponent(0);
-            Point p = getScrollPosition();
-            Dimension cs = calculateChildSize();
-            Dimension vs = getViewportSize();
-            Insets i = getInsets();
-
-            c.reshape(i.left - p.x, i.top - p.y, cs.width, cs.height);
-            ScrollPanePeer peer = (ScrollPanePeer)this.peer;
-            if (peer != null) {
-                peer.childResized(cs.width, cs.height);
-            }
-
-            // update adjustables... the viewport size may have changed
-            // with the scrollbars coming or going so the viewport size
-            // is updated before the adjustables.
-            vs = getViewportSize();
-            hAdjustable.setSpan(0, cs.width, vs.width);
-            vAdjustable.setSpan(0, cs.height, vs.height);
+        if (getComponentCount()==0) {
+            return;
         }
+        Component c = getComponent(0);
+        Point p = getScrollPosition();
+        Dimension cs = calculateChildSize();
+        Dimension vs = getViewportSize();
+        Insets i = getInsets();
+
+        c.reshape(i.left - p.x, i.top - p.y, cs.width, cs.height);
+        ScrollPanePeer peer = (ScrollPanePeer)this.peer;
+        if (peer != null) {
+            peer.childResized(cs.width, cs.height);
+        }
+
+        // update adjustables... the viewport size may have changed
+        // with the scrollbars coming or going so the viewport size
+        // is updated before the adjustables.
+        vs = getViewportSize();
+        hAdjustable.setSpan(0, cs.width, vs.width);
+        vAdjustable.setSpan(0, cs.height, vs.height);
     }
 
     /**
@@ -515,20 +518,21 @@ public class ScrollPane extends Container implements Accessible {
      * @see Component#printAll
      */
     public void printComponents(Graphics g) {
-        if (ncomponents > 0) {
-            Component c = component[0];
-            Point p = c.getLocation();
-            Dimension vs = getViewportSize();
-            Insets i = getInsets();
+        if (getComponentCount()==0) {
+            return;
+        }
+        Component c = getComponent(0);
+        Point p = c.getLocation();
+        Dimension vs = getViewportSize();
+        Insets i = getInsets();
 
-            Graphics cg = g.create();
-            try {
-                cg.clipRect(i.left, i.top, vs.width, vs.height);
-                cg.translate(p.x, p.y);
-                c.printAll(cg);
-            } finally {
-                cg.dispose();
-            }
+        Graphics cg = g.create();
+        try {
+            cg.clipRect(i.left, i.top, vs.width, vs.height);
+            cg.translate(p.x, p.y);
+            c.printAll(cg);
+        } finally {
+            cg.dispose();
         }
     }
 
@@ -589,7 +593,7 @@ public class ScrollPane extends Container implements Accessible {
             default:
                 sdpStr = "invalid display policy";
         }
-        Point p = ncomponents > 0? getScrollPosition() : new Point(0,0);
+        Point p = (getComponentCount()>0)? getScrollPosition() : new Point(0,0);
         Insets i = getInsets();
         return super.paramString()+",ScrollPosition=("+p.x+","+p.y+")"+
             ",Insets=("+i.top+","+i.left+","+i.bottom+","+i.right+")"+

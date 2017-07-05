@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.EventListener;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
 
 /**
@@ -142,9 +143,6 @@ public class TrayIcon {
      */
     public TrayIcon(Image image) {
         this();
-        if (image == null) {
-            throw new IllegalArgumentException("creating TrayIcon with null Image");
-        }
         setImage(image);
     }
 
@@ -433,7 +431,7 @@ public class TrayIcon {
      * @see      java.awt.event.MouseListener
      */
     public synchronized MouseListener[] getMouseListeners() {
-        return (MouseListener[])(getListeners(MouseListener.class));
+        return AWTEventMulticaster.getListeners(mouseListener, MouseListener.class);
     }
 
     /**
@@ -494,7 +492,7 @@ public class TrayIcon {
      * @see      java.awt.event.MouseMotionListener
      */
     public synchronized MouseMotionListener[] getMouseMotionListeners() {
-        return (MouseMotionListener[]) (getListeners(MouseMotionListener.class));
+        return AWTEventMulticaster.getListeners(mouseMotionListener, MouseMotionListener.class);
     }
 
     /**
@@ -581,7 +579,7 @@ public class TrayIcon {
      * @see      java.awt.event.ActionListener
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])(getListeners(ActionListener.class));
+        return AWTEventMulticaster.getListeners(actionListener, ActionListener.class);
     }
 
     /**
@@ -635,7 +633,7 @@ public class TrayIcon {
 
         TrayIconPeer peer = this.peer;
         if (peer != null) {
-            peer.displayMessage(caption, text, messageType.toString());
+            peer.displayMessage(caption, text, messageType.name());
         }
     }
 
@@ -657,24 +655,17 @@ public class TrayIcon {
     // ****************************************************************
     // ****************************************************************
 
-    <T extends EventListener> T[] getListeners(Class<T> listenerType) {
-        EventListener l = null;
-        if (listenerType == MouseListener.class) {
-            l = mouseListener;
-        } else if (listenerType == MouseMotionListener.class) {
-            l = mouseMotionListener;
-        } else if (listenerType == ActionListener.class) {
-            l = actionListener;
-        }
-        return AWTEventMulticaster.getListeners(l, listenerType);
-    }
-
     void addNotify()
       throws AWTException
     {
         synchronized (this) {
             if (peer == null) {
-                peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                Toolkit toolkit = Toolkit.getDefaultToolkit();
+                if (toolkit instanceof SunToolkit) {
+                    peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                } else if (toolkit instanceof HeadlessToolkit) {
+                    peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                }
             }
         }
         peer.setToolTip(tooltip);
