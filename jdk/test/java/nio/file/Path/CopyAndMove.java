@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path copyTo/moveTo methods
  * @library ..
  */
@@ -69,9 +69,9 @@ public class CopyAndMove {
         assertTrue(attrs1.isSymbolicLink() == attrs2.isSymbolicLink());
         assertTrue(attrs1.isOther() == attrs2.isOther());
 
-        // check last modified time (assume millisecond precision)
-        long time1 = attrs1.resolution().toMillis(attrs1.lastModifiedTime());
-        long time2 = attrs1.resolution().toMillis(attrs2.lastModifiedTime());
+        // check last modified time
+        long time1 = attrs1.lastModifiedTime().toMillis();
+        long time2 = attrs2.lastModifiedTime().toMillis();
         assertTrue(time1 == time2);
 
         // check size

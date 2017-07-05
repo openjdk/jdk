@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Sanity test for Sun-specific FILE_TREE watch event modifier
  * @library ..
  */
@@ -85,7 +85,7 @@ public class FileTreeModifier {
             throw new RuntimeException("Existing key not returned");
 
         // delete a/b/c/foo and check we get delete event
-        file.delete(false);
+        file.delete();
         checkExpectedEvent(watcher, ENTRY_DELETE, top.relativize(file));
         key.reset();
 

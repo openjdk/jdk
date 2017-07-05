@@ -26,8 +26,7 @@
 package sun.nio.fs;
 
 import java.nio.file.attribute.*;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 import java.io.IOException;
 import sun.misc.Unsafe;
 
@@ -104,10 +103,10 @@ class LinuxDosFileAttributeView
     }
 
     @Override
-    public Map<String,?> readAttributes(String first, String[] rest)
+    public Map<String,?> readAttributes(String[] attributes)
         throws IOException
     {
-        AttributesBuilder builder = AttributesBuilder.create(first, rest);
+        AttributesBuilder builder = AttributesBuilder.create(attributes);
         DosFileAttributes attrs = readAttributes();
         addBasicAttributesToBuilder(attrs, builder);
         if (builder.match(READONLY_NAME))
@@ -132,20 +131,16 @@ class LinuxDosFileAttributeView
 
              return new DosFileAttributes() {
                 @Override
-                public long lastModifiedTime() {
+                public FileTime lastModifiedTime() {
                     return attrs.lastModifiedTime();
                 }
                 @Override
-                public long lastAccessTime() {
+                public FileTime lastAccessTime() {
                     return attrs.lastAccessTime();
                 }
                 @Override
-                public long creationTime() {
+                public FileTime creationTime() {
                     return attrs.creationTime();
-                }
-                @Override
-                public TimeUnit resolution() {
-                    return attrs.resolution();
                 }
                 @Override
                 public boolean isRegularFile() {
@@ -166,10 +161,6 @@ class LinuxDosFileAttributeView
                 @Override
                 public long size() {
                     return attrs.size();
-                }
-                @Override
-                public int linkCount() {
-                    return attrs.linkCount();
                 }
                 @Override
                 public Object fileKey() {

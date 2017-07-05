@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import com.sun.nio.file.ExtendedCopyOption;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -189,11 +190,13 @@ class UnixCopyFile {
             if (flags.copyBasicAttributes) {
                 try {
                     if (dfd >= 0) {
-                        futimes(dfd, attrs.lastAccessTime(),
-                            attrs.lastModifiedTime());
+                        futimes(dfd,
+                                attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                                attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
                     } else {
-                        utimes(target, attrs.lastAccessTime(),
-                            attrs.lastModifiedTime());
+                        utimes(target,
+                               attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                               attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
                     }
                 } catch (UnixException x) {
                     // unable to set times
@@ -266,7 +269,9 @@ class UnixCopyFile {
                 // copy time attributes
                 if (flags.copyBasicAttributes) {
                     try {
-                        futimes(fo, attrs.lastAccessTime(), attrs.lastModifiedTime());
+                        futimes(fo,
+                                attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                                attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
                     } catch (UnixException x) {
                         if (flags.failIfUnableToCopyBasic)
                             x.rethrowAsIOException(target);
@@ -341,7 +346,9 @@ class UnixCopyFile {
             }
             if (flags.copyBasicAttributes) {
                 try {
-                    utimes(target, attrs.lastAccessTime(), attrs.lastModifiedTime());
+                    utimes(target,
+                           attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                           attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
                 } catch (UnixException x) {
                     if (flags.failIfUnableToCopyBasic)
                         x.rethrowAsIOException(target);

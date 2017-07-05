@@ -67,7 +67,7 @@ public interface RuntimeConstants {
     /* Class File Constants */
     int JAVA_MAGIC                   = 0xcafebabe;
     int JAVA_MIN_SUPPORTED_VERSION   = 45;
-    int JAVA_MAX_SUPPORTED_VERSION   = 50;
+    int JAVA_MAX_SUPPORTED_VERSION   = 51;
     int JAVA_MAX_SUPPORTED_MINOR_VERSION = 0;
 
     /* Generate class file version for 1.1  by default */
@@ -304,7 +304,7 @@ public interface RuntimeConstants {
     int opc_invokespecial            = 183;
     int opc_invokestatic             = 184;
     int opc_invokeinterface          = 185;
-    int opc_xxxunusedxxx             = 186;
+    int opc_invokedynamic            = 186;
     int opc_new                      = 187;
     int opc_newarray                 = 188;
     int opc_anewarray                = 189;
@@ -510,7 +510,7 @@ public interface RuntimeConstants {
         "invokespecial",
         "invokestatic",
         "invokeinterface",
-        "xxxunusedxxx",
+        "invokedynamic",
         "new",
         "newarray",
         "anewarray",
@@ -717,7 +717,7 @@ public interface RuntimeConstants {
         3,
         3,
         5,
-        0,
+        5,
         3,
         2,
         3,

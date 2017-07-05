@@ -50,8 +50,6 @@ class FileTreeWalker {
                 case FOLLOW_LINKS  : fl = true; break;
                 case DETECT_CYCLES : dc = true; break;
                 default:
-                    if (option == null)
-                        throw new NullPointerException("Visit options contains 'null'");
                     throw new AssertionError("Should not get here");
             }
         }
@@ -239,13 +237,13 @@ class FileTreeWalker {
     }
 
     private static class AncestorDirectory {
-        private final FileRef dir;
+        private final Path dir;
         private final Object key;
-        AncestorDirectory(FileRef dir, Object key) {
+        AncestorDirectory(Path dir, Object key) {
             this.dir = dir;
             this.key = key;
         }
-        FileRef file() {
+        Path file() {
             return dir;
         }
         Object fileKey() {

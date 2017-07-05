@@ -27,7 +27,6 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.util.*;
 import java.io.IOException;
 
 import static sun.nio.fs.WindowsConstants.*;
@@ -120,23 +119,40 @@ class WindowsFileStore
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> view) {
-        if (view == FileStoreSpaceAttributeView.class)
+    public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
+        if (type == null)
+            throw new NullPointerException();
+        if (type == FileStoreSpaceAttributeView.class)
             return (V) new WindowsFileStoreAttributeView(this);
         return (V) null;
     }
 
     @Override
-    public FileStoreAttributeView getFileStoreAttributeView(String name) {
-        if (name.equals("space"))
-            return new WindowsFileStoreAttributeView(this);
-        if (name.equals("volume"))
-            return new VolumeFileStoreAttributeView(this);
-        return null;
+    public Object getAttribute(String attribute) throws IOException {
+        // standard
+        if (attribute.equals("space:totalSpace"))
+            return new WindowsFileStoreAttributeView(this)
+                .readAttributes().totalSpace();
+        if (attribute.equals("space:usableSpace"))
+            return new WindowsFileStoreAttributeView(this)
+                 .readAttributes().usableSpace();
+        if (attribute.equals("space:unallocatedSpace"))
+            return new WindowsFileStoreAttributeView(this)
+                 .readAttributes().unallocatedSpace();
+        // windows specific for testing purposes
+        if (attribute.equals("volume:vsn"))
+            return volInfo.volumeSerialNumber();
+        if (attribute.equals("volume:isRemovable"))
+            return volType == DRIVE_REMOVABLE;
+        if (attribute.equals("volume:isCdrom"))
+            return volType == DRIVE_CDROM;
+        throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        if (type == null)
+            throw new NullPointerException();
         if (type == BasicFileAttributeView.class)
             return true;
         if (type == AclFileAttributeView.class || type == FileOwnerAttributeView.class)
@@ -154,7 +170,7 @@ class WindowsFileStore
             return supportsFileAttributeView(AclFileAttributeView.class);
         if (name.equals("owner"))
             return supportsFileAttributeView(FileOwnerAttributeView.class);
-        if (name.equals("xattr"))
+        if (name.equals("user"))
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return false;
     }
@@ -188,12 +204,17 @@ class WindowsFileStore
     }
 
     static class WindowsFileStoreAttributeView
-        extends AbstractFileStoreSpaceAttributeView
+        implements FileStoreSpaceAttributeView
     {
         private final WindowsFileStore fs;
 
         WindowsFileStoreAttributeView(WindowsFileStore fs) {
             this.fs = fs;
+        }
+
+        @Override
+        public String name() {
+            return "space";
         }
 
         @Override
@@ -225,113 +246,4 @@ class WindowsFileStore
             };
         }
     }
-
-    /**
-     * Windows-specific attribute view to allow access to volume information.
-     */
-    static class VolumeFileStoreAttributeView
-        implements FileStoreAttributeView
-    {
-        private static final String VSN_NAME = "vsn";
-        private static final String COMPRESSED_NAME = "compressed";
-        private static final String REMOVABLE_NAME = "removable";
-        private static final String CDROM_NAME = "cdrom";
-
-        private final WindowsFileStore fs;
-
-        VolumeFileStoreAttributeView(WindowsFileStore fs) {
-            this.fs = fs;
-        }
-
-        @Override
-        public String name() {
-            return "volume";
-        }
-
-        private int vsn() {
-            return fs.volumeInformation().volumeSerialNumber();
-        }
-
-        private boolean isCompressed() {
-            return (fs.volumeInformation().flags() &
-                    FILE_VOLUME_IS_COMPRESSED) > 0;
-        }
-
-        private boolean isRemovable() {
-            return fs.volumeType() == DRIVE_REMOVABLE;
-        }
-
-        private boolean isCdrom() {
-            return fs.volumeType() == DRIVE_CDROM;
-        }
-
-        @Override
-        public Object getAttribute(String attribute) throws IOException {
-            if (attribute.equals(VSN_NAME))
-                return vsn();
-            if (attribute.equals(COMPRESSED_NAME))
-                return isCompressed();
-            if (attribute.equals(REMOVABLE_NAME))
-                return isRemovable();
-            if (attribute.equals(CDROM_NAME))
-                return isCdrom();
-            return null;
-        }
-
-        @Override
-        public void setAttribute(String attribute, Object value)
-            throws IOException
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Map<String,?> readAttributes(String first, String... rest)
-            throws IOException
-        {
-            boolean all = false;
-            boolean vsn = false;
-            boolean compressed = false;
-            boolean removable = false;
-            boolean cdrom = false;
-
-            if (first.equals(VSN_NAME)) vsn = true;
-            else if (first.equals(COMPRESSED_NAME)) compressed = true;
-            else if (first.equals(REMOVABLE_NAME)) removable = true;
-            else if (first.equals(CDROM_NAME)) cdrom = true;
-            else if (first.equals("*")) all = true;
-
-            if (!all) {
-                for (String attribute: rest) {
-                    if (attribute.equals("*")) {
-                        all = true;
-                        break;
-                    }
-                    if (attribute.equals(VSN_NAME)) {
-                        vsn = true;
-                        continue;
-                    }
-                    if (attribute.equals(COMPRESSED_NAME)) {
-                        compressed = true;
-                        continue;
-                    }
-                    if (attribute.equals(REMOVABLE_NAME)) {
-                        removable = true;
-                        continue;
-                    }
-                }
-            }
-
-            Map<String,Object> result = new HashMap<String,Object>();
-            if (all || vsn)
-                result.put(VSN_NAME, vsn());
-            if (all || compressed)
-                result.put(COMPRESSED_NAME, isCompressed());
-            if (all || removable)
-                result.put(REMOVABLE_NAME, isRemovable());
-            if (all || cdrom)
-                result.put(CDROM_NAME, isCdrom());
-            return result;
-        }
-    }
-}
+ }

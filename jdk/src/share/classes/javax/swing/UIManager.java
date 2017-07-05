@@ -60,6 +60,7 @@ import sun.swing.SwingUtilities2;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
 
 
 /**
@@ -1472,21 +1473,7 @@ public class UIManager implements Serializable
                         return false;
                     }
                 });
-        try {
-            Method setRequestFocusControllerM = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedExceptionAction<Method>() {
-                        public Method run() throws Exception {
-                            Method method =
-                            Component.class.getDeclaredMethod("setRequestFocusController",
-                                                              sun.awt.RequestFocusController.class);
-                            method.setAccessible(true);
-                            return method;
-                        }
-                    });
-            setRequestFocusControllerM.invoke(null, JComponent.focusController);
-        } catch (Exception e) {
-            // perhaps we should log this
-            assert false;
-        }
+        AWTAccessor.getComponentAccessor().
+            setRequestFocusController(JComponent.focusController);
     }
 }

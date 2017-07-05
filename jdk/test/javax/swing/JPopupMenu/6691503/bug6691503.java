@@ -109,5 +109,3 @@ public class bug6691503 {
         });
     }
 }
-
-

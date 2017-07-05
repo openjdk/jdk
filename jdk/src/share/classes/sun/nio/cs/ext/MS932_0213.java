@@ -28,6 +28,7 @@ package sun.nio.cs.ext;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class MS932_0213 extends Charset {
     public MS932_0213() {
@@ -49,30 +50,31 @@ public class MS932_0213 extends Charset {
     }
 
     protected static class Decoder extends SJIS_0213.Decoder {
-        MS932DB.Decoder decMS932;
+        static DoubleByte.Decoder decMS932 =
+            (DoubleByte.Decoder)new MS932().newDecoder();
         protected Decoder(Charset cs) {
             super(cs);
-            decMS932 = new MS932DB.Decoder(cs);
         }
 
         protected char decodeDouble(int b1, int b2) {
             char c = decMS932.decodeDouble(b1, b2);
-            if (c == DoubleByteDecoder.REPLACE_CHAR)
+            if (c == UNMAPPABLE_DECODING)
                 return super.decodeDouble(b1, b2);
             return c;
         }
     }
 
     protected static class Encoder extends SJIS_0213.Encoder {
-        MS932DB.Encoder encMS932;
+        // we only use its encodeChar() method
+        static DoubleByte.Encoder encMS932 =
+            (DoubleByte.Encoder)new MS932().newEncoder();
         protected Encoder(Charset cs) {
             super(cs);
-            encMS932 = new MS932DB.Encoder(cs);
         }
 
         protected int encodeChar(char ch) {
-            int db = encMS932.encodeDouble(ch);
-            if (db == 0)
+            int db = encMS932.encodeChar(ch);
+            if (db == UNMAPPABLE_ENCODING)
                 return super.encodeChar(ch);
             return db;
         }
