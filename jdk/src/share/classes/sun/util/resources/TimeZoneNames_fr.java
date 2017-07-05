@@ -141,6 +141,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                      "Heure d'\u00e9t\u00e9 de Malaisie", "MYST"};
         String NORONHA[] = new String[] {"Heure de Fernando de Noronha", "FNT",
                                          "Heure d'\u00e9t\u00e9 de Fernando de Noronha", "FNST"};
+        String NPT[] = new String[] {"Heure du N\u00e9pal", "NPT",
+                                     "Heure d'\u00e9t\u00e9 du N\u00e9pal", "NPST"};
         String NST[] = new String[] {"Heure normale de Terre-Neuve", "NST",
                                      "Heure avanc\u00e9e de Terre-Neuve", "NDT"} ;
         String NZST[] = new String[] {"Heure normale de Nouvelle-Z\u00e9lande", "NZST",
@@ -151,6 +153,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                      "Heure d'\u00e9t\u00e9 du Pakistan", "PKST"} ;
         String PST[] = new String[] {"Heure normale du Pacifique", "PST",
                                      "Heure avanc\u00e9e du Pacifique", "PDT"} ;
+        String RST[] = new String[] {"Heure normale de l'Est", "EST",
+                                     "Heure avanc\u00e9e du Centre", "CDT"} ;
         String SAST[] = new String[] {"Heure normale d'Afrique du Sud", "SAST",
                                       "Heure d'\u00e9t\u00e9 d'Afrique du Sud", "SAST"} ;
         String SBT[] = new String[] {"Heure des \u00celes Salomon", "SBT",
@@ -290,6 +294,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"America/Argentina/La_Rioja", AGT},
             {"America/Argentina/Mendoza", AGT},
             {"America/Argentina/Rio_Gallegos", AGT},
+            {"America/Argentina/Salta", AGT},
             {"America/Argentina/San_Juan", AGT},
             {"America/Argentina/San_Luis", AGT},
             {"America/Argentina/Tucuman", AGT},
@@ -407,7 +412,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"America/Rankin_Inlet", CST},
             {"America/Recife", BRT},
             {"America/Regina", CST},
-            {"America/Resolute", EST},
+            {"America/Resolute", RST},
             {"America/Rio_Branco", AMT},
             {"America/Rosario", AGT},
             {"America/Santarem", BRT},
@@ -505,8 +510,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                              "Heure d'\u00e9t\u00e9 de Petropavlovsk-Kamchatski", "PETST"}},
             {"Asia/Karachi", PKT},
             {"Asia/Kashgar", CTT},
-            {"Asia/Katmandu", new String[] {"Heure du N\u00e9pal", "NPT",
-                                            "Heure d'\u00e9t\u00e9 du N\u00e9pal", "NPST"}},
+            {"Asia/Kathmandu", NPT},
+            {"Asia/Katmandu", NPT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", new String[] {"Heure de Krasno\u00efarsk", "KRAT",
                                                "Heure d'\u00e9t\u00e9 de Krasno\u00efarsk", "KRAST"}},

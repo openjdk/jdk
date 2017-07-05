@@ -2335,11 +2335,64 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # mean time in preference to apparent time -- Geneva from 1780 ....
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # From Whitman (who writes ``Midnight?''):
-Rule	Swiss	1940	only	-	Nov	 2	0:00	1:00	S
-Rule	Swiss	1940	only	-	Dec	31	0:00	0	-
+# Rule	Swiss	1940	only	-	Nov	 2	0:00	1:00	S
+# Rule	Swiss	1940	only	-	Dec	31	0:00	0	-
 # From Shanks & Pottenger:
-Rule	Swiss	1941	1942	-	May	Sun>=1	2:00	1:00	S
-Rule	Swiss	1941	1942	-	Oct	Sun>=1	0:00	0	-
+# Rule	Swiss	1941	1942	-	May	Sun>=1	2:00	1:00	S
+# Rule	Swiss	1941	1942	-	Oct	Sun>=1	0:00	0	-
+
+# From Alois Treindl (2008-12-17):
+# I have researched the DST usage in Switzerland during the 1940ies.
+#
+# As I wrote in an earlier message, I suspected the current tzdata values
+# to be wrong. This is now verified.
+#
+# I have found copies of the original ruling by the Swiss Federal
+# government, in 'Eidgen[o]ssische Gesetzessammlung 1941 and 1942' (Swiss
+# federal law collection)...
+#
+# DST began on Monday 5 May 1941, 1:00 am by shifting the clocks to 2:00 am
+# DST ended on Monday 6 Oct 1941, 2:00 am by shifting the clocks to 1:00 am.
+#
+# DST began on Monday, 4 May 1942 at 01:00 am
+# DST ended on Monday, 5 Oct 1942 at 02:00 am
+#
+# There was no DST in 1940, I have checked the law collection carefully.
+# It is also indicated by the fact that the 1942 entry in the law
+# collection points back to 1941 as a reference, but no reference to any
+# other years are made.
+#
+# Newspaper articles I have read in the archives on 6 May 1941 reported
+# about the introduction of DST (Sommerzeit in German) during the previous
+# night as an absolute novelty, because this was the first time that such
+# a thing had happened in Switzerland.
+#
+# I have also checked 1916, because one book source (Gabriel, Traite de
+# l'heure dans le monde) claims that Switzerland had DST in 1916. This is
+# false, no official document could be found. Probably Gabriel got misled
+# by references to Germany, which introduced DST in 1916 for the first time.
+#
+# The tzdata rules for Switzerland must be changed to:
+# Rule  Swiss   1941    1942    -       May     Mon>=1  1:00    1:00    S
+# Rule  Swiss   1941    1942    -       Oct     Mon>=1  2:00    0       -
+#
+# The 1940 rules must be deleted.
+#
+# One further detail for Switzerland, which is probably out of scope for
+# most users of tzdata:
+# The zone file
+# Zone    Europe/Zurich   0:34:08 -       LMT     1848 Sep 12
+#                          0:29:44 -       BMT     1894 Jun #Bern Mean Time
+#                          1:00    Swiss   CE%sT   1981
+#                          1:00    EU      CE%sT
+# describes all of Switzerland correctly, with the exception of
+# the Cantone Geneve (Geneva, Genf). Between 1848 and 1894 Geneve did not
+# follow Bern Mean Time but kept its own local mean time.
+# To represent this, an extra zone would be needed.
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Swiss	1941	1942	-	May	Mon>=1	1:00	1:00	S
+Rule	Swiss	1941	1942	-	Oct	Mon>=1	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
 			0:29:44	-	BMT	1894 Jun # Bern Mean Time
@@ -2374,6 +2427,27 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
 # I was able to locate the following seemingly official document
 # (on a non-government server though) describing dates between 2002 and 2006:
 # http://www.alomaliye.com/bkk_2002_3769.htm
+
+# From Sue Williams (2008-08-11):
+# I spotted this news article about a potential change in Turkey.
+#
+# <a href="http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1">
+# http://www.hurriyet.com.tr/english/domestic/9626174.asp?scr=1
+# </a>
+
+# From Sue Williams (2008-08-20):
+# This article says that around the end of March 2011, Turkey wants to
+# adjust the clocks forward by 1/2 hour and stay that way permanently.
+# The article indicates that this is a change in timezone offset in addition
+# to stopping observance of DST.
+# This proposal has not yet been approved.
+#
+# Read more here...
+#
+# Turkey to abandon daylight saving time in 2011
+# <a href="http://www.turkishdailynews.com.tr/article.php?enewsid=112989">
+# http://www.turkishdailynews.com.tr/article.php?enewsid=112989
+# </a>
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S

@@ -41,7 +41,7 @@ AUTO_FILES_JAVA_DIRS = sun/tools/serialver
 # Resources
 #
 LOCALE_SET_DEFINITION = jdk
-RESOURCE_BUNDLES_PROPERTIES = $(PKGDIR)/resources/serialver.properties 
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/resources/serialver.properties 
 
 #
 # Rules

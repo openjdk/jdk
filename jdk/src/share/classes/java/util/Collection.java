@@ -427,7 +427,7 @@ public interface Collection<E> extends Iterable<E> {
      * contract for the <tt>Object.hashCode</tt> method, programmers should
      * take note that any class that overrides the <tt>Object.equals</tt>
      * method must also override the <tt>Object.hashCode</tt> method in order
-     * to satisfy the general contract for the <tt>Object.hashCode</tt>method.
+     * to satisfy the general contract for the <tt>Object.hashCode</tt> method.
      * In particular, <tt>c1.equals(c2)</tt> implies that
      * <tt>c1.hashCode()==c2.hashCode()</tt>.
      *

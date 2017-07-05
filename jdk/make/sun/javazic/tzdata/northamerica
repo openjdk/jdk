@@ -1764,9 +1764,13 @@ Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 # The individual that answered the phone confirmed that the clocks did not
 # move at the end of daylight saving on October 29/2006.  He also told me that
 # the clocks did not move this past weekend (March 11/2007)....
-#
-# America/Resolute should use the "Canada" Rule up to October 29/2006.
-# After that it should be fixed on Eastern Standard Time until further notice.
+
+# From Chris Walton (2008-11-13):
+# ...the residents of Resolute believe that they are changing "time zones"
+# twice a year.  In winter months, local time is qualified with "Eastern
+# Time" which is really "Eastern Standard Time (UTC-5)".  In summer
+# months, local time is qualified with "Central Time" which is really
+# "Central Daylight Time (UTC-5)"...
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	NT_YK	1918	only	-	Apr	14	2:00	1:00	D
@@ -1794,11 +1798,14 @@ Zone America/Iqaluit	0	-	zzz	1942 Aug # Frobisher Bay est.
 			-6:00	Canada	C%sT	2000 Oct 29 2:00
 			-5:00	Canada	E%sT
 # aka Qausuittuq
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Resolute 2006	max	-	Nov	Sun>=1	2:00	0	ES
+Rule	Resolute 2007	max	-	Mar	Sun>=8	2:00	0	CD
 Zone America/Resolute	0	-	zzz	1947 Aug 31 # Resolute founded
 			-6:00	NT_YK	C%sT	2000 Oct 29 2:00
 			-5:00	-	EST	2001 Apr  1 3:00
 			-6:00	Canada	C%sT	2006 Oct 29 2:00
-			-5:00	-	EST
+			-5:00	Resolute	%sT
 # aka Kangiqiniq
 Zone America/Rankin_Inlet 0	-	zzz	1957 # Rankin Inlet founded
 			-6:00	NT_YK	C%sT	2000 Oct 29 2:00
@@ -2302,7 +2309,7 @@ Rule	Cuba	1996	only	-	Oct	 6	0:00s	0	S
 Rule	Cuba	1997	only	-	Oct	12	0:00s	0	S
 Rule	Cuba	1998	1999	-	Mar	lastSun	0:00s	1:00	D
 Rule	Cuba	1998	2003	-	Oct	lastSun	0:00s	0	S
-Rule	Cuba	2000	2006	-	Apr	Sun>=1	0:00s	1:00	D
+Rule	Cuba	2000	2004	-	Apr	Sun>=1	0:00s	1:00	D
 Rule	Cuba	2006	max	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
 Rule	Cuba	2008	max	-	Mar	Sun>=15	0:00s	1:00	D

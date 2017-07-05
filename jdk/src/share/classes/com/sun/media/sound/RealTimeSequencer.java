@@ -54,10 +54,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     private final static boolean DEBUG_PUMP = false;
     private final static boolean DEBUG_PUMP_ALL = false;
 
-
-    /** if true, we bridge RMF files over to the old MixerSequencer */
-    private final static boolean RMF = true;
-
     /**
      * Event Dispatcher thread. Should be using a shared event
      * dispatcher instance with a factory in EventDispatcher
@@ -145,9 +141,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     private ArrayList controllerEventListeners = new ArrayList();
 
 
-    /** for RMF media we need the RMF sequencer */
-    private MixerSequencer seqBridge = null;
-
     /** automatic connection support */
     private boolean autoConnect = false;
 
@@ -220,21 +213,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
                 playThread.setSequence(sequence);
             }
         }
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.close();
-                seqBridge = null;
-            }
-            // if previous file was an RMF, but this file is not RMF,
-            // then need to call implOpen again!
-            if (isOpen() && sequence != null && playThread == null) {
-                try {
-                    implOpen();
-                } catch (MidiUnavailableException mue) {
-                    if (Printer.err) mue.printStackTrace();
-                }
-            }
-        }
 
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: setSequence(" + sequence +") completed");
     }
@@ -249,52 +227,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
             return;
         }
 
-        // need to be able to detect RMF
-        if (RMF) {
-            MidiFileFormat fileFormat = MidiSystem.getMidiFileFormat(stream); // can throw IOException, InvalidMidiDataException
-            int type = fileFormat.getType();
-            int resolution = fileFormat.getResolution();
-            if (Printer.debug) Printer.debug("Got file with type="+type+" and resolution="+resolution);
-            if (resolution == MidiFileFormat.UNKNOWN_LENGTH) {
-                // seems to be RMF
-                if (seqBridge == null) {
-                    try {
-                        seqBridge = new MixerSequencer();
-                        if (isOpen()) {
-                            seqBridge.open();
-                        }
-                    } catch (MidiUnavailableException mue) {
-                        // uhum, strange situation. Need to cast to InvalidMidiDataException
-                        throw new InvalidMidiDataException(mue.getMessage());
-                    }
-                }
-                seqBridge.setSequence(stream);
-                // propagate state
-                seqBridge.setTempoFactor(getTempoFactor());
-
-                // propagate listeners
-                synchronized(metaEventListeners) {
-                    for (int i = 0 ; i < metaEventListeners.size(); i++) {
-                        seqBridge.addMetaEventListener((MetaEventListener) (metaEventListeners.get(i)));
-                    }
-                }
-                synchronized(controllerEventListeners) {
-                    for (int i = 0 ; i < controllerEventListeners.size(); i++) {
-                        ControllerListElement cve = (ControllerListElement) (controllerEventListeners.get(i));
-                        seqBridge.addControllerEventListener(cve.listener, cve.controllers);
-                    }
-                }
-                // disable the current sequence of RealTimeSequencer
-                //setSequence((Sequence) null); -> will remove bridge again!
-                this.sequence = null;
-                return;
-            }
-            if (seqBridge != null) {
-                seqBridge.close();
-                seqBridge = null;
-            }
-        }
-
         Sequence seq = MidiSystem.getSequence(stream); // can throw IOException, InvalidMidiDataException
 
         setSequence(seq);
@@ -305,22 +237,11 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public Sequence getSequence() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getSequence();
-            }
-        }
         return sequence;
     }
 
 
     public synchronized void start() {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.start();
-                return;
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: start()");
 
         // sequencer not open: throw an exception
@@ -346,12 +267,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized void stop() {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.stop();
-                return;
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: stop()");
 
         if (!isOpen()) {
@@ -373,23 +288,11 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public boolean isRunning() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.isRunning();
-            }
-        }
         return running;
     }
 
 
     public void startRecording() {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.startRecording();
-                return;
-            }
-        }
-
         if (!isOpen()) {
             throw new IllegalStateException("Sequencer not open");
         }
@@ -400,13 +303,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void stopRecording() {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.stopRecording();
-                return;
-            }
-        }
-
         if (!isOpen()) {
             throw new IllegalStateException("Sequencer not open");
         }
@@ -415,23 +311,11 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public boolean isRecording() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.isRecording();
-            }
-        }
         return recording;
     }
 
 
     public void recordEnable(Track track, int channel) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.recordEnable(track, channel);
-                return;
-            }
-        }
-
         if (!findTrack(track)) {
             throw new IllegalArgumentException("Track does not exist in the current sequence");
         }
@@ -449,13 +333,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void recordDisable(Track track) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.recordDisable(track);
-                return;
-            }
-        }
-
         synchronized(recordingTracks) {
             RecordingTrack rc = RecordingTrack.get(recordingTracks, track);
             if (rc != null) {
@@ -482,11 +359,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public float getTempoInBPM() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTempoInBPM();
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoInBPM() ");
 
         return (float) MidiUtils.convertTempo(getTempoInMPQ());
@@ -494,12 +366,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setTempoInBPM(float bpm) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTempoInBPM(bpm);
-                return;
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: setTempoInBPM() ");
         if (bpm <= 0) {
             // should throw IllegalArgumentException
@@ -511,12 +377,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public float getTempoInMPQ() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTempoInMPQ();
-            }
-        }
-
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoInMPQ() ");
 
         if (needCaching()) {
@@ -537,12 +397,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setTempoInMPQ(float mpq) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTempoInMPQ(mpq);
-                return;
-            }
-        }
         if (mpq <= 0) {
             // should throw IllegalArgumentException
             mpq = 1.0f;
@@ -564,12 +418,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setTempoFactor(float factor) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTempoFactor(factor);
-                return;
-            }
-        }
         if (factor <= 0) {
             // should throw IllegalArgumentException
             return;
@@ -588,11 +436,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public float getTempoFactor() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTempoFactor();
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoFactor() ");
 
         if (needCaching()) {
@@ -606,11 +449,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public long getTickLength() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTickLength();
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTickLength() ");
 
         if (sequence == null) {
@@ -622,11 +460,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized long getTickPosition() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTickPosition();
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTickPosition() ");
 
         if (getDataPump() == null || sequence == null) {
@@ -638,12 +471,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized void setTickPosition(long tick) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTickPosition(tick);
-                return;
-            }
-        }
         if (tick < 0) {
             // should throw IllegalArgumentException
             return;
@@ -667,12 +494,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public long getMicrosecondLength() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getMicrosecondLength();
-            }
-        }
-
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getMicrosecondLength() ");
 
         if (sequence == null) {
@@ -684,12 +505,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public long getMicrosecondPosition() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getMicrosecondPosition();
-            }
-        }
-
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getMicrosecondPosition() ");
 
         if (getDataPump() == null || sequence == null) {
@@ -702,13 +517,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setMicrosecondPosition(long microseconds) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setMicrosecondPosition(microseconds);
-                return;
-            }
-        }
-
         if (microseconds < 0) {
             // should throw IllegalArgumentException
             return;
@@ -734,33 +542,16 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setMasterSyncMode(Sequencer.SyncMode sync) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setMasterSyncMode(sync);
-                return;
-            }
-        }
         // not supported
     }
 
 
     public Sequencer.SyncMode getMasterSyncMode() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getMasterSyncMode();
-            }
-        }
         return masterSyncMode;
     }
 
 
     public Sequencer.SyncMode[] getMasterSyncModes() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getMasterSyncModes();
-            }
-        }
-
         Sequencer.SyncMode[] returnedModes = new Sequencer.SyncMode[masterSyncModes.length];
         System.arraycopy(masterSyncModes, 0, returnedModes, 0, masterSyncModes.length);
         return returnedModes;
@@ -768,33 +559,16 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void setSlaveSyncMode(Sequencer.SyncMode sync) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setSlaveSyncMode(sync);
-                return;
-            }
-        }
         // not supported
     }
 
 
     public Sequencer.SyncMode getSlaveSyncMode() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getSlaveSyncMode();
-            }
-        }
         return slaveSyncMode;
     }
 
 
     public Sequencer.SyncMode[] getSlaveSyncModes() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getSlaveSyncModes();
-            }
-        }
-
         Sequencer.SyncMode[] returnedModes = new Sequencer.SyncMode[slaveSyncModes.length];
         System.arraycopy(slaveSyncModes, 0, returnedModes, 0, slaveSyncModes.length);
         return returnedModes;
@@ -812,12 +586,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized void setTrackMute(int track, boolean mute) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTrackMute(track, mute);
-                return;
-            }
-        }
         int trackCount = getTrackCount();
         if (track < 0 || track >= getTrackCount()) return;
         trackMuted = ensureBoolArraySize(trackMuted, trackCount);
@@ -829,11 +597,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized boolean getTrackMute(int track) {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTrackMute(track);
-            }
-        }
         if (track < 0 || track >= getTrackCount()) return false;
         if (trackMuted == null || trackMuted.length <= track) return false;
         return trackMuted[track];
@@ -841,12 +604,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized void setTrackSolo(int track, boolean solo) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setTrackSolo(track, solo);
-                return;
-            }
-        }
         int trackCount = getTrackCount();
         if (track < 0 || track >= getTrackCount()) return;
         trackSolo = ensureBoolArraySize(trackSolo, trackCount);
@@ -858,11 +615,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public synchronized boolean getTrackSolo(int track) {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getTrackSolo(track);
-            }
-        }
         if (track < 0 || track >= getTrackCount()) return false;
         if (trackSolo == null || trackSolo.length <= track) return false;
         return trackSolo[track];
@@ -870,12 +622,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public boolean addMetaEventListener(MetaEventListener listener) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.addMetaEventListener(listener);
-                // do not return here!
-            }
-        }
         synchronized(metaEventListeners) {
             if (! metaEventListeners.contains(listener)) {
 
@@ -887,12 +633,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public void removeMetaEventListener(MetaEventListener listener) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.removeMetaEventListener(listener);
-                // do not return here!
-            }
-        }
         synchronized(metaEventListeners) {
             int index = metaEventListeners.indexOf(listener);
             if (index >= 0) {
@@ -903,13 +643,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public int[] addControllerEventListener(ControllerEventListener listener, int[] controllers) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.addControllerEventListener(listener, controllers);
-                // do not return here!
-            }
-        }
-
         synchronized(controllerEventListeners) {
 
             // first find the listener.  if we have one, add the controllers
@@ -938,12 +671,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     public int[] removeControllerEventListener(ControllerEventListener listener, int[] controllers) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.removeControllerEventListener(listener, controllers);
-                // do not return here!
-            }
-        }
         synchronized(controllerEventListeners) {
             ControllerListElement cve = null;
             boolean flag = false;
@@ -973,12 +700,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     ////////////////// LOOPING (added in 1.5) ///////////////////////
 
     public void setLoopStartPoint(long tick) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setLoopStartPoint(tick);
-                return;
-            }
-        }
         if ((tick > getTickLength())
             || ((loopEnd != -1) && (tick > loopEnd))
             || (tick < 0)) {
@@ -988,21 +709,10 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
     public long getLoopStartPoint() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getLoopStartPoint();
-            }
-        }
         return loopStart;
     }
 
     public void setLoopEndPoint(long tick) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setLoopEndPoint(tick);
-                return;
-            }
-        }
         if ((tick > getTickLength())
             || ((loopStart > tick) && (tick != -1))
             || (tick < -1)) {
@@ -1012,21 +722,10 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
     public long getLoopEndPoint() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getLoopEndPoint();
-            }
-        }
         return loopEnd;
     }
 
     public void setLoopCount(int count) {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.setLoopCount(count);
-                return;
-            }
-        }
         if (count != LOOP_CONTINUOUSLY
             && count < 0) {
             throw new IllegalArgumentException("illegal value for loop count: "+count);
@@ -1038,11 +737,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     }
 
     public int getLoopCount() {
-        if (RMF) {
-            if (seqBridge != null) {
-                return seqBridge.getLoopCount();
-            }
-        }
         return loopCount;
     }
 
@@ -1053,13 +747,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
      */
     protected void implOpen() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implOpen()");
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.open();
-                if (Printer.trace) Printer.trace("<< RealTimeSequencer: -> called seqBridge.open");
-                return;
-            }
-        }
 
         //openInternalSynth();
 
@@ -1095,12 +782,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
             synth.open();
             if (synth instanceof ReferenceCountingDevice) {
                 rec = ((ReferenceCountingDevice) synth).getReceiverReferenceCounting();
-                if (synth.getClass().toString().contains("com.sun.media.sound.MixerSynth")
-                    && (synth.getDefaultSoundbank() == null)) {
-                    // don't use this receiver if no soundbank available
-                    rec = null;
-                    synth.close();
-                }
             } else {
                 rec = synth.getReceiver();
             }
@@ -1147,12 +828,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     protected synchronized void implClose() {
-        if (RMF) {
-            if (seqBridge != null) {
-                seqBridge.close();
-                // don't return here!
-            }
-        }
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implClose() ");
 
         if (playThread == null) {
@@ -1302,12 +977,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
     // OVERRIDES OF ABSTRACT MIDI DEVICE METHODS
 
     protected boolean hasReceivers() {
-        if (RMF) {
-            if (seqBridge != null) {
-                //RMF does not allow recording
-                return false;
-            }
-        }
         return true;
     }
 
@@ -1318,12 +987,6 @@ class RealTimeSequencer extends AbstractMidiDevice implements Sequencer, AutoCon
 
 
     protected boolean hasTransmitters() {
-        if (RMF) {
-            if (seqBridge != null) {
-                //RMF does never allow setting own receivers
-                return false;
-            }
-        }
         return true;
     }
 

@@ -250,6 +250,7 @@ class LocaleISOData {
         + "BH" + "BHR"  // Bahrain, Kingdom of
         + "BI" + "BDI"  // Burundi, Republic of
         + "BJ" + "BEN"  // Benin, People's Republic of
+        + "BL" + "BLM"  // Saint Barth\u00e9lemy
         + "BM" + "BMU"  // Bermuda
         + "BN" + "BRN"  // Brunei Darussalam
         + "BO" + "BOL"  // Bolivia, Republic of
@@ -273,7 +274,7 @@ class LocaleISOData {
         + "CN" + "CHN"  // China, People's Republic of
         + "CO" + "COL"  // Colombia, Republic of
         + "CR" + "CRI"  // Costa Rica, Republic of
-        + "CS" + "SCG"  // Serbia and Montenegro
+//      + "CS" + "SCG"  // Serbia and Montenegro
         + "CU" + "CUB"  // Cuba, Republic of
         + "CV" + "CPV"  // Cape Verde, Republic of
         + "CX" + "CXR"  // Christmas Island
@@ -363,6 +364,7 @@ class LocaleISOData {
         + "MC" + "MCO"  // Monaco, Principality of
         + "MD" + "MDA"  // Moldova, Republic of
         + "ME" + "MNE"  // Montenegro, Republic of
+        + "MF" + "MAF"  // Saint Martin
         + "MG" + "MDG"  // Madagascar, Republic of
         + "MH" + "MHL"  // Marshall Islands
         + "MK" + "MKD"  // Macedonia, the former Yugoslav Republic of
