@@ -122,7 +122,7 @@ void AbstractAssembler::bind(Label& L) {
 void AbstractAssembler::generate_stack_overflow_check( int frame_size_in_bytes) {
   if (UseStackBanging) {
     // Each code entry causes one stack bang n pages down the stack where n
-    // is configurable by StackBangPages.  The setting depends on the maximum
+    // is configurable by StackShadowPages.  The setting depends on the maximum
     // depth of VM call stack or native before going back into java code,
     // since only java code can raise a stack overflow exception using the
     // stack banging mechanism.  The VM and native code does not detect stack

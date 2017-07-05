@@ -2916,6 +2916,9 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
       __ bind(LSkip2);
     }
 
+    // We have no guarantee that on 64 bit the higher half of limit_reg is 0
+    __ signx(limit_reg);
+
     __ subcc(limit_reg, 1 * sizeof(jchar), chr1_reg);
     __ br(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->mov(O7, result_reg);  // result is difference in lengths
@@ -2972,6 +2975,9 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     Register limit_reg =    cnt_reg;
     Register  chr1_reg = result_reg;
     Register  chr2_reg =   tmp1_reg;
+
+    // We have no guarantee that on 64 bit the higher half of limit_reg is 0
+    __ signx(limit_reg);
 
     //check for alignment and position the pointers to the ends
     __ or3(str1_reg, str2_reg, chr1_reg);
