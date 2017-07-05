@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # The common definitions for hotspot solaris builds.
@@ -172,9 +172,6 @@ JDK_INCLUDE_SUBDIR=solaris
 # Library suffix
 LIBRARY_SUFFIX=so
 
-# FIXUP: The subdirectory for a debug build is NOT the same on all platforms
-VM_DEBUG=jvmg
-
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.$(LIBRARY_SUFFIX)
@@ -221,8 +218,8 @@ ifeq ($(JVM_VARIANT_SERVER),true)
 endif
 ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX) 
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.$(LIBRARY_SUFFIX) 
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.$(LIBRARY_SUFFIX)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.$(LIBRARY_SUFFIX)
   ifeq ($(ARCH_DATA_MODEL),32)
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.$(LIBRARY_SUFFIX)
@@ -257,4 +254,4 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
   endif
 endif
-EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 
+EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
