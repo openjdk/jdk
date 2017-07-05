@@ -72,10 +72,19 @@ usage() {
       exit 1
 }
 
-
 if [ "x" = "x$command" ] ; then
   echo "ERROR: No command to hg supplied!"
   usage
+fi
+
+# Check if we can use fifos for monitoring sub-process completion.
+on_windows=`uname -s | egrep -ic -e 'cygwin|msys'`
+if [ ${on_windows} = "1" ]; then
+  # cygwin has (2014-04-18) broken (single writer only) FIFOs
+  # msys has (2014-04-18) no FIFOs.
+  have_fifos="false"
+else
+  have_fifos="true"
 fi
 
 # Clean out the temporary directory that stores the pid files.
@@ -210,7 +219,19 @@ if [ "${command}" = "serve" ] ; then
   ) &
 else
   # Run the supplied command on all repos in parallel.
+
+  # n is the number of subprocess started or which might still be running.
   n=0
+  if [ $have_fifos = "true" ]; then
+    # if we have fifos use them to detect command completion.
+    mkfifo ${tmp}/fifo
+    exec 3<>${tmp}/fifo
+    if [ "${sflag}" = "true" ] ; then
+      # force sequential
+      at_a_time=1
+    fi
+  fi
+
   for i in ${repos} ${repos_extra} ; do
     n=`expr ${n} '+' 1`
     repopidfile=`echo ${i} | sed -e 's@./@@' -e 's@/@_@g'`
@@ -221,10 +242,11 @@ else
           pull_base="${pull_extra}"
       fi
     done
+    pull_base="`echo ${pull_base} | sed -e 's@[/]*$@@'`"
     (
       (
         if [ "${command}" = "clone" -o "${command}" = "fclone" -o "${command}" = "tclone" ] ; then
-          pull_newrepo="`echo ${pull_base}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
+          pull_newrepo="${pull_base}/${i}"
           path="`dirname ${i}`"
           if [ "${path}" != "." ] ; then
             times=0
@@ -237,7 +259,7 @@ else
               sleep 5
             done
           fi
-          echo "hg clone ${pull_newrepo} ${i}" > ${status_output}
+          echo "hg${global_opts} clone ${pull_newrepo} ${i}" > ${status_output}
           (PYTHONUNBUFFERED=true hg${global_opts} clone ${pull_newrepo} ${i}; echo "$?" > ${tmp}/${repopidfile}.pid.rc ) 2>&1 &
         else
           echo "cd ${i} && hg${global_opts} ${command} ${command_args}" > ${status_output}
@@ -246,21 +268,41 @@ else
 
         echo $! > ${tmp}/${repopidfile}.pid
       ) 2>&1 | sed -e "s@^@${reponame}:   @" > ${status_output}
+      if [ $have_fifos = "true" ]; then
+        echo "${reponame}" >&3
+      fi
     ) &
 
-    if [ `expr ${n} '%' ${at_a_time}` -eq 0 -a "${sflag}" = "false" ] ; then
-      sleep 2
-      echo "Waiting 5 secs before spawning next background command." > ${status_output}
-      sleep 3
-    fi
-
-    if [ "${sflag}" = "true" ] ; then
+    if [ $have_fifos = "true" ]; then
+      # check on count of running subprocesses and possibly wait for completion
+      if [ ${at_a_time} -lt ${n} ] ; then
+        # read will block until there are completed subprocesses
+        while read repo_done; do
+          n=`expr ${n} '-' 1`
+          if [ ${n} -lt ${at_a_time} ] ; then
+            # we should start more subprocesses
+            break;
+          fi
+        done <&3
+      fi
+    else
+      if [ "${sflag}" = "false" ] ; then
+        # Compare completions to starts
+        completed="`(ls -1 ${tmp}/*.pid.rc 2> /dev/null | wc -l) || echo 0`"
+        while [ ${at_a_time} -lt `expr ${n} '-' ${completed}` ] ; do
+          # sleep a short time to give time for something to complete
+          sleep 1
+          completed="`(ls -1 ${tmp}/*.pid.rc 2> /dev/null | wc -l) || echo 0`"
+        done
+      else
+        # complete this task before starting another.
         wait
+      fi
     fi
   done
 fi
 
-# Wait for all hg commands to complete
+# Wait for all subprocesses to complete
 wait
 
 # Terminate with exit 0 only if all subprocesses were successful
@@ -270,7 +312,7 @@ if [ -d ${tmp} ]; then
     exit_code=`cat ${rc} | tr -d ' \n\r'`
     if [ "${exit_code}" != "0" ] ; then
       repo="`echo ${rc} | sed -e s@^${tmp}@@ -e 's@/*\([^/]*\)\.pid\.rc$@\1@' -e 's@_@/@g'`"
-      echo "WARNING: ${repo} exited abnormally." > ${status_output}
+      echo "WARNING: ${repo} exited abnormally ($exit_code)" > ${status_output}
       ec=1
     fi
   done

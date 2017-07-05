@@ -71,6 +71,7 @@ class ciMethod : public ciMetadata {
   int _interpreter_invocation_count;
   int _interpreter_throwout_count;
   int _instructions_size;
+  int _size_of_parameters;
 
   bool _uses_monitors;
   bool _balanced_monitors;
@@ -166,6 +167,7 @@ class ciMethod : public ciMetadata {
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
+  int size_of_parameters() const                 { check_is_loaded(); return _size_of_parameters; }
 
   // Code size for inlining decisions.
   int code_size_for_inlining();
@@ -241,7 +243,6 @@ class ciMethod : public ciMetadata {
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
-
   // Given a certain calling environment, find the monomorphic target
   // for the call.  Return NULL if the call is not monomorphic in
   // its calling environment.

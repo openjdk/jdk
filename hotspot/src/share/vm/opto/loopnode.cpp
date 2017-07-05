@@ -3172,17 +3172,16 @@ bool PhaseIdealLoop::verify_dominance(Node* n, Node* use, Node* LCA, Node* early
   bool had_error = false;
 #ifdef ASSERT
   if (early != C->root()) {
-    // Make sure that there's a dominance path from use to LCA
-    Node* d = use;
-    while (d != LCA) {
-      d = idom(d);
+    // Make sure that there's a dominance path from LCA to early
+    Node* d = LCA;
+    while (d != early) {
       if (d == C->root()) {
-        tty->print_cr("*** Use %d isn't dominated by def %s", use->_idx, n->_idx);
-        n->dump();
-        use->dump();
+        dump_bad_graph("Bad graph detected in compute_lca_of_uses", n, early, LCA);
+        tty->print_cr("*** Use %d isn't dominated by def %d ***", use->_idx, n->_idx);
         had_error = true;
         break;
       }
+      d = idom(d);
     }
   }
 #endif
@@ -3434,6 +3433,13 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
   if (n->req() == 2 && n->Opcode() == Op_ConvI2L && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
   }
+
+#ifdef ASSERT
+  if (_verify_only && !n->is_CFG()) {
+    // Check def-use domination.
+    compute_lca_of_uses(n, get_ctrl(n), true /* verify */);
+  }
+#endif
 
   // CFG and pinned nodes already handled
   if( n->in(0) ) {

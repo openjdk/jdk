@@ -89,7 +89,7 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
   if test "x$FOUND_MEM" = xyes; then
     AC_MSG_RESULT([$MEMORY_SIZE MB])
   else
-    AC_MSG_RESULT([could not detect memory size, defaulting to 1024 MB])
+    AC_MSG_RESULT([could not detect memory size, defaulting to $MEMORY_SIZE MB])
     AC_MSG_WARN([This might seriously impact build performance!])
   fi
 ])

@@ -132,7 +132,8 @@ class LIR_Assembler: public CompilationResourceObj {
   int code_offset() const;
   address pc() const;
 
-  int  initial_frame_size_in_bytes();
+  int  initial_frame_size_in_bytes() const;
+  int  bang_size_in_bytes() const;
 
   // test for constants which can be encoded directly in instructions
   static bool is_small_constant(LIR_Opr opr);
