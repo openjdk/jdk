@@ -376,7 +376,6 @@ AWT_ASSERT_APPKIT_THREAD;
 {
     void (^copy)() = [block copy];
     NSInteger encode = (NSInteger) copy;
-    [copy retain];
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     NSEvent* event = [NSEvent otherEventWithType: NSApplicationDefined
                                         location: NSMakePoint(0,0)

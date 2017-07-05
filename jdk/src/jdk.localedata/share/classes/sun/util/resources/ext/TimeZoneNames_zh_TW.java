@@ -189,6 +189,9 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"\u99ac\u7d39\u723e\u7fa4\u5cf6\u6642\u9593", "MHT",
                                      "\u99ac\u7d39\u723e\u7fa4\u5cf6\u590f\u4ee4\u6642\u9593", "MHST",
                                      "\u99AC\u7D39\u723E\u7FA4\u5CF6\u6642\u9593", "MHT"};
+        String MMT[] = new String[] {"\u7dec\u7538\u6642\u9593", "MMT",
+                                     "\u7dec\u7538\u590f\u4ee4\u6642\u9593", "MMST",
+                                     "\u7DEC\u7538\u6642\u9593", "MMT"};
         String MSK[] = new String[] {"\u83ab\u65af\u79d1\u6a19\u6e96\u6642\u9593", "MSK",
                                      "\u83ab\u65af\u79d1\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "MSD",
                                      "\u83AB\u65AF\u79D1\u6642\u9593", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Qyzylorda \u6642\u9593", "QYZT",
                                              "Qyzylorda \u590f\u4ee4\u6642\u9593", "QYZST",
                                              "\u514B\u5B5C\u6D1B\u723E\u9054\u6642\u9593", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"\u7dec\u7538\u6642\u9593", "MMT",
-                                           "\u7dec\u7538\u590f\u4ee4\u6642\u9593", "MMST",
-                                           "\u7DEC\u7538\u6642\u9593", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"\u5eab\u9801\u5cf6\u6642\u9593", "SAKT",
@@ -721,6 +722,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                                "\u6d77\u53c3\u5d34\u590f\u4ee4\u6642\u9593", "VLAST",
                                                "\u6D77\u53C3\u5D34\u6642\u9593", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Yekaterinburg \u6642\u9593", "YEKT",
                                                  "Yekaterinburg \u590f\u4ee4\u6642\u9593", "YEKST",
                                                  "\u8449\u5361\u6377\u7433\u5821\u6642\u9593", "YEKT"}},

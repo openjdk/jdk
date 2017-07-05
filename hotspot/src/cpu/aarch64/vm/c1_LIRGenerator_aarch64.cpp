@@ -140,10 +140,11 @@ LIR_Opr LIRGenerator::safepoint_poll_register() {
 LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
                                             int shift, int disp, BasicType type) {
   assert(base->is_register(), "must be");
+  intx large_disp = disp;
 
   // accumulate fixed displacements
   if (index->is_constant()) {
-    disp += index->as_constant_ptr()->as_jint() << shift;
+    large_disp += (intx)(index->as_constant_ptr()->as_jint()) << shift;
     index = LIR_OprFact::illegalOpr;
   }
 
@@ -154,31 +155,31 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
       __ shift_left(index, shift, tmp);
       index = tmp;
     }
-    if (disp != 0) {
+    if (large_disp != 0) {
       LIR_Opr tmp = new_pointer_register();
-      if (Assembler::operand_valid_for_add_sub_immediate(disp)) {
-        __ add(tmp, tmp, LIR_OprFact::intptrConst(disp));
+      if (Assembler::operand_valid_for_add_sub_immediate(large_disp)) {
+        __ add(tmp, tmp, LIR_OprFact::intptrConst(large_disp));
         index = tmp;
       } else {
-        __ move(tmp, LIR_OprFact::intptrConst(disp));
+        __ move(tmp, LIR_OprFact::intptrConst(large_disp));
         __ add(tmp, index, tmp);
         index = tmp;
       }
-      disp = 0;
+      large_disp = 0;
     }
-  } else if (disp != 0 && !Address::offset_ok_for_immed(disp, shift)) {
+  } else if (large_disp != 0 && !Address::offset_ok_for_immed(large_disp, shift)) {
     // index is illegal so replace it with the displacement loaded into a register
     index = new_pointer_register();
-    __ move(LIR_OprFact::intptrConst(disp), index);
-    disp = 0;
+    __ move(LIR_OprFact::intptrConst(large_disp), index);
+    large_disp = 0;
   }
 
   // at this point we either have base + index or base + displacement
-  if (disp == 0) {
+  if (large_disp == 0) {
     return new LIR_Address(base, index, type);
   } else {
-    assert(Address::offset_ok_for_immed(disp, 0), "must be");
-    return new LIR_Address(base, disp, type);
+    assert(Address::offset_ok_for_immed(large_disp, 0), "must be");
+    return new LIR_Address(base, large_disp, type);
   }
 }
 
@@ -192,7 +193,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   LIR_Address* addr;
   if (index_opr->is_constant()) {
     addr = new LIR_Address(array_opr,
-                           offset_in_bytes + index_opr->as_jint() * elem_size, type);
+                           offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
   } else {
     if (offset_in_bytes) {
       LIR_Opr tmp = new_pointer_register();
@@ -1030,6 +1031,10 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
   Unimplemented();
+}
+
+void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
+  fatal("FMA intrinsic is not implemented on this platform");
 }
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {

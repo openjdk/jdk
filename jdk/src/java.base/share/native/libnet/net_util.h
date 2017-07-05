@@ -42,6 +42,10 @@
 #define NET_ERROR(env, ex, msg) \
 { if (!(*env)->ExceptionOccurred(env)) JNU_ThrowByName(env, ex, msg); }
 
+#define NET_WAIT_READ    0x01
+#define NET_WAIT_WRITE   0x02
+#define NET_WAIT_CONNECT 0x04
+
 /************************************************************************
  * Cached field IDs
  *
@@ -133,9 +137,6 @@ JNIEXPORT jint JNICALL ipv6_available() ;
 
 JNIEXPORT jint JNICALL reuseport_available() ;
 
-void
-NET_AllocSockaddr(struct sockaddr **him, int *len);
-
 JNIEXPORT int JNICALL
 NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr *him, int *len, jboolean v4MappedAddress);
 
@@ -195,5 +196,7 @@ int getScopeID (struct sockaddr *);
 int cmpScopeID (unsigned int, struct sockaddr *);
 
 unsigned short in_cksum(unsigned short *addr, int len);
+
+jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 
 #endif /* NET_UTILS_H */

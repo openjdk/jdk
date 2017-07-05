@@ -2366,7 +2366,9 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   if (Interpreter::contains(pc)) {
     *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
     if (!fr->is_first_java_frame()) {
-      assert(fr->safe_for_sender(thread), "Safety check");
+      // get_frame_at_stack_banging_point() is only called when we
+      // have well defined stacks so java_sender() calls do not need
+      // to assert safe_for_sender() first.
       *fr = fr->java_sender();
     }
   } else {
@@ -2383,7 +2385,7 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
       // has been pushed on the stack
       *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
       if (!fr->is_java_frame()) {
-        assert(fr->safe_for_sender(thread), "Safety check");
+        // See java_sender() comment above.
         *fr = fr->java_sender();
       }
     }

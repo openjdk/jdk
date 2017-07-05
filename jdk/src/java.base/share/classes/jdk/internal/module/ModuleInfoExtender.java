@@ -163,6 +163,16 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public void write(OutputStream out) throws IOException {
+        // emit to the output stream
+        out.write(toByteArray());
+    }
+
+    /**
+     * Returns the bytes of the modified module-info.class.
+     * Once this method has been called then the Extender object should
+     * be discarded.
+     */
+    public byte[] toByteArray() throws IOException {
         ClassWriter cw
             = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
 
@@ -197,8 +207,7 @@ public final class ModuleInfoExtender {
         // add any attributes that didn't replace previous attributes
         cv.finish();
 
-        // emit to the output stream
-        out.write(cw.toByteArray());
+        return cw.toByteArray();
     }
 
     /**

@@ -562,8 +562,8 @@ JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, 
   }
 
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-  return StackWalk::moreFrames(stackStream_h, mode, anchor, frame_count,
-                               start_index, frames_array_h, THREAD);
+  return StackWalk::fetchNextBatch(stackStream_h, mode, anchor, frame_count,
+                                   start_index, frames_array_h, THREAD);
 JVM_END
 
 JVM_ENTRY(void, JVM_ToStackTraceElement(JNIEnv *env, jobject frame, jobject stack))

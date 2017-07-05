@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,18 +57,16 @@ Java_sun_nio_ch_InheritedChannel_initIDs(JNIEnv *env, jclass cla)
 JNIEXPORT jobject JNICALL
 Java_sun_nio_ch_InheritedChannel_peerAddress0(JNIEnv *env, jclass cla, jint fd)
 {
-    struct sockaddr *sa;
-    socklen_t sa_len;
+    SOCKETADDRESS sa;
+    socklen_t len = sizeof(SOCKETADDRESS);
     jobject remote_ia = NULL;
     jint remote_port;
 
-    NET_AllocSockaddr(&sa, (int *)&sa_len);
-    if (getpeername(fd, sa, &sa_len) == 0) {
-        if (matchFamily(sa)) {
-            remote_ia = NET_SockaddrToInetAddress(env, sa, (int *)&remote_port);
+    if (getpeername(fd, &sa.sa, &len) == 0) {
+        if (matchFamily(&sa.sa)) {
+            remote_ia = NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
         }
     }
-    free((void *)sa);
 
     return remote_ia;
 }
@@ -77,17 +75,15 @@ Java_sun_nio_ch_InheritedChannel_peerAddress0(JNIEnv *env, jclass cla, jint fd)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
 {
-    struct sockaddr *sa;
-    socklen_t sa_len;
+    SOCKETADDRESS sa;
+    socklen_t len = sizeof(SOCKETADDRESS);
     jint remote_port = -1;
 
-    NET_AllocSockaddr(&sa, (int *)&sa_len);
-    if (getpeername(fd, sa, &sa_len) == 0) {
-        if (matchFamily(sa)) {
-            NET_SockaddrToInetAddress(env, sa, (int *)&remote_port);
+    if (getpeername(fd, &sa.sa, &len) == 0) {
+        if (matchFamily(&sa.sa)) {
+            NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
         }
     }
-    free((void *)sa);
 
     return remote_port;
 }

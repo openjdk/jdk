@@ -45,6 +45,7 @@ import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -66,7 +67,7 @@ public class TestRTMSpinLoopCount extends CommandLineOptionTest {
             = new int[] { 0, 100, 1_000, 1_000_000, 10_000_000 };
 
     private TestRTMSpinLoopCount() {
-        super(new AndPredicate(new SupportedVM(), new SupportedCPU()));
+        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
     }
 
     @Override
