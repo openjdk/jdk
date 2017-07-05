@@ -1,0 +1,473 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+# private java.lang.Object createInetSocketAddress(java.lang.String, int)
+@ClassForName
+  com.sun.jndi.ldap.Connection -> java.net.InetSocketAddress
+  com.sun.jndi.ldap.Connection -> java.net.SocketAddress
+
+# com.sun.jndi.ldap.VersionHelper
+@ClassForName(optional)
+  com.sun.jndi.ldap.VersionHelper -> com.sun.jndi.ldap.VersionHelper*
+
+# private static void initMethodHandles()
+@ClassForName
+  com.sun.jndi.toolkit.corba.CorbaUtils -> javax.rmi.CORBA.Stub
+  com.sun.jndi.toolkit.corba.CorbaUtils -> javax.rmi.PortableRemoteObject
+
+# com.sun.naming.internal.ResourceManager$AppletParameter
+@ClassForName(optional)
+  com.sun.naming.internal.ResourceManager$AppletParameter -> java.applet.Applet
+
+# private static boolean loadProviderAsService()
+@Provider
+  com.sun.net.httpserver.spi.HttpServerProvider -> META-INF/services/com.sun.net.httpserver.spi.HttpServerProvider
+
+# com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXSLT
+@ClassForName
+  com.sun.org.apache.xml.internal.security.transforms.implementations.TransformXSLT -> javax.xml.XMLConstants
+
+# public static java.beans.PersistenceDelegate getPersistenceDelegate(java.lang.Class)
+@ClassForName
+  java.beans.MetaData -> java.beans.*_PersistenceDelegate
+
+# private static java.lang.reflect.Method getNanosMethod()
+@ClassForName(optional)
+  java.beans.java_sql_Timestamp_PersistenceDelegate -> java.sql.Timestamp
+
+# java.beans.java_util_Collections$CheckedCollection_PersistenceDelegate
+@ClassForName
+  java.beans.java_util_Collections$CheckedCollection_PersistenceDelegate -> java.util.Collections$CheckedCollection
+
+# java.beans.java_util_Collections$CheckedMap_PersistenceDelegate
+@ClassForName
+  java.beans.java_util_Collections$CheckedMap_PersistenceDelegate -> java.util.Collections$CheckedMap
+
+# private static java.lang.Object getType(java.lang.Object)
+@ClassForName
+  java.beans.java_util_EnumMap_PersistenceDelegate -> java.util.EnumMap
+
+# private java.lang.Integer getAxis(java.lang.Object)
+@ClassForName
+  java.beans.javax_swing_Box_PersistenceDelegate -> javax.swing.BoxLayout
+
+# java.lang.Double
+@Inline
+  java.lang.Double -> sun.misc.FloatConsts
+  java.lang.Double -> sun.misc.DoubleConsts
+
+# java.lang.Float
+@Inline
+  java.lang.Float -> sun.misc.FloatConsts
+  java.lang.Float -> sun.misc.DoubleConsts
+
+# java.net.DefaultDatagramSocketImplFactory
+@ClassForName(optional)
+  java.net.DefaultDatagramSocketImplFactory -> java.net.*DatagramSocketImpl
+
+# private static sun.net.spi.nameservice.NameService createNSProvider(java.lang.String)
+@Provider
+  java.net.InetAddress -> META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor
+
+# static java.net.InetAddressImpl create()
+@ClassForName
+  java.net.InetAddressImplFactory -> java.net.*Inet[46]AddressImpl
+
+# private static void init()
+@NativeFindClass
+  java.net.PlainDatagramSocketImpl -> java.io.FileDescriptor
+
+# java.net.ProxySelector
+@ClassForName
+  java.net.ProxySelector -> sun.net.spi.DefaultProxySelector
+
+# static java.net.URLStreamHandler getURLStreamHandler(java.lang.String)
+@ClassForName(optional)
+  java.net.URL -> sun.net.www.protocol.*.Handler
+
+# private java.net.ContentHandler lookupContentHandlerClassFor(java.lang.String)
+@ClassForName
+  java.net.URLConnection -> sun.net.www.content.*
+
+# private static java.nio.channels.spi.AsynchronousChannelProvider loadProviderAsService()
+@Provider
+  java.nio.channels.spi.AsynchronousChannelProvider$ProviderHolder -> META-INF/services/java.nio.channels.spi.AsynchronousChannelProvider
+
+# private static boolean loadProviderFromProperty()
+@ClassForName
+  java.nio.channels.spi.SelectorProvider -> sun.nio.ch.DefaultSelectorProvider
+
+# private static boolean loadProviderAsService()
+@Provider
+  java.nio.channels.spi.SelectorProvider -> META-INF/services/java.nio.channels.spi.SelectorProvider
+
+# private static java.util.Iterator providers()
+@Provider
+  java.nio.charset.Charset -> META-INF/services/java.nio.charset.spi.CharsetProvider
+
+# private static void probeExtendedProvider()
+@ClassForName(optional)
+  java.nio.charset.Charset -> sun.nio.cs.ext.ExtendedCharsets
+
+# public static java.nio.file.FileSystem newFileSystem(java.net.URI, java.util.Map<java.lang.String, ?>, java.lang.ClassLoader)
+@Provider
+  java.nio.file.FileSystems -> META-INF/services/java.nio.file.FileSystemProvider
+
+# private static java.util.List<java.nio.file.spi.FileTypeDetector> loadInstalledDetectors()
+@Provider
+  java.nio.file.Files$DefaultFileTypeDetectorHolder -> META-INF/services/java.nio.file.spi.FileTypeDetector
+
+# public static java.util.List<java.nio.file.spi.FileSystemProvider> installedProviders()
+@Provider
+  java.nio.file.spi.FileSystemProvider -> META-INF/services/java.nio.file.FileSystemProvider
+
+# private static java.rmi.server.RMIClassLoaderSpi initializeProvider()
+@Provider
+  java.rmi.server.RMIClassLoader -> META-INF/services/java.rmi.server.RMIClassLoaderSpi
+
+# private static void initializeSystemScope()
+@ClassForName(optional)
+  java.security.IdentityScope -> sun.security.provider.IdentityDatabase
+
+# static java.security.Policy getPolicyNoCheck()
+@ClassForName
+  java.security.Policy -> sun.security.provider.PolicyFile
+
+# private static java.lang.Class getSpiClass(java.lang.String)
+@ClassForName
+  java.security.Security -> java.security.*Spi
+
+# private static void invalidateSMCache(java.lang.String)
+@ClassForName
+  java.security.Security -> java.lang.SecurityManager
+
+# private static void loadInitialDrivers()
+@Provider
+  java.sql.DriverManager -> META-INF/services/java.sql.Driver
+
+# private static java.text.BreakIterator createBreakInstance(java.util.Locale, int, java.lang.String, java.lang.String)
+@Provider
+  java.text.BreakIterator -> META-INF/services/java.util.spi.BreakIteratorProvider
+
+# public static java.text.Collator getInstance(java.util.Locale)
+@Provider
+  java.text.Collator -> META-INF/services/java.util.spi.CollatorProvider
+
+# private static java.text.DateFormat get(int, int, int, java.util.Locale)
+@Provider
+  java.text.DateFormat -> META-INF/services/java.util.spi.DateNameProvider
+
+# public static java.util.Locale[] getAvailableLocales()
+@Provider
+  java.text.DateFormatSymbols -> META-INF/services/java.util.spi.DateFormatSymbolsProvider
+
+# public static java.util.Locale[] getAvailableLocales()
+@Provider
+  java.text.DecimalFormatSymbols -> META-INF/services/java.util.spi.DecimalFormatSymbolsProvider
+
+# public static java.util.Locale[] getAvailableLocales()
+@Provider
+  java.text.NumberFormat -> META-INF/services/java.util.spi.NumberFormatProvider
+
+# public java.lang.String getDisplayName(java.util.Locale)
+@Provider
+  java.util.Currency -> META-INF/services/java.util.spi.CurrencyNameProvider
+
+# java.util.Formatter
+@Inline
+  java.util.Formatter -> sun.misc.DoubleConsts
+
+# java.util.Locale
+@Inline
+  java.util.Locale -> java.util.LocaleISOData
+
+# private java.lang.String getDisplayString(java.lang.String, java.util.Locale, int)
+@Provider
+  java.util.Locale -> META-INF/services/java.util.spi.LocaleNameProvider
+
+# private static java.util.prefs.PreferencesFactory factory1()
+@ClassForName
+  java.util.prefs.Preferences -> java.util.prefs.WindowsPreferencesFactory
+  java.util.prefs.Preferences -> java.util.prefs.FileSystemPreferencesFactory
+
+# private static java.util.prefs.PreferencesFactory factory1()
+@Provider
+  java.util.prefs.Preferences -> META-INF/services/java.util.prefs.PreferencesFactory
+
+# public void registerApplicationClasspathSpis()
+@Provider
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.IIOServiceProvider
+
+# private void registerInstalledProviders()
+@Provider
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageReaderSpi
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageWriterSpi
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageReaderWriterSpi
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageTranscoderSpi
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageInputStreamSpi
+  javax.imageio.spi.IIORegistry -> META-INF/services/javax.imageio.spi.ImageOutputStreamSpi
+
+# public javax.naming.ldap.ExtendedResponse createExtendedResponse(java.lang.String, byte[], int, int)
+@Provider
+  javax.naming.ldap.StartTlsRequest -> META-INF/services/javax.naming.ldap.StartTlsResponse
+
+# private static java.util.ArrayList getAllLookupServices()
+@Provider
+  javax.print.PrintServiceLookup -> META-INF/services/javax.print.PrintServiceLookup
+
+# private static java.util.ArrayList getAllFactories()
+@Provider
+  javax.print.StreamPrintServiceFactory -> META-INF/services/javax.print.StreamPrintServiceFactory
+
+# private void initEngines(java.lang.ClassLoader)
+@Provider
+  javax.script.ScriptEngineManager -> META-INF/services/javax.script.ScriptEngineFactory
+
+# private void initializeInputMethodLocatorList()
+@Provider
+  sun.awt.im.ExecutableInputMethodManager -> META-INF/services/java.awt.im.spi.InputMethodDescriptor
+
+# private static java.lang.Class getConverterClass(int, java.lang.String)
+@ClassForName(optional)
+  sun.io.Converters -> sun.io.*
+
+# public static sun.java2d.cmm.PCMM getModule()
+@Provider
+  sun.java2d.cmm.CMSManager -> META-INF/services/sun.java2d.cmm.PCMM
+
+# public static sun.java2d.pipe.RenderingEngine getInstance()
+@Provider
+  sun.java2d.pipe.RenderingEngine -> META-INF/services/sun.java2d.pipe.RenderingEngine
+
+# public static sun.java2d.pipe.RenderingEngine getInstance()
+@ClassForName(optional)
+  sun.java2d.pipe.RenderingEngine -> sun.dc.DuctusRenderingEngine
+
+# sun.misc.FloatingDecimal
+@Inline
+  sun.misc.FloatingDecimal -> sun.misc.FloatConsts
+  sun.misc.FloatingDecimal -> sun.misc.DoubleConsts
+
+# sun.misc.FormattedFloatingDecimal
+@Inline
+  sun.misc.FormattedFloatingDecimal -> sun.misc.FloatConsts
+  sun.misc.FormattedFloatingDecimal -> sun.misc.DoubleConsts
+
+# sun.misc.FpUtils
+@Inline
+  sun.misc.FpUtils -> sun.misc.FloatConsts
+  sun.misc.FpUtils -> sun.misc.DoubleConsts
+
+# public java.net.URLStreamHandler createURLStreamHandler(java.lang.String)
+@ClassForName(optional)
+  sun.misc.Launcher$Factory -> sun.net.www.protocol.*.Handler
+
+# private static sun.net.NetHooks$Provider loadProvider(java.lang.String)
+@ClassForName(optional)
+  sun.net.NetHooks -> sun.net.spi.SdpProvider
+
+# sun.net.idn.StringPrep
+@Inline
+  sun.net.idn.StringPrep -> sun.net.idn.UCharacterDirection
+
+# private static boolean init()
+@NativeFindClass
+  sun.net.spi.DefaultProxySelector -> java.net.Proxy
+  sun.net.spi.DefaultProxySelector -> java.net.Proxy$Type
+  sun.net.spi.DefaultProxySelector -> java.net.InetSocketAddress
+
+# private static java.nio.channels.Channel createChannel()
+@ClassForName
+  sun.nio.ch.InheritedChannel -> java.io.FileDescriptor
+
+# private static void initDBBConstructor()
+@ClassForName
+  sun.nio.ch.Util -> java.nio.DirectByteBuffer
+
+# private static void initDBBRConstructor()
+@ClassForName
+  sun.nio.ch.Util -> java.nio.DirectByteBufferR
+
+# private java.nio.charset.Charset lookup(java.lang.String)
+@ClassForName(optional)
+  sun.nio.cs.FastCharsetProvider -> sun.nio.cs.*
+
+# sun.nio.cs.ext.ExtendedCharsets
+@ClassForName(optional)
+  sun.nio.cs.ext.ExtendedCharsets -> sun.nio.cs.ext.*
+
+# sun.nio.cs.ext.ExtendedCharsets
+@ClassForName(optional)
+  sun.nio.cs.ext.ExtendedCharsets -> sun.nio.cs.ext.*
+
+# public static java.nio.file.spi.FileSystemProvider create()
+@ClassForName
+  sun.nio.fs.DefaultFileSystemProvider -> sun.nio.fs.SolarisFileSystemProvider
+  sun.nio.fs.DefaultFileSystemProvider -> sun.nio.fs.LinuxFileSystemProvider
+
+# sun.rmi.server.MarshalInputStream
+@ClassForName
+  sun.rmi.server.MarshalInputStream -> sun.rmi.server.Activation$ActivationSystemImpl_Stub
+  sun.rmi.server.MarshalInputStream -> sun.rmi.registry.RegistryImpl_Stub
+
+# private java.security.Provider doLoadProvider()
+@ClassForName(optional)
+  sun.security.jca.ProviderConfig -> sun.security.pkcs11.SunPKCS11
+  sun.security.jca.ProviderConfig -> sun.security.provider.Sun
+  sun.security.jca.ProviderConfig -> sun.security.rsa.SunRsaSign
+  sun.security.jca.ProviderConfig -> sun.security.ec.SunEC
+  sun.security.jca.ProviderConfig -> com.sun.net.ssl.internal.ssl.Provider
+  sun.security.jca.ProviderConfig -> com.sun.crypto.provider.SunJCE
+  sun.security.jca.ProviderConfig -> sun.security.jgss.SunProvider
+  sun.security.jca.ProviderConfig -> com.sun.security.sasl.Provider
+  sun.security.jca.ProviderConfig -> org.jcp.xml.dsig.internal.dom.XMLDSigRI
+  sun.security.jca.ProviderConfig -> sun.security.smartcardio.SunPCSC
+  sun.security.jca.ProviderConfig -> sun.security.mscapi.SunMSCAPI
+
+# public static java.security.Provider getSunProvider()
+@ClassForName
+  sun.security.jca.Providers -> sun.security.provider.Sun
+  sun.security.jca.Providers -> sun.security.provider.VerificationProvider
+
+# private static sun.security.jgss.spi.MechanismFactory getMechFactoryImpl(java.security.Provider, java.lang.String, org.ietf.jgss.Oid, sun.security.jgss.GSSCaller)
+@ClassForName
+  sun.security.jgss.ProviderList -> sun.security.jgss.spi.MechanismFactory
+
+# sun.security.jgss.wrapper.SunNativeProvider
+@NativeFindClass
+  sun.security.jgss.wrapper.SunNativeProvider -> org.ietf.jgss.Oid
+  sun.security.jgss.wrapper.SunNativeProvider -> org.ietf.jgss.GSSException
+  sun.security.jgss.wrapper.SunNativeProvider -> sun.security.jgss.wrapper.GSSNameElement
+  sun.security.jgss.wrapper.SunNativeProvider -> sun.security.jgss.wrapper.GSSCredElement
+  sun.security.jgss.wrapper.SunNativeProvider -> sun.security.jgss.wrapper.NativeGSSContext
+  sun.security.jgss.wrapper.SunNativeProvider -> sun.security.jgss.wrapper.SunNativeProvider
+  sun.security.jgss.wrapper.SunNativeProvider -> org.ietf.jgss.MessageProp
+  sun.security.jgss.wrapper.SunNativeProvider -> org.ietf.jgss.ChannelBinding
+  sun.security.jgss.wrapper.SunNativeProvider -> java.net.InetAddress
+  sun.security.jgss.wrapper.SunNativeProvider -> sun.security.jgss.wrapper.GSSLibStub
+
+# static void ensureLoaded()
+@NativeFindClass
+  sun.security.krb5.Credentials -> sun.security.krb5.internal.Krb5
+  sun.security.krb5.Credentials -> sun.security.krb5.internal.Ticket
+  sun.security.krb5.Credentials -> sun.security.krb5.PrincipalName
+  sun.security.krb5.Credentials -> sun.security.util.DerValue
+  sun.security.krb5.Credentials -> sun.security.krb5.EncryptionKey
+  sun.security.krb5.Credentials -> sun.security.krb5.internal.TicketFlags
+  sun.security.krb5.Credentials -> sun.security.krb5.internal.KerberosTime
+
+# public static java.lang.String getDefaultCacheName()
+@ClassForName(optional)
+  sun.security.krb5.internal.ccache.FileCredentialsCache -> com.sun.security.auth.module.UnixSystem
+
+# sun.security.pkcs.PKCS9Attribute
+@ClassForName
+  sun.security.pkcs.PKCS9Attribute -> sun.security.util.ObjectIdentifier
+  sun.security.pkcs.PKCS9Attribute -> java.util.Date
+  sun.security.pkcs.PKCS9Attribute -> sun.security.pkcs.SignerInfo
+  sun.security.pkcs.PKCS9Attribute -> sun.security.x509.CertificateExtensions
+
+# protected T engineGetKeySpec(java.security.Key, java.lang.Class<T>)
+@ClassForName
+  sun.security.provider.DSAKeyFactory -> java.security.spec.DSAPublicKeySpec
+  sun.security.provider.DSAKeyFactory -> java.security.spec.X509EncodedKeySpec
+  sun.security.provider.DSAKeyFactory -> java.security.spec.DSAPrivateKeySpec
+  sun.security.provider.DSAKeyFactory -> java.security.spec.PKCS8EncodedKeySpec
+
+# protected T engineGetParameterSpec(java.lang.Class<T>)
+@ClassForName
+  sun.security.provider.DSAParameters -> java.security.spec.DSAParameterSpec
+
+# sun.security.provider.VerificationProvider
+@ClassForName(optional)
+  sun.security.provider.VerificationProvider -> sun.security.provider.Sun
+  sun.security.provider.VerificationProvider -> sun.security.rsa.SunRsaSign
+
+# sun.security.provider.certpath.URICertStore$LDAP
+@ClassForName(optional)
+  sun.security.provider.certpath.URICertStore$LDAP -> sun.security.provider.certpath.ldap.LDAPCertStoreHelper
+
+# sun.security.smartcardio.PCSC
+@NativeFindClass
+  sun.security.smartcardio.PCSC -> sun.security.smartcardio.PCSCException
+
+# sun.security.ssl.HandshakeMessage
+@ClassForName
+  sun.security.ssl.HandshakeMessage -> java.security.MessageDigest$Delegate
+
+# sun.security.ssl.JsseJce
+@ClassForName(optional)
+  sun.security.ssl.JsseJce -> sun.security.krb5.PrincipalName
+
+# sun.security.x509.OIDMap$OIDInfo
+@ClassForName
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.SubjectKeyIdentifierExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.KeyUsageExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.PrivateKeyUsageExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.SubjectAlternativeNameExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.IssuerAlternativeNameExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.BasicConstraintsExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.CRLNumberExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.CRLReasonCodeExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.NameConstraintsExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.PolicyMappingsExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.AuthorityKeyIdentifierExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.PolicyConstraintsExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.NetscapeCertTypeExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.CertificatePoliciesExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.ExtendedKeyUsageExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.InhibitAnyPolicyExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.CRLDistributionPointsExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.CertificateIssuerExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.SubjectInfoAccessExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.AuthorityInfoAccessExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.IssuingDistributionPointExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.DeltaCRLIndicatorExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.FreshestCRLExtension
+  sun.security.x509.OIDMap$OIDInfo -> sun.security.x509.OCSPNoCheckExtension
+
+# sun.util.LocaleServiceProviderPool$AllAvailableLocales
+@Provider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.BreakIteratorProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.CollatorProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.DateFormatProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.DateFormatSymbolsProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.DecimalFormatSymbolsProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.text.spi.NumberFormatProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.util.spi.CurrencyNameProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.util.spi.LocaleNameProvider
+  sun.util.LocaleServiceProviderPool$AllAvailableLocales -> META-INF/services/java.util.spi.TimeZoneNameProvider
+
+# private static final java.lang.String[] retrieveDisplayNames(sun.util.resources.OpenListResourceBundle, java.lang.String, java.util.Locale)
+@Provider
+  sun.util.TimeZoneNameUtility -> META-INF/services/java.util.spi.TimeZoneNamePProvider
+
+# public static sun.util.calendar.CalendarSystem forName(java.lang.String)
+@ClassForName
+  sun.util.calendar.CalendarSystem -> sun.util.calendar.Gregorian
+  sun.util.calendar.CalendarSystem -> sun.util.calendar.LocalGregorianCalendar
+  sun.util.calendar.CalendarSystem -> sun.util.calendar.JulianCalendar
+
+# sun.util.logging.LoggingSupport
+@ClassForName(optional)
+  sun.util.logging.LoggingSupport -> java.util.logging.LoggingProxyImpl

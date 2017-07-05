@@ -32,7 +32,7 @@ import javax.management.ObjectName;
  * for monitoring and managing a component in the Java platform.
  * Each platform managed object has a unique
  * <a href="ManagementFactory.html#MXBean">object name</a>
- * for the {@linkplain ManagementFactory.getPlatformMBeanServer
+ * for the {@linkplain ManagementFactory#getPlatformMBeanServer
  * platform MBeanServer} access.
  * All platform MXBeans will implement this interface.
  *

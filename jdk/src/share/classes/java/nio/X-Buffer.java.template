@@ -32,24 +32,24 @@ import java.io.IOException;
 #end[char]
 
 /**
- * $A$ $fulltype$ buffer.
+ * $A$ $type$ buffer.
  *
  * <p> This class defines {#if[byte]?six:four} categories of operations upon
- * $fulltype$ buffers:
+ * $type$ buffers:
  *
  * <ul>
  *
  *   <li><p> Absolute and relative {@link #get() </code><i>get</i><code>} and
  *   {@link #put($type$) </code><i>put</i><code>} methods that read and write
- *   single $fulltype$s; </p></li>
+ *   single $type$s; </p></li>
  *
  *   <li><p> Relative {@link #get($type$[]) </code><i>bulk get</i><code>}
- *   methods that transfer contiguous sequences of $fulltype$s from this buffer
+ *   methods that transfer contiguous sequences of $type$s from this buffer
  *   into an array; {#if[!byte]?and}</p></li>
  *
  *   <li><p> Relative {@link #put($type$[]) </code><i>bulk put</i><code>}
- *   methods that transfer contiguous sequences of $fulltype$s from $a$
- *   $fulltype$ array{#if[char]?,&#32;a&#32;string,} or some other $fulltype$
+ *   methods that transfer contiguous sequences of $type$s from $a$
+ *   $type$ array{#if[char]?,&#32;a&#32;string,} or some other $type$
  *   buffer into this buffer;{#if[!byte]?&#32;and} </p></li>
  *
 #if[byte]
@@ -67,22 +67,22 @@ import java.io.IOException;
  *
  *   <li><p> Methods for {@link #compact </code>compacting<code>}, {@link
  *   #duplicate </code>duplicating<code>}, and {@link #slice
- *   </code>slicing<code>} $a$ $fulltype$ buffer.  </p></li>
+ *   </code>slicing<code>} $a$ $type$ buffer.  </p></li>
  *
  * </ul>
  *
- * <p> $Fulltype$ buffers can be created either by {@link #allocate
+ * <p> $Type$ buffers can be created either by {@link #allocate
  * </code><i>allocation</i><code>}, which allocates space for the buffer's
  *
 #if[byte]
  *
  * content, or by {@link #wrap($type$[]) </code><i>wrapping</i><code>} an
- * existing $fulltype$ array {#if[char]?or&#32;string} into a buffer.
+ * existing $type$ array {#if[char]?or&#32;string} into a buffer.
  *
 #else[byte]
  *
  * content, by {@link #wrap($type$[]) </code><i>wrapping</i><code>} an existing
- * $fulltype$ array {#if[char]?or&#32;string} into a buffer, or by creating a
+ * $type$ array {#if[char]?or&#32;string} into a buffer, or by creating a
  * <a href="ByteBuffer.html#views"><i>view</i></a> of an existing byte buffer.
  *
 #end[byte]
@@ -189,12 +189,12 @@ import java.io.IOException;
 *
 #if[!byte]
  *
- * <p> Like a byte buffer, $a$ $fulltype$ buffer is either <a
+ * <p> Like a byte buffer, $a$ $type$ buffer is either <a
  * href="ByteBuffer.html#direct"><i>direct</i> or <i>non-direct</i></a>.  A
- * $fulltype$ buffer created via the <tt>wrap</tt> methods of this class will
- * be non-direct.  $A$ $fulltype$ buffer created as a view of a byte buffer will
+ * $type$ buffer created via the <tt>wrap</tt> methods of this class will
+ * be non-direct.  $A$ $type$ buffer created as a view of a byte buffer will
  * be direct if, and only if, the byte buffer itself is direct.  Whether or not
- * $a$ $fulltype$ buffer is direct may be determined by invoking the {@link
+ * $a$ $type$ buffer is direct may be determined by invoking the {@link
  * #isDirect isDirect} method.  </p>
  *
 #end[!byte]
@@ -287,7 +287,7 @@ public abstract class $Type$Buffer
 #if[byte]
 
     /**
-     * Allocates a new direct $fulltype$ buffer.
+     * Allocates a new direct $type$ buffer.
      *
      * <p> The new buffer's position will be zero, its limit will be its
      * capacity, its mark will be undefined, and each of its elements will be
@@ -295,9 +295,9 @@ public abstract class $Type$Buffer
      * {@link #hasArray </code>backing array<code>} is unspecified.
      *
      * @param  capacity
-     *         The new buffer's capacity, in $fulltype$s
+     *         The new buffer's capacity, in $type$s
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      *
      * @throws  IllegalArgumentException
      *          If the <tt>capacity</tt> is a negative integer
@@ -309,7 +309,7 @@ public abstract class $Type$Buffer
 #end[byte]
 
     /**
-     * Allocates a new $fulltype$ buffer.
+     * Allocates a new $type$ buffer.
      *
      * <p> The new buffer's position will be zero, its limit will be its
      * capacity, its mark will be undefined, and each of its elements will be
@@ -318,9 +318,9 @@ public abstract class $Type$Buffer
      * offset<code>} will be zero.
      *
      * @param  capacity
-     *         The new buffer's capacity, in $fulltype$s
+     *         The new buffer's capacity, in $type$s
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      *
      * @throws  IllegalArgumentException
      *          If the <tt>capacity</tt> is a negative integer
@@ -332,9 +332,9 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Wraps $a$ $fulltype$ array into a buffer.
+     * Wraps $a$ $type$ array into a buffer.
      *
-     * <p> The new buffer will be backed by the given $fulltype$ array;
+     * <p> The new buffer will be backed by the given $type$ array;
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity will be
      * <tt>array.length</tt>, its position will be <tt>offset</tt>, its limit
@@ -356,7 +356,7 @@ public abstract class $Type$Buffer
      *         <tt>array.length - offset</tt>.
      *         The new buffer's limit will be set to <tt>offset + length</tt>.
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      *
      * @throws  IndexOutOfBoundsException
      *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
@@ -373,9 +373,9 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Wraps $a$ $fulltype$ array into a buffer.
+     * Wraps $a$ $type$ array into a buffer.
      *
-     * <p> The new buffer will be backed by the given $fulltype$ array;
+     * <p> The new buffer will be backed by the given $type$ array;
      * that is, modifications to the buffer will cause the array to be modified
      * and vice versa.  The new buffer's capacity and limit will be
      * <tt>array.length</tt>, its position will be zero, and its mark will be
@@ -386,7 +386,7 @@ public abstract class $Type$Buffer
      * @param  array
      *         The array that will back this buffer
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      */
     public static $Type$Buffer wrap($type$[] array) {
         return wrap(array, 0, array.length);
@@ -486,7 +486,7 @@ public abstract class $Type$Buffer
 #end[char]
 
     /**
-     * Creates a new $fulltype$ buffer whose content is a shared subsequence of
+     * Creates a new $type$ buffer whose content is a shared subsequence of
      * this buffer's content.
      *
      * <p> The content of the new buffer will start at this buffer's current
@@ -495,17 +495,17 @@ public abstract class $Type$Buffer
      * values will be independent.
      *
      * <p> The new buffer's position will be zero, its capacity and its limit
-     * will be the number of $fulltype$s remaining in this buffer, and its mark
+     * will be the number of $type$s remaining in this buffer, and its mark
      * will be undefined.  The new buffer will be direct if, and only if, this
      * buffer is direct, and it will be read-only if, and only if, this buffer
      * is read-only.  </p>
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      */
     public abstract $Type$Buffer slice();
 
     /**
-     * Creates a new $fulltype$ buffer that shares this buffer's content.
+     * Creates a new $type$ buffer that shares this buffer's content.
      *
      * <p> The content of the new buffer will be that of this buffer.  Changes
      * to this buffer's content will be visible in the new buffer, and vice
@@ -517,12 +517,12 @@ public abstract class $Type$Buffer
      * and only if, this buffer is direct, and it will be read-only if, and
      * only if, this buffer is read-only.  </p>
      *
-     * @return  The new $fulltype$ buffer
+     * @return  The new $type$ buffer
      */
     public abstract $Type$Buffer duplicate();
 
     /**
-     * Creates a new, read-only $fulltype$ buffer that shares this buffer's
+     * Creates a new, read-only $type$ buffer that shares this buffer's
      * content.
      *
      * <p> The content of the new buffer will be that of this buffer.  Changes
@@ -537,7 +537,7 @@ public abstract class $Type$Buffer
      * <p> If this buffer is itself read-only then this method behaves in
      * exactly the same way as the {@link #duplicate duplicate} method.  </p>
      *
-     * @return  The new, read-only $fulltype$ buffer
+     * @return  The new, read-only $type$ buffer
      */
     public abstract $Type$Buffer asReadOnlyBuffer();
 
@@ -545,10 +545,10 @@ public abstract class $Type$Buffer
     // -- Singleton get/put methods --
 
     /**
-     * Relative <i>get</i> method.  Reads the $fulltype$ at this buffer's
+     * Relative <i>get</i> method.  Reads the $type$ at this buffer's
      * current position, and then increments the position. </p>
      *
-     * @return  The $fulltype$ at the buffer's current position
+     * @return  The $type$ at the buffer's current position
      *
      * @throws  BufferUnderflowException
      *          If the buffer's current position is not smaller than its limit
@@ -558,11 +558,11 @@ public abstract class $Type$Buffer
     /**
      * Relative <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> Writes the given $fulltype$ into this buffer at the current
+     * <p> Writes the given $type$ into this buffer at the current
      * position, and then increments the position. </p>
      *
      * @param  $x$
-     *         The $fulltype$ to be written
+     *         The $type$ to be written
      *
      * @return  This buffer
      *
@@ -575,13 +575,13 @@ public abstract class $Type$Buffer
     public abstract $Type$Buffer put($type$ $x$);
 
     /**
-     * Absolute <i>get</i> method.  Reads the $fulltype$ at the given
+     * Absolute <i>get</i> method.  Reads the $type$ at the given
      * index. </p>
      *
      * @param  index
-     *         The index from which the $fulltype$ will be read
+     *         The index from which the $type$ will be read
      *
-     * @return  The $fulltype$ at the given index
+     * @return  The $type$ at the given index
      *
      * @throws  IndexOutOfBoundsException
      *          If <tt>index</tt> is negative
@@ -592,14 +592,14 @@ public abstract class $Type$Buffer
     /**
      * Absolute <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> Writes the given $fulltype$ into this buffer at the given
+     * <p> Writes the given $type$ into this buffer at the given
      * index. </p>
      *
      * @param  index
-     *         The index at which the $fulltype$ will be written
+     *         The index at which the $type$ will be written
      *
      * @param  $x$
-     *         The $fulltype$ value to be written
+     *         The $type$ value to be written
      *
      * @return  This buffer
      *
@@ -618,14 +618,14 @@ public abstract class $Type$Buffer
     /**
      * Relative bulk <i>get</i> method.
      *
-     * <p> This method transfers $fulltype$s from this buffer into the given
-     * destination array.  If there are fewer $fulltype$s remaining in the
+     * <p> This method transfers $type$s from this buffer into the given
+     * destination array.  If there are fewer $type$s remaining in the
      * buffer than are required to satisfy the request, that is, if
      * <tt>length</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>, then no
-     * $fulltype$s are transferred and a {@link BufferUnderflowException} is
+     * $type$s are transferred and a {@link BufferUnderflowException} is
      * thrown.
      *
-     * <p> Otherwise, this method copies <tt>length</tt> $fulltype$s from this
+     * <p> Otherwise, this method copies <tt>length</tt> $type$s from this
      * buffer into the given array, starting at the current position of this
      * buffer and at the given offset in the array.  The position of this
      * buffer is then incremented by <tt>length</tt>.
@@ -638,26 +638,26 @@ public abstract class $Type$Buffer
      *     for (int i = off; i < off + len; i++)
      *         dst[i] = src.get(); </pre>
      *
-     * except that it first checks that there are sufficient $fulltype$s in
+     * except that it first checks that there are sufficient $type$s in
      * this buffer and it is potentially much more efficient. </p>
      *
      * @param  dst
-     *         The array into which $fulltype$s are to be written
+     *         The array into which $type$s are to be written
      *
      * @param  offset
-     *         The offset within the array of the first $fulltype$ to be
+     *         The offset within the array of the first $type$ to be
      *         written; must be non-negative and no larger than
      *         <tt>dst.length</tt>
      *
      * @param  length
-     *         The maximum number of $fulltype$s to be written to the given
+     *         The maximum number of $type$s to be written to the given
      *         array; must be non-negative and no larger than
      *         <tt>dst.length - offset</tt>
      *
      * @return  This buffer
      *
      * @throws  BufferUnderflowException
-     *          If there are fewer than <tt>length</tt> $fulltype$s
+     *          If there are fewer than <tt>length</tt> $type$s
      *          remaining in this buffer
      *
      * @throws  IndexOutOfBoundsException
@@ -677,7 +677,7 @@ public abstract class $Type$Buffer
     /**
      * Relative bulk <i>get</i> method.
      *
-     * <p> This method transfers $fulltype$s from this buffer into the given
+     * <p> This method transfers $type$s from this buffer into the given
      * destination array.  An invocation of this method of the form
      * <tt>src.get(a)</tt> behaves in exactly the same way as the invocation
      *
@@ -687,7 +687,7 @@ public abstract class $Type$Buffer
      * @return  This buffer
      *
      * @throws  BufferUnderflowException
-     *          If there are fewer than <tt>length</tt> $fulltype$s
+     *          If there are fewer than <tt>length</tt> $type$s
      *          remaining in this buffer
      */
     public $Type$Buffer get($type$[] dst) {
@@ -700,15 +700,15 @@ public abstract class $Type$Buffer
     /**
      * Relative bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> This method transfers the $fulltype$s remaining in the given source
-     * buffer into this buffer.  If there are more $fulltype$s remaining in the
+     * <p> This method transfers the $type$s remaining in the given source
+     * buffer into this buffer.  If there are more $type$s remaining in the
      * source buffer than in this buffer, that is, if
      * <tt>src.remaining()</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>,
-     * then no $fulltype$s are transferred and a {@link
+     * then no $type$s are transferred and a {@link
      * BufferOverflowException} is thrown.
      *
      * <p> Otherwise, this method copies
-     * <i>n</i>&nbsp;=&nbsp;<tt>src.remaining()</tt> $fulltype$s from the given
+     * <i>n</i>&nbsp;=&nbsp;<tt>src.remaining()</tt> $type$s from the given
      * buffer into this buffer, starting at each buffer's current position.
      * The positions of both buffers are then incremented by <i>n</i>.
      *
@@ -723,14 +723,14 @@ public abstract class $Type$Buffer
      * buffer and it is potentially much more efficient. </p>
      *
      * @param  src
-     *         The source buffer from which $fulltype$s are to be read;
+     *         The source buffer from which $type$s are to be read;
      *         must not be this buffer
      *
      * @return  This buffer
      *
      * @throws  BufferOverflowException
      *          If there is insufficient space in this buffer
-     *          for the remaining $fulltype$s in the source buffer
+     *          for the remaining $type$s in the source buffer
      *
      * @throws  IllegalArgumentException
      *          If the source buffer is this buffer
@@ -752,14 +752,14 @@ public abstract class $Type$Buffer
     /**
      * Relative bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> This method transfers $fulltype$s into this buffer from the given
-     * source array.  If there are more $fulltype$s to be copied from the array
+     * <p> This method transfers $type$s into this buffer from the given
+     * source array.  If there are more $type$s to be copied from the array
      * than remain in this buffer, that is, if
      * <tt>length</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>, then no
-     * $fulltype$s are transferred and a {@link BufferOverflowException} is
+     * $type$s are transferred and a {@link BufferOverflowException} is
      * thrown.
      *
-     * <p> Otherwise, this method copies <tt>length</tt> $fulltype$s from the
+     * <p> Otherwise, this method copies <tt>length</tt> $type$s from the
      * given array into this buffer, starting at the given offset in the array
      * and at the current position of this buffer.  The position of this buffer
      * is then incremented by <tt>length</tt>.
@@ -776,14 +776,14 @@ public abstract class $Type$Buffer
      * buffer and it is potentially much more efficient. </p>
      *
      * @param  src
-     *         The array from which $fulltype$s are to be read
+     *         The array from which $type$s are to be read
      *
      * @param  offset
-     *         The offset within the array of the first $fulltype$ to be read;
+     *         The offset within the array of the first $type$ to be read;
      *         must be non-negative and no larger than <tt>array.length</tt>
      *
      * @param  length
-     *         The number of $fulltype$s to be read from the given array;
+     *         The number of $type$s to be read from the given array;
      *         must be non-negative and no larger than
      *         <tt>array.length - offset</tt>
      *
@@ -813,7 +813,7 @@ public abstract class $Type$Buffer
      * Relative bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * <p> This method transfers the entire content of the given source
-     * $fulltype$ array into this buffer.  An invocation of this method of the
+     * $type$ array into this buffer.  An invocation of this method of the
      * form <tt>dst.put(a)</tt> behaves in exactly the same way as the
      * invocation
      *
@@ -837,15 +837,15 @@ public abstract class $Type$Buffer
     /**
      * Relative bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> This method transfers $fulltype$s from the given string into this
-     * buffer.  If there are more $fulltype$s to be copied from the string than
+     * <p> This method transfers $type$s from the given string into this
+     * buffer.  If there are more $type$s to be copied from the string than
      * remain in this buffer, that is, if
      * <tt>end&nbsp;-&nbsp;start</tt>&nbsp;<tt>&gt;</tt>&nbsp;<tt>remaining()</tt>,
-     * then no $fulltype$s are transferred and a {@link
+     * then no $type$s are transferred and a {@link
      * BufferOverflowException} is thrown.
      *
      * <p> Otherwise, this method copies
-     * <i>n</i>&nbsp;=&nbsp;<tt>end</tt>&nbsp;-&nbsp;<tt>start</tt> $fulltype$s
+     * <i>n</i>&nbsp;=&nbsp;<tt>end</tt>&nbsp;-&nbsp;<tt>start</tt> $type$s
      * from the given string into this buffer, starting at the given
      * <tt>start</tt> index and at the current position of this buffer.  The
      * position of this buffer is then incremented by <i>n</i>.
@@ -862,15 +862,15 @@ public abstract class $Type$Buffer
      * buffer and it is potentially much more efficient. </p>
      *
      * @param  src
-     *         The string from which $fulltype$s are to be read
+     *         The string from which $type$s are to be read
      *
      * @param  start
-     *         The offset within the string of the first $fulltype$ to be read;
+     *         The offset within the string of the first $type$ to be read;
      *         must be non-negative and no larger than
      *         <tt>string.length()</tt>
      *
      * @param  end
-     *         The offset within the string of the last $fulltype$ to be read,
+     *         The offset within the string of the last $type$ to be read,
      *         plus one; must be non-negative and no larger than
      *         <tt>string.length()</tt>
      *
@@ -921,7 +921,7 @@ public abstract class $Type$Buffer
     // -- Other stuff --
 
     /**
-     * Tells whether or not this buffer is backed by an accessible $fulltype$
+     * Tells whether or not this buffer is backed by an accessible $type$
      * array.
      *
      * <p> If this method returns <tt>true</tt> then the {@link #array() array}
@@ -936,7 +936,7 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Returns the $fulltype$ array that backs this
+     * Returns the $type$ array that backs this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * <p> Modifications to this buffer's content will cause the returned
@@ -993,17 +993,17 @@ public abstract class $Type$Buffer
     /**
      * Compacts this buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> The $fulltype$s between the buffer's current position and its limit,
+     * <p> The $type$s between the buffer's current position and its limit,
      * if any, are copied to the beginning of the buffer.  That is, the
-     * $fulltype$ at index <i>p</i>&nbsp;=&nbsp;<tt>position()</tt> is copied
-     * to index zero, the $fulltype$ at index <i>p</i>&nbsp;+&nbsp;1 is copied
-     * to index one, and so forth until the $fulltype$ at index
+     * $type$ at index <i>p</i>&nbsp;=&nbsp;<tt>position()</tt> is copied
+     * to index zero, the $type$ at index <i>p</i>&nbsp;+&nbsp;1 is copied
+     * to index one, and so forth until the $type$ at index
      * <tt>limit()</tt>&nbsp;-&nbsp;1 is copied to index
      * <i>n</i>&nbsp;=&nbsp;<tt>limit()</tt>&nbsp;-&nbsp;<tt>1</tt>&nbsp;-&nbsp;<i>p</i>.
      * The buffer's position is then set to <i>n+1</i> and its limit is set to
      * its capacity.  The mark, if defined, is discarded.
      *
-     * <p> The buffer's position is set to the number of $fulltype$s copied,
+     * <p> The buffer's position is set to the number of $type$s copied,
      * rather than to zero, so that an invocation of this method can be
      * followed immediately by an invocation of another relative <i>put</i>
      * method. </p>
@@ -1032,7 +1032,7 @@ public abstract class $Type$Buffer
     public abstract $Type$Buffer compact();
 
     /**
-     * Tells whether or not this $fulltype$ buffer is direct. </p>
+     * Tells whether or not this $type$ buffer is direct. </p>
      *
      * @return  <tt>true</tt> if, and only if, this buffer is direct
      */
@@ -1098,6 +1098,13 @@ public abstract class $Type$Buffer
      *
      *   <li><p> The two sequences of remaining elements, considered
      *   independently of their starting positions, are pointwise equal.
+#if[floatingPointType]
+     *   This method considers two $type$ elements {@code a} and {@code b}
+     *   to be equal if
+     *   {@code (a == b) || ($Fulltype$.isNaN(a) && $Fulltype$.isNaN(b))}.
+     *   The values {@code -0.0} and {@code +0.0} are considered to be
+     *   equal, unlike {@link $Fulltype$#equals(Object)}.
+#end[floatingPointType]
      *   </p></li>
      *
      * </ol>
@@ -1118,16 +1125,18 @@ public abstract class $Type$Buffer
         if (this.remaining() != that.remaining())
             return false;
         int p = this.position();
-        for (int i = this.limit() - 1, j = that.limit() - 1; i >= p; i--, j--) {
-            $type$ v1 = this.get(i);
-            $type$ v2 = that.get(j);
-            if (v1 != v2) {
-                if ((v1 != v1) && (v2 != v2))   // For float and double
-                    continue;
+        for (int i = this.limit() - 1, j = that.limit() - 1; i >= p; i--, j--)
+            if (!equals(this.get(i), that.get(j)))
                 return false;
-            }
-        }
         return true;
+    }
+
+    private static boolean equals($type$ x, $type$ y) {
+#if[floatingPointType]
+        return (x == y) || ($Fulltype$.isNaN(x) && $Fulltype$.isNaN(y));
+#else[floatingPointType]
+        return x == y;
+#end[floatingPointType]
     }
 
     /**
@@ -1136,6 +1145,17 @@ public abstract class $Type$Buffer
      * <p> Two $type$ buffers are compared by comparing their sequences of
      * remaining elements lexicographically, without regard to the starting
      * position of each sequence within its corresponding buffer.
+#if[floatingPointType]
+     * Pairs of {@code $type$} elements are compared as if by invoking
+     * {@link $Fulltype$#compare($type$,$type$)}, except that
+     * {@code -0.0} and {@code 0.0} are considered to be equal.
+     * {@code $Fulltype$.NaN} is considered by this method to be equal
+     * to itself and greater than all other {@code $type$} values
+     * (including {@code $Fulltype$.POSITIVE_INFINITY}).
+#else[floatingPointType]
+     * Pairs of {@code $type$} elements are compared as if by invoking
+     * {@link $Fulltype$#compare($type$,$type$)}.
+#end[floatingPointType]
      *
      * <p> A $type$ buffer is not comparable to any other type of object.
      *
@@ -1145,20 +1165,23 @@ public abstract class $Type$Buffer
     public int compareTo($Type$Buffer that) {
         int n = this.position() + Math.min(this.remaining(), that.remaining());
         for (int i = this.position(), j = that.position(); i < n; i++, j++) {
-            $type$ v1 = this.get(i);
-            $type$ v2 = that.get(j);
-            if (v1 == v2)
-                continue;
-            if ((v1 != v1) && (v2 != v2))       // For float and double
-                continue;
-            if (v1 < v2)
-                return -1;
-            return +1;
+            int cmp = compare(this.get(i), that.get(j));
+            if (cmp != 0)
+                return cmp;
         }
         return this.remaining() - that.remaining();
     }
 
-
+    private static int compare($type$ x, $type$ y) {
+#if[floatingPointType]
+        return ((x < y)  ? -1 :
+                (x > y)  ? +1 :
+                (x == y) ?  0 :
+                $Fulltype$.isNaN(x) ? ($Fulltype$.isNaN(y) ? 0 : +1) : -1);
+#else[floatingPointType]
+        return $Fulltype$.compare(x, y);
+#end[floatingPointType]
+    }
 
     // -- Other char stuff --
 
@@ -1326,7 +1349,7 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Appends the specified $fulltype$  to this
+     * Appends the specified $type$  to this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * <p> An invocation of this method of the form <tt>dst.append($x$)</tt>
@@ -1336,7 +1359,7 @@ public abstract class $Type$Buffer
      *     dst.put($x$) </pre>
      *
      * @param  $x$
-     *         The 16-bit $fulltype$ to append
+     *         The 16-bit $type$ to append
      *
      * @return  This buffer
      *
@@ -1362,10 +1385,10 @@ public abstract class $Type$Buffer
     /**
      * Retrieves this buffer's byte order.
      *
-     * <p> The byte order of $a$ $fulltype$ buffer created by allocation or by
+     * <p> The byte order of $a$ $type$ buffer created by allocation or by
      * wrapping an existing <tt>$type$</tt> array is the {@link
      * ByteOrder#nativeOrder </code>native order<code>} of the underlying
-     * hardware.  The byte order of $a$ $fulltype$ buffer created as a <a
+     * hardware.  The byte order of $a$ $type$ buffer created as a <a
      * href="ByteBuffer.html#views">view</a> of a byte buffer is that of the
      * byte buffer at the moment that the view is created.  </p>
      *

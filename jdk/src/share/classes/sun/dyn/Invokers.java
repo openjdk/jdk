@@ -44,16 +44,20 @@ public class Invokers {
     // generic (untyped) invoker for the outgoing call
     private /*lazy*/ MethodHandle genericInvoker;
 
+    // generic (untyped) invoker for the outgoing call; accepts a single Object[]
+    private final /*lazy*/ MethodHandle[] varargsInvokers;
+
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
      */
     public Invokers(Access token, MethodType targetType) {
         Access.check(token);
         this.targetType = targetType;
+        this.varargsInvokers = new MethodHandle[targetType.parameterCount()+1];
     }
 
     public static MethodType invokerType(MethodType targetType) {
-        return targetType.insertParameterType(0, MethodHandle.class);
+        return targetType.insertParameterTypes(0, MethodHandle.class);
     }
 
     public MethodHandle exactInvoker() {
@@ -76,8 +80,14 @@ public class Invokers {
         return invoker;
     }
 
-    public MethodHandle varargsInvoker() {
-        throw new UnsupportedOperationException("NYI");
+    public MethodHandle varargsInvoker(int objectArgCount) {
+        MethodHandle vaInvoker = varargsInvokers[objectArgCount];
+        if (vaInvoker != null)  return vaInvoker;
+        MethodHandle gInvoker = genericInvoker();
+        MethodType vaType = MethodType.genericMethodType(objectArgCount, true);
+        vaInvoker = MethodHandles.spreadArguments(gInvoker, invokerType(vaType));
+        varargsInvokers[objectArgCount] = vaInvoker;
+        return vaInvoker;
     }
 
     public String toString() {

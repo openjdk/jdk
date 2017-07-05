@@ -27,6 +27,7 @@ package sun.dyn;
 
 import java.dyn.*;
 import sun.dyn.util.Wrapper;
+import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
  * Shared information for a group of method types, which differ
@@ -56,8 +57,8 @@ public class MethodTypeImpl {
     // Cached adapter information:
     /*lazy*/ ToGeneric   toGeneric;     // convert cs. with prims to w/o
     /*lazy*/ FromGeneric fromGeneric;   // convert cs. w/o prims to with
+    /*lazy*/ SpreadGeneric[] spreadGeneric; // expand one argument to many
     /*lazy*/ FilterGeneric filterGeneric; // convert argument(s) on the fly
-    ///*lazy*/ Invokers    invokers;    // cache of handy higher-order adapters
 
     public MethodType erasedType() {
         return erasedType;
@@ -68,7 +69,7 @@ public class MethodTypeImpl {
     }
 
     /** Access methods for the internals of MethodType, supplied to
-     *  MethodTypeForm as a trusted agent.
+     *  MethodTypeImpl as a trusted agent.
      */
     static public interface MethodTypeFriend {
         Class<?>[]     ptypes(MethodType mt);
@@ -150,7 +151,7 @@ public class MethodTypeImpl {
         this.argToSlotTable = argToSlotTab;
         this.slotToArgTable = slotToArgTab;
 
-        if (pslotCount >= 256)  throw new IllegalArgumentException("too many arguments");
+        if (pslotCount >= 256)  throw newIllegalArgumentException("too many arguments");
 
         // send a few bits down to the JVM:
         this.vmslots = parameterSlotCount();
@@ -378,10 +379,10 @@ public class MethodTypeImpl {
     static MethodTypeImpl findForm(MethodType mt) {
         MethodType erased = canonicalize(mt, ERASE, ERASE);
         if (erased == null) {
-            // It is already erased.  Make a new MethodTypeForm.
+            // It is already erased.  Make a new MethodTypeImpl.
             return METHOD_TYPE_FRIEND.newMethodTypeForm(mt);
         } else {
-            // Share the MethodTypeForm with the erased version.
+            // Share the MethodTypeImpl with the erased version.
             return METHOD_TYPE_FRIEND.form(erased);
         }
     }
