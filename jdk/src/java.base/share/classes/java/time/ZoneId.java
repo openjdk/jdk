@@ -310,8 +310,7 @@ public abstract class ZoneId implements Serializable {
     public static ZoneId of(String zoneId, Map<String, String> aliasMap) {
         Objects.requireNonNull(zoneId, "zoneId");
         Objects.requireNonNull(aliasMap, "aliasMap");
-        String id = aliasMap.get(zoneId);
-        id = (id != null ? id : zoneId);
+        String id = Objects.requireNonNullElse(aliasMap.get(zoneId), zoneId);
         return of(id);
     }
 

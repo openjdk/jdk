@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ class Reflection: public AllStatic {
   static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS);
   static oop      basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS);
 
-  static objArrayHandle get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS);
-  static objArrayHandle get_exception_types(methodHandle method, TRAPS);
+  static objArrayHandle get_parameter_types(const methodHandle& method, int parameter_count, oop* return_type, TRAPS);
+  static objArrayHandle get_exception_types(const methodHandle& method, TRAPS);
   // Creating new java.lang.reflect.xxx wrappers
   static Handle new_type(Symbol* signature, KlassHandle k, TRAPS);
 
@@ -110,9 +110,9 @@ class Reflection: public AllStatic {
   //
 
   // Create a java.lang.reflect.Method object based on a method
-  static oop new_method(methodHandle method, bool for_constant_pool_access, TRAPS);
+  static oop new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS);
   // Create a java.lang.reflect.Constructor object based on a method
-  static oop new_constructor(methodHandle method, TRAPS);
+  static oop new_constructor(const methodHandle& method, TRAPS);
   // Create a java.lang.reflect.Field object based on a field descriptor
   static oop new_field(fieldDescriptor* fd, TRAPS);
   // Create a java.lang.reflect.Parameter object based on a
@@ -122,9 +122,16 @@ class Reflection: public AllStatic {
 
 private:
   // method resolution for invoke
-  static methodHandle resolve_interface_call(instanceKlassHandle klass, methodHandle method, KlassHandle recv_klass, Handle receiver, TRAPS);
+  static methodHandle resolve_interface_call(instanceKlassHandle klass, const methodHandle& method, KlassHandle recv_klass, Handle receiver, TRAPS);
   // Method call (shared by invoke_method and invoke_constructor)
-  static oop  invoke(instanceKlassHandle klass, methodHandle method, Handle receiver, bool override, objArrayHandle ptypes, BasicType rtype, objArrayHandle args, bool is_method_invoke, TRAPS);
+  static oop  invoke(instanceKlassHandle klass,
+                     const methodHandle& method,
+                     Handle receiver,
+                     bool override,
+                     objArrayHandle ptypes,
+                     BasicType rtype,
+                     objArrayHandle args,
+                     bool is_method_invoke, TRAPS);
 
   // Narrowing of basic types. Used to create correct jvalues for
   // boolean, byte, char and short return return values from interpreter

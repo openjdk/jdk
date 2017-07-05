@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
@@ -1250,7 +1251,7 @@ public abstract class URLConnection {
 
         if (handler != null) {
             ContentHandler h = handlers.putIfAbsent(contentType, handler);
-            return h != null ? h : handler;
+            return Objects.requireNonNullElse(h, handler);
         }
 
         try {
@@ -1263,7 +1264,7 @@ public abstract class URLConnection {
         assert handler != null;
 
         ContentHandler h = handlers.putIfAbsent(contentType, handler);
-        return h != null ? h : handler;
+        return Objects.requireNonNullElse(h, handler);
     }
 
     /*

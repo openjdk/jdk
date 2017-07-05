@@ -156,6 +156,7 @@ public class TCKZoneIdPrinterParser {
                 {"UTC", 3, -1, ZoneId.of("UTC"), false},
                 {"UT", 2, -1, ZoneId.of("UT"), false},
                 {"GMT", 3, -1, ZoneId.of("GMT"), false},
+                {"GMT0", 4, -1, ZoneId.of("GMT0"), false},
 
                 {"+00:00", 6, -1, ZoneOffset.UTC, true},
                 {"UTC+00:00", 9, -1, ZoneId.of("UTC"), false},

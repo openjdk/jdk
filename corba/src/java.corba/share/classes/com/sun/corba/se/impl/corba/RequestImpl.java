@@ -65,7 +65,6 @@ import com.sun.corba.se.spi.presentation.rmi.StubAdapter;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException;
 import com.sun.corba.se.impl.corba.AsynchInvoke;
-import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 public class RequestImpl
     extends Request
@@ -256,7 +255,7 @@ public class RequestImpl
     public synchronized void send_deferred()
     {
         AsynchInvoke invokeObject = new AsynchInvoke(_orb, this, false);
-        new ManagedLocalsThread(invokeObject).start();
+        new sun.misc.ManagedLocalsThread(invokeObject).start();
     }
 
     public synchronized boolean poll_response()

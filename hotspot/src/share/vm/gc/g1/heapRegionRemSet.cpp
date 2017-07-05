@@ -563,7 +563,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   assert(_n_fine_entries == _max_fine_entries, "Precondition");
   PerRegionTable* max = NULL;
   jint max_occ = 0;
-  PerRegionTable** max_prev;
+  PerRegionTable** max_prev = NULL;
   size_t max_ind;
 
   size_t i = _fine_eviction_start;
@@ -599,6 +599,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   }
 
   guarantee(max != NULL, "Since _n_fine_entries > 0");
+  guarantee(max_prev != NULL, "Since max != NULL.");
 
   // Set the corresponding coarse bit.
   size_t max_hrm_index = (size_t) max->hr()->hrm_index();
@@ -1138,7 +1139,7 @@ void HeapRegionRemSet::print_event(outputStream* str, Event evnt) {
 
 void HeapRegionRemSet::print_recorded() {
   int cur_evnt = 0;
-  Event cur_evnt_kind;
+  Event cur_evnt_kind = Event_illegal;
   int cur_evnt_ind = 0;
   if (_n_recorded_events > 0) {
     cur_evnt_kind = _recorded_events[cur_evnt];

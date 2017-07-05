@@ -35,7 +35,7 @@ import java.io.IOException;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * XDropTargetProtocol implementation for XDnD protocol.

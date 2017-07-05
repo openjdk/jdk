@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.inittimer.InitTimer.timer;
 
 import java.lang.reflect.Constructor;
@@ -36,7 +37,6 @@ import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.SpeculationLog;
 import sun.misc.Unsafe;
 
 /**
@@ -44,7 +44,7 @@ import sun.misc.Unsafe;
  * pointer as an argument (e.g., {@link #getSymbol(long)}) is undefined if the argument does not
  * denote a valid native object.
  */
-public final class CompilerToVM {
+final class CompilerToVM {
     /**
      * Initializes the native part of the JVMCI runtime.
      */
@@ -59,6 +59,14 @@ public final class CompilerToVM {
         try (InitTimer t = timer("CompilerToVM.registerNatives")) {
             registerNatives();
         }
+    }
+
+    /**
+     * Gets the {@link CompilerToVM} instance associated with the singleton
+     * {@link HotSpotJVMCIRuntime} instance.
+     */
+    public static CompilerToVM compilerToVM() {
+        return runtime().getCompilerToVM();
     }
 
     /**
@@ -301,7 +309,7 @@ public final class CompilerToVM {
      *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed} or
      *         {@link HotSpotVMConfig#codeInstallResultDependenciesInvalid}.
      */
-    public native int installCode(TargetDescription target, HotSpotCompiledCode compiledCode, InstalledCode code, SpeculationLog speculationLog);
+    native int installCode(TargetDescription target, HotSpotCompiledCode compiledCode, InstalledCode code, HotSpotSpeculationLog speculationLog);
 
     public native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
@@ -317,18 +325,18 @@ public final class CompilerToVM {
      * @param timeUnitsPerSecond the granularity of the units for the {@code time} value
      * @param installedCode the nmethod installed as a result of the compilation
      */
-    public synchronized native void notifyCompilationStatistics(int id, HotSpotResolvedJavaMethodImpl method, boolean osr, int processedBytecodes, long time, long timeUnitsPerSecond,
+    synchronized native void notifyCompilationStatistics(int id, HotSpotResolvedJavaMethodImpl method, boolean osr, int processedBytecodes, long time, long timeUnitsPerSecond,
                     InstalledCode installedCode);
 
     /**
      * Resets all compilation statistics.
      */
-    public native void resetCompilationStatistics();
+    native void resetCompilationStatistics();
 
     /**
      * Initializes the fields of {@code config}.
      */
-    native long initializeConfiguration();
+    native long initializeConfiguration(HotSpotVMConfig config);
 
     /**
      * Resolves the implementation of {@code method} for virtual dispatches on objects of dynamic
@@ -367,7 +375,7 @@ public final class CompilerToVM {
      * @param address an address that may be called from any code in the code cache
      * @return -1 if {@code address == 0}
      */
-    public native long getMaxCallTargetOffset(long address);
+    native long getMaxCallTargetOffset(long address);
 
     /**
      * Gets a textual disassembly of {@code codeBlob}.
@@ -376,7 +384,7 @@ public final class CompilerToVM {
      *         {@code codeBlob} could not be disassembled for some reason
      */
     // The HotSpot disassembler seems not to be thread safe so it's better to synchronize its usage
-    public synchronized native String disassembleCodeBlob(long codeBlob);
+    synchronized native String disassembleCodeBlob(InstalledCode installedCode);
 
     /**
      * Gets a stack trace element for {@code method} at bytecode index {@code bci}.
@@ -454,12 +462,12 @@ public final class CompilerToVM {
      * Invalidates {@code installedCode} such that {@link InvalidInstalledCodeException} will be
      * raised the next time {@code installedCode} is executed.
      */
-    public native void invalidateInstalledCode(InstalledCode installedCode);
+    native void invalidateInstalledCode(InstalledCode installedCode);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.
      */
-    public native long[] collectCounters();
+    native long[] collectCounters();
 
     /**
      * Determines if {@code metaspaceMethodData} is mature.
@@ -489,7 +497,7 @@ public final class CompilerToVM {
      * @param methods the methods to look for, where {@code null} means that any frame is returned
      * @return the frame, or {@code null} if the end of the stack was reached during the search
      */
-    public native HotSpotStackFrameReference getNextStackFrame(HotSpotStackFrameReference frame, HotSpotResolvedJavaMethodImpl[] methods, int initialSkip);
+    native HotSpotStackFrameReference getNextStackFrame(HotSpotStackFrameReference frame, ResolvedJavaMethod[] methods, int initialSkip);
 
     /**
      * Materializes all virtual objects within {@code stackFrame} updates its locals.
@@ -512,30 +520,34 @@ public final class CompilerToVM {
     /**
      * Determines if debug info should also be emitted at non-safepoint locations.
      */
-    public native boolean shouldDebugNonSafepoints();
+
+    native boolean shouldDebugNonSafepoints();
 
     /**
      * Writes {@code length} bytes from {@code bytes} starting at offset {@code offset} to the
      * HotSpot's log stream.
      *
-     * @exception NullPointerException if <code>bytes</code> is <code>null</code>.
+     * @exception NullPointerException if {@code bytes == null}
      * @exception IndexOutOfBoundsException if copying would cause access of data outside array
-     *                bounds.
+     *                bounds
      */
-    public native void writeDebugOutput(byte[] bytes, int offset, int length);
+    native void writeDebugOutput(byte[] bytes, int offset, int length);
 
     /**
      * Flush HotSpot's log stream.
      */
-    public native void flushDebugOutput();
+    native void flushDebugOutput();
 
     /**
-     * Read a value representing a metaspace Method* and return the
-     * {@link HotSpotResolvedJavaMethodImpl} wrapping it. This method does no checking that the
-     * location actually contains a valid Method*. If the {@code base} object is a
+     * Read a HotSpot Method* value from the memory location described by {@code base} plus
+     * {@code displacement} and return the {@link HotSpotResolvedJavaMethodImpl} wrapping it. This
+     * method does no checking that the memory location actually contains a valid pointer and may
+     * crash the VM if an invalid location is provided. If the {@code base} is null then
+     * {@code displacement} is used by itself. If {@code base} is a
      * {@link HotSpotResolvedJavaMethodImpl}, {@link HotSpotConstantPool} or
      * {@link HotSpotResolvedObjectTypeImpl} then the metaspace pointer is fetched from that object
-     * and used as the base. Otherwise the object itself is used as the base.
+     * and added to {@code displacement}. Any other non-null object type causes an
+     * {@link IllegalArgumentException} to be thrown.
      *
      * @param base an object to read from or null
      * @param displacement
@@ -544,12 +556,14 @@ public final class CompilerToVM {
     native HotSpotResolvedJavaMethodImpl getResolvedJavaMethod(Object base, long displacement);
 
     /**
-     * Read a value representing a metaspace ConstantPool* and return the
-     * {@link HotSpotConstantPool} wrapping it. This method does no checking that the location
-     * actually contains a valid ConstantPool*. If the {@code base} object is a
-     * {@link HotSpotResolvedJavaMethodImpl}, {@link HotSpotConstantPool} or
-     * {@link HotSpotResolvedObjectTypeImpl} then the metaspace pointer is fetched from that object
-     * and used as the base. Otherwise the object itself is used as the base.
+     * Read a HotSpot ConstantPool* value from the memory location described by {@code base} plus
+     * {@code displacement} and return the {@link HotSpotConstantPool} wrapping it. This method does
+     * no checking that the memory location actually contains a valid pointer and may crash the VM
+     * if an invalid location is provided. If the {@code base} is null then {@code displacement} is
+     * used by itself. If {@code base} is a {@link HotSpotResolvedJavaMethodImpl},
+     * {@link HotSpotConstantPool} or {@link HotSpotResolvedObjectTypeImpl} then the metaspace
+     * pointer is fetched from that object and added to {@code displacement}. Any other non-null
+     * object type causes an {@link IllegalArgumentException} to be thrown.
      *
      * @param base an object to read from or null
      * @param displacement
@@ -558,12 +572,15 @@ public final class CompilerToVM {
     native HotSpotConstantPool getConstantPool(Object base, long displacement);
 
     /**
-     * Read a value representing a metaspace Klass* and return the
-     * {@link HotSpotResolvedObjectTypeImpl} wrapping it. The method does no checking that the
-     * location actually contains a valid Klass*. If the {@code base} object is a
+     * Read a HotSpot Klass* value from the memory location described by {@code base} plus
+     * {@code displacement} and return the {@link HotSpotResolvedObjectTypeImpl} wrapping it. This
+     * method does no checking that the memory location actually contains a valid pointer and may
+     * crash the VM if an invalid location is provided. If the {@code base} is null then
+     * {@code displacement} is used by itself. If {@code base} is a
      * {@link HotSpotResolvedJavaMethodImpl}, {@link HotSpotConstantPool} or
      * {@link HotSpotResolvedObjectTypeImpl} then the metaspace pointer is fetched from that object
-     * and used as the base. Otherwise the object itself is used as the base.
+     * and added to {@code displacement}. Any other non-null object type causes an
+     * {@link IllegalArgumentException} to be thrown.
      *
      * @param base an object to read from or null
      * @param displacement
@@ -571,4 +588,17 @@ public final class CompilerToVM {
      * @return null or the resolved method for this location
      */
     native HotSpotResolvedObjectTypeImpl getResolvedJavaType(Object base, long displacement, boolean compressed);
+
+    /**
+     * Return the size of the HotSpot ProfileData* pointed at by {@code position}. If
+     * {@code position} is outside the space of the MethodData then an
+     * {@link IllegalArgumentException} is thrown. A {@code position} inside the MethodData but that
+     * isn't pointing at a valid ProfileData will crash the VM.
+     *
+     * @param metaspaceMethodData
+     * @param position
+     * @return the size of the ProfileData item pointed at by {@code position}
+     * @throws IllegalArgumentException if an out of range position is given
+     */
+    native int methodDataProfileDataSize(long metaspaceMethodData, int position);
 }

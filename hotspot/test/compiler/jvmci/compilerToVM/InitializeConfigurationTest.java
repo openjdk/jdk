@@ -44,6 +44,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import sun.misc.Unsafe;
@@ -72,7 +73,7 @@ public class InitializeConfigurationTest {
 
     private void runTest(List<TestCase> tcases) {
         VMStructDataReader reader = new VMStructDataReader(
-                CompilerToVMHelper.initializeConfiguration());
+                CompilerToVMHelper.initializeConfiguration(HotSpotJVMCIRuntime.runtime().getConfig()));
         while (reader.hasNext()) {
             VMFieldData data = reader.next();
             for (TestCase tcase : tcases) {

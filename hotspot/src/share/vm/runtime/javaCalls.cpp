@@ -289,21 +289,20 @@ void JavaCalls::call_static(JavaValue* result, KlassHandle klass, Symbol* name, 
 // Implementation of JavaCalls (low level)
 
 
-void JavaCalls::call(JavaValue* result, methodHandle method, JavaCallArguments* args, TRAPS) {
+void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
   // Check if we need to wrap a potential OS exception handler around thread
   // This is used for e.g. Win32 structured exception handlers
   assert(THREAD->is_Java_thread(), "only JavaThreads can make JavaCalls");
   // Need to wrap each and every time, since there might be native code down the
   // stack that has installed its own exception handlers
-  os::os_exception_wrapper(call_helper, result, &method, args, THREAD);
+  os::os_exception_wrapper(call_helper, result, method, args, THREAD);
 }
 
-void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArguments* args, TRAPS) {
+void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
   // During dumping, Java execution environment is not fully initialized. Also, Java execution
   // may cause undesirable side-effects in the class metadata.
   assert(!DumpSharedSpaces, "must not execute Java bytecodes when dumping");
 
-  methodHandle method = *m;
   JavaThread* thread = (JavaThread*)THREAD;
   assert(thread->is_Java_thread(), "must be called by a java thread");
   assert(method.not_null(), "must have a method to call");
@@ -546,7 +545,7 @@ class SignatureChekker : public SignatureIterator {
 };
 
 
-void JavaCallArguments::verify(methodHandle method, BasicType return_type,
+void JavaCallArguments::verify(const methodHandle& method, BasicType return_type,
   Thread *thread) {
   guarantee(method->size_of_parameters() == size_of_parameters(), "wrong no. of arguments pushed");
 

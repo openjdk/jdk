@@ -22,7 +22,8 @@
  */
 package jdk.vm.ci.common;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Indicates a condition in JVMCI related code that should never occur during normal operation.

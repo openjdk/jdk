@@ -2054,11 +2054,11 @@ const bool Matcher::match_rule_supported(int opcode) {
     return (UsePopCountInstruction && VM_Version::has_popcntw());
 
   case Op_StrComp:
-    return SpecialStringCompareTo;
+    return SpecialStringCompareTo && !CompactStrings;
   case Op_StrEquals:
-    return SpecialStringEquals;
+    return SpecialStringEquals && !CompactStrings;
   case Op_StrIndexOf:
-    return SpecialStringIndexOf;
+    return SpecialStringIndexOf && !CompactStrings;
   }
 
   return true;  // Per default match rules are supported.
@@ -11077,7 +11077,7 @@ instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc h
                                   immP needleImm, immL offsetImm, immI_1 needlecntImm,
                                   iRegIdst tmp1, iRegIdst tmp2,
                                   flagsRegCR0 cr0, flagsRegCR1 cr1) %{
-  predicate(SpecialStringIndexOf);  // type check implicit by parameter type, See Matcher::match_rule_supported
+  predicate(SpecialStringIndexOf && !CompactStrings);  // type check implicit by parameter type, See Matcher::match_rule_supported
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
 
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1);
@@ -11120,7 +11120,7 @@ instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
   effect(USE_KILL needle, /* TDEF needle, */ TEMP_DEF result,
          TEMP tmp1, TEMP tmp2);
   // Required for EA: check if it is still a type_array.
-  predicate(SpecialStringIndexOf && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+  predicate(SpecialStringIndexOf && !CompactStrings && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
             n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
@@ -11167,7 +11167,7 @@ instruct string_indexOf_imm(iRegIdst result, iRegPsrc haystack, rscratch1RegI ha
   effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6);
   // Required for EA: check if it is still a type_array.
-  predicate(SpecialStringIndexOf && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+  predicate(SpecialStringIndexOf && !CompactStrings && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
             n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
@@ -11200,7 +11200,7 @@ instruct string_indexOf(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
   effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
          TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6);
-  predicate(SpecialStringIndexOf);  // See Matcher::match_rule_supported.
+  predicate(SpecialStringIndexOf && !CompactStrings);  // See Matcher::match_rule_supported.
   ins_cost(300);
 
   ins_alignment(8); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.
@@ -11224,7 +11224,7 @@ instruct string_equals_imm(iRegPsrc str1, iRegPsrc str2, uimmI15 cntImm, iRegIds
   match(Set result (StrEquals (Binary str1 str2) cntImm));
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2,
          KILL cr0, KILL cr6, KILL ctr);
-  predicate(SpecialStringEquals);  // See Matcher::match_rule_supported.
+  predicate(SpecialStringEquals && !CompactStrings);  // See Matcher::match_rule_supported.
   ins_cost(250);
 
   ins_alignment(8); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.
@@ -11247,7 +11247,7 @@ instruct string_equals(iRegPsrc str1, iRegPsrc str2, iRegIsrc cnt, iRegIdst resu
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
          KILL cr0, KILL cr1, KILL cr6, KILL ctr);
-  predicate(SpecialStringEquals);  // See Matcher::match_rule_supported.
+  predicate(SpecialStringEquals && !CompactStrings);  // See Matcher::match_rule_supported.
   ins_cost(300);
 
   ins_alignment(8); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.
@@ -11267,6 +11267,7 @@ instruct string_equals(iRegPsrc str1, iRegPsrc str2, iRegIsrc cnt, iRegIdst resu
 // Use dst register classes if register gets killed, as it is the case for TEMP operands!
 instruct string_compare(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
                         iRegPdst tmp, flagsRegCR0 cr0, regCTR ctr) %{
+  predicate(!CompactStrings);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL cnt1, USE_KILL cnt2, USE_KILL str1, USE_KILL str2, TEMP_DEF result, TEMP tmp, KILL cr0, KILL ctr);
   ins_cost(300);
