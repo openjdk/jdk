@@ -43,7 +43,7 @@ import sun.java2d.xr.XRGraphicsConfig;
 import sun.java2d.loops.SurfaceType;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single
@@ -284,7 +284,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * Returns true only if:
      *   - the Xrandr extension is present
      *   - the necessary Xrandr functions were loaded successfully
-     *   - XINERAMA is not enabled
      */
     private static synchronized boolean isXrandrExtensionSupported() {
         if (xrandrExtSupported == null) {
@@ -316,7 +315,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     @Override
     public boolean isDisplayChangeSupported() {
-        return (isFullScreenSupported() && (getFullScreenWindow() != null));
+        return (isFullScreenSupported()
+                && !((X11GraphicsEnvironment) GraphicsEnvironment
+                        .getLocalGraphicsEnvironment()).runningXinerama());
     }
 
     private static void enterFullScreenExclusive(Window w) {
@@ -346,7 +347,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
         if (fsSupported && old != null) {
             // enter windowed mode (and restore original display mode)
             exitFullScreenExclusive(old);
-            setDisplayMode(origDisplayMode);
+            if (isDisplayChangeSupported()) {
+                setDisplayMode(origDisplayMode);
+            }
         }
 
         super.setFullScreenWindow(w);
@@ -428,16 +431,14 @@ public final class X11GraphicsDevice extends GraphicsDevice
                     Window old = getFullScreenWindow();
                     if (old != null) {
                         exitFullScreenExclusive(old);
-                        setDisplayMode(origDisplayMode);
+                        if (isDisplayChangeSupported()) {
+                            setDisplayMode(origDisplayMode);
+                        }
                     }
                 };
                 String name = "Display-Change-Shutdown-Thread-" + screen;
-                Thread t;
-                if (System.getSecurityManager() == null) {
-                    t = new Thread(ThreadGroupUtils.getRootThreadGroup(), r, name);
-                } else {
-                    t = new InnocuousThread(r, name);
-                }
+                Thread t = new ManagedLocalsThread(
+                        ThreadGroupUtils.getRootThreadGroup(), r, name);
                 t.setContextClassLoader(null);
                 Runtime.getRuntime().addShutdownHook(t);
                 return null;

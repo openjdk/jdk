@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,47 +24,26 @@
  */
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2011, International Business Machines Corporation and    *
+ * others. All Rights Reserved.                                                *
  *******************************************************************************
  */
 
 package sun.text.normalizer;
 
-public final class Utility {
+import java.io.IOException;
+import java.util.Locale;
 
-    /**
-     * Convenience utility to compare two Object[]s
-     * Ought to be in System.
-     * @param len the length to compare.
-     * The start indices and start+len must be valid.
-     */
-    public final static boolean arrayRegionMatches(char[] source, int sourceStart,
-                                            char[] target, int targetStart,
-                                            int len)
-    {
-        int sourceEnd = sourceStart + len;
-        int delta = targetStart - sourceStart;
-        for (int i = sourceStart; i < sourceEnd; i++) {
-            if (source[i]!=target[i + delta])
-            return false;
-        }
-        return true;
-    }
+final class Utility {
 
     /**
      * Convert characters outside the range U+0020 to U+007F to
      * Unicode escapes, and convert backslash to a double backslash.
      */
     public static final String escape(String s) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i=0; i<s.length(); ) {
-            int c = UTF16.charAt(s, i);
+            int c = Character.codePointAt(s, i);
             i += UTF16.getCharCount(c);
             if (c >= ' ' && c <= 0x007F) {
                 if (c == '\\') {
@@ -75,7 +54,7 @@ public final class Utility {
             } else {
                 boolean four = c <= 0xFFFF;
                 buf.append(four ? "\\u" : "\\U");
-                hex(c, four ? 4 : 8, buf);
+                buf.append(hex(c, four ? 4 : 8));
             }
         }
         return buf.toString();
@@ -124,7 +103,7 @@ public final class Utility {
         }
 
         /* Fetch first UChar after '\\' */
-        c = UTF16.charAt(s, offset);
+        c = Character.codePointAt(s, offset);
         offset += UTF16.getCharCount(c);
 
         /* Convert hexadecimal and octal escapes */
@@ -143,7 +122,7 @@ public final class Utility {
                 maxDig = 8;
             } else {
                 maxDig = 2;
-            }
+          }
             break;
         default:
             dig = UCharacter.digit(c, 8);
@@ -175,7 +154,7 @@ public final class Utility {
                     return -1;
                 }
                 ++offset;
-            }
+          }
             if (result < 0 || result >= 0x110000) {
                 return -1;
             }
@@ -184,7 +163,7 @@ public final class Utility {
             // escape or as a literal.  If so, join them up into a
             // supplementary.
             if (offset < length &&
-                UTF16.isLeadSurrogate((char) result)) {
+                    UTF16.isLeadSurrogate((char) result)) {
                 int ahead = offset+1;
                 c = s.charAt(offset); // [sic] get 16-bit code unit
                 if (c == '\\' && ahead < length) {
@@ -194,8 +173,8 @@ public final class Utility {
                 }
                 if (UTF16.isTrailSurrogate((char) c)) {
                     offset = ahead;
-                result = UCharacterProperty.getRawSupplementary(
-                                  (char) result, (char) c);
+                    result = UCharacterProperty.getRawSupplementary(
+                            (char) result, (char) c);
                 }
             }
             offset16[0] = offset;
@@ -226,39 +205,22 @@ public final class Utility {
     }
 
     /**
-     * Convert a integer to size width hex uppercase digits.
-     * E.g., {@code hex('a', 4, str) => "0041"}.
-     * Append the output to the given StringBuffer.
-     * If width is too small to fit, nothing will be appended to output.
+     * Supplies a zero-padded hex representation of an integer (without 0x)
      */
-    public static StringBuffer hex(int ch, int width, StringBuffer output) {
-        return appendNumber(output, ch, 16, width);
-    }
-
-    /**
-     * Convert a integer to size width (minimum) hex uppercase digits.
-     * E.g., {@code hex('a', 4, str) => "0041"}.  If the integer requires more
-     * than width digits, more will be used.
-     */
-    public static String hex(int ch, int width) {
-        StringBuffer buf = new StringBuffer();
-        return appendNumber(buf, ch, 16, width).toString();
-    }
-
-    /**
-     * Skip over a sequence of zero or more white space characters
-     * at pos.  Return the index of the first non-white-space character
-     * at or after pos, or str.length(), if there is none.
-     */
-    public static int skipWhitespace(String str, int pos) {
-        while (pos < str.length()) {
-            int c = UTF16.charAt(str, pos);
-            if (!UCharacterProperty.isRuleWhiteSpace(c)) {
-                break;
-            }
-            pos += UTF16.getCharCount(c);
+    static public String hex(long i, int places) {
+        if (i == Long.MIN_VALUE) return "-8000000000000000";
+        boolean negative = i < 0;
+        if (negative) {
+            i = -i;
         }
-        return pos;
+        String result = Long.toString(i, 16).toUpperCase(Locale.ENGLISH);
+        if (result.length() < places) {
+            result = "0000000000000000".substring(result.length(),places) + result;
+        }
+        if (negative) {
+            return '-' + result;
+        }
+        return result;
     }
 
     static final char DIGITS[] = {
@@ -269,117 +231,43 @@ public final class Utility {
     };
 
     /**
-     * Append the digits of a positive integer to the given
-     * <code>StringBuffer</code> in the given radix. This is
-     * done recursively since it is easiest to generate the low-
-     * order digit first, but it must be appended last.
-     *
-     * @param result is the <code>StringBuffer</code> to append to
-     * @param n is the positive integer
-     * @param radix is the radix, from 2 to 36 inclusive
-     * @param minDigits is the minimum number of digits to append.
-     */
-    private static void recursiveAppendNumber(StringBuffer result, int n,
-                                                int radix, int minDigits)
-    {
-        int digit = n % radix;
-
-        if (n >= radix || minDigits > 1) {
-            recursiveAppendNumber(result, n / radix, radix, minDigits - 1);
-        }
-
-        result.append(DIGITS[digit]);
-    }
-
-    /**
-     * Append a number to the given StringBuffer in the given radix.
-     * Standard digits '0'-'9' are used and letters 'A'-'Z' for
-     * radices 11 through 36.
-     * @param result the digits of the number are appended here
-     * @param n the number to be converted to digits; may be negative.
-     * If negative, a '-' is prepended to the digits.
-     * @param radix a radix from 2 to 36 inclusive.
-     * @param minDigits the minimum number of digits, not including
-     * any '-', to produce.  Values less than 2 have no effect.  One
-     * digit is always emitted regardless of this parameter.
-     * @return a reference to result
-     */
-    public static StringBuffer appendNumber(StringBuffer result, int n,
-                                             int radix, int minDigits)
-        throws IllegalArgumentException
-    {
-        if (radix < 2 || radix > 36) {
-            throw new IllegalArgumentException("Illegal radix " + radix);
-        }
-
-
-        int abs = n;
-
-        if (n < 0) {
-            abs = -n;
-            result.append("-");
-        }
-
-        recursiveAppendNumber(result, abs, radix, minDigits);
-
-        return result;
-    }
-
-    /**
      * Return true if the character is NOT printable ASCII.  The tab,
      * newline and linefeed characters are considered unprintable.
      */
     public static boolean isUnprintable(int c) {
+        //0x20 = 32 and 0x7E = 126
         return !(c >= 0x20 && c <= 0x7E);
     }
 
     /**
-     * Escape unprintable characters using {@code <backslash>uxxxx} notation
-     * for U+0000 to U+FFFF and {@code <backslash>Uxxxxxxxx} for U+10000 and
+     * Escape unprintable characters using <backslash>uxxxx notation
+     * for U+0000 to U+FFFF and <backslash>Uxxxxxxxx for U+10000 and
      * above.  If the character is printable ASCII, then do nothing
      * and return FALSE.  Otherwise, append the escaped notation and
      * return TRUE.
      */
-    public static boolean escapeUnprintable(StringBuffer result, int c) {
-        if (isUnprintable(c)) {
-            result.append('\\');
-            if ((c & ~0xFFFF) != 0) {
-                result.append('U');
-                result.append(DIGITS[0xF&(c>>28)]);
-                result.append(DIGITS[0xF&(c>>24)]);
-                result.append(DIGITS[0xF&(c>>20)]);
-                result.append(DIGITS[0xF&(c>>16)]);
-            } else {
-                result.append('u');
+    public static <T extends Appendable> boolean escapeUnprintable(T result, int c) {
+        try {
+            if (isUnprintable(c)) {
+                result.append('\\');
+                if ((c & ~0xFFFF) != 0) {
+                    result.append('U');
+                    result.append(DIGITS[0xF&(c>>28)]);
+                    result.append(DIGITS[0xF&(c>>24)]);
+                    result.append(DIGITS[0xF&(c>>20)]);
+                    result.append(DIGITS[0xF&(c>>16)]);
+                } else {
+                    result.append('u');
+                }
+                result.append(DIGITS[0xF&(c>>12)]);
+                result.append(DIGITS[0xF&(c>>8)]);
+                result.append(DIGITS[0xF&(c>>4)]);
+                result.append(DIGITS[0xF&c]);
+                return true;
             }
-            result.append(DIGITS[0xF&(c>>12)]);
-            result.append(DIGITS[0xF&(c>>8)]);
-            result.append(DIGITS[0xF&(c>>4)]);
-            result.append(DIGITS[0xF&c]);
-            return true;
+            return false;
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
         }
-        return false;
     }
-
-    /**
-    * Similar to StringBuffer.getChars, version 1.3.
-    * Since JDK 1.2 implements StringBuffer.getChars differently, this method
-    * is here to provide consistent results.
-    * To be removed after JDK 1.2 ceased to be the reference platform.
-    * @param src source string buffer
-    * @param srcBegin offset to the start of the src to retrieve from
-    * @param srcEnd offset to the end of the src to retrieve from
-    * @param dst char array to store the retrieved chars
-    * @param dstBegin offset to the start of the destination char array to
-    *                 store the retrieved chars
-    */
-    public static void getChars(StringBuffer src, int srcBegin, int srcEnd,
-                                char dst[], int dstBegin)
-    {
-        if (srcBegin == srcEnd) {
-            return;
-        }
-        src.getChars(srcBegin, srcEnd, dst, dstBegin);
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,8 @@
 
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2014, International Business Machines Corporation and    *
+ * others. All Rights Reserved.                                                *
  *******************************************************************************
  */
 
@@ -84,7 +79,6 @@ public abstract class UCharacterIterator
         return new ReplaceableUCharacterIterator(source);
     }
 
-    //// for StringPrep
     /**
      * Returns a <code>UCharacterIterator</code> object given a
      * source StringBuffer.
@@ -97,7 +91,7 @@ public abstract class UCharacterIterator
         return new ReplaceableUCharacterIterator(source);
     }
 
-    /**
+   /**
      * Returns a <code>UCharacterIterator</code> object given a
      * CharacterIterator.
      * @param source a valid CharacterIterator object.
@@ -112,20 +106,11 @@ public abstract class UCharacterIterator
     // public methods ----------------------------------------------------------
 
     /**
-     * Returns the code unit at the current index.  If index is out
-     * of range, returns DONE.  Index is not changed.
-     * @return current code unit
-     * @stable ICU 2.4
-     */
-    public abstract int current();
-
-    /**
      * Returns the length of the text
      * @return length of the text
      * @stable ICU 2.4
      */
     public abstract int getLength();
-
 
     /**
      * Gets the current index in text.
@@ -133,7 +118,6 @@ public abstract class UCharacterIterator
      * @stable ICU 2.4
      */
     public abstract int getIndex();
-
 
     /**
      * Returns the UTF16 code unit at index, and increments to the next
@@ -183,6 +167,33 @@ public abstract class UCharacterIterator
      */
     public abstract int previous();
 
+
+    /**
+     * Retreat to the start of the previous code point in the text,
+     * and return it (pre-decrement semantics).  If the index is not
+     * preceeded by a valid surrogate pair, the behavior is the same
+     * as <code>previous()</code>.  Otherwise the iterator is
+     * decremented to the start of the surrogate pair, and the code
+     * point represented by the pair is returned.
+     * @return the previous code point in the text, or DONE if the new
+     *         index is before the start of the text.
+     * @stable ICU 2.4
+     */
+    public int previousCodePoint(){
+        int ch1 = previous();
+        if(UTF16.isTrailSurrogate((char)ch1)){
+            int ch2 = previous();
+            if(UTF16.isLeadSurrogate((char)ch2)){
+                return UCharacterProperty.getRawSupplementary((char)ch2,
+                                                              (char)ch1);
+            }else if (ch2 != DONE) {
+                //unmatched trail surrogate so back out
+                next();
+            }
+        }
+        return ch1;
+    }
+
     /**
      * Sets the index to the specified index in the text.
      * @param index the index within the text.
@@ -192,7 +203,14 @@ public abstract class UCharacterIterator
      */
     public abstract void setIndex(int index);
 
-    //// for StringPrep
+    /**
+     * Sets the current index to the start.
+     * @stable ICU 2.4
+     */
+    public void setToStart() {
+        setIndex(0);
+    }
+
     /**
      * Fills the buffer with the underlying text storage of the iterator
      * If the buffer capacity is not enough a exception is thrown. The capacity
@@ -222,20 +240,19 @@ public abstract class UCharacterIterator
      *         units.
      * @param offset the position within the array to start putting the data.
      * @return the number of code units added to fillIn, as a convenience
-     * @exception IndexOutOfBounds exception if there is not enough
-     *            room after offset in the array, or if offset {@literal <} 0.
+     * @exception IndexOutOfBoundsException exception if there is not enough
+     *            room after offset in the array, or if offset < 0.
      * @stable ICU 2.4
      */
     public abstract int getText(char[] fillIn, int offset);
 
-    //// for StringPrep
     /**
      * Convenience override for <code>getText(char[], int)</code> that provides
      * an offset of 0.
      * @param fillIn an array of chars to fill with the underlying UTF-16 code
      *         units.
      * @return the number of code units added to fillIn, as a convenience
-     * @exception IndexOutOfBounds exception if there is not enough
+     * @exception IndexOutOfBoundsException exception if there is not enough
      *            room in the array.
      * @stable ICU 2.4
      */
@@ -243,7 +260,6 @@ public abstract class UCharacterIterator
         return getText(fillIn, 0);
     }
 
-    //// for StringPrep
     /**
      * Convenience method for returning the underlying text storage as a string
      * @return the underlying text storage in the iterator as a string
@@ -256,25 +272,32 @@ public abstract class UCharacterIterator
     }
 
     /**
-     * Moves the current position by the number of code units
-     * specified, either forward or backward depending on the sign
-     * of delta (positive or negative respectively).  If the resulting
-     * index would be less than zero, the index is set to zero, and if
-     * the resulting index would be greater than limit, the index is
-     * set to limit.
-     *
-     * @param delta the number of code units to move the current
-     *              index.
-     * @return the new index.
-     * @exception IndexOutOfBoundsException is thrown if an invalid index is
+     * Moves the current position by the number of code points
+     * specified, either forward or backward depending on the sign of
+     * delta (positive or negative respectively). If the current index
+     * is at a trail surrogate then the first adjustment is by code
+     * unit, and the remaining adjustments are by code points.  If the
+     * resulting index would be less than zero, the index is set to
+     * zero, and if the resulting index would be greater than limit,
+     * the index is set to limit.
+     * @param delta the number of code units to move the current index.
+     * @return the new index
+     * @exception IndexOutOfBoundsException is thrown if an invalid delta is
      *            supplied
      * @stable ICU 2.4
      *
      */
-    public int moveIndex(int delta) {
-        int x = Math.max(0, Math.min(getIndex() + delta, getLength()));
-        setIndex(x);
-        return x;
+    public int moveCodePointIndex(int delta){
+        if(delta>0){
+            while(delta>0 && nextCodePoint() != DONE){delta--;}
+        }else{
+            while(delta<0 && previousCodePoint() != DONE){delta++;}
+        }
+        if(delta!=0){
+            throw new IndexOutOfBoundsException();
+        }
+
+        return getIndex();
     }
 
     /**

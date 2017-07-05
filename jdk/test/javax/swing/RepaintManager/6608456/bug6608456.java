@@ -25,6 +25,7 @@
  *
  * @bug 6608456
  * @author Igor Kushnirskiy
+ * @modules java.desktop/com.sun.java.swing
  * @summary tests if delegate RepaintManager gets invoked.
  */
 

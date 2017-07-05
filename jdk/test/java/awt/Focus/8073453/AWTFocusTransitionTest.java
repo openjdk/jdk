@@ -28,13 +28,11 @@
  * @compile AWTFocusTransitionTest.java
  * @run main/othervm AWTFocusTransitionTest
  */
-import sun.awt.SunToolkit;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class AWTFocusTransitionTest {
-    private static SunToolkit toolkit;
     private static Robot robot;
 
     private static Frame frame;
@@ -42,20 +40,19 @@ public class AWTFocusTransitionTest {
     private static Button button;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
         try {
             createAndShowGUI();
 
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(button);
 
@@ -63,7 +60,7 @@ public class AWTFocusTransitionTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(textField);
 
@@ -71,7 +68,7 @@ public class AWTFocusTransitionTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(button);
         } finally {

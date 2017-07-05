@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
 import sun.misc.ManagedLocalsThread;
+
+import sun.misc.JavaNetAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * Implementation of an SSL socket.  This is a normal connection type
@@ -376,6 +379,15 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * The maximum expected network packet size for SSL/TLS/DTLS records.
      */
     private int maximumPacketSize = 0;
+
+    /*
+     * Is the local name service trustworthy?
+     *
+     * If the local name service is not trustworthy, reverse host name
+     * resolution should not be performed for endpoint identification.
+     */
+    static final boolean trustNameService =
+            Debug.getBooleanProperty("jdk.tls.trustNameService", false);
 
     //
     // CONSTRUCTORS AND INITIALIZATION CODE
@@ -2063,9 +2075,38 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     synchronized String getHost() {
         // Note that the host may be null or empty for localhost.
         if (host == null || host.length() == 0) {
-            host = getInetAddress().getHostName();
+            if (!trustNameService) {
+                // If the local name service is not trustworthy, reverse host
+                // name resolution should not be performed for endpoint
+                // identification.  Use the application original specified
+                // hostname or IP address instead.
+                host = getOriginalHostname(getInetAddress());
+            } else {
+                host = getInetAddress().getHostName();
+            }
         }
+
         return host;
+    }
+
+    /*
+     * Get the original application specified hostname.
+     */
+    private static String getOriginalHostname(InetAddress inetAddress) {
+        /*
+         * Get the original hostname via sun.misc.SharedSecrets.
+         */
+        JavaNetAccess jna = SharedSecrets.getJavaNetAccess();
+        String originalHostname = jna.getOriginalHostName(inetAddress);
+
+        /*
+         * If no application specified hostname, use the IP address.
+         */
+        if (originalHostname == null || originalHostname.length() == 0) {
+            originalHostname = inetAddress.getHostAddress();
+        }
+
+        return originalHostname;
     }
 
     // ONLY used by HttpsClient to setup the URI specified hostname

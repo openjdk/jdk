@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  * The {@code Short} class wraps a value of primitive type {@code
  * short} in an object.  An object of type {@code Short} contains a
@@ -227,6 +229,7 @@ public final class Short extends Number implements Comparable<Short> {
      * @return a {@code Short} instance representing {@code s}.
      * @since  1.5
      */
+    @HotSpotIntrinsicCandidate
     public static Short valueOf(short s) {
         final int offset = 128;
         int sAsInt = s;
@@ -334,6 +337,7 @@ public final class Short extends Number implements Comparable<Short> {
      * Returns the value of this {@code Short} as a
      * {@code short}.
      */
+    @HotSpotIntrinsicCandidate
     public short shortValue() {
         return value;
     }
@@ -487,6 +491,7 @@ public final class Short extends Number implements Comparable<Short> {
      *     the bytes in the specified {@code short} value.
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static short reverseBytes(short i) {
         return (short) (((i & 0xFF00) >> 8) | (i << 8));
     }

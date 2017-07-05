@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,12 +116,7 @@ final class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
                     showNativeDialog();
                     fd.setVisible(false);
                 };
-                if (System.getSecurityManager() == null) {
-                    new Thread(task).start();
-                } else {
-                    new ManagedLocalsThread(task).start();
-                }
-
+                new ManagedLocalsThread(task).start();
             } else {
                 quit();
                 fd.setVisible(false);

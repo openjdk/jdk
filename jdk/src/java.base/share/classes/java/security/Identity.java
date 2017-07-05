@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public abstract class Identity implements Principal, Serializable {
         certificates.addElement(certificate);
     }
 
-    private boolean keyEquals(Key aKey, Key anotherKey) {
+    private boolean keyEquals(PublicKey aKey, PublicKey anotherKey) {
         String aKeyFormat = aKey.getFormat();
         String anotherKeyFormat = anotherKey.getFormat();
         if ((aKeyFormat == null) ^ (anotherKeyFormat == null))

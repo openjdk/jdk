@@ -28,6 +28,7 @@
 # @summary Test option to limit direct memory allocation
 #
 # @build LimitDirectMemory
+# @ignore JDK-8129343
 # @run shell LimitDirectMemory.sh
 
 TMP1=tmp_$$

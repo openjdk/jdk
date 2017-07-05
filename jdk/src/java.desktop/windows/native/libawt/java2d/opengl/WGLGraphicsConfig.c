@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,8 +502,8 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     const unsigned char *versionstr;
     const char *extstr;
     jint caps = CAPS_EMPTY;
-    int attrKeys[] = { WGL_DOUBLE_BUFFER_ARB, WGL_ALPHA_BITS_ARB };
-    int attrVals[2];
+    int attrKeys[] = { WGL_DOUBLE_BUFFER_ARB};
+    int attrVals[1];
 
     J2dRlsTraceLn(J2D_TRACE_INFO, "WGLGraphicsConfig_getWGLConfigInfo");
 
@@ -624,12 +624,9 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     }
 
     // get config-specific capabilities
-    j2d_wglGetPixelFormatAttribivARB(hdc, pixfmt, 0, 2, attrKeys, attrVals);
+    j2d_wglGetPixelFormatAttribivARB(hdc, pixfmt, 0, 1, attrKeys, attrVals);
     if (attrVals[0]) {
         caps |= CAPS_DOUBLEBUFFERED;
-    }
-    if (attrVals[1] > 0) {
-        caps |= CAPS_STORED_ALPHA;
     }
 
     // create the scratch pbuffer

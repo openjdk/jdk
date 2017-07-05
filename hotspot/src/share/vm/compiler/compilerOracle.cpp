@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,15 +578,13 @@ static bool scan_line(const char * line,
                       int* bytes_read, const char*& error_msg) {
   *bytes_read = 0;
   error_msg = NULL;
-  if (2 == sscanf(line, "%*[ \t]%255" RANGESLASH "%*[ ]" "%255"  RANGE0 "%n", class_name, method_name, bytes_read)) {
+  if (2 == sscanf(line, "%*[ \t]%255" RANGESLASH "%*[ ]" "%255" RANGE0 "%n", class_name, method_name, bytes_read)) {
     *c_mode = check_mode(class_name, error_msg);
     *m_mode = check_mode(method_name, error_msg);
     return *c_mode != MethodMatcher::Unknown && *m_mode != MethodMatcher::Unknown;
   }
   return false;
 }
-
-
 
 // Scan next flag and value in line, return MethodMatcher object on success, NULL on failure.
 // On failure, error_msg contains description for the first error.
@@ -665,7 +663,7 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
           jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
         }
       } else {
-        jio_snprintf(errorbuf, sizeof(errorbuf), "  Value cannot be read for flag %s of type %s", flag, type);
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
       }
     } else if (strcmp(type, "double") == 0) {
       char buffer[2][256];
@@ -680,10 +678,10 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
         jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
       }
     } else {
-      jio_snprintf(errorbuf, sizeof(errorbuf), "  Type %s not supported ", type);
+      jio_snprintf(errorbuf, buf_size, "  Type %s not supported ", type);
     }
   } else {
-    jio_snprintf(errorbuf, sizeof(errorbuf), "  Flag name for type %s should be alphanumeric ", type);
+    jio_snprintf(errorbuf, buf_size, "  Flag name for type %s should be alphanumeric ", type);
   }
   return NULL;
 }

@@ -779,18 +779,10 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
 const TypeFunc* OptoRuntime::array_fill_Type() {
   const Type** fields;
   int argp = TypeFunc::Parms;
-  if (CCallingConventionRequiresIntsAsLongs) {
   // create input type (domain): pointer, int, size_t
-    fields = TypeTuple::fields(3 LP64_ONLY( + 2));
-    fields[argp++] = TypePtr::NOTNULL;
-    fields[argp++] = TypeLong::LONG;
-    fields[argp++] = Type::HALF;
-  } else {
-    // create input type (domain): pointer, int, size_t
-    fields = TypeTuple::fields(3 LP64_ONLY( + 1));
-    fields[argp++] = TypePtr::NOTNULL;
-    fields[argp++] = TypeInt::INT;
-  }
+  fields = TypeTuple::fields(3 LP64_ONLY( + 1));
+  fields[argp++] = TypePtr::NOTNULL;
+  fields[argp++] = TypeInt::INT;
   fields[argp++] = TypeX_X;               // size in whatevers (size_t)
   LP64_ONLY(fields[argp++] = Type::HALF); // other half of long length
   const TypeTuple *domain = TypeTuple::make(argp, fields);
@@ -1007,6 +999,53 @@ const TypeFunc* OptoRuntime::mulAdd_Type() {
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInt::INT;
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc* OptoRuntime::montgomeryMultiply_Type() {
+  // create input type (domain)
+  int num_args      = 7;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a
+  fields[argp++] = TypePtr::NOTNULL;    // b
+  fields[argp++] = TypePtr::NOTNULL;    // n
+  fields[argp++] = TypeInt::INT;        // len
+  fields[argp++] = TypeLong::LONG;      // inv
+  fields[argp++] = Type::HALF;
+  fields[argp++] = TypePtr::NOTNULL;    // result
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypePtr::NOTNULL;
+
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc* OptoRuntime::montgomerySquare_Type() {
+  // create input type (domain)
+  int num_args      = 6;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a
+  fields[argp++] = TypePtr::NOTNULL;    // n
+  fields[argp++] = TypeInt::INT;        // len
+  fields[argp++] = TypeLong::LONG;      // inv
+  fields[argp++] = Type::HALF;
+  fields[argp++] = TypePtr::NOTNULL;    // result
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypePtr::NOTNULL;
+
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
 

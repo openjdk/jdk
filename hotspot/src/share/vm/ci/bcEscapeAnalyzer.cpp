@@ -1185,7 +1185,6 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
   vmIntrinsics::ID iid = method()->intrinsic_id();
 
   if (iid == vmIntrinsics::_getClass ||
-      iid ==  vmIntrinsics::_fillInStackTrace ||
       iid == vmIntrinsics::_hashCode)
     return iid;
   else
@@ -1198,10 +1197,6 @@ bool BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsics::ID iid) {
   switch (iid) {
   case vmIntrinsics::_getClass:
     _return_local = false;
-    break;
-  case vmIntrinsics::_fillInStackTrace:
-    arg.set(0); // 'this'
-    set_returned(arg);
     break;
   case vmIntrinsics::_hashCode:
     // initialized state is correct
