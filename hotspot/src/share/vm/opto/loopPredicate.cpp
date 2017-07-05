@@ -41,63 +41,6 @@
  * checks (such as null checks).
 */
 
-//-------------------------------is_uncommon_trap_proj----------------------------
-// Return true if proj is the form of "proj->[region->..]call_uct"
-bool PhaseIdealLoop::is_uncommon_trap_proj(ProjNode* proj, Deoptimization::DeoptReason reason) {
-  int path_limit = 10;
-  assert(proj, "invalid argument");
-  Node* out = proj;
-  for (int ct = 0; ct < path_limit; ct++) {
-    out = out->unique_ctrl_out();
-    if (out == NULL)
-      return false;
-    if (out->is_CallStaticJava()) {
-      int req = out->as_CallStaticJava()->uncommon_trap_request();
-      if (req != 0) {
-        Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-        if (trap_reason == reason || reason == Deoptimization::Reason_none) {
-           return true;
-        }
-      }
-      return false; // don't do further after call
-    }
-    if (out->Opcode() != Op_Region)
-      return false;
-  }
-  return false;
-}
-
-//-------------------------------is_uncommon_trap_if_pattern-------------------------
-// Return true  for "if(test)-> proj -> ...
-//                          |
-//                          V
-//                      other_proj->[region->..]call_uct"
-//
-// "must_reason_predicate" means the uct reason must be Reason_predicate
-bool PhaseIdealLoop::is_uncommon_trap_if_pattern(ProjNode *proj, Deoptimization::DeoptReason reason) {
-  Node *in0 = proj->in(0);
-  if (!in0->is_If()) return false;
-  // Variation of a dead If node.
-  if (in0->outcnt() < 2)  return false;
-  IfNode* iff = in0->as_If();
-
-  // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
-  if (reason != Deoptimization::Reason_none) {
-    if (iff->in(1)->Opcode() != Op_Conv2B ||
-       iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
-      return false;
-    }
-  }
-
-  ProjNode* other_proj = iff->proj_out(1-proj->_con)->as_Proj();
-  if (is_uncommon_trap_proj(other_proj, reason)) {
-    assert(reason == Deoptimization::Reason_none ||
-           Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");
-    return true;
-  }
-  return false;
-}
-
 //-------------------------------register_control-------------------------
 void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) {
   assert(n->is_CFG(), "must be control node");
@@ -147,7 +90,7 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) 
 // This code is also used to clone predicates to clonned loops.
 ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                                       Deoptimization::DeoptReason reason) {
-  assert(is_uncommon_trap_if_pattern(cont_proj, reason), "must be a uct if pattern!");
+  assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   IfNode* iff = cont_proj->in(0)->as_If();
 
   ProjNode *uncommon_proj = iff->proj_out(1 - cont_proj->_con);
@@ -235,7 +178,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                                     Deoptimization::DeoptReason reason) {
   assert(new_entry != 0, "only used for clone predicate");
-  assert(PhaseIdealLoop::is_uncommon_trap_if_pattern(cont_proj, reason), "must be a uct if pattern!");
+  assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   IfNode* iff = cont_proj->in(0)->as_If();
 
   ProjNode *uncommon_proj = iff->proj_out(1 - cont_proj->_con);
@@ -422,7 +365,7 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
 ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason) {
   if (start_c == NULL || !start_c->is_Proj())
     return NULL;
-  if (is_uncommon_trap_if_pattern(start_c->as_Proj(), reason)) {
+  if (start_c->as_Proj()->is_uncommon_trap_if_pattern(reason)) {
     return start_c->as_Proj();
   }
   return NULL;
@@ -773,7 +716,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     ProjNode* proj = if_proj_list.pop()->as_Proj();
     IfNode*   iff  = proj->in(0)->as_If();
 
-    if (!is_uncommon_trap_if_pattern(proj, Deoptimization::Reason_none)) {
+    if (!proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
       if (loop->is_loop_exit(iff)) {
         // stop processing the remaining projs in the list because the execution of them
         // depends on the condition of "iff" (iff->in(1)).

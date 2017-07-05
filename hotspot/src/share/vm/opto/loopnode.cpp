@@ -167,7 +167,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
     if (ctl->is_CountedLoop() && ctl->in(1) != NULL && ctl->in(1)->in(0) != NULL && ctl->in(1)->in(0)->is_If()) {
-      if (!is_uncommon_trap_if_pattern(ctl->in(1)->as_Proj(), Deoptimization::Reason_none)) {
+      if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
         break;
       }
       next = idom(ctl->in(1)->in(0));
@@ -181,7 +181,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
       } else if (parent_ctl->is_CountedLoopEnd() && parent_ctl->as_CountedLoopEnd()->loopnode() != NULL) {
         next = parent_ctl->as_CountedLoopEnd()->loopnode()->init_control();
       } else if (parent_ctl->is_If()) {
-        if (!is_uncommon_trap_if_pattern(ctl->as_Proj(), Deoptimization::Reason_none)) {
+        if (!ctl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
           break;
         }
         assert(idom(ctl) == parent_ctl, "strange");
