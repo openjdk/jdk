@@ -37,7 +37,7 @@ import java.beans.PropertyChangeEvent;
 import sun.swing.SwingUtilities2;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JTabbedPane}.
  *
  * <p>Looks up the {@code selectedTabPadInsets} property from the Style,
@@ -120,7 +120,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -183,7 +183,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -192,7 +192,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -201,7 +201,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -227,7 +227,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -256,7 +256,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected JButton createScrollButton(int direction) {
@@ -272,7 +272,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
@@ -282,7 +282,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to keep track of whether the selected tab is also pressed.
      */
@@ -333,7 +333,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int getTabLabelShiftX(int tabPlacement, int tabIndex, boolean isSelected) {
@@ -345,7 +345,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int getTabLabelShiftY(int tabPlacement, int tabIndex, boolean isSelected) {
@@ -380,7 +380,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int getBaseline(int tab) {
@@ -404,7 +404,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -556,7 +556,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void setRolloverTab(int index) {
@@ -750,7 +750,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int calculateMaxTabHeight(int tabPlacement) {
@@ -766,7 +766,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int calculateTabWidth(int tabPlacement, int tabIndex,
@@ -797,7 +797,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected int calculateMaxTabWidth(int tabPlacement) {
@@ -813,7 +813,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected Insets getTabInsets(int tabPlacement, int tabIndex) {
@@ -823,7 +823,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected FontMetrics getFontMetrics() {
@@ -867,7 +867,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to create a TabbedPaneLayout subclass which takes into
      * account tabOverlap.

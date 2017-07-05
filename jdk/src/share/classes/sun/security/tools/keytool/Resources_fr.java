@@ -40,8 +40,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-// "Option" should be translated.
-        {".OPTION.", " [Option]..."},
+        {".OPTION.", " [OPTION]..."},
         {"Options.", "Options :"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utiliser \"keytool -help\" pour toutes les commandes disponibles"},
@@ -61,7 +60,6 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "Exporte le certificat"}, //-exportcert
         {"Generates.a.key.pair",
                 "G\u00E9n\u00E8re une paire de cl\u00E9s"}, //-genkeypair
-// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "G\u00E9n\u00E8re une cl\u00E9 secr\u00E8te"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -244,8 +242,10 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Certification.request.stored.in.file.filename.",
                 "Demande de certification stock\u00E9e dans le fichier <{0}>"},
         {"Submit.this.to.your.CA", "Soumettre \u00E0 votre CA"},
-        {"if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified",
-            "si l'alias n'est pas sp\u00E9cifi\u00E9, destalias, srckeypass et destkeypass ne doivent pas \u00EAtre sp\u00E9cifi\u00E9s"},
+        {"if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified",
+            "si l'alias n'est pas sp\u00E9cifi\u00E9, destalias et srckeypass ne doivent pas \u00EAtre sp\u00E9cifi\u00E9s"},
+        {"The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified.",
+            "Le fichier de cl\u00E9s pkcs12 de destination contient un mot de passe de fichier de cl\u00E9s et un mot de passe de cl\u00E9 diff\u00E9rents. R\u00E9essayez en sp\u00E9cifiant -destkeypass."},
         {"Certificate.stored.in.file.filename.",
                 "Certificat stock\u00E9 dans le fichier <{0}>"},
         {"Certificate.reply.was.installed.in.keystore",
@@ -324,7 +324,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "Voulez-vous toujours l'ajouter \u00E0 votre fichier de cl\u00E9s ? [non] :  "},
         {"Trust.this.certificate.no.", "Faire confiance \u00E0 ce certificat ? [non] :  "},
-        {"YES", "Oui"},
+        {"YES", "OUI"},
         {"New.prompt.", "Nouveau {0} : "},
         {"Passwords.must.differ", "Les mots de passe doivent diff\u00E9rer"},
         {"Re.enter.new.prompt.", "Indiquez encore le nouveau {0} : "},
@@ -361,7 +361,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                  "L''entr\u00E9e \u00E0 laquelle l''alias <{0}> fait r\u00E9f\u00E9rence n''est pas une entr\u00E9e de type cl\u00E9 priv\u00E9e. La commande -keyclone prend uniquement en charge le clonage des cl\u00E9s priv\u00E9es"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  Avertissement Avertissement Avertissement  *****************"},
+            "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signataire n\u00B0%d :"},
         {"Timestamp.", "Horodatage :"},
         {"Signature.", "Signature :"},
@@ -386,7 +386,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "Certificat de niveau sup\u00E9rieur dans la r\u00E9ponse :\n"},
         {".is.not.trusted.", "... non s\u00E9curis\u00E9. "},
         {"Install.reply.anyway.no.", "Installer la r\u00E9ponse quand m\u00EAme ? [non] :  "},
-        {"NO", "Non"},
+        {"NO", "NON"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Les cl\u00E9s publiques de la r\u00E9ponse et du fichier de cl\u00E9s ne concordent pas"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -399,6 +399,10 @@ public class Resources_fr extends java.util.ListResourceBundle {
                 "Cl\u00E9 secr\u00E8te non g\u00E9n\u00E9r\u00E9e, l''alias <{0}> existe d\u00E9j\u00E0"},
         {"Please.provide.keysize.for.secret.key.generation",
                 "Indiquez -keysize pour la g\u00E9n\u00E9ration de la cl\u00E9 secr\u00E8te"},
+
+        {"verified.by.s.in.s", "V\u00E9rifi\u00E9 par %s dans %s"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "AVERTISSEMENT : non v\u00E9rifi\u00E9. Assurez-vous que -keystore est correct."},
 
         {"Extensions.", "Extensions\u00A0: "},
         {".Empty.value.", "(Valeur vide)"},

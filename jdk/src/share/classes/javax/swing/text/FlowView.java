@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public abstract class FlowView extends BoxView {
      * is returned.
      *
      * @param index the index of the row being updated.
-     *   This should be a value >= 0 and < getViewCount().
+     *   This should be a value &gt;= 0 and &lt; getViewCount().
      * @see #getFlowStart
      */
     public int getFlowSpan(int index) {
@@ -103,7 +103,7 @@ public abstract class FlowView extends BoxView {
      * for the row constraints.
 
      * @param index the index of the row being updated.
-     *   This should be a value >= 0 and < getViewCount().
+     *   This should be a value &gt;= 0 and &lt; getViewCount().
      * @see #getFlowSpan
      */
     public int getFlowStart(int index) {
@@ -147,7 +147,7 @@ public abstract class FlowView extends BoxView {
      * Fetches the child view index representing the given position in
      * the model.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      */
@@ -175,9 +175,9 @@ public abstract class FlowView extends BoxView {
      * a preferenceChanged is called.  Following all of that,
      * the normal box layout of the superclass is performed.
      *
-     * @param width  the width to lay out against >= 0.  This is
+     * @param width  the width to lay out against &gt;= 0.  This is
      *   the width inside of the inset area.
-     * @param height the height to lay out against >= 0 This
+     * @param height the height to lay out against &gt;= 0 This
      *   is the height inside of the inset area.
      */
     protected void layout(int width, int height) {
@@ -580,7 +580,7 @@ public abstract class FlowView extends BoxView {
          *
          * @param rowIndex the row to adjust to the current layout
          *  span.
-         * @param desiredSpan the current layout span >= 0
+         * @param desiredSpan the current layout span &gt;= 0
          * @param x the location r starts at.
          */
         protected void adjustRow(FlowView fv, int rowIndex, int desiredSpan, int x) {
@@ -796,6 +796,22 @@ public abstract class FlowView extends BoxView {
             v.setParent(parent);
         }
 
+        /** {@inheritDoc} */
+        @Override
+        protected void forwardUpdate(DocumentEvent.ElementChange ec,
+                                          DocumentEvent e, Shape a, ViewFactory f) {
+            calculateUpdateIndexes(e);
+            // Send update event to all views followed by the changed place.
+            lastUpdateIndex = Math.max((getViewCount() - 1), 0);
+            for (int i = firstUpdateIndex; i <= lastUpdateIndex; i++) {
+                View v = getView(i);
+                if (v != null) {
+                    Shape childAlloc = getChildAllocation(i, a);
+                    forwardUpdateToView(v, e, childAlloc, f);
+                }
+            }
+        }
+
         // The following methods don't do anything useful, they
         // simply keep the class from being abstract.
 
@@ -816,8 +832,8 @@ public abstract class FlowView extends BoxView {
          * Implemented to return false, as hit detection is not
          * performed on the logical view.
          *
-         * @param x the X coordinate >= 0
-         * @param y the Y coordinate >= 0
+         * @param x the X coordinate &gt;= 0
+         * @param y the Y coordinate &gt;= 0
          * @param alloc the rectangle
          * @return true if the point is before the specified range
          */
@@ -830,8 +846,8 @@ public abstract class FlowView extends BoxView {
          * Implemented to return false, as hit detection is not
          * performed on the logical view.
          *
-         * @param x the X coordinate >= 0
-         * @param y the Y coordinate >= 0
+         * @param x the X coordinate &gt;= 0
+         * @param y the Y coordinate &gt;= 0
          * @param alloc the rectangle
          * @return true if the point is after the specified range
          */
@@ -844,8 +860,8 @@ public abstract class FlowView extends BoxView {
          * Implemented to return null, as hit detection is not
          * performed on the logical view.
          *
-         * @param x the X coordinate >= 0
-         * @param y the Y coordinate >= 0
+         * @param x the X coordinate &gt;= 0
+         * @param y the Y coordinate &gt;= 0
          * @param alloc the parent's allocation on entry, which should
          *   be changed to the child's allocation on exit
          * @return the child view
@@ -859,7 +875,7 @@ public abstract class FlowView extends BoxView {
          * Implemented to do nothing, as the logical view doesn't
          * perform layout on the children.
          *
-         * @param index the index of the child, >= 0 && < getViewCount()
+         * @param index the index of the child, &gt;= 0 &amp;&amp; &lt; getViewCount()
          * @param a  the allocation to the interior of the box on entry,
          *   and the allocation of the child view at the index on exit.
          */

@@ -226,7 +226,10 @@ class CompiledIC: public ResourceObj {
   //
   void set_to_clean();  // Can only be called during a safepoint operation
   void set_to_monomorphic(CompiledICInfo& info);
-  void set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS);
+
+  // Returns true if successful and false otherwise. The call can fail if memory
+  // allocation in the code cache fails.
+  bool set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS);
 
   static void compute_monomorphic_entry(methodHandle method, KlassHandle receiver_klass,
                                         bool is_optimized, bool static_bound, CompiledICInfo& info, TRAPS);

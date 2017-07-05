@@ -85,7 +85,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * list should be reused if possible.
      */
     transient private Container cachedRoot;
-    transient private List cachedCycle;
+    transient private List<Component> cachedCycle;
 
     /*
      * We suppose to use getFocusTraversalCycle & getComponentIndex methods in order
@@ -111,7 +111,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
         return cycle.indexOf(aComponent);
     }
 
-    private void enumerateCycle(Container container, List cycle) {
+    private void enumerateCycle(Container container, List<Component> cycle) {
         if (!(container.isVisible() && container.isDisplayable())) {
             return;
         }

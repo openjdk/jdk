@@ -34,10 +34,8 @@ package sun.security.krb5;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.*;
 import java.io.IOException;
-import java.util.StringTokenizer;
-import java.util.Vector;
-import java.util.Stack;
-import java.util.EmptyStackException;
+import java.util.*;
+
 import sun.security.krb5.internal.util.KerberosString;
 
 /**
@@ -50,7 +48,6 @@ import sun.security.krb5.internal.util.KerberosString;
  */
 public class Realm implements Cloneable {
     private final String realm; // not null nor empty
-    private static boolean DEBUG = Krb5.DEBUG;
 
     public Realm(String name) throws RealmException {
         realm = parseRealm(name);
@@ -233,90 +230,53 @@ public class Realm implements Cloneable {
         }
     }
 
-    /*
-     * First leg of realms parsing. Used by getRealmsList.
-     */
-    private static String[] doInitialParse(String cRealm, String sRealm)
-        throws KrbException {
-            if (cRealm == null || sRealm == null){
-                throw new KrbException(Krb5.API_INVALID_ARG);
-            }
-            if (DEBUG) {
-                System.out.println(">>> Realm doInitialParse: cRealm=["
-                                   + cRealm + "], sRealm=[" +sRealm + "]");
-            }
-            if (cRealm.equals(sRealm)) {
-                String[] retList = null;
-                retList = new String[1];
-                retList[0] = new String(cRealm);
-
-                if (DEBUG) {
-                    System.out.println(">>> Realm doInitialParse: "
-                                       + retList[0]);
-                }
-                return retList;
-            }
-            return null;
-        }
-
     /**
      * Returns an array of realms that may be traversed to obtain
      * a TGT from the initiating realm cRealm to the target realm
      * sRealm.
      * <br>
-     * There may be an arbitrary number of intermediate realms
-     * between cRealm and sRealm. The realms may be organized
-     * organized hierarchically, or the paths between them may be
-     * specified in the [capaths] stanza of the caller's
-     * Kerberos configuration file. The configuration file is consulted
-     * first. Then a hirarchical organization is assumed if no realms
-     * are found in the configuration file.
+     * This method would read [capaths] to create a path, or generate a
+     * hierarchical path if [capaths] does not contain a sub-stanza for cRealm
+     * or the sub-stanza does not contain a tag for sRealm.
      * <br>
-     * The returned list, if not null, contains cRealm as the first
-     * entry. sRealm is not included unless it is mistakenly listed
-     * in the configuration file as an intermediary realm.
+     * The returned list would never be null, and it always contains
+     * cRealm as the head entry. sRealm is not included as the tail.
      *
-     * @param cRealm the initiating realm
-     * @param sRealm the target realm
-     * @returns array of realms
-     * @thows KrbException
+     * @param cRealm the initiating realm, not null
+     * @param sRealm the target realm, not null, not equals to cRealm
+     * @returns array of realms including at least cRealm as the first
+     *          element
      */
-    public static String[] getRealmsList(String cRealm, String sRealm)
-        throws KrbException {
-            String[] retList = doInitialParse(cRealm, sRealm);
-            if (retList != null && retList.length != 0) {
-                return retList;
-            }
-            /*
-             * Try [capaths].
-             */
-            retList = parseCapaths(cRealm, sRealm);
-            if (retList != null && retList.length != 0) {
-                return retList;
-            }
-            /*
-             * Now assume the realms are organized hierarchically.
-             */
-            retList = parseHierarchy(cRealm, sRealm);
-            return retList;
+    public static String[] getRealmsList(String cRealm, String sRealm) {
+        try {
+            // Try [capaths]
+            return parseCapaths(cRealm, sRealm);
+        } catch (KrbException ke) {
+            // Now assume the realms are organized hierarchically.
+            return parseHierarchy(cRealm, sRealm);
         }
+    }
 
     /**
-     * Parses the [capaths] stanza of the configuration file
-     * for a list of realms to traverse
-     * to obtain credentials from the initiating realm cRealm to
-     * the target realm sRealm.
-     * @param cRealm the initiating realm
-     * @param sRealm the target realm
-     * @returns array of realms
-     * @ throws KrbException
-     */
-
-    /*
-     * parseCapaths works for a capaths organized such that
-     * for a given client realm C there is a tag C that
-     * contains subtags Ci ... Cn that completely define intermediate
-     * realms from C to target T. For example:
+     * Parses the [capaths] stanza of the configuration file for a
+     * list of realms to traverse to obtain credentials from the
+     * initiating realm cRealm to the target realm sRealm.
+     *
+     * For a given client realm C there is a tag C in [capaths] whose
+     * subtag S has a value which is a (possibly partial) path from C
+     * to S. When the path is partial, it contains only the tail of the
+     * full path. Values of other subtags will be used to build the full
+     * path. The value "." means a direct path from C to S. If realm S
+     * does not appear as a subtag, there is no path defined here.
+     *
+     * The implementation ignores all values which equals to C or S, or
+     * a "." in multiple values, or any duplicated realm names.
+     *
+     * When a path value has more than two realms, they can be specified
+     * with multiple key-value pairs each having a single value, but the
+     * order must not change.
+     *
+     * For example:
      *
      * [capaths]
      *    TIVOLI.COM = {
@@ -325,357 +285,130 @@ public class Realm implements Cloneable {
      *        LDAPCENTRAL.NET = .
      *    }
      *
-     * The tag TIVOLI.COM contains subtags IBM.COM, IBM_LDAPCENTRAL.COM
-     * and LDAPCENTRAL.NET that completely define the path from TIVOLI.COM
-     * to IBM.COM (TIVOLI.COM->LADAPCENTRAL.NET->IBM_LDAPCENTRAL.COM->IBM
-     * or TIVOLI.COM->MOONLITE.ORG->IBM.COM).
+     * TIVOLI.COM has a direct path to LDAPCENTRAL.NET, which has a direct
+     * path to IBM_LDAPCENTRAL.COM. It also has a partial path to IBM.COM
+     * being "IBM_LDAPCENTRAL.COM MOONLITE.ORG". Merging these info together,
+     * a full path from TIVOLI.COM to IBM.COM will be
      *
-     * A direct path is assumed for an intermediary whose entry is not
-     * "closed" by a "." In the above example, TIVOLI.COM is assumed
-     * to have a direct path to MOONLITE.ORG and MOONLITE.COM
-     * in turn to IBM.COM.
+     *   TIVOLI.COM -> LDAPCENTRAL.NET -> IBM_LDAPCENTRAL.COM
+     *              -> IBM_LDAPCENTRAL.COM -> MOONLITE.ORG
+     *
+     * Please note the sRealm IBM.COM does not appear in the path.
+     *
+     * @param cRealm the initiating realm
+     * @param sRealm the target realm, not the same as cRealm
+     * @returns array of realms including at least cRealm as the first
+     *          element
+     * @throws KrbException if the config does not contain a sub-stanza
+     *          for cRealm in [capaths] or the sub-stanza does not contain
+     *          sRealm as a tag
      */
+    private static String[] parseCapaths(String cRealm, String sRealm)
+            throws KrbException {
 
-    private static String[] parseCapaths(String cRealm, String sRealm) throws KrbException {
-        String[] retList = null;
+        // This line could throw a KrbException
+        Config cfg = Config.getInstance();
 
-        Config cfg = null;
-        try {
-            cfg = Config.getInstance();
-        } catch (Exception exc) {
-            if (DEBUG) {
-                System.out.println ("Configuration information can not be " +
-                                    "obtained " + exc.getMessage());
-            }
-            return null;
+        if (!cfg.exists("capaths", cRealm, sRealm)) {
+            throw new KrbException("No conf");
         }
 
-        String intermediaries = cfg.getAll("capaths", cRealm, sRealm);
+        LinkedList<String> path = new LinkedList<>();
 
-        if (intermediaries == null) {
-            if (DEBUG) {
-                System.out.println(">>> Realm parseCapaths: no cfg entry");
-            }
-            return null;
-        }
-
-        String tempTarget = null, tempRealm = null;
-        Stack<String> iStack = new Stack<>();
-
-        /*
-         * The half-established reversed-path, starting from the final target
-         * (sRealm), each item can be connected to by the next one.
-         * Might contains wrong item, if found, a bad track is performed
-         */
-        Vector<String> tempList = new Vector<>(8, 8);
-        tempList.add(sRealm);
-
-        int count = 0; // For debug only
-        tempTarget = sRealm;
-
-        out: do {
-            if (DEBUG) {
-                count++;
-                System.out.println(">>> Realm parseCapaths: loop " +
-                                   count + ": target=" + tempTarget);
-            }
-
-            if (intermediaries != null &&
-                !intermediaries.equals(".") &&
-                !intermediaries.equals(cRealm)) {
-                if (DEBUG) {
-                    System.out.println(">>> Realm parseCapaths: loop " +
-                                       count + ": intermediaries=[" +
-                                       intermediaries + "]");
-                }
-
-                /*
-                 * We have one or more space-separated intermediary realms.
-                 * Stack them. A null is always added between intermedies of
-                 * different targets. When this null is popped, it means none
-                 * of the intermedies for this target is useful (because of
-                 * infinite loop), the target is then removed from the partial
-                 * tempList, and the next possible intermediary is tried.
-                 */
-                iStack.push(null);
-                String[] ints = intermediaries.split("\\s+");
-                for (int i = ints.length-1; i>=0; i--)
-                {
-                    tempRealm = ints[i];
-                    if (tempRealm.equals(PrincipalName.REALM_COMPONENT_SEPARATOR_STR)) {
-                        break out;
-                    }
-                    if (!tempList.contains(tempRealm)) {
-                        iStack.push(tempRealm);
-                        if (DEBUG) {
-                            System.out.println(">>> Realm parseCapaths: loop " +
-                                               count +
-                                               ": pushed realm on to stack: " +
-                                               tempRealm);
-                        }
-                    } else if (DEBUG) {
-                        System.out.println(">>> Realm parseCapaths: loop " +
-                                           count +
-                                           ": ignoring realm: [" +
-                                           tempRealm + "]");
-                    }
-                }
-            } else {
-                if (DEBUG) {
-                    System.out.println(">>> Realm parseCapaths: loop " +
-                                       count +
-                                       ": no intermediaries");
-                }
+        String head = sRealm;
+        while (true) {
+            String value = cfg.getAll("capaths", cRealm, head);
+            if (value == null) {
                 break;
             }
-
-            /*
-             * Get next intermediary realm from the stack
-             */
-
-            try {
-                while ((tempTarget = iStack.pop()) == null) {
-                    tempList.removeElementAt(tempList.size()-1);
-                    if (DEBUG) {
-                        System.out.println(">>> Realm parseCapaths: backtrack, remove tail");
-                    }
+            String[] more = value.split("\\s+");
+            boolean changed = false;
+            for (int i=more.length-1; i>=0; i--) {
+                if (path.contains(more[i])
+                        || more[i].equals(".")
+                        || more[i].equals(cRealm)
+                        || more[i].equals(sRealm)
+                        || more[i].equals(head)) {
+                    // Ignore invalid values
+                    continue;
                 }
-            } catch (EmptyStackException exc) {
-                tempTarget = null;
+                changed = true;
+                path.addFirst(more[i]);
             }
-
-            if (tempTarget == null) {
-                /*
-                 * No more intermediaries. We're done.
-                 */
-                break;
-            }
-
-            tempList.add(tempTarget);
-
-            if (DEBUG) {
-                System.out.println(">>> Realm parseCapaths: loop " + count +
-                                   ": added intermediary to list: " +
-                                   tempTarget);
-            }
-
-            intermediaries = cfg.getAll("capaths", cRealm, tempTarget);
-
-        } while (true);
-
-        if (tempList.isEmpty()) {
-            return null;
+            if (!changed) break;
+            head = path.getFirst();
         }
-
-        // From (SREALM, T1, T2) to (CREALM, T2, T1)
-        retList = new String[tempList.size()];
-        retList[0] = cRealm;
-        for (int i=1; i<tempList.size(); i++) {
-            retList[i] = tempList.elementAt(tempList.size()-i);
-        }
-
-        if (DEBUG && retList != null) {
-            for (int i = 0; i < retList.length; i++) {
-                System.out.println(">>> Realm parseCapaths [" + i +
-                                   "]=" + retList[i]);
-            }
-        }
-
-        return retList;
-    }
+        path.addFirst(cRealm);
+        return path.toArray(new String[path.size()]);
+   }
 
     /**
      * Build a list of realm that can be traversed
      * to obtain credentials from the initiating realm cRealm
      * for a service in the target realm sRealm.
      * @param cRealm the initiating realm
-     * @param sRealm the target realm
-     * @returns array of realms
-     * @throws KrbException
+     * @param sRealm the target realm, not the same as cRealm
+     * @returns array of realms including cRealm as the first element
      */
-    private static String[] parseHierarchy(String cRealm, String sRealm)
-        throws KrbException
-    {
-        String[] retList = null;
+    private static String[] parseHierarchy(String cRealm, String sRealm) {
 
-        // Parse the components and determine common part, if any.
+        String[] cComponents = cRealm.split("\\.");
+        String[] sComponents = sRealm.split("\\.");
 
-        String[] cComponents = null;
-        String[] sComponents = null;
+        int cPos = cComponents.length;
+        int sPos = sComponents.length;
 
-        StringTokenizer strTok =
-        new StringTokenizer(cRealm,
-                            PrincipalName.REALM_COMPONENT_SEPARATOR_STR);
-
-        // Parse cRealm
-
-        int cCount = strTok.countTokens();
-        cComponents = new String[cCount];
-
-        for (cCount = 0; strTok.hasMoreTokens(); cCount++) {
-            cComponents[cCount] = strTok.nextToken();
+        boolean hasCommon = false;
+        for (sPos--, cPos--; sPos >=0 && cPos >= 0 &&
+                sComponents[sPos].equals(cComponents[cPos]);
+                sPos--, cPos--) {
+            hasCommon = true;
         }
 
-        if (DEBUG) {
-            System.out.println(">>> Realm parseHierarchy: cRealm has " +
-                               cCount + " components:");
-            int j = 0;
-            while (j < cCount) {
-                System.out.println(">>> Realm parseHierarchy: " +
-                                   "cComponents["+j+"]=" + cComponents[j++]);
-            }
+        // For those with common components:
+        //                            length  pos
+        // SITES1.SALES.EXAMPLE.COM   4       1
+        //   EVERYWHERE.EXAMPLE.COM   3       0
+
+        // For those without common components:
+        //                     length  pos
+        // DEVEL.EXAMPLE.COM   3       2
+        // PROD.EXAMPLE.ORG    3       2
+
+        LinkedList<String> path = new LinkedList<>();
+
+        // Un-common ones for client side
+        for (int i=0; i<=cPos; i++) {
+            path.addLast(subStringFrom(cComponents, i));
         }
 
-        // Parse sRealm
-
-        strTok = new StringTokenizer(sRealm,
-                                     PrincipalName.REALM_COMPONENT_SEPARATOR_STR);
-
-        int sCount = strTok.countTokens();
-        sComponents = new String[sCount];
-
-        for (sCount = 0; strTok.hasMoreTokens(); sCount++) {
-            sComponents[sCount] = strTok.nextToken();
+        // Common one
+        if (hasCommon) {
+            path.addLast(subStringFrom(cComponents, cPos+1));
         }
 
-        if (DEBUG) {
-            System.out.println(">>> Realm parseHierarchy: sRealm has " +
-                               sCount + " components:");
-            int j = 0;
-            while (j < sCount) {
-                System.out.println(">>> Realm parseHierarchy: sComponents["+j+
-                                   "]=" + sComponents[j++]);
-            }
+        // Un-common ones for server side
+        for (int i=sPos; i>=0; i--) {
+            path.addLast(subStringFrom(sComponents, i));
         }
 
-        // Determine common components, if any.
+        // Remove sRealm from path. Note that it might be added at last loop
+        // or as a common component, if sRealm is a parent of cRealm
+        path.removeLast();
 
-        int commonComponents = 0;
-
-        //while (sCount > 0 && cCount > 0 &&
-        //          sComponents[--sCount].equals(cComponents[--cCount]))
-
-        for (sCount--, cCount--; sCount >=0 && cCount >= 0 &&
-                 sComponents[sCount].equals(cComponents[cCount]);
-             sCount--, cCount--) {
-            commonComponents++;
-        }
-
-        int cCommonStart = -1;
-        int sCommonStart = -1;
-
-        int links = 0;
-
-        if (commonComponents > 0) {
-            sCommonStart = sCount+1;
-            cCommonStart = cCount+1;
-
-            // components from common to ancestors
-            links += sCommonStart;
-            links += cCommonStart;
-        } else {
-            links++;
-        }
-
-        if (DEBUG) {
-            if (commonComponents > 0) {
-                System.out.println(">>> Realm parseHierarchy: " +
-                                   commonComponents + " common component" +
-                                   (commonComponents > 1 ? "s" : " "));
-
-                System.out.println(">>> Realm parseHierarchy: common part "
-                                   +
-                                   "in cRealm (starts at index " +
-                                   cCommonStart + ")");
-                System.out.println(">>> Realm parseHierarchy: common part in sRealm (starts at index " +
-                                   sCommonStart + ")");
-
-
-                String commonPart = substring(cRealm, cCommonStart);
-                System.out.println(">>> Realm parseHierarchy: common part in cRealm=" +
-                                   commonPart);
-
-                commonPart = substring(sRealm, sCommonStart);
-                System.out.println(">>> Realm parseHierarchy: common part in sRealm=" +
-                                   commonPart);
-
-            } else
-            System.out.println(">>> Realm parseHierarchy: no common part");
-        }
-
-        if (DEBUG) {
-            System.out.println(">>> Realm parseHierarchy: total links=" + links);
-        }
-
-        retList = new String[links];
-
-        retList[0] = new String(cRealm);
-
-        if (DEBUG) {
-            System.out.println(">>> Realm parseHierarchy A: retList[0]=" +
-                               retList[0]);
-        }
-
-        // For an initiator realm A.B.C.D.COM,
-        // build a list krbtgt/B.C.D.COM@A.B.C.D.COM up to the common part,
-        // ie the issuer realm is the immediate descendant
-        // of the target realm.
-
-        String cTemp = null, sTemp = null;
-        int i;
-        for (i = 1, cCount = 0; i < links && cCount < cCommonStart; cCount++) {
-            sTemp = substring(cRealm, cCount+1);
-            //cTemp = substring(cRealm, cCount);
-            retList[i++] = new String(sTemp);
-
-            if (DEBUG) {
-                System.out.println(">>> Realm parseHierarchy B: retList[" +
-                                   (i-1) +"]="+retList[i-1]);
-            }
-        }
-
-
-        for (sCount = sCommonStart; i < links && sCount - 1 > 0; sCount--) {
-            sTemp = substring(sRealm, sCount-1);
-            //cTemp = substring(sRealm, sCount);
-            retList[i++] = new String(sTemp);
-            if (DEBUG) {
-                System.out.println(">>> Realm parseHierarchy D: retList[" +
-                                   (i-1) +"]="+retList[i-1]);
-            }
-        }
-
-        return retList;
+        return path.toArray(new String[path.size()]);
     }
 
-    private static String substring(String realm, int componentIndex)
-    {
-        int i = 0 , j = 0, len = realm.length();
-
-        while(i < len && j != componentIndex) {
-            if (realm.charAt(i++) != PrincipalName.REALM_COMPONENT_SEPARATOR)
-                continue;
-            j++;
+    /**
+     * Creates a realm name using components from the given postion.
+     * For example, subStringFrom({"A", "B", "C"}, 1) is "B.C".
+     */
+    private static String subStringFrom(String[] components, int from) {
+        StringBuilder sb = new StringBuilder();
+        for (int i=from; i<components.length; i++) {
+            if (sb.length() != 0) sb.append('.');
+            sb.append(components[i]);
         }
-
-        return realm.substring(i);
+        return sb.toString();
     }
-
-    static int getRandIndex(int arraySize) {
-        return (int)(Math.random() * 16384.0) % arraySize;
-    }
-
-    static void printNames(String[] names) {
-        if (names == null || names.length == 0)
-            return;
-
-        int len = names.length;
-        int i = 0;
-        System.out.println("List length = " + len);
-        while (i < names.length) {
-            System.out.println("["+ i +"]=" + names[i]);
-            i++;
-        }
-    }
-
 }

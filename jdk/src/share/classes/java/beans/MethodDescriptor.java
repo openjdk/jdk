@@ -38,7 +38,7 @@ import java.util.ArrayList;
 
 public class MethodDescriptor extends FeatureDescriptor {
 
-    private Reference<Method> methodRef;
+    private final MethodRef methodRef = new MethodRef();
 
     private String[] paramNames;
 
@@ -81,7 +81,7 @@ public class MethodDescriptor extends FeatureDescriptor {
      * @return The low-level description of the method
      */
     public synchronized Method getMethod() {
-        Method method = getMethod0();
+        Method method = this.methodRef.get();
         if (method == null) {
             Class<?> cls = getClass0();
             String name = getName();
@@ -114,13 +114,7 @@ public class MethodDescriptor extends FeatureDescriptor {
             setClass0(method.getDeclaringClass());
         }
         setParams(getParameterTypes(getClass0(), method));
-        this.methodRef = getSoftReference(method);
-    }
-
-    private Method getMethod0() {
-        return (this.methodRef != null)
-                ? this.methodRef.get()
-                : null;
+        this.methodRef.set(method);
     }
 
     private synchronized void setParams(Class<?>[] param) {
@@ -177,12 +171,10 @@ public class MethodDescriptor extends FeatureDescriptor {
      */
 
     MethodDescriptor(MethodDescriptor x, MethodDescriptor y) {
-        super(x,y);
+        super(x, y);
 
-        methodRef = x.methodRef;
-        if (y.methodRef != null) {
-            methodRef = y.methodRef;
-        }
+        Method method = y.methodRef.get();
+        this.methodRef.set(null != method ? method : x.methodRef.get());
         params = x.params;
         if (y.params != null) {
             params = y.params;
@@ -205,7 +197,7 @@ public class MethodDescriptor extends FeatureDescriptor {
     MethodDescriptor(MethodDescriptor old) {
         super(old);
 
-        methodRef = old.methodRef;
+        this.methodRef.set(old.getMethod());
         params = old.params;
         paramNames = old.paramNames;
 
@@ -219,7 +211,7 @@ public class MethodDescriptor extends FeatureDescriptor {
     }
 
     void appendTo(StringBuilder sb) {
-        appendTo(sb, "method", this.methodRef);
+        appendTo(sb, "method", this.methodRef.get());
         if (this.parameterDescriptors != null) {
             sb.append("; parameterDescriptors={");
             for (ParameterDescriptor pd : this.parameterDescriptors) {

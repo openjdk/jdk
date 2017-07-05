@@ -23,7 +23,7 @@
 # questions.
 #
 
-defalt: all
+default: all
 
 include $(SPEC)
 include MakeBase.gmk

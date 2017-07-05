@@ -169,7 +169,7 @@ public final class Source {
 
         final Source src = (Source)obj;
         // Only compare content as a last resort measure
-        return length == src.length && Objects.equals(name, src.name) && Arrays.equals(content, src.content);
+        return length == src.length && Objects.equals(url, src.url) && Objects.equals(name, src.name) && Arrays.equals(content, src.content);
     }
 
     @Override

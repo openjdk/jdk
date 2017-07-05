@@ -130,10 +130,10 @@ public class InlineView extends LabelView {
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
      * @param pos the potential location of the start of the
-     *   broken view >= 0.  This may be useful for calculating tab
+     *   broken view &gt;= 0.  This may be useful for calculating tab
      *   positions.
      * @param len specifies the relative length from <em>pos</em>
-     *   where a potential break is desired >= 0.
+     *   where a potential break is desired &gt;= 0.
      * @return the weight, which should be a value between
      *   ForcedBreakWeight and BadBreakWeight.
      * @see LabelView
@@ -162,14 +162,14 @@ public class InlineView extends LabelView {
      * @param axis may be either <code>View.X_AXIS</code> or
      *          <code>View.Y_AXIS</code>
      * @param offset the location in the document model
-     *   that a broken fragment would occupy >= 0.  This
+     *   that a broken fragment would occupy &gt;= 0.  This
      *   would be the starting offset of the fragment
      *   returned
      * @param pos the position along the axis that the
-     *  broken view would occupy >= 0.  This may be useful for
+     *  broken view would occupy &gt;= 0.  This may be useful for
      *  things like tab calculations
      * @param len specifies the distance along the axis
-     *  where a potential break is desired >= 0
+     *  where a potential break is desired &gt;= 0
      * @return the fragment of the view that represents the
      *  given span.
      * @since 1.5

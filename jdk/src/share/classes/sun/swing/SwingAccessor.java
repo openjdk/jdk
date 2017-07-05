@@ -72,6 +72,16 @@ public final class SwingAccessor {
     }
 
     /**
+     * An accessor for the JLightweightFrame class.
+     */
+    public interface JLightweightFrameAccessor {
+        /**
+         * Notifies the JLightweight frame that it needs to update a cursor
+         */
+        void updateCursor(JLightweightFrame frame);
+    }
+
+    /**
      * The javax.swing.text.JTextComponent class accessor object.
      */
     private static JTextComponentAccessor jtextComponentAccessor;
@@ -92,5 +102,24 @@ public final class SwingAccessor {
         }
 
         return jtextComponentAccessor;
+    }
+
+    /**
+     * The JLightweightFrame class accessor object
+     */
+    private static JLightweightFrameAccessor jLightweightFrameAccessor;
+
+    /**
+     * Set an accessor object for the JLightweightFrame class.
+     */
+    public static void setJLightweightFrameAccessor(JLightweightFrameAccessor accessor) {
+        jLightweightFrameAccessor = accessor;
+    }
+
+    /**
+     * Retrieve the accessor object for the JLightweightFrame class
+     */
+    public static JLightweightFrameAccessor getJLightweightFrameAccessor() {
+        return jLightweightFrameAccessor;
     }
 }

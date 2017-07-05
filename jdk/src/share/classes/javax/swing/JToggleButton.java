@@ -186,14 +186,14 @@ public class JToggleButton extends AbstractButton implements Accessible {
     }
 
     /**
-     * Returns a string that specifies the name of the l&f class
+     * Returns a string that specifies the name of the l&amp;f class
      * that renders this component.
      *
      * @return String "ToggleButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      * @beaninfo
-     *  description: A string that specifies the name of the L&F class
+     *  description: A string that specifies the name of the L&amp;F class
      */
     public String getUIClassID() {
         return uiClassID;

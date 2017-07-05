@@ -5755,7 +5755,8 @@ NEXT:       while (i <= last) {
      * input sequence that is terminated by another subsequence that matches
      * this pattern or is terminated by the end of the input sequence.  The
      * substrings in the stream are in the order in which they occur in the
-     * input.
+     * input.  Trailing empty strings will be discarded and not encountered in
+     * the stream.
      *
      * <p> If this pattern does not match any subsequence of the input then
      * the resulting stream has just one element, namely the input sequence in
@@ -5781,6 +5782,8 @@ NEXT:       while (i <= last) {
             private int current;
             // null if the next element, if any, needs to obtained
             private String nextElement;
+            // > 0 if there are N next empty elements
+            private int emptyElementCount;
 
             MatcherIterator() {
                 this.matcher = matcher(input);
@@ -5790,26 +5793,46 @@ NEXT:       while (i <= last) {
                 if (!hasNext())
                     throw new NoSuchElementException();
 
-                String n = nextElement;
-                nextElement = null;
-                return n;
+                if (emptyElementCount == 0) {
+                    String n = nextElement;
+                    nextElement = null;
+                    return n;
+                } else {
+                    emptyElementCount--;
+                    return "";
+                }
             }
 
             public boolean hasNext() {
-                if (nextElement != null)
+                if (nextElement != null || emptyElementCount > 0)
                     return true;
 
                 if (current == input.length())
                     return false;
 
-                if (matcher.find()) {
+                // Consume the next matching element
+                // Count sequence of matching empty elements
+                while (matcher.find()) {
                     nextElement = input.subSequence(current, matcher.start()).toString();
                     current = matcher.end();
-                } else {
-                    nextElement = input.subSequence(current, input.length()).toString();
-                    current = input.length();
+                    if (!nextElement.isEmpty()) {
+                        return true;
+                    } else {
+                        emptyElementCount++;
+                    }
                 }
-                return true;
+
+                // Consume last matching element
+                nextElement = input.subSequence(current, input.length()).toString();
+                current = input.length();
+                if (!nextElement.isEmpty()) {
+                    return true;
+                } else {
+                    // Ignore a terminal sequence of matching empty elements
+                    emptyElementCount = 0;
+                    nextElement = null;
+                    return false;
+                }
             }
         }
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(

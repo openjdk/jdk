@@ -185,21 +185,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     @Override
     public Object eval(final Reader reader, final ScriptContext ctxt) throws ScriptException {
-        try {
-            if (reader instanceof URLReader) {
-                final URL url = ((URLReader)reader).getURL();
-                final Charset cs = ((URLReader)reader).getCharset();
-                return evalImpl(compileImpl(new Source(url.toString(), url, cs), ctxt), ctxt);
-            }
-            return evalImpl(Source.readFully(reader), ctxt);
-        } catch (final IOException e) {
-            throw new ScriptException(e);
-        }
+        return evalImpl(makeSource(reader, ctxt), ctxt);
     }
 
     @Override
     public Object eval(final String script, final ScriptContext ctxt) throws ScriptException {
-        return evalImpl(script.toCharArray(), ctxt);
+        return evalImpl(makeSource(script, ctxt), ctxt);
     }
 
     @Override
@@ -221,16 +212,12 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     @Override
     public CompiledScript compile(final Reader reader) throws ScriptException {
-        try {
-            return asCompiledScript(compileImpl(Source.readFully(reader), context));
-        } catch (final IOException e) {
-            throw new ScriptException(e);
-        }
+        return asCompiledScript(makeSource(reader, context));
     }
 
     @Override
     public CompiledScript compile(final String str) throws ScriptException {
-        return asCompiledScript(compileImpl(str.toCharArray(), context));
+        return asCompiledScript(makeSource(str, context));
     }
 
     // Invocable methods
@@ -291,6 +278,29 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     // Implementation only below this point
+
+    private static Source makeSource(final Reader reader, final ScriptContext ctxt) throws ScriptException {
+        try {
+            if (reader instanceof URLReader) {
+                final URL url = ((URLReader)reader).getURL();
+                final Charset cs = ((URLReader)reader).getCharset();
+                return new Source(url.toString(), url, cs);
+            } else {
+                return new Source(getScriptName(ctxt), Source.readFully(reader));
+            }
+        } catch (final IOException ioExp) {
+            throw new ScriptException(ioExp);
+        }
+    }
+
+    private static Source makeSource(final String src, final ScriptContext ctxt) {
+        return new Source(getScriptName(ctxt), src);
+    }
+
+    private static String getScriptName(final ScriptContext ctxt) {
+        final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
+        return (val != null) ? val.toString() : "<eval>";
+    }
 
     private <T> T getInterfaceInner(final Object thiz, final Class<T> clazz) {
         if (clazz == null || !clazz.isInterface()) {
@@ -429,7 +439,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         // current ScriptContext exposed as "context"
         // "context" is non-writable from script - but script engine still
         // needs to set it and so save the context Property object
-        contextProperty = newGlobal.addOwnProperty("context", NON_ENUMERABLE_CONSTANT, null);
+        contextProperty = newGlobal.addOwnProperty("context", NON_ENUMERABLE_CONSTANT, ctxt);
         // current ScriptEngine instance exposed as "engine". We added @SuppressWarnings("LeakingThisInConstructor") as
         // NetBeans identifies this assignment as such a leak - this is a false positive as we're setting this property
         // in the Global of a Context we just created - both the Context and the Global were just created and can not be
@@ -509,8 +519,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         throw new IllegalArgumentException(getMessage("interface.on.non.script.object"));
     }
 
-    private Object evalImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
-        return evalImpl(compileImpl(buf, ctxt), ctxt);
+    private Object evalImpl(final Source src, final ScriptContext ctxt) throws ScriptException {
+        return evalImpl(compileImpl(src, ctxt), ctxt);
     }
 
     private Object evalImpl(final ScriptFunction script, final ScriptContext ctxt) throws ScriptException {
@@ -561,23 +571,26 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    private CompiledScript asCompiledScript(final ScriptFunction script) {
+    private CompiledScript asCompiledScript(final Source source) throws ScriptException {
+        final ScriptFunction func = compileImpl(source, context);
         return new CompiledScript() {
             @Override
             public Object eval(final ScriptContext ctxt) throws ScriptException {
-                return evalImpl(script, ctxt);
+                final ScriptObject global = getNashornGlobalFrom(ctxt);
+                // Are we running the script in the correct global?
+                if (func.getScope() == global) {
+                    return evalImpl(func, ctxt, global);
+                } else {
+                    // ScriptContext with a different global. Compile again!
+                    // Note that we may still hit per-global compilation cache.
+                    return evalImpl(compileImpl(source, ctxt), ctxt, global);
+                }
             }
             @Override
             public ScriptEngine getEngine() {
                 return NashornScriptEngine.this;
             }
         };
-    }
-
-    private ScriptFunction compileImpl(final char[] buf, final ScriptContext ctxt) throws ScriptException {
-        final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
-        final String fileName = (val != null) ? val.toString() : "<eval>";
-        return compileImpl(new Source(fileName, buf), ctxt);
     }
 
     private ScriptFunction compileImpl(final Source source, final ScriptContext ctxt) throws ScriptException {

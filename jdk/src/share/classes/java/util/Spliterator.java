@@ -539,7 +539,7 @@ public interface Spliterator<T> {
      * Spliterator is expected to have a documented policy concerning the impact
      * of modifications during traversal.
      *
-     * <p>A top-level Spliterator should not report {@code CONCURRENT} and
+     * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
      * {@code SIZED}, since the finite size, if known, may change if the source
      * is concurrently modified during traversal. Such a Spliterator is
      * inconsistent and no guarantees can be made about any computation using

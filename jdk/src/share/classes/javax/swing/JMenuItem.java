@@ -229,7 +229,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
     /**
      * Sets the look and feel object that renders this component.
      *
-     * @param ui  the <code>JMenuItemUI</code> L&F object
+     * @param ui  the <code>JMenuItemUI</code> L&amp;F object
      * @see UIDefaults#getUI
      * @beaninfo
      *        bound: true
@@ -252,7 +252,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
 
 
     /**
-     * Returns the suffix used to construct the name of the L&F class used to
+     * Returns the suffix used to construct the name of the L&amp;F class used to
      * render this component.
      *
      * @return the string "MenuItemUI"

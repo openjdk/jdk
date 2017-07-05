@@ -656,7 +656,7 @@ public abstract class WComponentPeer extends WObjectPeer
         _setFont(f);
     }
     public synchronized native void _setFont(Font f);
-    public final void updateCursorImmediately() {
+    public void updateCursorImmediately() {
         WGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
 

@@ -353,7 +353,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
 
 
     /**
-     * Returns the look and feel (L&F) object that renders this component.
+     * Returns the look and feel (L&amp;F) object that renders this component.
      *
      * @return the <code>ScrollPaneUI</code> object that renders this
      *                          component
@@ -371,9 +371,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
 
     /**
      * Sets the <code>ScrollPaneUI</code> object that provides the
-     * look and feel (L&F) for this component.
+     * look and feel (L&amp;F) for this component.
      *
-     * @param ui the <code>ScrollPaneUI</code> L&F object
+     * @param ui the <code>ScrollPaneUI</code> L&amp;F object
      * @see #getUI
      */
     public void setUI(ScrollPaneUI ui) {
@@ -395,7 +395,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
 
 
     /**
-     * Returns the suffix used to construct the name of the L&F class used to
+     * Returns the suffix used to construct the name of the L&amp;F class used to
      * render this component.
      *
      * @return the string "ScrollPaneUI"
