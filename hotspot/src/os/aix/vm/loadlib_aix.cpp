@@ -33,153 +33,337 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
-// 'allocation.inline.hpp' triggers the inclusion of 'inttypes.h' which defines macros
-// required by the definitions in 'globalDefinitions.hpp'. But these macros in 'inttypes.h'
-// are only defined if '__STDC_FORMAT_MACROS' is defined!
-#include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/threadCritical.hpp"
+
+#include "loadlib_aix.hpp"
+// for CritSect
+#include "misc_aix.hpp"
+#include "porting_aix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "loadlib_aix.hpp"
-#include "porting_aix.hpp"
 
 // For loadquery()
 #include <sys/ldr.h>
 
-///////////////////////////////////////////////////////////////////////////////
-// Implementation for LoadedLibraryModule
+// Use raw malloc instead of os::malloc - this code gets used for error reporting.
 
-// output debug info
-void LoadedLibraryModule::print(outputStream* os) const {
-  os->print("%15.15s: text: " INTPTR_FORMAT " - " INTPTR_FORMAT
-               ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " ",
-      shortname, text_from, text_to, data_from, data_to);
-  os->print(" %s", fullpath);
-  if (strlen(membername) > 0) {
-    os->print("(%s)", membername);
+// A class to "intern" eternal strings.
+// TODO: similar coding exists in AIX version of dladdr and potentially elsewhere: consolidate!
+class StringList {
+
+  char** _list;
+  int _cap;
+  int _num;
+
+  // Enlarge list. If oom, leave old list intact and return false.
+  bool enlarge() {
+    int cap2 = _cap + 64;
+    char** l2 = (char**) ::realloc(_list, sizeof(char*) * cap2);
+    if (!l2) {
+      return false;
+    }
+    _list = l2;
+    _cap = cap2;
+    return true;
   }
-  os->cr();
+
+  // Append string to end of list.
+  // Returns NULL if oom.
+  char* append(const char* s) {
+    if (_cap == _num) {
+      if (!enlarge()) {
+        return NULL;
+      }
+    }
+    assert0(_cap > _num);
+    char* s2 = ::strdup(s);
+    if (!s2) {
+      return NULL;
+    }
+    _list[_num] = s2;
+    trcVerbose("StringDir: added %s at pos %d", s2, _num);
+    _num ++;
+    return s2;
+  }
+
+public:
+
+  StringList()
+    : _list(NULL)
+    , _cap(0)
+    , _num(0)
+  {}
+
+  // String is copied into the list; pointer to copy is returned.
+  // Returns NULL if oom.
+  char* add (const char* s) {
+    for (int i = 0; i < _num; i++) {
+      if (strcmp(_list[i], s) == 0) {
+        return _list[i];
+      }
+    }
+    return append(s);
+  }
+
+};
+
+static StringList g_stringlist;
+
+//////////////////////
+
+// Entries are kept in a linked list ordered by text address. Entries are not
+// eternal - this list is rebuilt on every reload.
+// Note that we do not hand out those entries, but copies of them.
+
+struct entry_t {
+  entry_t* next;
+  loaded_module_t info;
+};
+
+static void print_entry(const entry_t* e, outputStream* os) {
+  const loaded_module_t* const lm = &(e->info);
+  os->print(" %c text: " INTPTR_FORMAT " - " INTPTR_FORMAT
+            ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " "
+            "%s",
+      (lm->is_in_vm ? '*' : ' '),
+      lm->text, (uintptr_t)lm->text + lm->text_len,
+      lm->data, (uintptr_t)lm->data + lm->data_len,
+      lm->path);
+  if (lm->member) {
+    os->print("(%s)", lm->member);
+  }
 }
 
+static entry_t* g_first = NULL;
 
-///////////////////////////////////////////////////////////////////////////////
-// Implementation for LoadedLibraries
-
-// class variables
-LoadedLibraryModule LoadedLibraries::tab[MAX_MODULES];
-int LoadedLibraries::num_loaded = 0;
-
-// Checks whether the address p points to any of the loaded code segments.
-// If it does, returns the LoadedLibraryModule entry. If not, returns NULL.
-// static
-const LoadedLibraryModule* LoadedLibraries::find_for_text_address(const unsigned char* p) {
-
-  if (num_loaded == 0) {
-    reload();
-  }
-  for (int i = 0; i < num_loaded; i++) {
-    if (tab[i].is_in_text(p)) {
-      return &tab[i];
+static entry_t* find_entry_for_text_address(const void* p) {
+  for (entry_t* e = g_first; e; e = e->next) {
+    if ((uintptr_t)p >= (uintptr_t)e->info.text &&
+        (uintptr_t)p < ((uintptr_t)e->info.text + e->info.text_len)) {
+      return e;
     }
   }
   return NULL;
 }
 
-// Checks whether the address p points to any of the loaded data segments.
-// If it does, returns the LoadedLibraryModule entry. If not, returns NULL.
-// static
-const LoadedLibraryModule* LoadedLibraries::find_for_data_address(const unsigned char* p) {
-  if (num_loaded == 0) {
-    reload();
-  }
-  for (int i = 0; i < num_loaded; i++) {
-    if (tab[i].is_in_data(p)) {
-      return &tab[i];
+static entry_t* find_entry_for_data_address(const void* p) {
+  for (entry_t* e = g_first; e; e = e->next) {
+    if ((uintptr_t)p >= (uintptr_t)e->info.data &&
+        (uintptr_t)p < ((uintptr_t)e->info.data + e->info.data_len)) {
+      return e;
     }
   }
   return NULL;
 }
 
-// Rebuild the internal table of LoadedLibraryModule objects
-// static
-void LoadedLibraries::reload() {
-
-  ThreadCritical cs;
-
-  // discard old content
-  num_loaded = 0;
-
-  // Call loadquery(L_GETINFO..) to get a list of all loaded Dlls from AIX.
-  size_t buf_size = 4096;
-  char* loadquery_buf = AllocateHeap(buf_size, mtInternal);
-
-  while(loadquery(L_GETINFO, loadquery_buf, buf_size) == -1) {
-    if (errno == ENOMEM) {
-      buf_size *= 2;
-      loadquery_buf = ReallocateHeap(loadquery_buf, buf_size, mtInternal);
-    } else {
-      FreeHeap(loadquery_buf);
-      // Ensure that the uintptr_t pointer is valid
-      assert(errno != EFAULT, "loadquery: Invalid uintptr_t in info buffer.");
-      fprintf(stderr, "loadquery failed (%d %s)", errno, strerror(errno));
-      return;
-    }
+// Adds a new entry to the list (ordered by text address ascending).
+static void add_entry_to_list(entry_t* e, entry_t** start) {
+  entry_t* last = NULL;
+  entry_t* e2 = *start;
+  while (e2 && e2->info.text < e->info.text) {
+    last = e2;
+    e2 = e2->next;
   }
+  if (last) {
+    last->next = e;
+  } else {
+    *start = e;
+  }
+  e->next = e2;
+}
 
-  // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
-  const struct ld_info* p = (struct ld_info*) loadquery_buf;
+static void free_entry_list(entry_t** start) {
+  entry_t* e = *start;
+  while (e) {
+    entry_t* const e2 = e->next;
+    ::free(e);
+    e = e2;
+  }
+  *start = NULL;
+}
 
-  // Ensure we have all loaded libs.
-  bool all_loaded = false;
-  while(num_loaded < MAX_MODULES) {
-    LoadedLibraryModule& mod = tab[num_loaded];
-    mod.text_from = (const unsigned char*) p->ldinfo_textorg;
-    mod.text_to   = (const unsigned char*) (((char*)p->ldinfo_textorg) + p->ldinfo_textsize);
-    mod.data_from = (const unsigned char*) p->ldinfo_dataorg;
-    mod.data_to   = (const unsigned char*) (((char*)p->ldinfo_dataorg) + p->ldinfo_datasize);
-    sprintf(mod.fullpath, "%.*s", sizeof(mod.fullpath), p->ldinfo_filename);
-    // do we have a member name as well (see ldr.h)?
-    const char* p_mbr_name = p->ldinfo_filename + strlen(p->ldinfo_filename) + 1;
-    if (*p_mbr_name) {
-      sprintf(mod.membername, "%.*s", sizeof(mod.membername), p_mbr_name);
+
+// Rebuild the internal module table. If an error occurs, old table remains
+// unchanged.
+static bool reload_table() {
+
+  bool rc = false;
+
+  trcVerbose("reload module table...");
+
+  entry_t* new_list = NULL;
+  const struct ld_info* ldi = NULL;
+
+  // Call loadquery(L_GETINFO..) to get a list of all loaded Dlls from AIX. loadquery
+  // requires a large enough buffer.
+  uint8_t* buffer = NULL;
+  size_t buflen = 1024;
+  for (;;) {
+    buffer = (uint8_t*) ::realloc(buffer, buflen);
+    if (loadquery(L_GETINFO, buffer, buflen) == -1) {
+      if (errno == ENOMEM) {
+        buflen *= 2;
+      } else {
+        trcVerbose("loadquery failed (%d)", errno);
+        goto cleanup;
+      }
     } else {
-      mod.membername[0] = '\0';
-    }
-
-    // fill in the short name
-    const char* p_slash = strrchr(mod.fullpath, '/');
-    if (p_slash) {
-      sprintf(mod.shortname, "%.*s", sizeof(mod.shortname), p_slash + 1);
-    } else {
-      sprintf(mod.shortname, "%.*s", sizeof(mod.shortname), mod.fullpath);
-    }
-    num_loaded ++;
-
-    // next entry...
-    if (p->ldinfo_next) {
-      p = (struct ld_info*)(((char*)p) + p->ldinfo_next);
-    } else {
-      all_loaded = true;
       break;
     }
   }
 
-  FreeHeap(loadquery_buf);
+  trcVerbose("loadquery buffer size is %llu.", buflen);
 
-  // Ensure we have all loaded libs
-  assert(all_loaded, "loadquery returned more entries then expected. Please increase MAX_MODULES");
+  // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
+  ldi = (struct ld_info*) buffer;
+
+  for (;;) {
+
+    entry_t* e = (entry_t*) ::malloc(sizeof(entry_t));
+    if (!e) {
+      trcVerbose("OOM.");
+      goto cleanup;
+    }
+
+    memset(e, 0, sizeof(entry_t));
+
+    e->info.text = ldi->ldinfo_textorg;
+    e->info.text_len = ldi->ldinfo_textsize;
+    e->info.data = ldi->ldinfo_dataorg;
+    e->info.data_len = ldi->ldinfo_datasize;
+
+    e->info.path = g_stringlist.add(ldi->ldinfo_filename);
+    if (!e->info.path) {
+      trcVerbose("OOM.");
+      goto cleanup;
+    }
+
+    // Extract short name
+    {
+      const char* p = strrchr(e->info.path, '/');
+      if (p) {
+        p ++;
+        e->info.shortname = p;
+      } else {
+        e->info.shortname = e->info.path;
+      }
+    }
+
+    // Do we have a member name as well (see ldr.h)?
+    const char* p_mbr_name =
+      ldi->ldinfo_filename + strlen(ldi->ldinfo_filename) + 1;
+    if (*p_mbr_name) {
+      e->info.member = g_stringlist.add(p_mbr_name);
+      if (!e->info.member) {
+        trcVerbose("OOM.");
+        goto cleanup;
+      }
+    } else {
+      e->info.member = NULL;
+    }
+
+    if (strcmp(e->info.shortname, "libjvm.so") == 0) {
+      // Note that this, theoretically, is fuzzy. We may accidentally contain
+      // more than one libjvm.so. But that is improbable, so lets go with this
+      // solution.
+      e->info.is_in_vm = true;
+    }
+
+    trcVerbose("entry: %p %llu, %p %llu, %s %s %s, %d",
+      e->info.text, e->info.text_len,
+      e->info.data, e->info.data_len,
+      e->info.path, e->info.shortname,
+      (e->info.member ? e->info.member : "NULL"),
+      e->info.is_in_vm
+    );
+
+    // Add to list.
+    add_entry_to_list(e, &new_list);
+
+    // Next entry...
+    if (ldi->ldinfo_next) {
+      ldi = (struct ld_info*)(((char*)ldi) + ldi->ldinfo_next);
+    } else {
+      break;
+    }
+  }
+
+  // We are done. All is well. Free old list and swap to new one.
+  if (g_first) {
+    free_entry_list(&g_first);
+  }
+  g_first = new_list;
+  new_list = NULL;
+
+  rc = true;
+
+cleanup:
+
+  if (new_list) {
+    free_entry_list(&new_list);
+  }
+
+  ::free(buffer);
+
+  return rc;
 
 } // end LoadedLibraries::reload()
 
 
-// output loaded libraries table
-//static
+///////////////////////////////////////////////////////////////////////////////
+// Externals
+
+static MiscUtils::CritSect g_cs;
+
+// Rebuild the internal module table. If an error occurs, old table remains
+// unchanged.
+bool LoadedLibraries::reload() {
+  MiscUtils::AutoCritSect lck(&g_cs);
+  return reload_table();
+}
+
 void LoadedLibraries::print(outputStream* os) {
-
-  for (int i = 0; i < num_loaded; i++) {
-    tab[i].print(os);
+  MiscUtils::AutoCritSect lck(&g_cs);
+  if (!g_first) {
+    reload_table();
   }
+  for (entry_t* e = g_first; e; e = e->next) {
+    print_entry(e, os);
+    os->cr();
+  }
+}
 
+bool LoadedLibraries::find_for_text_address(const void* p,
+                                            loaded_module_t* info) {
+  MiscUtils::AutoCritSect lck(&g_cs);
+  if (!g_first) {
+    reload_table();
+  }
+  const entry_t* const e = find_entry_for_text_address(p);
+  if (e) {
+    if (info) {
+      *info = e->info;
+    }
+    return true;
+  }
+  return false;
+}
+
+
+bool LoadedLibraries::find_for_data_address (
+  const void* p,
+  loaded_module_t* info // optional. can be NULL:
+) {
+  MiscUtils::AutoCritSect lck(&g_cs);
+  if (!g_first) {
+    reload_table();
+  }
+  const entry_t* const e = find_entry_for_data_address(p);
+  if (e) {
+    if (info) {
+      *info = e->info;
+    }
+    return true;
+  }
+  return false;
 }
 

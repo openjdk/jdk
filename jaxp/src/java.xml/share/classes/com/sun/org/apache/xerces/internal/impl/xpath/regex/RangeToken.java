@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -43,7 +42,7 @@ final class RangeToken extends Token implements java.io.Serializable {
         this.setSorted(false);
     }
 
-                                                // for RANGE or NRANGE
+    // for RANGE or NRANGE
     protected void addRange(int start, int end) {
         this.icaseCache = null;
         //System.err.println("Token#addRange(): "+start+" "+end);
@@ -560,7 +559,7 @@ final class RangeToken extends Token implements java.io.Serializable {
                         sb.append(escapeCharInCharClass(this.ranges[i]));
                     } else {
                         sb.append(escapeCharInCharClass(this.ranges[i]));
-                        sb.append((char)'-');
+                        sb.append('-');
                         sb.append(escapeCharInCharClass(this.ranges[i+1]));
                     }
                 }

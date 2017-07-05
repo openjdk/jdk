@@ -244,30 +244,6 @@ public:
   bool should_force() PRODUCT_RETURN_( return false; );
 };
 
-// this will enable a variety of different statistics per GC task
-#define _MARKING_STATS_       0
-// this will enable the higher verbose levels
-#define _MARKING_VERBOSE_     0
-
-#if _MARKING_STATS_
-#define statsOnly(statement)  \
-do {                          \
-  statement ;                 \
-} while (0)
-#else // _MARKING_STATS_
-#define statsOnly(statement)  \
-do {                          \
-} while (0)
-#endif // _MARKING_STATS_
-
-typedef enum {
-  no_verbose  = 0,   // verbose turned off
-  stats_verbose,     // only prints stats at the end of marking
-  low_verbose,       // low verbose, mostly per region and per major event
-  medium_verbose,    // a bit more detailed than low
-  high_verbose       // per object verbose
-} CMVerboseLevel;
-
 class YoungList;
 
 // Root Regions are regions that are not empty at the beginning of a
@@ -414,9 +390,6 @@ protected:
   // to determine the points between the end of concurrent marking and
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
-
-  // Verbose level
-  CMVerboseLevel          _verbose_level;
 
   // All of these times are in ms
   NumberSeq _init_times;
@@ -746,30 +719,11 @@ public:
 
   bool has_aborted()      { return _has_aborted; }
 
-  // This prints the global/local fingers. It is used for debugging.
-  NOT_PRODUCT(void print_finger();)
-
   void print_summary_info();
 
   void print_worker_threads_on(outputStream* st) const;
 
   void print_on_error(outputStream* st) const;
-
-  // The following indicate whether a given verbose level has been
-  // set. Notice that anything above stats is conditional to
-  // _MARKING_VERBOSE_ having been set to 1
-  bool verbose_stats() {
-    return _verbose_level >= stats_verbose;
-  }
-  bool verbose_low() {
-    return _MARKING_VERBOSE_ && _verbose_level >= low_verbose;
-  }
-  bool verbose_medium() {
-    return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose;
-  }
-  bool verbose_high() {
-    return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
-  }
 
   // Liveness counting
 
@@ -818,16 +772,13 @@ public:
                            size_t* marked_bytes_array,
                            BitMap* task_card_bm);
 
-  // Counts the given memory region in the task/worker counting
-  // data structures for the given worker id.
-  inline void count_region(MemRegion mr, HeapRegion* hr, uint worker_id);
-
   // Counts the given object in the given task/worker counting
   // data structures.
   inline void count_object(oop obj,
                            HeapRegion* hr,
                            size_t* marked_bytes_array,
-                           BitMap* task_card_bm);
+                           BitMap* task_card_bm,
+                           size_t word_size);
 
   // Attempts to mark the given object and, if successful, counts
   // the object in the given task/worker counting structures.
@@ -969,43 +920,6 @@ private:
   size_t*                     _marked_bytes_array;
   BitMap*                     _card_bm;
 
-  // LOTS of statistics related with this task
-#if _MARKING_STATS_
-  NumberSeq                   _all_clock_intervals_ms;
-  double                      _interval_start_time_ms;
-
-  size_t                      _aborted;
-  size_t                      _aborted_overflow;
-  size_t                      _aborted_cm_aborted;
-  size_t                      _aborted_yield;
-  size_t                      _aborted_timed_out;
-  size_t                      _aborted_satb;
-  size_t                      _aborted_termination;
-
-  size_t                      _steal_attempts;
-  size_t                      _steals;
-
-  size_t                      _clock_due_to_marking;
-  size_t                      _clock_due_to_scanning;
-
-  size_t                      _local_pushes;
-  size_t                      _local_pops;
-  size_t                      _local_max_size;
-  size_t                      _objs_scanned;
-
-  size_t                      _global_pushes;
-  size_t                      _global_pops;
-  size_t                      _global_max_size;
-
-  size_t                      _global_transfers_to;
-  size_t                      _global_transfers_from;
-
-  size_t                      _regions_claimed;
-  size_t                      _objs_found_on_bitmap;
-
-  size_t                      _satb_buffers_processed;
-#endif // _MARKING_STATS_
-
   // it updates the local fields after this task has claimed
   // a new region to scan
   void setup_for_region(HeapRegion* hr);
@@ -1139,10 +1053,6 @@ public:
 
   // it prints statistics associated with this task
   void print_stats();
-
-#if _MARKING_STATS_
-  void increase_objs_found_on_bitmap() { ++_objs_found_on_bitmap; }
-#endif // _MARKING_STATS_
 };
 
 // Class that's used to to print out per-region liveness

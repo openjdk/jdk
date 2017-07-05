@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -16195,6 +16195,10 @@
                   <dimension width="150" height="19"/>
                </uiProperty>
                <uiProperty name="cycleTime" type="INT" value="250"/>
+               <uiProperty name="minBarSize" type="DIMENSION">
+                  <dimension width="6" height="6"/>
+               </uiProperty>
+               <uiProperty name="glowWidth" type="INT" value="2"/>
             </uiproperties>
          </style>
          <backgroundStates>
@@ -16351,7 +16355,7 @@
                <canvas>
                   <size width="27" height="19"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>
@@ -16444,7 +16448,7 @@
                <canvas>
                   <size width="27" height="19"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>
@@ -16528,7 +16532,7 @@
                <canvas>
                   <size width="30" height="13"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>
@@ -16619,7 +16623,7 @@
                <canvas>
                   <size width="27" height="19"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>
@@ -16701,7 +16705,7 @@
                <canvas>
                   <size width="27" height="19"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>
@@ -16785,7 +16789,7 @@
                <canvas>
                   <size width="30" height="13"/>
                   <nextLayerNameIndex>2</nextLayerNameIndex>
-                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <stretchingInsets top="3" bottom="3" left="3" right="3"/>
                   <layer name="Layer 1">
                      <opacity>1.0</opacity>
                      <fillOpacity>1.0</fillOpacity>

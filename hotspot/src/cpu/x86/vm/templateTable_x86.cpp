@@ -1611,7 +1611,7 @@ static jlong double_signflip_pool[2*2];
 void TemplateTable::fneg() {
   transition(ftos, ftos);
   if (UseSSE >= 1) {
-    static jlong *float_signflip  = double_quadword(&float_signflip_pool[1], 0x8000000080000000, 0x8000000080000000);
+    static jlong *float_signflip  = double_quadword(&float_signflip_pool[1],  CONST64(0x8000000080000000),  CONST64(0x8000000080000000));
     __ xorps(xmm0, ExternalAddress((address) float_signflip));
   } else {
     LP64_ONLY(ShouldNotReachHere());
@@ -1622,7 +1622,8 @@ void TemplateTable::fneg() {
 void TemplateTable::dneg() {
   transition(dtos, dtos);
   if (UseSSE >= 2) {
-    static jlong *double_signflip  = double_quadword(&double_signflip_pool[1], 0x8000000000000000, 0x8000000000000000);
+    static jlong *double_signflip =
+      double_quadword(&double_signflip_pool[1], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
     __ xorpd(xmm0, ExternalAddress((address) double_signflip));
   } else {
 #ifdef _LP64

@@ -239,7 +239,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
     /** Does this function need to store all its variables in scope? */
-    private static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_EVAL;
+    public static final int HAS_ALL_VARS_IN_SCOPE = HAS_DEEP_EVAL;
 
     /** Does this function potentially need "arguments"? Note that this is not a full test, as further negative check of REDEFINES_ARGS is needed. */
     private static final int MAYBE_NEEDS_ARGUMENTS = USES_ARGUMENTS | HAS_EVAL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,17 @@ public class TCKClock_Tick extends AbstractTCKTest {
         Clock.tick(Clock.systemUTC(), null);
     }
 
+    //-----------------------------------------------------------------------
+    public void test_tickMillis_ZoneId() throws Exception {
+        Clock test = Clock.tickMillis(PARIS);
+        assertEquals(test.getZone(), PARIS);
+        assertEquals(test.instant().getNano() % 1000_000, 0);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test_tickMillis_ZoneId_nullZoneId() {
+        Clock.tickMillis(null);
+    }
     //-----------------------------------------------------------------------
     public void test_tickSeconds_ZoneId() throws Exception {
         Clock test = Clock.tickSeconds(PARIS);
