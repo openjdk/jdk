@@ -223,9 +223,7 @@ COPY_EXTRA += $(OUT_SERVICES_FILES_PRINT)
 ###
 
 $(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat : $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs/ext/sjis0213.dat
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $(@)
+	$(call install-file)
 
 COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/sun/nio/cs/ext/sjis0213.dat
 

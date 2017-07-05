@@ -39,7 +39,12 @@
 #include "runtime/vm_operations.hpp"
 
 #ifdef JVMTI_TRACE
-#define EC_TRACE(out) if (JvmtiTrace::trace_event_controller()) { SafeResourceMark rm; tty->print_cr out; } while (0)
+#define EC_TRACE(out) do { \
+  if (JvmtiTrace::trace_event_controller()) { \
+    SafeResourceMark rm; \
+    tty->print_cr out; \
+  } \
+} while (0)
 #else
 #define EC_TRACE(out)
 #endif /*JVMTI_TRACE */

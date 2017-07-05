@@ -327,11 +327,11 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
 
           if (target_loader() != super_loader()) {
             ResourceMark rm(THREAD);
-            char* failed_type_name =
+            Symbol* failed_type_symbol =
               SystemDictionary::check_signature_loaders(signature, target_loader,
                                                         super_loader, true,
                                                         CHECK_(false));
-            if (failed_type_name != NULL) {
+            if (failed_type_symbol != NULL) {
               const char* msg = "loader constraint violation: when resolving "
                 "overridden method \"%s\" the class loader (instance"
                 " of %s) of the current class, %s, and its superclass loader "
@@ -341,6 +341,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
               const char* loader1 = SystemDictionary::loader_name(target_loader());
               char* current = _klass->name()->as_C_string();
               const char* loader2 = SystemDictionary::loader_name(super_loader());
+              char* failed_type_name = failed_type_symbol->as_C_string();
               size_t buflen = strlen(msg) + strlen(sig) + strlen(loader1) +
                 strlen(current) + strlen(loader2) + strlen(failed_type_name);
               char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
@@ -787,12 +788,12 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
         Handle method_holder_loader (THREAD, target->method_holder()->class_loader());
         if (method_holder_loader() != interface_loader()) {
           ResourceMark rm(THREAD);
-          char* failed_type_name =
+          Symbol* failed_type_symbol =
             SystemDictionary::check_signature_loaders(method_signature,
                                                       method_holder_loader,
                                                       interface_loader,
                                                       true, CHECK);
-          if (failed_type_name != NULL) {
+          if (failed_type_symbol != NULL) {
             const char* msg = "loader constraint violation in interface "
               "itable initialization: when resolving method \"%s\" the class"
               " loader (instance of %s) of the current class, %s, "
@@ -804,6 +805,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
             char* current = klass->name()->as_C_string();
             const char* loader2 = SystemDictionary::loader_name(interface_loader());
             char* iface = InstanceKlass::cast(interf_h())->name()->as_C_string();
+            char* failed_type_name = failed_type_symbol->as_C_string();
             size_t buflen = strlen(msg) + strlen(sig) + strlen(loader1) +
               strlen(current) + strlen(loader2) + strlen(iface) +
               strlen(failed_type_name);

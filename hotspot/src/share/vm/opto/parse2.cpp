@@ -104,7 +104,8 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
     if (C->log() != NULL)   C->log()->elem("observe that='!need_range_check'");
   }
 
-  if (!arytype->klass()->is_loaded()) {
+  ciKlass * arytype_klass = arytype->klass();
+  if ((arytype_klass != NULL) && (!arytype_klass->is_loaded())) {
     // Only fails for some -Xcomp runs
     // The class is unloaded.  We have to run this bytecode in the interpreter.
     uncommon_trap(Deoptimization::Reason_unloaded,
@@ -1385,6 +1386,7 @@ void Parse::do_one_bytecode() {
   if (TraceOptoParse) {
     tty->print(" @");
     dump_bci(bci());
+    tty->cr();
   }
 #endif
 

@@ -412,6 +412,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     case If::leq: l = lir_cond_lessEqual;    break;
     case If::geq: l = lir_cond_greaterEqual; break;
     case If::gtr: l = lir_cond_greater;      break;
+    case If::aeq: l = lir_cond_aboveEqual;   break;
+    case If::beq: l = lir_cond_belowEqual;   break;
     };
     return l;
   }
@@ -534,6 +536,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
+  virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);
+  virtual void do_Assert         (Assert*          x);
 };
 
 

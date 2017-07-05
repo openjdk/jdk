@@ -71,6 +71,7 @@ class StubAssembler;
   stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
   stub(counter_overflow)             \
+  stub(predicate_failed_trap)        \
   last_entry(number_of_ids)
 
 #define DECLARE_STUB_ID(x)       x ## _id ,
@@ -189,6 +190,8 @@ class Runtime1: public AllStatic {
   static void primitive_arraycopy(HeapWord* src, HeapWord* dst, int length);
   static void oop_arraycopy(HeapWord* src, HeapWord* dst, int length);
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
+
+  static void predicate_failed_trap(JavaThread* thread);
 
   static void print_statistics()                 PRODUCT_RETURN;
 };
