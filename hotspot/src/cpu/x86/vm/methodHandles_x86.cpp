@@ -1005,7 +1005,7 @@ void trace_method_handle_stub(const char* adaptername,
   intptr_t* base_sp = last_sp;
   typedef MethodHandles::RicochetFrame RicochetFrame;
   RicochetFrame* rfp = (RicochetFrame*)((address)saved_bp - RicochetFrame::sender_link_offset_in_bytes());
-  if (!UseRicochetFrames || Universe::heap()->is_in((address) rfp->saved_args_base())) {
+  if (Universe::heap()->is_in((address) rfp->saved_args_base())) {
     // Probably an interpreter frame.
     base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
   }
@@ -1104,7 +1104,7 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS)
           //OP_COLLECT_ARGS is below...
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS)
-         |(!UseRicochetFrames ? 0 :
+         |(
            java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() <= 0 ? 0 :
            ((1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF)
            |(1<<java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS)

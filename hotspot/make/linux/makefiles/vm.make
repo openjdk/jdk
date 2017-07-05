@@ -98,6 +98,10 @@ CPPFLAGS =           \
   ${JRE_VERSION}     \
   ${VM_DISTRO}
 
+ifndef JAVASE_EMBEDDED
+CFLAGS += -DINCLUDE_TRACE
+endif
+
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN/BYFILE)
 
@@ -142,6 +146,12 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/$(Platform_os_family)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
+
+ifndef JAVASE_EMBEDDED
+SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
+  find $(HS_ALT_SRC)/share/vm/jfr -type d; \
+  fi)
+endif
 
 CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
 CORE_PATHS+=$(GENERATED)/jvmtifiles

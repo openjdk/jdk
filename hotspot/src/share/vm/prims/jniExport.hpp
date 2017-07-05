@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Red Hat, Inc.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,21 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_JNI_EXPORT_HPP
+#define SHARE_VM_PRIMS_JNI_EXPORT_HPP
 
-// Adapters
-enum /* platform_dependent_constants */ {
-  adapter_code_size = 0
+#include "prims/jni.h"
+#include "prims/jvmtiExport.hpp"
+
+class JniExportedInterface {
+ public:
+  static bool GetExportedInterface(JavaVM* vm, void** penv, jint version, jint* iface) {
+    if (JvmtiExport::is_jvmti_version(version)) {
+      *iface = JvmtiExport::get_jvmti_interface(vm, penv, version);
+      return true;
+    }
+    return false;
+  }
 };
 
+#endif // SHARE_VM_PRIMS_JNI_EXPORT_HPP
