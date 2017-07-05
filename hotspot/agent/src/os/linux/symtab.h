@@ -32,7 +32,7 @@
 struct symtab;
 
 // build symbol table for a given ELF file descriptor
-struct symtab* build_symtab(int fd);
+struct symtab* build_symtab(int fd, const char *filename);
 
 // destroy the symbol table
 void destroy_symtab(struct symtab* symtab);

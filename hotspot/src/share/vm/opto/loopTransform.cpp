@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1785,6 +1785,8 @@ bool PhaseIdealLoop::is_uncommon_trap_proj(ProjNode* proj, bool must_reason_pred
 bool PhaseIdealLoop::is_uncommon_trap_if_pattern(ProjNode *proj, bool must_reason_predicate) {
   Node *in0 = proj->in(0);
   if (!in0->is_If()) return false;
+  // Variation of a dead If node.
+  if (in0->outcnt() < 2)  return false;
   IfNode* iff = in0->as_If();
 
   // we need "If(Conv2B(Opaque1(...)))" pattern for must_reason_predicate
@@ -2086,29 +2088,41 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
 BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
                                        int scale, Node* offset,
                                        Node* init, Node* limit, Node* stride,
-                                       Node* range) {
+                                       Node* range, bool upper) {
+  DEBUG_ONLY(ttyLocker ttyl);
+  if (TraceLoopPredicate) tty->print("rc_predicate ");
+
   Node* max_idx_expr  = init;
   int stride_con = stride->get_int();
-  if ((stride_con > 0) == (scale > 0)) {
+  if ((stride_con > 0) == (scale > 0) == upper) {
     max_idx_expr = new (C, 3) SubINode(limit, stride);
     register_new_node(max_idx_expr, ctrl);
+    if (TraceLoopPredicate) tty->print("(limit - stride) ");
+  } else {
+    if (TraceLoopPredicate) tty->print("init ");
   }
 
   if (scale != 1) {
     ConNode* con_scale = _igvn.intcon(scale);
     max_idx_expr = new (C, 3) MulINode(max_idx_expr, con_scale);
     register_new_node(max_idx_expr, ctrl);
+    if (TraceLoopPredicate) tty->print("* %d ", scale);
   }
 
   if (offset && (!offset->is_Con() || offset->get_int() != 0)){
     max_idx_expr = new (C, 3) AddINode(max_idx_expr, offset);
     register_new_node(max_idx_expr, ctrl);
+    if (TraceLoopPredicate)
+      if (offset->is_Con()) tty->print("+ %d ", offset->get_int());
+      else tty->print("+ offset ");
   }
 
   CmpUNode* cmp = new (C, 3) CmpUNode(max_idx_expr, range);
   register_new_node(cmp, ctrl);
   BoolNode* bol = new (C, 2) BoolNode(cmp, BoolTest::lt);
   register_new_node(bol, ctrl);
+
+  if (TraceLoopPredicate) tty->print_cr("<u range");
   return bol;
 }
 
@@ -2116,6 +2130,18 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
 // Insert loop predicates for null checks and range checks
 bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   if (!UseLoopPredicate) return false;
+
+  if (!loop->_head->is_Loop()) {
+    // Could be a simple region when irreducible loops are present.
+    return false;
+  }
+
+  CountedLoopNode *cl = NULL;
+  if (loop->_head->is_CountedLoop()) {
+    cl = loop->_head->as_CountedLoop();
+    // do nothing for iteration-splitted loops
+    if (!cl->is_normal_loop()) return false;
+  }
 
   // Too many traps seen?
   bool tmt = C->too_many_traps(C->method(), 0, Deoptimization::Reason_predicate);
@@ -2127,13 +2153,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       tty->print_cr("");
     }
     return false;
-  }
-
-  CountedLoopNode *cl = NULL;
-  if (loop->_head->is_CountedLoop()) {
-    cl = loop->_head->as_CountedLoop();
-    // do nothing for iteration-splitted loops
-    if(!cl->is_normal_loop()) return false;
   }
 
   LoopNode *lpn  = loop->_head->as_Loop();
@@ -2180,7 +2199,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   while (if_proj_list.size() > 0) {
     // Following are changed to nonnull when a predicate can be hoisted
     ProjNode* new_predicate_proj = NULL;
-    BoolNode* new_predicate_bol   = NULL;
 
     ProjNode* proj = if_proj_list.pop()->as_Proj();
     IfNode*   iff  = proj->in(0)->as_If();
@@ -2211,93 +2229,120 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       // Invariant test
       new_predicate_proj = create_new_if_for_predicate(predicate_proj);
       Node* ctrl = new_predicate_proj->in(0)->as_If()->in(0);
-      new_predicate_bol  = invar.clone(bol, ctrl)->as_Bool();
-      if (TraceLoopPredicate) tty->print("invariant");
+      BoolNode* new_predicate_bol = invar.clone(bol, ctrl)->as_Bool();
+
+      // Negate test if necessary
+      bool negated = false;
+      if (proj->_con != predicate_proj->_con) {
+        new_predicate_bol = new (C, 2) BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
+        register_new_node(new_predicate_bol, ctrl);
+        negated = true;
+      }
+      IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
+      _igvn.hash_delete(new_predicate_iff);
+      new_predicate_iff->set_req(1, new_predicate_bol);
+      if (TraceLoopPredicate) tty->print_cr("invariant if%s: %d", negated ? " negated" : "", new_predicate_iff->_idx);
+
     } else if (cl != NULL && loop->is_range_check_if(iff, this, invar)) {
-      // Range check (only for counted loops)
-      new_predicate_proj = create_new_if_for_predicate(predicate_proj);
-      Node *ctrl = new_predicate_proj->in(0)->as_If()->in(0);
+      assert(proj->_con == predicate_proj->_con, "must match");
+
+      // Range check for counted loops
       const Node*    cmp    = bol->in(1)->as_Cmp();
       Node*          idx    = cmp->in(1);
       assert(!invar.is_invariant(idx), "index is variant");
       assert(cmp->in(2)->Opcode() == Op_LoadRange, "must be");
-      LoadRangeNode* ld_rng = (LoadRangeNode*)cmp->in(2); // LoadRangeNode
+      Node* ld_rng = cmp->in(2); // LoadRangeNode
       assert(invar.is_invariant(ld_rng), "load range must be invariant");
-      ld_rng = (LoadRangeNode*)invar.clone(ld_rng, ctrl);
       int scale    = 1;
       Node* offset = zero;
       bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), &scale, &offset);
       assert(ok, "must be index expression");
+
+      Node* init    = cl->init_trip();
+      Node* limit   = cl->limit();
+      Node* stride  = cl->stride();
+
+      // Build if's for the upper and lower bound tests.  The
+      // lower_bound test will dominate the upper bound test and all
+      // cloned or created nodes will use the lower bound test as
+      // their declared control.
+      ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj);
+      ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj);
+      assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
+      Node *ctrl = lower_bound_proj->in(0)->as_If()->in(0);
+
+      // Perform cloning to keep Invariance state correct since the
+      // late schedule will place invariant things in the loop.
+      ld_rng = invar.clone(ld_rng, ctrl);
       if (offset && offset != zero) {
         assert(invar.is_invariant(offset), "offset must be loop invariant");
         offset = invar.clone(offset, ctrl);
       }
-      Node* init    = cl->init_trip();
-      Node* limit   = cl->limit();
-      Node* stride  = cl->stride();
-      new_predicate_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, ld_rng);
-      if (TraceLoopPredicate) tty->print("range check");
-    }
 
-    if (new_predicate_proj == NULL) {
+      // Test the lower bound
+      Node*  lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, ld_rng, false);
+      IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
+      _igvn.hash_delete(lower_bound_iff);
+      lower_bound_iff->set_req(1, lower_bound_bol);
+      if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
+
+      // Test the upper bound
+      Node* upper_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, ld_rng, true);
+      IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
+      _igvn.hash_delete(upper_bound_iff);
+      upper_bound_iff->set_req(1, upper_bound_bol);
+      if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", lower_bound_iff->_idx);
+
+      // Fall through into rest of the clean up code which will move
+      // any dependent nodes onto the upper bound test.
+      new_predicate_proj = upper_bound_proj;
+    } else {
       // The other proj of the "iff" is a uncommon trap projection, and we can assume
       // the other proj will not be executed ("executed" means uct raised).
       continue;
-    } else {
-      // Success - attach condition (new_predicate_bol) to predicate if
-      invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
-      IfNode* new_iff = new_predicate_proj->in(0)->as_If();
-
-      // Negate test if necessary
-      if (proj->_con != predicate_proj->_con) {
-        new_predicate_bol = new (C, 2) BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
-        register_new_node(new_predicate_bol, new_iff->in(0));
-        if (TraceLoopPredicate) tty->print_cr(" if negated: %d", iff->_idx);
-      } else {
-        if (TraceLoopPredicate) tty->print_cr(" if: %d", iff->_idx);
-      }
-
-      _igvn.hash_delete(new_iff);
-      new_iff->set_req(1, new_predicate_bol);
-
-      _igvn.hash_delete(iff);
-      iff->set_req(1, proj->is_IfFalse() ? cond_false : cond_true);
-
-      Node* ctrl = new_predicate_proj; // new control
-      ProjNode* dp = proj;     // old control
-      assert(get_loop(dp) == loop, "guarenteed at the time of collecting proj");
-      // Find nodes (depends only on the test) off the surviving projection;
-      // move them outside the loop with the control of proj_clone
-      for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
-        Node* cd = dp->fast_out(i); // Control-dependent node
-        if (cd->depends_only_on_test()) {
-          assert(cd->in(0) == dp, "");
-          _igvn.hash_delete(cd);
-          cd->set_req(0, ctrl); // ctrl, not NULL
-          set_early_ctrl(cd);
-          _igvn._worklist.push(cd);
-          IdealLoopTree *new_loop = get_loop(get_ctrl(cd));
-          if (new_loop != loop) {
-            if (!loop->_child) loop->_body.yank(cd);
-            if (!new_loop->_child ) new_loop->_body.push(cd);
-          }
-          --i;
-          --imax;
-        }
-      }
-
-      hoisted = true;
-      C->set_major_progress();
     }
+
+    // Success - attach condition (new_predicate_bol) to predicate if
+    invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
+
+    // Eliminate the old if in the loop body
+    _igvn.hash_delete(iff);
+    iff->set_req(1, proj->is_IfFalse() ? cond_false : cond_true);
+
+    Node* ctrl = new_predicate_proj; // new control
+    ProjNode* dp = proj;     // old control
+    assert(get_loop(dp) == loop, "guaranteed at the time of collecting proj");
+    // Find nodes (depends only on the test) off the surviving projection;
+    // move them outside the loop with the control of proj_clone
+    for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
+      Node* cd = dp->fast_out(i); // Control-dependent node
+      if (cd->depends_only_on_test()) {
+        assert(cd->in(0) == dp, "");
+        _igvn.hash_delete(cd);
+        cd->set_req(0, ctrl); // ctrl, not NULL
+        set_early_ctrl(cd);
+        _igvn._worklist.push(cd);
+        IdealLoopTree *new_loop = get_loop(get_ctrl(cd));
+        if (new_loop != loop) {
+          if (!loop->_child) loop->_body.yank(cd);
+          if (!new_loop->_child ) new_loop->_body.push(cd);
+        }
+        --i;
+        --imax;
+      }
+    }
+
+    hoisted = true;
+    C->set_major_progress();
   } // end while
 
 #ifndef PRODUCT
-    // report that the loop predication has been actually performed
-    // for this loop
-    if (TraceLoopPredicate && hoisted) {
-      tty->print("Loop Predication Performed:");
-      loop->dump_head();
-    }
+  // report that the loop predication has been actually performed
+  // for this loop
+  if (TraceLoopPredicate && hoisted) {
+    tty->print("Loop Predication Performed:");
+    loop->dump_head();
+  }
 #endif
 
   return hoisted;

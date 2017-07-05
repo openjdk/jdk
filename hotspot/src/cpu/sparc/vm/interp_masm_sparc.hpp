@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                      bool check_exception = true);
 
 #ifndef CC_INTERP
-  void super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1);
+  void super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1, Register arg_2);
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.  Blows registers tmp1, tmp2 and tmp3.
