@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,9 @@
 #include "memory/gcLocker.hpp"
 
 inline bool GC_locker::is_active() {
+  assert(_needs_gc || SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
+  verify_critical_count();
   return _lock_count > 0 || _jni_lock_count > 0;
-}
-
-inline bool GC_locker::check_active_before_gc() {
-  if (is_active()) {
-    set_needs_gc();
-  }
-  return is_active();
 }
 
 inline void GC_locker::lock() {
@@ -56,24 +51,28 @@ inline void GC_locker::unlock() {
 
 inline void GC_locker::lock_critical(JavaThread* thread) {
   if (!thread->in_critical()) {
-    if (!needs_gc()) {
-      jni_lock();
-    } else {
-      jni_lock_slow();
+    if (needs_gc()) {
+      // jni_lock call calls enter_critical under the lock so that the
+      // global lock count and per thread count are in agreement.
+      jni_lock(thread);
+      return;
     }
+    increment_debug_jni_lock_count();
   }
   thread->enter_critical();
 }
 
 inline void GC_locker::unlock_critical(JavaThread* thread) {
-  thread->exit_critical();
-  if (!thread->in_critical()) {
-    if (!needs_gc()) {
-      jni_unlock();
-    } else {
-      jni_unlock_slow();
+  if (thread->in_last_critical()) {
+    if (needs_gc()) {
+      // jni_unlock call calls exit_critical under the lock so that
+      // the global lock count and per thread count are in agreement.
+      jni_unlock(thread);
+      return;
     }
+    decrement_debug_jni_lock_count();
   }
+  thread->exit_critical();
 }
 
 #endif // SHARE_VM_MEMORY_GCLOCKER_INLINE_HPP

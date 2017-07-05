@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,11 +479,9 @@ void GenCollectedHeap::do_collection(bool  full,
 
   const size_t perm_prev_used = perm_gen()->used();
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-    if (Verbose) {
-      gclog_or_tty->print_cr("GC Cause: %s", GCCause::to_string(gc_cause()));
-    }
+  print_heap_before_gc();
+  if (Verbose) {
+    gclog_or_tty->print_cr("GC Cause: %s", GCCause::to_string(gc_cause()));
   }
 
   {
@@ -685,9 +683,7 @@ void GenCollectedHeap::do_collection(bool  full,
   AdaptiveSizePolicy* sp = gen_policy()->size_policy();
   AdaptiveSizePolicyOutput(sp, total_collections());
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  print_heap_after_gc();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

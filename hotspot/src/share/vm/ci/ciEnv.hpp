@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,6 +283,20 @@ public:
 
   // Return state of appropriate compilability
   int compilable() { return _compilable; }
+
+  const char* retry_message() const {
+    switch (_compilable) {
+      case ciEnv::MethodCompilable_not_at_tier:
+        return "retry at different tier";
+      case ciEnv::MethodCompilable_never:
+        return "not retryable";
+      case ciEnv::MethodCompilable:
+        return NULL;
+      default:
+        ShouldNotReachHere();
+        return NULL;
+    }
+  }
 
   bool break_at_compile() { return _break_at_compile; }
   void set_break_at_compile(bool z) { _break_at_compile = z; }

@@ -105,7 +105,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 
     /*
      * The code below is responsible for:
-     * 1. Loading appropriate awt library, i.e. xawt/libmawt or headless/libwawt
+     * 1. Loading appropriate awt library, i.e. libawt_xawt or libawt_headless
      * 2. Setting "awt.toolkit" system property to use the appropriate Java toolkit class,
      *    (if user has specified the toolkit in env varialble)
      */
@@ -130,10 +130,10 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 
     /* Calculate library name to load */
     if (AWTIsHeadless()) {
-        strncpy(p, "/headless/libmawt.so", MAXPATHLEN-len-1);
+        strncpy(p, "/libawt_headless.so", MAXPATHLEN-len-1);
     } else {
         /* Default AWT Toolkit on Linux and Solaris is XAWT. */
-        strncpy(p, "/xawt/libmawt.so", MAXPATHLEN-len-1);
+        strncpy(p, "/libawt_xawt.so", MAXPATHLEN-len-1);
     }
 
     if (toolkit) {
@@ -161,7 +161,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
 /*
  * This entry point must remain in libawt.so as part of a contract
  * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
@@ -191,7 +191,7 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
 /*
  * This entry point must remain in libawt.so as part of a contract
  * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
@@ -250,7 +250,7 @@ return_type name arglist                                                \
 
 /*
  * These entry point must remain in libawt.so ***for Java Plugin ONLY***
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 
 REFLECT_VOID_FUNCTION(getAwtLockFunctions,

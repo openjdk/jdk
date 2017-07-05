@@ -25,9 +25,7 @@
 
 BUILDDIR = ../..
 PACKAGE = sun.awt.X11
-LIBRARY = mawt
-LIBRARY_OUTPUT = xawt
-LIB_LOCATION = $(LIBDIR)/$(LIBARCH)/xawt
+LIBRARY = awt_xawt
 PRODUCT = sun
 
 include $(BUILDDIR)/common/Defs.gmk

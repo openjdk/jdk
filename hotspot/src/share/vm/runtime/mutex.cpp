@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1296,10 +1296,6 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 
       assert(this->rank() >= 0, "bad lock rank");
 
-      if (LogMultipleMutexLocking && locks != NULL) {
-        Events::log("thread " INTPTR_FORMAT " locks %s, already owns %s", new_owner, name(), locks->name());
-      }
-
       // Deadlock avoidance rules require us to acquire Mutexes only in
       // a global total order. For example m1 is the lowest ranked mutex
       // that the thread holds and m2 is the mutex the thread is trying
@@ -1342,10 +1338,6 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 
     #ifdef ASSERT
       Monitor *locks = old_owner->owned_locks();
-
-      if (LogMultipleMutexLocking && locks != this) {
-        Events::log("thread " INTPTR_FORMAT " unlocks %s, still owns %s", old_owner, this->name(), locks->name());
-      }
 
       // remove "this" from the owned locks list
 

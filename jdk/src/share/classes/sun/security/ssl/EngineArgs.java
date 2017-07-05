@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import javax.net.ssl.*;
 import java.nio.*;
 
 /*
@@ -157,6 +156,7 @@ class EngineArgs {
             int amount = Math.min(appData[i].remaining(), spaceLeft);
             appData[i].limit(appData[i].position() + amount);
             netData.put(appData[i]);
+            appRemaining -= amount;
             spaceLeft -= amount;
         }
     }
@@ -209,10 +209,16 @@ class EngineArgs {
     /*
      * In the case of Exception, we want to reset the positions
      * to appear as though no data has been consumed or produced.
+     *
+     * Currently, this method is only called as we are preparing to
+     * fail out, and thus we don't need to actually recalculate
+     * appRemaining.  If that assumption changes, that variable should
+     * be updated here.
      */
     void resetPos() {
         netData.position(netPos);
         for (int i = offset; i < offset + len; i++) {
+            // See comment above about recalculating appRemaining.
             appData[i].position(appPoss[i]);
         }
     }
