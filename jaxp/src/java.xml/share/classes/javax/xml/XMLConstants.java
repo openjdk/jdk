@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,9 +247,11 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/conf/jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format. If the file exists and the system property is specified,
-         * its value will be used to override the default of the property.
+         * <b>jaxp.properties:</b> This configuration file is in standard
+         * {@link java.util.Properties} format and typically located in the {@code conf}
+         * directory of the Java installation. If the file exists and the system
+         * property is specified, its value will be used to override the default
+         * of the property.
          * </p>
          *
          * <p>
@@ -314,9 +316,11 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/conf/jaxp.properties:</b> This configuration file is in standard
-         * java.util.Properties format. If the file exists and the system property is specified,
-         * its value will be used to override the default of the property.
+         * <b>jaxp.properties:</b> This configuration file is in standard
+         * {@link java.util.Properties} format and typically located in the {@code conf}
+         * directory of the Java installation. If the file exists and the system
+         * property is specified, its value will be used to override the default
+         * of the property.
          *
          * @since 1.7
          * </p>
@@ -380,9 +384,11 @@ public final class XMLConstants {
          * </p>
          *
          * <p>
-         * <b>${JAVA_HOME}/conf/jaxp.properties: </b> This configuration file is in standard
-         * java.util.Properties format. If the file exists and the system property is specified,
-         * its value will be used to override the default of the property.
+         * <b>jaxp.properties:</b> This configuration file is in standard
+         * {@link java.util.Properties} format and typically located in the {@code conf}
+         * directory of the Java installation. If the file exists and the system
+         * property is specified, its value will be used to override the default
+         * of the property.
          *
          * @since 1.7
          */

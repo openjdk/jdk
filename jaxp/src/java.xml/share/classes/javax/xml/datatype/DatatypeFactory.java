@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,23 +32,34 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * <p>Factory that creates new <code>javax.xml.datatype</code> <code>Object</code>s that map XML to/from Java <code>Object</code>s.</p>
- *
- * <p>A new instance of the <code>DatatypeFactory</code> is created through the {@link #newInstance()} method
- * that uses the following implementation resolution mechanisms to determine an implementation:</p>
+ * Factory that creates new <code>javax.xml.datatype</code> <code>Object</code>s that map XML to/from Java <code>Object</code>s.
+ * <p>
+ * A new instance of the {@code DatatypeFactory} is created through the {@link #newInstance()} method
+ * that uses the following implementation resolution mechanisms to determine an implementation:
+ * <p>
  * <ol>
  *    <li>
- *      If the system property specified by {@link #DATATYPEFACTORY_PROPERTY}, "<code>javax.xml.datatype.DatatypeFactory</code>",
+ *      If the system property specified by {@link #DATATYPEFACTORY_PROPERTY}, "{@code javax.xml.datatype.DatatypeFactory}",
  *      exists, a class with the name of the property value is instantiated.
  *      Any Exception thrown during the instantiation process is wrapped as a {@link DatatypeConfigurationException}.
  *    </li>
  *    <li>
- *      If the file ${JAVA_HOME}/conf/jaxp.properties exists, it is loaded in a {@link java.util.Properties} <code>Object</code>.
- *      The <code>Properties</code> <code>Object </code> is then queried for the property as documented in the prior step
- *      and processed as documented in the prior step.
+ *      <p>
+ *      Use the configuration file "jaxp.properties". The file is in standard
+ *      {@link java.util.Properties} format and typically located in the
+ *      {@code conf} directory of the Java installation. It contains the fully qualified
+ *      name of the implementation class with the key being the system property
+ *      defined above.
+ *      <p>
+ *      The jaxp.properties file is read only once by the JAXP implementation
+ *      and its values are then cached for future use.  If the file does not exist
+ *      when the first attempt is made to read from it, no further attempts are
+ *      made to check for its existence.  It is not possible to change the value
+ *      of any property in jaxp.properties after it has been read for the first time.
  *    </li>
  *    <li>
- *     Uses the service-provider loading facilities, defined by the {@link java.util.ServiceLoader} class, to attempt
+ *     <p>
+ *     Use the service-provider loading facility, defined by the {@link java.util.ServiceLoader} class, to attempt
  *     to locate and load an implementation of the service using the {@linkplain
  *     java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
  *     the service-provider loading facility will use the {@linkplain
@@ -56,13 +67,14 @@ import java.util.regex.Pattern;
  *     to attempt to load the service. If the context class
  *     loader is null, the {@linkplain
  *     ClassLoader#getSystemClassLoader() system class loader} will be used.
- *     <br>
+ *     <p>
  *     In case of {@link java.util.ServiceConfigurationError service
- *     configuration error} a {@link javax.xml.datatype.DatatypeConfigurationException}
+ *     configuration error}, a {@link javax.xml.datatype.DatatypeConfigurationException}
  *     will be thrown.
  *    </li>
  *    <li>
- *      The final mechanism is to attempt to instantiate the <code>Class</code> specified by
+ *      <p>
+ *      The final mechanism is to attempt to instantiate the {@code Class} specified by
  *      {@link #DATATYPEFACTORY_IMPLEMENTATION_CLASS}.
  *      Any Exception thrown during the instantiation process is wrapped as a {@link DatatypeConfigurationException}.
  *    </li>
@@ -79,7 +91,7 @@ public abstract class DatatypeFactory {
     /**
      * <p>Default property name as defined in JSR 206: Java(TM) API for XML Processing (JAXP) 1.3.</p>
      *
-     * <p>Default value is <code>javax.xml.datatype.DatatypeFactory</code>.</p>
+     * <p>Default value is {@code javax.xml.datatype.DatatypeFactory}.</p>
      */
     public static final String DATATYPEFACTORY_PROPERTY =
             // We use a String constant here, rather than calling
@@ -120,18 +132,18 @@ public abstract class DatatypeFactory {
     /**
      * <p>Protected constructor to prevent instantiation outside of package.</p>
      *
-     * <p>Use {@link #newInstance()} to create a <code>DatatypeFactory</code>.</p>
+     * <p>Use {@link #newInstance()} to create a {@code DatatypeFactory}.</p>
      */
     protected DatatypeFactory() {
     }
 
     /**
-     * <p>Obtain a new instance of a <code>DatatypeFactory</code>.</p>
+     * <p>Obtain a new instance of a {@code DatatypeFactory}.</p>
      *
      * <p>The implementation resolution mechanisms are <a href="#DatatypeFactory.newInstance">defined</a> in this
      * <code>Class</code>'s documentation.</p>
      *
-     * @return New instance of a <code>DatatypeFactory</code>
+     * @return New instance of a {@code DatatypeFactory}
      *
      * @throws DatatypeConfigurationException If the implementation is not
      *   available or cannot be instantiated.
@@ -149,12 +161,12 @@ public abstract class DatatypeFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a <code>DatatypeFactory</code> from class name.
+     * <p>Obtain a new instance of a {@code DatatypeFactory} from class name.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
      * should be loaded.</p>
      *
-     * <p>Once an application has obtained a reference to a <code>DatatypeFactory</code>
+     * <p>Once an application has obtained a reference to a {@code DatatypeFactory}
      * it can use the factory to configure and obtain datatype instances.</P>
      *
      *
@@ -168,12 +180,12 @@ public abstract class DatatypeFactory {
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
      *
-     * @param factoryClassName fully qualified factory class name that provides implementation of <code>javax.xml.datatype.DatatypeFactory</code>.
+     * @param factoryClassName fully qualified factory class name that provides implementation of {@code javax.xml.datatype.DatatypeFactory}.
      *
      * @param classLoader <code>ClassLoader</code> used to load the factory class. If <code>null</code>
      *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
      *
-     * @return New instance of a <code>DatatypeFactory</code>
+     * @return New instance of a {@code DatatypeFactory}
      *
      * @throws DatatypeConfigurationException if <code>factoryClassName</code> is <code>null</code>, or
      *                                   the factory class cannot be loaded, instantiated.

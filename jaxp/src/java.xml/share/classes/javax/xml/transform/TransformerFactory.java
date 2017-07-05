@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package javax.xml.transform;
  * <p>The system property that determines which Factory implementation
  * to create is named <code>"javax.xml.transform.TransformerFactory"</code>.
  * This property names a concrete subclass of the
- * <code>TransformerFactory</code> abstract class. If the property is not
+ * {@code TransformerFactory} abstract class. If the property is not
  * defined, a platform default is be used.</p>
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
@@ -51,31 +51,36 @@ public abstract class TransformerFactory {
 
 
     /**
-     * <p>Obtain a new instance of a <code>TransformerFactory</code>.
-     * This static method creates a new factory instance.</p>
-     * <p>This method uses the following ordered lookup procedure to determine
-     * the <code>TransformerFactory</code> implementation class to
-     * load:</p>
+     * <p>
+     * Obtain a new instance of a {@code TransformerFactory}.
+     * This static method creates a new factory instance.
+     * <p>
+     * This method uses the following ordered lookup procedure to determine
+     * the {@code TransformerFactory} implementation class to
+     * load:
+     * <p>
      * <ul>
      * <li>
-     * Use the <code>javax.xml.transform.TransformerFactory</code> system
+     * Use the {@code javax.xml.transform.TransformerFactory} system
      * property.
      * </li>
      * <li>
-     * Use the properties file "conf/jaxp.properties" in the JRE directory.
-     * This configuration file is in standard <code>java.util.Properties
-     * </code> format and contains the fully qualified name of the
-     * implementation class with the key being the system property defined
-     * above.
-     * <br>
+     * <p>
+     * Use the configuration file "jaxp.properties". The file is in standard
+     * {@link java.util.Properties} format and typically located in the
+     * {@code conf} directory of the Java installation. It contains the fully qualified
+     * name of the implementation class with the key being the system property
+     * defined above.
+     * <p>
      * The jaxp.properties file is read only once by the JAXP implementation
-     * and it's values are then cached for future use.  If the file does not exist
+     * and its values are then cached for future use.  If the file does not exist
      * when the first attempt is made to read from it, no further attempts are
      * made to check for its existence.  It is not possible to change the value
      * of any property in jaxp.properties after it has been read for the first time.
      * </li>
      * <li>
-     *   Use the service-provider loading facilities, defined by the
+     * <p>
+     * Use the service-provider loading facility, defined by the
      *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
      *   implementation of the service using the {@linkplain
      *   java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
@@ -86,13 +91,15 @@ public abstract class TransformerFactory {
      *   ClassLoader#getSystemClassLoader() system class loader} will be used.
      * </li>
      * <li>
+     * <p>
      *   Otherwise, the system-default implementation is returned.
      * </li>
      * </ul>
      *
-     * <p>Once an application has obtained a reference to a <code>
-     * TransformerFactory</code> it can use the factory to configure
-     * and obtain transformer instances.</p>
+     * <p>
+     * Once an application has obtained a reference to a
+     * {@code TransformerFactory} it can use the factory to configure
+     * and obtain transformer instances.
      *
      * @return new TransformerFactory instance, never null.
      *
@@ -111,13 +118,13 @@ public abstract class TransformerFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a <code>TransformerFactory</code> from factory class name.
+     * <p>Obtain a new instance of a {@code TransformerFactory} from factory class name.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
      * should be loaded.</p>
      *
-     * <p>Once an application has obtained a reference to a <code>
-     * TransformerFactory</code> it can use the factory to configure
+     * <p>Once an application has obtained a reference to a
+     * {@code TransformerFactory} it can use the factory to configure
      * and obtain transformer instances.</p>
      *
      * <h2>Tip for Trouble-shooting</h2>
@@ -130,7 +137,7 @@ public abstract class TransformerFactory {
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
      *
-     * @param factoryClassName fully qualified factory class name that provides implementation of <code>javax.xml.transform.TransformerFactory</code>.
+     * @param factoryClassName fully qualified factory class name that provides implementation of {@code javax.xml.transform.TransformerFactory}.
      *
      * @param classLoader <code>ClassLoader</code> used to load the factory class. If <code>null</code>
      *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
@@ -232,7 +239,7 @@ public abstract class TransformerFactory {
      * @param charset The value of the charset attribute to match.  May be null.
      *
      * @return A <code>Source</code> <code>Object</code> suitable for passing
-     *   to the <code>TransformerFactory</code>.
+     *   to the {@code TransformerFactory}.
      *
      * @throws TransformerConfigurationException An <code>Exception</code>
      *   is thrown if an error occurings during parsing of the
@@ -268,15 +275,15 @@ public abstract class TransformerFactory {
     //======= CONFIGURATION METHODS =======
 
         /**
-         * <p>Set a feature for this <code>TransformerFactory</code> and <code>Transformer</code>s
+         * <p>Set a feature for this {@code TransformerFactory} and <code>Transformer</code>s
          * or <code>Template</code>s created by this factory.</p>
          *
          * <p>
          * Feature names are fully qualified {@link java.net.URI}s.
          * Implementations may define their own features.
-         * An {@link TransformerConfigurationException} is thrown if this <code>TransformerFactory</code> or the
+         * An {@link TransformerConfigurationException} is thrown if this {@code TransformerFactory} or the
          * <code>Transformer</code>s or <code>Template</code>s it creates cannot support the feature.
-         * It is possible for an <code>TransformerFactory</code> to expose a feature value but be unable to change its state.
+         * It is possible for an {@code TransformerFactory} to expose a feature value but be unable to change its state.
          * </p>
          *
          * <p>All implementations are required to support the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature.
@@ -299,7 +306,7 @@ public abstract class TransformerFactory {
          * @param name Feature name.
          * @param value Is feature state <code>true</code> or <code>false</code>.
          *
-         * @throws TransformerConfigurationException if this <code>TransformerFactory</code>
+         * @throws TransformerConfigurationException if this {@code TransformerFactory}
          *   or the <code>Transformer</code>s or <code>Template</code>s it creates cannot support this feature.
      * @throws NullPointerException If the <code>name</code> parameter is null.
          */
@@ -312,9 +319,9 @@ public abstract class TransformerFactory {
          * <p>
          * Feature names are fully qualified {@link java.net.URI}s.
          * Implementations may define their own features.
-         * <code>false</code> is returned if this <code>TransformerFactory</code> or the
+         * <code>false</code> is returned if this {@code TransformerFactory} or the
          * <code>Transformer</code>s or <code>Template</code>s it creates cannot support the feature.
-         * It is possible for an <code>TransformerFactory</code> to expose a feature value but be unable to change its state.
+         * It is possible for an {@code TransformerFactory} to expose a feature value but be unable to change its state.
          * </p>
          *
          * @param name Feature name.

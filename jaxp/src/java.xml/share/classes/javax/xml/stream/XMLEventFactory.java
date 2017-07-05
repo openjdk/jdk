@@ -23,7 +23,7 @@
  */
 
 /*
- * Copyright (c) 2009, 2013, by Oracle Corporation. All Rights Reserved.
+ * Copyright (c) 2009, 2015, by Oracle Corporation. All Rights Reserved.
  */
 
 package javax.xml.stream;
@@ -70,19 +70,34 @@ public abstract class XMLEventFactory {
    * This static method creates a new factory instance.
    * This method uses the following ordered lookup procedure to determine
    * the XMLEventFactory implementation class to load:
-   * </p>
+   * <p>
    * <ul>
    * <li>
    *   Use the javax.xml.stream.XMLEventFactory system property.
    * </li>
    * <li>
-   *   Use the properties file "lib/stax.properties" in the JRE directory.
-   *     This configuration file is in standard java.util.Properties format
-   *     and contains the fully qualified name of the implementation class
-   *     with the key being the system property defined above.
+   *   <p>
+   *   Use the configuration file "stax.properties". The file is in standard
+   *   {@link java.util.Properties} format and typically located in the
+   *   {@code conf} directory of the Java installation. It contains the fully qualified
+   *   name of the implementation class with the key being the system property
+   *   defined above.
+   *
+   *   <p>
+   *   The stax.properties file is read only once by the implementation
+   *   and its values are then cached for future use.  If the file does not exist
+   *   when the first attempt is made to read from it, no further attempts are
+   *   made to check for its existence.  It is not possible to change the value
+   *   of any property in stax.properties after it has been read for the first time.
+   *
+   *   <p>
+   *   Use the jaxp configuration file "jaxp.properties". The file is in the same
+   *   format as stax.properties and will only be read if stax.properties does
+   *   not exist.
    * </li>
    * <li>
-   *   Use the service-provider loading facilities, defined by the
+   *   <p>
+   *   Use the service-provider loading facility, defined by the
    *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
    *   implementation of the service using the {@linkplain
    *   java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
@@ -93,18 +108,18 @@ public abstract class XMLEventFactory {
    *   ClassLoader#getSystemClassLoader() system class loader} will be used.
    * </li>
    * <li>
+   *   <p>
    *   Otherwise, the system-default implementation is returned.
    * </li>
    * </ul>
    * <p>
    *   Once an application has obtained a reference to a XMLEventFactory it
    *   can use the factory to configure and obtain stream instances.
-   * </p>
    * <p>
    *   Note that this is a new method that replaces the deprecated newInstance() method.
    *     No changes in behavior are defined by this replacement method relative to
    *     the deprecated method.
-   * </p>
+   *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
@@ -143,20 +158,35 @@ public abstract class XMLEventFactory {
    * <p>
    * This method uses the following ordered lookup procedure to determine
    * the XMLEventFactory implementation class to load:
-   * </p>
+   * <p>
    * <ul>
    * <li>
    *   Use the value of the system property identified by {@code factoryId}.
    * </li>
    * <li>
-   *   Use the properties file "lib/stax.properties" in the JRE directory.
-   *     This configuration file is in standard java.util.Properties format
-   *     and contains the fully qualified name of the implementation class
-   *     with the key being the given {@code factoryId}.
+   *   <p>
+   *   Use the configuration file "stax.properties". The file is in standard
+   *   {@link java.util.Properties} format and typically located in the
+   *   conf directory of the Java installation. It contains the fully qualified
+   *   name of the implementation class with the key being the system property
+   *   defined above.
+   *
+   *   <p>
+   *   The stax.properties file is read only once by the implementation
+   *   and its values are then cached for future use.  If the file does not exist
+   *   when the first attempt is made to read from it, no further attempts are
+   *   made to check for its existence.  It is not possible to change the value
+   *   of any property in stax.properties after it has been read for the first time.
+   *
+   *   <p>
+   *   Use the jaxp configuration file "jaxp.properties". The file is in the same
+   *   format as stax.properties and will only be read if stax.properties does
+   *   not exist.
    * </li>
    * <li>
+   *   <p>
    *   If {@code factoryId} is "javax.xml.stream.XMLEventFactory",
-   *   use the service-provider loading facilities, defined by the
+   *   use the service-provider loading facility, defined by the
    *   {@link java.util.ServiceLoader} class, to attempt to {@linkplain
    *   java.util.ServiceLoader#load(java.lang.Class, java.lang.ClassLoader) locate and load}
    *   an implementation of the service using the specified {@code ClassLoader}.
@@ -169,6 +199,7 @@ public abstract class XMLEventFactory {
    *   ClassLoader#getSystemClassLoader() system class loader} will be used.
    * </li>
    * <li>
+   *   <p>
    *   Otherwise, throws a {@link FactoryConfigurationError}.
    * </li>
    * </ul>
@@ -179,7 +210,6 @@ public abstract class XMLEventFactory {
    *   newInstance(String factoryId, ClassLoader classLoader)} method.
    * No changes in behavior are defined by this replacement method relative
    * to the deprecated method.
-   * </p>
    *
    * @apiNote The parameter factoryId defined here is inconsistent with that
    * of other JAXP factories where the first parameter is fully qualified
