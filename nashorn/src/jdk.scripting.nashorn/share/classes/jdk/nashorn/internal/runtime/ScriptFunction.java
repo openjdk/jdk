@@ -143,7 +143,6 @@ public abstract class ScriptFunction extends ScriptObject {
 
         this.data  = data;
         this.scope = scope;
-        this.allocatorMap = data.getAllocatorMap();
     }
 
     @Override
@@ -253,7 +252,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         assert !isBoundFunction(); // allocate never invoked on bound functions
 
-        final ScriptObject object = data.allocate(allocatorMap);
+        final ScriptObject object = data.allocate(getAllocatorMap());
 
         if (object != null) {
             final Object prototype = getPrototype();
@@ -267,6 +266,13 @@ public abstract class ScriptFunction extends ScriptObject {
         }
 
         return object;
+    }
+
+    private PropertyMap getAllocatorMap() {
+        if (allocatorMap == null) {
+            allocatorMap = data.getAllocatorMap();
+        }
+        return allocatorMap;
     }
 
     /**

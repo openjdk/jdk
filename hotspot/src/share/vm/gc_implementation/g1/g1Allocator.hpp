@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,11 +159,11 @@ public:
     _retired = false;
   }
 
-  virtual void retire(bool end_of_gc, bool retain) {
+  virtual void retire() {
     if (_retired) {
       return;
     }
-    ParGCAllocBuffer::retire(end_of_gc, retain);
+    ParGCAllocBuffer::retire();
     _retired = true;
   }
 };

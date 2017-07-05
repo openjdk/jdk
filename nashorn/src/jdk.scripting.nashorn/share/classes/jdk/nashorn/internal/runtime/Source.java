@@ -484,6 +484,30 @@ public final class Source implements Loggable {
      * Constructor
      *
      * @param name  source name
+     * @param path  path from which source can be loaded
+     *
+     * @return source instance
+     *
+     * @throws IOException if source cannot be loaded
+     */
+    public static Source sourceFor(final String name, final Path path) throws IOException {
+        File file = null;
+        try {
+            file = path.toFile();
+        } catch (final UnsupportedOperationException uoe) {
+        }
+
+        if (file != null) {
+            return sourceFor(name, file);
+        } else {
+            return sourceFor(name, Files.newBufferedReader(path));
+        }
+    }
+
+    /**
+     * Constructor
+     *
+     * @param name  source name
      * @param file  file from which source can be loaded
      * @param cs    Charset used to convert bytes to chars
      *
@@ -601,7 +625,7 @@ public final class Source implements Loggable {
 
     /**
      * Get explicit source URL.
-     * @return URL set vial sourceURL directive
+     * @return URL set via sourceURL directive
      */
     public String getExplicitURL() {
         return explicitURL;

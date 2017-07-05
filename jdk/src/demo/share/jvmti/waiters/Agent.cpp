@@ -111,8 +111,6 @@ Agent::get_monitor(jvmtiEnv *jvmti, JNIEnv *env, jobject object)
 /* VM initialization and VM death calls to Agent */
 Agent::Agent(jvmtiEnv *jvmti, JNIEnv *env, jthread thread)
 {
-    jvmtiError err;
-
     stdout_message("Agent created..\n");
     stdout_message("VMInit...\n");
     /* Start monitor list */
@@ -129,8 +127,6 @@ Agent::~Agent()
 
 void Agent::vm_death(jvmtiEnv *jvmti, JNIEnv *env)
 {
-    jvmtiError err;
-
     /* Delete all Monitors we allocated */
     for ( int i = 0; i < (int)monitor_count; i++ ) {
         delete monitor_list[i];

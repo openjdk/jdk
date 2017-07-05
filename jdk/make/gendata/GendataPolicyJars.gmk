@@ -77,7 +77,7 @@ US_EXPORT_POLICY_JAR_DEPS := \
     $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
 $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, \
-    $(US_EXPORT_POLICY_JAR_DEPS), \
+    DEPENDENCIES := $(US_EXPORT_POLICY_JAR_DEPS), \
     SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
     SUFFIXES := .policy, \
     JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED), \
@@ -139,8 +139,8 @@ $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: \
 	$(install-file)
 
 $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
-    $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
-    $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
+    DEPENDENCIES := $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
+        $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
     SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
     SUFFIXES := .policy, \
     JAR := $(LOCAL_POLICY_JAR_LIMITED), \
@@ -148,7 +148,7 @@ $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
     SKIP_METAINF := true))
 
 $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
-    $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
+    DEPENDENCIES := $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
     SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
     SUFFIXES := .policy, \
     JAR := $(LOCAL_POLICY_JAR_UNLIMITED), \

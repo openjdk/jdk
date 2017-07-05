@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,13 @@ import java.util.Vector;
  * The X509V1CertImpl class is used as a conversion wrapper around
  * sun.security.x509.X509Cert certificates when running under JDK1.1.x.
  *
+ * @deprecated This is the implementation class for the deprecated
+ *  {@code javax.security.cert.X509Certificate} class. The classes in the
+ *  {@code java.security.cert} package should be used instead.
+ *
  * @author Jeff Nisewanger
  */
+@Deprecated
 public class X509V1CertImpl extends X509Certificate implements Serializable {
     static final long serialVersionUID = -2048442350420423405L;
     private java.security.cert.X509Certificate wrappedCert;

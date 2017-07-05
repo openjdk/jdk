@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1718,8 +1718,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // arg0: store_address
         Address store_addr(rbp, 2*BytesPerWord);
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+        CardTableModRefBS* ct =
+          barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
         assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
         Label done;

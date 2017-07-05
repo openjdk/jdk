@@ -52,7 +52,7 @@ import java.util.List;
  * <pre>
  *   XMLSignatureFactory factory = XMLSignatureFactory.getInstance("DOM");
  *   Reference ref = factory.newReference("#reference-1", DigestMethod.SHA1);
- *   List<Reference> references = Collections.singletonList(ref);
+ *   List&lt;Reference&gt; references = Collections.singletonList(ref);
  *   Manifest manifest = factory.newManifest(references, "manifest-1");
  * </pre>
  *

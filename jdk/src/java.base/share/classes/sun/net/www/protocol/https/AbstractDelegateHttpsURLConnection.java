@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,9 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     public java.security.cert.Certificate[] getServerCertificates()
             throws SSLPeerUnverifiedException {
         if (cachedResponse != null) {
-            List<java.security.cert.Certificate> l = ((SecureCacheResponse)cachedResponse).getServerCertificateChain();
+            List<java.security.cert.Certificate> l =
+                    ((SecureCacheResponse)cachedResponse)
+                            .getServerCertificateChain();
             if (l == null) {
                 return null;
             } else {
@@ -262,7 +264,12 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     /**
      * Returns the server's X.509 certificate chain, or null if
      * the server did not authenticate.
+     *
+     * @deprecated This method returns the deprecated
+     *  {@code javax.security.cert.X509Certificate} type.
+     *  Use {@code getServerCertificates()} instead.
      */
+    @Deprecated
     public javax.security.cert.X509Certificate[] getServerCertificateChain()
             throws SSLPeerUnverifiedException {
         if (cachedResponse != null) {
@@ -271,7 +278,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         if (http == null) {
             throw new IllegalStateException("connection not yet open");
         } else {
-            return ((HttpsClient)http).getServerCertificateChain ();
+            return ((HttpsClient)http).getServerCertificateChain();
         }
     }
 

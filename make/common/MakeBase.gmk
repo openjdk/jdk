@@ -374,27 +374,69 @@ endef
 # Make sure logging is setup for everyone that includes MakeBase.gmk.
 $(eval $(call SetupLogging))
 
-# This is to be called by all SetupFoo macros
-define LogSetupMacroEntry
-  $(if $(27),$(error Internal makefile error: Too many arguments to LogSetupMacroEntry, please update MakeBase.gmk))
-  $(if $(findstring $(LOG_LEVEL),debug trace), $(info $1 $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,$(if $(strip $($i)),$(NEWLINE) $(strip [$i] $($i))))))
-endef
+################################################################################
+# Creates a sequence of increasing numbers (inclusive).
+# Param 1 - starting number
+# Param 2 - ending number
+sequence = \
+    $(wordlist $1, $2, $(strip \
+        $(eval SEQUENCE_COUNT :=) \
+        $(call _sequence-do,$(strip $2))))
 
-# Support macro for all SetupFoo macros.
-define EvalDebugWrapper
-  $(if $(DEBUG_$1),
-    $(info -------- <<< Begin expansion of $1)
-    $(info $2)
-    $(info -------- >>> End expansion of $1)
+_sequence-do = \
+    $(if $(word $1, $(SEQUENCE_COUNT)),, \
+      $(eval SEQUENCE_COUNT += .) \
+      $(words $(SEQUENCE_COUNT)) \
+      $(call _sequence-do,$1))
+
+################################################################################
+
+MAX_PARAMS := 30
+PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
+
+# Template for creating a macro taking named parameters. To use it, assign the
+# template to a variable with the name you want for your macro, using '='
+# assignment. Then define a macro body with the suffix "Body". The Body macro
+# should take 1 parameter which should be a unique string for that invocation
+# of the macro.
+# Ex:
+# SetupFoo = $(NamedParamsMacroTemplate)
+# define SetupFooBody
+#   # do something
+#   # access parameters as $$($1_BAR)
+# endef
+# Call it like this
+# $(eval $(call SetupFoo, BUILD_SOMETHING, \
+#     BAR := some parameter value, \
+# ))
+define NamedParamsMacroTemplate
+  $(if $($(MAX_PARAMS)),$(error Internal makefile error: \
+      Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
+  # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
+  $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
+    $(strip $1)_$(strip $($i)))$(NEWLINE))
+  # Debug print all named parameter names and values
+  $(if $(findstring $(LOG_LEVEL),debug trace), \
+    $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
+      $(if $(strip $($i)),$(NEWLINE) $(strip [$i] $(if $(filter $(LOG_LEVEL), trace), \
+        $($i), $(wordlist 1, 20, $($(i))) $(if $(word 21, $($(i))), ...)))))))
+
+  $(if $(DEBUG_$(strip $1)),
+    $(info -------- <<< Begin expansion of $(strip $1)) \
+    $(info $(call $(0)Body,$(strip $1))) \
+    $(info -------- >>> End expansion of $(strip $1)) \
   )
 
-  $2
+  $(call $(0)Body,$(strip $1))
 endef
 
+################################################################################
 # Make directory without forking mkdir if not needed
 MakeDir = \
     $(strip $(if $(subst $(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),,$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9)),\
       $(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)))
+
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS),solaris)
   # On Solaris, if the target is a symlink and exists, cp won't overwrite.
@@ -437,6 +479,7 @@ else
   endef
 endif
 
+################################################################################
 # Convenience functions for working around make's limitations with $(filter ).
 containing = \
     $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),$v)))
@@ -457,8 +500,9 @@ equals = \
     $(and $(findstring $(strip $1),$(strip $2)),\
         $(findstring $(strip $2),$(strip $1)))
 
+################################################################################
+
 ifneq ($(DISABLE_CACHE_FIND), true)
-  ################################################################################
   # In Cygwin, finds are very costly, both because of expensive forks and because
   # of bad file system caching. Find is used extensively in $(shell) commands to
   # find source files. This makes rerunning make with no or few changes rather
@@ -544,16 +588,8 @@ endef
 #   FLATTEN : Set to flatten the directory structure in the DEST dir.
 #   MACRO   : Optionally override the default macro used for making the copy.
 #             Default is 'install-file'
-
-define SetupCopyFiles
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupCopyFiles, please update MakeBase.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupCopyFilesInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupCopyFilesInner
-  $(foreach i,2 3 4 5 6, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupCopyFiles($1),$2,$3,$4,$5,$6)
-  $(if $(7),$(error Internal makefile error: Too many arguments to SetupCopyFiles, please update MakeBase.gmk))
+SetupCopyFiles = $(NamedParamsMacroTemplate)
+define SetupCopyFilesBody
 
   ifeq ($$($1_MACRO), )
     $1_MACRO := install-file
