@@ -877,7 +877,7 @@ inline void ParMarkBitMapClosure::decrement_words_remaining(size_t words) {
 // The summary phase calculates the total live data to the left of each region
 // XXX.  Based on that total and the bottom of the space, it can calculate the
 // starting location of the live data in XXX.  The summary phase calculates for
-// each region XXX quantites such as
+// each region XXX quantities such as
 //
 //      - the amount of live data at the beginning of a region from an object
 //        entering the region.

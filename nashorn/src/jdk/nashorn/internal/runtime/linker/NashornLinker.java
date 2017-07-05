@@ -29,7 +29,10 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -37,16 +40,17 @@ import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.support.LinkerServicesImpl;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.NativeArray;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -100,9 +104,16 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     }
 
     @Override
-    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
-        final GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
-        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
+    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
+        if(gi != null) {
+            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), true);
+        }
+        gi = getSamTypeConverter(sourceType, targetType);
+        if(gi != null) {
+            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), false);
+        }
+        return null;
     }
 
     /**
@@ -126,12 +137,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
             return arrayConverter;
         }
 
-        final GuardedInvocation mirrorConverter = getMirrorConverter(sourceType, targetType);
-        if(mirrorConverter != null) {
-            return mirrorConverter;
-        }
-
-        return getSamTypeConverter(sourceType, targetType);
+        return getMirrorConverter(sourceType, targetType);
     }
 
     /**
@@ -150,11 +156,21 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptFunction.class);
 
         if ((isSourceTypeGeneric || ScriptFunction.class.isAssignableFrom(sourceType)) && isAutoConvertibleFromFunction(targetType)) {
-            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType);
+            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup());
             assert ctor != null; // if isAutoConvertibleFromFunction() returned true, then ctor must exist.
             return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_SCRIPT_FUNCTION : null);
         }
         return null;
+    }
+
+    private static Lookup getCurrentLookup() {
+        final LinkRequest currentRequest = AccessController.doPrivileged(new PrivilegedAction<LinkRequest>() {
+            @Override
+            public LinkRequest run() {
+                return LinkerServicesImpl.getCurrentLinkRequest();
+            }
+        });
+        return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();
     }
 
     /**

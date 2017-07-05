@@ -387,7 +387,7 @@ void SimpleThresholdPolicy::method_back_branch_event(methodHandle mh, methodHand
                                                      int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
   // If the method is already compiling, quickly bail out.
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, bci)) {
-    // Use loop event as an opportinity to also check there's been
+    // Use loop event as an opportunity to also check there's been
     // enough calls.
     CompLevel cur_level = comp_level(mh());
     CompLevel next_level = call_event(mh(), cur_level);

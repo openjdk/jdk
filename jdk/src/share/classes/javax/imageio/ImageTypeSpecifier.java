@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ public class ImageTypeSpecifier {
                     ("Bad value for dataType!");
             }
             this.colorSpace = colorSpace;
-            this.bandOffsets = (int[])bandOffsets.clone();
+            this.bandOffsets = bandOffsets.clone();
             this.dataType = dataType;
             this.hasAlpha = hasAlpha;
             this.isAlphaPremultiplied = isAlphaPremultiplied;
@@ -449,8 +449,8 @@ public class ImageTypeSpecifier {
             }
 
             this.colorSpace = colorSpace;
-            this.bankIndices = (int[])bankIndices.clone();
-            this.bandOffsets = (int[])bandOffsets.clone();
+            this.bankIndices = bankIndices.clone();
+            this.bandOffsets = bandOffsets.clone();
             this.dataType = dataType;
             this.hasAlpha = hasAlpha;
             this.isAlphaPremultiplied = isAlphaPremultiplied;
@@ -769,11 +769,11 @@ public class ImageTypeSpecifier {
                 (alphaLUT != null && alphaLUT.length != len)) {
                 throw new IllegalArgumentException("LUT has improper length!");
             }
-            this.redLUT = (byte[])redLUT.clone();
-            this.greenLUT = (byte[])greenLUT.clone();
-            this.blueLUT = (byte[])blueLUT.clone();
+            this.redLUT = redLUT.clone();
+            this.greenLUT = greenLUT.clone();
+            this.blueLUT = blueLUT.clone();
             if (alphaLUT != null) {
-                this.alphaLUT = (byte[])alphaLUT.clone();
+                this.alphaLUT = alphaLUT.clone();
             }
             this.bits = bits;
             this.dataType = dataType;

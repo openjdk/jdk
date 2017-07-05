@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1496,6 +1496,7 @@ public class BasicListUI extends ListUI
      * @see #installKeyboardActions
      * @see #installUI
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public class MouseInputHandler implements MouseInputListener
     {
         public void mouseClicked(MouseEvent e) {
@@ -1600,6 +1601,7 @@ public class BasicListUI extends ListUI
      * @see #getCellBounds
      * @see #installUI
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public class ListSelectionHandler implements ListSelectionListener
     {
         public void valueChanged(ListSelectionEvent e)
@@ -1659,6 +1661,7 @@ public class BasicListUI extends ListUI
      * @see #createListDataListener
      * @see #installUI
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public class ListDataHandler implements ListDataListener
     {
         public void intervalAdded(ListDataEvent e) {
@@ -1725,6 +1728,7 @@ public class BasicListUI extends ListUI
      * @see #createPropertyChangeListener
      * @see #installUI
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         public void propertyChange(PropertyChangeEvent e)

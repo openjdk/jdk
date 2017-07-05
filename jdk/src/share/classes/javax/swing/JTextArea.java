@@ -124,6 +124,7 @@ import java.io.IOException;
  * @see JTextPane
  * @see JEditorPane
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JTextArea extends JTextComponent {
 
     /**
@@ -787,6 +788,7 @@ public class JTextArea extends JTextComponent {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJTextArea extends AccessibleJTextComponent {
 
         /**

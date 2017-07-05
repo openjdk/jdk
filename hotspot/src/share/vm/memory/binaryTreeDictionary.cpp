@@ -56,7 +56,7 @@ TreeChunk<Chunk_t, FreeList_t>* TreeChunk<Chunk_t, FreeList_t>::as_TreeChunk(Chu
 template <class Chunk_t, template <class> class FreeList_t>
 void TreeChunk<Chunk_t, FreeList_t>::verify_tree_chunk_list() const {
   TreeChunk<Chunk_t, FreeList_t>* nextTC = (TreeChunk<Chunk_t, FreeList_t>*)next();
-  if (prev() != NULL) { // interior list node shouldn'r have tree fields
+  if (prev() != NULL) { // interior list node shouldn't have tree fields
     guarantee(embedded_list()->parent() == NULL && embedded_list()->left() == NULL &&
               embedded_list()->right()  == NULL, "should be clear");
   }
@@ -247,7 +247,7 @@ TreeList<Chunk_t, FreeList_t>* TreeList<Chunk_t, FreeList_t>::remove_chunk_repla
     prevFC->link_after(nextTC);
   }
 
-  // Below this point the embeded TreeList<Chunk_t, FreeList_t> being used for the
+  // Below this point the embedded TreeList<Chunk_t, FreeList_t> being used for the
   // tree node may have changed. Don't use "this"
   // TreeList<Chunk_t, FreeList_t>*.
   // chunk should still be a free chunk (bit set in _prev)
@@ -703,7 +703,7 @@ TreeList<Chunk_t, FreeList_t>* BinaryTreeDictionary<Chunk_t, FreeList_t>::remove
     // The only use of this method would not pass the root of the
     // tree (as indicated by the assertion above that the tree list
     // has a parent) but the specification does not explicitly exclude the
-    // passing of the root so accomodate it.
+    // passing of the root so accommodate it.
     set_root(NULL);
   }
   debug_only(

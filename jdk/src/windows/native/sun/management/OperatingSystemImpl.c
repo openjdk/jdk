@@ -77,7 +77,7 @@ static HANDLE main_process;
 int perfiInit(void);
 
 JNIEXPORT void JNICALL
-Java_sun_management_OperatingSystemImpl_initialize
+Java_sun_management_OperatingSystemImpl_initialize0
   (JNIEnv *env, jclass cls)
 {
     main_process = GetCurrentProcess();
@@ -97,7 +97,7 @@ Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize0
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize0
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -107,7 +107,7 @@ Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize
+Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize0
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -117,7 +117,7 @@ Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_OperatingSystemImpl_getProcessCpuTime
+Java_sun_management_OperatingSystemImpl_getProcessCpuTime0
   (JNIEnv *env, jobject mbean)
 {
 
@@ -136,7 +136,7 @@ Java_sun_management_OperatingSystemImpl_getProcessCpuTime
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize0
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -146,7 +146,7 @@ Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize
+Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize0
   (JNIEnv *env, jobject mbean)
 {
     MEMORYSTATUSEX ms;
@@ -927,14 +927,14 @@ perfInit(void) {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     return perfGetCPULoad(-1);
 }
 
 JNIEXPORT jdouble JNICALL
-Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     return perfGetProcessLoad();

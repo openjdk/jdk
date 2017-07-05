@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class ConvertExpression extends UnaryExpression {
               case TC_BYTE:     return new ByteExpression(right.where, (byte)value);
               case TC_CHAR:     return new CharExpression(right.where, (char)value);
               case TC_SHORT:    return new ShortExpression(right.where, (short)value);
-              case TC_INT:      return new IntExpression(right.where, (int)value);
+              case TC_INT:      return new IntExpression(right.where, value);
               case TC_LONG:     return new LongExpression(right.where, (long)value);
               case TC_FLOAT:    return new FloatExpression(right.where, (float)value);
               case TC_DOUBLE:   return new DoubleExpression(right.where, (double)value);

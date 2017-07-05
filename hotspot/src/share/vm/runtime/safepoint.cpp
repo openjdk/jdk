@@ -156,7 +156,7 @@ void SafepointSynchronize::begin() {
   // stopped by different mechanisms:
   //
   //  1. Running interpreted
-  //     The interpeter dispatch table is changed to force it to
+  //     The interpreter dispatch table is changed to force it to
   //     check for a safepoint condition between bytecodes.
   //  2. Running in native code
   //     When returning from the native code, a Java thread must check
@@ -282,7 +282,7 @@ void SafepointSynchronize::begin() {
       // See the comments in synchronizer.cpp for additional remarks on spinning.
       //
       // In the future we might:
-      // 1. Modify the safepoint scheme to avoid potentally unbounded spinning.
+      // 1. Modify the safepoint scheme to avoid potentially unbounded spinning.
       //    This is tricky as the path used by a thread exiting the JVM (say on
       //    on JNI call-out) simply stores into its state field.  The burden
       //    is placed on the VM thread, which must poll (spin).
@@ -489,7 +489,7 @@ void SafepointSynchronize::end() {
     ConcurrentGCThread::safepoint_desynchronize();
   }
 #endif // INCLUDE_ALL_GCS
-  // record this time so VMThread can keep track how much time has elasped
+  // record this time so VMThread can keep track how much time has elapsed
   // since last safepoint.
   _end_of_last_safepoint = os::javaTimeMillis();
 }
@@ -826,7 +826,7 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
 void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason) {
   if (!timeout_error_printed) {
     timeout_error_printed = true;
-    // Print out the thread infor which didn't reach the safepoint for debugging
+    // Print out the thread info which didn't reach the safepoint for debugging
     // purposes (useful when there are lots of threads in the debugger).
     tty->print_cr("");
     tty->print_cr("# SafepointSynchronize::begin: Timeout detected:");
@@ -1093,7 +1093,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
       if (caller_fr.is_deoptimized_frame()) {
         // The exception patch will destroy registers that are still
         // live and will be needed during deoptimization. Defer the
-        // Async exception should have defered the exception until the
+        // Async exception should have deferred the exception until the
         // next safepoint which will be detected when we get into
         // the interpreter so if we have an exception now things
         // are messed up.

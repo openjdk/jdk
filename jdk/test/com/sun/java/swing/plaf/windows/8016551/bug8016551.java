@@ -25,7 +25,7 @@
  * @bug 8016551
  * @summary JMenuItem in WindowsLookAndFeel can't paint default icons
  * @author Leonid Romanov
- * @run main bug8016551
+ * @run main/othervm bug8016551
  */
 
 import javax.swing.*;

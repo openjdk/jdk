@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,13 @@ __typeof__ ( __mlib_sincosf) mlib_sincosf
 
 void *__mlib_malloc(mlib_u32 size)
 {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(AIX)
   /*
    * Currently, all MS C compilers for Win32 platforms default to 8 byte
    * alignment. -- from stdlib.h of MS VC++5.0.
+   *
+   * On AIX, the malloc subroutine returns a pointer to space suitably
+   * aligned for the storage of any type of object (see 'man malloc').
    */
   return (void *) malloc(size);
 #elif defined(MACOSX)

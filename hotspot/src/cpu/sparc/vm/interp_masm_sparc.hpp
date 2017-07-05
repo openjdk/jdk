@@ -323,6 +323,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
                            Register scratch2,
                            Register scratch3);
 
+  void profile_obj_type(Register obj, const Address& mdo_addr, Register tmp);
+  void profile_arguments_type(Register callee, Register tmp1, Register tmp2, bool is_virtual);
+  void profile_return_type(Register ret, Register tmp1, Register tmp2);
+  void profile_parameters_type(Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+
   // Debugging
   void interp_verify_oop(Register reg, TosState state, const char * file, int line);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore

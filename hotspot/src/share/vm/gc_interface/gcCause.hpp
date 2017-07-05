@@ -31,7 +31,7 @@
 // This class exposes implementation details of the various
 // collector(s), and we need to be very careful with it. If
 // use of this class grows, we should split it into public
-// and implemenation-private "causes".
+// and implementation-private "causes".
 //
 
 class GCCause : public AllStatic {

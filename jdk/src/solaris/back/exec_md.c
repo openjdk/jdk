@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 #include "sys.h"
 #include "util.h"
 
-#if defined(LINUX) || defined(_ALLBSD_SOURCE)
-  /* Linux */
+#if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(AIX)
+  /* Linux, BSD, AIX */
   #define FORK() fork()
 #else
   /* Solaris (make sure we always get the POSIX-specified behavior) */

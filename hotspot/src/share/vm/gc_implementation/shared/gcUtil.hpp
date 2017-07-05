@@ -210,7 +210,7 @@ class LinearLeastSquareFit : public CHeapObj<mtGC> {
   double y(double x);
   double slope() { return _slope; }
   // Methods to decide if a change in the dependent variable will
-  // achive a desired goal.  Note that these methods are not
+  // achieve a desired goal.  Note that these methods are not
   // complementary and both are needed.
   bool decrement_will_decrease();
   bool increment_will_decrease();

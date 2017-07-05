@@ -3288,7 +3288,10 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   ciSignature* signature_at_call = NULL;
   x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
 
-  ciKlass* exact = profile_type(md, 0, md->byte_offset_of_slot(data, ret->type_offset()),
+  // The offset within the MDO of the entry to update may be too large
+  // to be used in load/store instructions on some platforms. So have
+  // profile_type() compute the address of the profile in a register.
+  ciKlass* exact = profile_type(md, md->byte_offset_of_slot(data, ret->type_offset()), 0,
                                 ret->type(), x->ret(), mdp,
                                 !x->needs_null_check(),
                                 signature_at_call->return_type()->as_klass(),

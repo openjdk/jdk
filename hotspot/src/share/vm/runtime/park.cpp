@@ -59,58 +59,22 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
 
   // Start by trying to recycle an existing but unassociated
   // ParkEvent from the global free list.
-  for (;;) {
-    ev = FreeList ;
-    if (ev == NULL) break ;
-    // 1: Detach - sequester or privatize the list
-    // Tantamount to ev = Swap (&FreeList, NULL)
-    if (Atomic::cmpxchg_ptr (NULL, &FreeList, ev) != ev) {
-       continue ;
+  // Using a spin lock since we are part of the mutex impl.
+  // 8028280: using concurrent free list without memory management can leak
+  // pretty badly it turns out.
+  Thread::SpinAcquire(&ListLock, "ParkEventFreeListAllocate");
+  {
+    ev = FreeList;
+    if (ev != NULL) {
+      FreeList = ev->FreeNext;
     }
-
-    // We've detached the list.  The list in-hand is now
-    // local to this thread.   This thread can operate on the
-    // list without risk of interference from other threads.
-    // 2: Extract -- pop the 1st element from the list.
-    ParkEvent * List = ev->FreeNext ;
-    if (List == NULL) break ;
-    for (;;) {
-        // 3: Try to reattach the residual list
-        guarantee (List != NULL, "invariant") ;
-        ParkEvent * Arv =  (ParkEvent *) Atomic::cmpxchg_ptr (List, &FreeList, NULL) ;
-        if (Arv == NULL) break ;
-
-        // New nodes arrived.  Try to detach the recent arrivals.
-        if (Atomic::cmpxchg_ptr (NULL, &FreeList, Arv) != Arv) {
-            continue ;
-        }
-        guarantee (Arv != NULL, "invariant") ;
-        // 4: Merge Arv into List
-        ParkEvent * Tail = List ;
-        while (Tail->FreeNext != NULL) Tail = Tail->FreeNext ;
-        Tail->FreeNext = Arv ;
-    }
-    break ;
   }
+  Thread::SpinRelease(&ListLock);
 
   if (ev != NULL) {
     guarantee (ev->AssociatedWith == NULL, "invariant") ;
   } else {
     // Do this the hard way -- materialize a new ParkEvent.
-    // In rare cases an allocating thread might detach a long list --
-    // installing null into FreeList -- and then stall or be obstructed.
-    // A 2nd thread calling Allocate() would see FreeList == null.
-    // The list held privately by the 1st thread is unavailable to the 2nd thread.
-    // In that case the 2nd thread would have to materialize a new ParkEvent,
-    // even though free ParkEvents existed in the system.  In this case we end up
-    // with more ParkEvents in circulation than we need, but the race is
-    // rare and the outcome is benign.  Ideally, the # of extant ParkEvents
-    // is equal to the maximum # of threads that existed at any one time.
-    // Because of the race mentioned above, segments of the freelist
-    // can be transiently inaccessible.  At worst we may end up with the
-    // # of ParkEvents in circulation slightly above the ideal.
-    // Note that if we didn't have the TSM/immortal constraint, then
-    // when reattaching, above, we could trim the list.
     ev = new ParkEvent () ;
     guarantee ((intptr_t(ev) & 0xFF) == 0, "invariant") ;
   }
@@ -124,13 +88,14 @@ void ParkEvent::Release (ParkEvent * ev) {
   if (ev == NULL) return ;
   guarantee (ev->FreeNext == NULL      , "invariant") ;
   ev->AssociatedWith = NULL ;
-  for (;;) {
-    // Push ev onto FreeList
-    // The mechanism is "half" lock-free.
-    ParkEvent * List = FreeList ;
-    ev->FreeNext = List ;
-    if (Atomic::cmpxchg_ptr (ev, &FreeList, List) == List) break ;
+  // Note that if we didn't have the TSM/immortal constraint, then
+  // when reattaching we could trim the list.
+  Thread::SpinAcquire(&ListLock, "ParkEventFreeListRelease");
+  {
+    ev->FreeNext = FreeList;
+    FreeList = ev;
   }
+  Thread::SpinRelease(&ListLock);
 }
 
 // Override operator new and delete so we can ensure that the
@@ -152,7 +117,7 @@ void ParkEvent::operator delete (void * a) {
 
 // 6399321 As a temporary measure we copied & modified the ParkEvent::
 // allocate() and release() code for use by Parkers.  The Parker:: forms
-// will eventually be removed as we consolide and shift over to ParkEvents
+// will eventually be removed as we consolidate and shift over to ParkEvents
 // for both builtin synchronization and JSR166 operations.
 
 volatile int Parker::ListLock = 0 ;
@@ -164,56 +129,21 @@ Parker * Parker::Allocate (JavaThread * t) {
 
   // Start by trying to recycle an existing but unassociated
   // Parker from the global free list.
-  for (;;) {
-    p = FreeList ;
-    if (p  == NULL) break ;
-    // 1: Detach
-    // Tantamount to p = Swap (&FreeList, NULL)
-    if (Atomic::cmpxchg_ptr (NULL, &FreeList, p) != p) {
-       continue ;
+  // 8028280: using concurrent free list without memory management can leak
+  // pretty badly it turns out.
+  Thread::SpinAcquire(&ListLock, "ParkerFreeListAllocate");
+  {
+    p = FreeList;
+    if (p != NULL) {
+      FreeList = p->FreeNext;
     }
-
-    // We've detached the list.  The list in-hand is now
-    // local to this thread.   This thread can operate on the
-    // list without risk of interference from other threads.
-    // 2: Extract -- pop the 1st element from the list.
-    Parker * List = p->FreeNext ;
-    if (List == NULL) break ;
-    for (;;) {
-        // 3: Try to reattach the residual list
-        guarantee (List != NULL, "invariant") ;
-        Parker * Arv =  (Parker *) Atomic::cmpxchg_ptr (List, &FreeList, NULL) ;
-        if (Arv == NULL) break ;
-
-        // New nodes arrived.  Try to detach the recent arrivals.
-        if (Atomic::cmpxchg_ptr (NULL, &FreeList, Arv) != Arv) {
-            continue ;
-        }
-        guarantee (Arv != NULL, "invariant") ;
-        // 4: Merge Arv into List
-        Parker * Tail = List ;
-        while (Tail->FreeNext != NULL) Tail = Tail->FreeNext ;
-        Tail->FreeNext = Arv ;
-    }
-    break ;
   }
+  Thread::SpinRelease(&ListLock);
 
   if (p != NULL) {
     guarantee (p->AssociatedWith == NULL, "invariant") ;
   } else {
     // Do this the hard way -- materialize a new Parker..
-    // In rare cases an allocating thread might detach
-    // a long list -- installing null into FreeList --and
-    // then stall.  Another thread calling Allocate() would see
-    // FreeList == null and then invoke the ctor.  In this case we
-    // end up with more Parkers in circulation than we need, but
-    // the race is rare and the outcome is benign.
-    // Ideally, the # of extant Parkers is equal to the
-    // maximum # of threads that existed at any one time.
-    // Because of the race mentioned above, segments of the
-    // freelist can be transiently inaccessible.  At worst
-    // we may end up with the # of Parkers in circulation
-    // slightly above the ideal.
     p = new Parker() ;
   }
   p->AssociatedWith = t ;          // Associate p with t
@@ -227,11 +157,12 @@ void Parker::Release (Parker * p) {
   guarantee (p->AssociatedWith != NULL, "invariant") ;
   guarantee (p->FreeNext == NULL      , "invariant") ;
   p->AssociatedWith = NULL ;
-  for (;;) {
-    // Push p onto FreeList
-    Parker * List = FreeList ;
-    p->FreeNext = List ;
-    if (Atomic::cmpxchg_ptr (p, &FreeList, List) == List) break ;
+
+  Thread::SpinAcquire(&ListLock, "ParkerFreeListRelease");
+  {
+    p->FreeNext = FreeList;
+    FreeList = p;
   }
+  Thread::SpinRelease(&ListLock);
 }
 

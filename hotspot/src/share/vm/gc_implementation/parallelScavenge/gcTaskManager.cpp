@@ -202,12 +202,12 @@ void GCTaskQueue::enqueue(GCTaskQueue* list) {
     list->print("list:");
   }
   if (list->is_empty()) {
-    // Enqueuing the empty list: nothing to do.
+    // Enqueueing the empty list: nothing to do.
     return;
   }
   uint list_length = list->length();
   if (is_empty()) {
-    // Enqueuing to empty list: just acquire elements.
+    // Enqueueing to empty list: just acquire elements.
     set_insert_end(list->insert_end());
     set_remove_end(list->remove_end());
     set_length(list_length);

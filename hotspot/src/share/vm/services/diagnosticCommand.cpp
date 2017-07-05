@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -44,6 +45,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
@@ -610,8 +612,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 JMXStartLocalDCmd::JMXStartLocalDCmd(outputStream *output, bool heap_allocated) :
-  DCmd(output, heap_allocated)
-{
+  DCmd(output, heap_allocated) {
   // do nothing
 }
 
@@ -632,7 +633,6 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
     JavaCalls::call_static(&result, ik, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
 }
 
-
 void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
@@ -650,3 +650,12 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
     JavaCalls::call_static(&result, ik, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
 }
 
+VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_allocated) :
+  DCmd(output, heap_allocated) {
+  // do nothing
+}
+
+void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
+  os::print_dll_info(output());
+  output()->cr();
+}

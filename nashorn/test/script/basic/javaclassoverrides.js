@@ -46,7 +46,8 @@ var R2 = Java.extend(java.lang.Runnable, {
 var r1 = new R1
 var r2 = new R2
 // Create one with an instance-override too
-var r3 = new R2(function() { print("r3.run() invoked") })
+var R3 = Java.extend(R2)
+var r3 = new R3({ run: function() { print("r3.run() invoked") }})
 
 // Run 'em - we're passing them through a Thread to make sure they indeed
 // are full-blown Runnables
@@ -60,9 +61,9 @@ runInThread(r2)
 runInThread(r3)
 
 // Two class-override classes differ
-print("r1.class != r2.class: " + (r1.class != r2.class))
-// However, adding instance-overrides doesn't change the class
-print("r2.class == r3.class: " + (r2.class == r3.class))
+print("r1.class !== r2.class: " + (r1.class !== r2.class))
+// instance-override class also differs
+print("r2.class !== r3.class: " + (r2.class !== r3.class))
 
 function checkAbstract(r) {
     try {
@@ -77,10 +78,10 @@ function checkAbstract(r) {
 // overrides nor instance overrides are present
 var RAbstract = Java.extend(java.lang.Runnable, {})
 checkAbstract(new RAbstract()) // class override (empty)
-checkAbstract(new RAbstract() {}) // class+instance override (empty)
+checkAbstract(new (Java.extend(RAbstract))() {}) // class+instance override (empty)
 
 // Check we delegate to superclass if neither class
 // overrides nor instance overrides are present
 var ExtendsList = Java.extend(java.util.ArrayList, {})
 print("(new ExtendsList).size() = " + (new ExtendsList).size())
-print("(new ExtendsList(){}).size() = " + (new ExtendsList(){}).size())
+print("(new (Java.extend(ExtendsList)){}).size() = " + (new (Java.extend(ExtendsList)){}).size())

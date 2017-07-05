@@ -382,8 +382,7 @@ public class ThreadLocal<T> {
             setThreshold(len);
             table = new Entry[len];
 
-            for (int j = 0; j < len; j++) {
-                Entry e = parentTable[j];
+            for (Entry e : parentTable) {
                 if (e != null) {
                     @SuppressWarnings("unchecked")
                     ThreadLocal<Object> key = (ThreadLocal<Object>) e.get();
@@ -685,8 +684,7 @@ public class ThreadLocal<T> {
             Entry[] newTab = new Entry[newLen];
             int count = 0;
 
-            for (int j = 0; j < oldLen; ++j) {
-                Entry e = oldTab[j];
+            for (Entry e : oldTab) {
                 if (e != null) {
                     ThreadLocal<?> k = e.get();
                     if (k == null) {
