@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,11 @@ class WindbgX86Thread implements ThreadProxy {
   private boolean        gotID;
   private long           id;
 
-  /** The address argument must be the address of the HANDLE of the
-      desired thread in the target process. */
+  // The address argument must be the address of OSThread::_thread_id
   WindbgX86Thread(WindbgDebugger debugger, Address addr) {
     this.debugger = debugger;
-    // FIXME: size of data fetched here should be configurable.
-    // However, making it so would produce a dependency on the "types"
-    // package from the debugger package, which is not desired.
-
-    // another hack here is that we use sys thread id instead of handle.
-    // windbg can't get details based on handles it seems.
-    // I assume that osThread_win32 thread struct has _thread_id (which
-    // sys thread id) just after handle field.
-
-    this.sysId   = (int) addr.addOffsetTo(debugger.getAddressSize()).getCIntegerAt(0, 4, true);
-    gotID = false;
+    this.sysId    = (long)addr.getCIntegerAt(0, 4, true);
+    gotID         = false;
   }
 
   WindbgX86Thread(WindbgDebugger debugger, long sysId) {

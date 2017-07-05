@@ -154,6 +154,10 @@ public final class Constructor<T> extends Executable {
     byte[] getAnnotationBytes() {
         return annotations;
     }
+    @Override
+    byte[] getTypeAnnotationBytes() {
+        return typeAnnotations;
+    }
 
     /**
      * {@inheritDoc}
@@ -522,5 +526,13 @@ public final class Constructor<T> extends Executable {
                           "Parameter annotations don't match number of parameters");
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.8
+     */
+    public AnnotatedType getAnnotatedReturnType() {
+        return getAnnotatedReturnType0(getDeclaringClass());
     }
 }

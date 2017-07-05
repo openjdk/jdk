@@ -1618,6 +1618,16 @@ class PackageWriter extends BandStructure {
                     bc_which = null;
                     assert(false);
                 }
+                if (ref != null && bc_which.index != null && !bc_which.index.contains(ref)) {
+                    // Crash and burn with a complaint if there are funny
+                    // references for this bytecode instruction.
+                    // Example:  invokestatic of a CONSTANT_InterfaceMethodref.
+                    String complaint = code.getMethod() +
+                        " contains a bytecode " + i +
+                        " with an unsupported constant reference; please use the pass-file option on this class.";
+                    Utils.log.warning(complaint);
+                    throw new IOException(complaint);
+                }
                 bc_codes.putByte(vbc);
                 bc_which.putRef(ref);
                 // handle trailing junk

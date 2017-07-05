@@ -26,6 +26,7 @@
 #define CPU_X86_VM_MACROASSEMBLER_X86_HPP
 
 #include "asm/assembler.hpp"
+#include "utilities/macros.hpp"
 
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -294,7 +295,7 @@ class MacroAssembler: public Assembler {
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
   void g1_write_barrier_pre(Register obj,
                             Register pre_val,
@@ -309,7 +310,7 @@ class MacroAssembler: public Assembler {
                              Register tmp,
                              Register tmp2);
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // split store_check(Register obj) to enhance instruction interleaving
   void store_check_part_1(Register obj);

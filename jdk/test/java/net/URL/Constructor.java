@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,71 +21,235 @@
  * questions.
  */
 
-/* This is no longer run directly. See runconstructor.sh
- *
- *
- *
+/*
+ * @test
+ * @bug 4393671
+ * @summary URL constructor URL(URL context, String spec) FAILED with specific input
+ */
+
+/*
  * This program tests the URL parser in the URL constructor. It
  * tries to construct a variety of valid URLs with a given context
  * (which may be null) and a variety of specs. It then compares the
  * result with an expected value.
- *
- * It expects that a data file named "urls" be available in the
- * current directory, from which it will get its testing data. The
- * format of the file is:
- *
- * URL: null
- * spec: jar:http://www.foo.com/dir1/jar.jar!/
- * expected: jar:http://www.foo.com/dir1/jar.jar!/
- *
- * where URL is the context, spec is the spec and expected is the
- * expected result. The first : must be followed by a space. Each test
- * entry should be followed by a blank line.
  */
 
-import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Constructor {
 
     public static void main(String[] args) throws Exception {
-        URL url = null;
-        String urls = "jar_urls";
-        if (args.length > 0 && args[0] != null) {
-            urls = args[0];
-        }
+        List<Entry> entries = new ArrayList<>();
+        entries.addAll(Arrays.asList(fileURLs));
+        entries.addAll(Arrays.asList(jarURLs));
+        entries.addAll(Arrays.asList(normalHttpURLs));
+        entries.addAll(Arrays.asList(abnormalHttpURLs));
+        if (hasFtp())
+            entries.addAll(Arrays.asList(ftpURLs));
+        URL url;
 
-        File f = new File(urls);
-        InputStream file = new FileInputStream(f);
-        BufferedReader in = new BufferedReader(new InputStreamReader(file));
-        while(true) {
-            String context = in.readLine();
-            if (context == null) {
-                break;
-            }
-            context = getValue(context);
-            String spec = getValue(in.readLine());
-            String expected = getValue(in.readLine());
+        for (Entry e : entries) {
+            if (e.context == null)
+                url = new URL(e.spec);
+            else
+                url = new URL(new URL(e.context), e.spec);
 
-            if (context.equals("null")) {
-                url = new URL(spec);
-            } else {
-                url = new URL(new URL(context), spec);
-            }
-            if (!(url.toString().equals(expected))) {
-                throw new RuntimeException("error for: \n\tURL:" + context +
-                                           "\n\tspec: " + spec +
-                                           "\n\texpected: " + expected +
+            if (!(url.toString().equals(e.expected))) {
+                throw new RuntimeException("error for: \n\tURL:" + e.context +
+                                           "\n\tspec: " + e.spec +
+                                           "\n\texpected: " + e.expected +
                                            "\n\tactual: " + url.toString());
             } else {
-                System.out.println("success for: " + url + "\n");
+                //debug
+                //System.out.println("success for: " + url);
             }
-            in.readLine();
         }
-        in.close();
     }
 
-    private static String getValue(String value) {
-        return value.substring(value.indexOf(':') + 2);
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
+        }
     }
+
+    static class Entry {
+        final String context;
+        final String spec;
+        final String expected;
+        Entry(String context, String spec, String expected) {
+            this.context = context;
+            this.spec =spec;
+            this.expected = expected;
+        }
+    }
+
+    static Entry[] fileURLs = new Entry[] {
+        new Entry(null,
+                  "file://JavaSoft/Test",
+                  "file://JavaSoft/Test"),
+        new Entry(null,
+                  "file:///JavaSoft/Test",
+                  "file:/JavaSoft/Test"),
+        new Entry(null,
+                  "file:/JavaSoft/Test",
+                  "file:/JavaSoft/Test"),
+        new Entry(null,
+                  "file:/c:/JavaSoft/Test",
+                  "file:/c:/JavaSoft/Test"),
+        new Entry(null,
+                  "file:/c:/JavaSoft/Test:something",
+                  "file:/c:/JavaSoft/Test:something"),
+        new Entry(null,
+                  "file:/c:/JavaSoft/Test#anchor",
+                  "file:/c:/JavaSoft/Test#anchor"),
+        new Entry("file://JavaSoft/Test",
+                  "Test#bar",
+                  "file://JavaSoft/Test#bar"),
+        new Entry("file://codrus/c:/jdk/eng/index.html",
+                  "pulsar.html",
+                  "file://codrus/c:/jdk/eng/pulsar.html"),
+        new Entry("file:///c:/jdk/eng/index.html",
+                  "pulsar.html",
+                  "file:/c:/jdk/eng/pulsar.html"),
+        new Entry("file:///jdk/eng/index.html",
+                  "pulsar.html",
+                  "file:/jdk/eng/pulsar.html"),
+        new Entry("file://JavaSoft/Test",
+                  "file://radartoad.com/Test#bar",
+                  "file://radartoad.com/Test#bar"),
+        new Entry("file://JavaSoft/Test",
+                  "/c:/Test#bar",
+                  "file://JavaSoft/c:/Test#bar"),
+    };
+
+    static Entry[] jarURLs = new Entry[] {
+        new Entry(null,
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir2/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir2/entry.txt"),
+        new Entry(null,
+                  "jar:http://www.foo.com/dir1/jar.jar!/",
+                  "jar:http://www.foo.com/dir1/jar.jar!/"),
+        new Entry(null,
+                  "jar:http://www.foo.com/dir1/jar.jar!/",
+                  "jar:http://www.foo.com/dir1/jar.jar!/"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "dir1/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/dir1/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/dir1/",
+                  "entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/dir2/dir3/entry2.txt",
+                  "/dir1/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/dir1/foo/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/foo/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/dir1/dir2/dir3/",
+                  "dir4/foo/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/dir2/dir3/dir4/foo/entry.txt"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/",
+                  "/dir1/foo/entry.txt",
+                  "jar:http://www.foo.com/dir1/jar.jar!/dir1/foo/entry.txt"),
+        new Entry(null,
+                  "jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor",
+                  "jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/foo.txt",
+                  "#anchor",
+                  "jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor"),
+        new Entry("jar:http://www.foo.com/dir1/jar.jar!/foo/bar/",
+                  "baz/quux#anchor",
+                  "jar:http://www.foo.com/dir1/jar.jar!/foo/bar/baz/quux#anchor"),
+        new Entry("jar:http://balloo.com/olle.jar!/",
+                  "p2",
+                  "jar:http://balloo.com/olle.jar!/p2")
+    };
+
+    static Entry[] normalHttpURLs = new Entry[] {
+        new Entry("http://a/b/c/d;p?q", "g",       "http://a/b/c/g"),
+        new Entry("http://a/b/c/d;p?q", "./g",     "http://a/b/c/g"),
+        new Entry("http://a/b/c/d;p?q", "g/",      "http://a/b/c/g/"),
+        new Entry("http://a/b/c/d;p?q", "/g",      "http://a/g"),
+        new Entry("http://a/b/c/d;p?q", "//g",     "http://g"),
+        new Entry("http://a/b/c/d;p?q", "?y",      "http://a/b/c/?y"),
+        new Entry("http://a/b/c/d;p?q", "g?y",     "http://a/b/c/g?y"),
+        new Entry("http://a/b/c/d;p?q", "g#s",     "http://a/b/c/g#s"),
+        new Entry("http://a/b/c/d;p?q", "g?y#s",   "http://a/b/c/g?y#s"),
+        new Entry("http://a/b/c/d;p?q", ";x",      "http://a/b/c/;x"),
+        new Entry("http://a/b/c/d;p?q", "g;x",     "http://a/b/c/g;x"),
+        new Entry("http://a/b/c/d;p?q", "g;x?y#s", "http://a/b/c/g;x?y#s"),
+        new Entry("http://a/b/c/d;p?q", ".",       "http://a/b/c/"),
+        new Entry("http://a/b/c/d;p?q", "./",      "http://a/b/c/"),
+        new Entry("http://a/b/c/d;p?q", "..",      "http://a/b/"),
+        new Entry("http://a/b/c/d;p?q", "../",     "http://a/b/"),
+        new Entry("http://a/b/c/d;p?q", "../g",    "http://a/b/g"),
+        new Entry("http://a/b/c/d;p?q", "../..",   "http://a/"),
+        new Entry("http://a/b/c/d;p?q", "../../",  "http://a/"),
+        new Entry("http://a/b/c/d;p?q", "../../g", "http://a/g"),
+        new Entry(null,
+                  "http://www.javasoft.com/jdc/community/chat/index.html#javalive?frontpage-jdc",
+                  "http://www.javasoft.com/jdc/community/chat/index.html#javalive?frontpage-jdc")
+    };
+
+    static Entry[] abnormalHttpURLs = new Entry[] {
+        new Entry("http://a/b/c/d;p?q", "../../../g",    "http://a/../g"),
+        new Entry("http://a/b/c/d;p?q", "../../../../g", "http://a/../../g"),
+        new Entry("http://a/b/c/d;p?q", "/./g",          "http://a/./g"),
+        new Entry("http://a/b/c/d;p?q", "/../g",         "http://a/../g"),
+        new Entry("http://a/b/c/d;p?q", ".g",            "http://a/b/c/.g"),
+        new Entry("http://a/b/c/d;p?q", "g.",            "http://a/b/c/g."),
+        new Entry("http://a/b/c/d;p?q", "./../g",        "http://a/b/g"),
+        new Entry("http://a/b/c/d;p?q", "./g/.",         "http://a/b/c/g/"),
+        new Entry("http://a/b/c/d;p?q", "g/./h",         "http://a/b/c/g/h"),
+        new Entry("http://a/b/c/d;p?q", "g;x=1/./y",     "http://a/b/c/g;x=1/y"),
+        new Entry("http://a/b/c/d;p?q", "g;x=1/../y",    "http://a/b/c/y")
+    };
+
+    static Entry[] ftpURLs = new Entry[] {
+        new Entry(null,
+                  "ftp://ftp.foo.com/dir1/entry.txt",
+                  "ftp://ftp.foo.com/dir1/entry.txt"),
+        new Entry(null,
+                  "ftp://br:pwd@ftp.foo.com/dir1/jar.jar",
+                  "ftp://br:pwd@ftp.foo.com/dir1/jar.jar"),
+        new Entry("ftp://ftp.foo.com/dir1/foo.txt",
+                  "bar.txt",
+                  "ftp://ftp.foo.com/dir1/bar.txt"),
+        new Entry("ftp://ftp.foo.com/dir1/jar.jar",
+                  "/entry.txt",
+                  "ftp://ftp.foo.com/entry.txt"),
+        new Entry("ftp://ftp.foo.com/dir1/jar.jar",
+                  "dir1/entry.txt",
+                  "ftp://ftp.foo.com/dir1/dir1/entry.txt"),
+        new Entry("ftp://ftp.foo.com/dir1/jar.jar",
+                  "/dir1/entry.txt",
+                  "ftp://ftp.foo.com/dir1/entry.txt"),
+        new Entry("ftp://br:pwd@ftp.foo.com/dir1/jar.jar",
+                  "/dir1/entry.txt",
+                  "ftp://br:pwd@ftp.foo.com/dir1/entry.txt")
+    };
 }

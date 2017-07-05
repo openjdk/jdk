@@ -33,6 +33,5 @@ typedef void (*mlib_stop_timer)(int, int);
 mlib_status awt_getImagingLib(JNIEnv *, mlibFnS_t *, mlibSysFnS_t *);
 mlib_start_timer awt_setMlibStartTimer();
 mlib_stop_timer awt_setMlibStopTimer();
-void awt_getBIColorOrder(int type, int *colorOrder);
 
 #endif /* _AWT_MLIB_H */
