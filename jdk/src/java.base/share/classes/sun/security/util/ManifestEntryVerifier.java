@@ -165,7 +165,7 @@ public class ManifestEntryVerifier {
     /**
      * update the digests for the digests we are interested in
      */
-    public void update(byte buffer[], int off, int len) {
+    public void update(byte[] buffer, int off, int len) {
         if (skip) return;
 
         for (int i=0; i < digests.size(); i++) {

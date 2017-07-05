@@ -175,7 +175,7 @@ final class P11Cipher extends CipherSpi {
         this.algorithm = algorithm;
         this.mechanism = mechanism;
 
-        String algoParts[] = algorithm.split("/");
+        String[] algoParts = algorithm.split("/");
 
         if (algoParts[0].startsWith("AES")) {
             blockSize = 16;

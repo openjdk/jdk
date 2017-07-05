@@ -134,7 +134,8 @@ public class CopyOnWriteArrayList<E>
             elements = ((CopyOnWriteArrayList<?>)c).getArray();
         else {
             elements = c.toArray();
-            // c.toArray might (incorrectly) not return Object[] (see 6260652)
+            // defend against c.toArray (incorrectly) not returning Object[]
+            // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
             if (elements.getClass() != Object[].class)
                 elements = Arrays.copyOf(elements, elements.length, Object[].class);
         }

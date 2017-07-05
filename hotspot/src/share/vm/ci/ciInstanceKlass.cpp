@@ -58,6 +58,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_default_methods = ik->has_default_methods();
+  _is_anonymous = ik->is_anonymous();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
   _has_injected_fields = -1;
   _implementor = NULL; // we will fill these lazily
@@ -101,6 +102,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
   _has_injected_fields = -1;
+  _is_anonymous = false;
   _loader = loader;
   _protection_domain = protection_domain;
   _is_shared = false;

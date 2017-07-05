@@ -91,7 +91,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
         final Object[] oarray = new Object[trim ? len : array.length];
 
         for (int index = 0; index < len; index++) {
-            oarray[index] = Long.valueOf(array[index]);
+            oarray[index] = array[index];
         }
 
         return oarray;

@@ -66,7 +66,7 @@ abstract class KeyStore extends KeyStoreSpi {
     class KeyEntry
     {
         private Key privateKey;
-        private X509Certificate certChain[];
+        private X509Certificate[] certChain;
         private String alias;
 
         KeyEntry(Key key, X509Certificate[] chain) {

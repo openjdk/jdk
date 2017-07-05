@@ -71,7 +71,7 @@ public final class StringNode extends Node implements StringType {
             final char[] tmp = new char[len + NODE_STR_MARGIN];
             System.arraycopy(chars, p, tmp, 0, end - p);
             chars = tmp;
-            end = end - p;
+            end -= p;
             p = 0;
             clearShared();
         } else {

@@ -65,7 +65,7 @@ public class CodeSource implements java.io.Serializable {
     /*
      * The code signers. Certificate chains are concatenated.
      */
-    private transient java.security.cert.Certificate certs[] = null;
+    private transient java.security.cert.Certificate[] certs = null;
 
     // cached SocketPermission used for matchLocation
     private transient SocketPermission sp;
@@ -91,7 +91,7 @@ public class CodeSource implements java.io.Serializable {
      * @param certs the certificate(s). It may be null. The contents of the
      * array are copied to protect against subsequent modification.
      */
-    public CodeSource(URL url, java.security.cert.Certificate certs[]) {
+    public CodeSource(URL url, java.security.cert.Certificate[] certs) {
         this.location = url;
         if (url != null) {
             this.locationNoFragString = URLUtil.urlNoFragString(url);

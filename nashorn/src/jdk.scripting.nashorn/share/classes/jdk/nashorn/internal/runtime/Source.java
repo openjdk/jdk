@@ -995,7 +995,7 @@ public final class Source implements Loggable {
         return initLogger(Context.getContextTrusted());
     }
 
-    private File dumpFile(final String dir) {
+    private File dumpFile(final File dirFile) {
         final URL u = getURL();
         final StringBuilder buf = new StringBuilder();
         // make it unique by prefixing current date & time
@@ -1010,11 +1010,17 @@ public final class Source implements Loggable {
             buf.append(getName());
         }
 
-        return new File(dir, buf.toString());
+        return new File(dirFile, buf.toString());
     }
 
     void dump(final String dir) {
-        final File file = dumpFile(dir);
+        final File dirFile = new File(dir);
+        final File file = dumpFile(dirFile);
+        if (!dirFile.exists() && !dirFile.mkdirs()) {
+            debug("Skipping source dump for " + name);
+            return;
+        }
+
         try (final FileOutputStream fos = new FileOutputStream(file)) {
             final PrintWriter pw = new PrintWriter(fos);
             pw.print(data.toString());
@@ -1025,7 +1031,7 @@ public final class Source implements Loggable {
                     ": " +
                     ECMAErrors.getMessage(
                         "io.error.cant.write",
-                        dir.toString() +
+                        dir +
                         " : " + ioExp.toString()));
         }
     }

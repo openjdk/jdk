@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import sun.net.SocksProxy;
+import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
 /* import org.ietf.jgss.*; */
 
@@ -69,10 +70,19 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             server = ad.getHostString();
             serverPort = ad.getPort();
         }
+        useV4 = useV4(proxy);
     }
 
     void setV4() {
         useV4 = true;
+    }
+
+    private static boolean useV4(Proxy proxy) {
+        if (proxy instanceof SocksProxy
+            && ((SocksProxy)proxy).protocolVersion() == 4) {
+            return true;
+        }
+        return DefaultProxySelector.socksProxyVersion() == 4;
     }
 
     private synchronized void privilegedConnect(final String host,
@@ -398,11 +408,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();
-                if (p instanceof SocksProxy) {
-                    if (((SocksProxy)p).protocolVersion() == 4) {
-                        useV4 = true;
-                    }
-                }
+                useV4 = useV4(p);
 
                 // Connects to the SOCKS server
                 try {
@@ -715,11 +721,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();
-                if (p instanceof SocksProxy) {
-                    if (((SocksProxy)p).protocolVersion() == 4) {
-                        useV4 = true;
-                    }
-                }
+                useV4 = useV4(p);
 
                 // Connects to the SOCKS server
                 try {
