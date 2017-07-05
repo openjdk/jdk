@@ -36,7 +36,10 @@
 
 #define STRICT
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0400
+/* REMIND : 0x500 means Windows 2000 .. seems like we can update
+ * for Windows XP when we move the SDK and build platform
+ */
+#define _WIN32_WINNT 0x0500
 #endif
 #define _ATL_APARTMENT_THREADED
 

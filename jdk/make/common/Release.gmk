@@ -749,6 +749,8 @@ initial-image-jre-sol64:: initial-image-jre-setup \
 	$(RM) `$(FIND) $(JRE_IMAGE_DIR)/lib -name 'ir.idl'`
 
 # Construct an initial jre image (initial jdk jre) no trimming or stripping
+# See "initial-image-jdk-setup" for an explanation of the rm of
+# drive names like C:
 initial-image-jre:: initial-image-jre-setup \
 		    $(JRE_LICENSES) $(JRE_DOCFILES) \
 		    $(RT_JAR) $(RESOURCES_JAR) $(JSSE_JAR) \
@@ -759,6 +761,10 @@ initial-image-jre:: initial-image-jre-setup \
 	$(MKDIR) -p $(JRE_IMAGE_DIR)/lib/applet
 	@# Copy in lib directory
 	$(CD) $(OUTPUTDIR) && $(FIND) lib -depth | $(CPIO) -pdum $(JRE_IMAGE_DIR)
+  ifeq ($(USING_CYGWIN),true)
+	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
+	  $(RM) -rf $(OUTPUTDIR)/[A-Za-z]:
+  endif
 	@# Make sure all directories are read/execute for everyone
 	$(CHMOD) a+rx `$(FIND) $(JRE_IMAGE_DIR) -type d`
 	@# Remove some files from the jre area
@@ -858,11 +864,27 @@ endif
 ######################################################
 # Note: cpio ($(CPIO)) sometimes leaves directories without rx access.
 
+# REMIND: the $(RM) calls for patterns like c:, d: following $(CPIO)
+# are because the 1.7.x versions of cygwin's cpio command drops these
+# in the working directory if the output path begins with that pattern
+# The one for the output jre subdirectory gets there because cpio sees its
+# own dropping in the input jre subdirectory. Need to remove both of these.
+# We can remove these RM's if someone figures out how to stop cpio from
+# leaving these there.
+# Note that its a real problem not because this directory can end up in the
+# bundle (I think it won't since it not in bin or lib and those are the
+# only places from which we copy everything), but because the presence
+# of this file causes cygwin's find to bomb out, thus breaking the build
+# in "install".
 initial-image-jdk-setup:
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/jre
 	($(CD) $(JRE_IMAGE_DIR) && $(FIND) . -depth -print \
 	      | $(CPIO) -pdum $(JDK_IMAGE_DIR)/jre )
+  ifeq ($(USING_CYGWIN),true)
+	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
+	  $(RM) -rf $(JDK_IMAGE_DIR)/jre/[A-Za-z]:
+  endif
 	$(RM) -rf $(JDK_IMAGE_DIR)/jre/man
 	$(CHMOD) a+rx `$(FIND) $(JDK_IMAGE_DIR) -type d`
 
@@ -923,6 +945,9 @@ initial-image-jdk:: initial-image-jdk-setup \
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/bin
 	$(CP) $(BINDIR)/*$(EXE_SUFFIX) $(JDK_IMAGE_DIR)/bin
 	$(CP) $(BINDIR)/jli.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
+    ifeq ($(COMPILER_VERSION), VS2010)
+	$(CP) $(BINDIR)/msvc*100.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
+    endif
     ifeq ($(ARCH_DATA_MODEL), 32)
       ifeq ($(COMPILER_VERSION), VS2003)
 	$(CP) $(BINDIR)/msvc*71.$(LIBRARY_SUFFIX) $(JDK_IMAGE_DIR)/bin
