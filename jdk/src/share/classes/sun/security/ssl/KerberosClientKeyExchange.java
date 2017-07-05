@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,8 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
     private final KerberosClientKeyExchange impl = createImpl();
 
     private KerberosClientKeyExchange createImpl() {
-        if (getClass() == KerberosClientKeyExchange.class) {
+        if (implClass != null &&
+                getClass() == KerberosClientKeyExchange.class) {
             try {
                 return (KerberosClientKeyExchange)implClass.newInstance();
             } catch (InstantiationException e) {
@@ -69,8 +70,11 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
         return null;
     }
 
-    public KerberosClientKeyExchange() {
-        // empty
+    // This constructor will be called when constructing an instance of its
+    // subclass -- KerberosClientKeyExchangeImpl.  Please won't check the
+    // value of impl variable in this constructor.
+    protected KerberosClientKeyExchange() {
+        // please won't check the value of impl variable
     }
 
     public KerberosClientKeyExchange(String serverName, boolean isLoopback,
@@ -85,8 +89,9 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
     }
 
     public KerberosClientKeyExchange(ProtocolVersion protocolVersion,
-        ProtocolVersion clientVersion, SecureRandom rand,
-        HandshakeInStream input, AccessControlContext acc, Object serverKeys) throws IOException {
+            ProtocolVersion clientVersion, SecureRandom rand,
+            HandshakeInStream input, AccessControlContext acc,
+            Object serverKeys) throws IOException {
 
         if (impl != null) {
             init(protocolVersion, clientVersion, rand, input, acc, serverKeys);
@@ -101,7 +106,7 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
     }
 
     @Override
-    public int  messageLength() {
+    public int messageLength() {
         return impl.messageLength();
     }
 
@@ -125,11 +130,13 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
     }
 
     public void init(ProtocolVersion protocolVersion,
-        ProtocolVersion clientVersion, SecureRandom rand,
-        HandshakeInStream input, AccessControlContext acc, Object ServiceCreds) throws IOException {
+            ProtocolVersion clientVersion, SecureRandom rand,
+            HandshakeInStream input, AccessControlContext acc,
+            Object ServiceCreds) throws IOException {
 
         if (impl != null) {
-            impl.init(protocolVersion, clientVersion, rand, input, acc, ServiceCreds);
+            impl.init(protocolVersion, clientVersion,
+                                    rand, input, acc, ServiceCreds);
         }
     }
 

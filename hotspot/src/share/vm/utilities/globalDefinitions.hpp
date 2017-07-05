@@ -362,6 +362,8 @@ const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
 // Klass encoding metaspace max size
 const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
 
+const jlong CompressedKlassPointersBase = NOT_LP64(0) LP64_ONLY(CONST64(0x800000000));  // 32*G
+
 // Machine dependent stuff
 
 #ifdef TARGET_ARCH_x86

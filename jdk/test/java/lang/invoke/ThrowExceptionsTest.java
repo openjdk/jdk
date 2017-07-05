@@ -25,12 +25,13 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
- * @run junit test.java.lang.invoke.ThrowExceptionsTest
+ * @run testng test.java.lang.invoke.ThrowExceptionsTest
  */
 
 package test.java.lang.invoke;
 
-import org.junit.*;
+import org.testng.*;
+import org.testng.annotations.*;
 
 import java.util.*;
 import java.lang.reflect.*;

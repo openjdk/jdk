@@ -107,7 +107,7 @@ public final class JapaneseEra
      * The singleton instance for the 'Meiji' era (1868-09-08 - 1912-07-29)
      * which has the value -1.
      */
-    public static final JapaneseEra MEIJI = new JapaneseEra(-1, LocalDate.of(1868, 9, 8));
+    public static final JapaneseEra MEIJI = new JapaneseEra(-1, LocalDate.of(1868, 1, 1));
     /**
      * The singleton instance for the 'Taisho' era (1912-07-30 - 1926-12-24)
      * which has the value 0.

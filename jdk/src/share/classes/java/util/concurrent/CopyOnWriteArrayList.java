@@ -952,6 +952,8 @@ public class CopyOnWriteArrayList<E>
     /**
      * Saves this list to a stream (that is, serializes it).
      *
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      * @serialData The length of the array backing the list is emitted
      *               (int), followed by all of its elements (each an Object)
      *               in the proper order.
@@ -972,6 +974,10 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * Reconstitutes this list from a stream (that is, deserializes it).
+     * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -1092,15 +1098,29 @@ public class CopyOnWriteArrayList<E>
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
-    public ListIterator<E> listIterator(final int index) {
+    public ListIterator<E> listIterator(int index) {
         Object[] elements = getArray();
         int len = elements.length;
-        if (index<0 || index>len)
+        if (index < 0 || index > len)
             throw new IndexOutOfBoundsException("Index: "+index);
 
         return new COWIterator<E>(elements, index);
     }
 
+    /**
+     * Returns a {@link Spliterator} over the elements in this list.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#IMMUTABLE},
+     * {@link Spliterator#ORDERED}, {@link Spliterator#SIZED}, and
+     * {@link Spliterator#SUBSIZED}.
+     *
+     * <p>The spliterator provides a snapshot of the state of the list
+     * when the spliterator was constructed. No synchronization is needed while
+     * operating on the spliterator.
+     *
+     * @return a {@code Spliterator} over the elements in this list
+     * @since 1.8
+     */
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator
             (getArray(), Spliterator.IMMUTABLE | Spliterator.ORDERED);
@@ -1257,7 +1277,7 @@ public class CopyOnWriteArrayList<E>
 
         // only call this holding l's lock
         private void rangeCheck(int index) {
-            if (index<0 || index>=size)
+            if (index < 0 || index >= size)
                 throw new IndexOutOfBoundsException("Index: "+index+
                                                     ",Size: "+size);
         }
@@ -1304,7 +1324,7 @@ public class CopyOnWriteArrayList<E>
             lock.lock();
             try {
                 checkForComodification();
-                if (index<0 || index>size)
+                if (index < 0 || index > size)
                     throw new IndexOutOfBoundsException();
                 l.add(index+offset, element);
                 expectedArray = l.getArray();
@@ -1361,12 +1381,12 @@ public class CopyOnWriteArrayList<E>
             }
         }
 
-        public ListIterator<E> listIterator(final int index) {
+        public ListIterator<E> listIterator(int index) {
             final ReentrantLock lock = l.lock;
             lock.lock();
             try {
                 checkForComodification();
-                if (index<0 || index>size)
+                if (index < 0 || index > size)
                     throw new IndexOutOfBoundsException("Index: "+index+
                                                         ", Size: "+size);
                 return new COWSubListIterator<E>(l, index, offset, size);
@@ -1380,7 +1400,7 @@ public class CopyOnWriteArrayList<E>
             lock.lock();
             try {
                 checkForComodification();
-                if (fromIndex<0 || toIndex>size)
+                if (fromIndex < 0 || toIndex > size)
                     throw new IndexOutOfBoundsException();
                 return new COWSubList<E>(l, fromIndex + offset,
                                          toIndex + offset);
@@ -1580,6 +1600,7 @@ public class CopyOnWriteArrayList<E>
             return Spliterators.spliterator
                 (a, lo, hi, Spliterator.IMMUTABLE | Spliterator.ORDERED);
         }
+
     }
 
     private static class COWSubListIterator<E> implements ListIterator<E> {

@@ -7679,3 +7679,5 @@ FormatData/pt/MonthAbbreviations/9=out
 FormatData/pt/MonthAbbreviations/10=nov
 FormatData/pt/MonthAbbreviations/11=dez
 
+# bug 8021121
+CurrencyNames/lv_LV/EUR=\u20AC

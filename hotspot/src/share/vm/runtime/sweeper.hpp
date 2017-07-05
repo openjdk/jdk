@@ -83,6 +83,7 @@ class NMethodSweeper : public AllStatic {
   static jlong peak_disconnect_time()        { return _peak_disconnect_time; }
 
 #ifdef ASSERT
+  static bool is_sweeping(nmethod* which) { return _current == which; }
   // Keep track of sweeper activity in the ring buffer
   static void record_sweep(nmethod* nm, int line);
   static void report_events(int id, address entry);

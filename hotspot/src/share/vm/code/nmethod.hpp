@@ -566,7 +566,7 @@ public:
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map,
                                      OopClosure* f);
   void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool do_strong_roots_only);
+  void oops_do(OopClosure* f, bool allow_zombie);
   bool detect_scavenge_root_oops();
   void verify_scavenge_root_oops() PRODUCT_RETURN;
 

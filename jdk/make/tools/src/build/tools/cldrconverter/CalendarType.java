@@ -31,7 +31,8 @@ import java.util.Locale;
  * Constants for the Calendars supported by JRE.
  */
 enum CalendarType {
-    GREGORIAN("gregory"), BUDDHIST, JAPANESE, ROC, ISLAMIC, ISLAMIC_CIVIL("islamicc");
+    GREGORIAN("gregory"), BUDDHIST, JAPANESE, ROC,
+    ISLAMIC, ISLAMIC_CIVIL("islamicc"), ISLAMIC_UMALQURA("islamic-umalqura");
 
     private static final int[][] ERA_DATA = {
         // start index, array length
@@ -41,6 +42,7 @@ enum CalendarType {
         {0,   2},   // roc (Minguo)
         {0,   1},   // islamic (Hijrah)
         {0,   1},   // islamicc (same as islamic)
+        {0,   1},   // islamic-umalqura
     };
 
     private final String lname; // lowercase name
@@ -52,8 +54,8 @@ enum CalendarType {
 
     private CalendarType(String uname) {
         String lname = name().toLowerCase(Locale.ROOT);
-        if (lname.equals("islamic_civil")) {
-            lname = "islamic-civil";
+        if (lname.startsWith("islamic_")) {
+            lname = lname.replace('_', '-');
         }
         this.lname = lname;
         this.uname = (uname != null) ? uname : lname;

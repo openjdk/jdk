@@ -52,6 +52,8 @@ public:
   static bool must_be_compiled(methodHandle m, int comp_level = CompLevel_all);
   // m is allowed to be compiled
   static bool can_be_compiled(methodHandle m, int comp_level = CompLevel_all);
+  // m is allowed to be osr compiled
+  static bool can_be_osr_compiled(methodHandle m, int comp_level = CompLevel_all);
   static bool is_compilation_enabled();
   static void set_policy(CompilationPolicy* policy) { _policy = policy; }
   static CompilationPolicy* policy()                { return _policy; }

@@ -1,22 +1,22 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#  
+#
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
 # published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
 # by Oracle in the LICENSE file that accompanied this code.
-#  
+#
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
-#  
+#
 # You should have received a copy of the GNU General Public License version
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#  
+#
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
@@ -1235,39 +1235,21 @@ Rule	Zion	2011	only	-	Oct	 2	2:00	0	S
 Rule	Zion	2012	only	-	Mar	Fri>=26	2:00	1:00	D
 Rule	Zion	2012	only	-	Sep	23	2:00	0	S
 
-# From Ephraim Silverberg (2012-10-18):
-# Yesterday, the Interior Ministry Committee, after more than a year
-# past, approved sending the proposed June 2011 changes to the Time
-# Decree Law back to the Knesset for second and third (final) votes
-# before the upcoming elections on Jan. 22, 2013.  Hence, although the
-# changes are not yet law, they are expected to be so before February 2013.
+# From Ephraim Silverberg (2013-06-27):
+# On June 23, 2013, the Israeli government approved changes to the
+# Time Decree Law.  The next day, the changes passed the First Reading
+# in the Knesset.  The law is expected to pass the Second and Third
+# (final) Readings by the beginning of September 2013.
 #
-# As of 2013, DST starts at 02:00 on the Friday before the last Sunday in March.
-# DST ends at 02:00 on the first Sunday after October 1, unless it occurs on the
-# second day of the Jewish Rosh Hashana holiday, in which case DST ends a day
-# later (i.e. at 02:00 the first Monday after October 2).
-# [Rosh Hashana holidays are factored in until 2100.]
-
-# From Ephraim Silverberg (2012-11-05):
-# The Knesset passed today (in second and final readings) the amendment to the
-# Time Decree Law making the changes ... law.
+# As of 2013, DST starts at 02:00 on the Friday before the last Sunday
+# in March.  DST ends at 02:00 on the last Sunday of October.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Zion	2013	max	-	Mar	Fri>=23	2:00	1:00	D
-Rule	Zion	2013	2026	-	Oct	Sun>=2	2:00	0	S
-Rule	Zion	2027	only	-	Oct	Mon>=3	2:00	0	S
-Rule	Zion	2028	max	-	Oct	Sun>=2	2:00	0	S
-# The following rules are commented out for now, as they break older
-# versions of zic that support only signed 32-bit timestamps, i.e.,
-# through 2038-01-19 03:14:07 UTC.
-#Rule	Zion	2028	2053	-	Oct	Sun>=2	2:00	0	S
-#Rule	Zion	2054	only	-	Oct	Mon>=3	2:00	0	S
-#Rule	Zion	2055	2080	-	Oct	Sun>=2	2:00	0	S
-#Rule	Zion	2081	only	-	Oct	Mon>=3	2:00	0	S
-#Rule	Zion	2082	max	-	Oct	Sun>=2	2:00	0	S
+Rule	Zion	2013	max	-	Oct	lastSun	2:00	0	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Jerusalem	2:20:56 -	LMT	1880
+Zone	Asia/Jerusalem	2:20:54 -	LMT	1880
 			2:20:40	-	JMT	1918	# Jerusalem Mean Time?
 			2:00	Zion	I%sT
 
@@ -2570,8 +2552,8 @@ Rule	Syria	2006	only	-	Sep	22	0:00	0	-
 Rule	Syria	2007	only	-	Mar	lastFri	0:00	1:00	S
 # From Jesper Norgard (2007-10-27):
 # The sister center ICARDA of my work CIMMYT is confirming that Syria DST will
-# not take place 1.st November at 0:00 o'clock but 1.st November at 24:00 or
-# rather Midnight between Thursday and Friday. This does make more sence than
+# not take place 1st November at 0:00 o'clock but 1st November at 24:00 or
+# rather Midnight between Thursday and Friday. This does make more sense than
 # having it between Wednesday and Thursday (two workdays in Syria) since the
 # weekend in Syria is not Saturday and Sunday, but Friday and Saturday. So now
 # it is implemented at midnight of the last workday before weekend...

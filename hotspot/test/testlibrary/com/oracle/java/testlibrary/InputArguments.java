@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,31 @@
  * questions.
  */
 
-public class Logging {
-    private Logging() { }
+package com.oracle.java.testlibrary;
 
-    public static void log(String msg) {
-        System.out.println(msg);
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
+
+/**
+ * This class provides access to the input arguments to the VM.
+ */
+public class InputArguments {
+    private static final List<String> args;
+
+    static {
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        args = runtimeMxBean.getInputArguments();
+    }
+
+    /**
+     * Returns true if {@code arg} is an input argument to the VM.
+     *
+     * @param arg The name of the argument.
+     * @return {@code true} if the given argument is an input argument,
+     *         otherwise {@code false}.
+     */
+    public static boolean contains(String arg) {
+        return args.contains(arg);
     }
 }

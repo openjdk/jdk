@@ -888,6 +888,19 @@ public class ArrayDeque<E> extends AbstractCollection<E>
             elements[i] = s.readObject();
     }
 
+    /**
+     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
+     * and <em>fail-fast</em> {@link Spliterator} over the elements in this
+     * deque.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
+     * {@link Spliterator#SUBSIZED}, {@link Spliterator#ORDERED}, and
+     * {@link Spliterator#NONNULL}.  Overriding implementations should document
+     * the reporting of additional characteristic values.
+     *
+     * @return a {@code Spliterator} over the elements in this deque
+     * @since 1.8
+     */
     public Spliterator<E> spliterator() {
         return new DeqSpliterator<E>(this, -1, -1);
     }
