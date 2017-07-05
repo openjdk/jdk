@@ -28,9 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-import sun.misc.FloatConsts;
-
 public class IeeeRecommendedTests {
     private IeeeRecommendedTests(){}
 
@@ -54,7 +51,7 @@ public class IeeeRecommendedTests {
      * Returns a floating-point power of two in the normal range.
      */
     static double powerOfTwoD(int n) {
-        return Double.longBitsToDouble((((long)n + (long)DoubleConsts.MAX_EXPONENT) <<
+        return Double.longBitsToDouble((((long)n + (long)Double.MAX_EXPONENT) <<
                                         (DoubleConsts.SIGNIFICAND_WIDTH-1))
                                        & DoubleConsts.EXP_BIT_MASK);
     }
@@ -63,7 +60,7 @@ public class IeeeRecommendedTests {
      * Returns a floating-point power of two in the normal range.
      */
     static float powerOfTwoF(int n) {
-        return Float.intBitsToFloat(((n + FloatConsts.MAX_EXPONENT) <<
+        return Float.intBitsToFloat(((n + Float.MAX_EXPONENT) <<
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
                                     & FloatConsts.EXP_BIT_MASK);
     }
@@ -129,7 +126,7 @@ public class IeeeRecommendedTests {
                                   +16.0f,
                                   +Float.MIN_VALUE,
                                   +Float_MAX_SUBNORMAL,
-                                  +FloatConsts.MIN_NORMAL,
+                                  +Float.MIN_NORMAL,
                                   +Float.MAX_VALUE
         };
 
@@ -139,10 +136,10 @@ public class IeeeRecommendedTests {
                                  0,
                                  1,
                                  4,
-                                 FloatConsts.MIN_EXPONENT - 1,
-                                 -FloatConsts.MAX_EXPONENT,
-                                 FloatConsts.MIN_EXPONENT,
-                                 FloatConsts.MAX_EXPONENT
+                                 Float.MIN_EXPONENT - 1,
+                                 -Float.MAX_EXPONENT,
+                                 Float.MIN_EXPONENT,
+                                 Float.MAX_EXPONENT
         };
 
         // Special value tests
@@ -152,7 +149,7 @@ public class IeeeRecommendedTests {
 
 
         // Normal exponent tests
-        for(int i = FloatConsts.MIN_EXPONENT; i <= FloatConsts.MAX_EXPONENT; i++) {
+        for(int i = Float.MIN_EXPONENT; i <= Float.MAX_EXPONENT; i++) {
             int result;
 
             // Create power of two
@@ -175,7 +172,7 @@ public class IeeeRecommendedTests {
                 failures += testGetExponentCase(randFloat, i);
             }
 
-            if (i > FloatConsts.MIN_EXPONENT) {
+            if (i > Float.MIN_EXPONENT) {
                 float po2minus = Math.nextAfter(po2,
                                                  Float.NEGATIVE_INFINITY);
                 failures += testGetExponentCase(po2minus, i-1);
@@ -199,13 +196,13 @@ public class IeeeRecommendedTests {
             i++, top *= 2.0f) {
 
             failures += testGetExponentCase(top,
-                                            FloatConsts.MIN_EXPONENT - 1);
+                                            Float.MIN_EXPONENT - 1);
 
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
                 testGetExponentCase(Math.nextAfter(top, 0.0f),
-                                    FloatConsts.MIN_EXPONENT - 1);
+                                    Float.MIN_EXPONENT - 1);
 
                 if( i >= 10) {
                     // create a bit mask with (i-1) 1's in the low order
@@ -217,7 +214,7 @@ public class IeeeRecommendedTests {
                                                  (rand.nextInt() & mask ) ) ;
 
                     failures += testGetExponentCase(randFloat,
-                                                    FloatConsts.MIN_EXPONENT - 1);
+                                                    Float.MIN_EXPONENT - 1);
                 }
             }
         }
@@ -236,7 +233,7 @@ public class IeeeRecommendedTests {
                                    +16.0,
                                    +Double.MIN_VALUE,
                                    +Double_MAX_SUBNORMAL,
-                                   +DoubleConsts.MIN_NORMAL,
+                                   +Double.MIN_NORMAL,
                                    +Double.MAX_VALUE
         };
 
@@ -246,10 +243,10 @@ public class IeeeRecommendedTests {
                                  0,
                                  1,
                                  4,
-                                 DoubleConsts.MIN_EXPONENT - 1,
-                                 -DoubleConsts.MAX_EXPONENT,
-                                 DoubleConsts.MIN_EXPONENT,
-                                 DoubleConsts.MAX_EXPONENT
+                                 Double.MIN_EXPONENT - 1,
+                                 -Double.MAX_EXPONENT,
+                                 Double.MIN_EXPONENT,
+                                 Double.MAX_EXPONENT
         };
 
         // Special value tests
@@ -259,7 +256,7 @@ public class IeeeRecommendedTests {
 
 
         // Normal exponent tests
-        for(int i = DoubleConsts.MIN_EXPONENT; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = Double.MIN_EXPONENT; i <= Double.MAX_EXPONENT; i++) {
             int result;
 
             // Create power of two
@@ -282,7 +279,7 @@ public class IeeeRecommendedTests {
                 failures += testGetExponentCase(randFloat, i);
             }
 
-            if (i > DoubleConsts.MIN_EXPONENT) {
+            if (i > Double.MIN_EXPONENT) {
                 double po2minus = Math.nextAfter(po2,
                                                     Double.NEGATIVE_INFINITY);
                 failures += testGetExponentCase(po2minus, i-1);
@@ -306,13 +303,13 @@ public class IeeeRecommendedTests {
             i++, top *= 2.0f) {
 
             failures += testGetExponentCase(top,
-                                            DoubleConsts.MIN_EXPONENT - 1);
+                                            Double.MIN_EXPONENT - 1);
 
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
                 testGetExponentCase(Math.nextAfter(top, 0.0),
-                                    DoubleConsts.MIN_EXPONENT - 1);
+                                    Double.MIN_EXPONENT - 1);
 
                 if( i >= 10) {
                     // create a bit mask with (i-1) 1's in the low order
@@ -324,7 +321,7 @@ public class IeeeRecommendedTests {
                                                  (rand.nextLong() & mask ) ) ;
 
                     failures += testGetExponentCase(randFloat,
-                                                    DoubleConsts.MIN_EXPONENT - 1);
+                                                    Double.MIN_EXPONENT - 1);
                 }
             }
         }
@@ -400,15 +397,15 @@ public class IeeeRecommendedTests {
             {Float_MAX_VALUEmm, infinityF,              Float.MAX_VALUE},
             {Float_MAX_VALUEmm, Float_MAX_VALUEmm,      Float_MAX_VALUEmm},
 
-            {FloatConsts.MIN_NORMAL,    infinityF,              FloatConsts.MIN_NORMAL+
+            {Float.MIN_NORMAL,          infinityF,              Float.MIN_NORMAL+
                                                                 Float.MIN_VALUE},
-            {FloatConsts.MIN_NORMAL,    -infinityF,             Float_MAX_SUBNORMAL},
-            {FloatConsts.MIN_NORMAL,    1.0f,                   FloatConsts.MIN_NORMAL+
+            {Float.MIN_NORMAL,          -infinityF,             Float_MAX_SUBNORMAL},
+            {Float.MIN_NORMAL,          1.0f,                   Float.MIN_NORMAL+
                                                                 Float.MIN_VALUE},
-            {FloatConsts.MIN_NORMAL,    -1.0f,                  Float_MAX_SUBNORMAL},
-            {FloatConsts.MIN_NORMAL,    FloatConsts.MIN_NORMAL, FloatConsts.MIN_NORMAL},
+            {Float.MIN_NORMAL,          -1.0f,                  Float_MAX_SUBNORMAL},
+            {Float.MIN_NORMAL,          Float.MIN_NORMAL,       Float.MIN_NORMAL},
 
-            {Float_MAX_SUBNORMAL,       FloatConsts.MIN_NORMAL, FloatConsts.MIN_NORMAL},
+            {Float_MAX_SUBNORMAL,       Float.MIN_NORMAL,       Float.MIN_NORMAL},
             {Float_MAX_SUBNORMAL,       Float_MAX_SUBNORMAL,    Float_MAX_SUBNORMAL},
             {Float_MAX_SUBNORMAL,       0.0f,                   Float_MAX_SUBNORMALmm},
 
@@ -472,15 +469,15 @@ public class IeeeRecommendedTests {
             {Double_MAX_VALUEmm,        infinityD,              Double.MAX_VALUE},
             {Double_MAX_VALUEmm,        Double_MAX_VALUEmm,     Double_MAX_VALUEmm},
 
-            {DoubleConsts.MIN_NORMAL,   infinityD,              DoubleConsts.MIN_NORMAL+
+            {Double.MIN_NORMAL,         infinityD,              Double.MIN_NORMAL+
                                                                 Double.MIN_VALUE},
-            {DoubleConsts.MIN_NORMAL,   -infinityD,             Double_MAX_SUBNORMAL},
-            {DoubleConsts.MIN_NORMAL,   1.0f,                   DoubleConsts.MIN_NORMAL+
+            {Double.MIN_NORMAL,         -infinityD,             Double_MAX_SUBNORMAL},
+            {Double.MIN_NORMAL,         1.0f,                   Double.MIN_NORMAL+
                                                                 Double.MIN_VALUE},
-            {DoubleConsts.MIN_NORMAL,   -1.0f,                  Double_MAX_SUBNORMAL},
-            {DoubleConsts.MIN_NORMAL,   DoubleConsts.MIN_NORMAL,DoubleConsts.MIN_NORMAL},
+            {Double.MIN_NORMAL,         -1.0f,                  Double_MAX_SUBNORMAL},
+            {Double.MIN_NORMAL,         Double.MIN_NORMAL,      Double.MIN_NORMAL},
 
-            {Double_MAX_SUBNORMAL,      DoubleConsts.MIN_NORMAL,DoubleConsts.MIN_NORMAL},
+            {Double_MAX_SUBNORMAL,      Double.MIN_NORMAL,      Double.MIN_NORMAL},
             {Double_MAX_SUBNORMAL,      Double_MAX_SUBNORMAL,   Double_MAX_SUBNORMAL},
             {Double_MAX_SUBNORMAL,      0.0d,                   Double_MAX_SUBNORMALmm},
 
@@ -529,15 +526,15 @@ public class IeeeRecommendedTests {
             {NaNf,                      NaNf},
             {-infinityF,                -Float.MAX_VALUE},
             {-Float.MAX_VALUE,          -Float_MAX_VALUEmm},
-            {-FloatConsts.MIN_NORMAL,   -Float_MAX_SUBNORMAL},
+            {-Float.MIN_NORMAL,         -Float_MAX_SUBNORMAL},
             {-Float_MAX_SUBNORMAL,      -Float_MAX_SUBNORMALmm},
             {-Float.MIN_VALUE,          -0.0f},
             {-0.0f,                     Float.MIN_VALUE},
             {+0.0f,                     Float.MIN_VALUE},
             {Float.MIN_VALUE,           Float.MIN_VALUE*2},
             {Float_MAX_SUBNORMALmm,     Float_MAX_SUBNORMAL},
-            {Float_MAX_SUBNORMAL,       FloatConsts.MIN_NORMAL},
-            {FloatConsts.MIN_NORMAL,    FloatConsts.MIN_NORMAL+Float.MIN_VALUE},
+            {Float_MAX_SUBNORMAL,       Float.MIN_NORMAL},
+            {Float.MIN_NORMAL,          Float.MIN_NORMAL+Float.MIN_VALUE},
             {Float_MAX_VALUEmm,         Float.MAX_VALUE},
             {Float.MAX_VALUE,           infinityF},
             {infinityF,                 infinityF}
@@ -567,15 +564,15 @@ public class IeeeRecommendedTests {
             {NaNd,                      NaNd},
             {-infinityD,                -Double.MAX_VALUE},
             {-Double.MAX_VALUE,         -Double_MAX_VALUEmm},
-            {-DoubleConsts.MIN_NORMAL,  -Double_MAX_SUBNORMAL},
+            {-Double.MIN_NORMAL,        -Double_MAX_SUBNORMAL},
             {-Double_MAX_SUBNORMAL,     -Double_MAX_SUBNORMALmm},
             {-Double.MIN_VALUE,         -0.0d},
             {-0.0d,                     Double.MIN_VALUE},
             {+0.0d,                     Double.MIN_VALUE},
             {Double.MIN_VALUE,          Double.MIN_VALUE*2},
             {Double_MAX_SUBNORMALmm,    Double_MAX_SUBNORMAL},
-            {Double_MAX_SUBNORMAL,      DoubleConsts.MIN_NORMAL},
-            {DoubleConsts.MIN_NORMAL,   DoubleConsts.MIN_NORMAL+Double.MIN_VALUE},
+            {Double_MAX_SUBNORMAL,      Double.MIN_NORMAL},
+            {Double.MIN_NORMAL,         Double.MIN_NORMAL+Double.MIN_VALUE},
             {Double_MAX_VALUEmm,        Double.MAX_VALUE},
             {Double.MAX_VALUE,          infinityD},
             {infinityD,                 infinityD}
@@ -607,16 +604,16 @@ public class IeeeRecommendedTests {
             {-infinityF,                -infinityF},
             {-Float.MAX_VALUE,          -infinityF},
             {-Float_MAX_VALUEmm,        -Float.MAX_VALUE},
-            {-Float_MAX_SUBNORMAL,      -FloatConsts.MIN_NORMAL},
+            {-Float_MAX_SUBNORMAL,      -Float.MIN_NORMAL},
             {-Float_MAX_SUBNORMALmm,    -Float_MAX_SUBNORMAL},
             {-0.0f,                     -Float.MIN_VALUE},
             {+0.0f,                     -Float.MIN_VALUE},
             {Float.MIN_VALUE,           0.0f},
             {Float.MIN_VALUE*2,         Float.MIN_VALUE},
             {Float_MAX_SUBNORMAL,       Float_MAX_SUBNORMALmm},
-            {FloatConsts.MIN_NORMAL,    Float_MAX_SUBNORMAL},
-            {FloatConsts.MIN_NORMAL+
-             Float.MIN_VALUE,           FloatConsts.MIN_NORMAL},
+            {Float.MIN_NORMAL,          Float_MAX_SUBNORMAL},
+            {Float.MIN_NORMAL+
+             Float.MIN_VALUE,           Float.MIN_NORMAL},
             {Float.MAX_VALUE,           Float_MAX_VALUEmm},
             {infinityF,                 Float.MAX_VALUE},
         };
@@ -646,16 +643,16 @@ public class IeeeRecommendedTests {
             {-infinityD,                -infinityD},
             {-Double.MAX_VALUE,         -infinityD},
             {-Double_MAX_VALUEmm,       -Double.MAX_VALUE},
-            {-Double_MAX_SUBNORMAL,     -DoubleConsts.MIN_NORMAL},
+            {-Double_MAX_SUBNORMAL,     -Double.MIN_NORMAL},
             {-Double_MAX_SUBNORMALmm,   -Double_MAX_SUBNORMAL},
             {-0.0d,                     -Double.MIN_VALUE},
             {+0.0d,                     -Double.MIN_VALUE},
             {Double.MIN_VALUE,          0.0d},
             {Double.MIN_VALUE*2,        Double.MIN_VALUE},
             {Double_MAX_SUBNORMAL,      Double_MAX_SUBNORMALmm},
-            {DoubleConsts.MIN_NORMAL,   Double_MAX_SUBNORMAL},
-            {DoubleConsts.MIN_NORMAL+
-             Double.MIN_VALUE,          DoubleConsts.MIN_NORMAL},
+            {Double.MIN_NORMAL,         Double_MAX_SUBNORMAL},
+            {Double.MIN_NORMAL+
+             Double.MIN_VALUE,          Double.MIN_NORMAL},
             {Double.MAX_VALUE,          Double_MAX_VALUEmm},
             {infinityD,                 Double.MAX_VALUE},
         };
@@ -689,7 +686,7 @@ public class IeeeRecommendedTests {
             -Float.MAX_VALUE,
             -3.0f,
             -1.0f,
-            -FloatConsts.MIN_NORMAL,
+            -Float.MIN_NORMAL,
             -Float_MAX_SUBNORMALmm,
             -Float_MAX_SUBNORMAL,
             -Float.MIN_VALUE,
@@ -698,7 +695,7 @@ public class IeeeRecommendedTests {
             Float.MIN_VALUE,
             Float_MAX_SUBNORMALmm,
             Float_MAX_SUBNORMAL,
-            FloatConsts.MIN_NORMAL,
+            Float.MIN_NORMAL,
             1.0f,
             3.0f,
             Float_MAX_VALUEmm,
@@ -739,7 +736,7 @@ public class IeeeRecommendedTests {
             -Double.MAX_VALUE,
             -3.0d,
             -1.0d,
-            -DoubleConsts.MIN_NORMAL,
+            -Double.MIN_NORMAL,
             -Double_MAX_SUBNORMALmm,
             -Double_MAX_SUBNORMAL,
             -Double.MIN_VALUE,
@@ -748,7 +745,7 @@ public class IeeeRecommendedTests {
             Double.MIN_VALUE,
             Double_MAX_SUBNORMALmm,
             Double_MAX_SUBNORMAL,
-            DoubleConsts.MIN_NORMAL,
+            Double.MIN_NORMAL,
             1.0d,
             3.0d,
             Double_MAX_VALUEmm,
@@ -790,7 +787,7 @@ public class IeeeRecommendedTests {
              Float.MIN_VALUE,
              Float_MAX_SUBNORMALmm,
              Float_MAX_SUBNORMAL,
-             FloatConsts.MIN_NORMAL,
+             Float.MIN_NORMAL,
              1.0f,
              3.0f,
              Float_MAX_VALUEmm,
@@ -801,7 +798,7 @@ public class IeeeRecommendedTests {
              -Float.MAX_VALUE,
              -3.0f,
              -1.0f,
-             -FloatConsts.MIN_NORMAL,
+             -Float.MIN_NORMAL,
              -Float_MAX_SUBNORMALmm,
              -Float_MAX_SUBNORMAL,
              -Float.MIN_VALUE,
@@ -864,7 +861,7 @@ public class IeeeRecommendedTests {
              Double.MIN_VALUE,
              Double_MAX_SUBNORMALmm,
              Double_MAX_SUBNORMAL,
-             DoubleConsts.MIN_NORMAL,
+             Double.MIN_NORMAL,
              1.0d,
              3.0d,
              Double_MAX_VALUEmm,
@@ -875,7 +872,7 @@ public class IeeeRecommendedTests {
              -Double.MAX_VALUE,
              -3.0d,
              -1.0d,
-             -DoubleConsts.MIN_NORMAL,
+             -Double.MIN_NORMAL,
              -Double_MAX_SUBNORMALmm,
              -Double_MAX_SUBNORMAL,
              -Double.MIN_VALUE,
@@ -964,7 +961,7 @@ public class IeeeRecommendedTests {
 
     public static int testFloatScalb() {
         int failures=0;
-        int MAX_SCALE = FloatConsts.MAX_EXPONENT + -FloatConsts.MIN_EXPONENT +
+        int MAX_SCALE = Float.MAX_EXPONENT + -Float.MIN_EXPONENT +
                         FloatConsts.SIGNIFICAND_WIDTH + 1;
 
 
@@ -988,7 +985,7 @@ public class IeeeRecommendedTests {
             3.0f*Float.MIN_VALUE,
             Float_MAX_SUBNORMALmm,
             Float_MAX_SUBNORMAL,
-            FloatConsts.MIN_NORMAL,
+            Float.MIN_NORMAL,
             1.0f,
             2.0f,
             3.0f,
@@ -998,8 +995,8 @@ public class IeeeRecommendedTests {
         };
 
         int [] oneMultiplyScalingFactors = {
-            FloatConsts.MIN_EXPONENT,
-            FloatConsts.MIN_EXPONENT+1,
+            Float.MIN_EXPONENT,
+            Float.MIN_EXPONENT+1,
             -3,
             -2,
             -1,
@@ -1007,8 +1004,8 @@ public class IeeeRecommendedTests {
             1,
             2,
             3,
-            FloatConsts.MAX_EXPONENT-1,
-            FloatConsts.MAX_EXPONENT
+            Float.MAX_EXPONENT-1,
+            Float.MAX_EXPONENT
         };
 
         int [] manyScalingFactors = {
@@ -1018,14 +1015,14 @@ public class IeeeRecommendedTests {
             -MAX_SCALE,
             -MAX_SCALE+1,
 
-            2*FloatConsts.MIN_EXPONENT-1,       // -253
-            2*FloatConsts.MIN_EXPONENT,         // -252
-            2*FloatConsts.MIN_EXPONENT+1,       // -251
+            2*Float.MIN_EXPONENT-1,       // -253
+            2*Float.MIN_EXPONENT,         // -252
+            2*Float.MIN_EXPONENT+1,       // -251
 
-            FloatConsts.MIN_EXPONENT - FloatConsts.SIGNIFICAND_WIDTH,
+            Float.MIN_EXPONENT - FloatConsts.SIGNIFICAND_WIDTH,
             FloatConsts.MIN_SUB_EXPONENT,
-            -FloatConsts.MAX_EXPONENT,          // -127
-            FloatConsts.MIN_EXPONENT,           // -126
+            -Float.MAX_EXPONENT,          // -127
+            Float.MIN_EXPONENT,           // -126
 
             -2,
             -1,
@@ -1033,13 +1030,13 @@ public class IeeeRecommendedTests {
             1,
             2,
 
-            FloatConsts.MAX_EXPONENT-1,         // 126
-            FloatConsts.MAX_EXPONENT,           // 127
-            FloatConsts.MAX_EXPONENT+1,         // 128
+            Float.MAX_EXPONENT-1,         // 126
+            Float.MAX_EXPONENT,           // 127
+            Float.MAX_EXPONENT+1,         // 128
 
-            2*FloatConsts.MAX_EXPONENT-1,       // 253
-            2*FloatConsts.MAX_EXPONENT,         // 254
-            2*FloatConsts.MAX_EXPONENT+1,       // 255
+            2*Float.MAX_EXPONENT-1,       // 253
+            2*Float.MAX_EXPONENT,         // 254
+            2*Float.MAX_EXPONENT+1,       // 255
 
             MAX_SCALE-1,
             MAX_SCALE,
@@ -1086,7 +1083,7 @@ public class IeeeRecommendedTests {
 
         // Create 2^MAX_EXPONENT
         float twoToTheMaxExp = 1.0f; // 2^0
-        for(int i = 0; i < FloatConsts.MAX_EXPONENT; i++)
+        for(int i = 0; i < Float.MAX_EXPONENT; i++)
             twoToTheMaxExp *=2.0f;
 
         // Scale-up subnormal values until they all overflow
@@ -1094,12 +1091,12 @@ public class IeeeRecommendedTests {
             float scale = 1.0f; // 2^j
             float value = subnormalTestCases[i];
 
-            for(int j=FloatConsts.MAX_EXPONENT*2; j < MAX_SCALE; j++) { // MAX_SCALE -1 should cause overflow
+            for(int j=Float.MAX_EXPONENT*2; j < MAX_SCALE; j++) { // MAX_SCALE -1 should cause overflow
                 int scaleFactor = j;
 
                 failures+=testScalbCase(value,
                                         scaleFactor,
-                                        (Tests.ilogb(value) +j > FloatConsts.MAX_EXPONENT ) ?
+                                        (Tests.ilogb(value) +j > Float.MAX_EXPONENT ) ?
                                         Math.copySign(infinityF, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );
@@ -1172,7 +1169,7 @@ public class IeeeRecommendedTests {
 
     public static int testDoubleScalb() {
         int failures=0;
-        int MAX_SCALE = DoubleConsts.MAX_EXPONENT + -DoubleConsts.MIN_EXPONENT +
+        int MAX_SCALE = Double.MAX_EXPONENT + -Double.MIN_EXPONENT +
                         DoubleConsts.SIGNIFICAND_WIDTH + 1;
 
 
@@ -1195,7 +1192,7 @@ public class IeeeRecommendedTests {
             3.0d*Double.MIN_VALUE,
             Double_MAX_SUBNORMALmm,
             Double_MAX_SUBNORMAL,
-            DoubleConsts.MIN_NORMAL,
+            Double.MIN_NORMAL,
             1.0d,
             2.0d,
             3.0d,
@@ -1205,8 +1202,8 @@ public class IeeeRecommendedTests {
         };
 
         int [] oneMultiplyScalingFactors = {
-            DoubleConsts.MIN_EXPONENT,
-            DoubleConsts.MIN_EXPONENT+1,
+            Double.MIN_EXPONENT,
+            Double.MIN_EXPONENT+1,
             -3,
             -2,
             -1,
@@ -1214,8 +1211,8 @@ public class IeeeRecommendedTests {
             1,
             2,
             3,
-            DoubleConsts.MAX_EXPONENT-1,
-            DoubleConsts.MAX_EXPONENT
+            Double.MAX_EXPONENT-1,
+            Double.MAX_EXPONENT
         };
 
         int [] manyScalingFactors = {
@@ -1225,15 +1222,15 @@ public class IeeeRecommendedTests {
             -MAX_SCALE,
             -MAX_SCALE+1,
 
-            2*DoubleConsts.MIN_EXPONENT-1,      // -2045
-            2*DoubleConsts.MIN_EXPONENT,        // -2044
-            2*DoubleConsts.MIN_EXPONENT+1,      // -2043
+            2*Double.MIN_EXPONENT-1,      // -2045
+            2*Double.MIN_EXPONENT,        // -2044
+            2*Double.MIN_EXPONENT+1,      // -2043
 
-            DoubleConsts.MIN_EXPONENT,          // -1022
-            DoubleConsts.MIN_EXPONENT - DoubleConsts.SIGNIFICAND_WIDTH,
+            Double.MIN_EXPONENT,          // -1022
+            Double.MIN_EXPONENT - DoubleConsts.SIGNIFICAND_WIDTH,
             DoubleConsts.MIN_SUB_EXPONENT,
-            -DoubleConsts.MAX_EXPONENT,         // -1023
-            DoubleConsts.MIN_EXPONENT,          // -1022
+            -Double.MAX_EXPONENT,         // -1023
+            Double.MIN_EXPONENT,          // -1022
 
             -2,
             -1,
@@ -1241,13 +1238,13 @@ public class IeeeRecommendedTests {
             1,
             2,
 
-            DoubleConsts.MAX_EXPONENT-1,        // 1022
-            DoubleConsts.MAX_EXPONENT,          // 1023
-            DoubleConsts.MAX_EXPONENT+1,        // 1024
+            Double.MAX_EXPONENT-1,        // 1022
+            Double.MAX_EXPONENT,          // 1023
+            Double.MAX_EXPONENT+1,        // 1024
 
-            2*DoubleConsts.MAX_EXPONENT-1,      // 2045
-            2*DoubleConsts.MAX_EXPONENT,        // 2046
-            2*DoubleConsts.MAX_EXPONENT+1,      // 2047
+            2*Double.MAX_EXPONENT-1,      // 2045
+            2*Double.MAX_EXPONENT,        // 2046
+            2*Double.MAX_EXPONENT+1,      // 2047
 
             MAX_SCALE-1,
             MAX_SCALE,
@@ -1294,7 +1291,7 @@ public class IeeeRecommendedTests {
 
         // Create 2^MAX_EXPONENT
         double twoToTheMaxExp = 1.0; // 2^0
-        for(int i = 0; i < DoubleConsts.MAX_EXPONENT; i++)
+        for(int i = 0; i < Double.MAX_EXPONENT; i++)
             twoToTheMaxExp *=2.0;
 
         // Scale-up subnormal values until they all overflow
@@ -1302,12 +1299,12 @@ public class IeeeRecommendedTests {
             double scale = 1.0; // 2^j
             double value = subnormalTestCases[i];
 
-            for(int j=DoubleConsts.MAX_EXPONENT*2; j < MAX_SCALE; j++) { // MAX_SCALE -1 should cause overflow
+            for(int j=Double.MAX_EXPONENT*2; j < MAX_SCALE; j++) { // MAX_SCALE -1 should cause overflow
                 int scaleFactor = j;
 
                 failures+=testScalbCase(value,
                                         scaleFactor,
-                                        (Tests.ilogb(value) +j > DoubleConsts.MAX_EXPONENT ) ?
+                                        (Tests.ilogb(value) +j > Double.MAX_EXPONENT ) ?
                                         Math.copySign(infinityD, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );
@@ -1345,7 +1342,7 @@ public class IeeeRecommendedTests {
 
         double value = 0x1.000000000000bP-1;
         expected     = 0x0.2000000000001P-1022;
-        for(int i = 0; i < DoubleConsts.MAX_EXPONENT+2; i++) {
+        for(int i = 0; i < Double.MAX_EXPONENT+2; i++) {
             failures+=testScalbCase(value,
                                     -1024-i,
                                     expected);
@@ -1401,7 +1398,7 @@ public class IeeeRecommendedTests {
                                   +16.0f,
                                   +Float.MIN_VALUE,
                                   +Float_MAX_SUBNORMAL,
-                                  +FloatConsts.MIN_NORMAL,
+                                  +Float.MIN_NORMAL,
                                   +Float.MAX_VALUE
         };
 
@@ -1424,7 +1421,7 @@ public class IeeeRecommendedTests {
 
 
         // Normal exponent tests
-        for(int i = FloatConsts.MIN_EXPONENT; i <= FloatConsts.MAX_EXPONENT; i++) {
+        for(int i = Float.MIN_EXPONENT; i <= Float.MAX_EXPONENT; i++) {
             float expected;
 
             // Create power of two
@@ -1448,7 +1445,7 @@ public class IeeeRecommendedTests {
                 failures += testUlpCase(randFloat, expected);
             }
 
-            if (i > FloatConsts.MIN_EXPONENT) {
+            if (i > Float.MIN_EXPONENT) {
                 float po2minus = Math.nextAfter(po2,
                                                    Float.NEGATIVE_INFINITY);
                 failures += testUlpCase(po2minus, expected/2.0f);
@@ -1506,7 +1503,7 @@ public class IeeeRecommendedTests {
                                   +16.0d,
                                   +Double.MIN_VALUE,
                                   +Double_MAX_SUBNORMAL,
-                                  +DoubleConsts.MIN_NORMAL,
+                                  +Double.MIN_NORMAL,
                                   +Double.MAX_VALUE
         };
 
@@ -1529,7 +1526,7 @@ public class IeeeRecommendedTests {
 
 
         // Normal exponent tests
-        for(int i = DoubleConsts.MIN_EXPONENT; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = Double.MIN_EXPONENT; i <= Double.MAX_EXPONENT; i++) {
             double expected;
 
             // Create power of two
@@ -1553,7 +1550,7 @@ public class IeeeRecommendedTests {
                 failures += testUlpCase(randDouble, expected);
             }
 
-            if (i > DoubleConsts.MIN_EXPONENT) {
+            if (i > Double.MIN_EXPONENT) {
                 double po2minus = Math.nextAfter(po2,
                                                     Double.NEGATIVE_INFINITY);
                 failures += testUlpCase(po2minus, expected/2.0f);
@@ -1607,7 +1604,7 @@ public class IeeeRecommendedTests {
             {NaNf,                      NaNf},
             {-infinityF,                -1.0f},
             {-Float.MAX_VALUE,          -1.0f},
-            {-FloatConsts.MIN_NORMAL,   -1.0f},
+            {-Float.MIN_NORMAL,         -1.0f},
             {-1.0f,                     -1.0f},
             {-2.0f,                     -1.0f},
             {-Float_MAX_SUBNORMAL,      -1.0f},
@@ -1617,7 +1614,7 @@ public class IeeeRecommendedTests {
             {Float.MIN_VALUE,            1.0f},
             {Float_MAX_SUBNORMALmm,      1.0f},
             {Float_MAX_SUBNORMAL,        1.0f},
-            {FloatConsts.MIN_NORMAL,     1.0f},
+            {Float.MIN_NORMAL,           1.0f},
             {1.0f,                       1.0f},
             {2.0f,                       1.0f},
             {Float_MAX_VALUEmm,          1.0f},
@@ -1641,7 +1638,7 @@ public class IeeeRecommendedTests {
             {NaNd,                      NaNd},
             {-infinityD,                -1.0},
             {-Double.MAX_VALUE,         -1.0},
-            {-DoubleConsts.MIN_NORMAL,  -1.0},
+            {-Double.MIN_NORMAL,        -1.0},
             {-1.0,                      -1.0},
             {-2.0,                      -1.0},
             {-Double_MAX_SUBNORMAL,     -1.0},
@@ -1651,7 +1648,7 @@ public class IeeeRecommendedTests {
             {Double.MIN_VALUE,           1.0},
             {Double_MAX_SUBNORMALmm,     1.0},
             {Double_MAX_SUBNORMAL,       1.0},
-            {DoubleConsts.MIN_NORMAL,    1.0},
+            {Double.MIN_NORMAL,          1.0},
             {1.0,                        1.0},
             {2.0,                        1.0},
             {Double_MAX_VALUEmm,         1.0},

@@ -27,11 +27,11 @@ include LibCommon.gmk
 
 ################################################################################
 
-BUILD_LIBHPROF_SRC := $(JDK_TOPDIR)/src/demo/share/jvmti/hprof \
-    $(JDK_TOPDIR)/src/demo/$(OPENJDK_TARGET_OS_API_DIR)/jvmti/hprof
+BUILD_LIBHPROF_SRC := $(call FindSrcDirsForLib, jdk.hprof.agent, hprof)
+
 BUILD_LIBHPROF_CFLAGS := $(addprefix -I, $(BUILD_LIBHPROF_SRC)) \
     -I$(JDK_TOPDIR)/src/demo/share/jvmti/java_crw_demo
-
+    
 BUILD_LIBHPROF_LDFLAGS :=
 
 LIBHPROF_OPTIMIZATION := HIGHEST

@@ -184,7 +184,16 @@ class FileInputStream extends InputStream
      * Opens the specified file for reading.
      * @param name the name of the file
      */
-    private native void open(String name) throws FileNotFoundException;
+    private native void open0(String name) throws FileNotFoundException;
+
+    // wrap native call to allow instrumentation
+    /**
+     * Opens the specified file for reading.
+     * @param name the name of the file
+     */
+    private void open(String name) throws FileNotFoundException {
+        open0(name);
+    }
 
     /**
      * Reads a byte of data from this input stream. This method blocks

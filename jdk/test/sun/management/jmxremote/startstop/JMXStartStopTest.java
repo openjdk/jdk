@@ -53,7 +53,7 @@ import jdk.testlibrary.JDKToolLauncher;
  * @bug 7110104
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* JMXStartStopTest JMXStartStopDoSomething
- * @run main/othervm/timeout=600 JMXStartStopTest
+ * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through
  *          JCMD achieves the desired results
  */

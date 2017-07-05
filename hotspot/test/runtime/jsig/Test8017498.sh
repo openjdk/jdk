@@ -31,6 +31,7 @@
 ## @bug 8022301
 ## @bug 8025519
 ## @summary sigaction(sig) results in process hang/timed-out if sig is much greater than SIGRTMAX
+## @ignore 8041727
 ## @run shell/timeout=60 Test8017498.sh
 ##
 

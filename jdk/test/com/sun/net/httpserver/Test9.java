@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 6270015
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm Test9
  * @summary  Light weight HTTP server
  */
@@ -34,6 +36,7 @@ import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 /* Same as Test1 but requests run in parallel.
  */
@@ -59,7 +62,7 @@ public class Test9 extends Test {
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
-            ctx = new SimpleSSLContext(System.getProperty("test.src")).get();
+            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();

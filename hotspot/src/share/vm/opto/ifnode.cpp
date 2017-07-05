@@ -503,7 +503,7 @@ int IfNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   jint  off = 0;
   if (l->is_top()) {
     return 0;
-  } else if (l->is_Add()) {
+  } else if (l->Opcode() == Op_AddI) {
     if ((off = l->in(1)->find_int_con(0)) != 0) {
       ind = l->in(2);
     } else if ((off = l->in(2)->find_int_con(0)) != 0) {

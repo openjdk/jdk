@@ -78,6 +78,7 @@ jint ParallelScavengeHeap::initialize() {
                         (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   CardTableExtension* const barrier_set = new CardTableExtension(_reserved, 3);
+  barrier_set->initialize();
   _barrier_set = barrier_set;
   oopDesc::set_bs(_barrier_set);
   if (_barrier_set == NULL) {
