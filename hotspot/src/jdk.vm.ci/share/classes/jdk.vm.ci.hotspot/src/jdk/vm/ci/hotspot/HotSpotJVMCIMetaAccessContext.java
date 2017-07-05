@@ -27,8 +27,6 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -147,21 +145,34 @@ public class HotSpotJVMCIMetaAccessContext {
         }
     }
 
-    private final Map<Class<?>, WeakReference<ResolvedJavaType>> typeMap = new WeakHashMap<>();
+    private final ClassValue<WeakReference<ResolvedJavaType>> resolvedJavaType = new ClassValue<WeakReference<ResolvedJavaType>>() {
+        @Override
+        protected WeakReference<ResolvedJavaType> computeValue(Class<?> type) {
+            return new WeakReference<>(createClass(type));
+        }
+    };
 
     /**
      * Gets the JVMCI mirror for a {@link Class} object.
      *
      * @return the {@link ResolvedJavaType} corresponding to {@code javaClass}
      */
-    public synchronized ResolvedJavaType fromClass(Class<?> javaClass) {
-        WeakReference<ResolvedJavaType> typeRef = typeMap.get(javaClass);
-        ResolvedJavaType type = typeRef != null ? typeRef.get() : null;
-        if (type == null) {
-            type = createClass(javaClass);
-            typeMap.put(javaClass, new WeakReference<>(type));
+    public ResolvedJavaType fromClass(Class<?> javaClass) {
+        ResolvedJavaType javaType = null;
+        while (javaType == null) {
+            WeakReference<ResolvedJavaType> type = resolvedJavaType.get(javaClass);
+            javaType = type.get();
+            if (javaType == null) {
+                /*
+                 * If the referent has become null, clear out the current value
+                 * and let computeValue above create a new value.  Reload the
+                 * value in a loop because in theory the WeakReference referent
+                 * can be reclaimed at any point.
+                 */
+                resolvedJavaType.remove(javaClass);
+            }
         }
-        return type;
+        return javaType;
     }
 
     /**

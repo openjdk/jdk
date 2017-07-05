@@ -153,9 +153,9 @@ public class GenGraphs {
      */
     void genDotFile(String name, Set<String> roots) throws IOException {
         Configuration cf =
-            Configuration.empty().resolveRequires(ModuleFinder.ofSystem(),
-                                                  ModuleFinder.of(),
-                                                  roots);
+            Configuration.empty().resolve(ModuleFinder.ofSystem(),
+                                          ModuleFinder.of(),
+                                          roots);
 
         Set<ModuleDescriptor> mds = cf.modules().stream()
                 .map(ResolvedModule::reference)
