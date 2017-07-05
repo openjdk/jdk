@@ -1,10 +1,14 @@
-# 
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+#!/bin/sh
+
+#
+# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,14 +23,11 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-# 
-
-#
-# This file format must remain compatible with both
-# GNU Makefile and Microsoft nmake formats.
 #
 
-# Don't put quotes (fail windows build).
-HOTSPOT_VM_DISTRO=Java HotSpot(TM)
-COMPANY_NAME=Oracle Corporation
-PRODUCT_NAME=Java(TM) Platform SE
+# Get clones of all nested repositories
+sh ./make/scripts/hgforest.sh clone
+
+# Update all existing repositories to the latest sources
+sh ./make/scripts/hgforest.sh pull -u
+

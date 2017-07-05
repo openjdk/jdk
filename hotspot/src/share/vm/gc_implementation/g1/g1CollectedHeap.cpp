@@ -1192,6 +1192,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(true /* full */);
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -1768,6 +1769,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
   _into_cset_dirty_card_queue_set(false),
+  _is_alive_closure(this),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -2061,7 +2063,8 @@ void G1CollectedHeap::ref_processing_init() {
                                          mr,    // span
                                          false, // Reference discovery is not atomic
                                          true,  // mt_discovery
-                                         NULL,  // is alive closure: need to fill this in for efficiency
+                                         &_is_alive_closure, // is alive closure
+                                                             // for efficiency
                                          ParallelGCThreads,
                                          ParallelRefProcEnabled,
                                          true); // Setting next fields of discovered
@@ -3211,13 +3214,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     return false;
   }
 
+  DTraceGCProbeMarker gc_probe_marker(false /* full */);
+  ResourceMark rm;
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
 
   {
-    ResourceMark rm;
-
     // This call will decide whether this pause is an initial-mark
     // pause. If it is, during_initial_mark_pause() will return true
     // for the duration of this pause.
@@ -3956,8 +3960,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   // Now restore saved marks, if any.
   if (_objs_with_preserved_marks != NULL) {
     assert(_preserved_marks_of_objs != NULL, "Both or none.");
-    assert(_objs_with_preserved_marks->length() ==
-           _preserved_marks_of_objs->length(), "Both or none.");
     guarantee(_objs_with_preserved_marks->length() ==
               _preserved_marks_of_objs->length(), "Both or none.");
     for (int i = 0; i < _objs_with_preserved_marks->length(); i++) {
@@ -4052,7 +4054,10 @@ void G1CollectedHeap::handle_evacuation_failure_common(oop old, markOop m) {
 }
 
 void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
-  if (m != markOopDesc::prototype()) {
+  assert(evacuation_failed(), "Oversaving!");
+  // We want to call the "for_promotion_failure" version only in the
+  // case of a promotion failure.
+  if (m->must_be_preserved_for_promotion_failure(obj)) {
     if (_objs_with_preserved_marks == NULL) {
       assert(_preserved_marks_of_objs == NULL, "Both or none.");
       _objs_with_preserved_marks =
