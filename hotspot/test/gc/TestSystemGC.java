@@ -28,12 +28,10 @@
  * @summary Runs System.gc() with different flags.
  * @run main/othervm TestSystemGC
  * @run main/othervm -XX:+UseSerialGC TestSystemGC
- * @run main/othervm -XX:+UseParNewGC TestSystemGC
  * @run main/othervm -XX:+UseParallelGC TestSystemGC
  * @run main/othervm -XX:+UseParallelGC -XX:-UseParallelOldGC TestSystemGC
  * @run main/othervm -XX:+UseConcMarkSweepGC TestSystemGC
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC TestSystemGC
  * @run main/othervm -XX:+UseG1GC TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent TestSystemGC
  * @run main/othervm -XX:+UseLargePages TestSystemGC

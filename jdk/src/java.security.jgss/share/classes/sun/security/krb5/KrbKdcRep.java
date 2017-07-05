@@ -80,49 +80,41 @@ abstract class KrbKdcRep {
             rep.encKDCRepPart.flags.get(KDCOptions.RENEWABLE)) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
-        if ((req.reqBody.from == null) || req.reqBody.from.isZero())
+
+        if ((req.reqBody.from == null) || req.reqBody.from.isZero()) {
             // verify this is allowed
             if ((rep.encKDCRepPart.starttime != null) &&
-                !rep.encKDCRepPart.starttime.inClockSkew()) {
+                    !rep.encKDCRepPart.starttime.inClockSkew()) {
                 rep.encKDCRepPart.key.destroy();
                 throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
             }
+        }
 
-        if ((req.reqBody.from != null) && !req.reqBody.from.isZero())
+        if ((req.reqBody.from != null) && !req.reqBody.from.isZero()) {
             // verify this is allowed
             if ((rep.encKDCRepPart.starttime != null) &&
-                !req.reqBody.from.equals(rep.encKDCRepPart.starttime)) {
+                    !req.reqBody.from.equals(rep.encKDCRepPart.starttime)) {
                 rep.encKDCRepPart.key.destroy();
                 throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
             }
+        }
 
         if (!req.reqBody.till.isZero() &&
-            rep.encKDCRepPart.endtime.greaterThan(req.reqBody.till)) {
+                rep.encKDCRepPart.endtime.greaterThan(req.reqBody.till)) {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
 
-        if (req.reqBody.kdcOptions.get(KDCOptions.RENEWABLE))
-            if (req.reqBody.rtime != null && !req.reqBody.rtime.isZero())
-                                // verify this is required
+        if (req.reqBody.kdcOptions.get(KDCOptions.RENEWABLE)) {
+            if (req.reqBody.rtime != null && !req.reqBody.rtime.isZero()) {
+                // verify this is required
                 if ((rep.encKDCRepPart.renewTill == null) ||
-                    rep.encKDCRepPart.renewTill.greaterThan(req.reqBody.rtime)
-                    ) {
+                        rep.encKDCRepPart.renewTill.greaterThan(req.reqBody.rtime)
+                        ) {
                     rep.encKDCRepPart.key.destroy();
                     throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
                 }
-
-        if (req.reqBody.kdcOptions.get(KDCOptions.RENEWABLE_OK) &&
-            rep.encKDCRepPart.flags.get(KDCOptions.RENEWABLE))
-            if (!req.reqBody.till.isZero())
-                                // verify this is required
-                if ((rep.encKDCRepPart.renewTill == null) ||
-                    rep.encKDCRepPart.renewTill.greaterThan(req.reqBody.till)
-                    ) {
-                    rep.encKDCRepPart.key.destroy();
-                    throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
-                }
+            }
+        }
     }
-
-
 }

@@ -1744,7 +1744,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
     ccstr svalue = java_lang_String::as_utf8_string(str);
     succeed = CommandLineFlags::ccstrAtPut(name, &svalue, Flag::MANAGEMENT);
     if (succeed) {
-      FREE_C_HEAP_ARRAY(char, svalue, mtInternal);
+      FREE_C_HEAP_ARRAY(char, svalue);
     }
   }
   assert(succeed, "Setting flag should succeed");
@@ -1819,7 +1819,7 @@ ThreadTimesClosure::~ThreadTimesClosure() {
   for (int i = 0; i < _count; i++) {
     os::free(_names_chars[i]);
   }
-  FREE_C_HEAP_ARRAY(char *, _names_chars, mtInternal);
+  FREE_C_HEAP_ARRAY(char *, _names_chars);
 }
 
 // Fills names with VM internal thread names and times with the corresponding

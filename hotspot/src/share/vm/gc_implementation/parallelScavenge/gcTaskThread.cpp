@@ -58,7 +58,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
 
 GCTaskThread::~GCTaskThread() {
   if (_time_stamps != NULL) {
-    FREE_C_HEAP_ARRAY(GCTaskTimeStamp, _time_stamps, mtGC);
+    FREE_C_HEAP_ARRAY(GCTaskTimeStamp, _time_stamps);
   }
 }
 

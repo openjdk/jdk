@@ -158,6 +158,7 @@ public abstract class PerfDataBufferImpl {
      * the sun.jvmstat.perfdata.aliasmap file indicates some other
      * file as the source.
      */
+    @SuppressWarnings("deprecation")
     private void buildAliasMap() {
         assert Thread.holdsLock(this);
 
