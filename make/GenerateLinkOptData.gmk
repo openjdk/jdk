@@ -49,7 +49,7 @@ TARGETS += $(CLASSLIST_JAR)
 
 LINK_OPT_DIR := $(SUPPORT_OUTPUTDIR)/link_opt
 CLASSLIST_FILE := $(LINK_OPT_DIR)/classlist
-JLI_TRACE_FILE := $(LINK_OPT_DIR)/jli_trace.out
+JLI_TRACE_FILE := $(LINK_OPT_DIR)/default_jli_trace.txt
 
 # If an external buildjdk has been supplied, we don't build a separate interim
 # image, so just use the external build jdk instead.
@@ -69,7 +69,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 
 # The jli trace is created by the same recipe as classlist. By declaring these
 # dependencies, make will correctly rebuild both jli trace and classlist
-# incrementally using the single recpie above.
+# incrementally using the single recipe above.
 $(CLASSLIST_FILE): $(JLI_TRACE_FILE)
 $(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXE_SUFFIX) $(CLASSLIST_JAR)
 
@@ -82,6 +82,19 @@ $(eval $(call SetupCopyFiles, COPY_CLASSLIST, \
 ))
 
 TARGETS += $(COPY_CLASSLIST)
+
+# Copy the default_jli_trace.txt file into jdk.jlink
+$(eval $(call SetupCopyFiles, COPY_JLI_TRACE, \
+    FILES := $(JLI_TRACE_FILE), \
+    DEST := $(JDK_OUTPUTDIR)/modules/jdk.jlink/jdk/tools/jlink/internal/plugins, \
+))
+
+# Because of the single recipe for jli trace and classlist above, the
+# COPY_JLI_TRACE rule needs to explicitly add the classlist file as a
+# prerequisite.
+$(COPY_JLI_TRACE): $(CLASSLIST_FILE)
+
+TARGETS += $(COPY_JLI_TRACE)
 
 ################################################################################
 
