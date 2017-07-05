@@ -52,7 +52,7 @@ fi
 runOne()
 {
    echo "$TESTJAVA/bin/java -classpath $TESTCLASSES $@"
-   $TESTJAVA/bin/java -classpath $TESTCLASSES $@
+   $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@
 }
 
 # Retry 5 times to be more resilent to system load fluctation.

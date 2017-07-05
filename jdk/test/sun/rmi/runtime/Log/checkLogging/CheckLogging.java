@@ -29,9 +29,6 @@
  *
  * @library ../../../../../java/rmi/testlibrary
  * @build TestLibrary
- * @build TestParams
- * @build TestFailedException
- * @build CheckLogging
  * @run main/othervm CheckLogging
  */
 

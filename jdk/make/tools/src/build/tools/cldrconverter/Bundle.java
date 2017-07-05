@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +87,23 @@ class Bundle {
     private final static String[] ERA_KEYS = {
         "long.Eras",
         "Eras",
-        "short.Eras"
+        "narrow.Eras"
+    };
+
+    // Keys for individual time zone names
+    private final static String TZ_GEN_LONG_KEY = "timezone.displayname.generic.long";
+    private final static String TZ_GEN_SHORT_KEY = "timezone.displayname.generic.short";
+    private final static String TZ_STD_LONG_KEY = "timezone.displayname.standard.long";
+    private final static String TZ_STD_SHORT_KEY = "timezone.displayname.standard.short";
+    private final static String TZ_DST_LONG_KEY = "timezone.displayname.daylight.long";
+    private final static String TZ_DST_SHORT_KEY = "timezone.displayname.daylight.short";
+    private final static String[] ZONE_NAME_KEYS = {
+        TZ_STD_LONG_KEY,
+        TZ_STD_SHORT_KEY,
+        TZ_DST_LONG_KEY,
+        TZ_DST_SHORT_KEY,
+        TZ_GEN_LONG_KEY,
+        TZ_GEN_SHORT_KEY
     };
 
     private final String id;
@@ -98,6 +115,7 @@ class Bundle {
         return bundles.get(id);
     }
 
+    @SuppressWarnings("ConvertToStringSwitch")
     Bundle(String id, String cldrPath, String bundles, String currencies) {
         this.id = id;
         this.cldrPath = cldrPath;
@@ -242,9 +260,12 @@ class Bundle {
             // handle multiple inheritance for month and day names
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "MonthNames");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "MonthAbbreviations");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "MonthNarrows");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "DayNames");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "DayAbbreviations");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "DayNarrows");
             handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "AmPmMarkers");
+            handleMultipleInheritance(myMap, parentsMap, calendarPrefix + "narrow.AmPmMarkers");
 
             adjustEraNames(myMap, calendarType);
 
@@ -253,6 +274,99 @@ class Bundle {
             handleDateTimeFormatPatterns(DATETIME_PATTERN_KEYS, myMap, parentsMap, calendarType, "DateTimePatterns");
         }
 
+        // if myMap has any empty timezone or metazone names, weed out them.
+        // Fill in any missing abbreviations if locale is "en".
+        for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
+            String key = it.next();
+            if (key.startsWith(CLDRConverter.TIMEZONE_ID_PREFIX)
+                    || key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
+                @SuppressWarnings("unchecked")
+                Map<String, String> nameMap = (Map<String, String>) myMap.get(key);
+                if (nameMap.isEmpty()) {
+                    // Some zones have only exemplarCity, which become empty.
+                    // Remove those from the map.
+                    it.remove();
+                    continue;
+                }
+
+                if (id.startsWith("en")) {
+                    fillInAbbrs(key, nameMap);
+                }
+            }
+        }
+        for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
+            String key = it.next();
+            if (key.startsWith(CLDRConverter.TIMEZONE_ID_PREFIX)
+                    || key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
+                @SuppressWarnings("unchecked")
+                Map<String, String> nameMap = (Map<String, String>) myMap.get(key);
+                // Convert key/value pairs to an array.
+                String[] names = new String[ZONE_NAME_KEYS.length];
+                int ix = 0;
+                for (String nameKey : ZONE_NAME_KEYS) {
+                    String name = nameMap.get(nameKey);
+                    if (name == null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> parentNames = (Map<String, String>) parentsMap.get(key);
+                        if (parentNames != null) {
+                            name = parentNames.get(nameKey);
+                        }
+                    }
+                    names[ix++] = name;
+                }
+                if (hasNulls(names)) {
+                    String metaKey = toMetaZoneKey(key);
+                    if (metaKey != null) {
+                        Object obj = myMap.get(metaKey);
+                        if (obj instanceof String[]) {
+                            String[] metaNames = (String[]) obj;
+                            for (int i = 0; i < names.length; i++) {
+                                if (names[i] == null) {
+                                    names[i] = metaNames[i];
+                                }
+                            }
+                        } else if (obj instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, String> m = (Map<String, String>) obj;
+                            for (int i = 0; i < names.length; i++) {
+                                if (names[i] == null) {
+                                    names[i] = m.get(ZONE_NAME_KEYS[i]);
+                                }
+                            }
+                        }
+                    }
+                    // If there are still any nulls, try filling in them from en data.
+                    if (hasNulls(names) && !id.equals("en")) {
+                        @SuppressWarnings("unchecked")
+                        String[] enNames = (String[]) Bundle.getBundle("en").getTargetMap().get(key);
+                        if (enNames == null) {
+                            if (metaKey != null) {
+                                @SuppressWarnings("unchecked")
+                                String[] metaNames = (String[]) Bundle.getBundle("en").getTargetMap().get(metaKey);
+                                enNames = metaNames;
+                            }
+                        }
+                        if (enNames != null) {
+                            for (int i = 0; i < names.length; i++) {
+                                if (names[i] == null) {
+                                    names[i] = enNames[i];
+                                }
+                            }
+                        }
+                        // If there are still nulls, give up names.
+                        if (hasNulls(names)) {
+                            names = null;
+                        }
+                    }
+                }
+                // replace the Map with the array
+                if (names != null) {
+                    myMap.put(key, names);
+                } else {
+                    it.remove();
+                }
+            }
+        }
         return myMap;
     }
 
@@ -352,20 +466,10 @@ class Bundle {
             realKeys[index] = realKey;
             eraNames[index++] = value;
         }
-        if (eraNames[0] != null) {
-            if (eraNames[1] != null) {
-                if (eraNames[2] == null) {
-                    // Eras -> short.Eras
-                    // long.Eras -> Eras
-                    map.put(realKeys[2], map.get(realKeys[1]));
-                    map.put(realKeys[1], map.get(realKeys[0]));
-                }
-            } else {
-                // long.Eras -> Eras
-                map.put(realKeys[1], map.get(realKeys[0]));
+        for (int i = 0; i < eraNames.length; i++) {
+            if (eraNames[i] == null) {
+                map.put(realKeys[i], null);
             }
-            // remove long.Eras
-            map.remove(realKeys[0]);
         }
     }
 
@@ -473,6 +577,86 @@ class Bundle {
         return jrePattern.toString();
     }
 
+    private String toMetaZoneKey(String tzKey) {
+        if (tzKey.startsWith(CLDRConverter.TIMEZONE_ID_PREFIX)) {
+            String tz = tzKey.substring(CLDRConverter.TIMEZONE_ID_PREFIX.length());
+            String meta = CLDRConverter.handlerMetaZones.get(tz);
+            if (meta != null) {
+                return CLDRConverter.METAZONE_ID_PREFIX + meta;
+            }
+        }
+        return null;
+    }
+
+    private void fillInAbbrs(String key, Map<String, String> map) {
+        fillInAbbrs(TZ_STD_LONG_KEY, TZ_STD_SHORT_KEY, map);
+        fillInAbbrs(TZ_DST_LONG_KEY, TZ_DST_SHORT_KEY, map);
+        fillInAbbrs(TZ_GEN_LONG_KEY, TZ_GEN_SHORT_KEY, map);
+
+        // If the standard std is "Standard Time" and daylight std is "Summer Time",
+        // replace the standard std with the generic std to avoid using
+        // the same abbrivation except for Australia time zone names.
+        String std = map.get(TZ_STD_SHORT_KEY);
+        String dst = map.get(TZ_DST_SHORT_KEY);
+        String gen = map.get(TZ_GEN_SHORT_KEY);
+        if (std != null) {
+            if (dst == null) {
+                // if dst is null, create long and short names from the standard
+                // std. ("Something Standard Time" to "Something Daylight Time",
+                // or "Something Time" to "Something Summer Time")
+                String name = map.get(TZ_STD_LONG_KEY);
+                if (name != null) {
+                    if (name.contains("Standard Time")) {
+                        name = name.replace("Standard Time", "Daylight Time");
+                    } else if (name.endsWith("Mean Time")) {
+                        name = name.replace("Mean Time", "Summer Time");
+                    } else if (name.endsWith(" Time")) {
+                        name = name.replace(" Time", " Summer Time");
+                    }
+                    map.put(TZ_DST_LONG_KEY, name);
+                    fillInAbbrs(TZ_DST_LONG_KEY, TZ_DST_SHORT_KEY, map);
+                }
+            }
+            if (gen  == null) {
+                String name = map.get(TZ_STD_LONG_KEY);
+                if (name != null) {
+                    if (name.endsWith("Standard Time")) {
+                        name = name.replace("Standard Time", "Time");
+                    } else if (name.endsWith("Mean Time")) {
+                        name = name.replace("Mean Time", "Time");
+                    }
+                    map.put(TZ_GEN_LONG_KEY, name);
+                    fillInAbbrs(TZ_GEN_LONG_KEY, TZ_GEN_SHORT_KEY, map);
+                }
+            }
+        }
+    }
+
+    private void fillInAbbrs(String longKey, String shortKey, Map<String, String> map) {
+        String abbr = map.get(shortKey);
+        if (abbr == null) {
+            String name = map.get(longKey);
+            if (name != null) {
+                abbr = toAbbr(name);
+                if (abbr != null) {
+                    map.put(shortKey, abbr);
+                }
+            }
+        }
+    }
+
+    private String toAbbr(String name) {
+        String[] substrs = name.split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String s : substrs) {
+            char c = s.charAt(0);
+            if (c >= 'A' && c <= 'Z') {
+                sb.append(c);
+            }
+        }
+        return sb.length() > 0 ? sb.toString() : null;
+    }
+
     private void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
         case 'G':
@@ -538,5 +722,14 @@ class Bundle {
         for (int i = 0; i < n; i++) {
             sb.append(c);
         }
+    }
+
+    private static boolean hasNulls(Object[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -30,11 +30,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build ContextInsulation
- * @build ServiceConfiguration
- * @build TestProvider
- * @build TestProvider2
+ * @build TestLibrary ServiceConfiguration TestProvider TestProvider2
  * @run main/othervm/policy=security.policy ContextInsulation
  */
 

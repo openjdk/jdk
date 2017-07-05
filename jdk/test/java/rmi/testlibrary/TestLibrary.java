@@ -54,6 +54,7 @@ import java.rmi.server.RemoteRef;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Enumeration;
 import java.util.Properties;
+
 import sun.rmi.registry.RegistryImpl;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.transport.Endpoint;
@@ -92,6 +93,7 @@ public class TestLibrary {
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 64003;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 64004;
     public final static int READTEST_REGISTRY_PORT = 64005;
+    private final static int MAX_SERVER_SOCKET_TRIES = 10;
 
     static void mesg(Object mesg) {
         System.err.println("TEST_LIBRARY: " + mesg.toString());
@@ -125,36 +127,15 @@ public class TestLibrary {
         bomb(null, e);
     }
 
-    /**
-     * Property accessors
-     */
-    private static boolean getBoolean(String name) {
-        return (new Boolean(getProperty(name, "false")).booleanValue());
-    }
-    private static Integer getInteger(String name) {
-        int val = 0;
-        Integer value = null;
-
-        String propVal = getProperty(name, null);
-        if (propVal == null) {
-            return null;
-        }
-
-        try {
-            value = new Integer(Integer.parseInt(propVal));
-        } catch (NumberFormatException nfe) {
-        }
-        return value;
-    }
     public static String getProperty(String property, String defaultVal) {
         final String prop = property;
         final String def = defaultVal;
-        return ((String) java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
-                public Object run() {
+        return java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<String>() {
+                public String run() {
                     return System.getProperty(prop, def);
                 }
-            }));
+            });
     }
 
     /**
@@ -169,9 +150,9 @@ public class TestLibrary {
     public static void setProperty(String property, String value) {
         final String prop = property;
         final String val = value;
-        java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
-                public Object run() {
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                     System.setProperty(prop, val);
                     return null;
                 }
@@ -188,7 +169,7 @@ public class TestLibrary {
         out.println("-------------------Test environment----------" +
                     "---------");
 
-        for(Enumeration keys = System.getProperties().keys();
+        for(Enumeration<?> keys = System.getProperties().keys();
             keys.hasMoreElements();) {
 
             String property = (String) keys.nextElement();
@@ -252,7 +233,7 @@ public class TestLibrary {
         /*
          * Obtain the URL for the codebase.
          */
-        URL codebaseURL = dstDir.toURL();
+        URL codebaseURL = dstDir.toURI().toURL();
 
         /*
          * Specify where we will copy the class definition from, if
@@ -407,26 +388,46 @@ public class TestLibrary {
      */
     public static int getUnusedRandomPort() {
         int numTries = 0;
-        int unusedRandomPort = FIXED_PORT_MIN;
-        Exception ex = null;
+        IOException ex = null;
 
-        while (numTries++ < 10) {
+        while (numTries++ < MAX_SERVER_SOCKET_TRIES) {
+            int unusedRandomPort = -1;
             ex = null; //reset
 
             try (ServerSocket ss = new ServerSocket(0)) {
                 unusedRandomPort = ss.getLocalPort();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 ex = e;
+                // temporarily print stack trace here until we find out why
+                // tests are failing.
+                System.err.println("TestLibrary.getUnusedRandomPort() caught "
+                        + "exception on iteration " + numTries
+                        + (numTries==MAX_SERVER_SOCKET_TRIES ? " (the final try)."
+                        : "."));
+                ex.printStackTrace();
             }
 
-            if (!isReservedPort(unusedRandomPort)) {
-                return unusedRandomPort;
+            if (unusedRandomPort >= 0) {
+                if (isReservedPort(unusedRandomPort)) {
+                    System.out.println("INFO: On try # " + numTries
+                        + (numTries==MAX_SERVER_SOCKET_TRIES ? ", the final try, ": ",")
+                        + " ServerSocket(0) returned the reserved port "
+                        + unusedRandomPort
+                        + " in TestLibrary.getUnusedRandomPort() ");
+                } else {
+                    return unusedRandomPort;
+                }
             }
         }
 
         // If we're here, then either an exception was thrown or the port is
         // a reserved port.
-        throw new RuntimeException("Error getting unused random port.", ex);
+        if (ex==null) {
+            throw new RuntimeException("Error getting unused random port. The"
+                    +" last port returned by ServerSocket(0) was a reserved port");
+        } else {
+            throw new RuntimeException("Error getting unused random port.", ex);
+        }
     }
 
     /**

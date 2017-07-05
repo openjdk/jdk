@@ -611,8 +611,6 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   // C++ interpreter only
   // rsi/r13 - previous interpreter state pointer
 
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
-
   // InterpreterRuntime::frequency_counter_overflow takes one argument
   // indicating if the counter overflow occurs at a backwards branch (non-NULL bcp).
   // The call returns the address of the verified entry point for the method or NULL
@@ -977,15 +975,16 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   //      to save/restore.
   address entry_point = __ pc();
 
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
-  const Address size_of_locals    (rbx, Method::size_of_locals_offset());
+  const Address constMethod       (rbx, Method::const_offset());
   const Address invocation_counter(rbx, Method::invocation_counter_offset() + InvocationCounter::counter_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
 
   // rsi/r13 == state/locals rdi == prevstate
   const Register locals = rdi;
 
   // get parameter size (always needed)
+  __ movptr(rcx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: Method*
@@ -994,6 +993,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // for natives the size of locals is zero
 
   // compute beginning of parameters /locals
+
   __ lea(locals, Address(rsp, rcx, Address::times_ptr, -wordSize));
 
   // initialize fixed part of activation frame
@@ -1107,11 +1107,14 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register method = rbx;
   const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rdi);
   const Register t      = InterpreterRuntime::SignatureHandlerGenerator::temp();    // rcx|rscratch1
+  const Address constMethod       (method, Method::const_offset());
+  const Address size_of_parameters(t, ConstMethod::size_of_parameters_offset());
 
   // allocate space for parameters
   __ movptr(method, STATE(_method));
   __ verify_method_ptr(method);
-  __ load_unsigned_short(t, Address(method, Method::size_of_parameters_offset()));
+  __ movptr(t, constMethod);
+  __ load_unsigned_short(t, size_of_parameters);
   __ shll(t, 2);
 #ifdef _LP64
   __ subptr(rsp, t);
@@ -1700,15 +1703,17 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // save sender sp
   __ push(rcx);
 
-  const Address size_of_parameters(rbx, Method::size_of_parameters_offset());
-  const Address size_of_locals    (rbx, Method::size_of_locals_offset());
+  const Address constMethod       (rbx, Method::const_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rdx, ConstMethod::size_of_parameters_offset());
+  const Address size_of_locals    (rdx, ConstMethod::size_of_locals_offset());
 
   // const Address monitor_block_top (rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   // const Address monitor_block_bot (rbp, frame::interpreter_frame_initial_sp_offset        * wordSize);
   // const Address monitor(rbp, frame::interpreter_frame_initial_sp_offset * wordSize - (int)sizeof(BasicObjectLock));
 
   // get parameter size (always needed)
+  __ movptr(rdx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: Method*
@@ -1989,7 +1994,9 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ movptr(rbx, STATE(_result._to_call._callee));
 
   // callee left args on top of expression stack, remove them
-  __ load_unsigned_short(rcx, Address(rbx, Method::size_of_parameters_offset()));
+  __ movptr(rcx, constMethod);
+  __ load_unsigned_short(rcx, Address(rcx, ConstMethod::size_of_parameters_offset()));
+
   __ lea(rsp, Address(rsp, rcx, Address::times_ptr));
 
   __ movl(rcx, Address(rbx, Method::result_index_offset()));
@@ -2159,7 +2166,9 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Make it look like call_stub calling conventions
 
   // Get (potential) receiver
-  __ load_unsigned_short(rcx, size_of_parameters);                   // get size of parameters in words
+  // get size of parameters in words
+  __ movptr(rcx, constMethod);
+  __ load_unsigned_short(rcx, Address(rcx, ConstMethod::size_of_parameters_offset()));
 
   ExternalAddress recursive(CAST_FROM_FN_PTR(address, RecursiveInterpreterActivation));
   __ pushptr(recursive.addr());                                      // make it look good in the debugger

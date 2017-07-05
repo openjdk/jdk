@@ -76,7 +76,7 @@ case "$OS" in
     ;;  
 esac
 # trailing / after code base is important for rmi codebase property.
-${TESTJAVA}${FS}bin${FS}java -cp $TEST_CLASSPATH -Djava.rmi.server.codebase=${FILEURL}$CODEBASE/ readTest > OUT.TXT 2>&1 &
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp $TEST_CLASSPATH -Djava.rmi.server.codebase=${FILEURL}$CODEBASE/ readTest > OUT.TXT 2>&1 &
 TEST_PID=$!
 #bulk of testcase - let it run for a while
 sleep 5

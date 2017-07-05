@@ -29,7 +29,6 @@
  * boundaries
  * @author Ann Wollrath
  *
- * @build LogTest
  * @run main/othervm/timeout=240 LogTest
  */
 

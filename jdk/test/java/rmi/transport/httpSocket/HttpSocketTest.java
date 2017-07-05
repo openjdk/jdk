@@ -27,7 +27,7 @@
  * @author Dana Burns
  *
  * @library ../../testlibrary
- * @build HttpSocketTest HttpSocketTest_Stub TestLibrary
+ * @build TestLibrary HttpSocketTest HttpSocketTest_Stub
  * @run main/othervm/policy=security.policy HttpSocketTest
  */
 

@@ -63,7 +63,7 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
 
  public:
   // constructor
-  CMBitMapRO(ReservedSpace rs, int shifter);
+  CMBitMapRO(int shifter);
 
   enum { do_yield = true };
 
@@ -117,8 +117,11 @@ class CMBitMap : public CMBitMapRO {
 
  public:
   // constructor
-  CMBitMap(ReservedSpace rs, int shifter) :
-    CMBitMapRO(rs, shifter) {}
+  CMBitMap(int shifter) :
+    CMBitMapRO(shifter) {}
+
+  // Allocates the back store for the marking bitmap
+  bool allocate(ReservedSpace heap_rs);
 
   // write marks
   void mark(HeapWord* addr) {
@@ -155,17 +158,18 @@ class CMBitMap : public CMBitMapRO {
   MemRegion getAndClearMarkedRegion(HeapWord* addr, HeapWord* end_addr);
 };
 
-// Represents a marking stack used by the CM collector.
-// Ideally this should be GrowableArray<> just like MSC's marking stack(s).
+// Represents a marking stack used by ConcurrentMarking in the G1 collector.
 class CMMarkStack VALUE_OBJ_CLASS_SPEC {
+  VirtualSpace _virtual_space;   // Underlying backing store for actual stack
   ConcurrentMark* _cm;
   oop*   _base;        // bottom of stack
-  jint   _index;       // one more than last occupied index
-  jint   _capacity;    // max #elements
-  jint   _saved_index; // value of _index saved at start of GC
-  NOT_PRODUCT(jint _max_depth;)  // max depth plumbed during run
+  jint _index;       // one more than last occupied index
+  jint _capacity;    // max #elements
+  jint _saved_index; // value of _index saved at start of GC
+  NOT_PRODUCT(jint _max_depth;)   // max depth plumbed during run
 
-  bool   _overflow;
+  bool  _overflow;
+  bool  _should_expand;
   DEBUG_ONLY(bool _drain_in_progress;)
   DEBUG_ONLY(bool _drain_in_progress_yields;)
 
@@ -173,7 +177,13 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   CMMarkStack(ConcurrentMark* cm);
   ~CMMarkStack();
 
-  void allocate(size_t size);
+#ifndef PRODUCT
+  jint max_depth() const {
+    return _max_depth;
+  }
+#endif
+
+  bool allocate(size_t capacity);
 
   oop pop() {
     if (!isEmpty()) {
@@ -231,10 +241,16 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
 
   bool isEmpty()    { return _index == 0; }
   bool isFull()     { return _index == _capacity; }
-  int maxElems()    { return _capacity; }
+  int  maxElems()   { return _capacity; }
 
   bool overflow() { return _overflow; }
   void clear_overflow() { _overflow = false; }
+
+  bool should_expand() const { return _should_expand; }
+  void set_should_expand();
+
+  // Expand the stack, typically in response to an overflow condition
+  void expand();
 
   int  size() { return _index; }
 
@@ -344,6 +360,7 @@ public:
 class ConcurrentMarkThread;
 
 class ConcurrentMark: public CHeapObj<mtGC> {
+  friend class CMMarkStack;
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
@@ -577,6 +594,9 @@ protected:
   // the card bitmaps.
   intptr_t _heap_bottom_card_num;
 
+  // Set to true when initialization is complete
+  bool _completed_initialization;
+
 public:
   // Manipulation of the global mark stack.
   // Notice that the first mark_stack_push is CAS-based, whereas the
@@ -636,7 +656,7 @@ public:
     return _task_queues->steal(worker_id, hash_seed, obj);
   }
 
-  ConcurrentMark(ReservedSpace rs, uint max_regions);
+  ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs);
   ~ConcurrentMark();
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
@@ -906,6 +926,11 @@ public:
   // contains the object to be marked/counted, which this routine looks up.
   // Should *not* be called from parallel code.
   inline bool mark_and_count(oop obj);
+
+  // Returns true if initialization was successfully completed.
+  bool completed_initialization() const {
+    return _completed_initialization;
+  }
 
 protected:
   // Clear all the per-task bitmaps and arrays used to store the

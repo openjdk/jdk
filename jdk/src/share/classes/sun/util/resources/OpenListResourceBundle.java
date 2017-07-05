@@ -67,6 +67,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
     }
 
     // Implements java.util.ResourceBundle.handleGetObject; inherits javadoc specification.
+    @Override
     public Object handleGetObject(String key) {
         if (key == null) {
             throw new NullPointerException();
@@ -79,6 +80,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
     /**
      * Implementation of ResourceBundle.getKeys.
      */
+    @Override
     public Enumeration<String> getKeys() {
         ResourceBundle parent = this.parent;
         return new ResourceBundleEnumeration(handleGetKeys(),
@@ -86,7 +88,8 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
     }
 
     /**
-     * Returns a set of keys provided in this resource bundle
+     * Returns a set of keys provided in this resource bundle,
+     * including no parents.
      */
     public Set<String> handleGetKeys() {
         loadLookupTablesIfNecessary();
@@ -99,7 +102,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         if (keyset != null) {
             return keyset;
         }
-        Set<String> ks = new HashSet<>();
+        Set<String> ks = createSet();
         ks.addAll(handleGetKeys());
         if (parent != null) {
             ks.addAll(parent.keySet());
@@ -110,13 +113,6 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
             }
         }
         return keyset;
-    }
-
-    /**
-     * Returns the parent bundle
-     */
-    public OpenListResourceBundle getParent() {
-        return (OpenListResourceBundle)parent;
     }
 
     /**
@@ -160,8 +156,12 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * Lets subclasses provide specialized Map implementations.
      * Default uses HashMap.
      */
-    protected Map<String, Object> createMap(int size) {
+    protected <K, V> Map<K, V> createMap(int size) {
         return new HashMap<>(size);
+    }
+
+    protected <E> Set<E> createSet() {
+        return new HashSet<>();
     }
 
     private volatile Map<String, Object> lookup = null;

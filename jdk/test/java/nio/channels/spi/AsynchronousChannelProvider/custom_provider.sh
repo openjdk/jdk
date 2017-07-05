@@ -51,7 +51,7 @@ failures=0
 
 go() {
     echo ''
-    $JAVA $1 $2 $3 2>&1
+    $JAVA ${TESTVMOPTS} $1 $2 $3 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 

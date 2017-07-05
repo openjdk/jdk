@@ -29,8 +29,7 @@
   * @author Vinod Johnson
   *
   * @library ../testlibrary
-  * @build TestLibrary
-  * @build UnderscoreHost UnderscoreHost_Stub
+  * @build TestLibrary UnderscoreHost_Stub
   * @run main/othervm UnderscoreHost
  */
 

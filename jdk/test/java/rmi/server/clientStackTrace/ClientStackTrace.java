@@ -28,7 +28,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build ClientStackTrace MyRemoteObject_Stub TestLibrary TestParams
+ * @build TestLibrary ClientStackTrace MyRemoteObject_Stub
  * @run main/othervm/policy=security.policy/timeout=120 ClientStackTrace
  */
 

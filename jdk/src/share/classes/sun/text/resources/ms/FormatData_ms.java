@@ -81,6 +81,23 @@ public class FormatData_ms extends ListResourceBundle {
                     "",
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "O",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Ahad",
@@ -101,6 +118,28 @@ public class FormatData_ms extends ListResourceBundle {
                     "Kha",
                     "Jum",
                     "Sab",
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "A",
+                    "I",
+                    "S",
+                    "R",
+                    "K",
+                    "J",
+                    "S",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "A",
+                    "I",
+                    "S",
+                    "R",
+                    "K",
+                    "J",
+                    "S",
                 }
             },
             { "Eras",

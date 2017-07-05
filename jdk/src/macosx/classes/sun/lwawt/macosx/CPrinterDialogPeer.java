@@ -41,7 +41,7 @@ public class CPrinterDialogPeer extends LWWindowPeer {
     public CPrinterDialogPeer(CPrinterDialog target, PlatformComponent platformComponent,
                               PlatformWindow platformWindow)
     {
-        super(target, platformComponent, platformWindow);
+        super(target, platformComponent, platformWindow, LWWindowPeer.PeerType.DIALOG);
         //super(target);
         fTarget = target;
         super.initialize();

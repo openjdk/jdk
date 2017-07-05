@@ -50,6 +50,13 @@ import javax.sql.rowset.*;
  * an instance from a <code>Struct</code> object, a method for retrieving
  * the SQL type name of the SQL structured type in the database, and methods
  * for retrieving its attribute values.
+ *
+ * <h4> Thread safety </h4>
+ *
+ * A SerialStruct is not safe for use by multiple concurrent threads.  If a
+ * SerialStruct is to be used by more than one thread then access to the
+ * SerialStruct should be controlled by appropriate synchronization.
+ *
  */
 public class SerialStruct implements Struct, Serializable, Cloneable {
 

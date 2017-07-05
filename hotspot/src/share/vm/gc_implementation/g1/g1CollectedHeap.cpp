@@ -2079,7 +2079,11 @@ jint G1CollectedHeap::initialize() {
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm       = new ConcurrentMark(heap_rs, max_regions());
+  _cm = new ConcurrentMark(this, heap_rs);
+  if (_cm == NULL || !_cm->completed_initialization()) {
+    vm_shutdown_during_initialization("Could not create/initialize ConcurrentMark");
+    return JNI_ENOMEM;
+  }
   _cmThread = _cm->cmThread();
 
   // Initialize the from_card cache structure of HeapRegionRemSet.
@@ -2087,7 +2091,7 @@ jint G1CollectedHeap::initialize() {
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size)) {
-    vm_exit_during_initialization("Failed to allocate initial heap.");
+    vm_shutdown_during_initialization("Failed to allocate initial heap.");
     return JNI_ENOMEM;
   }
 

@@ -104,6 +104,17 @@ public class FormatData_et extends ListResourceBundle {
                     "L" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "P",
+                    "E",
+                    "T",
+                    "K",
+                    "N",
+                    "R",
+                    "L",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "e.m.a.",

@@ -69,6 +69,8 @@ public class ConstMethod extends VMObject {
     signatureIndex             = new CIntField(type.getCIntegerField("_signature_index"), 0);
     idnum                      = new CIntField(type.getCIntegerField("_method_idnum"), 0);
     maxStack                   = new CIntField(type.getCIntegerField("_max_stack"), 0);
+    maxLocals                  = new CIntField(type.getCIntegerField("_max_locals"), 0);
+    sizeOfParameters           = new CIntField(type.getCIntegerField("_size_of_parameters"), 0);
 
     // start of byte code
     bytecodeOffset = type.getSize();
@@ -96,6 +98,8 @@ public class ConstMethod extends VMObject {
   private static CIntField signatureIndex;
   private static CIntField idnum;
   private static CIntField maxStack;
+  private static CIntField maxLocals;
+  private static CIntField sizeOfParameters;
 
   // start of bytecode
   private static long bytecodeOffset;
@@ -149,6 +153,14 @@ public class ConstMethod extends VMObject {
 
   public long getMaxStack() {
     return maxStack.getValue(this);
+  }
+
+  public long getMaxLocals() {
+    return maxLocals.getValue(this);
+  }
+
+  public long getSizeOfParameters() {
+    return sizeOfParameters.getValue(this);
   }
 
   public Symbol getName() {
@@ -247,6 +259,8 @@ public class ConstMethod extends VMObject {
       visitor.doCInt(signatureIndex, true);
       visitor.doCInt(codeSize, true);
       visitor.doCInt(maxStack, true);
+      visitor.doCInt(maxLocals, true);
+      visitor.doCInt(sizeOfParameters, true);
     }
 
   // Accessors

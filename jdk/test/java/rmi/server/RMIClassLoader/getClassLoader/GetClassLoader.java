@@ -29,9 +29,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build GetClassLoader
- * @build Foo
+ * @build TestLibrary Foo
  * @run main/othervm/policy=security.policy GetClassLoader
  */
 

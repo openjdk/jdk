@@ -31,11 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build Receiver
- * @build DownloadArrayClass
- * @build DownloadArrayClass_Stub
- * @build Foo
+ * @build TestLibrary Receiver DownloadArrayClass_Stub Foo
  * @run main/othervm/policy=security.policy DownloadArrayClass
  */
 

@@ -46,5 +46,5 @@ ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Foo.java
 ${TESTJAVA}/bin/jar cf cb.jar *.class
 rm -f *.class
 ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test
 rm -f *.class *.jar

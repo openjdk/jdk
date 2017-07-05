@@ -32,7 +32,7 @@
  * @author Laird Dornin
  *
  * @library ../testlibrary
- * @build InvalidName
+ * @build TestLibrary
  * @run main/othervm InvalidName
  */
 

@@ -28,11 +28,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build DGCDeadLock
- * @build Test
- * @build TestImpl
- * @build TestImpl_Stub
- * @build TestLibrary
+ * @build TestLibrary Test TestImpl TestImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=360 DGCDeadLock
  */
 

@@ -33,9 +33,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build DelegateBeforePermissionCheck
- * @build Foo
+ * @build TestLibrary Foo
  * @run main/othervm DelegateBeforePermissionCheck
  */
 
