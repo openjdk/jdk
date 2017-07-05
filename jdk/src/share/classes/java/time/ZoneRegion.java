@@ -66,7 +66,6 @@ import java.time.zone.ZoneRules;
 import java.time.zone.ZoneRulesException;
 import java.time.zone.ZoneRulesProvider;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
  * A geographical region where the same time-zone rules apply.
@@ -151,19 +150,6 @@ final class ZoneRegion extends ZoneId implements Serializable {
             if (c == '-' && i != 0) continue;
             throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
         }
-    }
-
-    /**
-     * Obtains an instance of {@code ZoneId} wrapping an offset.
-     * <p>
-     * For example, zone IDs like 'UTC', 'GMT', 'UT' and 'UTC+01:30' will be setup here.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @param offset  the offset, not null
-     * @return the zone ID, not null
-     */
-    static ZoneRegion ofPrefixedOffset(String zoneId, ZoneOffset offset) {
-        return new ZoneRegion(zoneId, offset.getRules());
     }
 
     //-------------------------------------------------------------------------

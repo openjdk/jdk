@@ -143,7 +143,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The resolved date.
      */
-    private ChronoLocalDate<?> date;
+    private ChronoLocalDate date;
     /**
      * The resolved time.
      */
@@ -197,7 +197,7 @@ final class Parsed implements TemporalAccessor {
             return time.getLong(field);
         }
         if (field instanceof ChronoField) {
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
@@ -255,38 +255,30 @@ final class Parsed implements TemporalAccessor {
         // if any other fields, handle them
         // any lenient date resolution should return epoch-day
         if (fieldValues.size() > 0) {
-            boolean changed = false;
+            int changedCount = 0;
             outer:
-            while (true) {
+            while (changedCount < 50) {
                 for (Map.Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
                     TemporalField targetField = entry.getKey();
-                    Map<TemporalField, Long> changes = targetField.resolve(this, entry.getValue(), resolverStyle);
-                    if (changes != null) {
-                        changed = true;
-                        resolveFieldsMakeChanges(targetField, changes);
-                        fieldValues.remove(targetField);  // helps avoid infinite loops
+                    ChronoLocalDate resolvedDate = targetField.resolve(fieldValues, chrono, zone, resolverStyle);
+                    if (resolvedDate != null) {
+                        updateCheckConflict(resolvedDate);
+                        changedCount++;
+                        continue outer;  // have to restart to avoid concurrent modification
+                    } else if (fieldValues.containsKey(targetField) == false) {
+                        changedCount++;
                         continue outer;  // have to restart to avoid concurrent modification
                     }
                 }
                 break;
             }
+            if (changedCount == 50) {  // catch infinite loops
+                throw new DateTimeException("One of the parsed fields has an incorrectly implemented resolve method");
+            }
             // if something changed then have to redo ChronoField resolve
-            if (changed) {
+            if (changedCount > 0) {
                 resolveDateFields();
                 resolveTimeFields();
-            }
-        }
-    }
-
-    private void resolveFieldsMakeChanges(TemporalField targetField, Map<TemporalField, Long> changes) {
-        for (Map.Entry<TemporalField, Long> change : changes.entrySet()) {
-            TemporalField changeField = change.getKey();
-            Long changeValue = change.getValue();
-            Objects.requireNonNull(changeField, "changeField");
-            if (changeValue != null) {
-                updateCheckConflict(targetField, changeField, changeValue);
-            } else {
-                fieldValues.remove(changeField);
             }
         }
     }
@@ -305,7 +297,7 @@ final class Parsed implements TemporalAccessor {
         updateCheckConflict(chrono.resolveDate(fieldValues, resolverStyle));
     }
 
-    private void updateCheckConflict(ChronoLocalDate<?> cld) {
+    private void updateCheckConflict(ChronoLocalDate cld) {
         if (date != null) {
             if (cld != null && date.equals(cld) == false) {
                 throw new DateTimeException("Conflict found: Fields resolved to two different dates: " + date + " " + cld);

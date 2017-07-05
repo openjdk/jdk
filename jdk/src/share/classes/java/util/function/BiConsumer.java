@@ -27,13 +27,16 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * An operation which accepts two input arguments and returns no result. This is
- * the two-arity specialization of {@link Consumer}. Unlike most other
- * functional interfaces, {@code BiConsumer} is expected to operate via
- * side-effects.
+ * Represents an operation that accepts two input arguments and returns no
+ * result.  This is the two-arity specialization of {@link Consumer}.
+ * Unlike most other functional interfaces, {@code BiConsumer} is expected
+ * to operate via side-effects.
  *
- * @param <T> the type of the first argument to the {@code accept} operation
- * @param <U> the type of the second argument to the {@code accept} operation
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #accept(Object, Object)}.
+ *
+ * @param <T> the type of the first argument to the operation
+ * @param <U> the type of the second argument to the operation
  *
  * @see Consumer
  * @since 1.8
@@ -42,35 +45,31 @@ import java.util.Objects;
 public interface BiConsumer<T, U> {
 
     /**
-     * Performs operations upon the provided objects which may modify those
-     * objects and/or external state.
+     * Performs this operation on the given arguments.
      *
-     * @param t an input object
-     * @param u an input object
+     * @param t the first input argument
+     * @param u the second input argument
      */
     void accept(T t, U u);
 
     /**
-     * Returns a {@code BiConsumer} which performs, in sequence, the operation
-     * represented by this object followed by the operation represented by
-     * the other {@code BiConsumer}.
+     * Returns a composed {@code BiConsumer} that performs, in sequence, this
+     * operation followed by the {@code after} operation. If performing either
+     * operation throws an exception, it is relayed to the caller of the
+     * composed operation.  If performing this operation throws an exception,
+     * the {@code after} operation will not be performed.
      *
-     * <p>Any exceptions thrown by either {@code accept} method are relayed
-     * to the caller; if performing this operation throws an exception, the
-     * other operation will not be performed.
-     *
-     * @param other a BiConsumer which will be chained after this BiConsumer
-     * @return a BiConsumer which performs in sequence the {@code accept} method
-     * of this BiConsumer and the {@code accept} method of the specified
-     * BiConsumer operation
-     * @throws NullPointerException if other is null
+     * @param after the operation to perform after this operation
+     * @return a composed {@code BiConsumer} that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
      */
-    default BiConsumer<T, U> chain(BiConsumer<? super T, ? super U> other) {
-        Objects.requireNonNull(other);
+    default BiConsumer<T, U> andThen(BiConsumer<? super T, ? super U> after) {
+        Objects.requireNonNull(after);
 
         return (l, r) -> {
             accept(l, r);
-            other.accept(l, r);
+            after.accept(l, r);
         };
     }
 }
