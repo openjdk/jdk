@@ -26,6 +26,11 @@
 
 package sun.security.ssl;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.math.BigInteger;
 import java.security.*;
 import java.io.IOException;
@@ -95,9 +100,35 @@ final class DHCrypt {
      * Generate a Diffie-Hellman keypair of the specified size.
      */
     DHCrypt(int keyLength, SecureRandom random) {
+        this(keyLength,
+                ParametersHolder.definedParams.get(keyLength), random);
+    }
+
+    /**
+     * Generate a Diffie-Hellman keypair using the specified parameters.
+     *
+     * @param modulus the Diffie-Hellman modulus P
+     * @param base the Diffie-Hellman base G
+     */
+    DHCrypt(BigInteger modulus, BigInteger base, SecureRandom random) {
+        this(modulus.bitLength(),
+                new DHParameterSpec(modulus, base), random);
+    }
+
+    /**
+     * Generate a Diffie-Hellman keypair using the specified size and
+     * parameters.
+     */
+    private DHCrypt(int keyLength,
+            DHParameterSpec params, SecureRandom random) {
+
         try {
             KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("DiffieHellman");
-            kpg.initialize(keyLength, random);
+            if (params != null) {
+                kpg.initialize(params, random);
+            } else {
+                kpg.initialize(keyLength, random);
+            }
 
             DHPublicKeySpec spec = generateDHPublicKeySpec(kpg);
             if (spec == null) {
@@ -111,33 +142,6 @@ final class DHCrypt {
             throw new RuntimeException("Could not generate DH keypair", e);
         }
     }
-
-
-    /**
-     * Generate a Diffie-Hellman keypair using the specified parameters.
-     *
-     * @param modulus the Diffie-Hellman modulus P
-     * @param base the Diffie-Hellman base G
-     */
-    DHCrypt(BigInteger modulus, BigInteger base, SecureRandom random) {
-        this.modulus = modulus;
-        this.base = base;
-        try {
-            KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("DiffieHellman");
-            DHParameterSpec params = new DHParameterSpec(modulus, base);
-            kpg.initialize(params, random);
-
-            DHPublicKeySpec spec = generateDHPublicKeySpec(kpg);
-            if (spec == null) {
-                throw new RuntimeException("Could not generate DH keypair");
-            }
-
-            publicValue = spec.getY();
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Could not generate DH keypair", e);
-        }
-    }
-
 
     static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) {
         if (key instanceof DHPublicKey) {
@@ -267,5 +271,142 @@ final class DHCrypt {
         }
 
         return null;
+    }
+
+    // lazy initialization holder class idiom for static default parameters
+    //
+    // See Effective Java Second Edition: Item 71.
+    private static class ParametersHolder {
+        private final static boolean debugIsOn =
+                (Debug.getInstance("ssl") != null) && Debug.isOn("sslctx");
+
+        //
+        // Default DH ephemeral parameters
+        //
+        private static final BigInteger g2 = BigInteger.valueOf(2);
+
+        private static final BigInteger p512 = new BigInteger(   // generated
+                "D87780E15FF50B4ABBE89870188B049406B5BEA98AB23A02" +
+                "41D88EA75B7755E669C08093D3F0CA7FC3A5A25CF067DCB9" +
+                "A43DD89D1D90921C6328884461E0B6D3", 16);
+        private static final BigInteger p768 = new BigInteger(   // RFC 2409
+                "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+                "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
+                "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
+                "E485B576625E7EC6F44C42E9A63A3620FFFFFFFFFFFFFFFF", 16);
+
+        private static final BigInteger p1024 = new BigInteger(  // RFC 2409
+                "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+                "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
+                "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
+                "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
+                "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381" +
+                "FFFFFFFFFFFFFFFF", 16);
+        private static final BigInteger p2048 = new BigInteger(  // TLS FEDHE
+                "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
+                "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
+                "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
+                "2433F51F5F066ED0856365553DED1AF3B557135E7F57C935" +
+                "984F0C70E0E68B77E2A689DAF3EFE8721DF158A136ADE735" +
+                "30ACCA4F483A797ABC0AB182B324FB61D108A94BB2C8E3FB" +
+                "B96ADAB760D7F4681D4F42A3DE394DF4AE56EDE76372BB19" +
+                "0B07A7C8EE0A6D709E02FCE1CDF7E2ECC03404CD28342F61" +
+                "9172FE9CE98583FF8E4F1232EEF28183C3FE3B1B4C6FAD73" +
+                "3BB5FCBC2EC22005C58EF1837D1683B2C6F34A26C1B2EFFA" +
+                "886B423861285C97FFFFFFFFFFFFFFFF", 16);
+
+        private static final BigInteger[] supportedPrimes = {
+                p512, p768, p1024, p2048};
+
+        // a measure of the uncertainty that prime modulus p is not a prime
+        //
+        // see BigInteger.isProbablePrime(int certainty)
+        private final static int PRIME_CERTAINTY = 120;
+
+        // the known security property, jdk.tls.server.defaultDHEParameters
+        private final static String PROPERTY_NAME =
+                "jdk.tls.server.defaultDHEParameters";
+
+        private static final Pattern spacesPattern = Pattern.compile("\\s+");
+
+        private final static Pattern syntaxPattern = Pattern.compile(
+                "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})" +
+                "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})*");
+
+        private static final Pattern paramsPattern = Pattern.compile(
+                "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)\\}");
+
+        // cache of predefined default DH ephemeral parameters
+        private final static Map<Integer,DHParameterSpec> definedParams;
+
+        static {
+            String property = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
+                        return Security.getProperty(PROPERTY_NAME);
+                    }
+                });
+
+            if (property != null && !property.isEmpty()) {
+                // remove double quote marks from beginning/end of the property
+                if (property.length() >= 2 && property.charAt(0) == '"' &&
+                        property.charAt(property.length() - 1) == '"') {
+                    property = property.substring(1, property.length() - 1);
+                }
+
+                property = property.trim();
+            }
+
+            if (property != null && !property.isEmpty()) {
+                Matcher spacesMatcher = spacesPattern.matcher(property);
+                property = spacesMatcher.replaceAll("");
+
+                if (debugIsOn) {
+                    System.out.println("The Security Property " +
+                            PROPERTY_NAME + ": " + property);
+                }
+            }
+
+            Map<Integer,DHParameterSpec> defaultParams = new HashMap<>();
+            if (property != null && !property.isEmpty()) {
+                Matcher syntaxMatcher = syntaxPattern.matcher(property);
+                if (syntaxMatcher.matches()) {
+                    Matcher paramsFinder = paramsPattern.matcher(property);
+                    while(paramsFinder.find()) {
+                        String primeModulus = paramsFinder.group(1);
+                        BigInteger p = new BigInteger(primeModulus, 16);
+                        if (!p.isProbablePrime(PRIME_CERTAINTY)) {
+                            if (debugIsOn) {
+                                System.out.println(
+                                    "Prime modulus p in Security Property, " +
+                                    PROPERTY_NAME + ", is not a prime: " +
+                                    primeModulus);
+                            }
+
+                            continue;
+                        }
+
+                        String baseGenerator = paramsFinder.group(2);
+                        BigInteger g = new BigInteger(baseGenerator, 16);
+
+                        DHParameterSpec spec = new DHParameterSpec(p, g);
+                        int primeLen = p.bitLength();
+                        defaultParams.put(primeLen, spec);
+                    }
+                } else if (debugIsOn) {
+                    System.out.println("Invalid Security Property, " +
+                            PROPERTY_NAME + ", definition");
+                }
+            }
+
+            for (BigInteger p : supportedPrimes) {
+                int primeLen = p.bitLength();
+                defaultParams.putIfAbsent(primeLen, new DHParameterSpec(p, g2));
+            }
+
+            definedParams =
+                    Collections.<Integer,DHParameterSpec>unmodifiableMap(
+                                                                defaultParams);
+        }
     }
 }

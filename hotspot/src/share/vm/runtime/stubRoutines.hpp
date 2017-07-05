@@ -197,6 +197,7 @@ class StubRoutines: AllStatic {
   static address _updateBytesCRC32;
   static address _crc_table_adr;
 
+  static address _crc32c_table_addr;
   static address _updateBytesCRC32C;
   static address _updateBytesAdler32;
 
@@ -206,6 +207,8 @@ class StubRoutines: AllStatic {
   static address _montgomeryMultiply;
   static address _montgomerySquare;
 
+  static address _dexp;
+
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
   // constant folding in the compiler to ensure equivalence.  If the
@@ -214,7 +217,6 @@ class StubRoutines: AllStatic {
   // SharedRuntime.
   static double (*_intrinsic_log)(double);
   static double (*_intrinsic_log10)(double);
-  static double (*_intrinsic_exp)(double);
   static double (*_intrinsic_pow)(double, double);
   static double (*_intrinsic_sin)(double);
   static double (*_intrinsic_cos)(double);
@@ -364,6 +366,7 @@ class StubRoutines: AllStatic {
   static address updateBytesCRC32()    { return _updateBytesCRC32; }
   static address crc_table_addr()      { return _crc_table_adr; }
 
+  static address crc32c_table_addr()   { return _crc32c_table_addr; }
   static address updateBytesCRC32C()   { return _updateBytesCRC32C; }
   static address updateBytesAdler32()  { return _updateBytesAdler32; }
 
@@ -372,6 +375,8 @@ class StubRoutines: AllStatic {
   static address mulAdd()              {return _mulAdd; }
   static address montgomeryMultiply()  { return _montgomeryMultiply; }
   static address montgomerySquare()    { return _montgomerySquare; }
+
+  static address dexp()                {return _dexp; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
@@ -384,10 +389,6 @@ class StubRoutines: AllStatic {
   static double  intrinsic_log10(double d) {
     assert(_intrinsic_log != NULL, "must be defined");
     return _intrinsic_log10(d);
-  }
-  static double  intrinsic_exp(double d) {
-    assert(_intrinsic_exp != NULL, "must be defined");
-    return _intrinsic_exp(d);
   }
   static double  intrinsic_pow(double d, double d2) {
     assert(_intrinsic_pow != NULL, "must be defined");

@@ -117,7 +117,7 @@ public class CMNodeFactory {
                 System.out.println("nodeCount = " + nodeCount ) ;
                 System.out.println("nodeLimit = " + maxNodeLimit ) ;
             }
-            fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN, "maxOccurLimit", new Object[]{ new Integer(maxNodeLimit) }, XMLErrorReporter.SEVERITY_FATAL_ERROR);
+            fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN, "MaxOccurLimit", new Object[]{ new Integer(maxNodeLimit) }, XMLErrorReporter.SEVERITY_FATAL_ERROR);
             // similarly to entity manager behaviour, take into accont
             // behaviour if continue-after-fatal-error is set.
             nodeCount = 0;

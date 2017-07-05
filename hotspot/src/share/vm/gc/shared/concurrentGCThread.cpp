@@ -33,10 +33,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 
-// CopyrightVersion 1.2
-
-int  ConcurrentGCThread::_CGC_flag            = CGC_nil;
-
 ConcurrentGCThread::ConcurrentGCThread() :
   _should_terminate(false), _has_terminated(false) {
 };

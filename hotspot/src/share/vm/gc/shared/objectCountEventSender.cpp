@@ -33,13 +33,13 @@
 #include "utilities/ticks.hpp"
 #if INCLUDE_SERVICES
 
-void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, const Ticks& timestamp) {
+void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
 #if INCLUDE_TRACE
   assert(Tracing::is_event_enabled(EventObjectCountAfterGC::eventId),
          "Only call this method if the event is enabled");
 
   EventObjectCountAfterGC event(UNTIMED);
-  event.set_gcId(gc_id.id());
+  event.set_gcId(GCId::current());
   event.set_class(entry->klass());
   event.set_count(entry->count());
   event.set_totalSize(entry->words() * BytesPerWord);

@@ -32,6 +32,7 @@
 
 // This file specializes the assember with interpreter-specific macros
 
+typedef ByteSize (*OffsetFunction)(uint);
 
 class InterpreterMacroAssembler: public MacroAssembler {
 
@@ -59,6 +60,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code),
     _locals_register(LP64_ONLY(r14) NOT_LP64(rdi)),
     _bcp_register(LP64_ONLY(r13) NOT_LP64(rsi)) {}
+
+  void jump_to_entry(address entry);
 
   void load_earlyret_value(TosState state);
 
@@ -249,6 +252,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
                                       Label& done, bool is_virtual_call);
+  void record_item_in_profile_helper(Register item, Register mdp,
+                                     Register reg2, int start_row, Label& done, int total_rows,
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
+                                     int non_profiled_offset);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -262,6 +269,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_virtual_call(Register receiver, Register mdp,
                             Register scratch2,
                             bool receiver_can_be_null = false);
+  void profile_called_method(Register method, Register mdp, Register reg2) NOT_JVMCI_RETURN;
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass, Register scratch);

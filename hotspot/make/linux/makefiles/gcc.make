@@ -213,12 +213,16 @@ ifeq ($(USE_CLANG),)
   # Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
   # conversions which might affect the values. Only enable it in earlier versions.
   ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
+    # GCC < 4.3
     WARNING_FLAGS += -Wconversion
   endif  
   ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+    # GCC >= 4.8
     # This flag is only known since GCC 4.3. Gcc 4.8 contains a fix so that with templates no
     # warnings are issued: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=11856
     WARNING_FLAGS += -Wtype-limits
+    # GCC < 4.8 don't accept this flag for C++.
+    WARNING_FLAGS += -Wno-format-zero-length
   endif
 endif
 

@@ -124,7 +124,7 @@ void CallInfo::set_common(KlassHandle resolved_klass,
     // Note: with several active threads, the must_be_compiled may be true
     //       while can_be_compiled is false; remove assert
     // assert(CompilationPolicy::can_be_compiled(selected_method), "cannot compile");
-    if (THREAD->is_Compiler_thread()) {
+    if (!THREAD->can_call_java()) {
       // don't force compilation, resolve was on behalf of compiler
       return;
     }
@@ -179,11 +179,11 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
     KlassHandle object_klass = SystemDictionary::Object_klass();
     Method * object_resolved_method = object_klass()->vtable()->method_at(index);
     assert(object_resolved_method->name() == resolved_method->name(),
-      err_msg("Object and interface method names should match at vtable index %d, %s != %s",
-      index, object_resolved_method->name()->as_C_string(), resolved_method->name()->as_C_string()));
+      "Object and interface method names should match at vtable index %d, %s != %s",
+      index, object_resolved_method->name()->as_C_string(), resolved_method->name()->as_C_string());
     assert(object_resolved_method->signature() == resolved_method->signature(),
-      err_msg("Object and interface method signatures should match at vtable index %d, %s != %s",
-      index, object_resolved_method->signature()->as_C_string(), resolved_method->signature()->as_C_string()));
+      "Object and interface method signatures should match at vtable index %d, %s != %s",
+      index, object_resolved_method->signature()->as_C_string(), resolved_method->signature()->as_C_string());
 #endif // ASSERT
 
     kind = CallInfo::vtable_call;
@@ -192,7 +192,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
     kind = CallInfo::itable_call;
     index = resolved_method->itable_index();
   }
-  assert(index == Method::nonvirtual_vtable_index || index >= 0, err_msg("bad index %d", index));
+  assert(index == Method::nonvirtual_vtable_index || index >= 0, "bad index %d", index);
   _call_kind  = kind;
   _call_index = index;
   _resolved_appendix = Handle();
@@ -215,7 +215,7 @@ void CallInfo::verify() {
     assert(call_kind() != CallInfo::unknown_kind, "CallInfo must be set");
     break;
   default:
-    fatal(err_msg_res("Unexpected call kind %d", call_kind()));
+    fatal("Unexpected call kind %d", call_kind());
   }
 }
 #endif //ASSERT
@@ -450,7 +450,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
       }
       return result;
     } else if (iid == vmIntrinsics::_invokeGeneric
-               && !THREAD->is_Compiler_thread()
+               && THREAD->can_call_java()
                && appendix_result_or_null != NULL) {
       // This is a method with type-checking semantics.
       // We will ask Java code to spin an adapter method for it.
@@ -499,7 +499,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
           result->print();
         }
         assert(actual_size_of_params == expected_size_of_params,
-               err_msg("%d != %d", actual_size_of_params, expected_size_of_params));
+               "%d != %d", actual_size_of_params, expected_size_of_params);
 #endif //ASSERT
 
         assert(appendix_result_or_null != NULL, "");

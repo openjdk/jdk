@@ -400,7 +400,7 @@ public class ListAdapter extends AbstractList<Object> implements RandomAccess, D
         return new Callable<MethodHandle>() {
             @Override
             public MethodHandle call() {
-                return Bootstrap.createDynamicInvoker("dyn:call", rtype, ptypes);
+                return Bootstrap.createDynamicCallInvoker(rtype, ptypes);
             }
         };
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 6800154
  * @summary Add comments to long_by_long_mulhi() for better understandability
- *
+ * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test6800154.divcomp Test6800154
  */
 
-import java.net.URLClassLoader;
+import jdk.test.lib.Utils;
 
 public class Test6800154 implements Runnable {
     static final long[] DIVIDENDS = {
@@ -78,12 +78,13 @@ public class Test6800154 implements Runnable {
     public static void main(String[] args) throws Exception
     {
         Class cl = Class.forName("Test6800154");
-        URLClassLoader apploader = (URLClassLoader) cl.getClassLoader();
+        ClassLoader apploader = cl.getClassLoader();
 
         // Iterate over all divisors.
         for (int i = 0; i < DIVISORS.length; i++) {
             System.setProperty("divisor", "" + DIVISORS[i]);
-            ClassLoader loader = new URLClassLoader(apploader.getURLs(), apploader.getParent());
+            ClassLoader loader
+                    = Utils.getTestClassPathURLClassLoader(apploader.getParent());
             Class c = loader.loadClass("Test6800154");
             Runnable r = (Runnable) c.newInstance();
             r.run();

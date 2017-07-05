@@ -438,6 +438,18 @@ jdk.jvmstat_COPY := aliasmap
 
 ################################################################################
 
+jdk.vm.ci_EXCLUDE_FILES += \
+    jdk/vm/ci/options/processor/OptionProcessor.java \
+    jdk/vm/ci/service/processor/ServiceProviderProcessor.java \
+    #
+
+jdk.vm.ci_EXCLUDES += \
+    META-INF/jvmci.options \
+    META-INF/jvmci.providers \
+    #
+
+################################################################################
+
 jdk.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 jdk.xml.bind_CLEAN := .properties
 jdk.xml.bind_COPY := .xsd JAXBContextFactory.java ZeroOneBooleanAdapter.java
@@ -479,6 +491,7 @@ ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
 endif
 
 SHARE_SRC_DIRS += \
+    $(HOTSPOT_TOPDIR)/src/$1/share/classes \
     $(JDK_TOPDIR)/src/$1/share/classes \
     $(LANGTOOLS_TOPDIR)/src/$1/share/classes \
     $(CORBA_TOPDIR)/src/$1/share/classes \
@@ -531,7 +544,7 @@ define SetupModuleCompilation
 
   $$(eval $$(call SetupJavaCompilation,$1, \
       SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \
-      SRC := $$(wildcard $$(call ALL_SRC_DIRS,$1)), \
+      SRC := $$(if $$($1_SRC), $$($1_SRC), $$(wildcard $$(call ALL_SRC_DIRS,$1))), \
       INCLUDES := $(JDK_USER_DEFINED_FILTER),\
       BIN := $$(if $$($1_BIN), $$($1_BIN), $(JDK_OUTPUTDIR)/modules/$1), \
       HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$1, \

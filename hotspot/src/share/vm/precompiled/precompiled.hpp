@@ -101,7 +101,6 @@
 # include "gc/shared/gcStats.hpp"
 # include "gc/shared/gcUtil.hpp"
 # include "gc/shared/genCollectedHeap.hpp"
-# include "gc/shared/genRemSet.hpp"
 # include "gc/shared/generation.hpp"
 # include "gc/shared/generationCounters.hpp"
 # include "gc/shared/modRefBarrierSet.hpp"
@@ -111,7 +110,6 @@
 # include "gc/shared/spaceDecorator.hpp"
 # include "gc/shared/taskqueue.hpp"
 # include "gc/shared/threadLocalAllocBuffer.hpp"
-# include "gc/shared/watermark.hpp"
 # include "gc/shared/workgroup.hpp"
 # include "interpreter/abstractInterpreter.hpp"
 # include "interpreter/bytecode.hpp"
@@ -128,6 +126,7 @@
 # include "interpreter/templateInterpreter.hpp"
 # include "interpreter/templateTable.hpp"
 # include "jvmtifiles/jvmti.h"
+# include "logging/log.hpp"
 # include "memory/allocation.hpp"
 # include "memory/allocation.inline.hpp"
 # include "memory/heap.hpp"
@@ -290,6 +289,9 @@
 # include "c1/c1_ValueType.hpp"
 # include "c1/c1_globals.hpp"
 #endif // COMPILER1
+#if INCLUDE_JVMCI
+# include "jvmci/jvmci_globals.hpp"
+#endif // INCLUDE_JVMCI
 #if INCLUDE_ALL_GCS
 # include "gc/cms/compactibleFreeListSpace.hpp"
 # include "gc/cms/concurrentMarkSweepGeneration.hpp"

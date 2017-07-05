@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,16 +46,16 @@
 package com.sun.org.apache.xml.internal.serialize;
 
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Hashtable;
-import java.util.Vector;
-
 import com.sun.org.apache.xerces.internal.dom.DOMErrorImpl;
 import com.sun.org.apache.xerces.internal.dom.DOMLocatorImpl;
 import com.sun.org.apache.xerces.internal.dom.DOMMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.Document;
@@ -187,7 +186,7 @@ public abstract class BaseMarkupSerializer
      * Accumulated here prior to starting an element and placing this
      * list in the element state.
      */
-    protected Hashtable     _prefixes;
+    protected Map<String, String>  _prefixes;
 
 
     /**
@@ -828,7 +827,7 @@ public abstract class BaseMarkupSerializer
         throws SAXException
     {
         if ( _prefixes == null )
-            _prefixes = new Hashtable();
+            _prefixes = new HashMap<>();
         _prefixes.put( uri, prefix == null ? "" : prefix );
     }
 
@@ -1890,7 +1889,7 @@ public abstract class BaseMarkupSerializer
         String    prefix;
 
         if ( _prefixes != null ) {
-            prefix = (String) _prefixes.get( namespaceURI );
+            prefix = _prefixes.get( namespaceURI );
             if ( prefix != null )
                 return prefix;
         }

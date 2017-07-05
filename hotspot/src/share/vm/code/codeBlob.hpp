@@ -120,6 +120,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   virtual bool is_compiled_by_c2() const         { return false; }
   virtual bool is_compiled_by_c1() const         { return false; }
+  virtual bool is_compiled_by_jvmci() const      { return false; }
 
   // Casting
   nmethod* as_nmethod_or_null()                  { return is_nmethod() ? (nmethod*) this : NULL; }
@@ -380,6 +381,12 @@ class DeoptimizationBlob: public SingletonBlob {
 
   int _unpack_with_exception_in_tls;
 
+#if INCLUDE_JVMCI
+  // Offsets when JVMCI calls uncommon_trap.
+  int _uncommon_trap_offset;
+  int _implicit_exception_uncommon_trap_offset;
+#endif
+
   // Creation support
   DeoptimizationBlob(
     CodeBuffer* cb,
@@ -429,6 +436,21 @@ class DeoptimizationBlob: public SingletonBlob {
     assert(code_contains(code_begin() + _unpack_with_exception_in_tls), "must be PC inside codeblob");
   }
   address unpack_with_exception_in_tls() const   { return code_begin() + _unpack_with_exception_in_tls; }
+
+#if INCLUDE_JVMCI
+  // Offsets when JVMCI calls uncommon_trap.
+  void set_uncommon_trap_offset(int offset) {
+    _uncommon_trap_offset = offset;
+    assert(contains(code_begin() + _uncommon_trap_offset), "must be PC inside codeblob");
+  }
+  address uncommon_trap() const                  { return code_begin() + _uncommon_trap_offset; }
+
+  void set_implicit_exception_uncommon_trap_offset(int offset) {
+    _implicit_exception_uncommon_trap_offset = offset;
+    assert(contains(code_begin() + _implicit_exception_uncommon_trap_offset), "must be PC inside codeblob");
+  }
+  address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
+#endif // INCLUDE_JVMCI
 };
 
 

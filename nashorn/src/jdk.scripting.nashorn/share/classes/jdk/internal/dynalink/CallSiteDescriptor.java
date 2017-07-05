@@ -83,92 +83,205 @@
 
 package jdk.internal.dynalink;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import java.util.Objects;
 
 /**
- * An immutable descriptor of a call site. It is an immutable object that contains all the information about a call
- * site: the class performing the lookups, the name of the method being invoked, and the method signature. The library
- * has a default {@link CallSiteDescriptorFactory} for descriptors that you can use, or you can create your own
- * descriptor classes, especially if you need to add further information (values passed in additional parameters to the
- * bootstrap method) to them. Call site descriptors are used in this library in place of passing a real call site to
- * guarding linkers so they aren't tempted to directly manipulate the call sites. The constructors of built-in
- * {@link RelinkableCallSite} implementations all need a call site descriptor. Even if you create your own call site
- * descriptors consider using {@link CallSiteDescriptorFactory#tokenizeName(String)} in your implementation.
+ * Call site descriptors contain all the information necessary for linking a
+ * call site. This information is normally passed as parameters to bootstrap
+ * methods and consists of the {@code MethodHandles.Lookup} object on the caller
+ * class in which the call site occurs, the dynamic operation at the call
+ * site, and the method type of the call site. {@code CallSiteDescriptor}
+ * objects are used in Dynalink to capture and store these parameters for
+ * subsequent use by the {@link DynamicLinker}.
+ * <p>
+ * The constructors of built-in {@link RelinkableCallSite} implementations all
+ * take a call site descriptor.
+ * <p>
+ * Call site descriptors must be immutable. You can use this class as-is or you
+ * can subclass it, especially if you need to add further information to the
+ * descriptors (typically, values passed in additional parameters to the
+ * bootstrap method. Since the descriptors must be immutable, you can set up a
+ * cache for equivalent descriptors to have the call sites share them.
  */
-public interface CallSiteDescriptor {
-    /**
-     * The index of the name token that will carry the operation scheme prefix (usually, "dyn").
-     */
-    public static final int SCHEME = 0;
-    /**
-     * The index of the name token that will usually carry the operation name.
-     */
-
-    public static final int OPERATOR=1;
-    /**
-     * The index of the name token that will usually carry a name of an operand (of a property, method, etc.)
-     */
-
-    public static final int NAME_OPERAND=2;
+public class CallSiteDescriptor {
+    private final MethodHandles.Lookup lookup;
+    private final Operation operation;
+    private final MethodType methodType;
 
     /**
-     * Character used to delimit tokens in an call site name.
+     * The name of a runtime permission to invoke the {@link #getLookup()}
+     * method.
      */
-    public static final String TOKEN_DELIMITER = ":";
+    public static final String GET_LOOKUP_PERMISSION_NAME = "dynalink.getLookup";
+
+    private static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission(GET_LOOKUP_PERMISSION_NAME);
 
     /**
-     * Character used to delimit operation names in a composite operation specification.
+     * Creates a new call site descriptor.
+     * @param lookup the lookup object describing the class the call site belongs to.
+     * @param operation the dynamic operation at the call site.
+     * @param methodType the method type of the call site.
      */
-    public static final String OPERATOR_DELIMITER = "|";
+    public CallSiteDescriptor(final Lookup lookup, final Operation operation, final MethodType methodType) {
+        this.lookup = Objects.requireNonNull(lookup, "lookup");
+        this.operation = Objects.requireNonNull(operation, "name");
+        this.methodType = Objects.requireNonNull(methodType, "methodType");
+    }
 
     /**
-     * Returns the number of tokens in the name of the method at the call site. Method names are tokenized with the
-     * colon ":" character, i.e. "dyn:getProp:color" would be the name used to describe a method that retrieves the
-     * property named "color" on the object it is invoked on.
-     * @return the number of tokens in the name of the method at the call site.
+     * Returns the operation at the call site.
+     * @return the operation at the call site.
      */
-    public int getNameTokenCount();
-
-    /**
-     * Returns the <i>i<sup>th</sup></i> token in the method name at the call site. Method names are tokenized with the
-     * colon ":" character.
-     * @param i the index of the token. Must be between 0 (inclusive) and {@link #getNameTokenCount()} (exclusive)
-     * @throws IllegalArgumentException if the index is outside the allowed range.
-     * @return the <i>i<sup>th</sup></i> token in the method name at the call site. The returned strings are interned.
-     */
-    public String getNameToken(int i);
-
-    /**
-     * Returns the name of the method at the call site. Note that the object internally only stores the tokenized name,
-     * and has to reconstruct the full name from tokens on each invocation.
-     * @return the name of the method at the call site.
-     */
-    public String getName();
+    public final Operation getOperation() {
+        return operation;
+    }
 
     /**
      * The type of the method at the call site.
      *
      * @return type of the method at the call site.
      */
-    public MethodType getMethodType();
+    public final MethodType getMethodType() {
+        return methodType;
+    }
 
     /**
-     * Returns the lookup passed to the bootstrap method. If the lookup isn't the public lookup, the
-     * implementation must check the {@code RuntimePermission("dynalink.getLookup")} permission if a security
-     * manager is present.
-     * @return the lookup passed to the bootstrap method.
+     * Returns the lookup that should be used to find method handles to set as
+     * targets of the call site described by this descriptor. When creating
+     * descriptors from a {@link java.lang.invoke} bootstrap method, it should
+     * be the lookup passed to the bootstrap.
+     * @return the lookup that should be used to find method handles to set as
+     * targets of the call site described by this descriptor.
+     * @throws SecurityException if the lookup isn't the
+     * {@link MethodHandles#publicLookup()} and a security manager is present,
+     * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
      */
-    public Lookup getLookup();
+    public final Lookup getLookup() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null && lookup != MethodHandles.publicLookup()) {
+            sm.checkPermission(GET_LOOKUP_PERMISSION);
+        }
+        return lookup;
+    }
 
     /**
-     * Creates a new call site descriptor from this descriptor, which is identical to this, except it changes the method
-     * type.
+     * Returns the value of {@link #getLookup()} without a security check. Can
+     * be used by subclasses to access the lookup quickly.
+     * @return same as returned value of {@link #getLookup()}.
+     */
+    protected final Lookup getLookupPrivileged() {
+        return lookup;
+    }
+
+    /**
+     * Creates a new call site descriptor from this descriptor, which is
+     * identical to this, except it changes the method type. Invokes
+     * {@link #changeMethodTypeInternal(MethodType)} and checks that it returns
+     * a descriptor of the same class as this descriptor.
+     *
+     * @param newMethodType the new method type
+     * @return a new call site descriptor, with the method type changed.
+     * @throws RuntimeException if {@link #changeMethodTypeInternal(MethodType)}
+     * returned a descriptor of different class than this object.
+     * @throws NullPointerException if {@link #changeMethodTypeInternal(MethodType)}
+     * returned null.
+     */
+    public final CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
+        final CallSiteDescriptor changed = Objects.requireNonNull(
+                changeMethodTypeInternal(newMethodType),
+                "changeMethodTypeInternal() must not return null.");
+
+        if (getClass() != changed.getClass()) {
+            throw new RuntimeException(
+                    "changeMethodTypeInternal() must return an object of the same class it is invoked on.");
+        }
+
+        return changed;
+    }
+
+    /**
+     * Creates a new call site descriptor from this descriptor, which is
+     * identical to this, except it changes the method type. Subclasses must
+     * override this method to return an object of their exact class.
      *
      * @param newMethodType the new method type
      * @return a new call site descriptor, with the method type changed.
      */
-    public CallSiteDescriptor changeMethodType(MethodType newMethodType);
+    protected CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
+        return new CallSiteDescriptor(lookup, operation, newMethodType);
+    }
 
+    /**
+     * Returns true if this call site descriptor is equal to the passed object.
+     * It is considered equal if the other object is of the exact same class,
+     * their operations and method types are equal, and their lookups have the
+     * same {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()}.
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (obj == null) {
+            return false;
+        } else if (obj.getClass() != getClass()) {
+            return false;
+        }
+        final CallSiteDescriptor other = (CallSiteDescriptor)obj;
+        return operation.equals(other.operation) &&
+               methodType.equals(other.methodType) &&
+               lookupsEqual(lookup, other.lookup);
+    }
+
+    /**
+     * Compares two lookup objects for value-based equality. They are considered
+     * equal if they have the same
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()}.
+     * @param l1 first lookup
+     * @param l2 second lookup
+     * @return true if the two lookups are equal, false otherwise.
+     */
+    private static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
+        return l1.lookupClass() == l2.lookupClass() && l1.lookupModes() == l2.lookupModes();
+    }
+
+    /**
+     * Returns a value-based hash code of this call site descriptor computed
+     * from its operation, method type, and lookup object's lookup class and
+     * lookup modes.
+     * @return value-based hash code for this call site descriptor.
+     */
+    @Override
+    public int hashCode() {
+        return operation.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(lookup);
+    }
+
+    /**
+     * Returns a value-based hash code for the passed lookup object. It is
+     * based on the lookup object's
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()} values.
+     * @param lookup the lookup object.
+     * @return a hash code for the object..
+     */
+    private static int lookupHashCode(final Lookup lookup) {
+        return lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
+    }
+
+    /**
+     * Returns the string representation of this call site descriptor, of the
+     * format {@code name(parameterTypes)returnType@lookup}.
+     */
+    @Override
+    public String toString() {
+        final String mt = methodType.toString();
+        final String l = lookup.toString();
+        final String o = operation.toString();
+        final StringBuilder b = new StringBuilder(o.length() + mt.length() + 1 + l.length());
+        return b.append(o).append(mt).append('@').append(l).toString();
+    }
 }

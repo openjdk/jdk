@@ -1,0 +1,221 @@
+/*
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.vm.ci.code;
+
+import java.util.*;
+
+import jdk.vm.ci.meta.*;
+
+/**
+ * An instance of this class represents an object whose allocation was removed by escape analysis.
+ * The information stored in the {@link VirtualObject} is used during deoptimization to recreate the
+ * object.
+ */
+public final class VirtualObject implements JavaValue {
+
+    private final ResolvedJavaType type;
+    private JavaValue[] values;
+    private JavaKind[] slotKinds;
+    private final int id;
+
+    /**
+     * Creates a new {@link VirtualObject} for the given type, with the given fields. If
+     * {@code type} is an instance class then {@code values} provides the values for the fields
+     * returned by {@link ResolvedJavaType#getInstanceFields(boolean) getInstanceFields(true)}. If
+     * {@code type} is an array then the length of the values array determines the reallocated array
+     * length.
+     *
+     * @param type the type of the object whose allocation was removed during compilation. This can
+     *            be either an instance of an array type.
+     * @param id a unique id that identifies the object within the debug information for one
+     *            position in the compiled code.
+     * @return a new {@link VirtualObject} instance.
+     */
+    public static VirtualObject get(ResolvedJavaType type, int id) {
+        return new VirtualObject(type, id);
+    }
+
+    private VirtualObject(ResolvedJavaType type, int id) {
+        this.type = type;
+        this.id = id;
+    }
+
+    private static StringBuilder appendValue(StringBuilder buf, JavaValue value, Set<VirtualObject> visited) {
+        if (value instanceof VirtualObject) {
+            VirtualObject vo = (VirtualObject) value;
+            buf.append("vobject:").append(vo.type.toJavaName(false)).append(':').append(vo.id);
+            if (!visited.contains(vo)) {
+                visited.add(vo);
+                buf.append('{');
+                if (vo.values == null) {
+                    buf.append("<uninitialized>");
+                } else {
+                    if (vo.type.isArray()) {
+                        for (int i = 0; i < vo.values.length; i++) {
+                            if (i != 0) {
+                                buf.append(',');
+                            }
+                            buf.append(i).append('=');
+                            appendValue(buf, vo.values[i], visited);
+                        }
+                    } else {
+                        ResolvedJavaField[] fields = vo.type.getInstanceFields(true);
+                        assert fields.length == vo.values.length : vo.type + ", fields=" + Arrays.toString(fields) + ", values=" + Arrays.toString(vo.values);
+                        for (int i = 0; i < vo.values.length; i++) {
+                            if (i != 0) {
+                                buf.append(',');
+                            }
+                            buf.append(fields[i].getName()).append('=');
+                            appendValue(buf, vo.values[i], visited);
+                        }
+                    }
+                }
+                buf.append('}');
+            }
+        } else {
+            buf.append(value);
+        }
+        return buf;
+    }
+
+    @Override
+    public String toString() {
+        Set<VirtualObject> visited = Collections.newSetFromMap(new IdentityHashMap<VirtualObject, Boolean>());
+        return appendValue(new StringBuilder(), this, visited).toString();
+    }
+
+    /**
+     * Returns the type of the object whose allocation was removed during compilation. This can be
+     * either an instance of an array type.
+     */
+    public ResolvedJavaType getType() {
+        return type;
+    }
+
+    /**
+     * Returns an array containing all the values to be stored into the object when it is recreated.
+     */
+    public JavaValue[] getValues() {
+        return values;
+    }
+
+    /**
+     * Returns an array containing the Java kind of all values in the object.
+     */
+    public JavaKind[] getSlotKinds() {
+        return slotKinds;
+    }
+
+    /**
+     * Returns the unique id that identifies the object within the debug information for one
+     * position in the compiled code.
+     */
+    public int getId() {
+        return id;
+    }
+
+    private boolean checkValues() {
+        assert (values == null) == (slotKinds == null);
+        if (values != null) {
+            assert values.length == slotKinds.length;
+            if (!type.isArray()) {
+                ResolvedJavaField[] fields = type.getInstanceFields(true);
+                int fieldIndex = 0;
+                for (int i = 0; i < values.length; i++) {
+                    ResolvedJavaField field = fields[fieldIndex++];
+                    JavaKind valKind = slotKinds[i].getStackKind();
+                    if (field.getJavaKind() == JavaKind.Object) {
+                        assert valKind.isObject() : field + ": " + valKind + " != " + field.getJavaKind();
+                    } else {
+                        if ((valKind == JavaKind.Double || valKind == JavaKind.Long) && field.getJavaKind() == JavaKind.Int) {
+                            assert fields[fieldIndex].getJavaKind() == JavaKind.Int;
+                            fieldIndex++;
+                        } else {
+                            assert valKind == field.getJavaKind().getStackKind() : field + ": " + valKind + " != " + field.getJavaKind();
+                        }
+                    }
+                }
+                assert fields.length == fieldIndex : type + ": fields=" + Arrays.toString(fields) + ", field values=" + Arrays.toString(values);
+            } else {
+                JavaKind componentKind = type.getComponentType().getJavaKind().getStackKind();
+                if (componentKind == JavaKind.Object) {
+                    for (int i = 0; i < values.length; i++) {
+                        assert slotKinds[i].isObject() : slotKinds[i] + " != " + componentKind;
+                    }
+                } else {
+                    for (int i = 0; i < values.length; i++) {
+                        assert slotKinds[i] == componentKind || componentKind.getBitCount() >= slotKinds[i].getBitCount() ||
+                                        (componentKind == JavaKind.Int && slotKinds[i].getBitCount() >= JavaKind.Int.getBitCount()) : slotKinds[i] + " != " + componentKind;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Overwrites the current set of values with a new one.
+     *
+     * @param values an array containing all the values to be stored into the object when it is
+     *            recreated.
+     * @param slotKinds an array containing the Java kinds of the values.
+     */
+    public void setValues(JavaValue[] values, JavaKind[] slotKinds) {
+        this.values = values;
+        this.slotKinds = slotKinds;
+        assert checkValues();
+    }
+
+    @Override
+    public int hashCode() {
+        return 42 + type.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof VirtualObject) {
+            VirtualObject l = (VirtualObject) o;
+            if (!l.type.equals(type) || l.values.length != values.length) {
+                return false;
+            }
+            for (int i = 0; i < values.length; i++) {
+                /*
+                 * Virtual objects can form cycles. Calling equals() could therefore lead to
+                 * infinite recursion.
+                 */
+                if (!same(values[i], l.values[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean same(Object o1, Object o2) {
+        return o1 == o2;
+    }
+}

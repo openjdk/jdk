@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,8 +20,10 @@
 
 package com.sun.org.apache.xml.internal.resolver;
 
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a Catalog entry.
@@ -47,14 +52,14 @@ import java.util.Vector;
  */
 public class CatalogEntry {
   /** The nextEntry is the ordinal number of the next entry type. */
-  static int nextEntry = 0;
+  static AtomicInteger nextEntry = new AtomicInteger(0);
 
   /**
    * The entryTypes vector maps catalog entry names
    * (e.g., 'BASE' or 'SYSTEM') to their type (1, 2, etc.).
    * Names are case sensitive.
    */
-  static final Hashtable entryTypes = new Hashtable();
+  static final Map<String, Integer> entryTypes = new ConcurrentHashMap<>();
 
   /** The entryTypes vector maps catalog entry types to the
       number of arguments they're required to have. */
@@ -71,12 +76,12 @@ public class CatalogEntry {
    * of arguments.
    * @return The type for the new entry.
    */
-  public static int addEntryType(String name, int numArgs) {
-    entryTypes.put(name, new Integer(nextEntry));
-    entryArgs.add(nextEntry, new Integer(numArgs));
-    nextEntry++;
+  static int addEntryType(String name, int numArgs) {
+    final int index = nextEntry.getAndIncrement();
+    entryTypes.put(name, index);
+    entryArgs.add(index, numArgs);
 
-    return nextEntry-1;
+    return index;
   }
 
   /**
@@ -93,13 +98,13 @@ public class CatalogEntry {
       throw new CatalogException(CatalogException.INVALID_ENTRY_TYPE);
     }
 
-    Integer iType = (Integer) entryTypes.get(name);
+    Integer iType = entryTypes.get(name);
 
     if (iType == null) {
       throw new CatalogException(CatalogException.INVALID_ENTRY_TYPE);
     }
 
-    return iType.intValue();
+    return iType;
   }
 
   /**
@@ -155,13 +160,13 @@ public class CatalogEntry {
    */
   public CatalogEntry(String name, Vector args)
     throws CatalogException {
-    Integer iType = (Integer) entryTypes.get(name);
+    Integer iType = entryTypes.get(name);
 
     if (iType == null) {
       throw new CatalogException(CatalogException.INVALID_ENTRY_TYPE);
     }
 
-    int type = iType.intValue();
+    int type = iType;
 
     try {
       Integer iArgs = (Integer) entryArgs.get(type);

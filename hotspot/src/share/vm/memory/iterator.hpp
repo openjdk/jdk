@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,18 @@ class OopClosure : public Closure {
 // This is needed by the GC and is extracted to a separate type to not
 // pollute the OopClosure interface.
 class ExtendedOopClosure : public OopClosure {
- public:
+ private:
   ReferenceProcessor* _ref_processor;
+
+ protected:
   ExtendedOopClosure(ReferenceProcessor* rp) : _ref_processor(rp) { }
-  ExtendedOopClosure() : OopClosure(), _ref_processor(NULL) { }
+  ExtendedOopClosure() : _ref_processor(NULL) { }
+  ~ExtendedOopClosure() { }
+
+  void set_ref_processor_internal(ReferenceProcessor* rp) { _ref_processor = rp; }
+
+ public:
+  ReferenceProcessor* ref_processor() const { return _ref_processor; }
 
   // If the do_metadata functions return "true",
   // we invoke the following when running oop_iterate():

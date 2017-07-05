@@ -167,7 +167,7 @@ bool OverflowMulLNode::can_overflow(const Type* t1, const Type* t2) const {
 }
 
 const Type* OverflowNode::sub(const Type* t1, const Type* t2) const {
-  fatal(err_msg_res("sub() should not be called for '%s'", NodeClassNames[this->Opcode()]));
+  fatal("sub() should not be called for '%s'", NodeClassNames[this->Opcode()]);
   return TypeInt::CC;
 }
 

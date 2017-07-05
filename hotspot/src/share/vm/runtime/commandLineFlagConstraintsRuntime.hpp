@@ -38,4 +38,11 @@ Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose);
 
 Flag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose);
 
+Flag::Error BiasedLockingBulkRebiasThresholdFunc(intx value, bool verbose);
+Flag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose);
+Flag::Error BiasedLockingBulkRevokeThresholdFunc(intx value, bool verbose);
+Flag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose);
+
+Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose);
+
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP */

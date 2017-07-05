@@ -255,8 +255,7 @@ public class CustomLauncherTest {
         // and set the executable flag
         Path localLauncherPath = FS.getPath(WORK_DIR, "launcher");
         Files.copy(launcherPath, localLauncherPath,
-                   StandardCopyOption.REPLACE_EXISTING,
-                   StandardCopyOption.COPY_ATTRIBUTES);
+                   StandardCopyOption.REPLACE_EXISTING);
         if (!Files.isExecutable(localLauncherPath)) {
             Set<PosixFilePermission> perms = new HashSet<>(
                 Files.getPosixFilePermissions(

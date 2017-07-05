@@ -78,7 +78,7 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCoun
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is " UINTX_FORMAT, MaxTenuringThreshold));
+           "MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is " UINTX_FORMAT, MaxTenuringThreshold);
     result = MaxTenuringThreshold;
   } else {
     size_t total = 0;

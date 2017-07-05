@@ -58,7 +58,7 @@ class TenuredGeneration: public CardGeneration {
  public:
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
-                    GenRemSet* remset);
+                    CardTableRS* remset);
 
   Generation::Name kind() { return Generation::MarkSweepCompact; }
 

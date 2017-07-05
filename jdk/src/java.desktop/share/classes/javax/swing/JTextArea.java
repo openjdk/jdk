@@ -25,17 +25,12 @@
 package javax.swing;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import javax.swing.text.*;
-import javax.swing.plaf.*;
 import javax.accessibility.*;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
 /**
@@ -116,15 +111,13 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A multi-line area that displays plain text.
- *
  * @author  Timothy Prinzing
  * @see JTextPane
  * @see JEditorPane
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "A multi-line area that displays plain text.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextArea extends JTextComponent {
 
@@ -237,6 +230,7 @@ public class JTextArea extends JTextComponent {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -260,11 +254,9 @@ public class JTextArea extends JTextComponent {
      *
      * @param size number of characters to expand to
      * @see #getTabSize
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: the number of characters to expand tabs to
      */
+    @BeanProperty(preferred = true, description
+            = "the number of characters to expand tabs to")
     public void setTabSize(int size) {
         Document doc = getDocument();
         if (doc != null) {
@@ -302,11 +294,9 @@ public class JTextArea extends JTextComponent {
      *
      * @param wrap indicates if lines should be wrapped
      * @see #getLineWrap
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: should lines be wrapped
      */
+    @BeanProperty(preferred = true, description
+            = "should lines be wrapped")
     public void setLineWrap(boolean wrap) {
         boolean old = this.wrap;
         this.wrap = wrap;
@@ -336,11 +326,9 @@ public class JTextArea extends JTextComponent {
      * @param word indicates if word boundaries should be used
      *   for line wrapping
      * @see #getWrapStyleWord
-     * @beaninfo
-     *   preferred: false
-     *       bound: true
-     * description: should wrapping occur at word boundaries
      */
+    @BeanProperty(description
+            = "should wrapping occur at word boundaries")
     public void setWrapStyleWord(boolean word) {
         boolean old = this.word;
         this.word = word;
@@ -388,6 +376,7 @@ public class JTextArea extends JTextComponent {
      *
      * @return the number of lines &gt; 0
      */
+    @BeanProperty(bound = false)
     public int getLineCount() {
         Element map = getDocument().getDefaultRootElement();
         return map.getElementCount();
@@ -531,9 +520,9 @@ public class JTextArea extends JTextComponent {
      * @param rows the number of rows &gt;= 0
      * @exception IllegalArgumentException if rows is less than 0
      * @see #getRows
-     * @beaninfo
-     * description: the number of rows preferred for display
      */
+    @BeanProperty(bound = false, description
+            = "the number of rows preferred for display")
     public void setRows(int rows) {
         int oldVal = this.rows;
         if (rows < 0) {
@@ -575,9 +564,9 @@ public class JTextArea extends JTextComponent {
      * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if columns is less than 0
      * @see #getColumns
-     * @beaninfo
-     * description: the number of columns preferred for display
      */
+    @BeanProperty(bound = false, description
+            = "the number of columns preferred for display")
     public void setColumns(int columns) {
         int oldVal = this.columns;
         if (columns < 0) {
@@ -680,6 +669,7 @@ public class JTextArea extends JTextComponent {
      * @return true if a viewport should force the Scrollables width
      * to match its own.
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportWidth() {
         return (wrap) ? true : super.getScrollableTracksViewportWidth();
     }
@@ -693,6 +683,7 @@ public class JTextArea extends JTextComponent {
      * @return The preferredSize of a JViewport whose view is this Scrollable.
      * @see JViewport#getPreferredSize
      */
+    @BeanProperty(bound = false)
     public Dimension getPreferredScrollableViewportSize() {
         Dimension size = super.getPreferredScrollableViewportSize();
         size = (size == null) ? new Dimension(400,400) : size;
@@ -766,6 +757,7 @@ public class JTextArea extends JTextComponent {
      * @return an AccessibleJTextArea that serves as the
      *         AccessibleContext of this JTextArea
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJTextArea();

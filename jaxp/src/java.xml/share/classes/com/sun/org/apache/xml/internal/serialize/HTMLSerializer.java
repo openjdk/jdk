@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -37,13 +37,12 @@
 package com.sun.org.apache.xml.internal.serialize;
 
 import com.sun.org.apache.xerces.internal.dom.DOMMessageFormatter;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Enumeration;
 import java.util.Locale;
-
+import java.util.Map;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -320,13 +319,10 @@ public class HTMLSerializer
                 preserveSpace = true;
 
             if ( addNSAttr ) {
-                Enumeration keys;
-
-                keys = _prefixes.keys();
-                while ( keys.hasMoreElements() ) {
+                for (Map.Entry<String, String> entry : _prefixes.entrySet()) {
                     _printer.printSpace();
-                    value = (String) keys.nextElement();
-                    name = (String) _prefixes.get( value );
+                    value = entry.getKey(); //The prefixes map uses the URI value as key.
+                    name = entry.getValue(); //and prefix name as value
                     if ( name.length() == 0 ) {
                         _printer.printText( "xmlns=\"" );
                         printEscaped( value );

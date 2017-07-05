@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import java.util.Hashtable;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+
 import sun.awt.SunToolkit;
 
 import javax.accessibility.*;
@@ -155,6 +158,7 @@ import javax.accessibility.*;
  * @author David Kloba
  * @since 1.2
  */
+@JavaBean(defaultProperty = "accessibleContext")
 @SuppressWarnings("serial")
 public class JLayeredPane extends JComponent implements Accessible {
     /// Watch the values in getObjectForLayer()
@@ -275,6 +279,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      * @return false if components can overlap, else true
      * @see JComponent#isOptimizedDrawingEnabled
      */
+    @BeanProperty(bound = false)
     public boolean isOptimizedDrawingEnabled() {
         return optimizedDrawingPossible;
     }
@@ -738,6 +743,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      * @return an AccessibleJLayeredPane that serves as the
      *         AccessibleContext of this JLayeredPane
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJLayeredPane();

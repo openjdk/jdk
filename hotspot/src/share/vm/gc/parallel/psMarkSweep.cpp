@@ -36,6 +36,7 @@
 #include "gc/serial/markSweep.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -113,6 +114,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
 
+  GCIdMark gc_id_mark;
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(gc_cause, _gc_timer->gc_start());
 
@@ -165,7 +167,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     HandleMark hm;
 
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    GCTraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, NULL, _gc_tracer->gc_id());
+    GCTraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, NULL);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
@@ -189,7 +191,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     allocate_stacks();
 
-    COMPILER2_PRESENT(DerivedPointerTable::clear());
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTable::clear();
+#endif
 
     ref_processor()->enable_discovery();
     ref_processor()->setup_policy(clear_all_softrefs);
@@ -198,9 +202,11 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     mark_sweep_phase2();
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
     // Don't add any more derived pointers during phase3
-    COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));
-    COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
+    assert(DerivedPointerTable::is_active(), "Sanity");
+    DerivedPointerTable::set_active(false);
+#endif
 
     mark_sweep_phase3();
 
@@ -245,7 +251,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     CodeCache::gc_epilogue();
     JvmtiExport::gc_epilogue();
 
-    COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTable::update_pointers();
+#endif
 
     ref_processor()->enqueue_discovered_references(NULL);
 
@@ -508,7 +516,7 @@ void PSMarkSweep::deallocate_stacks() {
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
+  GCTraceTime tm("phase 1", PrintGCDetails && Verbose, true, _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -541,7 +549,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     ref_processor()->setup_policy(clear_all_softrefs);
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
-        is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL, _gc_timer, _gc_tracer->gc_id());
+        is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL, _gc_timer);
     gc_tracer()->report_gc_reference_stats(stats);
   }
 
@@ -567,7 +575,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 
 void PSMarkSweep::mark_sweep_phase2() {
-  GCTraceTime tm("phase 2", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
+  GCTraceTime tm("phase 2", PrintGCDetails && Verbose, true, _gc_timer);
 
   // Now all live objects are marked, compute the new object addresses.
 
@@ -594,7 +602,7 @@ static PSAlwaysTrueClosure always_true;
 
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
+  GCTraceTime tm("phase 3", PrintGCDetails && Verbose, true, _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -634,7 +642,7 @@ void PSMarkSweep::mark_sweep_phase3() {
 
 void PSMarkSweep::mark_sweep_phase4() {
   EventMark m("4 compact heap");
-  GCTraceTime tm("phase 4", PrintGCDetails && Verbose, true, _gc_timer, _gc_tracer->gc_id());
+  GCTraceTime tm("phase 4", PrintGCDetails && Verbose, true, _gc_timer);
 
   // All pointers are now adjusted, move objects accordingly
 

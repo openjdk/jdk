@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
-import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.*;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+import java.beans.PropertyChangeListener;
 
 import java.util.*;
 
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
 import javax.accessibility.*;
-
-import java.lang.ref.WeakReference;
 
 /**
  * An implementation of a menu -- a popup window containing
@@ -97,10 +90,6 @@ import java.lang.ref.WeakReference;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer true
- * description: A popup window containing menu items displayed in a menu bar.
- *
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
@@ -110,6 +99,8 @@ import java.lang.ref.WeakReference;
  * @see JPopupMenu
  * @since 1.2
  */
+@JavaBean(description = "A popup window containing menu items displayed in a menu bar.")
+@SwingContainer
 @SuppressWarnings("serial")
 public class JMenu extends JMenuItem implements Accessible,MenuElement
 {
@@ -232,6 +223,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -247,11 +239,6 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param newModel the <code>ButtonModel</code>
      * @see #getModel
-     * @beaninfo
-     * description: The menu's model
-     *       bound: true
-     *      expert: true
-     *      hidden: true
      */
     public void setModel(ButtonModel newModel) {
         ButtonModel oldModel = getModel();
@@ -285,11 +272,9 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param b  true to select (highlight) the menu; false to de-select
      *          the menu
-     * @beaninfo
-     *      description: When the menu is selected, its popup child is shown.
-     *           expert: true
-     *           hidden: true
      */
+    @BeanProperty(expert = true, hidden = true, description
+            = "When the menu is selected, its popup child is shown.")
     public void setSelected(boolean b) {
         ButtonModel model = getModel();
         boolean oldValue = model.isSelected();
@@ -323,11 +308,9 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param b  a boolean value -- true to make the menu visible,
      *           false to hide it
-     * @beaninfo
-     *      description: The popup menu's visibility
-     *           expert: true
-     *           hidden: true
      */
+    @BeanProperty(bound = false, expert = true, hidden = true, description
+            = "The popup menu's visibility")
     public void setPopupMenuVisible(boolean b) {
         if (DEBUG) {
             System.out.println("in JMenu.setPopupMenuVisible " + b);
@@ -517,10 +500,9 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param       d the number of milliseconds to delay
      * @exception   IllegalArgumentException if <code>d</code>
      *                       is less than 0
-     * @beaninfo
-     *      description: The delay between menu selection and making the popup menu visible
-     *           expert: true
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The delay between menu selection and making the popup menu visible")
     public void setDelay(int d) {
         if (d < 0)
             throw new IllegalArgumentException("Delay must be a positive integer");
@@ -788,6 +770,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return an integer equal to the number of items on the menu
      * @see #getMenuComponentCount
      */
+    @BeanProperty(bound = false)
     public int getItemCount() {
         return getMenuComponentCount();
     }
@@ -799,6 +782,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return true if the menu can be torn off, else false
      * @exception  Error  if invoked -- this method is not yet implemented
      */
+    @BeanProperty(bound = false)
     public boolean isTearOff() {
         throw new Error("boolean isTearOff() {} not yet implemented");
     }
@@ -856,6 +840,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @return an integer containing the number of components on the menu
      */
+    @BeanProperty(bound = false)
     public int getMenuComponentCount() {
         int componentCount = 0;
         if (popupMenu != null)
@@ -886,6 +871,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return an array of <code>Component</code>s or an empty array
      *          if there is no popup menu
      */
+    @BeanProperty(bound = false)
     public Component[] getMenuComponents() {
         if (popupMenu != null)
             return popupMenu.getComponents();
@@ -901,6 +887,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *         false if the menu is activated from a menu item
      *         on another menu
      */
+    @BeanProperty(bound = false)
     public boolean isTopLevelMenu() {
         return getParent() instanceof JMenuBar;
 
@@ -985,6 +972,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @return the {@code JPopupMenu} associated with this menu
      */
+    @BeanProperty(bound = false)
     public JPopupMenu getPopupMenu() {
         ensurePopupMenuCreated();
         return popupMenu;
@@ -1016,6 +1004,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public MenuListener[] getMenuListeners() {
         return listenerList.getListeners(MenuListener.class);
     }
@@ -1208,6 +1197,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @return an array of <code>MenuElement</code> objects
      */
+    @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         if(popupMenu == null)
             return new MenuElement[0];
@@ -1270,11 +1260,6 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *                  without navigating the menu hierarchy
      * @exception Error  if invoked -- this method is not defined for JMenu.
      *                  Use <code>setMnemonic</code> instead
-     *
-     * @beaninfo
-     *     description: The keystroke combination which will invoke the JMenuItem's
-     *                  actionlisteners without navigating the menu hierarchy
-     *          hidden: true
      */
     public void setAccelerator(KeyStroke keyStroke) {
         throw new Error("setAccelerator() is not defined for JMenu.  Use setMnemonic() instead.");
@@ -1381,6 +1366,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return an AccessibleJMenu that serves as the
      *         AccessibleContext of this JMenu
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJMenu();
