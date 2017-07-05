@@ -188,7 +188,17 @@ class instanceKlass: public Klass {
   klassOop        _host_klass;
   // Class signers.
   objArrayOop     _signers;
-  // inner_classes attribute.
+  // The InnerClasses attribute and EnclosingMethod attribute. The
+  // _inner_classes is an array of shorts. If the class has InnerClasses
+  // attribute, then the _inner_classes array begins with 4-tuples of shorts
+  // [inner_class_info_index, outer_class_info_index,
+  // inner_name_index, inner_class_access_flags] for the InnerClasses
+  // attribute. If the EnclosingMethod attribute exists, it occupies the
+  // last two shorts [class_index, method_index] of the array. If only
+  // the InnerClasses attribute exists, the _inner_classes array length is
+  // number_of_inner_classes * 4. If the class has both InnerClasses
+  // and EnclosingMethod attributes the _inner_classes array length is
+  // number_of_inner_classes * 4 + enclosing_method_attribute_size.
   typeArrayOop    _inner_classes;
   // Implementors of this interface (not valid if it overflows)
   klassOop        _implementors[implementors_limit];
@@ -251,8 +261,6 @@ class instanceKlass: public Klass {
   // Array of interesting part(s) of the previous version(s) of this
   // instanceKlass. See PreviousVersionWalker below.
   GrowableArray<PreviousVersionNode *>* _previous_versions;
-  u2              _enclosing_method_class_index;  // Constant pool index for class of enclosing method, or 0 if none
-  u2              _enclosing_method_method_index; // Constant pool index for name and type of enclosing method, or 0 if none
   // JVMTI fields can be moved to their own structure - see 6315920
   unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
   jint            _cached_class_file_len;         // JVMTI: length of above
@@ -349,6 +357,12 @@ class instanceKlass: public Klass {
     inner_class_inner_name_offset = 2,
     inner_class_access_flags_offset = 3,
     inner_class_next_offset = 4
+  };
+
+  enum EnclosingMethodAttributeOffset {
+    enclosing_method_class_index_offset = 0,
+    enclosing_method_method_index_offset = 1,
+    enclosing_method_attribute_size = 2
   };
 
   // method override check
@@ -533,11 +547,15 @@ class instanceKlass: public Klass {
   Symbol* generic_signature() const                   { return _generic_signature; }
   void set_generic_signature(Symbol* sig)             { _generic_signature = sig; }
 
-  u2 enclosing_method_class_index() const             { return _enclosing_method_class_index; }
-  u2 enclosing_method_method_index() const            { return _enclosing_method_method_index; }
+  u2 enclosing_method_data(int offset);
+  u2 enclosing_method_class_index() {
+    return enclosing_method_data(enclosing_method_class_index_offset);
+  }
+  u2 enclosing_method_method_index() {
+    return enclosing_method_data(enclosing_method_method_index_offset);
+  }
   void set_enclosing_method_indices(u2 class_index,
-                                    u2 method_index)  { _enclosing_method_class_index  = class_index;
-                                                        _enclosing_method_method_index = method_index; }
+                                    u2 method_index);
 
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
@@ -1051,6 +1069,85 @@ class nmethodBucket: public CHeapObj {
   nmethodBucket* next()                   { return _next; }
   void set_next(nmethodBucket* b)         { _next = b; }
   nmethod* get_nmethod()                  { return _nmethod; }
+};
+
+// An iterator that's used to access the inner classes indices in the
+// instanceKlass::_inner_classes array.
+class InnerClassesIterator : public StackObj {
+ private:
+  typeArrayHandle _inner_classes;
+  int _length;
+  int _idx;
+ public:
+
+  InnerClassesIterator(instanceKlassHandle k) {
+    _inner_classes = k->inner_classes();
+    if (k->inner_classes() != NULL) {
+      _length = _inner_classes->length();
+      // The inner class array's length should be the multiple of
+      // inner_class_next_offset if it only contains the InnerClasses
+      // attribute data, or it should be
+      // n*inner_class_next_offset+enclosing_method_attribute_size
+      // if it also contains the EnclosingMethod data.
+      assert((_length % instanceKlass::inner_class_next_offset == 0 ||
+              _length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size),
+             "just checking");
+      // Remove the enclosing_method portion if exists.
+      if (_length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size) {
+        _length -= instanceKlass::enclosing_method_attribute_size;
+      }
+    } else {
+      _length = 0;
+    }
+    _idx = 0;
+  }
+
+  int length() const {
+    return _length;
+  }
+
+  void next() {
+    _idx += instanceKlass::inner_class_next_offset;
+  }
+
+  bool done() const {
+    return (_idx >= _length);
+  }
+
+  u2 inner_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_class_info_offset);
+  }
+
+  void set_inner_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_class_info_offset, index);
+  }
+
+  u2 outer_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_outer_class_info_offset);
+  }
+
+  void set_outer_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_outer_class_info_offset, index);
+  }
+
+  u2 inner_name_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_name_offset);
+  }
+
+  void set_inner_name_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_name_offset, index);
+  }
+
+  u2 inner_access_flags() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_access_flags_offset);
+  }
 };
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP

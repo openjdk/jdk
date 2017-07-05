@@ -155,7 +155,7 @@ void ConcurrentMarkThread::run() {
 
           CMCheckpointRootsFinalClosure final_cl(_cm);
           sprintf(verbose_str, "GC remark");
-          VM_CGC_Operation op(&final_cl, verbose_str);
+          VM_CGC_Operation op(&final_cl, verbose_str, true /* needs_pll */);
           VMThread::execute(&op);
         }
         if (cm()->restart_for_overflow() &&
@@ -189,7 +189,7 @@ void ConcurrentMarkThread::run() {
 
         CMCleanUp cl_cl(_cm);
         sprintf(verbose_str, "GC cleanup");
-        VM_CGC_Operation op(&cl_cl, verbose_str);
+        VM_CGC_Operation op(&cl_cl, verbose_str, false /* needs_pll */);
         VMThread::execute(&op);
       } else {
         // We don't want to update the marking status if a GC pause
