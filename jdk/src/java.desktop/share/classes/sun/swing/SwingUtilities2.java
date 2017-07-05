@@ -103,14 +103,6 @@ public class SwingUtilities2 {
         new FontRenderContext(null, false, false);
 
     /**
-     * A JComponent client property is used to determine text aa settings.
-     * To avoid having this property persist between look and feels changes
-     * the value of the property is set to null in JComponent.setUI
-     */
-    public static final Object AA_TEXT_PROPERTY_KEY =
-                          new StringBuffer("AATextInfoPropertyKey");
-
-    /**
      * Attribute key for the content elements.  If it is set on an element, the
      * element is considered to be a line break.
      */
@@ -123,58 +115,23 @@ public class SwingUtilities2 {
     private static final StringBuilder SKIP_CLICK_COUNT =
         new StringBuilder("skipClickCount");
 
-    /* Presently this class assumes default fractional metrics.
-     * This may need to change to emulate future platform L&Fs.
-     */
-    public static class AATextInfo {
+    @SuppressWarnings("unchecked")
+    public static void putAATextInfo(boolean lafCondition,
+            Map<Object, Object> map) {
+        SunToolkit.setAAFontSettingsCondition(lafCondition);
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        Object desktopHints = tk.getDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
 
-        private static AATextInfo getAATextInfoFromMap(Map<java.awt.RenderingHints.Key, Object> hints) {
-
-            Object aaHint   = hints.get(KEY_TEXT_ANTIALIASING);
-            Object contHint = hints.get(KEY_TEXT_LCD_CONTRAST);
-
-            if (aaHint == null ||
-                aaHint == VALUE_TEXT_ANTIALIAS_OFF ||
-                aaHint == VALUE_TEXT_ANTIALIAS_DEFAULT) {
-                return null;
-            } else {
-                return new AATextInfo(aaHint, (Integer)contHint);
+        if (desktopHints instanceof Map) {
+            Map<Object, Object> hints = (Map<Object, Object>) desktopHints;
+            Object aaHint = hints.get(KEY_TEXT_ANTIALIASING);
+            if (aaHint == null
+                    || aaHint == VALUE_TEXT_ANTIALIAS_OFF
+                    || aaHint == VALUE_TEXT_ANTIALIAS_DEFAULT) {
+                return;
             }
-        }
-
-        @SuppressWarnings("unchecked")
-        public static AATextInfo getAATextInfo(boolean lafCondition) {
-            SunToolkit.setAAFontSettingsCondition(lafCondition);
-            Toolkit tk = Toolkit.getDefaultToolkit();
-            Object map = tk.getDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
-            if (map instanceof Map) {
-                return getAATextInfoFromMap((Map<java.awt.RenderingHints.Key, Object>)map);
-            } else {
-                return null;
-            }
-        }
-
-        Object aaHint;
-        Integer lcdContrastHint;
-        FontRenderContext frc;
-
-        /* These are rarely constructed objects, and only when a complete
-         * UI is being updated, so the cost of the tests here is minimal
-         * and saves tests elsewhere.
-         * We test that the values are ones we support/expect.
-         */
-        public AATextInfo(Object aaHint, Integer lcdContrastHint) {
-            if (aaHint == null) {
-                throw new InternalError("null not allowed here");
-            }
-            if (aaHint == VALUE_TEXT_ANTIALIAS_OFF ||
-                aaHint == VALUE_TEXT_ANTIALIAS_DEFAULT) {
-                throw new InternalError("AA must be on");
-            }
-            this.aaHint = aaHint;
-            this.lcdContrastHint = lcdContrastHint;
-            this.frc = new FontRenderContext(null, aaHint,
-                                             VALUE_FRACTIONALMETRICS_DEFAULT);
+            map.put(KEY_TEXT_ANTIALIASING, aaHint);
+            map.put(KEY_TEXT_LCD_CONTRAST, hints.get(KEY_TEXT_LCD_CONTRAST));
         }
     }
 
@@ -239,22 +196,6 @@ public class SwingUtilities2 {
     // In other words, if you add new functionality to these methods you
     // need to gracefully handle null.
     //
-
-    /**
-     * Returns whether or not text should be drawn antialiased.
-     *
-     * @param c JComponent to test.
-     * @return Whether or not text should be drawn antialiased for the
-     *         specified component.
-     */
-    public static AATextInfo drawTextAntialiased(JComponent c) {
-        if (c != null) {
-            /* a non-null property implies some form of AA requested */
-            return (AATextInfo)c.getClientProperty(AA_TEXT_PROPERTY_KEY);
-        }
-        // No component, assume aa is off
-        return null;
-    }
 
     /**
      * Returns the left side bearing of the first character of string. The
@@ -530,7 +471,6 @@ public class SwingUtilities2 {
 
         // If we get here we're not printing
         if (g instanceof Graphics2D) {
-            AATextInfo info = drawTextAntialiased(c);
             Graphics2D g2 = (Graphics2D)g;
 
             boolean needsTextLayout = ((c != null) &&
@@ -543,21 +483,27 @@ public class SwingUtilities2 {
                 }
             }
 
-            if (info != null) {
+            Object aaHint = (c == null)
+                                ? null
+                                : c.getClientProperty(KEY_TEXT_ANTIALIASING);
+            if (aaHint != null) {
                 Object oldContrast = null;
                 Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
-                if (info.aaHint != oldAAValue) {
-                    g2.setRenderingHint(KEY_TEXT_ANTIALIASING, info.aaHint);
+                if (aaHint != oldAAValue) {
+                    g2.setRenderingHint(KEY_TEXT_ANTIALIASING, aaHint);
                 } else {
                     oldAAValue = null;
                 }
-                if (info.lcdContrastHint != null) {
+
+                Object lcdContrastHint = c.getClientProperty(
+                        KEY_TEXT_LCD_CONTRAST);
+                if (lcdContrastHint != null) {
                     oldContrast = g2.getRenderingHint(KEY_TEXT_LCD_CONTRAST);
-                    if (info.lcdContrastHint.equals(oldContrast)) {
+                    if (lcdContrastHint.equals(oldContrast)) {
                         oldContrast = null;
                     } else {
                         g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST,
-                                            info.lcdContrastHint);
+                                            lcdContrastHint);
                     }
                 }
 
@@ -821,24 +767,28 @@ public class SwingUtilities2 {
         }
         // Assume we're not printing if we get here, or that we are invoked
         // via Swing text printing which is laid out for the printer.
-        AATextInfo info = drawTextAntialiased(c);
-        if (info != null && (g instanceof Graphics2D)) {
+        Object aaHint = (c == null)
+                            ? null
+                            : c.getClientProperty(KEY_TEXT_ANTIALIASING);
+        if (aaHint != null && (g instanceof Graphics2D)) {
             Graphics2D g2 = (Graphics2D)g;
 
             Object oldContrast = null;
             Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
-            if (info.aaHint != null && info.aaHint != oldAAValue) {
-                g2.setRenderingHint(KEY_TEXT_ANTIALIASING, info.aaHint);
+            if (aaHint != null && aaHint != oldAAValue) {
+                g2.setRenderingHint(KEY_TEXT_ANTIALIASING, aaHint);
             } else {
                 oldAAValue = null;
             }
-            if (info.lcdContrastHint != null) {
+
+            Object lcdContrastHint = c.getClientProperty(KEY_TEXT_LCD_CONTRAST);
+            if (lcdContrastHint != null) {
                 oldContrast = g2.getRenderingHint(KEY_TEXT_LCD_CONTRAST);
-                if (info.lcdContrastHint.equals(oldContrast)) {
+                if (lcdContrastHint.equals(oldContrast)) {
                     oldContrast = null;
                 } else {
                     g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST,
-                                        info.lcdContrastHint);
+                                        lcdContrastHint);
                 }
             }
 
@@ -1117,13 +1067,33 @@ public class SwingUtilities2 {
      */
     private static FontRenderContext getFRCProperty(JComponent c) {
         if (c != null) {
-            AATextInfo info =
-                (AATextInfo)c.getClientProperty(AA_TEXT_PROPERTY_KEY);
-            if (info != null) {
-                return info.frc;
+            Object aaHint = c.getClientProperty(KEY_TEXT_ANTIALIASING);
+            if (aaHint != null) {
+                return getFRCFromCache(aaHint);
             }
         }
         return null;
+    }
+
+    private static final Object APP_CONTEXT_FRC_CACHE_KEY = new Object();
+
+    private static FontRenderContext getFRCFromCache(Object aaHint) {
+        @SuppressWarnings("unchecked")
+        Map<Object, FontRenderContext> cache = (Map<Object, FontRenderContext>)
+                AppContext.getAppContext().get(APP_CONTEXT_FRC_CACHE_KEY);
+
+        if (cache == null) {
+            cache = new HashMap<>();
+            AppContext.getAppContext().put(APP_CONTEXT_FRC_CACHE_KEY, cache);
+        }
+
+        FontRenderContext frc = cache.get(aaHint);
+        if (frc == null) {
+            frc = new FontRenderContext(null, aaHint,
+                    VALUE_FRACTIONALMETRICS_DEFAULT);
+            cache.put(aaHint, frc);
+        }
+        return frc;
     }
 
     /*

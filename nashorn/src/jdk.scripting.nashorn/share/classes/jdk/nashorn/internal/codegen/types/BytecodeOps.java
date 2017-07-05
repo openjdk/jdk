@@ -36,7 +36,7 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
  * The bytecode ops are coupled to a MethodVisitor from ASM for
  * byte code generation. They know nothing about our MethodGenerator,
  * which is the abstraction for working with Nashorn JS types
- * For exmaple, anything like "two or one slots" for a type, which
+ * For example, anything like "two or one slots" for a type, which
  * is represented in bytecode and ASM, is abstracted away in the
  * MethodGenerator. There you just say "dup" or "store".
  *
