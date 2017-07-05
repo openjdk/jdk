@@ -318,7 +318,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
 
         // not for the scrolling tabs
-        if (tabIndex >= 0) {
+        if (component == null && tabIndex >= 0) {
             paintTitle(g2d, font, metrics, textRect, tabIndex, title);
         }
 

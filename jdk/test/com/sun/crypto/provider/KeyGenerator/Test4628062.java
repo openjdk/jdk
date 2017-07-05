@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4628062
+ * @bug 4628062 4963723
  * @summary Verify that AES KeyGenerator supports default initialization
  *      when init is not called
  * @author Valerie Peng
@@ -34,39 +34,45 @@ import java.util.*;
 
 public class Test4628062 {
 
-    private static final String ALGO = "AES";
-    private static final int[] KEYSIZES =
-        { 16, 24, 32 }; // in bytes
+    private static final int[] AES_SIZES = { 16, 24, 32 }; // in bytes
+    private static final int[] HMACSHA224_SIZES = { 28 };
+    private static final int[] HMACSHA256_SIZES = { 32 };
+    private static final int[] HMACSHA384_SIZES = { 48 };
+    private static final int[] HMACSHA512_SIZES = { 64 };
 
-    public boolean execute() throws Exception {
-        KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
+    public boolean execute(String algo, int[] keySizes) throws Exception {
+        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
 
         // TEST FIX 4628062
         Key keyWithDefaultSize = kg.generateKey();
         byte[] encoding = keyWithDefaultSize.getEncoded();
-        if (encoding.length == 0) {
+        int defKeyLen = encoding.length ;
+        if (defKeyLen == 0) {
             throw new Exception("default key length is 0!");
+        } else if (defKeyLen != keySizes[0]) {
+            throw new Exception("default key length mismatch!");
         }
 
         // BONUS TESTS
-        // 1. call init(int keysize) with various valid key sizes
-        // and see if the generated key is the right size.
-        for (int i=0; i<KEYSIZES.length; i++) {
-            kg.init(KEYSIZES[i]*8); // in bits
-            Key key = kg.generateKey();
-            if (key.getEncoded().length != KEYSIZES[i]) {
-                throw new Exception("key is generated with the wrong length!");
+        if (keySizes.length > 1) {
+            // 1. call init(int keysize) with various valid key sizes
+            // and see if the generated key is the right size.
+            for (int i=0; i<keySizes.length; i++) {
+                kg.init(keySizes[i]*8); // in bits
+                Key key = kg.generateKey();
+                if (key.getEncoded().length != keySizes[i]) {
+                    throw new Exception("key is generated with the wrong length!");
+                }
+            }
+            // 2. call init(int keysize) with invalid key size and see
+            // if the expected InvalidParameterException is thrown.
+            try {
+                kg.init(keySizes[0]*8+1);
+            } catch (InvalidParameterException ex) {
+            } catch (Exception ex) {
+                throw new Exception("wrong exception is thrown for invalid key size!");
             }
         }
-        // 2. call init(int keysize) with invalid key size and see
-        // if the expected InvalidParameterException is thrown.
-        try {
-            kg.init(KEYSIZES[0]*8+1);
-        } catch (InvalidParameterException ex) {
-        } catch (Exception ex) {
-            throw new Exception("wrong exception is thrown for invalid key size!");
-        }
-
         // passed all tests...hooray!
         return true;
     }
@@ -76,8 +82,20 @@ public class Test4628062 {
 
         Test4628062 test = new Test4628062();
         String testName = test.getClass().getName();
-        if (test.execute()) {
-            System.out.println(testName + ": Passed!");
+        if (test.execute("AES", AES_SIZES)) {
+            System.out.println(testName + ": AES Passed!");
+        }
+        if (test.execute("HmacSHA224", HMACSHA224_SIZES)) {
+            System.out.println(testName + ": HmacSHA224 Passed!");
+        }
+        if (test.execute("HmacSHA256", HMACSHA256_SIZES)) {
+            System.out.println(testName + ": HmacSHA256 Passed!");
+        }
+        if (test.execute("HmacSHA384", HMACSHA384_SIZES)) {
+            System.out.println(testName + ": HmacSHA384 Passed!");
+        }
+        if (test.execute("HmacSHA512", HMACSHA512_SIZES)) {
+            System.out.println(testName + ": HmacSHA512 Passed!");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,11 +105,11 @@ final class KeyGeneratorCore {
         return new SecretKeySpec(b, name);
     }
 
-    // nested static class for the HmacSHA256 key generator
-    public static final class HmacSHA256KG extends KeyGeneratorSpi {
+    // nested static classes for the HmacSHA-2 family of key generator
+    abstract static class HmacSHA2KG extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;
-        public HmacSHA256KG() {
-            core = new KeyGeneratorCore("HmacSHA256", 256);
+        protected HmacSHA2KG(String algoName, int len) {
+            core = new KeyGeneratorCore(algoName, len);
         }
         protected void engineInit(SecureRandom random) {
             core.implInit(random);
@@ -124,47 +124,26 @@ final class KeyGeneratorCore {
         protected SecretKey engineGenerateKey() {
             return core.implGenerateKey();
         }
-    }
 
-    // nested static class for the HmacSHA384 key generator
-    public static final class HmacSHA384KG extends KeyGeneratorSpi {
-        private final KeyGeneratorCore core;
-        public HmacSHA384KG() {
-            core = new KeyGeneratorCore("HmacSHA384", 384);
+        public static final class SHA224 extends HmacSHA2KG {
+            public SHA224() {
+                super("HmacSHA224", 224);
+            }
         }
-        protected void engineInit(SecureRandom random) {
-            core.implInit(random);
+        public static final class SHA256 extends HmacSHA2KG {
+            public SHA256() {
+                super("HmacSHA256", 256);
+            }
         }
-        protected void engineInit(AlgorithmParameterSpec params,
-                SecureRandom random) throws InvalidAlgorithmParameterException {
-            core.implInit(params, random);
+        public static final class SHA384 extends HmacSHA2KG {
+            public SHA384() {
+                super("HmacSHA384", 384);
+            }
         }
-        protected void engineInit(int keySize, SecureRandom random) {
-            core.implInit(keySize, random);
-        }
-        protected SecretKey engineGenerateKey() {
-            return core.implGenerateKey();
-        }
-    }
-
-    // nested static class for the HmacSHA384 key generator
-    public static final class HmacSHA512KG extends KeyGeneratorSpi {
-        private final KeyGeneratorCore core;
-        public HmacSHA512KG() {
-            core = new KeyGeneratorCore("HmacSHA512", 512);
-        }
-        protected void engineInit(SecureRandom random) {
-            core.implInit(random);
-        }
-        protected void engineInit(AlgorithmParameterSpec params,
-                SecureRandom random) throws InvalidAlgorithmParameterException {
-            core.implInit(params, random);
-        }
-        protected void engineInit(int keySize, SecureRandom random) {
-            core.implInit(keySize, random);
-        }
-        protected SecretKey engineGenerateKey() {
-            return core.implGenerateKey();
+        public static final class SHA512 extends HmacSHA2KG {
+            public SHA512() {
+                super("HmacSHA512", 512);
+            }
         }
     }
 
