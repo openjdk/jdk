@@ -46,6 +46,7 @@ import org.xml.sax.InputSource;
  * @bug 8144593
  * @key intermittent
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @compile -XDignore.symbol.file TestSAXDriver.java
  * @run testng/othervm -DrunSecMngr=true common.ValidationWarningsTest
  * @run testng/othervm common.ValidationWarningsTest
  * @summary Check that warnings about unsupported properties from SAX

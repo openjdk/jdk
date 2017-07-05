@@ -29,11 +29,10 @@
  *          Access allowed, an unnamed module can read all modules and p2 in module m2
  *          which is exported unqualifiedly.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build UmodDiffCL_ExpUnqual
  * @run main/othervm -Xbootclasspath/a:. UmodDiffCL_ExpUnqual
  */
 

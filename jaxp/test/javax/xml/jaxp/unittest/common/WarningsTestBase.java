@@ -23,11 +23,15 @@
 
 package common;
 
+import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,25 +62,27 @@ public abstract class WarningsTestBase {
         PrintStream defStdErr = System.err;
         //Set new byte array stream as standard error stream
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream(5000);
-        System.setErr(new PrintStream(byteStream));
+        runWithAllPerm(() -> System.setErr(new PrintStream(byteStream)));
         //Execute multiple TestWorker tasks
         for (int id = 0; id < THREADS_COUNT; id++) {
             EXECUTOR.execute(new TestWorker(id));
         }
         //Initiate shutdown of previously submitted task
-        EXECUTOR.shutdown();
+        runWithAllPerm(EXECUTOR::shutdown);
         //Wait for termination of submitted tasks
         if (!EXECUTOR.awaitTermination(THREADS_COUNT, TimeUnit.SECONDS)) {
             //If not all tasks terminates during the time out force them to shutdown
-            EXECUTOR.shutdownNow();
+            runWithAllPerm(EXECUTOR::shutdownNow);
         }
         //Restore default standard error stream
-        System.setErr(defStdErr);
+        runWithAllPerm(() -> System.setErr(defStdErr));
         //Print tasks stderr output
         String errContent = byteStream.toString();
         System.out.println("Standard error output content:");
         System.out.println(errContent);
-        //Check tasks stderr output for quatity of warning messages
+        //Check if uncaught exceptions were observed by one or more threads
+        Assert.assertFalse(uncaughtExceptions);
+        //Check tasks stderr output for quantity of warning messages
         Assert.assertTrue(warningPrintedOnce(XMLConstants.ACCESS_EXTERNAL_DTD, errContent));
         Assert.assertTrue(warningPrintedOnce(ENT_EXP_PROPERTY, errContent));
         Assert.assertTrue(warningPrintedOnce(XMLConstants.FEATURE_SECURE_PROCESSING, errContent));
@@ -123,6 +129,25 @@ public abstract class WarningsTestBase {
         }
     }
 
+    // Thread factory that handles uncaughtExceptions and prints them
+    // to stdout instead of stderr.
+    private static class TestThreadFactory implements ThreadFactory {
+
+        public Thread newThread(final Runnable r) {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable thr) {
+                    thr.printStackTrace(System.out);
+                    uncaughtExceptions = true;
+                }
+            });
+            return t;
+        }
+    }
+
+    //Flag that indicates if one or more threads from thread pool caught unhandled exception
+    private static boolean uncaughtExceptions = false;
     //Entity expansion limit property name
     private static final String ENT_EXP_PROPERTY = "http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit";
     //Number of simultaneous test threads
@@ -130,7 +155,7 @@ public abstract class WarningsTestBase {
     //Number of iterations per one thread
     private static final int ITERATIONS_PER_THREAD = 4;
     //Test thread pool
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
-    //Cyclic barrier for threads startup synchronisation
+    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(new TestThreadFactory());
+    //Cyclic barrier for threads startup synchronization
     private static final CyclicBarrier BARRIER = new CyclicBarrier(THREADS_COUNT);
 }

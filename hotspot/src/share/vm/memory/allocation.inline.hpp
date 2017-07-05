@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_MEMORY_ALLOCATION_INLINE_HPP
 #define SHARE_VM_MEMORY_ALLOCATION_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"

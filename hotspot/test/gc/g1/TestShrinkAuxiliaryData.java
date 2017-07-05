@@ -22,9 +22,9 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;

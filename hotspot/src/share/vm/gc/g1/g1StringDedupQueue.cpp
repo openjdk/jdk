@@ -30,7 +30,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/stack.inline.hpp"
 

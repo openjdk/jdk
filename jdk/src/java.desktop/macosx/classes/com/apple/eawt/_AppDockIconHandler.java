@@ -72,7 +72,7 @@ class _AppDockIconHandler {
 
     public void setDockIconImage(final Image image) {
         try {
-            final CImage cImage = getCImageCreator().createFromImage(image);
+            final CImage cImage = CImage.createFromImage(image);
             final long nsImagePtr = getNSImagePtrFrom(cImage);
             nativeSetDockIconImage(nsImagePtr);
         } catch (final Throwable e) {
@@ -84,7 +84,11 @@ class _AppDockIconHandler {
         try {
             final long dockNSImage = nativeGetDockIconImage();
             if (dockNSImage == 0) return null;
-            return getCImageCreator().createImageUsingNativeSize(dockNSImage);
+            final Method getCreatorMethod = CImage.class.getDeclaredMethod(
+                    "getCreator", new Class<?>[]{});
+            getCreatorMethod.setAccessible(true);
+            Creator imageCreator = (Creator) getCreatorMethod.invoke(null, new Object[]{});
+            return imageCreator.createImageUsingNativeSize(dockNSImage);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
@@ -96,16 +100,6 @@ class _AppDockIconHandler {
 
     void setDockIconProgress(int value) {
         nativeSetDockIconProgress(value);
-    }
-
-    static Creator getCImageCreator() {
-        try {
-            final Method getCreatorMethod = CImage.class.getDeclaredMethod("getCreator", new Class<?>[] {});
-            getCreatorMethod.setAccessible(true);
-            return (Creator)getCreatorMethod.invoke(null, new Object[] {});
-        } catch (final Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static long getNSImagePtrFrom(final CImage cImage) {

@@ -26,12 +26,13 @@
  * @key gc
  * @requires vm.gc.G1
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import java.util.*;
 import java.util.regex.*;
 

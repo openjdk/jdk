@@ -270,7 +270,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
  * Method:    createAttachFile
  * Signature: (Ljava.lang.String;)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_createAttachFile(JNIEnv *env, jclass cls, jstring path)
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_createAttachFile0(JNIEnv *env, jclass cls, jstring path)
 {
     const char* _path;
     jboolean isCopy;

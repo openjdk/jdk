@@ -26,14 +26,17 @@
  * @key gc
  * @bug 8144527
  * @summary Tests argument processing for NewSizeThreadIncrease
- * @library /testlibrary
+ * @library /test/lib
  * @requires vm.gc.Serial
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
 
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 
 // Range of NewSizeThreadIncrease is 0 ~ max_uintx.
 // Total of 5 threads will be created (1 GCTest thread and 4 TestThread).

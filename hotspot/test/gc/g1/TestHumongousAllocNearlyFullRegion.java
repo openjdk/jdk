@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@
  * @summary G1: humongous object allocations should work even when there is
  *              not enough space in the heapRegion to fit a filler object.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @run driver TestHumongousAllocNearlyFullRegion
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestHumongousAllocNearlyFullRegion {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to

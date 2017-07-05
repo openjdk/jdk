@@ -27,12 +27,11 @@
  * @test
  * @summary class p3.c3 defined in module m1 tries to access c4 defined in unnamed module.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile c4.java
  * @compile p3/c3.jcod
  * @compile p3/c3ReadEdge.jcod
- * @build UmodUPkg
  * @run main/othervm -Xbootclasspath/a:. UmodUPkg
  */
 

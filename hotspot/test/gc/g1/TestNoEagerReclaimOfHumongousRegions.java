@@ -29,9 +29,9 @@
  *          might pass even if there are problems in the code, but it will never crash unless there is a problem.
  * @requires vm.gc.G1
  * @key gc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build TestNoEagerReclaimOfHumongousRegions
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xlog:gc,gc+humongous=debug -XX:+UseG1GC -XX:MaxTenuringThreshold=0 -XX:G1RSetSparseRegionEntries=32 -XX:G1HeapRegionSize=1m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestNoEagerReclaimOfHumongousRegions

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary Creates two threads contending for the same lock and checks
  *      whether jstack reports "locked" by more than one thread.
  *
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm TestThreadDumpMonitorContention
@@ -43,7 +43,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
 
 public class TestThreadDumpMonitorContention {
     // jstack tends to be closely bound to the VM that we are running

@@ -119,6 +119,10 @@ final class CatalogResolverImpl implements CatalogResolver {
         String result = null;
         CatalogImpl c = (CatalogImpl)catalog;
         String uri = Normalizer.normalizeURI(href);
+        if (uri == null) {
+            return null;
+        }
+
         //check whether uri is an urn
         if (uri != null && uri.startsWith(Util.URN)) {
             String publicId = Normalizer.decodeURN(uri);
