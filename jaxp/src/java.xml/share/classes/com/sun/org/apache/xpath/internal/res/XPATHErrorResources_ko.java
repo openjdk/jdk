@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XPATHErrorResources_ko.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 02:39:51 gmolloy Exp $
- */
 package com.sun.org.apache.xpath.internal.res;
 
 import java.util.ListResourceBundle;
@@ -93,6 +90,7 @@ public class XPATHErrorResources_ko extends ListResourceBundle
   public static final String ER_CURRENT_TAKES_NO_ARGS =
          "ER_CURRENT_TAKES_NO_ARGS";
   public static final String ER_DOCUMENT_REPLACED = "ER_DOCUMENT_REPLACED";
+  public static final String ER_CONTEXT_CAN_NOT_BE_NULL = "ER_CONTEXT_CAN_NOT_BE_NULL";
   public static final String ER_CONTEXT_HAS_NO_OWNERDOC =
          "ER_CONTEXT_HAS_NO_OWNERDOC";
   public static final String ER_LOCALNAME_HAS_TOO_MANY_ARGS =
@@ -367,6 +365,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_DOCUMENT_REPLACED,
       "document() \uD568\uC218 \uAD6C\uD604\uC774 com.sun.org.apache.xalan.internal.xslt.FuncDocument\uB85C \uB300\uCCB4\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+
+  { ER_CONTEXT_CAN_NOT_BE_NULL,
+      "\uC791\uC5C5\uC774 \uCEE8\uD14D\uC2A4\uD2B8\uC5D0 \uC885\uC18D\uC801\uC77C \uB54C \uCEE8\uD14D\uC2A4\uD2B8\uB294 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
       "\uCEE8\uD14D\uC2A4\uD2B8\uC5D0 \uC18C\uC720\uC790 \uBB38\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},

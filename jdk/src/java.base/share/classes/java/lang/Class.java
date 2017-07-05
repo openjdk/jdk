@@ -1277,31 +1277,38 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private static final class EnclosingMethodInfo {
-        private Class<?> enclosingClass;
-        private String name;
-        private String descriptor;
+        private final Class<?> enclosingClass;
+        private final String name;
+        private final String descriptor;
 
-        private EnclosingMethodInfo(Object[] enclosingInfo) {
+        static void validate(Object[] enclosingInfo) {
             if (enclosingInfo.length != 3)
                 throw new InternalError("Malformed enclosing method information");
             try {
                 // The array is expected to have three elements:
 
                 // the immediately enclosing class
-                enclosingClass = (Class<?>) enclosingInfo[0];
+                Class<?> enclosingClass = (Class<?>)enclosingInfo[0];
                 assert(enclosingClass != null);
 
                 // the immediately enclosing method or constructor's
                 // name (can be null).
-                name            = (String)   enclosingInfo[1];
+                String name = (String)enclosingInfo[1];
 
                 // the immediately enclosing method or constructor's
                 // descriptor (null iff name is).
-                descriptor      = (String)   enclosingInfo[2];
+                String descriptor = (String)enclosingInfo[2];
                 assert((name != null && descriptor != null) || name == descriptor);
             } catch (ClassCastException cce) {
                 throw new InternalError("Invalid type in enclosing method information", cce);
             }
+        }
+
+        EnclosingMethodInfo(Object[] enclosingInfo) {
+            validate(enclosingInfo);
+            this.enclosingClass = (Class<?>)enclosingInfo[0];
+            this.name = (String)enclosingInfo[1];
+            this.descriptor = (String)enclosingInfo[2];
         }
 
         boolean isPartial() {
@@ -1481,7 +1488,7 @@ public final class Class<T> implements java.io.Serializable,
 
         if (enclosingInfo == null) {
             // This is a top level or a nested class or an inner class (a, b, or c)
-            enclosingCandidate = getDeclaringClass();
+            enclosingCandidate = getDeclaringClass0();
         } else {
             Class<?> enclosingClass = enclosingInfo.getEnclosingClass();
             // This is a local class or an anonymous class (d or e)
@@ -1548,14 +1555,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Character.isDigit answers {@code true} to some non-ascii
-     * digits.  This one does not.
-     */
-    private static boolean isAsciiDigit(char c) {
-        return '0' <= c && c <= '9';
-    }
-
-    /**
      * Returns the canonical name of the underlying class as
      * defined by the Java Language Specification.  Returns null if
      * the underlying class does not have a canonical name (i.e., if
@@ -1594,7 +1593,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isAnonymousClass() {
-        return "".equals(getSimpleName());
+        return !isArray() && isLocalOrAnonymousClass() &&
+                getSimpleBinaryName0() == null;
     }
 
     /**
@@ -1605,7 +1605,8 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isLocalClass() {
-        return isLocalOrAnonymousClass() && !isAnonymousClass();
+        return isLocalOrAnonymousClass() &&
+                (isArray() || getSimpleBinaryName0() != null);
     }
 
     /**
@@ -1616,7 +1617,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     public boolean isMemberClass() {
-        return getSimpleBinaryName() != null && !isLocalOrAnonymousClass();
+        return !isLocalOrAnonymousClass() && getDeclaringClass0() != null;
     }
 
     /**
@@ -1626,8 +1627,7 @@ public final class Class<T> implements java.io.Serializable,
      * class.
      */
     private String getSimpleBinaryName() {
-        Class<?> enclosingClass = getEnclosingClass();
-        if (enclosingClass == null) // top level class
+        if (isTopLevelClass())
             return null;
         String name = getSimpleBinaryName0();
         if (name == null) // anonymous class
@@ -1638,6 +1638,14 @@ public final class Class<T> implements java.io.Serializable,
     private native String getSimpleBinaryName0();
 
     /**
+     * Returns {@code true} if this is a top level class.  Returns {@code false}
+     * otherwise.
+     */
+    private boolean isTopLevelClass() {
+        return !isLocalOrAnonymousClass() && getDeclaringClass0() == null;
+    }
+
+    /**
      * Returns {@code true} if this is a local class or an anonymous
      * class.  Returns {@code false} otherwise.
      */
@@ -1645,7 +1653,16 @@ public final class Class<T> implements java.io.Serializable,
         // JVM Spec 4.7.7: A class must have an EnclosingMethod
         // attribute if and only if it is a local class or an
         // anonymous class.
-        return getEnclosingMethodInfo() != null;
+        return hasEnclosingMethodInfo();
+    }
+
+    private boolean hasEnclosingMethodInfo() {
+        Object[] enclosingInfo = getEnclosingMethod0();
+        if (enclosingInfo != null) {
+            EnclosingMethodInfo.validate(enclosingInfo);
+            return true;
+        }
+        return false;
     }
 
     /**

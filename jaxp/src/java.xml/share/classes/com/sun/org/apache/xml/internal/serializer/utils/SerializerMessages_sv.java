@@ -19,9 +19,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SerializerMessages_sv.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 01:57:20 gmolloy Exp $
- */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
 import java.util.ListResourceBundle;

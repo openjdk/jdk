@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1235,12 +1235,14 @@ StatusDrawCallback(XIC ic, XPointer client_data,
     if (status_draw->type == XIMTextType){
         XIMText *text = (status_draw->data).text;
         if (text != NULL){
-          if (text->string.multi_byte != NULL){
-              strcpy(statusWindow->status, text->string.multi_byte);
+          if (text->string.multi_byte != NULL) {
+              strncpy(statusWindow->status, text->string.multi_byte, MAX_STATUS_LEN);
+              statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
           }
-          else{
+          else {
               char *mbstr = wcstombsdmp(text->string.wide_char, text->length);
-              strcpy(statusWindow->status, mbstr);
+              strncpy(statusWindow->status, mbstr, MAX_STATUS_LEN);
+              statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
           }
           statusWindow->on = True;
           onoffStatusWindow(pX11IMData, statusWindow->parent, True);

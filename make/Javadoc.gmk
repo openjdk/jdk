@@ -499,6 +499,21 @@ TARGETS += $(httpserver)
 
 ################################################################################
 
+$(eval $(call SetupJavadocGeneration, httpclient, \
+    MODULES := jdk.incubator.httpclient, \
+    PACKAGES := \
+        jdk.incubator.http, \
+    API_ROOT := jre, \
+    DEST_DIR := incubator/httpclient/spec, \
+    TITLE := Java&trade; HTTP Client API (incubator module), \
+    FIRST_COPYRIGHT_YEAR := 2015, \
+    DISABLED_DOCLINT := accessibility missing syntax, \
+))
+
+TARGETS += $(httpclient)
+
+################################################################################
+
 $(eval $(call SetupJavadocGeneration, jsobject, \
     MODULES := jdk.jsobject, \
     PACKAGES := netscape.javascript, \

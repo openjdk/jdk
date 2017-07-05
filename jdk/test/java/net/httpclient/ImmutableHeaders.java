@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,13 +24,12 @@
 /**
  * @test
  * @bug 8087112
- * @modules java.httpclient
+ * @modules jdk.incubator.httpclient
  *          jdk.httpserver
  * @run main/othervm ImmutableHeaders
  * @summary ImmutableHeaders
  */
 
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -41,13 +38,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.http.*;
+import jdk.incubator.http.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.List;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 public class ImmutableHeaders {
 
@@ -55,23 +52,25 @@ public class ImmutableHeaders {
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 10);
-        ExecutorService e = Executors.newCachedThreadPool();
-        Handler h = new Handler();
-        HttpContext serverContext = server.createContext("/test", h);
+        ExecutorService serverExecutor = Executors.newCachedThreadPool();
+        ExecutorService clientExecutor = Executors.newCachedThreadPool();
+        server.createContext("/test", new ImmutableHeadersHandler());
         int port = server.getAddress().getPort();
         System.out.println("Server port = " + port);
 
-        server.setExecutor(e);
+        server.setExecutor(serverExecutor);
         server.start();
-        HttpClient client = HttpClient.create()
+        HttpClient client = HttpClient.newBuilder()
+                                      .executor(clientExecutor)
                                       .build();
 
         try {
-            URI uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/test/foo");
-            HttpRequest req = client.request(uri)
-                .headers("X-Foo", "bar")
-                .headers("X-Bar", "foo")
-                .GET();
+            URI uri = new URI("http://127.0.0.1:" + port + "/test/foo");
+            HttpRequest req = HttpRequest.newBuilder(uri)
+                                         .headers("X-Foo", "bar")
+                                         .headers("X-Bar", "foo")
+                                         .GET()
+                                         .build();
 
             try {
                 HttpHeaders hd = req.headers();
@@ -82,7 +81,7 @@ public class ImmutableHeaders {
                 throw new RuntimeException("Test failed");
             } catch (UnsupportedOperationException ex) {
             }
-            HttpResponse resp = req.response();
+            HttpResponse resp = client.send(req, discard(null));
             try {
                 HttpHeaders hd = resp.headers();
                 List<String> v = hd.allValues("X-Foo-Response");
@@ -94,14 +93,14 @@ public class ImmutableHeaders {
             }
 
         } finally {
-            client.executorService().shutdownNow();
+            clientExecutor.shutdownNow();
+            serverExecutor.shutdownNow();
             server.stop(0);
-            e.shutdownNow();
         }
         System.out.println("OK");
     }
 
-   static class Handler implements HttpHandler {
+   static class ImmutableHeadersHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange he) throws IOException {
