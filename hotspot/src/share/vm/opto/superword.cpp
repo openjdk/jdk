@@ -944,7 +944,7 @@ void SuperWord::schedule() {
 void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
                                   Node *uip, Unique_Node_List &sched_before) {
   Node* my_mem = current->in(MemNode::Memory);
-  _igvn.hash_delete(current);
+  _igvn.rehash_node_delayed(current);
   _igvn.hash_delete(my_mem);
 
   //remove current_store from its current position in the memmory graph
@@ -952,7 +952,7 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
     Node* use = current->out(i);
     if (use->is_Mem()) {
       assert(use->in(MemNode::Memory) == current, "must be");
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       if (use == prev) { // connect prev to my_mem
         use->set_req(MemNode::Memory, my_mem);
       } else if (sched_before.member(use)) {
@@ -962,7 +962,6 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
         _igvn.hash_delete(lip);
         use->set_req(MemNode::Memory, lip);
       }
-      _igvn._worklist.push(use);
       --i; //deleted this edge; rescan position
     }
   }
@@ -976,25 +975,20 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
     Node* use = insert_pt->out(i);
     if (use->is_Mem()) {
       assert(use->in(MemNode::Memory) == insert_pt, "must be");
-      _igvn.hash_delete(use);
-      use->set_req(MemNode::Memory, current);
-      _igvn._worklist.push(use);
+      _igvn.replace_input_of(use, MemNode::Memory, current);
       --i; //deleted this edge; rescan position
     } else if (!sched_up && use->is_Phi() && use->bottom_type() == Type::MEMORY) {
       uint pos; //lip (lower insert point) must be the last one in the memory slice
-      _igvn.hash_delete(use);
       for (pos=1; pos < use->req(); pos++) {
         if (use->in(pos) == insert_pt) break;
       }
-      use->set_req(pos, current);
-      _igvn._worklist.push(use);
+      _igvn.replace_input_of(use, pos, current);
       --i;
     }
   }
 
   //connect current to insert_pt
   current->set_req(MemNode::Memory, insert_pt);
-  _igvn._worklist.push(current);
 }
 
 //------------------------------co_locate_pack----------------------------------
@@ -1077,15 +1071,13 @@ void SuperWord::co_locate_pack(Node_List* pk) {
           Node* use = current->out(i);
           if (use->is_Mem() && use != previous) {
             assert(use->in(MemNode::Memory) == current, "must be");
-            _igvn.hash_delete(use);
             if (schedule_before_pack.member(use)) {
               _igvn.hash_delete(upper_insert_pt);
-              use->set_req(MemNode::Memory, upper_insert_pt);
+              _igvn.replace_input_of(use, MemNode::Memory, upper_insert_pt);
             } else {
               _igvn.hash_delete(lower_insert_pt);
-              use->set_req(MemNode::Memory, lower_insert_pt);
+              _igvn.replace_input_of(use, MemNode::Memory, lower_insert_pt);
             }
-            _igvn._worklist.push(use);
             --i; // deleted this edge; rescan position
           }
         }
@@ -1122,9 +1114,7 @@ void SuperWord::co_locate_pack(Node_List* pk) {
     // Give each load the same memory state
     for (uint i = 0; i < pk->size(); i++) {
       LoadNode* ld = pk->at(i)->as_Load();
-      _igvn.hash_delete(ld);
-      ld->set_req(MemNode::Memory, mem_input);
-      _igvn._worklist.push(ld);
+      _igvn.replace_input_of(ld, MemNode::Memory, mem_input);
     }
   }
 }
@@ -1282,16 +1272,14 @@ void SuperWord::insert_extracts(Node_List* p) {
 
     // Insert extract operation
     _igvn.hash_delete(def);
-    _igvn.hash_delete(use);
     int def_pos = alignment(def) / data_size(def);
     const Type* def_t = velt_type(def);
 
     Node* ex = ExtractNode::make(_phase->C, def, def_pos, def_t);
     _phase->_igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
-    use->set_req(idx, ex);
+    _igvn.replace_input_of(use, idx, ex);
     _igvn._worklist.push(def);
-    _igvn._worklist.push(use);
 
     bb_insert_after(ex, bb_idx(def));
     set_velt_type(ex, def_t);

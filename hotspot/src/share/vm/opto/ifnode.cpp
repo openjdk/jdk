@@ -338,8 +338,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   Node *phi_f = NULL;     // do not construct unless needed
   for (DUIterator_Last i2min, i2 = phi->last_outs(i2min); i2 >= i2min; --i2) {
     Node* v = phi->last_out(i2);// User of the phi
-    igvn->hash_delete(v);       // Have to fixup other Phi users
-    igvn->_worklist.push(v);
+    igvn->rehash_node_delayed(v); // Have to fixup other Phi users
     uint vop = v->Opcode();
     Node *proj = NULL;
     if( vop == Op_Phi ) {       // Remote merge point
@@ -552,9 +551,8 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   if( new_cmp == cmp ) return;
   // Else, adjust existing check
   Node *new_bol = gvn->transform( new (gvn->C, 2) BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
-  igvn->hash_delete( iff );
+  igvn->rehash_node_delayed( iff );
   iff->set_req_X( 1, new_bol, igvn );
-  igvn->_worklist.push( iff );
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -732,9 +730,7 @@ Node* IfNode::fold_compares(PhaseGVN* phase) {
               Node* adjusted = phase->transform(new (phase->C, 3) SubINode(n, phase->intcon(failtype->_lo)));
               Node* newcmp = phase->transform(new (phase->C, 3) CmpUNode(adjusted, phase->intcon(bound)));
               Node* newbool = phase->transform(new (phase->C, 2) BoolNode(newcmp, cond));
-              phase->hash_delete(dom_iff);
-              dom_iff->set_req(1, phase->intcon(ctrl->as_Proj()->_con));
-              phase->is_IterGVN()->_worklist.push(dom_iff);
+              phase->is_IterGVN()->replace_input_of(dom_iff, 1, phase->intcon(ctrl->as_Proj()->_con));
               phase->hash_delete(this);
               set_req(1, newbool);
               return this;
@@ -1042,17 +1038,15 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      igvn->hash_delete(s);         // Yank from hash table before edge hacking
       if( !s->depends_only_on_test() ) {
         // Find the control input matching this def-use edge.
         // For Regions it may not be in slot 0.
         uint l;
         for( l = 0; s->in(l) != ifp; l++ ) { }
-        s->set_req(l, ctrl_target);
+        igvn->replace_input_of(s, l, ctrl_target);
       } else {                      // Else, for control producers,
-        s->set_req(0, data_target); // Move child to data-target
+        igvn->replace_input_of(s, 0, data_target); // Move child to data-target
       }
-      igvn->_worklist.push(s);  // Revisit collapsed Phis
     } // End for each child of a projection
 
     igvn->remove_dead_node(ifp);
