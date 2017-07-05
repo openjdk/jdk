@@ -1846,7 +1846,3 @@ void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
     remove_file_mapping(addr);
   }
 }
-
-char* PerfMemory::backing_store_filename() {
-  return sharedmem_fileName;
-}

@@ -30,6 +30,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.XSFacets;
 import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
 import com.sun.org.apache.xerces.internal.xs.StringList;
 import com.sun.org.apache.xerces.internal.xs.XSNamespaceItem;
+import com.sun.org.apache.xerces.internal.xs.XSObject;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
 import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
@@ -74,6 +75,10 @@ public class XSSimpleTypeDelegate
 
     public XSObjectList getFacets() {
         return type.getFacets();
+    }
+
+    public XSObject getFacet(int facetType) {
+        return type.getFacet(facetType);
     }
 
     public boolean getFinite() {

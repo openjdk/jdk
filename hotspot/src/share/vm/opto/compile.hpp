@@ -707,12 +707,15 @@ class Compile : public Phase {
   void sort_expensive_nodes();
 
   // Compilation environment.
-  Arena*            comp_arena()                { return &_comp_arena; }
-  ciEnv*            env() const                 { return _env; }
-  CompileLog*       log() const                 { return _log; }
-  bool              failing() const             { return _env->failing() || _failure_reason != NULL; }
-  const char*       failure_reason() { return _failure_reason; }
-  bool              failure_reason_is(const char* r) { return (r==_failure_reason) || (r!=NULL && _failure_reason!=NULL && strcmp(r, _failure_reason)==0); }
+  Arena*      comp_arena()           { return &_comp_arena; }
+  ciEnv*      env() const            { return _env; }
+  CompileLog* log() const            { return _log; }
+  bool        failing() const        { return _env->failing() || _failure_reason != NULL; }
+  const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
+
+  bool failure_reason_is(const char* r) const {
+    return (r == _failure_reason) || (r != NULL && _failure_reason != NULL && strcmp(r, _failure_reason) == 0);
+  }
 
   void record_failure(const char* reason);
   void record_method_not_compilable(const char* reason, bool all_tiers = false) {

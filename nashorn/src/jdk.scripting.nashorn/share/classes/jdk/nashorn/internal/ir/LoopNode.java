@@ -53,14 +53,15 @@ public abstract class LoopNode extends BreakableStatement {
      * @param token              token
      * @param finish             finish
      * @param body               loop body
+     * @param test               test
      * @param controlFlowEscapes controlFlowEscapes
      */
-    protected LoopNode(final int lineNumber, final long token, final int finish, final Block body, final boolean controlFlowEscapes) {
+    protected LoopNode(final int lineNumber, final long token, final int finish, final Block body, final JoinPredecessorExpression test, final boolean controlFlowEscapes) {
         super(lineNumber, token, finish, new Label("while_break"));
         this.continueLabel = new Label("while_continue");
-        this.test = null;
         this.body = body;
         this.controlFlowEscapes = controlFlowEscapes;
+        this.test = test;
     }
 
     /**

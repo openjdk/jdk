@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2000-2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,14 +21,17 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs;
 
+import com.sun.org.apache.xerces.internal.impl.dv.ValidatedInfo;
+import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
+import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
+import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import com.sun.org.apache.xerces.internal.xs.ShortList;
 import com.sun.org.apache.xerces.internal.xs.StringList;
 import com.sun.org.apache.xerces.internal.xs.XSAttributeDeclaration;
+import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
-import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
-import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
-import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import com.sun.org.apache.xerces.internal.xs.XSValue;
 
 /**
  * Attribute PSV infoset augmentations implementation.
@@ -49,20 +53,8 @@ public class AttributePSVImpl implements AttributePSVI {
      * value in the original document, this is false; otherwise, it is true */
     protected boolean fSpecified = false;
 
-    /** schema normalized value property */
-    protected String fNormalizedValue = null;
-
-    /** schema actual value */
-    protected Object fActualValue = null;
-
-    /** schema actual value type */
-    protected short fActualValueType = XSConstants.UNAVAILABLE_DT;
-
-    /** actual value types if the value is a list */
-    protected ShortList fItemValueTypes = null;
-
-    /** member type definition against which attribute was validated */
-    protected XSSimpleTypeDefinition fMemberType = null;
+    /** Schema value */
+    protected ValidatedInfo fValue = new ValidatedInfo();
 
     /** validation attempted: none, partial, full */
     protected short fValidationAttempted = AttributePSVI.VALIDATION_NONE;
@@ -70,15 +62,66 @@ public class AttributePSVImpl implements AttributePSVI {
     /** validity: valid, invalid, unknown */
     protected short fValidity = AttributePSVI.VALIDITY_NOTKNOWN;
 
-    /** error codes */
-    protected String[] fErrorCodes = null;
+    /** error codes and error messages */
+    protected String[] fErrors = null;
 
     /** validation context: could be QName or XPath expression*/
     protected String fValidationContext = null;
 
+    /** true if this object is immutable **/
+    protected boolean fIsConstant;
+
+    public AttributePSVImpl() {}
+
+    public AttributePSVImpl(boolean isConstant, AttributePSVI attrPSVI) {
+        fDeclaration = attrPSVI.getAttributeDeclaration();
+        fTypeDecl = attrPSVI.getTypeDefinition();
+        fSpecified = attrPSVI.getIsSchemaSpecified();
+        fValue.copyFrom(attrPSVI.getSchemaValue());
+        fValidationAttempted = attrPSVI.getValidationAttempted();
+        fValidity = attrPSVI.getValidity();
+        if (attrPSVI instanceof AttributePSVImpl) {
+            final AttributePSVImpl attrPSVIImpl = (AttributePSVImpl) attrPSVI;
+            fErrors = (attrPSVIImpl.fErrors != null) ?
+                    (String[]) attrPSVIImpl.fErrors.clone() : null;
+        }
+        else {
+            final StringList errorCodes = attrPSVI.getErrorCodes();
+            final int length = errorCodes.getLength();
+            if (length > 0) {
+                final StringList errorMessages = attrPSVI.getErrorMessages();
+                final String[] errors = new String[length << 1];
+                for (int i = 0, j = 0; i < length; ++i) {
+                    errors[j++] = errorCodes.item(i);
+                    errors[j++] = errorMessages.item(i);
+                }
+                fErrors = errors;
+            }
+        }
+        fValidationContext = attrPSVI.getValidationContext();
+        fIsConstant = isConstant;
+    }
+
     //
     // AttributePSVI methods
     //
+
+    /* (non-Javadoc)
+     * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#constant()
+     */
+    public ItemPSVI constant() {
+        if (isConstant()) {
+            return this;
+        }
+        return new AttributePSVImpl(true, this);
+    }
+
+    /* (non-Javadoc)
+     * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#isConstant()
+     */
+    public boolean isConstant() {
+        return fIsConstant;
+    }
 
     /**
      * [schema default]
@@ -98,7 +141,7 @@ public class AttributePSVImpl implements AttributePSVI {
      * @return the normalized value of this item after validation
      */
     public String getSchemaNormalizedValue() {
-        return fNormalizedValue;
+        return fValue.getNormalizedValue();
     }
 
     /**
@@ -139,9 +182,23 @@ public class AttributePSVImpl implements AttributePSVI {
      * @return list of error codes
      */
     public StringList getErrorCodes() {
-        if (fErrorCodes == null)
-            return null;
-        return new StringListImpl(fErrorCodes, fErrorCodes.length);
+        if (fErrors == null || fErrors.length == 0) {
+            return StringListImpl.EMPTY_LIST;
+        }
+        return new PSVIErrorList(fErrors, true);
+    }
+
+    /**
+     * A list of error messages generated from the validation attempt or
+     * an empty <code>StringList</code> if no errors occurred during the
+     * validation attempt. The indices of error messages in this list are
+     * aligned with those in the <code>[schema error code]</code> list.
+     */
+    public StringList getErrorMessages() {
+        if (fErrors == null || fErrors.length == 0) {
+            return StringListImpl.EMPTY_LIST;
+        }
+        return new PSVIErrorList(fErrors, false);
     }
 
     // This is the only information we can provide in a pipeline.
@@ -168,7 +225,7 @@ public class AttributePSVImpl implements AttributePSVI {
      * @return  a simple type declaration
      */
     public XSSimpleTypeDefinition getMemberTypeDefinition() {
-        return fMemberType;
+        return fValue.getMemberTypeDefinition();
     }
 
     /**
@@ -185,38 +242,41 @@ public class AttributePSVImpl implements AttributePSVI {
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValue()
      */
     public Object getActualNormalizedValue() {
-        return this.fActualValue;
+        return fValue.getActualValue();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValueType()
      */
     public short getActualNormalizedValueType() {
-        return this.fActualValueType;
+        return fValue.getActualValueType();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getItemValueTypes()
      */
     public ShortList getItemValueTypes() {
-        return this.fItemValueTypes;
+        return fValue.getListValueTypes();
+    }
+
+    /* (non-Javadoc)
+     * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getSchemaValue()
+     */
+    public XSValue getSchemaValue() {
+        return fValue;
     }
 
     /**
      * Reset()
      */
     public void reset() {
-        fNormalizedValue = null;
-        fActualValue = null;
-        fActualValueType = XSConstants.UNAVAILABLE_DT;
-        fItemValueTypes = null;
+        fValue.reset();
         fDeclaration = null;
         fTypeDecl = null;
         fSpecified = false;
-        fMemberType = null;
         fValidationAttempted = AttributePSVI.VALIDATION_NONE;
         fValidity = AttributePSVI.VALIDITY_NOTKNOWN;
-        fErrorCodes = null;
+        fErrors = null;
         fValidationContext = null;
     }
 }

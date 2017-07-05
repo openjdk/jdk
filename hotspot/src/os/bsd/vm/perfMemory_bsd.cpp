@@ -1043,7 +1043,3 @@ void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
 
   unmap_shared(addr, bytes);
 }
-
-char* PerfMemory::backing_store_filename() {
-  return backing_store_file_name;
-}

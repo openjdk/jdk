@@ -2011,10 +2011,14 @@ static Bool exitSecondaryLoop = True;
  * Toolkit thread to process PropertyNotify or SelectionNotify events.
  */
 static Bool
-secondary_loop_event(Display* dpy, XEvent* event, char* arg) {
-    return (event->type == SelectionNotify ||
-            event->type == SelectionClear  ||
-            event->type == PropertyNotify) ? True : False;
+secondary_loop_event(Display* dpy, XEvent* event, XPointer xawt_root_window) {
+    return (
+                event->type == SelectionNotify ||
+                event->type == SelectionClear  ||
+                event->type == PropertyNotify  ||
+                (event->type == ConfigureNotify
+                    && event->xany.window == *(Window*) xawt_root_window)
+            ) ? True : False;
 }
 
 
@@ -2025,8 +2029,11 @@ Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent(JNIEnv *env, jclass clazz,
 
     AWT_CHECK_HAVE_LOCK_RETURN(JNI_FALSE);
     exitSecondaryLoop = False;
+    Window xawt_root_window = get_xawt_root_shell(env);
+
     while (!exitSecondaryLoop) {
-        if (XCheckIfEvent((Display*) jlong_to_ptr(display), (XEvent*) jlong_to_ptr(ptr), secondary_loop_event, NULL)) {
+        if (XCheckIfEvent((Display*) jlong_to_ptr(display),
+                (XEvent*) jlong_to_ptr(ptr), secondary_loop_event, (XPointer) &xawt_root_window)) {
             return JNI_TRUE;
         }
         timeout = (timeout < AWT_SECONDARY_LOOP_TIMEOUT) ? (timeout << 1) : AWT_SECONDARY_LOOP_TIMEOUT;
