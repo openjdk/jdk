@@ -1245,13 +1245,12 @@ public class DescriptorSupport
             return s.substring(1, s.length() - 1);
         }
         final String className = s.substring(1, slash);
+
         final Constructor<?> constr;
         try {
+            ReflectUtil.checkPackageAccess(className);
             final ClassLoader contextClassLoader =
                 Thread.currentThread().getContextClassLoader();
-            if (contextClassLoader == null) {
-                ReflectUtil.checkPackageAccess(className);
-            }
             final Class<?> c =
                 Class.forName(className, false, contextClassLoader);
             constr = c.getConstructor(new Class<?>[] {String.class});

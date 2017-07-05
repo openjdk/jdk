@@ -62,7 +62,7 @@ public class JarSigningNonAscii {
                         "-signedJar", signedJar,
                         unsignedJar, "b"
                         };
-        JarSigner.main(jsArgs);
+        sun.security.tools.jarsigner.Main.main(jsArgs);
 
         //  verify the signed jar file
 

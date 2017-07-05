@@ -25,8 +25,8 @@
 
 GENSRC_CHARSETMAPPING:=
 
-GENSRC_TMP := $(JDK_OUTPUTDIR)/gensrc_charsetmapping
-GENSRC_DST := $(JDK_OUTPUTDIR)/gensrc_charsetmapping/sun/nio/cs
+GENSRC_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_DST := $(JDK_OUTPUTDIR)/gensrc/sun/nio/cs
 
 GENSRC_SRC := $(JDK_TOPDIR)/make/tools/CharsetMapping
 GENSRC_JAVA_SRC := $(JDK_TOPDIR)/make/tools/src/build/tools/charsetmapping
@@ -35,17 +35,17 @@ GENSRC_TEMPLATES := $(GENSRC_SRC)/SingleByte-X.java.template $(GENSRC_SRC)/Doubl
 
 ###
 
-$(GENSRC_TMP)/_the.dir :
+$(GENSRC_TMP)/_the.charsetmapping.dir :
 	$(ECHO) Generating charsetmapping classes
 	$(MKDIR) -p $(GENSRC_DST)/ext
 	$(TOUCH) $@
 
 ###
 
-GENSRC_SB := $(GENSRC_TMP)/gensrc_the.charsetmapping.sbcs
+GENSRC_SB := $(GENSRC_TMP)/_the.charsetmapping.sbcs
 
-$(GENSRC_SB) : $(GENSRC_SRC)/sbcs $(GENSRC_TEMPLATES) $(GENSRC_TMP)/_the.dir
-	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(GENSRC_DST) sbcs
+$(GENSRC_SB) : $(GENSRC_SRC)/sbcs $(GENSRC_TEMPLATES) $(GENSRC_TMP)/_the.charsetmapping.dir
+	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_SRC) $(GENSRC_DST) sbcs
 	$(TOUCH) $@
 
 GENSRC_CHARSETMAPPING += $(GENSRC_SB)
@@ -53,28 +53,28 @@ GENSRC_CHARSETMAPPING += $(GENSRC_SB)
 ###
 
 $(GENSRC_DST)/ext/sjis0213.dat : $(GENSRC_SRC)/sjis0213.map $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $< $@ sjis0213
+	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $< $@ sjis0213
 
 GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/sjis0213.dat
 
 ###
 
 $(GENSRC_DST)/ext/EUC_TWMapping.java : $(GENSRC_JAVA_SRC)/EUC_TW.java $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(GENSRC_DST)/ext euctw $(GENSRC_JAVA_SRC)/EUC_TW.java
+	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_SRC) $(GENSRC_DST)/ext euctw $(GENSRC_JAVA_SRC)/EUC_TW.java
 
 GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/EUC_TWMapping.java
 
 ###
 
 $(GENSRC_DST)/ext/HKSCSMapping.java : $(GENSRC_JAVA_SRC)/HKSCS.java $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(GENSRC_DST)/ext hkscs $(GENSRC_JAVA_SRC)/HKSCS.java
+	$(TOOL_CHARSETMAPPING) $(LOG_INFO) $(GENSRC_SRC) $(GENSRC_DST)/ext hkscs $(GENSRC_JAVA_SRC)/HKSCS.java
 
 GENSRC_CHARSETMAPPING += $(GENSRC_DST)/ext/HKSCSMapping.java
 
 ###
 
 $(GENSRC_TMP)/gensrc_the.charsetmapping.extsbcs : $(GENSRC_SRC)/extsbcs $(GENSRC_TEMPLATES) $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(GENSRC_DST)/ext extsbcs
+	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(LOG_INFO) $(GENSRC_DST)/ext extsbcs
 	$(TOUCH) $@
 
 GENSRC_CHARSETMAPPING += $(GENSRC_TMP)/gensrc_the.charsetmapping.extsbcs
@@ -82,7 +82,7 @@ GENSRC_CHARSETMAPPING += $(GENSRC_TMP)/gensrc_the.charsetmapping.extsbcs
 ###
 
 $(GENSRC_TMP)/gensrc_the.charsetmapping.dbcs : $(GENSRC_SRC)/dbcs $(GENSRC_TEMPLATES) $(GENSRC_SB)
-	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(GENSRC_DST)/ext dbcs
+	$(TOOL_CHARSETMAPPING) $(GENSRC_SRC) $(LOG_INFO) $(GENSRC_DST)/ext dbcs
 	$(TOUCH) $@
 
 GENSRC_CHARSETMAPPING += $(GENSRC_TMP)/gensrc_the.charsetmapping.dbcs
@@ -93,12 +93,12 @@ GENSRC_CHARSET_PROVIDER_CMD := $(JDK_TOPDIR)/makefiles/scripts/genCharsetProvide
 
 $(GENSRC_DST)/StandardCharsets.java : $(JDK_TOPDIR)/src/share/classes/sun/nio/cs/standard-charsets \
                                       $(GENSRC_CHARSET_PROVIDER_CMD) \
-                                      $(GENSRC_TMP)/_the.dir
+                                      $(GENSRC_TMP)/_the.charsetmapping.dir
 
 	NAWK="$(NAWK)" TEMPDIR="$(GENSRC_TMP)" SH="$(SH)" \
 	  HASHER="$(TOOL_HASHER)" \
           SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" \
-	  $(SH) -e $(GENSRC_CHARSET_PROVIDER_CMD) $< $(@D)
+	  $(SH) -e $(GENSRC_CHARSET_PROVIDER_CMD) $(LOG_INFO) $< $(@D)
 
 GENSRC_CHARSETMAPPING += $(GENSRC_DST)/StandardCharsets.java
 

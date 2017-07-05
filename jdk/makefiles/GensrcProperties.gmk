@@ -57,13 +57,13 @@ define add_properties_to_compile
   ALL_COMPILED_PROPSOURCES+=$2
 
   # Generate the list of to be created java files.
-  ALL_COMPILED_PROPJAVAS+=$$(patsubst %,$(JDK_OUTPUTDIR)/gensrc_properties/%.java,$$($1_PROPPATHS))
+  ALL_COMPILED_PROPJAVAS+=$$(patsubst %,$(JDK_OUTPUTDIR)/gensrc/%.java,$$($1_PROPPATHS))
 
   # Now generate a sequence of "-compile ...CurrencyNames_sv.properties ...CurrencyNames_sv.java ListResourceBundle"
   # suitable to be fed into the CompileProperties command.
   COMPILE_PROPCMDLINE+=$$(subst _SPACE_,$(SPACE),$$(join $$(addprefix -compile_SPACE_,$2), \
 		$$(addsuffix _SPACE_$(strip $3),\
-                    $$(addprefix _SPACE_$(JDK_OUTPUTDIR)/gensrc_properties/,\
+                    $$(addprefix _SPACE_$(JDK_OUTPUTDIR)/gensrc/,\
                         $$(addsuffix .java,$$($1_PROPPATHS))))))
 endef
 
@@ -303,13 +303,12 @@ $(eval $(call add_properties_to_compile,SUN_UTIL,\
 		sun.util.resources.LocaleNamesBundle))
 
 # Now setup the rule for the generation of the resource bundles.
-$(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
-	$(RM) -r $(JDK_OUTPUTDIR)/gensrc_properties/*
+$(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
 #	Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
 	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
-	$(call ListPathsSafely,COMPILE_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/gensrc_properties/_the.cmdline)
-	$(TOOL_COMPILEPROPERTIES) -quiet @$(JDK_OUTPUTDIR)/gensrc_properties/_the.cmdline
+	$(call ListPathsSafely,COMPILE_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/gensrc/_the.cmdline)
+	$(TOOL_COMPILEPROPERTIES) -quiet @$(JDK_OUTPUTDIR)/gensrc/_the.cmdline
 	$(TOUCH) $@
 
 # Now setup the rule for the generation of the cleaned properties.
@@ -323,13 +322,13 @@ $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties : $(ALL_CLEANED_PROPSOURCES) $(
 	$(TOOL_STRIPPROPERTIES) @$(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
 	$(TOUCH) $@
 
-$(ALL_COMPILED_PROPJAVAS) : $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties
+$(ALL_COMPILED_PROPJAVAS) : $(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties
 
 $(ALL_CLEANED_PROPOUTPUT) : $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties
 
 
 # Some zh_HK resources are just copied of zh_TW
-$(JDK_OUTPUTDIR)/gensrc_properties/%_zh_HK.java: $(JDK_TOPDIR)/src/share/classes/%_zh_TW.java
+$(JDK_OUTPUTDIR)/gensrc/%_zh_HK.java: $(JDK_TOPDIR)/src/share/classes/%_zh_TW.java
 	$(MKDIR) -p $(@D)
 	$(CAT) $< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $@
 
@@ -338,7 +337,7 @@ ZH_HK_JAVA:=	sun/applet/resources/MsgAppletViewer_zh_HK.java \
 		sun/security/util/AuthResources_zh_HK.java \
                 sun/security/util/Resources_zh_HK.java
 
-ZH_HK_JAVA_FILES:=$(addprefix $(JDK_OUTPUTDIR)/gensrc_properties/,$(ZH_HK_JAVA))
+ZH_HK_JAVA_FILES:=$(addprefix $(JDK_OUTPUTDIR)/gensrc/,$(ZH_HK_JAVA))
 
 
 GENSRC_PROPERTIES:=$(ALL_COMPILED_PROPJAVAS) $(ALL_CLEANED_PROPOUTPUT) $(ZH_HK_JAVA_FILES)

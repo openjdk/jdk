@@ -127,7 +127,6 @@ public abstract class ProxySelector {
      * <UL>
      * <LI>http URI for http connections</LI>
      * <LI>https URI for https connections
-     * <LI>ftp URI for ftp connections</LI>
      * <LI><code>socket://host:port</code><br>
      *     for tcp client sockets connections</LI>
      * </UL>

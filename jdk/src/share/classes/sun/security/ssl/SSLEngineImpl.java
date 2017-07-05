@@ -27,13 +27,13 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.nio.*;
+import java.util.*;
 import java.security.*;
 
 import javax.crypto.BadPaddingException;
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-
 
 /**
  * Implementation of an non-blocking SSLEngine.
@@ -253,6 +253,12 @@ final public class SSLEngineImpl extends SSLEngine {
     // The cryptographic algorithm constraints
     private AlgorithmConstraints        algorithmConstraints = null;
 
+    // The server name indication and matchers
+    List<SNIServerName>         serverNames =
+                                    Collections.<SNIServerName>emptyList();
+    Collection<SNIMatcher>      sniMatchers =
+                                    Collections.<SNIMatcher>emptyList();
+
     // Have we been told whether we're client or server?
     private boolean                     serverModeSet = false;
     private boolean                     roleIsServer;
@@ -361,6 +367,10 @@ final public class SSLEngineImpl extends SSLEngine {
         roleIsServer = true;
         connectionState = cs_START;
 
+        // default server name indication
+        serverNames =
+            Utilities.addToSNIServerNameList(serverNames, getPeerHost());
+
         /*
          * default read and write side cipher and MAC support
          *
@@ -459,11 +469,13 @@ final public class SSLEngineImpl extends SSLEngine {
                     enabledProtocols, doClientAuth,
                     protocolVersion, connectionState == cs_HANDSHAKE,
                     secureRenegotiation, clientVerifyData, serverVerifyData);
+            handshaker.setSNIMatchers(sniMatchers);
         } else {
             handshaker = new ClientHandshaker(this, sslContext,
                     enabledProtocols,
                     protocolVersion, connectionState == cs_HANDSHAKE,
                     secureRenegotiation, clientVerifyData, serverVerifyData);
+            handshaker.setSNIServerNames(serverNames);
         }
         handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
@@ -1100,7 +1112,7 @@ final public class SSLEngineImpl extends SSLEngine {
                     // TLS requires that unrecognized records be ignored.
                     //
                     if (debug != null && Debug.isOn("ssl")) {
-                        System.out.println(threadName() +
+                        System.out.println(Thread.currentThread().getName() +
                             ", Received record type: "
                             + inputRecord.contentType());
                     }
@@ -1384,7 +1396,7 @@ final public class SSLEngineImpl extends SSLEngine {
              * for handshaking and bad_record_mac for other records.
              */
             if (debug != null && Debug.isOn("ssl")) {
-                System.out.println(threadName() +
+                System.out.println(Thread.currentThread().getName() +
                     ", sequence number extremely close to overflow " +
                     "(2^64-1 packets). Closing connection.");
             }
@@ -1402,7 +1414,8 @@ final public class SSLEngineImpl extends SSLEngine {
          */
         if ((type != Record.ct_handshake) && mac.seqNumIsHuge()) {
             if (debug != null && Debug.isOn("ssl")) {
-                System.out.println(threadName() + ", request renegotiation " +
+                System.out.println(Thread.currentThread().getName() +
+                        ", request renegotiation " +
                         "to avoid sequence number overflow");
             }
 
@@ -1420,7 +1433,8 @@ final public class SSLEngineImpl extends SSLEngine {
     private void closeOutboundInternal() {
 
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", closeOutboundInternal()");
+            System.out.println(Thread.currentThread().getName() +
+                                    ", closeOutboundInternal()");
         }
 
         /*
@@ -1467,7 +1481,8 @@ final public class SSLEngineImpl extends SSLEngine {
          * Dump out a close_notify to the remote side
          */
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", called closeOutbound()");
+            System.out.println(Thread.currentThread().getName() +
+                                    ", called closeOutbound()");
         }
 
         closeOutboundInternal();
@@ -1487,7 +1502,8 @@ final public class SSLEngineImpl extends SSLEngine {
     private void closeInboundInternal() {
 
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", closeInboundInternal()");
+            System.out.println(Thread.currentThread().getName() +
+                                    ", closeInboundInternal()");
         }
 
         /*
@@ -1519,7 +1535,8 @@ final public class SSLEngineImpl extends SSLEngine {
          * someday in the future.
          */
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", called closeInbound()");
+            System.out.println(Thread.currentThread().getName() +
+                                    ", called closeInbound()");
         }
 
         /*
@@ -1642,7 +1659,7 @@ final public class SSLEngineImpl extends SSLEngine {
          */
         if (closeReason != null) {
             if ((debug != null) && Debug.isOn("ssl")) {
-                System.out.println(threadName() +
+                System.out.println(Thread.currentThread().getName() +
                     ", fatal: engine already closed.  Rethrowing " +
                     cause.toString());
             }
@@ -1656,7 +1673,7 @@ final public class SSLEngineImpl extends SSLEngine {
         }
 
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName()
+            System.out.println(Thread.currentThread().getName()
                         + ", fatal error: " + description +
                         ": " + diagnostic + "\n" + cause.toString());
         }
@@ -1723,7 +1740,7 @@ final public class SSLEngineImpl extends SSLEngine {
         if (debug != null && (Debug.isOn("record") ||
                 Debug.isOn("handshake"))) {
             synchronized (System.out) {
-                System.out.print(threadName());
+                System.out.print(Thread.currentThread().getName());
                 System.out.print(", RECV " + protocolVersion + " ALERT:  ");
                 if (level == Alerts.alert_fatal) {
                     System.out.print("fatal, ");
@@ -1790,7 +1807,7 @@ final public class SSLEngineImpl extends SSLEngine {
         boolean useDebug = debug != null && Debug.isOn("ssl");
         if (useDebug) {
             synchronized (System.out) {
-                System.out.print(threadName());
+                System.out.print(Thread.currentThread().getName());
                 System.out.print(", SEND " + protocolVersion + " ALERT:  ");
                 if (level == Alerts.alert_fatal) {
                     System.out.print("fatal, ");
@@ -1810,7 +1827,7 @@ final public class SSLEngineImpl extends SSLEngine {
             writeRecord(r);
         } catch (IOException e) {
             if (useDebug) {
-                System.out.println(threadName() +
+                System.out.println(Thread.currentThread().getName() +
                     ", Exception sending alert: " + e);
             }
         }
@@ -1948,7 +1965,7 @@ final public class SSLEngineImpl extends SSLEngine {
 
         default:
             if (debug != null && Debug.isOn("ssl")) {
-                System.out.println(threadName() +
+                System.out.println(Thread.currentThread().getName() +
                     ", setUseClientMode() invoked in state = " +
                     connectionState);
             }
@@ -2050,6 +2067,8 @@ final public class SSLEngineImpl extends SSLEngine {
         // the super implementation does not handle the following parameters
         params.setEndpointIdentificationAlgorithm(identificationProtocol);
         params.setAlgorithmConstraints(algorithmConstraints);
+        params.setSNIMatchers(sniMatchers);
+        params.setServerNames(serverNames);
 
         return params;
     }
@@ -2063,17 +2082,26 @@ final public class SSLEngineImpl extends SSLEngine {
         // the super implementation does not handle the following parameters
         identificationProtocol = params.getEndpointIdentificationAlgorithm();
         algorithmConstraints = params.getAlgorithmConstraints();
+
+        List<SNIServerName> sniNames = params.getServerNames();
+        if (sniNames != null) {
+            serverNames = sniNames;
+        }
+
+        Collection<SNIMatcher> matchers = params.getSNIMatchers();
+        if (matchers != null) {
+            sniMatchers = matchers;
+        }
+
         if ((handshaker != null) && !handshaker.started()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
+            if (roleIsServer) {
+                handshaker.setSNIMatchers(sniMatchers);
+            } else {
+                handshaker.setSNIServerNames(serverNames);
+            }
         }
-    }
-
-    /**
-     * Return the name of the current thread. Utility method.
-     */
-    private static String threadName() {
-        return Thread.currentThread().getName();
     }
 
     /**

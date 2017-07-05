@@ -144,8 +144,10 @@ enum MemoryType {
   mtNMT               = 0x0A00,  // memory used by native memory tracking
   mtChunk             = 0x0B00,  // chunk that holds content of arenas
   mtJavaHeap          = 0x0C00,  // Java heap
-  mtDontTrack         = 0x0D00,  // memory we donot or cannot track
-  mt_number_of_types  = 0x000C,  // number of memory types
+  mtClassShared       = 0x0D00,  // class data sharing
+  mt_number_of_types  = 0x000D,  // number of memory types (mtDontTrack
+                                 // is not included as validate type)
+  mtDontTrack         = 0x0E00,  // memory we do not or cannot track
   mt_masks            = 0x7F00,
 
   // object type mask
@@ -342,7 +344,6 @@ protected:
  public:
   Arena();
   Arena(size_t init_size);
-  Arena(Arena *old);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }

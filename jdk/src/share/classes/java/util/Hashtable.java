@@ -1059,7 +1059,7 @@ public class Hashtable<K,V>
         }
 
         public int hashCode() {
-            return hash ^ (value==null ? 0 : value.hashCode());
+            return (Objects.hashCode(key) ^ Objects.hashCode(value));
         }
 
         public String toString() {

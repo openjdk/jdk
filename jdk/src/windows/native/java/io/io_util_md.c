@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,21 +40,7 @@
 #include <limits.h>
 #include <wincon.h>
 
-extern jboolean onNT = JNI_FALSE;
-
 static DWORD MAX_INPUT_EVENTS = 2000;
-
-void
-initializeWindowsVersion() {
-    OSVERSIONINFO ver;
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    if (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-        onNT = JNI_TRUE;
-    } else {
-        onNT = JNI_FALSE;
-    }
-}
 
 /* If this returns NULL then an exception is pending */
 WCHAR*
@@ -247,27 +233,21 @@ winFileHandleOpen(JNIEnv *env, jstring path, int flags)
     const DWORD flagsAndAttributes = maybeWriteThrough | maybeDeleteOnClose;
     HANDLE h = NULL;
 
-    if (onNT) {
-        WCHAR *pathbuf = pathToNTPath(env, path, JNI_TRUE);
-        if (pathbuf == NULL) {
-            /* Exception already pending */
-            return -1;
-        }
-        h = CreateFileW(
-            pathbuf,            /* Wide char path name */
-            access,             /* Read and/or write permission */
-            sharing,            /* File sharing flags */
-            NULL,               /* Security attributes */
-            disposition,        /* creation disposition */
-            flagsAndAttributes, /* flags and attributes */
-            NULL);
-        free(pathbuf);
-    } else {
-        WITH_PLATFORM_STRING(env, path, _ps) {
-            h = CreateFile(_ps, access, sharing, NULL, disposition,
-                           flagsAndAttributes, NULL);
-        } END_PLATFORM_STRING(env, _ps);
+    WCHAR *pathbuf = pathToNTPath(env, path, JNI_TRUE);
+    if (pathbuf == NULL) {
+        /* Exception already pending */
+        return -1;
     }
+    h = CreateFileW(
+        pathbuf,            /* Wide char path name */
+        access,             /* Read and/or write permission */
+        sharing,            /* File sharing flags */
+        NULL,               /* Security attributes */
+        disposition,        /* creation disposition */
+        flagsAndAttributes, /* flags and attributes */
+        NULL);
+    free(pathbuf);
+
     if (h == INVALID_HANDLE_VALUE) {
         int error = GetLastError();
         if (error == ERROR_TOO_MANY_OPEN_FILES) {

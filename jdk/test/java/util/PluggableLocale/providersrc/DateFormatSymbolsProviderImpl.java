@@ -221,5 +221,10 @@ public class DateFormatSymbolsProviderImpl extends DateFormatSymbolsProvider {
         public void setAmPmStrings(String[] newAmpms) {
             ampms = newAmpms;
         }
+
+        @Override
+        public String[][] getZoneStrings() {
+            return new String[0][0];
+        }
     }
 }
