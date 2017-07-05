@@ -192,7 +192,7 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
   Register reg,
   int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  movl(reg, Address(r13, bcp_offset));
+  load_unsigned_short(reg, Address(r13, bcp_offset));
   bswapl(reg);
   shrl(reg, 16);
 }
