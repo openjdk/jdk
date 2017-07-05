@@ -356,8 +356,13 @@ wildcardFileList(const char *wildcard)
     const char *basename;
     FileList fl = FileList_new(16);
     WildcardIterator it = WildcardIterator_for(wildcard);
+
     if (it == NULL)
+    {
+        FileList_free(fl);
         return NULL;
+    }
+
     while ((basename = WildcardIterator_next(it)) != NULL)
         if (isJarFileName(basename))
             FileList_add(fl, wildcardConcat(wildcard, basename));

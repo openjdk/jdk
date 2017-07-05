@@ -641,14 +641,14 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
   int super_depth = klass->super_depth();
   int idx;
   for (idx = 0; idx < super_depth; idx++) {
-    if (Klass::cast(klass->primary_super_of_depth(idx))->name() == ty_sym) {
+    if (klass->primary_super_of_depth(idx)->name() == ty_sym) {
       return true;
     }
   }
   // Compare secondary supers
   Array<Klass*>* sec_supers = klass->secondary_supers();
   for (idx = 0; idx < sec_supers->length(); idx++) {
-    if (Klass::cast((Klass*) sec_supers->at(idx))->name() == ty_sym) {
+    if (((Klass*) sec_supers->at(idx))->name() == ty_sym) {
       return true;
     }
   }
@@ -726,7 +726,7 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
     KlassHandle ob_kh = KlassHandle(cur_thread, obj->klass());
     NULL_CHECK(ob_kh, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
-    if (!is_assignable(signature, Klass::cast(ob_kh()), cur_thread)) {
+    if (!is_assignable(signature, ob_kh(), cur_thread)) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }

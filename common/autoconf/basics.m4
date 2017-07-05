@@ -345,7 +345,13 @@ AC_ARG_WITH(conf-name, [AS_HELP_STRING([--with-conf-name],
         [ CONF_NAME=${with_conf_name} ])
 
 # Test from where we are running configure, in or outside of src root.
-if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+# To enable comparison of directories, CURDIR needs to be symlink free
+# just like SRC_ROOT already is
+NOSYM_CURDIR="$CURDIR"
+BASIC_REMOVE_SYMBOLIC_LINKS(NOSYM_CURDIR)
+if test "x$NOSYM_CURDIR" = "x$SRC_ROOT" || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/autoconf" \
+        || test "x$NOSYM_CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then

@@ -115,17 +115,25 @@ bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records)
   while (malloc_ptr != NULL) {
     index = flag2index(FLAGS_TO_MEMORY_TYPE(malloc_ptr->flags()));
     size_t size = malloc_ptr->size();
-    _total_malloced += size;
-    _malloc_data[index].inc(size);
-    if (MemPointerRecord::is_arena_record(malloc_ptr->flags())) {
-      // see if arena size record present
-      MemPointerRecord* next_malloc_ptr = (MemPointerRecordEx*)malloc_itr.peek_next();
-      if (MemPointerRecord::is_arena_size_record(next_malloc_ptr->flags())) {
-        assert(next_malloc_ptr->is_size_record_of_arena(malloc_ptr), "arena records do not match");
-        size = next_malloc_ptr->size();
-        _arena_data[index].inc(size);
-        used_arena_size += size;
-        malloc_itr.next();
+    if (malloc_ptr->is_arena_memory_record()) {
+      // We do have anonymous arenas, they are either used as value objects,
+      // which are embedded inside other objects, or used as stack objects.
+      _arena_data[index].inc(size);
+      used_arena_size += size;
+    } else {
+      _total_malloced += size;
+      _malloc_data[index].inc(size);
+      if (malloc_ptr->is_arena_record()) {
+        // see if arena memory record present
+        MemPointerRecord* next_malloc_ptr = (MemPointerRecordEx*)malloc_itr.peek_next();
+        if (next_malloc_ptr->is_arena_memory_record()) {
+          assert(next_malloc_ptr->is_memory_record_of_arena(malloc_ptr),
+             "Arena records do not match");
+          size = next_malloc_ptr->size();
+          _arena_data[index].inc(size);
+          used_arena_size += size;
+          malloc_itr.next();
+        }
       }
     }
     malloc_ptr = (MemPointerRecordEx*)malloc_itr.next();
@@ -193,7 +201,7 @@ bool MemBaseline::baseline_malloc_details(const MemPointerArray* malloc_records)
 
   // baseline memory that is totaled over 1 KB
   while (malloc_ptr != NULL) {
-    if (!MemPointerRecord::is_arena_size_record(malloc_ptr->flags())) {
+    if (!MemPointerRecord::is_arena_memory_record(malloc_ptr->flags())) {
       // skip thread stacks
       if (!IS_MEMORY_TYPE(malloc_ptr->flags(), mtThreadStack)) {
         if (malloc_callsite.addr() != malloc_ptr->pc()) {

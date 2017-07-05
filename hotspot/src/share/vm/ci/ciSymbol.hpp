@@ -73,6 +73,9 @@ public:
   const char* as_utf8();
   int         utf8_length();
 
+  // The text of the symbol as ascii with all non-printable characters quoted as \u####
+  const char* as_quoted_ascii();
+
   // Return the i-th utf8 byte, where i < utf8_length
   int         byte_at(int i);
 

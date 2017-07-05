@@ -4588,7 +4588,20 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *
      * @return a hash code value for this {@code Character}
      */
+    @Override
     public int hashCode() {
+        return Character.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code char} value; compatible with
+     * {@code Character.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code char} value.
+     */
+    public static int hashCode(char value) {
         return (int)value;
     }
 
@@ -7156,6 +7169,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since 1.5
      */
     public static final int SIZE = 16;
+
+    /**
+     * The number of bytes used to represent a {@code char} value in unsigned
+     * binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
      * Returns the value obtained by reversing the order of the bytes in the

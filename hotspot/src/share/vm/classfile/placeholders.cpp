@@ -45,7 +45,7 @@ PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
   entry->set_loadInstanceThreadQ(NULL);
   entry->set_defineThreadQ(NULL);
   entry->set_definer(NULL);
-  entry->set_instanceKlass(NULL);
+  entry->set_instance_klass(NULL);
   return entry;
 }
 
@@ -188,7 +188,7 @@ void PlaceholderTable::classes_do(KlassClosure* f) {
 void PlaceholderEntry::classes_do(KlassClosure* closure) {
   assert(klassname() != NULL, "should have a non-null klass");
   if (_instanceKlass != NULL) {
-    closure->do_klass(InstanceKlass());
+    closure->do_klass(instance_klass());
   }
 }
 
@@ -220,9 +220,9 @@ void PlaceholderEntry::print() const {
     tty->print(", definer ");
     definer()->print_value();
   }
-  if (InstanceKlass() != NULL) {
+  if (instance_klass() != NULL) {
     tty->print(", InstanceKlass ");
-    InstanceKlass()->print_value();
+    instance_klass()->print_value();
   }
   tty->print("\n");
   tty->print("loadInstanceThreadQ threads:");
@@ -241,9 +241,9 @@ void PlaceholderEntry::verify() const {
   guarantee(loader_data() != NULL, "Must have been setup.");
   guarantee(loader_data()->class_loader() == NULL || loader_data()->class_loader()->is_instance(),
             "checking type of _loader");
-  guarantee(InstanceKlass() == NULL
-            || Klass::cast(InstanceKlass())->oop_is_instance(),
-            "checking type of InstanceKlass result");
+  guarantee(instance_klass() == NULL
+            || instance_klass()->oop_is_instance(),
+            "checking type of instance_klass result");
 }
 
 void PlaceholderTable::verify() {

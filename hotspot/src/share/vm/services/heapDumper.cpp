@@ -879,7 +879,7 @@ void DumperSupport::dump_instance(DumpWriter* writer, oop o) {
   writer->write_u4(STACK_TRACE_ID);
 
   // class ID
-  writer->write_classID(Klass::cast(k));
+  writer->write_classID(k);
 
   // number of bytes that follow
   writer->write_u4(instance_size(k) );
@@ -891,7 +891,7 @@ void DumperSupport::dump_instance(DumpWriter* writer, oop o) {
 // creates HPROF_GC_CLASS_DUMP record for the given class and each of
 // its array classes
 void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
-  Klass* klass = Klass::cast(k);
+  Klass* klass = k;
   assert(klass->oop_is_instance(), "not an InstanceKlass");
   InstanceKlass* ik = (InstanceKlass*)klass;
 
@@ -906,7 +906,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   if (java_super == NULL) {
     writer->write_objectID(oop(NULL));
   } else {
-    writer->write_classID(Klass::cast(java_super));
+    writer->write_classID(java_super);
   }
 
   writer->write_objectID(ik->class_loader());
@@ -932,7 +932,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   // array classes
   k = klass->array_klass_or_null();
   while (k != NULL) {
-    Klass* klass = Klass::cast(k);
+    Klass* klass = k;
     assert(klass->oop_is_objArray(), "not an ObjArrayKlass");
 
     writer->write_u1(HPROF_GC_CLASS_DUMP);
@@ -942,7 +942,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
     // super class of array classes is java.lang.Object
     java_super = klass->java_super();
     assert(java_super != NULL, "checking");
-    writer->write_classID(Klass::cast(java_super));
+    writer->write_classID(java_super);
 
     writer->write_objectID(ik->class_loader());
     writer->write_objectID(ik->signers());
@@ -965,7 +965,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
 void DumperSupport::dump_basic_type_array_class(DumpWriter* writer, Klass* k) {
  // array classes
  while (k != NULL) {
-    Klass* klass = Klass::cast(k);
+    Klass* klass = k;
 
     writer->write_u1(HPROF_GC_CLASS_DUMP);
     writer->write_classID(klass);
@@ -974,7 +974,7 @@ void DumperSupport::dump_basic_type_array_class(DumpWriter* writer, Klass* k) {
     // super class of array classes is java.lang.Object
     Klass* java_super = klass->java_super();
     assert(java_super != NULL, "checking");
-    writer->write_classID(Klass::cast(java_super));
+    writer->write_classID(java_super);
 
     writer->write_objectID(oop(NULL));    // loader
     writer->write_objectID(oop(NULL));    // signers
@@ -1001,7 +1001,7 @@ void DumperSupport::dump_object_array(DumpWriter* writer, objArrayOop array) {
   writer->write_u4((u4)array->length());
 
   // array class ID
-  writer->write_classID(Klass::cast(array->klass()));
+  writer->write_classID(array->klass());
 
   // [id]* elements
   for (int index=0; index<array->length(); index++) {
@@ -1525,7 +1525,7 @@ void VM_HeapDumper::do_load_class(Klass* k) {
     writer()->write_u4(++class_serial_num);
 
     // class ID
-    Klass* klass = Klass::cast(k);
+    Klass* klass = k;
     writer()->write_classID(klass);
 
     // add the Klass* and class serial number pair
@@ -1796,7 +1796,7 @@ void VM_HeapDumper::dump_stack_traces() {
       // write fake frame that makes it look like the thread, which caused OOME,
       // is in the OutOfMemoryError zero-parameter constructor
       if (thread == _oome_thread && _oome_constructor != NULL) {
-        int oome_serial_num = _klass_map->find(Klass::cast(_oome_constructor->method_holder()));
+        int oome_serial_num = _klass_map->find(_oome_constructor->method_holder());
         // the class serial number starts from 1
         assert(oome_serial_num > 0, "OutOfMemoryError class not found");
         DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, oome_serial_num,
@@ -1806,7 +1806,7 @@ void VM_HeapDumper::dump_stack_traces() {
       for (int j=0; j < depth; j++) {
         StackFrameInfo* frame = stack_trace->stack_frame_at(j);
         Method* m = frame->method();
-        int class_serial_num = _klass_map->find(Klass::cast(m->method_holder()));
+        int class_serial_num = _klass_map->find(m->method_holder());
         // the class serial number starts from 1
         assert(class_serial_num > 0, "class not found");
         DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, class_serial_num, m, frame->bci());

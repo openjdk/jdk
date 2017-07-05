@@ -112,22 +112,34 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     ckpInitArgs->UnlockMutex = NULL_PTR;
 #else
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "CreateMutex", "Lsun/security/pkcs11/wrapper/CK_CREATEMUTEX;");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->CreateMutex = (jMutexHandler != NULL) ? &callJCreateMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "DestroyMutex", "Lsun/security/pkcs11/wrapper/CK_DESTROYMUTEX;");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->DestroyMutex = (jMutexHandler != NULL) ? &callJDestroyMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "LockMutex", "Lsun/security/pkcs11/wrapper/CK_LOCKMUTEX;");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->LockMutex = (jMutexHandler != NULL) ? &callJLockMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "UnlockMutex", "Lsun/security/pkcs11/wrapper/CK_UNLOCKMUTEX;");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->UnlockMutex = (jMutexHandler != NULL) ? &callJUnlockMutex : NULL_PTR;
 
@@ -151,13 +163,19 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
 
     /* convert and set the flags field */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "flags", "J");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jFlags = (*env)->GetLongField(env, jInitArgs, fieldID);
     ckpInitArgs->flags = jLongToCKULong(jFlags);
 
     /* pReserved should be NULL_PTR in this version */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "pReserved", "Ljava/lang/Object;");
-    if (fieldID == NULL) { return NULL; }
+    if (fieldID == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
     jReserved = (*env)->GetObjectField(env, jInitArgs, fieldID);
 
     /* we try to convert the reserved parameter also */
