@@ -359,6 +359,12 @@ class MethodHandleNatives {
             required = Object[].class;  // should have been an array
             code = 192; // checkcast
             break;
+        case 191: // athrow
+            // JVM is asking us to wrap an exception which happened during resolving
+            if (required == BootstrapMethodError.class) {
+                throw new BootstrapMethodError((Throwable) actual);
+            }
+            break;
         }
         // disregard the identity of the actual object, if it is not a class:
         if (message == null) {
@@ -389,18 +395,7 @@ class MethodHandleNatives {
                                                  Class<?> defc, String name, Object type) {
         try {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
-            switch (refKind) {
-            case REF_getField:          return lookup.findGetter(       defc, name, (Class<?>)   type );
-            case REF_getStatic:         return lookup.findStaticGetter( defc, name, (Class<?>)   type );
-            case REF_putField:          return lookup.findSetter(       defc, name, (Class<?>)   type );
-            case REF_putStatic:         return lookup.findStaticSetter( defc, name, (Class<?>)   type );
-            case REF_invokeVirtual:     return lookup.findVirtual(      defc, name, (MethodType) type );
-            case REF_invokeStatic:      return lookup.findStatic(       defc, name, (MethodType) type );
-            case REF_invokeSpecial:     return lookup.findSpecial(      defc, name, (MethodType) type, callerClass );
-            case REF_newInvokeSpecial:  return lookup.findConstructor(  defc,       (MethodType) type );
-            case REF_invokeInterface:   return lookup.findVirtual(      defc, name, (MethodType) type );
-            }
-            throw new IllegalArgumentException("bad MethodHandle constant "+name+" : "+type);
+            return lookup.linkMethodHandleConstant(refKind, defc, name, type);
         } catch (ReflectiveOperationException ex) {
             Error err = new IncompatibleClassChangeError();
             err.initCause(ex);
