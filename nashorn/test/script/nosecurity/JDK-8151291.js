@@ -27,7 +27,7 @@
  *
  * @test
  * @option -scripting
- * @run
+ * @runif os.not.windows.cmd
  */
 
 $EXEC(["java", "-version"])

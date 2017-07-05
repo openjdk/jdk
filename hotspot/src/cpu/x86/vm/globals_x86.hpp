@@ -97,6 +97,8 @@ define_pd_global(bool, CompactStrings, true);
 
 define_pd_global(bool, PreserveFramePointer, false);
 
+define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
+
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \
                                                                             \
   develop(bool, IEEEPrecision, true,                                        \

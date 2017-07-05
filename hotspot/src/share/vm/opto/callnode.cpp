@@ -1243,13 +1243,13 @@ void SafePointNode::pop_monitor() {
 
 Node *SafePointNode::peek_monitor_box() const {
   int mon = jvms()->nof_monitors() - 1;
-  assert(mon >= 0, "most have a monitor");
+  assert(mon >= 0, "must have a monitor");
   return monitor_box(jvms(), mon);
 }
 
 Node *SafePointNode::peek_monitor_obj() const {
   int mon = jvms()->nof_monitors() - 1;
-  assert(mon >= 0, "most have a monitor");
+  assert(mon >= 0, "must have a monitor");
   return monitor_obj(jvms(), mon);
 }
 

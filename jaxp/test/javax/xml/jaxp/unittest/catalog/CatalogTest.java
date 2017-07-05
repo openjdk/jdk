@@ -42,11 +42,23 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248, 8144966, 8146606, 8146237
+ * @bug 8081248, 8144966, 8146606, 8146237, 8151154
  * @summary Tests basic Catalog functions.
  */
-
 public class CatalogTest {
+    /**
+     * @bug 8151154
+     * Verifies that the CatalogFeatures' builder throws IllegalArgumentException
+     * on invalid file inputs.
+     * @param file the file path
+     */
+    @Test(dataProvider = "invalidPaths", expectedExceptions = IllegalArgumentException.class)
+    public void testFileInput(String file) {
+            CatalogFeatures features = CatalogFeatures.builder()
+                .with(CatalogFeatures.Feature.FILES, file)
+                .build();
+    }
+
     /**
      * @bug 8146237
      * PREFER from Features API taking precedence over catalog file
@@ -201,6 +213,24 @@ public class CatalogTest {
         }
     }
 
+    /*
+       DataProvider: for testing the verification of file paths by
+                     the CatalogFeatures builder
+     */
+    @DataProvider(name = "invalidPaths")
+    Object[][] getFiles() {
+        return new Object[][]{
+            {null},
+            {""},
+            {"file:a/b\\c"},
+            {"file:/../../.."},
+            {"c:/te:t"},
+            {"c:/te?t"},
+            {"c/te*t"},
+            {"in|valid.txt"},
+            {"shema:invalid.txt"},
+        };
+    }
 
     /*
        DataProvider: provides test name, expected string, the catalog, and XML

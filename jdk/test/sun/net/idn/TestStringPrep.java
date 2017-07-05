@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Unit test for sun.net.idn.Punycode
- * @bug 4737170
+ * @bug 4737170 8060097
  * @modules java.base/sun.net.idn java.base/sun.text.normalizer
  * @library .
  * @compile -XDignore.symbol.file TestStringPrep.java NFS4StringPrep.java
@@ -41,6 +41,7 @@
 
 import java.text.ParseException;
 import java.io.InputStream;
+import java.util.Locale;
 
 import sun.net.idn.StringPrep;
 import sun.text.normalizer.UCharacterIterator;
@@ -209,7 +210,7 @@ public class TestStringPrep {
             src = "THISISATEST";
             byte[] dest = NFS4StringPrep.cs_prepare(src.getBytes("UTF-8"), false);
             String destStr = new String(dest, "UTF-8");
-            if(!src.toLowerCase().equals(destStr)){
+            if(!src.toLowerCase(Locale.ROOT).equals(destStr)){
                 fail("Did not get expected output. Expected: "+ prettify(src)+
                       " Got: " + prettify(destStr));
             }
@@ -275,7 +276,7 @@ public class TestStringPrep {
 
     private static String hex(char ch) {
         StringBuffer result = new StringBuffer();
-        String foo = Integer.toString(ch,16).toUpperCase();
+        String foo = Integer.toString(ch,16).toUpperCase(Locale.ROOT);
         for (int i = foo.length(); i < 4; ++i) {
             result.append('0');
         }
