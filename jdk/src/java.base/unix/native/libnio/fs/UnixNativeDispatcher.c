@@ -35,7 +35,12 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef MACOSX
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/statvfs.h>
+#endif
 #include <sys/time.h>
 
 #ifdef __solaris__
@@ -50,7 +55,9 @@
 #include <string.h>
 
 #define stat64 stat
+#ifndef MACOSX
 #define statvfs64 statvfs
+#endif
 
 #define open64 open
 #define fstat64 fstat
@@ -901,11 +908,18 @@ Java_sun_nio_fs_UnixNativeDispatcher_statvfs0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
     int err;
+#ifdef MACOSX
+    struct statfs buf;
+#else
     struct statvfs64 buf;
+#endif
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
-
+#ifdef MACOSX
+    RESTARTABLE(statfs(path, &buf), err);
+#else
     RESTARTABLE(statvfs64(path, &buf), err);
+#endif
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
@@ -921,7 +935,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_statvfs0(JNIEnv* env, jclass this,
             buf.f_bavail = 0;
         }
 #endif
+#ifdef MACOSX
+        (*env)->SetLongField(env, attrs, attrs_f_frsize, long_to_jlong(buf.f_bsize));
+#else
         (*env)->SetLongField(env, attrs, attrs_f_frsize, long_to_jlong(buf.f_frsize));
+#endif
         (*env)->SetLongField(env, attrs, attrs_f_blocks, long_to_jlong(buf.f_blocks));
         (*env)->SetLongField(env, attrs, attrs_f_bfree,  long_to_jlong(buf.f_bfree));
         (*env)->SetLongField(env, attrs, attrs_f_bavail, long_to_jlong(buf.f_bavail));

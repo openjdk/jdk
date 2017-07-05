@@ -47,7 +47,7 @@ public class WindowsGraphicsUtils {
      * Renders a text String in Windows without the mnemonic.
      * This is here because the WindowsUI hierarchy doesn't match the Component hierarchy. All
      * the overriden paintText methods of the ButtonUI delegates will call this static method.
-     * <p>
+     *
      * @param g Graphics context
      * @param b Current button to render
      * @param textRect Bounding rectangle to render the text.

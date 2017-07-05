@@ -222,7 +222,6 @@ CORE_PKGS = \
     javax.swing.plaf.nimbus \
     javax.swing.plaf.synth \
     javax.tools \
-    javax.tools.annotation \
     javax.transaction \
     javax.transaction.xa \
     javax.xml.parsers \
