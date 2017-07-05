@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,6 @@
 #define OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
 
 // Defines the interfaces to Solaris operating systems that vary across platforms
-
-
-// This is a simple callback that just fetches a PC for an interrupted thread.
-// The thread need not be suspended and the fetched PC is just a hint.
-// Returned PC and nPC are not necessarily consecutive.
-// This one is currently used for profiling the VMThread ONLY!
-
-// Must be synchronous
-class GetThreadPC_Callback : public OSThread::Sync_Interrupt_Callback {
- private:
-  ExtendedPC _addr;
-
- public:
-
-  GetThreadPC_Callback(Monitor *sync) :
-    OSThread::Sync_Interrupt_Callback(sync) { }
-  ExtendedPC addr() const { return _addr; }
-
-  void set_addr(ExtendedPC addr) { _addr = addr; }
-
-  void execute(OSThread::InterruptArguments *args);
-};
 
 // misc
 extern "C" {

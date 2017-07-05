@@ -56,6 +56,11 @@
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 
+#if INCLUDE_TRACE
+ #include "trace/tracing.hpp"
+ #include "trace/traceMacros.hpp"
+#endif
+
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
@@ -586,9 +591,14 @@ instanceKlassHandle SystemDictionary::handle_parallel_super_load(
 }
 
 
-Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle class_loader, Handle protection_domain, TRAPS) {
+Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
+                                                        Handle class_loader,
+                                                        Handle protection_domain,
+                                                        TRAPS) {
   assert(name != NULL && !FieldType::is_array(name) &&
          !FieldType::is_obj(name), "invalid class name");
+
+  TracingTime class_load_start_time = Tracing::time();
 
   // UseNewReflection
   // Fix for 4474172; see evaluation for more details
@@ -804,8 +814,9 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
             // during compilations.
             MutexLocker mu(Compile_lock, THREAD);
             update_dictionary(d_index, d_hash, p_index, p_hash,
-                            k, class_loader, THREAD);
+                              k, class_loader, THREAD);
           }
+
           if (JvmtiExport::should_post_class_load()) {
             Thread *thread = THREAD;
             assert(thread->is_Java_thread(), "thread->is_Java_thread()");
@@ -861,14 +872,16 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name, Handle cla
       // This brackets the SystemDictionary updates for both defining
       // and initiating loaders
       MutexLocker mu(SystemDictionary_lock, THREAD);
-        placeholders()->find_and_remove(p_index, p_hash, name, loader_data, PlaceholderTable::LOAD_INSTANCE, THREAD);
-        SystemDictionary_lock->notify_all();
+      placeholders()->find_and_remove(p_index, p_hash, name, loader_data, PlaceholderTable::LOAD_INSTANCE, THREAD);
+      SystemDictionary_lock->notify_all();
     }
   }
 
   if (HAS_PENDING_EXCEPTION || k.is_null()) {
     return NULL;
   }
+
+  post_class_load_event(class_load_start_time, k, class_loader);
 
 #ifdef ASSERT
   {
@@ -993,6 +1006,8 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
                                       TRAPS) {
   TempNewSymbol parsed_name = NULL;
 
+  TracingTime class_load_start_time = Tracing::time();
+
   ClassLoaderData* loader_data;
   if (host_klass.not_null()) {
     // Create a new CLD for anonymous class, that uses the same class loader
@@ -1048,6 +1063,8 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
         assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
         JvmtiExport::post_class_load((JavaThread *) THREAD, k());
     }
+
+    post_class_load_event(class_load_start_time, k, class_loader);
   }
   assert(host_klass.not_null() || cp_patches == NULL,
          "cp_patches only found with host_klass");
@@ -1435,6 +1452,7 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
+
 }
 
 // Support parallel classloading
@@ -1678,6 +1696,7 @@ int SystemDictionary::calculate_systemdictionary_size(int classcount) {
   }
   return newsize;
 }
+
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
@@ -2023,12 +2042,6 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
       k->set_prototype_header(markOopDesc::biased_locking_prototype());
     }
   }
-
-  // Assign a classid if one has not already been assigned.  The
-  // counter does not need to be atomically incremented since this
-  // is only done while holding the SystemDictionary_lock.
-  // All loaded classes get a unique ID.
-  TRACE_INIT_ID(k);
 
   // Make a new system dictionary entry.
   Klass* sd_check = find_class(d_index, d_hash, name, loader_data);
@@ -2610,6 +2623,27 @@ void SystemDictionary::verify_obj_klass_present(Symbol* class_name,
   }
   guarantee(probe != NULL || name != NULL,
             "Loaded klasses should be in SystemDictionary");
+}
+
+// utility function for class load event
+void SystemDictionary::post_class_load_event(TracingTime start_time,
+                                             instanceKlassHandle k,
+                                             Handle initiating_loader) {
+#if INCLUDE_TRACE
+  EventClassLoad event(UNTIMED);
+  if (event.should_commit()) {
+    event.set_endtime(Tracing::time());
+    event.set_starttime(start_time);
+    event.set_loadedClass(k());
+    oop defining_class_loader = k->class_loader();
+    event.set_definingClassLoader(defining_class_loader !=  NULL ?
+                                    defining_class_loader->klass() : (Klass*)NULL);
+    oop class_loader = initiating_loader.is_null() ? (oop)NULL : initiating_loader();
+    event.set_initiatingClassLoader(class_loader != NULL ?
+                                      class_loader->klass() : (Klass*)NULL);
+    event.commit();
+  }
+#endif /* INCLUDE_TRACE */
 }
 
 #ifndef PRODUCT
