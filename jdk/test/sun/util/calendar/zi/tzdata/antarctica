@@ -133,7 +133,8 @@ Zone Antarctica/Mawson	0	-	-00	1954 Feb 13
 # O'Higgins, Antarctic Peninsula, -6319-05704, since 1948-02
 # Prat, -6230-05941
 # Villa Las Estrellas (a town), around the Frei base, since 1984-04-09
-# These locations have always used Santiago time; use TZ='America/Santiago'.
+# These locations employ Region of Magallanes time; use
+# TZ='America/Punta_Arenas'.
 
 # China - year-round bases
 # Great Wall, King George Island, -6213-05858, since 1985-02-20

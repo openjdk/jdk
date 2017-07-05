@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Set;
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -212,6 +213,11 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
                                            packageName,
                                            relativeName,
                                            unwrap(sibling)));
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public boolean contains(Location location, FileObject file) throws IOException {
+        return super.contains(location, unwrap(file));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2133,7 +2133,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Type varargsElement;
         public PolyKind refPolyKind;
         public boolean ownerAccessible;
-        public OverloadKind overloadKind;
+        private OverloadKind overloadKind;
         public Type referentType;
 
         public enum OverloadKind {
@@ -2174,7 +2174,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             }
         }
 
-        protected JCMemberReference(ReferenceMode mode, Name name, JCExpression expr, List<JCExpression> typeargs) {
+        public JCMemberReference(ReferenceMode mode, Name name, JCExpression expr, List<JCExpression> typeargs) {
             this.mode = mode;
             this.name = name;
             this.expr = expr;
@@ -2204,6 +2204,20 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         public boolean hasKind(ReferenceKind kind) {
             return this.kind == kind;
+        }
+
+        /**
+         * @return the overloadKind
+         */
+        public OverloadKind getOverloadKind() {
+            return overloadKind;
+        }
+
+        /**
+         * @param overloadKind the overloadKind to set
+         */
+        public void setOverloadKind(OverloadKind overloadKind) {
+            this.overloadKind = overloadKind;
         }
     }
 

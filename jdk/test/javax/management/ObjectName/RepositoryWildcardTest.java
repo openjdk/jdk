@@ -27,7 +27,7 @@
  * @summary Test if the repository supports correctly the use of
  *          wildcards in the ObjectName key properties value part.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean RepositoryWildcardTest
  * @run build RepositoryWildcardTest
  * @run main RepositoryWildcardTest

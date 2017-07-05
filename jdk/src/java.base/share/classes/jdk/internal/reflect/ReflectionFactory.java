@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Properties;
 
+import jdk.internal.misc.VM;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 
@@ -134,6 +135,24 @@ public class ReflectionFactory {
         return soleInstance;
     }
 
+    /**
+     * Returns an alternate reflective Method instance for the given method
+     * intended for reflection to invoke, if present.
+     *
+     * A trusted method can define an alternate implementation for a method `foo`
+     * by defining a method named "reflected$foo" that will be invoked
+     * reflectively.
+     */
+    private static Method findMethodForReflection(Method method) {
+        String altName = "reflected$" + method.getName();
+        try {
+           return method.getDeclaringClass()
+                        .getDeclaredMethod(altName, method.getParameterTypes());
+        } catch (NoSuchMethodException ex) {
+            return null;
+        }
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by java.lang.reflect
@@ -159,6 +178,13 @@ public class ReflectionFactory {
 
     public MethodAccessor newMethodAccessor(Method method) {
         checkInitted();
+
+        if (Reflection.isCallerSensitive(method)) {
+            Method altMethod = findMethodForReflection(method);
+            if (altMethod != null) {
+                method = altMethod;
+            }
+        }
 
         if (noInflation && !ReflectUtil.isVMAnonymousClass(method.getDeclaringClass())) {
             return new MethodAccessorGenerator().
@@ -585,17 +611,10 @@ public class ReflectionFactory {
     private static void checkInitted() {
         if (initted) return;
 
-        // Tests to ensure the system properties table is fully
-        // initialized. This is needed because reflection code is
-        // called very early in the initialization process (before
-        // command-line arguments have been parsed and therefore
-        // these user-settable properties installed.) We assume that
-        // if System.out is non-null then the System class has been
-        // fully initialized and that the bulk of the startup code
-        // has been run.
-
-        if (System.out == null) {
-            // java.lang.System not yet fully initialized
+        // Defer initialization until module system is initialized so as
+        // to avoid inflation and spinning bytecode in unnamed modules
+        // during early startup.
+        if (!VM.isModuleSystemInited()) {
             return;
         }
 

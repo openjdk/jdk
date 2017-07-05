@@ -28,7 +28,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 
 /*
@@ -106,7 +105,7 @@ public class SystemLoggerInPlatformLoader {
         }
         Class<?> platformLoggerType = platformLogger.getClass();
         System.out.println("platformLogger: " + platformLoggerType);
-        boolean simpleConsoleOnly = !Layer.boot().findModule("java.logging").isPresent();
+        boolean simpleConsoleOnly = !ModuleLayer.boot().findModule("java.logging").isPresent();
         if (simpleConsoleOnly) {
             /* Happens if the test is called with custom JDK without java.logging module
                or in case usage commandline option --limit-modules java.base */
