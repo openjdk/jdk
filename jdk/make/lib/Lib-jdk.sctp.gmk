@@ -41,7 +41,6 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         LIBRARY := sctp, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(JDK_TOPDIR)/src/jdk.sctp/$(OPENJDK_TARGET_OS_TYPE)/native/libsctp, \
-        LANG := C, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
             -I $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \

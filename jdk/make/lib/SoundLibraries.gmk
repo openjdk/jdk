@@ -35,8 +35,6 @@ LIBJSOUND_CFLAGS := \
 
 LIBJSOUND_SRC_FILES := Utilities.c Platform.c
 
-LIBJSOUND_LANG := C
-
 EXTRA_SOUND_JNI_LIBS :=
 
 LIBJSOUND_MIDIFILES := \
@@ -81,7 +79,7 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
 endif # OPENJDK_TARGET_OS aix
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBJSOUND_LANG := C++
+  LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_MACOSX \
       -DUSE_PORTS=TRUE \
       -DUSE_DAUDIO=TRUE \
@@ -124,7 +122,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJSOUND_SRC_DIRS), \
     INCLUDE_FILES := $(LIBJSOUND_SRC_FILES), \
-    LANG := $(LIBJSOUND_LANG), \
+    TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJSOUND_CFLAGS), \
@@ -169,7 +167,6 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
           PLATFORM_API_LinuxOS_ALSA_MidiOut.c \
           PLATFORM_API_LinuxOS_ALSA_MidiUtils.c \
           PLATFORM_API_LinuxOS_ALSA_Ports.c, \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(ALSA_CFLAGS) \
           $(LIBJSOUND_CFLAGS) \
@@ -201,7 +198,6 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \
           PLATFORM_API_WinOS_DirectSound.cpp, \
-      LANG := C++, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBJSOUND_CFLAGS) \

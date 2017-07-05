@@ -33,7 +33,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBRARY := osxapp, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBOSXAPP_SRC), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(addprefix -I, $(LIBOSXAPP_SRC)) \

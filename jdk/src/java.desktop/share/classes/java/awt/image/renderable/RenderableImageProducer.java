@@ -34,10 +34,11 @@
  **********************************************************************/
 
 package java.awt.image.renderable;
-import java.awt.color.ColorSpace;
+
+import sun.misc.ManagedLocalsThread;
+
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.DirectColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.ImageProducer;
 import java.awt.image.Raster;
@@ -135,7 +136,13 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
     public synchronized void startProduction(ImageConsumer ic) {
         addConsumer(ic);
         // Need to build a runnable object for the Thread.
-        Thread thread = new Thread(this, "RenderableImageProducer Thread");
+        String name = "RenderableImageProducer Thread";
+        Thread thread;
+        if (System.getSecurityManager() == null) {
+            thread = new Thread(this, name);
+        } else {
+            thread = new ManagedLocalsThread(this);
+        }
         thread.start();
     }
 

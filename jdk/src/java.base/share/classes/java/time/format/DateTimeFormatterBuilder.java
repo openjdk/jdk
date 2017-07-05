@@ -70,6 +70,7 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.ERA;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
@@ -84,6 +85,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
+import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeTextProvider.LocaleStore;
 import java.time.temporal.ChronoField;
@@ -3129,6 +3131,16 @@ public final class DateTimeFormatterBuilder {
                     String itText = entry.getKey();
                     if (context.subSequenceEquals(itText, 0, parseText, position, itText.length())) {
                         return context.setParsedField(field, entry.getValue(), position, position + itText.length());
+                    }
+                }
+                if (field == ERA && !context.isStrict()) {
+                    // parse the possible era name from era.toString()
+                    List<Era> eras = chrono.eras();
+                    for (Era era : eras) {
+                        String name = era.toString();
+                        if (context.subSequenceEquals(name, 0, parseText, position, name.length())) {
+                            return context.setParsedField(field, era.getValue(), position, position + name.length());
+                        }
                     }
                 }
                 if (context.isStrict()) {

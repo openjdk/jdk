@@ -163,9 +163,7 @@ $(eval $(call SetupCopyFiles,COPY_JIMAGE_SERVICE_PROVIDER, \
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   $(eval $(call SetupNativeCompilation,ADD_GNU_DEBUGLINK, \
       SRC := $(JDK_TOPDIR)/make/src/native/add_gnu_debuglink, \
-      LANG := C, \
-      CC := $(BUILD_CC), \
-      LDEXE := $(BUILD_LD), \
+      TOOLCHAIN := TOOLCHAIN_BUILD, \
       LDFLAGS := -lelf, \
       OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/add_gnu_debuglink, \
       OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \
@@ -173,9 +171,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
       SRC := $(JDK_TOPDIR)/make/src/native/fix_empty_sec_hdr_flags, \
-      LANG := C, \
-      CC := $(BUILD_CC), \
-      LDEXE := $(BUILD_LD), \
+      TOOLCHAIN := TOOLCHAIN_BUILD, \
       LDFLAGS := -lelf, \
       OBJECT_DIR := $(BUILDTOOLS_OUTPUTDIR)/objs/fix_empty_sec_hdr_flags, \
       OUTPUT_DIR := $(BUILDTOOLS_OUTPUTDIR)/bin, \

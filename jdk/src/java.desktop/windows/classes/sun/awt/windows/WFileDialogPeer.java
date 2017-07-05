@@ -36,6 +36,7 @@ import java.util.MissingResourceException;
 import java.util.Vector;
 import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
+import sun.misc.ManagedLocalsThread;
 
 final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
@@ -97,12 +98,11 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     @Override
     public void show() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                _show();
-            }
-        }).start();
+        if (System.getSecurityManager() == null) {
+            new Thread(this::_show).start();
+        } else {
+            new ManagedLocalsThread(this::_show).start();
+        }
     }
 
     @Override

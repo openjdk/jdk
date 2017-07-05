@@ -29,6 +29,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicScrollPaneUI;
 
 public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
     public static ComponentUI createUI(final JComponent x) {
@@ -39,28 +40,9 @@ public class AquaScrollPaneUI extends javax.swing.plaf.basic.BasicScrollPaneUI {
         return new XYMouseWheelHandler();
     }
 
-    // This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally
-    // when we notice that the shift key is down. This should be removed when AWT/Swing
-    // becomes aware of multi-axis scroll wheels.
-    protected class XYMouseWheelHandler extends javax.swing.plaf.basic.BasicScrollPaneUI.MouseWheelHandler {
+    protected class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
         public void mouseWheelMoved(final MouseWheelEvent e) {
-            JScrollBar vScrollBar = null;
-            boolean wasVisible = false;
-
-            if (e.isShiftDown()) {
-                vScrollBar = scrollpane.getVerticalScrollBar();
-                if (vScrollBar != null) {
-                    wasVisible = vScrollBar.isVisible();
-                    vScrollBar.setVisible(false);
-                }
-            }
-
             super.mouseWheelMoved(e);
-
-            if (wasVisible) {
-                vScrollBar.setVisible(true);
-            }
-
             // Consume the event even when the scrollBar is invisible
             // see #7124320
             e.consume();

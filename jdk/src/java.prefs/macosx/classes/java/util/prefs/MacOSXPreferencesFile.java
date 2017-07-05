@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.lang.ref.WeakReference;
+import sun.misc.ManagedLocalsThread;
 
 
 /*
@@ -343,7 +344,7 @@ class MacOSXPreferencesFile {
     {
         if (timer == null) {
             timer = new Timer(true); // daemon
-            Thread flushThread = new Thread() {
+            Thread flushThread = new ManagedLocalsThread() {
                 @Override
                 public void run() {
                     flushWorld();

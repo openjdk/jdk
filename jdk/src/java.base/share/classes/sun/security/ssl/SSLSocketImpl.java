@@ -39,6 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Implementation of an SSL socket.  This is a normal connection type
@@ -1078,8 +1079,10 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                             HandshakeCompletedEvent event =
                                 new HandshakeCompletedEvent(this, sess);
 
-                            Thread t = new NotifyHandshakeThread(
-                                handshakeListeners.entrySet(), event);
+                            Thread t = new ManagedLocalsThread(
+                                new NotifyHandshake(
+                                    handshakeListeners.entrySet(), event),
+                                "HandshakeCompletedNotify-Thread");
                             t.start();
                         }
                     }
@@ -2575,17 +2578,16 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     // events.  This ensures that the notifications don't block the
     // protocol state machine.
     //
-    private static class NotifyHandshakeThread extends Thread {
+    private static class NotifyHandshake implements Runnable {
 
         private Set<Map.Entry<HandshakeCompletedListener,AccessControlContext>>
                 targets;        // who gets notified
         private HandshakeCompletedEvent event;          // the notification
 
-        NotifyHandshakeThread(
+        NotifyHandshake(
             Set<Map.Entry<HandshakeCompletedListener,AccessControlContext>>
             entrySet, HandshakeCompletedEvent e) {
 
-            super("HandshakeCompletedNotify-Thread");
             targets = new HashSet<>(entrySet);          // clone the entry set
             event = e;
         }
