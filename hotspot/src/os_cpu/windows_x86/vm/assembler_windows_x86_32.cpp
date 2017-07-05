@@ -59,6 +59,6 @@ void MacroAssembler::get_thread(Register thread) {
   movl(thread, Address(thread, ThreadLocalStorage::get_thread_ptr_offset()));
 }
 
-bool MacroAssembler::needs_explicit_null_check(int offset) {
+bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   return offset < 0 || (int)os::vm_page_size() <= offset;
 }

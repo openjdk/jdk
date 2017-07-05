@@ -48,7 +48,7 @@ class Matcher : public PhaseTransform {
   void ReduceOper( State *s, int newrule, Node *&mem, MachNode *mach );
 
   // If this node already matched using "rule", return the MachNode for it.
-  MachNode* find_shared_constant(Node* con, uint rule);
+  MachNode* find_shared_node(Node* n, uint rule);
 
   // Convert a dense opcode number to an expanded rule number
   const int *_reduceOp;
@@ -81,7 +81,7 @@ class Matcher : public PhaseTransform {
 
   Node_List &_proj_list;        // For Machine nodes killing many values
 
-  Node_Array _shared_constants;
+  Node_Array _shared_nodes;
 
   debug_only(Node_Array _old2new_map;)   // Map roots of ideal-trees to machine-roots
 

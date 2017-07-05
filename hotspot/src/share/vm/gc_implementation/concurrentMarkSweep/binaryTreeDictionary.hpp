@@ -130,6 +130,7 @@ class TreeChunk : public FreeChunk {
 const size_t MIN_TREE_CHUNK_SIZE  = sizeof(TreeChunk)/HeapWordSize;
 
 class BinaryTreeDictionary: public FreeBlockDictionary {
+  friend class VMStructs;
   bool       _splay;
   size_t     _totalSize;
   size_t     _totalFreeBlocks;

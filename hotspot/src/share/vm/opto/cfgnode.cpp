@@ -707,8 +707,14 @@ PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
 //------------------------split_out_instance-----------------------------------
 // Split out an instance type from a bottom phi.
 PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const {
-  assert(type() == Type::MEMORY && (adr_type() == TypePtr::BOTTOM ||
-         adr_type() == TypeRawPtr::BOTTOM) , "bottom or raw memory required");
+  const TypeOopPtr *t_oop = at->isa_oopptr();
+  assert(t_oop != NULL && t_oop->is_instance(), "expecting instance oopptr");
+  const TypePtr *t = adr_type();
+  assert(type() == Type::MEMORY &&
+         (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
+          t->isa_oopptr() && !t->is_oopptr()->is_instance() &&
+          t->is_oopptr()->cast_to_instance(t_oop->instance_id()) == t_oop),
+         "bottom or raw memory required");
 
   // Check if an appropriate node already exists.
   Node *region = in(0);
@@ -1342,7 +1348,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
     Node *n = phi->in(i);
     if( !n ) return NULL;
     if( phase->type(n) == Type::TOP ) return NULL;
-    if( n->Opcode() == Op_ConP )
+    if( n->Opcode() == Op_ConP || n->Opcode() == Op_ConN )
       break;
   }
   if( i >= phi->req() )         // Only split for constants
@@ -1613,64 +1619,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // This optimization only modifies phi - don't need to check for dead loop.
     assert(opt == NULL || phase->eqv(opt, this), "do not elide phi");
     if (opt != NULL)  return opt;
-  }
-
-  if (in(1) != NULL && in(1)->Opcode() == Op_AddP && can_reshape) {
-    // Try to undo Phi of AddP:
-    //   (Phi (AddP base base y) (AddP base2 base2 y))
-    // becomes:
-    //   newbase := (Phi base base2)
-    //   (AddP newbase newbase y)
-    //
-    // This occurs as a result of unsuccessful split_thru_phi and
-    // interferes with taking advantage of addressing modes.  See the
-    // clone_shift_expressions code in matcher.cpp
-    Node* addp = in(1);
-    const Type* type = addp->in(AddPNode::Base)->bottom_type();
-    Node* y = addp->in(AddPNode::Offset);
-    if (y != NULL && addp->in(AddPNode::Base) == addp->in(AddPNode::Address)) {
-      // make sure that all the inputs are similar to the first one,
-      // i.e. AddP with base == address and same offset as first AddP
-      bool doit = true;
-      for (uint i = 2; i < req(); i++) {
-        if (in(i) == NULL ||
-            in(i)->Opcode() != Op_AddP ||
-            in(i)->in(AddPNode::Base) != in(i)->in(AddPNode::Address) ||
-            in(i)->in(AddPNode::Offset) != y) {
-          doit = false;
-          break;
-        }
-        // Accumulate type for resulting Phi
-        type = type->meet(in(i)->in(AddPNode::Base)->bottom_type());
-      }
-      Node* base = NULL;
-      if (doit) {
-        // Check for neighboring AddP nodes in a tree.
-        // If they have a base, use that it.
-        for (DUIterator_Fast kmax, k = this->fast_outs(kmax); k < kmax; k++) {
-          Node* u = this->fast_out(k);
-          if (u->is_AddP()) {
-            Node* base2 = u->in(AddPNode::Base);
-            if (base2 != NULL && !base2->is_top()) {
-              if (base == NULL)
-                base = base2;
-              else if (base != base2)
-                { doit = false; break; }
-            }
-          }
-        }
-      }
-      if (doit) {
-        if (base == NULL) {
-          base = new (phase->C, in(0)->req()) PhiNode(in(0), type, NULL);
-          for (uint i = 1; i < req(); i++) {
-            base->init_req(i, in(i)->in(AddPNode::Base));
-          }
-          phase->is_IterGVN()->register_new_node_with_optimizer(base);
-        }
-        return new (phase->C, 4) AddPNode(base, base, y);
-      }
-    }
   }
 
   // Split phis through memory merges, so that the memory merges will go away.

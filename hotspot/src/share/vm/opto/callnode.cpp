@@ -637,7 +637,7 @@ bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
   }
   Compile *C = phase->C;
   int offset = adrInst_t->offset();
-  assert(offset >= 0, "should be valid offset");
+  assert(adrInst_t->klass_is_exact() && offset >= 0, "should be valid offset");
   ciKlass* adr_k = adrInst_t->klass();
   assert(adr_k->is_loaded() &&
          adr_k->is_java_klass() &&
@@ -674,12 +674,11 @@ bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
       ciKlass* at_k = at_ptr->klass();
       if ((adrInst_t->base() == at_ptr->base()) &&
           at_k->is_loaded() &&
-          at_k->is_java_klass() &&
-          !at_k->is_interface()) {
+          at_k->is_java_klass()) {
         // If we have found an argument matching addr_t, check if the field
         // at the specified offset is modified.
-        int at_idx = C->get_alias_index(at_ptr->add_offset(offset)->isa_oopptr());
-        if (base_idx == at_idx &&
+        if ((at_k->is_interface() || adr_k == at_k ||
+             adr_k->is_subclass_of(at_k) && !at_ptr->klass_is_exact()) &&
             (bcea == NULL ||
              bcea->is_arg_modified(i - TypeFunc::Parms, offset, size))) {
           return true;
