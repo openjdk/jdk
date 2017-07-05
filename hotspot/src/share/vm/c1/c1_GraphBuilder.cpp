@@ -33,6 +33,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
@@ -3395,8 +3396,8 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
   assert(!callee->is_native(), "callee must not be native");
-  if (count_backedges() && callee->has_loops()) {
-    INLINE_BAILOUT("too complex for tiered");
+  if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
+    INLINE_BAILOUT("inlining prohibited by policy");
   }
   // first perform tests of things it's not possible to inline
   if (callee->has_exception_handlers() &&

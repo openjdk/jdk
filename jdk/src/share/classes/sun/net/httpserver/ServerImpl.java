@@ -27,8 +27,6 @@ package sun.net.httpserver;
 
 import java.net.*;
 import java.io.*;
-import java.nio.*;
-import java.security.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -36,7 +34,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 import sun.net.httpserver.HttpConnection.State;
 
 /**
@@ -358,6 +355,12 @@ class ServerImpl implements TimeSource {
                                 continue;
                             }
                             SocketChannel chan = schan.accept();
+
+                            // Set TCP_NODELAY, if appropriate
+                            if (ServerConfig.noDelay()) {
+                                chan.socket().setTcpNoDelay(true);
+                            }
+
                             if (chan == null) {
                                 continue; /* cancel something ? */
                             }

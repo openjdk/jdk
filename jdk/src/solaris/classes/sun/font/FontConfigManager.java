@@ -347,6 +347,11 @@ public class FontConfigManager {
         name = name.toLowerCase();
 
         initFontConfigFonts(false);
+        if (fontConfigFonts == null) {
+            // This avoids an immediate NPE if fontconfig look up failed
+            // but doesn't guarantee this is a recoverable situation.
+            return null;
+        }
 
         FcCompFont fcInfo = null;
         for (int i=0; i<fontConfigFonts.length; i++) {

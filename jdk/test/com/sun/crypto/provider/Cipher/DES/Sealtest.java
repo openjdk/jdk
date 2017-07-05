@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 0000000 7055362
  * @summary Sealtest
  * @author Jan Luehe
  */
@@ -54,14 +54,16 @@ public class Sealtest {
         SealedObject sealed = new SealedObject(kp.getPrivate(), c);
 
         // serialize
-        FileOutputStream fos = new FileOutputStream("sealed");
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(sealed);
+        try (FileOutputStream fos = new FileOutputStream("sealed");
+                ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(sealed);
+        }
 
         // deserialize
-        FileInputStream fis = new FileInputStream("sealed");
-        ObjectInputStream ois = new ObjectInputStream(fis);
-        sealed = (SealedObject)ois.readObject();
+        try (FileInputStream fis = new FileInputStream("sealed");
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            sealed = (SealedObject)ois.readObject();
+        }
 
         System.out.println(sealed.getAlgorithm());
 

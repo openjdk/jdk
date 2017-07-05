@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,6 @@ static bool    returns_to_call_stub(address return_pc)   { return return_pc == _
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
   code_size2 = 22000           // simply increase if too small (assembler will crash if too small)
-};
-
-// MethodHandles adapters
-enum method_handles_platform_dependent_constants {
-  method_handles_adapters_code_size = 80000 DEBUG_ONLY(+ 120000)
 };
 
 class x86 {

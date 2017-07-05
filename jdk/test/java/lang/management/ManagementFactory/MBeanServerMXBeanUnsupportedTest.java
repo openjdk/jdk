@@ -29,7 +29,7 @@
  * @author Luis-Miguel Alventosa
  * @run clean MBeanServerMXBeanUnsupportedTest
  * @run build MBeanServerMXBeanUnsupportedTest
- * @run main MBeanServerMXBeanUnsupportedTest
+ * @run main/othervm MBeanServerMXBeanUnsupportedTest
  */
 
 import java.lang.management.ManagementFactory;

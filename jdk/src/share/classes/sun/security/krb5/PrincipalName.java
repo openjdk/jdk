@@ -173,12 +173,6 @@ public class PrincipalName
 
     boolean equalsWithoutRealm(PrincipalName other) {
 
-
-        if (nameType != KRB_NT_UNKNOWN &&
-            other.nameType != KRB_NT_UNKNOWN &&
-            nameType != other.nameType)
-            return false;
-
         if ((nameStrings != null && other.nameStrings == null) ||
             (nameStrings == null && other.nameStrings != null))
             return false;

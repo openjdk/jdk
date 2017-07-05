@@ -396,12 +396,6 @@ LRESULT CALLBACK AwtChoice::ListWindowProc(HWND hwnd, UINT message,
 
     DASSERT(::IsWindow(hwnd));
 
-    // This branch is required for the proper work of AwtComponent::GetComponent() method
-    // while hovering drop-down list
-    if (message == WmAwtIsComponent) {
-        return (LRESULT)TRUE;
-    }
-
     switch (message) {
         case WM_LBUTTONDOWN: {
             DWORD curPos = ::GetMessagePos();

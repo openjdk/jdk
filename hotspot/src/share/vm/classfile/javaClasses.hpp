@@ -1079,6 +1079,8 @@ class java_lang_invoke_MethodType: AllStatic {
     return obj != NULL && obj->klass() == SystemDictionary::MethodType_klass();
   }
 
+  static bool equals(oop mt1, oop mt2);
+
   // Accessors for code generation:
   static int rtype_offset_in_bytes()            { return _rtype_offset; }
   static int ptypes_offset_in_bytes()           { return _ptypes_offset; }

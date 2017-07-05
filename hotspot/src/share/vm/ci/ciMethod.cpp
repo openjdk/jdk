@@ -125,7 +125,8 @@ ciMethod::ciMethod(methodHandle h_m) : ciObject(h_m) {
   _name = env->get_symbol(h_m()->name());
   _holder = env->get_object(h_m()->method_holder())->as_instance_klass();
   ciSymbol* sig_symbol = env->get_symbol(h_m()->signature());
-  _signature = new (env->arena()) ciSignature(_holder, sig_symbol);
+  constantPoolHandle cpool = h_m()->constants();
+  _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = NULL;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || TieredCompilation) {
@@ -152,7 +153,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   // These fields are always filled in.
   _name = name;
   _holder = holder;
-  _signature = new (CURRENT_ENV->arena()) ciSignature(_holder, signature);
+  _signature = new (CURRENT_ENV->arena()) ciSignature(_holder, constantPoolHandle(), signature);
   _intrinsic_id = vmIntrinsics::_none;
   _liveness = NULL;
   _can_be_statically_bound = false;
@@ -1007,6 +1008,12 @@ int ciMethod::comp_level() {
   nmethod* nm = get_methodOop()->code();
   if (nm != NULL) return nm->comp_level();
   return 0;
+}
+
+int ciMethod::highest_osr_comp_level() {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  return get_methodOop()->highest_osr_comp_level();
 }
 
 // ------------------------------------------------------------------

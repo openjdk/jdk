@@ -783,6 +783,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(nmethod,             _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,             _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,             _scavenge_root_state,                          jbyte)                                 \
+  nonstatic_field(nmethod,             _state,                                        unsigned char)                         \
   nonstatic_field(nmethod,             _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
   nonstatic_field(nmethod,             _orig_pc_offset,                               int)                                   \
@@ -800,6 +801,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(nmethod,             _osr_entry_point,                              address)                               \
   nonstatic_field(nmethod,             _lock_count,                                   jint)                                  \
   nonstatic_field(nmethod,             _stack_traversal_mark,                         long)                                  \
+  nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
+  nonstatic_field(nmethod,             _marked_for_deoptimization,                    bool)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* JavaCalls (NOTE: incomplete) */                                                                                                 \
@@ -1310,11 +1313,13 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(BufferBlob,            CodeBlob)                           \
-  declare_type(nmethod,       CodeBlob)                           \
+  declare_type(AdapterBlob,           BufferBlob)                         \
+  declare_type(nmethod,               CodeBlob)                           \
   declare_type(RuntimeStub,           CodeBlob)                           \
   declare_type(SingletonBlob,         CodeBlob)                           \
   declare_type(SafepointBlob,         SingletonBlob)                      \
   declare_type(DeoptimizationBlob,    SingletonBlob)                      \
+  declare_type(RicochetBlob,          SingletonBlob)                      \
   declare_c2_type(ExceptionBlob,      SingletonBlob)                      \
   declare_c2_type(UncommonTrapBlob,   CodeBlob)                           \
                                                                           \

@@ -5225,14 +5225,15 @@ LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
 
   // Look at the alignment of the starting offsets.
   int abase = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
-  const intptr_t BIG_NEG = -128;
-  assert(BIG_NEG + 2*abase < 0, "neg enough");
 
-  intptr_t src_off  = abase + ((intptr_t) find_int_con(src_offset, -1)  << scale);
-  intptr_t dest_off = abase + ((intptr_t) find_int_con(dest_offset, -1) << scale);
-  if (src_off < 0 || dest_off < 0)
+  intptr_t src_off_con  = (intptr_t) find_int_con(src_offset, -1);
+  intptr_t dest_off_con = (intptr_t) find_int_con(dest_offset, -1);
+  if (src_off_con < 0 || dest_off_con < 0)
     // At present, we can only understand constants.
     return false;
+
+  intptr_t src_off  = abase + (src_off_con  << scale);
+  intptr_t dest_off = abase + (dest_off_con << scale);
 
   if (((src_off | dest_off) & (BytesPerLong-1)) != 0) {
     // Non-aligned; too bad.
