@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,24 @@
 
 package com.sun.media.sound;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.EOFException;
-import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.net.URL;
 
-import javax.sound.midi.MidiFileFormat;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiFileFormat;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.spi.MidiFileReader;
-
-
 
 /**
  * MIDI file reader.
@@ -53,19 +51,23 @@ import javax.sound.midi.spi.MidiFileReader;
  * @author Jan Borgersen
  * @author Florian Bomers
  */
-
 public final class StandardMidiFileReader extends MidiFileReader {
 
     private static final int MThd_MAGIC = 0x4d546864;  // 'MThd'
 
     private static final int bisBufferSize = 1024; // buffer size in buffered input streams
 
-    public MidiFileFormat getMidiFileFormat(InputStream stream) throws InvalidMidiDataException, IOException {
+    public MidiFileFormat getMidiFileFormat(InputStream stream)
+            throws InvalidMidiDataException, IOException {
         return getMidiFileFormatFromStream(stream, MidiFileFormat.UNKNOWN_LENGTH, null);
     }
 
-    // $$fb 2002-04-17: part of fix for 4635286: MidiSystem.getMidiFileFormat() returns format having invalid length
-    private MidiFileFormat getMidiFileFormatFromStream(InputStream stream, int fileLength, SMFParser smfParser) throws InvalidMidiDataException, IOException {
+    // $$fb 2002-04-17: part of fix for 4635286: MidiSystem.getMidiFileFormat()
+    // returns format having invalid length
+    private MidiFileFormat getMidiFileFormatFromStream(InputStream stream,
+                                                       int fileLength,
+                                                       SMFParser smfParser)
+            throws InvalidMidiDataException, IOException{
         int maxReadLength = 16;
         int duration = MidiFileFormat.UNKNOWN_LENGTH;
         DataInputStream dis;
@@ -230,7 +232,7 @@ public final class StandardMidiFileReader extends MidiFileReader {
 //=============================================================================================================
 
 /**
- * State variables during parsing of a MIDI file
+ * State variables during parsing of a MIDI file.
  */
 final class SMFParser {
     private static final int MTrk_MAGIC = 0x4d54726b;  // 'MTrk'
@@ -297,7 +299,11 @@ final class SMFParser {
             }
         }
         // now read track in a byte array
-        trackData = new byte[trackLength];
+        try {
+            trackData = new byte[trackLength];
+        } catch (final OutOfMemoryError oom) {
+            throw new IOException("Track length too big", oom);
+        }
         try {
             // $$fb 2003-08-20: fix for 4910986: MIDI file parser breaks up on http connection
             stream.readFully(trackData);
@@ -386,8 +392,13 @@ final class SMFParser {
                         // meta
                         int metaType = readUnsigned();
                         int metaLength = (int) readVarInt();
+                        final byte[] metaData;
+                        try {
+                            metaData = new byte[metaLength];
+                        } catch (final OutOfMemoryError oom) {
+                            throw new IOException("Meta length too big", oom);
+                        }
 
-                        byte[] metaData = new byte[metaLength];
                         read(metaData);
 
                         MetaMessage metaMessage = new MetaMessage();
@@ -413,5 +424,4 @@ final class SMFParser {
             throw new EOFException("invalid MIDI file");
         }
     }
-
 }

@@ -66,11 +66,11 @@ public final class CoreMetrics {
         return ((FontLineMetrics)lm).cm;
     }
 
-    public final int hashCode() {
+    public int hashCode() {
         return Float.floatToIntBits(ascent + ssOffset);
     }
 
-    public final boolean equals(Object rhs) {
+    public boolean equals(Object rhs) {
         try {
             return equals((CoreMetrics)rhs);
         }
@@ -79,7 +79,7 @@ public final class CoreMetrics {
         }
     }
 
-    public final boolean equals(CoreMetrics rhs) {
+    public boolean equals(CoreMetrics rhs) {
         if (rhs != null) {
             if (this == rhs) {
                 return true;
@@ -105,7 +105,7 @@ public final class CoreMetrics {
     // fullOffsets is an array of 5 baseline offsets,
     // roman, center, hanging, bottom, and top in that order
     // this does NOT add the ssOffset
-    public final float effectiveBaselineOffset(float[] fullOffsets) {
+    public float effectiveBaselineOffset(float[] fullOffsets) {
         switch (baselineIndex) {
         case GraphicAttribute.TOP_ALIGNMENT:
             return fullOffsets[4] + ascent;

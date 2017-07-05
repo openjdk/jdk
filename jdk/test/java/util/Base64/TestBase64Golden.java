@@ -40,9 +40,6 @@ import java.util.Base64.Encoder;
 import java.util.Objects;
 import java.util.Random;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
-
 public class TestBase64Golden {
 
     public static void main(String[] args) throws Exception {
@@ -138,16 +135,6 @@ public class TestBase64Golden {
             resArr = decoder.decode(encodedStr);
             assertEqual(resArr, srcArr);
 
-            // test compatible with sun.misc.Base64Encoder
-            if (type == Base64Type.MIME) {
-                sun.misc.BASE64Encoder miscEncoder = new BASE64Encoder();
-                sun.misc.BASE64Decoder miscDecoder = new BASE64Decoder();
-                resArr = decoder.decode(miscEncoder.encode(srcArr));
-                assertEqual(resArr, srcArr);
-
-                resArr = encoder.encode(miscDecoder.decodeBuffer(encodedStr));
-                assertEqual(new String(resArr, DEF_CHARSET), encodedStr);
-            }
         }
     }
 

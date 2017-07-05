@@ -23,7 +23,7 @@
 
 /*
  * @test TestDeferredRSUpdate
- * @bug 8040977
+ * @bug 8040977 8052170
  * @summary Ensure that running with -XX:-G1DeferredRSUpdate does not crash the VM
  * @key gc
  * @library /testlibrary
@@ -38,6 +38,7 @@ public class TestDeferredRSUpdate {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                               "-Xmx10M",
+                                                              "-XX:+PrintGCDetails",
                                                               // G1DeferredRSUpdate is a develop option, but we cannot limit execution of this test to only debug VMs.
                                                               "-XX:+IgnoreUnrecognizedVMOptions",
                                                               "-XX:-G1DeferredRSUpdate",

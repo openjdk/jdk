@@ -75,10 +75,16 @@ private:
 
  public:
   NamedCounter(const char *n, CounterTag tag = NoTag):
-    _name(n),
+    _name(n == NULL ? NULL : os::strdup(n)),
     _count(0),
     _next(NULL),
     _tag(tag) {}
+
+  ~NamedCounter() {
+    if (_name != NULL) {
+      os::free((void*)_name);
+    }
+  }
 
   const char * name() const     { return _name; }
   int count() const             { return _count; }

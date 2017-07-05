@@ -43,7 +43,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.lang.reflect.*;
 
 /**
  * CredentialsCache stores credentials(tickets, session keys, etc) in a
@@ -388,51 +387,35 @@ public class FileCredentialsCache extends CredentialsCache
 
         /*
          * For Unix platforms we use the default cache name to be
-         * /tmp/krbcc_uid ; for all other platforms  we use
-         * {user_home}/krb5_cc{user_name}
-         * Please note that for Windows 2K we will use LSA to get
+         * /tmp/krb5cc_uid ; for all other platforms  we use
+         * {user_home}/krb5cc_{user_name}
+         * Please note that for Windows we will use LSA to get
          * the TGT from the the default cache even before we come here;
          * however when we create cache we will create a cache under
-         * {user_home}/krb5_cc{user_name} for non-Unix platforms including
-         * Windows 2K.
+         * {user_home}/krb5cc_{user_name} for non-Unix platforms including
+         * Windows.
          */
 
-        if (osname != null) {
-            String cmd = null;
-            String uidStr = null;
-            long uid = 0;
-
-            if (osname.startsWith("SunOS") ||
-                (osname.startsWith("Linux"))) {
-                try {
-                    Class<?> c = Class.forName
-                        ("com.sun.security.auth.module.UnixSystem");
-                    Constructor<?> constructor = c.getConstructor();
-                    Object obj = constructor.newInstance();
-                    Method method = c.getMethod("getUid");
-                    uid =  ((Long)method.invoke(obj)).longValue();
-                    name = File.separator + "tmp" +
+        if (osname != null && !osname.startsWith("Windows")) {
+            long uid = sun.misc.VM.getuid();
+            if (uid != -1) {
+                name = File.separator + "tmp" +
                         File.separator + stdCacheNameComponent + "_" + uid;
-                    if (DEBUG) {
-                        System.out.println(">>>KinitOptions cache name is " +
-                                           name);
-                    }
-                    return name;
-                } catch (Exception e) {
-                    if (DEBUG) {
-                        System.out.println("Exception in obtaining uid " +
-                                            "for Unix platforms " +
-                                            "Using user's home directory");
-
-
-                        e.printStackTrace();
-                    }
+                if (DEBUG) {
+                    System.out.println(">>>KinitOptions cache name is " +
+                            name);
+                }
+                return name;
+            } else {
+                if (DEBUG) {
+                    System.out.println("Error in obtaining uid " +
+                                        "for Unix platforms " +
+                                        "Using user's home directory");
                 }
             }
         }
 
         // we did not get the uid;
-
 
         String user_name =
             java.security.AccessController.doPrivileged(

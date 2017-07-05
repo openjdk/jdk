@@ -509,7 +509,7 @@ class MethodHandleNatives {
 
     /**
      * Is this method a caller-sensitive method?
-     * I.e., does it call Reflection.getCallerClass or a similer method
+     * I.e., does it call Reflection.getCallerClass or a similar method
      * to ask about the identity of its caller?
      */
     static boolean isCallerSensitive(MemberName mem) {

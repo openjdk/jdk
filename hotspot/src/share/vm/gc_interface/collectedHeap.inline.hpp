@@ -241,6 +241,44 @@ inline void CollectedHeap::oop_iterate_no_header(OopClosure* cl) {
   oop_iterate(&no_header_cl);
 }
 
+
+inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
+                                                         HeapWord* end,
+                                                         unsigned short alignment_in_bytes) {
+  if (alignment_in_bytes <= ObjectAlignmentInBytes) {
+    return addr;
+  }
+
+  assert(is_ptr_aligned(addr, HeapWordSize),
+    err_msg("Address " PTR_FORMAT " is not properly aligned.", p2i(addr)));
+  assert(is_size_aligned(alignment_in_bytes, HeapWordSize),
+    err_msg("Alignment size %u is incorrect.", alignment_in_bytes));
+
+  HeapWord* new_addr = (HeapWord*) align_pointer_up(addr, alignment_in_bytes);
+  size_t padding = pointer_delta(new_addr, addr);
+
+  if (padding == 0) {
+    return addr;
+  }
+
+  if (padding < CollectedHeap::min_fill_size()) {
+    padding += alignment_in_bytes / HeapWordSize;
+    assert(padding >= CollectedHeap::min_fill_size(),
+      err_msg("alignment_in_bytes %u is expect to be larger "
+      "than the minimum object size", alignment_in_bytes));
+    new_addr = addr + padding;
+  }
+
+  assert(new_addr > addr, err_msg("Unexpected arithmetic overflow "
+    PTR_FORMAT " not greater than " PTR_FORMAT, p2i(new_addr), p2i(addr)));
+  if(new_addr < end) {
+    CollectedHeap::fill_with_object(addr, padding);
+    return new_addr;
+  } else {
+    return NULL;
+  }
+}
+
 #ifndef PRODUCT
 
 inline bool

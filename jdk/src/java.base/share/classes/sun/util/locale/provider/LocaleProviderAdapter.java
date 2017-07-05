@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public abstract class LocaleProviderAdapter {
      * A utility method for implementing the default LocaleServiceProvider.isSupportedLocale
      * for the JRE, CLDR, and FALLBACK adapters.
      */
-    static boolean isSupportedLocale(Locale locale, LocaleProviderAdapter.Type type, Set<String> langtags) {
+    public static boolean isSupportedLocale(Locale locale, LocaleProviderAdapter.Type type, Set<String> langtags) {
         assert type == Type.JRE || type == Type.CLDR || type == Type.FALLBACK;
         if (Locale.ROOT.equals(locale)) {
             return true;

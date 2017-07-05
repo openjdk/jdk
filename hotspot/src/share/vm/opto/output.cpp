@@ -526,7 +526,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
 
         if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
           // We've got a winner.  Replace this branch.
-          MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+          MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
           // Update the jmp_size.
           int new_size = replacement->size(_regalloc);
@@ -785,9 +785,10 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jint   *dp = (jint*)&d;
-    array->append(new ConstantIntValue(dp[1]));
-    array->append(new ConstantIntValue(dp[0]));
+    jlong_accessor acc;
+    acc.long_value = jlong_cast(d);
+    array->append(new ConstantIntValue(acc.words[1]));
+    array->append(new ConstantIntValue(acc.words[0]));
 #endif
     break;
   }
@@ -804,9 +805,10 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jint *dp = (jint*)&d;
-    array->append(new ConstantIntValue(dp[1]));
-    array->append(new ConstantIntValue(dp[0]));
+    jlong_accessor acc;
+    acc.long_value = d;
+    array->append(new ConstantIntValue(acc.words[1]));
+    array->append(new ConstantIntValue(acc.words[0]));
 #endif
     break;
   }
@@ -1174,7 +1176,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
   // fill in the nop array for bundling computations
   MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list, this);
+  Bundle::initialize_nops(_nop_list);
 
   return cb;
 }
@@ -1408,7 +1410,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
             if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
               // We've got a winner.  Replace this branch.
-              MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+              MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
               // Update the jmp_size.
               int new_size = replacement->size(_regalloc);
