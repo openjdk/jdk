@@ -141,11 +141,10 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
     }
 
     /**
-     * Paint the label text in the foreground color, if the label
-     * is opaque then paint the entire background with the background
-     * color.  The Label text is drawn by paintEnabledText() or
-     * paintDisabledText().  The locations of the label parts are computed
-     * by layoutCL.
+     * Paints the label text with the foreground color, if the label is opaque
+     * then paints the entire background with the background color. The Label
+     * text is drawn by {@link #paintEnabledText} or {@link #paintDisabledText}.
+     * The locations of the label parts are computed by {@link #layoutCL}.
      *
      * @see #paintEnabledText
      * @see #paintDisabledText

@@ -118,8 +118,6 @@ public class JarSigner {
     KeyStore store;                 // the keystore specified by -keystore
                                     // or the default keystore, never null
 
-    IdentityScope scope;
-
     String keystore; // key store file
     boolean nullStream = false; // null keystore input stream (NONE)
     boolean token = false; // token-based keystore
@@ -212,7 +210,6 @@ public class JarSigner {
             if (verify) {
                 try {
                     loadKeyStore(keystore, false);
-                    scope = IdentityScope.getSystemScope();
                 } catch (Exception e) {
                     if ((keystore != null) || (storepass != null)) {
                         System.out.println(rb.getString("jarsigner error: ") +
@@ -982,13 +979,6 @@ public class JarSigner {
                         storeHash.put(c, "(" + alias + ")");
                         found = true;
                         result |= IN_KEYSTORE;
-                    }
-                }
-                if (!found && (scope != null)) {
-                    Identity id = scope.getIdentity(c.getPublicKey());
-                    if (id != null) {
-                        result |= IN_SCOPE;
-                        storeHash.put(c, "[" + id.getName() + "]");
                     }
                 }
                 if (ckaliases.contains(alias)) {

@@ -45,14 +45,15 @@ import java.awt.*;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author  Shannon Hickey
+ * @since 1.7
  */
-class SynthTextPaneUI extends SynthEditorPaneUI {
+public class SynthTextPaneUI extends SynthEditorPaneUI {
 
     /**
      * Creates a UI for the JTextPane.
      *
      * @param c the JTextPane object
-     * @return the UI
+     * @return the UI object
      */
     public static ComponentUI createUI(JComponent c) {
         return new SynthTextPaneUI();
@@ -65,10 +66,15 @@ class SynthTextPaneUI extends SynthEditorPaneUI {
      *
      * @return the name ("TextPane")
      */
+    @Override
     protected String getPropertyPrefix() {
         return "TextPane";
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         updateForeground(c.getForeground());
@@ -86,6 +92,7 @@ class SynthTextPaneUI extends SynthEditorPaneUI {
      *
      * @param evt the property change event
      */
+    @Override
     protected void propertyChange(PropertyChangeEvent evt) {
         super.propertyChange(evt);
 
@@ -150,11 +157,16 @@ class SynthTextPaneUI extends SynthEditorPaneUI {
         }
     }
 
+    @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
         context.getPainter().paintTextPaneBackground(context, g, 0, 0,
                                                   c.getWidth(), c.getHeight());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintTextPaneBorder(context, g, x, y, w, h);

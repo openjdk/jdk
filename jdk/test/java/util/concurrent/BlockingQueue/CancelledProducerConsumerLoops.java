@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 CancelledProducerConsumerLoops.java
+ * @compile CancelledProducerConsumerLoops.java
  * @run main/timeout=7000 CancelledProducerConsumerLoops
  * @summary Checks for responsiveness of blocking queues to cancellation.
  * Runs under the assumption that ITERS computations require more than

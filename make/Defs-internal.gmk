@@ -227,6 +227,35 @@ ifndef SKIP_FASTDEBUG_BUILD
   SKIP_FASTDEBUG_BUILD=false
 endif
 
+# Select javadoc setting GENERATE_DOCS
+ifndef NO_DOCS
+  # Default value (we want javadoc run)
+  GENERATE_DOCS=true
+  # No DOCS build when JDK_UPDATE_VERSION set
+  ifdef JDK_UPDATE_VERSION
+    GENERATE_DOCS=false
+  endif
+  # If langtools, corba, jaxp, and jaxws are not being built, 
+  #   a full jdk javadoc is not possible
+  ifneq ($(BUILD_LANGTOOLS), true)
+    GENERATE_DOCS=false
+  endif
+  ifneq ($(BUILD_CORBA), true)
+    GENERATE_DOCS=false
+  endif
+  ifneq ($(BUILD_JAXP), true)
+    GENERATE_DOCS=false
+  endif
+  ifneq ($(BUILD_JAXWS), true)
+    GENERATE_DOCS=false
+  endif
+  ifeq ($(GENERATE_DOCS),false)
+    NO_DOCS=true
+  endif
+else
+  GENERATE_DOCS=false
+endif
+
 # Output directory for hotspot build
 HOTSPOT_DIR = $(ABS_OUTPUTDIR)/hotspot
 

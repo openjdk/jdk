@@ -53,7 +53,12 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         }
     }
 
-    native void create(WComponentPeer parent);
+    native void createAwtDialog(WComponentPeer parent);
+    void create(WComponentPeer parent) {
+        preCreate(parent);
+        createAwtDialog(parent);
+    }
+
     native void showModal();
     native void endModal();
 
@@ -93,7 +98,7 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
 
     public void blockWindows(java.util.List<Window> toBlock) {
         for (Window w : toBlock) {
-            WWindowPeer wp = (WWindowPeer)ComponentAccessor.getPeer(w);
+            WWindowPeer wp = (WWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
             if (wp != null) {
                 wp.setModalBlocked((Dialog)target, true);
             }

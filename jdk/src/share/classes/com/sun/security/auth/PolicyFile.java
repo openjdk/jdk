@@ -34,8 +34,6 @@ import java.util.*;
 
 import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.Identity;
-import java.security.IdentityScope;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Permission;
@@ -267,7 +265,7 @@ public class PolicyFile extends javax.security.auth.Policy {
     private boolean initialized = false;
 
     private boolean expandProperties = true;
-    private boolean ignoreIdentityScope = false;
+    private boolean ignoreIdentityScope = true;
 
     // for use with the reflection API
 
@@ -458,9 +456,6 @@ public class PolicyFile extends javax.security.auth.Policy {
             // do not load a static policy
         }
     }
-
-    /** the scope to check */
-    private static IdentityScope scope = null;
 
     /**
      * Checks public key. If it is marked as trusted in

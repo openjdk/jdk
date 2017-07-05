@@ -685,7 +685,7 @@ public class BasicListUI extends ListUI
 
 
     /**
-     * Create and install the listeners for the JList, its model, and its
+     * Creates and installs the listeners for the JList, its model, and its
      * selectionModel.  This method is called at installUI() time.
      *
      * @see #installUI
@@ -728,7 +728,7 @@ public class BasicListUI extends ListUI
 
 
     /**
-     * Remove the listeners for the JList, its model, and its
+     * Removes the listeners from the JList, its model, and its
      * selectionModel.  All of the listener fields, are reset to
      * null here.  This method is called at uninstallUI() time,
      * it should be kept in sync with installListeners.
@@ -764,8 +764,8 @@ public class BasicListUI extends ListUI
 
 
     /**
-     * Initialize JList properties, e.g. font, foreground, and background,
-     * and add the CellRendererPane.  The font, foreground, and background
+     * Initializes list properties such as font, foreground, and background,
+     * and adds the CellRendererPane. The font, foreground, and background
      * properties are only set if their current value is either null
      * or a UIResource, other properties are set if the current
      * value is null.
@@ -820,9 +820,9 @@ public class BasicListUI extends ListUI
 
 
     /**
-     * Set the JList properties that haven't been explicitly overridden to
-     * null.  A property is considered overridden if its current value
-     * is not a UIResource.
+     * Sets the list properties that have not been explicitly overridden to
+     * {@code null}. A property is considered overridden if its current value
+     * is not a {@code UIResource}.
      *
      * @see #installDefaults
      * @see #uninstallUI

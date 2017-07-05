@@ -133,7 +133,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
     }
     void handleFocusIn(int detail) {
         if (embedded.focusAllowedFor()) {
-            embedded.handleWindowFocusInSync(0);
+            embedded.handleWindowFocusIn(0);
         }
         switch(detail) {
           case XEMBED_FOCUS_CURRENT:
@@ -205,7 +205,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
         // embedded is an active window before sending WINDOW_LOST_FOCUS
         // to shared code
         if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() == embedded.target) {
-            embedded.handleWindowFocusOutSync(null, 0);
+            embedded.handleWindowFocusOut(null, 0);
         }
     }
 

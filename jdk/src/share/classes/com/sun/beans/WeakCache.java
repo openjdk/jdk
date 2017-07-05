@@ -81,4 +81,11 @@ public final class WeakCache<K, V> {
             this.map.remove(key);
         }
     }
+
+    /**
+     * Removes all of the mappings from this cache.
+     */
+    public void clear() {
+        this.map.clear();
+    }
 }

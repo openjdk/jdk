@@ -26,9 +26,6 @@
  * @bug     4822887
  * @summary Basic test for Collections.addAll
  * @author  Josh Bloch
- *
- * @compile -source 1.5 AddAll.java
- * @run main AddAll
  */
 
 import java.util.*;

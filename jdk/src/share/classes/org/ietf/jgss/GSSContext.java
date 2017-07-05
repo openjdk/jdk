@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,7 +678,7 @@ public interface GSSContext {
      * are not definitive then the method will attempt to treat all
      * available bytes as part of the token.<p>
      *
-     * Other than the possible blocking behaviour described above, this
+     * Other than the possible blocking behavior described above, this
      * method is equivalent to the byte array based {@link #unwrap(byte[],
      * int, int, MessageProp) unwrap} method.<p>
      *
@@ -826,7 +826,7 @@ public interface GSSContext {
      * are not definitive then the method will attempt to treat all
      * available bytes as part of the token.<p>
      *
-     * Other than the possible blocking behaviour described above, this
+     * Other than the possible blocking behavior described above, this
      * method is equivalent to the byte array based {@link #verifyMIC(byte[],
      * int, int, byte[], int, int, MessageProp) verifyMIC} method.<p>
      *
@@ -917,7 +917,7 @@ public interface GSSContext {
      * getMutualAuthState} method.<p>
      *
      * @param state a boolean value indicating whether mutual
-     * authentication shouls be used or not.
+     * authentication should be used or not.
      * @see #getMutualAuthState()
      *
      * @throws GSSException containing the following
@@ -928,7 +928,7 @@ public interface GSSContext {
 
     /**
      * Requests that replay detection be enabled for the
-     * per-message security services after context establishemnt. This
+     * per-message security services after context establishment. This
      * request can only be made on the context initiator's side and it has
      * to be done prior to the first call to
      * <code>initSecContext</code>. During context establishment replay
@@ -958,7 +958,7 @@ public interface GSSContext {
 
     /**
      * Requests that sequence checking be enabled for the
-     * per-message security services after context establishemnt. This
+     * per-message security services after context establishment. This
      * request can only be made on the context initiator's side and it has
      * to be done prior to the first call to
      * <code>initSecContext</code>. During context establishment sequence

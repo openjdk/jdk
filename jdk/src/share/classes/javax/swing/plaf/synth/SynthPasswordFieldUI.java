@@ -25,21 +25,19 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
+import java.awt.Graphics;
 import javax.swing.*;
 import javax.swing.text.*;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ComponentUI;
 
 /**
- * Provides the Synth look and feel for a password field.
- * The only difference from the standard text field is that
- * the view of the text is simply a string of the echo
- * character as specified in JPasswordField, rather than the
- * real text contained in the field.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JPasswordField}.
  *
  * @author  Shannon Hickey
+ * @since 1.7
  */
-class SynthPasswordFieldUI extends SynthTextFieldUI {
+public class SynthPasswordFieldUI extends SynthTextFieldUI {
 
     /**
      * Creates a UI for a JPasswordField.
@@ -58,6 +56,7 @@ class SynthPasswordFieldUI extends SynthTextFieldUI {
      *
      * @return the name ("PasswordField")
      */
+    @Override
     protected String getPropertyPrefix() {
         return "PasswordField";
     }
@@ -68,20 +67,33 @@ class SynthPasswordFieldUI extends SynthTextFieldUI {
      * @param elem the element
      * @return the view
      */
+    @Override
     public View create(Element elem) {
         return new PasswordView(elem);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     void paintBackground(SynthContext context, Graphics g, JComponent c) {
         context.getPainter().paintPasswordFieldBackground(context, g, 0, 0,
                                                 c.getWidth(), c.getHeight());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPasswordFieldBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         ActionMap map = SwingUtilities.getUIActionMap(getComponent());
