@@ -287,7 +287,7 @@ public:
 
   // Sets the number of parallel threads that will be doing tasks
   // (such as process strong roots) subsequently.
-  virtual void set_par_threads(int t);
+  virtual void set_par_threads(uint t);
 
   int n_termination();
   void set_n_termination(int t);

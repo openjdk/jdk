@@ -488,7 +488,7 @@ extern "C" {
   }
 }
 
-void CommandLineFlags::printSetFlags() {
+void CommandLineFlags::printSetFlags(outputStream* out) {
   // Print which flags were set on the command line
   // note: this method is called before the thread structure is in place
   //       which means resource allocation cannot be used.
@@ -507,11 +507,11 @@ void CommandLineFlags::printSetFlags() {
   // Print
   for (int i = 0; i < length; i++) {
     if (array[i]->origin /* naked field! */) {
-      array[i]->print_as_flag(tty);
-      tty->print(" ");
+      array[i]->print_as_flag(out);
+      out->print(" ");
     }
   }
-  tty->cr();
+  out->cr();
   FREE_C_HEAP_ARRAY(Flag*, array);
 }
 
@@ -524,7 +524,7 @@ void CommandLineFlags::verify() {
 
 #endif // PRODUCT
 
-void CommandLineFlags::printFlags(bool withComments) {
+void CommandLineFlags::printFlags(outputStream* out, bool withComments) {
   // Print the flags sorted by name
   // note: this method is called before the thread structure is in place
   //       which means resource allocation cannot be used.
@@ -541,10 +541,10 @@ void CommandLineFlags::printFlags(bool withComments) {
   qsort(array, length, sizeof(Flag*), compare_flags);
 
   // Print
-  tty->print_cr("[Global flags]");
+  out->print_cr("[Global flags]");
   for (int i = 0; i < length; i++) {
     if (array[i]->is_unlocked()) {
-      array[i]->print_on(tty, withComments);
+      array[i]->print_on(out, withComments);
     }
   }
   FREE_C_HEAP_ARRAY(Flag*, array);

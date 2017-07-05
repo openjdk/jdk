@@ -58,6 +58,8 @@
   static void setup_fpu();
   static bool supports_sse() { return true; }
 
+  static jlong rdtsc();
+
   static bool      register_code_area(char *low, char *high);
 
 #endif // OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP
