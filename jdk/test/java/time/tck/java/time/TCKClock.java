@@ -83,6 +83,10 @@ public class TCKClock {
             return millis;
         }
         @Override
+        public Instant instant() {
+            return Instant.ofEpochMilli(millis());
+        }
+        @Override
         public ZoneId getZone() {
             return zone;
         }

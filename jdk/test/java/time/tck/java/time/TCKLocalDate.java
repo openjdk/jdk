@@ -80,11 +80,6 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -93,24 +88,29 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatters;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.ISOChrono;
 import java.time.temporal.JulianFields;
-import java.time.temporal.OffsetDate;
 import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
-import java.time.temporal.Year;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -595,14 +595,14 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
     public void factory_parse_formatter() {
-        DateTimeFormatter f = DateTimeFormatters.pattern("y M d");
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M d");
         LocalDate test = LocalDate.parse("2010 12 3", f);
         assertEquals(test, LocalDate.of(2010, 12, 3));
     }
 
     @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
     public void factory_parse_formatter_nullText() {
-        DateTimeFormatter f = DateTimeFormatters.pattern("y M d");
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M d");
         LocalDate.parse((String) null, f);
     }
 
@@ -637,34 +637,27 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // query(TemporalQuery)
     //-----------------------------------------------------------------------
-    @Test
-    public void test_query_chrono() {
-        assertEquals(TEST_2007_07_15.query(Queries.chrono()), ISOChrono.INSTANCE);
-        assertEquals(Queries.chrono().queryFrom(TEST_2007_07_15), ISOChrono.INSTANCE);
+    @DataProvider(name="query")
+    Object[][] data_query() {
+        return new Object[][] {
+                {TEST_2007_07_15, Queries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2007_07_15, Queries.zoneId(), null},
+                {TEST_2007_07_15, Queries.precision(), ChronoUnit.DAYS},
+                {TEST_2007_07_15, Queries.zone(), null},
+                {TEST_2007_07_15, Queries.offset(), null},
+                {TEST_2007_07_15, Queries.localDate(), TEST_2007_07_15},
+                {TEST_2007_07_15, Queries.localTime(), null},
+        };
     }
 
-    @Test
-    public void test_query_zoneId() {
-        assertEquals(TEST_2007_07_15.query(Queries.zoneId()), null);
-        assertEquals(Queries.zoneId().queryFrom(TEST_2007_07_15), null);
+    @Test(dataProvider="query")
+    public <T> void test_query(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(temporal.query(query), expected);
     }
 
-    @Test
-    public void test_query_precision() {
-        assertEquals(TEST_2007_07_15.query(Queries.precision()), ChronoUnit.DAYS);
-        assertEquals(Queries.precision().queryFrom(TEST_2007_07_15), ChronoUnit.DAYS);
-    }
-
-    @Test
-    public void test_query_offset() {
-        assertEquals(TEST_2007_07_15.query(Queries.offset()), null);
-        assertEquals(Queries.offset().queryFrom(TEST_2007_07_15), null);
-    }
-
-    @Test
-    public void test_query_zone() {
-        assertEquals(TEST_2007_07_15.query(Queries.zone()), null);
-        assertEquals(Queries.zone().queryFrom(TEST_2007_07_15), null);
+    @Test(dataProvider="query")
+    public <T> void test_queryFrom(TemporalAccessor temporal, TemporalQuery<T> query, T expected) {
+        assertEquals(query.queryFrom(temporal), expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -1629,6 +1622,117 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
+    // periodUntil(ChronoLocalDate)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="periodUntil")
+    Object[][] data_periodUntil() {
+        return new Object[][] {
+                {2010, 1, 1, 2010, 1, 1, 0, 0, 0},
+                {2010, 1, 1, 2010, 1, 2, 0, 0, 1},
+                {2010, 1, 1, 2010, 1, 31, 0, 0, 30},
+                {2010, 1, 1, 2010, 2, 1, 0, 1, 0},
+                {2010, 1, 1, 2010, 2, 28, 0, 1, 27},
+                {2010, 1, 1, 2010, 3, 1, 0, 2, 0},
+                {2010, 1, 1, 2010, 12, 31, 0, 11, 30},
+                {2010, 1, 1, 2011, 1, 1, 1, 0, 0},
+                {2010, 1, 1, 2011, 12, 31, 1, 11, 30},
+                {2010, 1, 1, 2012, 1, 1, 2, 0, 0},
+
+                {2010, 1, 10, 2010, 1, 1, 0, 0, -9},
+                {2010, 1, 10, 2010, 1, 2, 0, 0, -8},
+                {2010, 1, 10, 2010, 1, 9, 0, 0, -1},
+                {2010, 1, 10, 2010, 1, 10, 0, 0, 0},
+                {2010, 1, 10, 2010, 1, 11, 0, 0, 1},
+                {2010, 1, 10, 2010, 1, 31, 0, 0, 21},
+                {2010, 1, 10, 2010, 2, 1, 0, 0, 22},
+                {2010, 1, 10, 2010, 2, 9, 0, 0, 30},
+                {2010, 1, 10, 2010, 2, 10, 0, 1, 0},
+                {2010, 1, 10, 2010, 2, 28, 0, 1, 18},
+                {2010, 1, 10, 2010, 3, 1, 0, 1, 19},
+                {2010, 1, 10, 2010, 3, 9, 0, 1, 27},
+                {2010, 1, 10, 2010, 3, 10, 0, 2, 0},
+                {2010, 1, 10, 2010, 12, 31, 0, 11, 21},
+                {2010, 1, 10, 2011, 1, 1, 0, 11, 22},
+                {2010, 1, 10, 2011, 1, 9, 0, 11, 30},
+                {2010, 1, 10, 2011, 1, 10, 1, 0, 0},
+
+                {2010, 3, 30, 2011, 5, 1, 1, 1, 1},
+                {2010, 4, 30, 2011, 5, 1, 1, 0, 1},
+
+                {2010, 2, 28, 2012, 2, 27, 1, 11, 30},
+                {2010, 2, 28, 2012, 2, 28, 2, 0, 0},
+                {2010, 2, 28, 2012, 2, 29, 2, 0, 1},
+
+                {2012, 2, 28, 2014, 2, 27, 1, 11, 30},
+                {2012, 2, 28, 2014, 2, 28, 2, 0, 0},
+                {2012, 2, 28, 2014, 3, 1, 2, 0, 1},
+
+                {2012, 2, 29, 2014, 2, 28, 1, 11, 30},
+                {2012, 2, 29, 2014, 3, 1, 2, 0, 1},
+                {2012, 2, 29, 2014, 3, 2, 2, 0, 2},
+
+                {2012, 2, 29, 2016, 2, 28, 3, 11, 30},
+                {2012, 2, 29, 2016, 2, 29, 4, 0, 0},
+                {2012, 2, 29, 2016, 3, 1, 4, 0, 1},
+
+                {2010, 1, 1, 2009, 12, 31, 0, 0, -1},
+                {2010, 1, 1, 2009, 12, 30, 0, 0, -2},
+                {2010, 1, 1, 2009, 12, 2, 0, 0, -30},
+                {2010, 1, 1, 2009, 12, 1, 0, -1, 0},
+                {2010, 1, 1, 2009, 11, 30, 0, -1, -1},
+                {2010, 1, 1, 2009, 11, 2, 0, -1, -29},
+                {2010, 1, 1, 2009, 11, 1, 0, -2, 0},
+                {2010, 1, 1, 2009, 1, 2, 0, -11, -30},
+                {2010, 1, 1, 2009, 1, 1, -1, 0, 0},
+
+                {2010, 1, 15, 2010, 1, 15, 0, 0, 0},
+                {2010, 1, 15, 2010, 1, 14, 0, 0, -1},
+                {2010, 1, 15, 2010, 1, 1, 0, 0, -14},
+                {2010, 1, 15, 2009, 12, 31, 0, 0, -15},
+                {2010, 1, 15, 2009, 12, 16, 0, 0, -30},
+                {2010, 1, 15, 2009, 12, 15, 0, -1, 0},
+                {2010, 1, 15, 2009, 12, 14, 0, -1, -1},
+
+                {2010, 2, 28, 2009, 3, 1, 0, -11, -27},
+                {2010, 2, 28, 2009, 2, 28, -1, 0, 0},
+                {2010, 2, 28, 2009, 2, 27, -1, 0, -1},
+
+                {2010, 2, 28, 2008, 2, 29, -1, -11, -28},
+                {2010, 2, 28, 2008, 2, 28, -2, 0, 0},
+                {2010, 2, 28, 2008, 2, 27, -2, 0, -1},
+
+                {2012, 2, 29, 2009, 3, 1, -2, -11, -28},
+                {2012, 2, 29, 2009, 2, 28, -3, 0, -1},
+                {2012, 2, 29, 2009, 2, 27, -3, 0, -2},
+
+                {2012, 2, 29, 2008, 3, 1, -3, -11, -28},
+                {2012, 2, 29, 2008, 2, 29, -4, 0, 0},
+                {2012, 2, 29, 2008, 2, 28, -4, 0, -1},
+        };
+    }
+
+    @Test(dataProvider="periodUntil")
+    public void test_periodUntil_LocalDate(int y1, int m1, int d1, int y2, int m2, int d2, int ye, int me, int de) {
+        LocalDate start = LocalDate.of(y1, m1, d1);
+        LocalDate end = LocalDate.of(y2, m2, d2);
+        Period test = start.periodUntil(end);
+        assertEquals(test.getYears(), ye);
+        assertEquals(test.getMonths(), me);
+        assertEquals(test.getDays(), de);
+    }
+
+    @Test
+    public void test_periodUntil_LocalDate_max() {
+        int years = Math.toIntExact((long) Year.MAX_VALUE - (long) Year.MIN_VALUE);
+        assertEquals(LocalDate.MIN.periodUntil(LocalDate.MAX), Period.of(years, 11, 30));
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_periodUntil_LocalDate_null() {
+        TEST_2007_07_15.periodUntil(null);
+    }
+
+    //-----------------------------------------------------------------------
     // atTime()
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
@@ -1771,39 +1875,53 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // atOffset()
-    //-----------------------------------------------------------------------
     @Test(groups={"tck"})
-    public void test_atOffset() {
+    public void test_atTime_OffsetTime() {
         LocalDate t = LocalDate.of(2008, 6, 30);
-        assertEquals(t.atOffset(OFFSET_PTWO), OffsetDate.of(LocalDate.of(2008, 6, 30), OFFSET_PTWO));
+        assertEquals(t.atTime(OffsetTime.of(11, 30, 0, 0, OFFSET_PONE)), OffsetDateTime.of(2008, 6, 30, 11, 30, 0, 0, OFFSET_PONE));
     }
 
     @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_atOffset_nullZoneOffset() {
+    public void test_atTime_OffsetTime_null() {
         LocalDate t = LocalDate.of(2008, 6, 30);
-        t.atOffset((ZoneOffset) null);
+        t.atTime((OffsetTime) null);
     }
 
     //-----------------------------------------------------------------------
     // atStartOfDay()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_atStartOfDay() {
-        LocalDate t = LocalDate.of(2008, 6, 30);
-        assertEquals(t.atStartOfDay(ZONE_PARIS),
-                ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 0, 0), ZONE_PARIS));
+    @DataProvider(name="atStartOfDay")
+    Object[][] data_atStartOfDay() {
+        return new Object[][] {
+                {LocalDate.of(2008, 6, 30), LocalDateTime.of(2008, 6, 30, 0, 0)},
+                {LocalDate.of(-12, 6, 30), LocalDateTime.of(-12, 6, 30, 0, 0)},
+        };
     }
 
-    @Test(groups={"tck"})
-    public void test_atStartOfDay_dstGap() {
-        LocalDate t = LocalDate.of(2007, 4, 1);
-        assertEquals(t.atStartOfDay(ZONE_GAZA),
-                ZonedDateTime.of(LocalDateTime.of(2007, 4, 1, 1, 0), ZONE_GAZA));
+    @Test(dataProvider="atStartOfDay")
+    public void test_atStartOfDay(LocalDate test, LocalDateTime expected) {
+        assertEquals(test.atStartOfDay(), expected);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
-    public void test_atStartOfDay_nullTimeZone() {
+    //-----------------------------------------------------------------------
+    // atStartOfDay(ZoneId)
+    //-----------------------------------------------------------------------
+    @DataProvider(name="atStartOfDayZoneId")
+    Object[][] data_atStartOfDayZoneId() {
+        return new Object[][] {
+                {LocalDate.of(2008, 6, 30), ZONE_PARIS, ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 0, 0), ZONE_PARIS)},
+                {LocalDate.of(2008, 6, 30), OFFSET_PONE, ZonedDateTime.of(LocalDateTime.of(2008, 6, 30, 0, 0), OFFSET_PONE)},
+                {LocalDate.of(2007, 4, 1), ZONE_GAZA, ZonedDateTime.of(LocalDateTime.of(2007, 4, 1, 1, 0), ZONE_GAZA)},
+        };
+    }
+
+    @Test(dataProvider="atStartOfDayZoneId")
+    public void test_atStartOfDay_ZoneId(LocalDate test, ZoneId zone, ZonedDateTime expected) {
+        assertEquals(test.atStartOfDay(zone), expected);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_atStartOfDay_ZoneId_null() {
         LocalDate t = LocalDate.of(2008, 6, 30);
         t.atStartOfDay((ZoneId) null);
     }
@@ -2005,7 +2123,7 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(groups={"tck"})
     public void test_toString_formatter() {
-        DateTimeFormatter f = DateTimeFormatters.pattern("y M d");
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M d");
         String t = LocalDate.of(2010, 12, 3).toString(f);
         assertEquals(t, "2010 12 3");
     }

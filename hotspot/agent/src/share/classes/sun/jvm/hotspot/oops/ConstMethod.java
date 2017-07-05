@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,18 @@ public class ConstMethod extends VMObject {
   private static int HAS_LOCALVARIABLE_TABLE;
   private static int HAS_EXCEPTION_TABLE;
   private static int HAS_GENERIC_SIGNATURE;
+  private static int HAS_METHOD_ANNOTATIONS;
+  private static int HAS_PARAMETER_ANNOTATIONS;
+  private static int HAS_DEFAULT_ANNOTATIONS;
+  private static int HAS_TYPE_ANNOTATIONS;
+
+  private static final int sizeofShort = 2;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type                  = db.lookupType("ConstMethod");
     constants                  = new MetadataField(type.getAddressField("_constants"), 0);
     constMethodSize            = new CIntField(type.getCIntegerField("_constMethod_size"), 0);
-    flags                      = new ByteField(type.getJByteField("_flags"), 0);
+    flags                      = new CIntField(type.getCIntegerField("_flags"), 0);
 
     // enum constants for flags
     HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethod::_has_linenumber_table").intValue();
@@ -62,6 +68,10 @@ public class ConstMethod extends VMObject {
     HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethod::_has_localvariable_table").intValue();
     HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethod::_has_exception_table").intValue();
     HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethod::_has_generic_signature").intValue();
+    HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethod::_has_method_annotations").intValue();
+    HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethod::_has_parameter_annotations").intValue();
+    HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethod::_has_default_annotations").intValue();
+    HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethod::_has_type_annotations").intValue();
 
     // Size of Java bytecodes allocated immediately after ConstMethod*.
     codeSize                   = new CIntField(type.getCIntegerField("_code_size"), 0);
@@ -92,7 +102,7 @@ public class ConstMethod extends VMObject {
   // Fields
   private static MetadataField constants;
   private static CIntField constMethodSize;
-  private static ByteField flags;
+  private static CIntField flags;
   private static CIntField codeSize;
   private static CIntField nameIndex;
   private static CIntField signatureIndex;
@@ -123,7 +133,7 @@ public class ConstMethod extends VMObject {
     return constMethodSize.getValue(this);
   }
 
-  public byte getFlags() {
+  public long getFlags() {
     return flags.getValue(this);
   }
 
@@ -253,7 +263,7 @@ public class ConstMethod extends VMObject {
   public void iterateFields(MetadataVisitor visitor) {
     visitor.doMetadata(constants, true);
       visitor.doCInt(constMethodSize, true);
-      visitor.doByte(flags, true);
+      visitor.doCInt(flags, true);
       visitor.doCInt(codeSize, true);
       visitor.doCInt(nameIndex, true);
       visitor.doCInt(signatureIndex, true);
@@ -381,6 +391,22 @@ public class ConstMethod extends VMObject {
     return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
   }
 
+  private boolean hasMethodAnnotations() {
+    return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasParameterAnnotations() {
+    return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasDefaultAnnotations() {
+    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
+  }
+
+  private boolean hasTypeAnnotations() {
+    return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
+  }
+
 
   //---------------------------------------------------------------------------
   // Internals only below this point
@@ -400,9 +426,15 @@ public class ConstMethod extends VMObject {
     return offsetOfCodeEnd() + (isNative() ? 2 * VM.getVM().getAddressSize() : 0);
   }
 
-  // Offset of last short in Method*
+  // Offset of last short in Method* before annotations, if present
   private long offsetOfLastU2Element() {
-    return getSize() * VM.getVM().getObjectHeap().getOopSize() - 2;
+    int offset = 0;
+    if (hasMethodAnnotations()) offset++;
+    if (hasParameterAnnotations()) offset++;
+    if (hasTypeAnnotations()) offset++;
+    if (hasDefaultAnnotations()) offset++;
+    long wordSize = VM.getVM().getObjectHeap().getOopSize();
+    return (getSize() * wordSize) - (offset * wordSize) - sizeofShort;
   }
 
   // Offset of the generic signature index
@@ -411,7 +443,7 @@ public class ConstMethod extends VMObject {
   }
 
   private long offsetOfCheckedExceptionsLength() {
-    return hasGenericSignature() ? offsetOfLastU2Element() - 2 :
+    return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                    offsetOfLastU2Element();
   }
 
@@ -461,11 +493,11 @@ public class ConstMethod extends VMObject {
     }
 
     if (hasExceptionTable()) {
-      return offsetOfExceptionTable() - 2;
+      return offsetOfExceptionTable() - sizeofShort;
     } else if (hasCheckedExceptions()) {
-      return offsetOfCheckedExceptions() - 2;
+      return offsetOfCheckedExceptions() - sizeofShort;
     } else {
-      return hasGenericSignature() ? offsetOfLastU2Element() - 2 :
+      return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                      offsetOfLastU2Element();
     }
   }
@@ -493,9 +525,9 @@ public class ConstMethod extends VMObject {
       Assert.that(hasExceptionTable(), "should only be called if table is present");
     }
     if (hasCheckedExceptions()) {
-      return offsetOfCheckedExceptions() - 2;
+      return offsetOfCheckedExceptions() - sizeofShort;
     } else {
-      return hasGenericSignature() ? offsetOfLastU2Element() - 2 :
+      return hasGenericSignature() ? offsetOfLastU2Element() - sizeofShort :
                                      offsetOfLastU2Element();
     }
   }

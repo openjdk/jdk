@@ -1064,11 +1064,11 @@ bool VirtualSpaceList::contains(const void *ptr) {
 //
 // After the GC the compute_new_size() for MetaspaceGC is called to
 // resize the capacity of the metaspaces.  The current implementation
-// is based on the flags MinHeapFreeRatio and MaxHeapFreeRatio used
+// is based on the flags MinMetaspaceFreeRatio and MaxHeapFreeRatio used
 // to resize the Java heap by some GC's.  New flags can be implemented
 // if really needed.  MinHeapFreeRatio is used to calculate how much
 // free space is desirable in the metaspace capacity to decide how much
-// to increase the HWM.  MaxHeapFreeRatio is used to decide how much
+// to increase the HWM.  MaxMetaspaceFreeRatio is used to decide how much
 // free space is desirable in the metaspace capacity before decreasing
 // the HWM.
 
@@ -1166,7 +1166,7 @@ void MetaspaceGC::compute_new_size() {
   size_t capacity_until_GC = vsl->capacity_bytes_sum();
   size_t free_after_gc = capacity_until_GC - used_after_gc;
 
-  const double minimum_free_percentage = MinHeapFreeRatio / 100.0;
+  const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
 
   const double min_tmp = used_after_gc / maximum_used_percentage;
@@ -1232,8 +1232,8 @@ void MetaspaceGC::compute_new_size() {
     max_shrink_words));
 
   // Should shrinking be considered?
-  if (MaxHeapFreeRatio < 100) {
-    const double maximum_free_percentage = MaxHeapFreeRatio / 100.0;
+  if (MaxMetaspaceFreeRatio < 100) {
+    const double maximum_free_percentage = MaxMetaspaceFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));

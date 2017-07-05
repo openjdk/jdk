@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,9 @@ inflate_file(int fd, zentry *entry, int *size_out)
             *size_out = (int)entry->isize;
         }
         return (out);
-    } else
-        return (NULL);
+    }
+    free(in);
+    return (NULL);
 }
 
 static jboolean zip64_present = JNI_FALSE;
@@ -563,7 +564,7 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
 
     if ((fd = open(jarfile, O_RDONLY
 #ifdef O_LARGEFILE
-        | O_LARGEFILE /* large file mode on solaris */
+        | O_LARGEFILE /* large file mode */
 #endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
@@ -618,6 +619,9 @@ JLI_JarUnpackFile(const char *jarfile, const char *filename, int *size) {
     void    *data = NULL;
 
     fd = open(jarfile, O_RDONLY
+#ifdef O_LARGEFILE
+        | O_LARGEFILE /* large file mode */
+#endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif
@@ -661,6 +665,9 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
     int     rc;
 
     if ((fd = open(jarfile, O_RDONLY
+#ifdef O_LARGEFILE
+        | O_LARGEFILE /* large file mode */
+#endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif

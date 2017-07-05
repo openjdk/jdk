@@ -85,16 +85,20 @@
         "Number of bytes used by the InstanceKlass::singers() array") \
     f(class_annotations_bytes, class_annotations, \
         "Size of class annotations") \
+    f(class_type_annotations_bytes, class_type_annotations, \
+        "Size of class type annotations") \
     f(fields_annotations_bytes, fields_annotations, \
         "Size of field annotations") \
+    f(fields_type_annotations_bytes, fields_type_annotations, \
+        "Size of field type annotations") \
     f(methods_annotations_bytes, methods_annotations, \
         "Size of method annotations") \
     f(methods_parameter_annotations_bytes, methods_parameter_annotations, \
         "Size of method parameter annotations") \
+    f(methods_type_annotations_bytes, methods_type_annotations, \
+        "Size of methods type annotations") \
     f(methods_default_annotations_bytes, methods_default_annotations, \
         "Size of methods default annotations") \
-    f(type_annotations_bytes, type_annotations, \
-        "Size of type annotations") \
     f(annotations_bytes, annotations, \
         "Size of all annotations") \
     f(cp_bytes, Cp, \

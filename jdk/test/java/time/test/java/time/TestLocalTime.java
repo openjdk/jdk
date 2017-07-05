@@ -168,15 +168,6 @@ public class TestLocalTime extends AbstractTest {
     }
 
     @Test(groups={"implementation"})
-    public void factory_ofSecondOfDay7_long_int_singletons() {
-        for (int i = 0; i < 24; i++) {
-            LocalTime test1 = LocalTime.ofSecondOfDay(i * 60L * 60L, 0);
-            LocalTime test2 = LocalTime.of(i, 0);
-            assertSame(test1, test2);
-        }
-    }
-
-    @Test(groups={"implementation"})
     public void factory_ofNanoOfDay_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.ofNanoOfDay(i * 1000000000L * 60L * 60L);

@@ -51,6 +51,7 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.BuddhistCalendar;
@@ -3561,5 +3562,18 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                 zone = tz;
             }
         }
+    }
+
+    /**
+     * Converts this object to an {@link Instant}.
+     * <p>
+     * The conversion creates an {@code Instant} that represents the
+     * same point on the time-line as this {@code Calendar}.
+     *
+     * @return the instant representing the same point on the time-line
+     * @since 1.8
+     */
+    public final Instant toInstant() {
+        return Instant.ofEpochMilli(getTimeInMillis());
     }
 }

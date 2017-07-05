@@ -490,11 +490,16 @@ class Zoneinfo {
                                             tz.addUsedRec(rrec);
                                             usedZone = true;
                                         }
-                                    } else {
+                                    } else {  // fromTime == minTime
                                         int save = rrec.getSave();
-                                        tz.addTransition(fromTime,
+                                        tz.addTransition(minTime,
+                                                         tz.getOffsetIndex(gmtOffset),
+                                                         tz.getDstOffsetIndex(0));
+
+                                        tz.addTransition(transition,
                                                          tz.getOffsetIndex(gmtOffset+save),
                                                          tz.getDstOffsetIndex(save));
+
                                         tz.addUsedRec(rrec);
                                         usedZone = true;
                                     }

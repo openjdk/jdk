@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,6 +610,7 @@ void klassVtable::copy_vtable_to(vtableEntry* start) {
   Copy::disjoint_words((HeapWord*)table(), (HeapWord*)start, _length * vtableEntry::size());
 }
 
+#if INCLUDE_JVMTI
 void klassVtable::adjust_method_entries(Method** old_methods, Method** new_methods,
                                         int methods_length, bool * trace_name_printed) {
   // search the vtable for uses of either obsolete or EMCP methods
@@ -638,10 +639,38 @@ void klassVtable::adjust_method_entries(Method** old_methods, Method** new_metho
                                 new_method->name()->as_C_string(),
                                 new_method->signature()->as_C_string()));
         }
+        // cannot 'break' here; see for-loop comment above.
       }
     }
   }
 }
+
+// a vtable should never contain old or obsolete methods
+bool klassVtable::check_no_old_or_obsolete_entries() {
+  for (int i = 0; i < length(); i++) {
+    Method* m = unchecked_method_at(i);
+    if (m != NULL &&
+        (NOT_PRODUCT(!m->is_valid() ||) m->is_old() || m->is_obsolete())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void klassVtable::dump_vtable() {
+  tty->print_cr("vtable dump --");
+  for (int i = 0; i < length(); i++) {
+    Method* m = unchecked_method_at(i);
+    if (m != NULL) {
+      tty->print("      (%5d)  ", i);
+      m->access_flags().print_on(tty);
+      tty->print(" --  ");
+      m->print_name(tty);
+      tty->cr();
+    }
+  }
+}
+#endif // INCLUDE_JVMTI
 
 // CDS/RedefineClasses support - clear vtables so they can be reinitialized
 void klassVtable::clear_vtable() {
@@ -805,6 +834,7 @@ void klassItable::initialize_with_method(Method* m) {
   }
 }
 
+#if INCLUDE_JVMTI
 void klassItable::adjust_method_entries(Method** old_methods, Method** new_methods,
                                         int methods_length, bool * trace_name_printed) {
   // search the itable for uses of either obsolete or EMCP methods
@@ -833,12 +863,43 @@ void klassItable::adjust_method_entries(Method** old_methods, Method** new_metho
             new_method->name()->as_C_string(),
             new_method->signature()->as_C_string()));
         }
-        // Cannot break because there might be another entry for this method
+        // cannot 'break' here; see for-loop comment above.
       }
       ime++;
     }
   }
 }
+
+// an itable should never contain old or obsolete methods
+bool klassItable::check_no_old_or_obsolete_entries() {
+  itableMethodEntry* ime = method_entry(0);
+  for (int i = 0; i < _size_method_table; i++) {
+    Method* m = ime->method();
+    if (m != NULL &&
+        (NOT_PRODUCT(!m->is_valid() ||) m->is_old() || m->is_obsolete())) {
+      return false;
+    }
+    ime++;
+  }
+  return true;
+}
+
+void klassItable::dump_itable() {
+  itableMethodEntry* ime = method_entry(0);
+  tty->print_cr("itable dump --");
+  for (int i = 0; i < _size_method_table; i++) {
+    Method* m = ime->method();
+    if (m != NULL) {
+      tty->print("      (%5d)  ", i);
+      m->access_flags().print_on(tty);
+      tty->print(" --  ");
+      m->print_name(tty);
+      tty->cr();
+    }
+    ime++;
+  }
+}
+#endif // INCLUDE_JVMTI
 
 
 // Setup
@@ -1124,43 +1185,6 @@ void klassVtable::print_statistics() {
   tty->print_cr("%6d bytes filler overhead", VtableStats::filler);
   tty->print_cr("%6d bytes for vtable entries (%d for arrays)", VtableStats::entries, VtableStats::array_entries);
   tty->print_cr("%6d bytes total", total);
-}
-
-bool klassVtable::check_no_old_entries() {
-  // Check that there really is no entry
-  for (int i = 0; i < length(); i++) {
-    Method* m = unchecked_method_at(i);
-    if (m != NULL) {
-        if (!m->is_valid() || m->is_old()) {
-            return false;
-        }
-    }
-  }
-  return true;
-}
-
-void klassVtable::dump_vtable() {
-  tty->print_cr("vtable dump --");
-  for (int i = 0; i < length(); i++) {
-    Method* m = unchecked_method_at(i);
-    if (m != NULL) {
-      tty->print("      (%5d)  ", i);
-      m->access_flags().print_on(tty);
-      tty->print(" --  ");
-      m->print_name(tty);
-      tty->cr();
-    }
-  }
-}
-
-bool klassItable::check_no_old_entries() {
-  itableMethodEntry* ime = method_entry(0);
-  for(int i = 0; i < _size_method_table; i++) {
-    Method* m = ime->method();
-    if (m != NULL && (!m->is_valid() || m->is_old())) return false;
-    ime++;
-  }
-  return true;
 }
 
 int  klassItable::_total_classes;   // Total no. of classes with itables

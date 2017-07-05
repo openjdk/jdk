@@ -63,12 +63,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.OffsetDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDate;
 import java.time.temporal.ChronoUnit;
-import java.time.calendar.JapaneseChrono;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.JapaneseDate;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -100,7 +101,7 @@ public class TestJapaneseChronoImpl {
         Calendar cal = java.util.Calendar.getInstance(locale);
         assertEquals(cal.getCalendarType(), "japanese", "Unexpected calendar type");
 
-        ChronoLocalDate<JapaneseChrono> jDate = JapaneseChrono.INSTANCE.date(isoStartDate);
+        JapaneseDate jDate = JapaneseChronology.INSTANCE.date(isoStartDate);
 
         // Convert to millis and set Japanese Calendar to that start date (at GMT)
         OffsetDateTime jodt = OffsetDateTime.of(isoStartDate, LocalTime.MIN, ZoneOffset.UTC);
