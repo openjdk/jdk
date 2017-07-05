@@ -86,12 +86,13 @@ public final class HmacPKCS12PBESHA1 extends HmacCore {
             throw new InvalidKeyException("SecretKey of PBE type required");
         }
         if (params == null) {
-            // generate default for salt and iteration count if necessary
-            if (salt == null) {
-                salt = new byte[20];
-                SunJCE.getRandom().nextBytes(salt);
+            // should not auto-generate default values since current
+            // javax.crypto.Mac api does not have any method for caller to
+            // retrieve the generated defaults.
+            if ((salt == null) || (iCount == 0)) {
+                throw new InvalidAlgorithmParameterException
+                    ("PBEParameterSpec required for salt and iteration count");
             }
-            if (iCount == 0) iCount = 100;
         } else if (!(params instanceof PBEParameterSpec)) {
             throw new InvalidAlgorithmParameterException
                 ("PBEParameterSpec type required");

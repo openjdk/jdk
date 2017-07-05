@@ -282,7 +282,7 @@ loop:
         next();
 
         // Prepare to accumulate elements.
-        final List<Node> elements = new ArrayList<>();
+        final List<PropertyNode> elements = new ArrayList<>();
 
         // Create a block for the object literal.
 loop:
@@ -298,7 +298,7 @@ loop:
 
             default:
                 // Get and add the next property.
-                final Node property = propertyAssignment();
+                final PropertyNode property = propertyAssignment();
                 elements.add(property);
 
                 // Comma between property assigments is mandatory in JSON.
@@ -317,7 +317,7 @@ loop:
      * Parse a property assignment from the token stream
      * @return the property assignment as a Node
      */
-    private Node propertyAssignment() {
+    private PropertyNode propertyAssignment() {
         // Capture firstToken.
         final long propertyToken = token;
         LiteralNode<?> name = null;

@@ -140,7 +140,7 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) {
   return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             Metaspace::ClassType, CHECK_NULL);
+                             MetaspaceObj::ClassType, CHECK_NULL);
 }
 
 Klass::Klass() {
@@ -511,8 +511,9 @@ void Klass::restore_unshareable_info(TRAPS) {
   // (same order as class file parsing)
   loader_data->add_class(this);
 
-  // Recreate the class mirror
-  java_lang_Class::create_mirror(this, CHECK);
+  // Recreate the class mirror.  The protection_domain is always null for
+  // boot loader, for now.
+  java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
 }
 
 Klass* Klass::array_klass_or_null(int rank) {

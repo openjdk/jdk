@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ import javax.management.StandardMBean;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -482,6 +484,11 @@ public class ManagementFactory {
                     }
                 }
             }
+            HashMap<ObjectName, DynamicMBean> dynmbeans =
+                    ManagementFactoryHelper.getPlatformDynamicMBeans();
+            for (Map.Entry<ObjectName, DynamicMBean> e : dynmbeans.entrySet()) {
+                addDynamicMBean(platformMBeanServer, e.getValue(), e.getKey());
+            }
         }
         return platformMBeanServer;
     }
@@ -825,4 +832,24 @@ public class ManagementFactory {
         }
     }
 
+    /**
+     * Registers a DynamicMBean.
+     */
+    private static void addDynamicMBean(final MBeanServer mbs,
+                                        final DynamicMBean dmbean,
+                                        final ObjectName on) {
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws InstanceAlreadyExistsException,
+                                         MBeanRegistrationException,
+                                         NotCompliantMBeanException {
+                    mbs.registerMBean(dmbean, on);
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw new RuntimeException(e.getException());
+        }
+    }
 }

@@ -47,7 +47,7 @@ final class EmptyArrayLikeIterator extends ArrayLikeIterator<Object> {
     }
 
     @Override
-    public int getLength() {
+    public long getLength() {
         return 0;
     }
 }

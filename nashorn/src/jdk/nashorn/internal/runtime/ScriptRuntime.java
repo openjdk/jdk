@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
 import jdk.nashorn.internal.parser.Lexer;
@@ -240,6 +241,10 @@ public final class ScriptRuntime {
             };
         }
 
+        if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).keySet().iterator();
+        }
+
         return Collections.emptyIterator();
     }
 
@@ -278,6 +283,10 @@ public final class ScriptRuntime {
                     throw new UnsupportedOperationException();
                 }
             };
+        }
+
+        if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).values().iterator();
         }
 
         if (obj instanceof Iterable) {
@@ -589,6 +598,10 @@ public final class ScriptRuntime {
 
         if (obj == null) {
             throw typeError("cant.delete.property", safeToString(property), "null");
+        }
+
+        if (obj instanceof ScriptObjectMirror) {
+            return ((ScriptObjectMirror)obj).delete(property);
         }
 
         if (JSType.isPrimitive(obj)) {

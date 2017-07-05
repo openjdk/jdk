@@ -25,6 +25,7 @@
 
 package java.nio;
 
+import java.util.Spliterator;
 
 /**
  * A container for data of a specific primitive type.
@@ -172,6 +173,13 @@ package java.nio;
  */
 
 public abstract class Buffer {
+
+    /**
+     * The characteristics of Spliterators that traverse and split elements
+     * maintained in Buffers.
+     */
+    static final int SPLITERATOR_CHARACTERISTICS =
+        Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
     private int mark = -1;

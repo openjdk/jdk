@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
       (free_in_old_gen < (size_t) mem_free_old_limit &&
        free_in_eden < (size_t) mem_free_eden_limit))) {
     gclog_or_tty->print_cr(
-          "PSAdaptiveSizePolicy::compute_generation_free_space limits:"
+          "PSAdaptiveSizePolicy::check_gc_overhead_limit:"
           " promo_limit: " SIZE_FORMAT
           " max_eden_size: " SIZE_FORMAT
           " total_free_limit: " SIZE_FORMAT

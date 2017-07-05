@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,10 +112,10 @@ public class DigestOutputStream extends FilterOutputStream {
      * @see MessageDigest#update(byte)
      */
     public void write(int b) throws IOException {
+        out.write(b);
         if (on) {
             digest.update((byte)b);
         }
-        out.write(b);
     }
 
     /**
@@ -142,10 +142,10 @@ public class DigestOutputStream extends FilterOutputStream {
      * @see MessageDigest#update(byte[], int, int)
      */
     public void write(byte[] b, int off, int len) throws IOException {
+        out.write(b, off, len);
         if (on) {
             digest.update(b, off, len);
         }
-        out.write(b, off, len);
     }
 
     /**

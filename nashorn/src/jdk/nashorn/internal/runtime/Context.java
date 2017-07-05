@@ -48,6 +48,7 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -488,6 +489,40 @@ public final class Context {
         }
 
         throw typeError("cant.load.script", ScriptRuntime.safeToString(from));
+    }
+
+    /**
+     * Implementation of {@code loadWithNewGlobal} Nashorn extension. Load a script file from a source
+     * expression, after creating a new global scope.
+     *
+     * @param from source expression for script
+     *
+     * @return return value for load call (undefined)
+     *
+     * @throws IOException if source cannot be found or loaded
+     */
+    public Object loadWithNewGlobal(final Object from) throws IOException {
+        final ScriptObject oldGlobal = getGlobalTrusted();
+        final ScriptObject newGlobal = AccessController.doPrivileged(new PrivilegedAction<ScriptObject>() {
+           @Override
+           public ScriptObject run() {
+               try {
+                   return createGlobal();
+               } catch (final RuntimeException e) {
+                   if (Context.DEBUG) {
+                       e.printStackTrace();
+                   }
+                   throw e;
+               }
+           }
+        });
+        setGlobalTrusted(newGlobal);
+
+        try {
+            return ScriptObjectMirror.wrap(load(newGlobal, from), newGlobal);
+        } finally {
+            setGlobalTrusted(oldGlobal);
+        }
     }
 
     /**

@@ -1143,6 +1143,19 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             addNotify();
         }
 
+        @Override
+        public void invalidate() {
+            synchronized (getTreeLock()) {
+                final Container parent = getParent();
+                AWTAccessor.getComponentAccessor().setParent(this, null);
+                try {
+                    super.invalidate();
+                } finally {
+                    AWTAccessor.getComponentAccessor().setParent(this, parent);
+                }
+            }
+        }
+
         public void focusGained(FocusEvent e) {
             Graphics g = getGraphics();
             Rectangle r = getViewportBorderBounds();

@@ -12,7 +12,7 @@ import java.util.Arrays;
  * @bug 6937053 8005472
  *
  * @run clean TestSerializationMismatch
- * @run main TestSerializationMismatch
+ * @run main/othervm TestSerializationMismatch
  *
  */
 public class TestSerializationMismatch {

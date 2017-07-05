@@ -377,7 +377,7 @@ public final class HttpURLPermission extends Permission {
             throw new IllegalArgumentException ("unexpected URL scheme");
         }
         if (!u.getSchemeSpecificPart().equals("*")) {
-            u = URI.create(scheme + "://" + u.getAuthority() + u.getPath());
+            u = URI.create(scheme + "://" + u.getRawAuthority() + u.getRawPath());
         }
         return u;
     }
