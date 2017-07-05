@@ -39,7 +39,7 @@ package java.lang.reflect;
  * @see Method
  * @see Constructor
  */
-public class InvocationTargetException extends Exception {
+public class InvocationTargetException extends ReflectiveOperationException {
     /**
      * Use serialVersionUID from JDK 1.1.X for interoperability
      */

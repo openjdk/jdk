@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -739,6 +739,11 @@ public class JFileChooser extends JComponent implements Accessible {
 
         dialog.show();
         firePropertyChange("JFileChooserDialogIsClosingProperty", dialog, null);
+
+        // Remove all components from dialog. The MetalFileChooserUI.installUI() method (and other LAFs)
+        // registers AWT listener for dialogs and produces memory leaks. It happens when
+        // installUI invoked after the showDialog method.
+        dialog.getContentPane().removeAll();
         dialog.dispose();
         dialog = null;
         return returnValue;

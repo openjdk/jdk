@@ -3739,11 +3739,12 @@ void AwtComponent::SetCandidateWindow(int iCandType, int x, int y)
 
 MsgRouting AwtComponent::WmImeSetContext(BOOL fSet, LPARAM *lplParam)
 {
-    // This message causes native status window shown even it is disabled.  So don't
-    // let DefWindowProc process this message if this IMC is disabled.
+    // If the Windows input context is disabled, do not let Windows
+    // display any UIs.
     HIMC hIMC = ImmGetContext();
     if (hIMC == NULL) {
-        return mrConsume;
+        *lplParam = 0;
+        return mrDoDefault;
     }
 
     if (fSet) {

@@ -95,7 +95,7 @@ public class Basic {
        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
 
         // start accepting
-        listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+        listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
             public void completed(AsynchronousSocketChannel ch, Void att) {
                 try {
                     ch.close();

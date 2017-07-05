@@ -175,23 +175,6 @@ public class ParagraphView extends FlowView implements TabExpander {
     }
 
     /**
-     * Adjusts the given row if possible to fit within the
-     * layout span.  By default this will try to find the
-     * highest break weight possible nearest the end of
-     * the row.  If a forced break is encountered, the
-     * break will be positioned there.
-     * <p>
-     * This is meant for internal usage, and should not be used directly.
-     *
-     * @param r the row to adjust to the current layout
-     *          span
-     * @param desiredSpan the current layout span >= 0
-     * @param x the location r starts at
-     */
-    protected void adjustRow(Row r, int desiredSpan, int x) {
-    }
-
-    /**
      * Returns the next visual position for the cursor, in
      * either the east or west direction.
      * Overridden from <code>CompositeView</code>.

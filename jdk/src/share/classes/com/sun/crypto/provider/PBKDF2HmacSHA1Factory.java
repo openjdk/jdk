@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,9 @@ import javax.crypto.spec.SecretKeySpec;
 public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
 
     /**
-     * Verify the SunJCE provider in the constructor.
-     *
-     * @exception SecurityException if fails to verify
-     * its own integrity
+     * Empty constructor
      */
     public PBKDF2HmacSHA1Factory() {
-        if (!SunJCE.verifySelfIntegrity(this.getClass())) {
-            throw new SecurityException("The SunJCE provider may have " +
-                                        "been tampered.");
-        }
     }
 
     /**
