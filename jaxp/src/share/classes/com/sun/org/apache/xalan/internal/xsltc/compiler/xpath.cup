@@ -1,0 +1,1116 @@
+/*
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
+ */
+/*
+ * Copyright 2001-2004 The Apache Software Foundation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * $Id: xpath.cup,v 1.51 2004/12/15 17:35:39 jycli Exp $
+ */
+
+/*
+ * @author Jacek Ambroziak
+ * @author Santiago Pericas-Geertsen
+ * @author Morten Jorgensen
+ * @author G. Todd Miller
+ */
+
+package com.sun.org.apache.xalan.internal.xsltc.compiler;
+
+import java.util.Stack;
+import java.util.Vector;
+import java.io.StringReader;
+import com.sun.java_cup.internal.runtime.*;
+
+import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xalan.internal.xsltc.DOM;
+import com.sun.org.apache.xml.internal.dtm.Axis;
+import com.sun.org.apache.xalan.internal.xsltc.runtime.Operators;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
+
+parser code {:
+    /**
+     * Used by function calls with no args.
+     */
+    static public final Vector EmptyArgs = new Vector(0);
+
+    /**
+     * Reference to non-existing variable.
+     */
+    static public final VariableRef DummyVarRef = null;
+
+    /**
+     * Reference to the Parser class.
+     */
+    private Parser _parser;
+    private XSLTC  _xsltc;
+
+    /**
+     * String representation of the expression being parsed.
+     */
+    private String _expression;
+
+    /**
+     * Line number where this expression/pattern was declared.
+     */
+    private int _lineNumber = 0;
+
+    /**
+     * Reference to the symbol table.
+     */
+    public SymbolTable _symbolTable;
+
+    public XPathParser(Parser parser) {
+        _parser = parser;
+	_xsltc = parser.getXSLTC();
+        _symbolTable = parser.getSymbolTable();
+    }
+
+    public int getLineNumber() {
+        return _lineNumber;
+    }
+
+    public QName getQNameIgnoreDefaultNs(String name) {
+          return _parser.getQNameIgnoreDefaultNs(name);
+    }
+
+    public QName getQName(String namespace, String prefix, String localname) {
+        return _parser.getQName(namespace, prefix, localname);
+    }
+
+    public void setMultiDocument(boolean flag) {
+          _xsltc.setMultiDocument(flag);
+    }
+
+    public void setCallsNodeset(boolean flag) {
+          _xsltc.setCallsNodeset(flag);
+    }
+
+    public void setHasIdCall(boolean flag) {
+          _xsltc.setHasIdCall(flag);
+    }
+
+
+    /**
+     * This method is similar to findNodeType(int, Object) except that it
+     * creates a StepPattern instead of just returning a node type. It also
+     * differs in the way it handles "{uri}:*" and "{uri}:@*". The last two
+     * patterns are expanded as "*[namespace-uri() = 'uri']" and
+     * "@*[namespace-uri() = 'uri']", respectively. This expansion considerably
+     * simplifies the grouping of patterns in the Mode class. For this
+     * expansion to be correct, the priority of the pattern/template must be
+     * set to -0.25 (when no other predicates are present).
+     */
+    public StepPattern createStepPattern(int axis, Object test, Vector predicates) {
+	int nodeType;
+
+	if (test == null) {  // "*"
+	    nodeType = (axis == Axis.ATTRIBUTE) ? NodeTest.ATTRIBUTE :
+		(axis == Axis.NAMESPACE) ? -1 : NodeTest.ELEMENT;
+
+	    return new StepPattern(axis, nodeType, predicates);
+        }
+        else if (test instanceof Integer) {
+	    nodeType = ((Integer) test).intValue();
+
+	    return new StepPattern(axis, nodeType, predicates);
+        }
+        else {
+	    QName name = (QName)test;
+	    boolean setPriority = false;
+
+	    if (axis == Axis.NAMESPACE) {
+		nodeType = (name.toString().equals("*")) ? -1
+				: _xsltc.registerNamespacePrefix(name);;
+            }
+	    else {
+		final String uri = name.getNamespace();
+		final String local = name.getLocalPart();
+		final QName namespace_uri =
+		    _parser.getQNameIgnoreDefaultNs("namespace-uri");
+
+		// Expand {uri}:* to *[namespace-uri() = 'uri'] - same for @*
+		if (uri != null && (local.equals("*") || local.equals("@*"))) {
+		    if (predicates == null) {
+			predicates = new Vector(2);
+		    }
+
+		    // Priority is set by hand if no other predicates exist
+		    setPriority = (predicates.size() == 0);
+
+		    predicates.add(
+			new Predicate(
+			    new EqualityExpr(Operators.EQ,
+				new NamespaceUriCall(namespace_uri),
+				new LiteralExpr(uri))));
+		}
+
+		if (local.equals("*")) {
+		    nodeType = (axis == Axis.ATTRIBUTE) ? NodeTest.ATTRIBUTE
+			: NodeTest.ELEMENT;
+		}
+		else if (local.equals("@*")) {
+		    nodeType = NodeTest.ATTRIBUTE;
+		}
+		else {
+		    nodeType = (axis == Axis.ATTRIBUTE) ? _xsltc.registerAttribute(name)
+			: _xsltc.registerElement(name);
+		}
+	    }
+
+	    final StepPattern result = new StepPattern(axis, nodeType, predicates);
+
+	    // Set priority for case prefix:* and prefix:@* (no predicates)
+	    if (setPriority) {
+		result.setPriority(-0.25);
+	    }
+
+	    return result;
+	}
+    }
+
+    public int findNodeType(int axis, Object test) {
+	if (test == null) {  // *
+	    return (axis == Axis.ATTRIBUTE) ?
+		NodeTest.ATTRIBUTE :
+		(axis == Axis.NAMESPACE) ? -1 : NodeTest.ELEMENT;
+        }
+        else if (test instanceof Integer) {
+            return ((Integer)test).intValue();
+        }
+        else {
+	    QName name = (QName)test;
+
+	    if (axis == Axis.NAMESPACE) {
+		return (name.toString().equals("*")) ? -1
+		    : _xsltc.registerNamespacePrefix(name);
+            }
+
+	    if (name.getNamespace() == null) {
+		final String local = name.getLocalPart();
+
+		if (local.equals("*")) {
+		    return (axis == Axis.ATTRIBUTE) ? NodeTest.ATTRIBUTE
+			: NodeTest.ELEMENT;
+		}
+		else if (local.equals("@*")) {
+		    return NodeTest.ATTRIBUTE;
+		}
+	    }
+
+	    return (axis == Axis.ATTRIBUTE) ? _xsltc.registerAttribute(name)
+		: _xsltc.registerElement(name);
+        }
+    }
+
+    /**
+     * Parse the expression passed to the current scanner. If this
+     * expression contains references to local variables and it will be
+     * compiled in an external module (not in the main class) request
+     * the current template to create a new variable stack frame.
+     *
+     * @param lineNumber Line where the current expression is defined.
+     * @param external   Set to <tt>true</tt> if this expression is
+     *                   compiled in a separate module.
+     *
+     */
+    public Symbol parse(String expression, int lineNumber) throws Exception {
+        try {
+	    _expression = expression;
+	    _lineNumber = lineNumber;
+	    return super.parse();
+        }
+        catch (IllegalCharException e) {
+            ErrorMsg err = new ErrorMsg(ErrorMsg.ILLEGAL_CHAR_ERR,
+                                        lineNumber, e.getMessage());
+            _parser.reportError(Constants.FATAL, err);
+        }
+        return null;
+    }
+
+    /**
+     * Lookup a variable or parameter in the symbol table given its name.
+     *
+     * @param name Name of the symbol being looked up.
+     */
+    final SyntaxTreeNode lookupName(QName name) {
+        // Is it a local var or param ?
+        final SyntaxTreeNode result = _parser.lookupVariable(name);
+	if (result != null)
+            return(result);
+        else
+	    return(_symbolTable.lookupName(name));
+    }
+
+    public final void addError(ErrorMsg error) {
+	_parser.reportError(Constants.ERROR, error);
+    }
+
+    public void report_error(String message, Object info) {
+	final ErrorMsg err = new ErrorMsg(ErrorMsg.SYNTAX_ERR, _lineNumber,
+	    _expression);
+	_parser.reportError(Constants.FATAL, err);
+    }
+
+    public void report_fatal_error(String message, Object info) {
+        // empty
+    }
+
+    public RelativeLocationPath insertStep(Step step, RelativeLocationPath rlp) {
+	if (rlp instanceof Step) {
+	    return new ParentLocationPath(step, (Step) rlp);
+	}
+	else if (rlp instanceof ParentLocationPath) {
+	    final ParentLocationPath plp = (ParentLocationPath) rlp;
+	    final RelativeLocationPath newrlp = insertStep(step, plp.getPath());
+	    return new ParentLocationPath(newrlp, plp.getStep());
+	}
+	else {
+	    addError(new ErrorMsg(ErrorMsg.INTERNAL_ERR, "XPathParser.insertStep"));
+	    return rlp;
+	}
+    }
+
+    /**
+     * Returns true if the axis applies to elements only. The axes
+     * child, attribute, namespace, descendant result in non-empty
+     * nodesets only if the context node is of type element.
+     */
+    public boolean isElementAxis(int axis) {
+	return (axis == Axis.CHILD || axis == Axis.ATTRIBUTE ||
+		axis == Axis.NAMESPACE || axis == Axis.DESCENDANT);
+    }
+:}
+
+terminal SLASH, DOT, LBRACK, RBRACK, VBAR, LPAREN, RPAREN, STAR, COMMA;
+terminal DOLLAR, ATSIGN;
+terminal DDOT, DCOLON, DSLASH;
+terminal EQ, NE;
+terminal LT, GT, LE, GE;
+terminal PLUS, MINUS, DIV, MOD, MULT;
+terminal String Literal;
+terminal String QNAME;
+terminal ID, KEY, TEXT, NODE, OR, AND, COMMENT, PI, PIPARAM, PRECEDINGSIBLING;
+terminal SELF, PARENT, CHILD, ATTRIBUTE, ANCESTOR, ANCESTORORSELF, DESCENDANT;
+terminal DESCENDANTORSELF, FOLLOWING, FOLLOWINGSIBLING, NAMESPACE, PRECEDING;
+terminal Double REAL;
+terminal Long INT;
+terminal PATTERN, EXPRESSION;
+
+non terminal SyntaxTreeNode TopLevel;
+
+non terminal Expression Expr, Argument, LocationPath;
+non terminal Expression Predicate, FilterExpr, Step;
+non terminal Expression OrExpr, AndExpr, EqualityExpr;
+non terminal Expression RelationalExpr, AdditiveExpr;
+non terminal Expression MultiplicativeExpr, UnaryExpr;
+non terminal Expression VariableReference, FunctionCall;
+non terminal Expression PrimaryExpr, UnionExpr, PathExpr, AbbreviatedStep;
+non terminal Expression RelativeLocationPath, AbbreviatedRelativeLocationPath;
+non terminal Expression AbsoluteLocationPath, AbbreviatedAbsoluteLocationPath;
+
+non terminal Object NodeTest, NameTest;
+
+non terminal IdKeyPattern IdKeyPattern;
+non terminal Pattern Pattern;
+non terminal Pattern LocationPathPattern;
+non terminal StepPattern ProcessingInstructionPattern;
+non terminal RelativePathPattern RelativePathPattern;
+non terminal StepPattern StepPattern;
+non terminal Object NodeTestPattern, NameTestPattern;
+
+non terminal Vector Predicates, NonemptyArgumentList;
+non terminal QName QName, FunctionName, VariableName;
+non terminal Integer AxisName, AxisSpecifier;
+non terminal Integer ChildOrAttributeAxisSpecifier;
+
+precedence left VBAR;
+precedence left OR;
+precedence left AND;
+precedence nonassoc EQ, NE;
+precedence left LT, GT, LE, GE;
+
+precedence left PLUS, MINUS;
+precedence left DIV, MOD, MULT;
+precedence left DOLLAR;
+precedence left ATSIGN;
+precedence right DCOLON;
+
+start with TopLevel;
+
+TopLevel ::= PATTERN Pattern:pattern
+            {: RESULT = pattern; :}
+
+            | EXPRESSION Expr:expr
+            {: RESULT = expr; :};
+
+/* --------------------------- Patterns ----------------------------------- */
+
+Pattern ::= LocationPathPattern:lpp
+            {: RESULT = lpp; :}
+
+            | LocationPathPattern:lpp VBAR Pattern:p
+            {: RESULT = new AlternativePattern(lpp, p);  :};
+
+LocationPathPattern ::= SLASH
+            {: RESULT = new AbsolutePathPattern(null); :}
+
+            | SLASH RelativePathPattern:rpp
+            {: RESULT = new AbsolutePathPattern(rpp); :}
+
+            | IdKeyPattern:ikp
+            {: RESULT = ikp; :}
+
+            | IdKeyPattern:ikp SLASH RelativePathPattern:rpp
+            {: RESULT = new ParentPattern(ikp, rpp); :}
+
+            | IdKeyPattern:ikp DSLASH RelativePathPattern:rpp
+            {: RESULT = new AncestorPattern(ikp, rpp); :}
+
+            | DSLASH RelativePathPattern:rpp
+            {: RESULT = new AncestorPattern(rpp); :}
+
+            | RelativePathPattern:rpp
+            {: RESULT = rpp; :};
+
+IdKeyPattern ::= ID LPAREN Literal:l RPAREN
+            {: RESULT = new IdPattern(l);
+               parser.setHasIdCall(true);
+            :}
+
+            | KEY LPAREN Literal:l1 COMMA Literal:l2 RPAREN
+            {: RESULT = new KeyPattern(l1, l2); :};
+
+ProcessingInstructionPattern ::= PIPARAM LPAREN Literal:l RPAREN
+            {: RESULT = new ProcessingInstructionPattern(l); :};
+
+RelativePathPattern ::= StepPattern:sp
+            {: RESULT = sp; :}
+
+            | StepPattern:sp SLASH RelativePathPattern:rpp
+            {: RESULT = new ParentPattern(sp, rpp); :}
+
+            | StepPattern:sp DSLASH RelativePathPattern:rpp
+            {: RESULT = new AncestorPattern(sp, rpp); :};
+
+StepPattern ::= NodeTestPattern:nt
+            {:
+		RESULT = parser.createStepPattern(Axis.CHILD, nt, null);
+            :}
+
+            | NodeTestPattern:nt Predicates:pp
+            {:
+		RESULT = parser.createStepPattern(Axis.CHILD, nt, pp);
+            :}
+
+            | ProcessingInstructionPattern:pip
+            {: RESULT = pip; :}
+
+	    | ProcessingInstructionPattern:pip Predicates:pp
+            {: RESULT = (ProcessingInstructionPattern)pip.setPredicates(pp); :}
+
+            | ChildOrAttributeAxisSpecifier:axis NodeTestPattern:nt
+            {:
+	       RESULT = parser.createStepPattern(axis.intValue(), nt, null);
+            :}
+
+	    | ChildOrAttributeAxisSpecifier:axis
+		  NodeTestPattern:nt Predicates:pp
+            {:
+	       RESULT = parser.createStepPattern(axis.intValue(), nt, pp);
+            :}
+
+            | ChildOrAttributeAxisSpecifier:axis ProcessingInstructionPattern:pip
+            {:
+	       RESULT = pip; 	// TODO: report error if axis is attribute
+	    :}
+
+	    | ChildOrAttributeAxisSpecifier:axis ProcessingInstructionPattern:pip
+		Predicates:pp
+            {:
+	       // TODO: report error if axis is attribute
+	       RESULT = (ProcessingInstructionPattern)pip.setPredicates(pp);
+	    :};
+
+NodeTestPattern ::= NameTestPattern:nt
+            {: RESULT = nt; :}
+
+            | NODE
+            {: RESULT = new Integer(NodeTest.ANODE); :}
+
+            | TEXT
+            {: RESULT = new Integer(NodeTest.TEXT); :}
+
+            | COMMENT
+            {: RESULT = new Integer(NodeTest.COMMENT); :}
+
+            | PI
+            {: RESULT = new Integer(NodeTest.PI); :};
+
+NameTestPattern ::= STAR
+            {: RESULT = null; :}
+
+            | QName:qn
+            {: RESULT = qn; :};
+
+ChildOrAttributeAxisSpecifier ::= ATSIGN
+            {: RESULT = new Integer(Axis.ATTRIBUTE); :}
+
+            | CHILD DCOLON
+            {: RESULT = new Integer(Axis.CHILD); :}
+
+            | ATTRIBUTE DCOLON
+            {: RESULT = new Integer(Axis.ATTRIBUTE); :};
+
+Predicates ::= Predicate:p
+            {:
+		Vector temp = new Vector();
+		temp.addElement(p);
+		RESULT = temp;
+            :}
+
+            | Predicate:p Predicates:pp
+            {: pp.insertElementAt(p, 0); RESULT = pp; :};
+
+Predicate ::=  LBRACK Expr:e RBRACK
+	    {:
+		RESULT = new Predicate(e);
+	    :};
+
+/* --------------------------- Expressions --------------------------------- */
+
+Expr ::= OrExpr:ex
+        {: RESULT = ex; :};
+
+OrExpr ::= AndExpr:ae
+        {: RESULT = ae; :}
+
+        | OrExpr:oe OR AndExpr:ae
+        {: RESULT = new LogicalExpr(LogicalExpr.OR, oe, ae); :};
+
+AndExpr ::= EqualityExpr:e
+        {: RESULT = e; :}
+
+        | AndExpr:ae AND EqualityExpr:ee
+        {: RESULT = new LogicalExpr(LogicalExpr.AND, ae, ee); :};
+
+EqualityExpr ::= RelationalExpr:re
+        {: RESULT = re; :}
+
+        | EqualityExpr:ee EQ RelationalExpr:re
+        {: RESULT = new EqualityExpr(Operators.EQ, ee, re); :}
+
+        | EqualityExpr:ee NE RelationalExpr:re
+        {: RESULT = new EqualityExpr(Operators.NE, ee, re); :};
+
+RelationalExpr ::= AdditiveExpr:ae
+        {: RESULT = ae; :}
+
+        | RelationalExpr:re LT AdditiveExpr:ae
+        {: RESULT = new RelationalExpr(Operators.LT, re, ae); :}
+
+        | RelationalExpr:re GT AdditiveExpr:ae
+        {: RESULT = new RelationalExpr(Operators.GT, re, ae); :}
+
+        | RelationalExpr:re LE AdditiveExpr:ae
+        {: RESULT = new RelationalExpr(Operators.LE, re, ae); :}
+
+        | RelationalExpr:re GE AdditiveExpr:ae
+        {: RESULT = new RelationalExpr(Operators.GE, re, ae); :};
+
+AdditiveExpr ::= MultiplicativeExpr:me
+        {: RESULT = me; :}
+
+        | AdditiveExpr:ae PLUS  MultiplicativeExpr:me
+        {: RESULT = new BinOpExpr(BinOpExpr.PLUS, ae, me); :}
+
+        | AdditiveExpr:ae MINUS MultiplicativeExpr:me
+        {: RESULT = new BinOpExpr(BinOpExpr.MINUS, ae, me); :};
+
+MultiplicativeExpr ::= UnaryExpr:ue
+        {: RESULT = ue; :}
+
+        | MultiplicativeExpr:me MULT UnaryExpr:ue
+        {: RESULT = new BinOpExpr(BinOpExpr.TIMES, me, ue); :}
+
+        | MultiplicativeExpr:me DIV UnaryExpr:ue
+        {: RESULT = new BinOpExpr(BinOpExpr.DIV, me, ue); :}
+
+        | MultiplicativeExpr:me MOD UnaryExpr:ue
+        {: RESULT = new BinOpExpr(BinOpExpr.MOD, me, ue); :};
+
+UnaryExpr ::= UnionExpr:ue
+        {: RESULT = ue; :}
+
+        | MINUS UnaryExpr:ue
+        {: RESULT = new UnaryOpExpr(ue); :};
+
+UnionExpr ::= PathExpr:pe
+        {: RESULT = pe; :}
+
+        | PathExpr:pe VBAR UnionExpr:rest
+        {: RESULT = new UnionPathExpr(pe, rest); :};
+
+PathExpr ::= LocationPath:lp
+        {: RESULT = lp; :}
+
+        | FilterExpr:fexp
+        {: RESULT = fexp; :}
+
+        | FilterExpr:fexp SLASH RelativeLocationPath:rlp
+        {: RESULT = new FilterParentPath(fexp, rlp); :}
+
+        | FilterExpr:fexp DSLASH RelativeLocationPath:rlp
+        {:
+           //
+	   // Expand '//' into '/descendant-or-self::node()/' or
+	   // into /descendant-or-self::*/
+	   //
+	   int nodeType = DOM.NO_TYPE;
+	   if (rlp instanceof Step &&
+	       parser.isElementAxis(((Step) rlp).getAxis()))
+	   {
+	       nodeType = DTM.ELEMENT_NODE;
+	   }
+           final Step step = new Step(Axis.DESCENDANTORSELF, nodeType, null);
+           FilterParentPath fpp = new FilterParentPath(fexp, step);
+           fpp = new FilterParentPath(fpp, rlp);
+           if (fexp instanceof KeyCall == false) {
+               fpp.setDescendantAxis();
+	   }
+           RESULT = fpp;
+        :};
+
+LocationPath ::= RelativeLocationPath:rlp
+        {: RESULT = rlp; :}
+
+        | AbsoluteLocationPath:alp
+        {: RESULT = alp; :};
+
+RelativeLocationPath ::= Step:step
+        {: RESULT = step; :}
+
+        | RelativeLocationPath:rlp SLASH Step:step
+        {:
+        if (rlp instanceof Step && ((Step) rlp).isAbbreviatedDot()) {
+              RESULT = step;       // Remove './' from the middle
+        }
+        else if (((Step) step).isAbbreviatedDot()) {
+              RESULT = rlp;        // Remove '/.' from the end
+        }
+        else {
+             RESULT =
+                new ParentLocationPath((RelativeLocationPath) rlp, step);
+           }
+        :}
+
+        | AbbreviatedRelativeLocationPath:arlp
+        {: RESULT = arlp; :};
+
+AbsoluteLocationPath ::= SLASH
+        {: RESULT = new AbsoluteLocationPath(); :}
+
+        | SLASH RelativeLocationPath:rlp
+        {: RESULT = new AbsoluteLocationPath(rlp); :}
+
+        | AbbreviatedAbsoluteLocationPath:aalp
+        {: RESULT = aalp; :};
+
+AbbreviatedRelativeLocationPath ::= RelativeLocationPath:rlp DSLASH Step:step
+        {:
+	   final Step right  = (Step)step;
+           final int  axis   = right.getAxis();
+           final int  type   = right.getNodeType();
+           final Vector predicates = right.getPredicates();
+
+           if ((axis == Axis.CHILD) && (type != NodeTest.ATTRIBUTE)) {
+               // Compress './/child:E' into 'descendant::E' - if possible
+               if (predicates == null) {
+                   right.setAxis(Axis.DESCENDANT);
+                   if (rlp instanceof Step && ((Step)rlp).isAbbreviatedDot()) {
+	               RESULT = right;
+                   }
+                   else {
+                       // Expand 'rlp//child::E' into 'rlp/descendant::E'
+                       RelativeLocationPath left = (RelativeLocationPath)rlp;
+	               RESULT = new ParentLocationPath(left, right);
+                   }
+               }
+               else {
+                   // Expand './/step' -> 'descendant-or-self::*/step'
+                   if (rlp instanceof Step && ((Step)rlp).isAbbreviatedDot()) {
+                       Step left = new Step(Axis.DESCENDANTORSELF,
+			    DTM.ELEMENT_NODE, null);
+                       RESULT = new ParentLocationPath(left, right);
+                   }
+                   else {
+                       // Expand 'rlp//step' -> 'rlp/descendant-or-self::*/step'
+                       RelativeLocationPath left = (RelativeLocationPath)rlp;
+                       Step mid = new Step(Axis.DESCENDANTORSELF,
+			    DTM.ELEMENT_NODE, null);
+                       ParentLocationPath ppl = new ParentLocationPath(mid, right);
+                       RESULT = new ParentLocationPath(left, ppl);
+                   }
+               }
+           }
+           else if ((axis == Axis.ATTRIBUTE) || (type == NodeTest.ATTRIBUTE)) {
+               // Expand 'rlp//step' -> 'rlp/descendant-or-self::*/step'
+               RelativeLocationPath left = (RelativeLocationPath)rlp;
+               Step middle = new Step(Axis.DESCENDANTORSELF,
+		    DTM.ELEMENT_NODE, null);
+               ParentLocationPath ppl = new ParentLocationPath(middle, right);
+               RESULT = new ParentLocationPath(left, ppl);
+	   }
+	   else {
+	       // Expand 'rlp//step' -> 'rlp/descendant-or-self::node()/step'
+               RelativeLocationPath left = (RelativeLocationPath)rlp;
+	       Step middle = new Step(Axis.DESCENDANTORSELF,
+		    DOM.NO_TYPE, null);
+               ParentLocationPath ppl = new ParentLocationPath(middle, right);
+	       RESULT = new ParentLocationPath(left, ppl);
+	   }
+        :};
+
+
+AbbreviatedAbsoluteLocationPath ::= DSLASH RelativeLocationPath:rlp
+        {:
+           //
+	   // Expand '//' into '/descendant-or-self::node()/' or
+	   // into /descendant-or-self::*/
+	   //
+	   int nodeType = DOM.NO_TYPE;
+	   if (rlp instanceof Step &&
+	       parser.isElementAxis(((Step) rlp).getAxis()))
+	   {
+	       nodeType = DTM.ELEMENT_NODE;
+	   }
+	   final Step step = new Step(Axis.DESCENDANTORSELF, nodeType, null);
+	   RESULT = new AbsoluteLocationPath(parser.insertStep(step,
+				(RelativeLocationPath) rlp));
+	:};
+
+Step ::= NodeTest:ntest
+        {:
+            if (ntest instanceof Step) {
+                RESULT = (Step)ntest;
+            }
+            else {
+		RESULT = new Step(Axis.CHILD,
+                             parser.findNodeType(Axis.CHILD, ntest),
+                             null);
+            }
+        :}
+
+        | NodeTest:ntest Predicates:pp
+        {:
+            if (ntest instanceof Step) {
+                Step step = (Step)ntest;
+                step.addPredicates(pp);
+                RESULT = (Step)ntest;
+            }
+            else {
+                RESULT = new Step(Axis.CHILD,
+                             parser.findNodeType(Axis.CHILD, ntest), pp);
+            }
+        :}
+
+        | AxisSpecifier:axis NodeTest:ntest Predicates:pp
+        {: RESULT = new Step(axis.intValue(),
+                             parser.findNodeType(axis.intValue(), ntest),
+                             pp);
+        :}
+
+        | AxisSpecifier:axis NodeTest:ntest
+        {: RESULT = new Step(axis.intValue(),
+                             parser.findNodeType(axis.intValue(), ntest),
+                             null);
+        :}
+
+        | AbbreviatedStep:abbrev
+        {: RESULT = abbrev; :};
+
+AxisSpecifier ::= AxisName:an DCOLON
+        {: RESULT = an; :}
+
+        | ATSIGN
+        {: RESULT = new Integer(Axis.ATTRIBUTE); :};
+
+AxisName ::=    ANCESTOR
+        {: RESULT = new Integer(Axis.ANCESTOR); :}
+
+        | ANCESTORORSELF
+        {: RESULT = new Integer(Axis.ANCESTORORSELF); :}
+
+        | ATTRIBUTE
+        {: RESULT = new Integer(Axis.ATTRIBUTE); :}
+
+        | CHILD
+        {: RESULT = new Integer(Axis.CHILD); :}
+
+        | DESCENDANT
+        {: RESULT = new Integer(Axis.DESCENDANT); :}
+
+        | DESCENDANTORSELF
+        {: RESULT = new Integer(Axis.DESCENDANTORSELF); :}
+
+        | FOLLOWING
+        {: RESULT = new Integer(Axis.FOLLOWING); :}
+
+        | FOLLOWINGSIBLING
+        {: RESULT = new Integer(Axis.FOLLOWINGSIBLING); :}
+
+        | NAMESPACE
+        {: RESULT = new Integer(Axis.NAMESPACE); :}
+
+        | PARENT
+        {: RESULT = new Integer(Axis.PARENT); :}
+
+        | PRECEDING
+        {: RESULT = new Integer(Axis.PRECEDING); :}
+
+        | PRECEDINGSIBLING
+        {: RESULT = new Integer(Axis.PRECEDINGSIBLING); :}
+
+        | SELF
+        {: RESULT = new Integer(Axis.SELF); :};
+
+AbbreviatedStep ::= DOT
+        {: RESULT = new Step(Axis.SELF, NodeTest.ANODE, null); :}
+
+        | DDOT
+        {: RESULT = new Step(Axis.PARENT, NodeTest.ANODE, null); :};
+
+FilterExpr ::=  PrimaryExpr:primary
+        {: RESULT = primary; :}
+
+        | PrimaryExpr:primary Predicates:pp
+        {: RESULT = new FilterExpr(primary, pp); :};
+
+PrimaryExpr ::= VariableReference:vr
+        {: RESULT = vr; :}
+
+        | LPAREN Expr:ex RPAREN
+        {: RESULT = ex; :}
+
+	| Literal:string
+	{:
+	/*
+	* If the string appears to have the syntax of a QName, store
+	* namespace info in the literal expression. This is used for
+	* element-available and function-available functions, among
+	* others. Also, the default namespace must be ignored.
+	*/
+	String namespace = null;
+	final int index = string.lastIndexOf(':');
+
+	if (index > 0) {
+	    final String prefix = string.substring(0, index);
+	    namespace = parser._symbolTable.lookupNamespace(prefix);
+	}
+	RESULT = (namespace == null) ? new LiteralExpr(string)
+		     : new LiteralExpr(string, namespace);
+	:}
+
+        | INT:num
+        {:
+	   long value = num.longValue();
+	   if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+		RESULT = new RealExpr(value);
+	   }
+	   else {
+               if (num.doubleValue() == -0)
+                   RESULT = new RealExpr(num.doubleValue());
+               else if (num.intValue() == 0)
+                   RESULT = new IntExpr(num.intValue());
+               else if (num.doubleValue() == 0.0)
+                   RESULT = new RealExpr(num.doubleValue());
+               else
+                   RESULT = new IntExpr(num.intValue());
+	   }
+        :}
+
+        | REAL:num
+        {: RESULT = new RealExpr(num.doubleValue()); :}
+
+        | FunctionCall:fc
+        {: RESULT = fc; :};
+
+VariableReference ::= DOLLAR VariableName:varName
+        {:
+            // An empty qname prefix for a variable or parameter reference
+            // should map to the null namespace and not the default URI.
+            SyntaxTreeNode node = parser.lookupName(varName);
+
+            if (node != null) {
+                if (node instanceof Variable) {
+                    RESULT = new VariableRef((Variable)node);
+                }
+                else if (node instanceof Param) {
+                    RESULT = new ParameterRef((Param)node);
+                }
+                else {
+                    RESULT = new UnresolvedRef(varName);
+                }
+            }
+
+            if (node == null) {
+                RESULT = new UnresolvedRef(varName);
+            }
+        :};
+
+FunctionCall ::= FunctionName:fname LPAREN RPAREN
+        {:
+
+          if (parser.getQNameIgnoreDefaultNs("current").equals(fname)) {
+            RESULT = new CurrentCall(fname);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("number").equals(fname)) {
+            RESULT = new NumberCall(fname, parser.EmptyArgs);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("string").equals(fname)) {
+            RESULT = new StringCall(fname, parser.EmptyArgs);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("concat").equals(fname)) {
+            RESULT = new ConcatCall(fname, parser.EmptyArgs);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("true").equals(fname)) {
+            RESULT = new BooleanExpr(true);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("false").equals(fname)) {
+            RESULT = new BooleanExpr(false);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("name").equals(fname)) {
+            RESULT = new NameCall(fname);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("generate-id").equals(fname)) {
+            RESULT = new GenerateIdCall(fname, parser.EmptyArgs);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("string-length").equals(fname)) {
+            RESULT = new StringLengthCall(fname, parser.EmptyArgs);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("position").equals(fname)) {
+            RESULT = new PositionCall(fname);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("last").equals(fname)) {
+            RESULT = new LastCall(fname);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("local-name").equals(fname)) {
+            RESULT = new LocalNameCall(fname);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("namespace-uri").equals(fname)) {
+            RESULT = new NamespaceUriCall(fname);
+	  }
+          else {
+            RESULT = new FunctionCall(fname, parser.EmptyArgs);
+	  }
+        :}
+
+        | FunctionName:fname LPAREN NonemptyArgumentList:argl RPAREN
+        {:
+          if (parser.getQNameIgnoreDefaultNs("concat").equals(fname)) {
+            RESULT = new ConcatCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("number").equals(fname)) {
+            RESULT = new NumberCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("document").equals(fname)) {
+	    parser.setMultiDocument(true);
+            RESULT = new DocumentCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("string").equals(fname)) {
+            RESULT = new StringCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("boolean").equals(fname)) {
+            RESULT = new BooleanCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("name").equals(fname)) {
+            RESULT = new NameCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("generate-id").equals(fname)) {
+            RESULT = new GenerateIdCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("not").equals(fname)) {
+            RESULT = new NotCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("format-number").equals(fname)) {
+            RESULT = new FormatNumberCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("unparsed-entity-uri").equals(fname)) {
+            RESULT = new UnparsedEntityUriCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("key").equals(fname)) {
+            RESULT = new KeyCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("id").equals(fname)) {
+            RESULT = new KeyCall(fname, argl);
+            parser.setHasIdCall(true);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("ceiling").equals(fname)) {
+            RESULT = new CeilingCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("round").equals(fname)) {
+            RESULT = new RoundCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("floor").equals(fname)) {
+            RESULT = new FloorCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("contains").equals(fname)) {
+            RESULT = new ContainsCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("string-length").equals(fname)) {
+            RESULT = new StringLengthCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("starts-with").equals(fname)) {
+            RESULT = new StartsWithCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("function-available").equals(fname)) {
+            RESULT = new FunctionAvailableCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("element-available").equals(fname)) {
+            RESULT = new ElementAvailableCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("local-name").equals(fname)) {
+            RESULT = new LocalNameCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("lang").equals(fname)) {
+            RESULT = new LangCall(fname, argl);
+	  }
+          else if (parser.getQNameIgnoreDefaultNs("namespace-uri").equals(fname)) {
+            RESULT = new NamespaceUriCall(fname, argl);
+	  }
+          else if (parser.getQName(Constants.TRANSLET_URI, "xsltc", "cast").equals(fname)) {
+            RESULT = new CastCall(fname, argl);
+	  }
+	  // Special case for extension function nodeset()
+          else if (fname.getLocalPart().equals("nodeset") || fname.getLocalPart().equals("node-set")) {
+	    parser.setCallsNodeset(true);  // implies MultiDOM
+            RESULT = new FunctionCall(fname, argl);
+	  }
+          else {
+            RESULT = new FunctionCall(fname, argl);
+	  }
+    :};
+
+NonemptyArgumentList ::= Argument:arg
+        {:
+            Vector temp = new Vector();
+            temp.addElement(arg);
+            RESULT = temp;
+        :}
+
+        | Argument:arg COMMA NonemptyArgumentList:argl
+        {: argl.insertElementAt(arg, 0); RESULT = argl; :};
+
+FunctionName ::= QName:fname
+        {:
+	    RESULT = fname;
+	:};
+
+VariableName ::= QName:vname
+        {:
+	    RESULT = vname;
+	:};
+
+Argument ::= Expr:ex
+        {: RESULT = ex; :};
+
+NodeTest ::= NameTest:nt
+        {: RESULT = nt; :}
+
+        | NODE
+        {: RESULT = new Integer(NodeTest.ANODE); :}
+
+        | TEXT
+        {: RESULT = new Integer(NodeTest.TEXT); :}
+
+        | COMMENT
+        {: RESULT = new Integer(NodeTest.COMMENT); :}
+
+        | PIPARAM LPAREN Literal:l RPAREN
+        {:
+           QName name = parser.getQNameIgnoreDefaultNs("name");
+           Expression exp = new EqualityExpr(Operators.EQ,
+                                             new NameCall(name),
+                                             new LiteralExpr(l));
+           Vector predicates = new Vector();
+           predicates.addElement(new Predicate(exp));
+           RESULT = new Step(Axis.CHILD, NodeTest.PI, predicates);
+        :}
+
+        | PI
+        {: RESULT = new Integer(NodeTest.PI); :};
+
+NameTest ::= STAR
+             {: RESULT = null; :}
+
+             | QName:qn
+             {: RESULT = qn; :};
+
+QName ::= QNAME:qname
+        {: RESULT = parser.getQNameIgnoreDefaultNs(qname); :}
+
+	| DIV
+        {: RESULT = parser.getQNameIgnoreDefaultNs("div"); :}
+
+        | MOD
+        {: RESULT = parser.getQNameIgnoreDefaultNs("mod"); :}
+
+        | KEY
+        {: RESULT = parser.getQNameIgnoreDefaultNs("key"); :}
+
+        | ANCESTOR
+        {: RESULT = parser.getQNameIgnoreDefaultNs("child"); :}
+
+        | ANCESTORORSELF
+        {: RESULT = parser.getQNameIgnoreDefaultNs("ancestor-or-self"); :}
+
+        | ATTRIBUTE
+        {: RESULT = parser.getQNameIgnoreDefaultNs("attribute"); :}
+
+        | CHILD
+        {: RESULT = parser.getQNameIgnoreDefaultNs("child"); :}
+
+        | DESCENDANT
+        {: RESULT = parser.getQNameIgnoreDefaultNs("decendant"); :}
+
+        | DESCENDANTORSELF
+        {: RESULT = parser.getQNameIgnoreDefaultNs("decendant-or-self"); :}
+
+        | FOLLOWING
+        {: RESULT = parser.getQNameIgnoreDefaultNs("following"); :}
+
+        | FOLLOWINGSIBLING
+        {: RESULT = parser.getQNameIgnoreDefaultNs("following-sibling"); :}
+
+        | NAMESPACE
+        {: RESULT = parser.getQNameIgnoreDefaultNs("namespace"); :}
+
+        | PARENT
+        {: RESULT = parser.getQNameIgnoreDefaultNs("parent"); :}
+
+        | PRECEDING
+        {: RESULT = parser.getQNameIgnoreDefaultNs("preceding"); :}
+
+        | PRECEDINGSIBLING
+        {: RESULT = parser.getQNameIgnoreDefaultNs("preceding-sibling"); :}
+
+        | SELF
+        {: RESULT = parser.getQNameIgnoreDefaultNs("self"); :}
+
+        | ID
+        {: RESULT = parser.getQNameIgnoreDefaultNs("id"); :};
+

@@ -1,0 +1,913 @@
+<?xml version="1.0"?>
+<!--
+ Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!DOCTYPE grammar [
+
+
+<!ENTITY XJCURI "http://java.sun.com/xml/ns/jaxb/xjc">
+]>
+<grammar
+  xmlns="http://relaxng.org/ns/structure/1.0"
+  xmlns:cc="http://www.xml.gr.jp/xmlns/relaxngcc"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:xjc="&XJCURI;"
+  xmlns:p="post-processor-to-build-schema-for-validation"
+  
+  ns="http://java.sun.com/xml/ns/jaxb"
+  
+  cc:runtime-type="com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.NGCCRuntimeEx"
+  cc:package="com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.parser"
+  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+<!--  cc:$runtime-type="com.sun.xml.internal.xsom.impl.parser.NGCCRuntimeEx">-->
+  
+  <cc:java-import>
+    import com.sun.codemodel.internal.*;
+    import com.sun.tools.internal.xjc.generator.bean.field.*;
+    import com.sun.tools.internal.xjc.model.*;
+    import com.sun.xml.internal.bind.api.impl.NameConverter;
+    import com.sun.xml.internal.bind.v2.WellKnownNamespace;
+    import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
+    import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.*;
+    import com.sun.tools.internal.xjc.reader.Const;
+    import org.xml.sax.*;
+    import org.w3c.dom.Document;
+    import org.xml.sax.helpers.DefaultHandler;
+    import java.util.*;
+    import javax.xml.namespace.QName;
+    import javax.xml.parsers.ParserConfigurationException;
+  </cc:java-import>
+  
+  <start cc:class="Root">
+    <choice>
+      <!-- root of the external binding file. -->
+      <ref name="declaration"/>
+      <!-- root of the internal binding -->
+      <ref name="annotation"/>
+    </choice>
+  </start>
+  
+  <!--
+    in context of XML Schema annotation
+  -->
+  <define name="annotation" cc:access="public" cc:class="AnnotationState"
+    cc:return-type="BindInfo" cc:return-value="bi">
+    
+    <cc:java-import>
+      import java.io.StringWriter;
+      import com.sun.xml.internal.bind.marshaller.DataWriter;
+    </cc:java-import>
+    <cc:java-body>
+      // customization declarations
+      public BindInfo bi;
+      
+      private StringWriter w;
+
+      private SAX2DOMEx sax2dom;
+    </cc:java-body>
+    
+    <element name="xs:annotation">
+      bi = new BindInfo($runtime.copyLocator());
+      $runtime.currentBindInfo = bi;
+      
+      <p:ignore><ref name="anyAttributes"/></p:ignore>
+      <zeroOrMore>
+        <choice>
+          <element name="xs:appinfo">
+            <p:ignore><ref name="anyAttributes"/></p:ignore>
+            <zeroOrMore>
+              <choice>
+                <group>
+                  result = <ref name="declaration" />
+                  bi.addDecl(result);
+                </group>
+                <element>
+                  <anyName><except>
+                    <nsName ns="&XJCURI;"/>
+                    <nsName /><!-- JAXB namespace URI -->
+                    <nsName ns="http://www.w3.org/2001/XMLSchema" />
+                  </except></anyName>
+
+                  if($runtime.isExtensionURI($uri)) {
+                    // parse this sub-tree as an extension
+                    try {
+                      sax2dom = new SAX2DOMEx();
+                    } catch( ParserConfigurationException e ) {
+                      throw new Error(e); // impossible
+                    }
+                    $runtime.redirectSubtree(sax2dom,$uri,$localName,$qname);
+                  } else {
+                    // ignore this sub-tree
+                    sax2dom = null;
+                    $runtime.redirectSubtree(new DefaultHandler(),$uri,$localName,$qname);
+                  }
+                  <empty/>
+                  <p:ignore><ref name="anyContents"/></p:ignore>
+                  if(sax2dom!=null) {
+                    bi.addDecl(new BIXPluginCustomization(((Document)sax2dom.getDOM()).getDocumentElement(),$runtime.copyLocator()));
+                  }
+                </element>
+                <text/>
+              </choice>
+            </zeroOrMore>
+          </element>
+          <!-- ignore documentations -->
+          <element name="xs:documentation">
+            <p:ignore><ref name="anyAttributes"/></p:ignore>
+            <zeroOrMore>
+              <choice>
+                <group>
+                  msg = <text />
+                  bi.appendDocumentation($runtime.truncateDocComment(msg),true);
+                </group>
+                <group>
+                  <element>
+                    <anyName />
+                    w = new StringWriter();
+                    DataWriter xw = new DataWriter(w,"UTF-8");
+                    xw.setXmlDecl(false);
+                    $runtime.redirectSubtree(xw,$uri,$localName,$qname);
+                    <empty/>
+                    <p:ignore><ref name="anyContents"/></p:ignore>
+                  </element>
+                  <![CDATA[
+                  bi.appendDocumentation("<pre>"+
+                    $runtime.escapeMarkup($runtime.truncateDocComment(w.toString()))+
+                    "</pre>",
+                    false );
+                  w=null;
+                  ]]>
+                </group>
+              </choice>
+            </zeroOrMore>
+          </element>
+        </choice>
+      </zeroOrMore>
+    </element>
+  </define>
+  
+  
+  
+  <!--
+  
+    Individual customization declarations
+  
+  -->
+  
+  <define name="declaration"
+    cc:return-type="BIDeclaration" cc:return-value="result">
+    
+    <cc:java-body>
+      private BIDeclaration result;
+    </cc:java-body>
+    <!-- result field will have the parsed object -->
+    <choice>
+      result = <ref name="globalBindings" />
+      result = <ref name="schemaBindings" />
+      result = <ref name="class"/>
+      result = <ref name="conversion"/>
+      result = <ref name="property"/>
+      result = <ref name="typesafeEnum"/>
+      result = <ref name="enumMember"/>
+      <!-- result = <ref name="idSymbolSpace"/-->
+      <!-- result = <ref name="dom"/-->
+    </choice>
+  </define>
+  
+  
+  <define name="globalBindings"
+    cc:return-type="BIGlobalBinding" cc:return-value="makeResult()">
+    
+    <cc:java-body>
+      private Locator loc;
+      private Map globalConvs = new HashMap();
+      private NameConverter nameConverter = NameConverter.standard;
+      private String enableJavaNamingConvention = "true";
+      private String fixedAttrToConstantProperty = "false";
+      private String needIsSetMethod = "false";
+      private String simpleTypeSubstitution = "false";
+      private boolean flattenClasses = false;
+      private Set enumBaseTypes = new HashSet();
+      private int defaultEnumSizeCap = 256;
+      private boolean generateEnumMemberName = false;
+      private boolean choiceContentPropertyWithModelGroupBinding = false;
+      private boolean xSmartWildcardDefaultBinding = false;
+      private boolean xSimpleMode;
+      private boolean generateValueClass = true;
+      private boolean generateElementClass = false;
+      private boolean generateMixedExtensions = false;
+
+      public BIGlobalBinding makeResult() {
+        if( enumBaseTypes.size()==0 )
+          enumBaseTypes.add(new QName(WellKnownNamespace.XML_SCHEMA,"NCName")); // defaults to NCName
+        
+        return new BIGlobalBinding(
+          globalConvs,nameConverter,
+          choiceContentPropertyWithModelGroupBinding,
+          generateValueClass,
+          generateElementClass,
+          $runtime.parseBoolean(enableJavaNamingConvention),
+          $runtime.parseBoolean(fixedAttrToConstantProperty),
+          $runtime.parseBoolean(needIsSetMethod),
+          $runtime.parseBoolean(simpleTypeSubstitution),
+          generateEnumMemberName,
+          flattenClasses,
+          enumBaseTypes,
+          defaultEnumSizeCap,
+          ct,
+          serializable,
+          xSuperClass,
+          xSuperInterface,
+          xSimpleMode,
+          xSmartWildcardDefaultBinding,
+          loc);
+      }
+    </cc:java-body>
+    <element name="globalBindings">
+      loc = $runtime.copyLocator();
+      
+      <optional>
+        <attribute name="underscoreBinding">
+          <choice>
+            <value>asWordSeparator</value><!-- default -->
+            <group>
+              <value>asCharInWord</value>
+              nameConverter = NameConverter.jaxrpcCompatible;
+            </group>
+          </choice>
+        </attribute>
+      </optional>
+      
+      <optional>
+        <attribute name="enableJavaNamingConventions">
+          enableJavaNamingConvention = <data type="boolean"/>
+        </attribute>
+      </optional>
+      
+      <optional>
+        <attribute name="fixedAttributeAsConstantProperty">
+          fixedAttrToConstantProperty = <data type="boolean"/>
+        </attribute>
+      </optional>
+      
+      <optional>
+        <attribute name="generateIsSetMethod">
+          needIsSetMethod = <data type="boolean"/>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="mapSimpleTypeDef">
+          simpleTypeSubstitution = <data type="boolean"/>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="localScoping">
+          <choice>
+            <group>
+              <value>nested</value>
+              flattenClasses = false;
+            </group>
+            <group>
+              <value>toplevel</value>
+              flattenClasses = true;
+            </group>
+          </choice>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="collectionType">
+          ct = <ref name="collectionType" />
+        </attribute>
+      </optional>
+      
+      <optional>
+        <attribute name="typesafeEnumMemberName">
+          <choice>
+            <value>generateError</value> <!-- default -->
+            <group>
+              <value>generateName</value>
+              generateEnumMemberName = true;
+            </group>
+          </choice>
+        </attribute>
+      </optional>
+      
+      <optional>
+        <attribute name="typesafeEnumBase">
+          <list>
+            <oneOrMore>
+              value = <data type="QName"/>
+              QName qn = $runtime.parseQName(value);
+              enumBaseTypes.add( qn );
+            </oneOrMore>
+          </list>
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="typesafeEnumMaxMembers">
+          <list>
+            <oneOrMore>
+              value = <data type="int"/>
+              defaultEnumSizeCap = Integer.parseInt(value);
+            </oneOrMore>
+          </list>
+        </attribute>
+      </optional>
+
+
+      <optional>
+        <attribute name="choiceContentProperty">
+          value = <data type="boolean"/>
+          choiceContentPropertyWithModelGroupBinding = $runtime.parseBoolean(value);
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="generateValueClass">
+          value = <data type="boolean"/>
+          generateValueClass = $runtime.parseBoolean(value);
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="generateElementClass">
+          value = <data type="boolean"/>
+          generateElementClass = $runtime.parseBoolean(value);
+        </attribute>
+      </optional>
+
+      <optional>
+        <attribute name="generateMixedExtensions">
+          value = <data type="boolean"/>
+          generateMixedExtensions = $runtime.parseBoolean(value);
+        </attribute>
+      </optional>
+
+      <!-- unimplemented attributes -->
+      <optional>
+        <attribute name="enableValidation">
+          value = <data type="boolean"/>
+          if( $runtime.parseBoolean(value)==true )
+            $runtime.reportUnsupportedFeature("enableValidation");
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="enableFailFastCheck">
+          value = <data type="boolean"/>
+          if( $runtime.parseBoolean(value)==true )
+            $runtime.reportUnsupportedFeature("enableFailFastCheck");
+        </attribute>
+      </optional>
+      
+      <!-- body -->
+      <zeroOrMore>
+        <choice>
+          <element name="javaType">
+            <attribute name="xmlType">
+              xmlType = <data type="QName"/>
+            </attribute>
+            conv = <ref name="conversionBody" />
+            
+            globalConvs.put( $runtime.parseQName(xmlType), conv );
+          </element>
+          <element name="serializable">
+            <optional>
+              <attribute name="uid">
+                serialuid = <data type="long"/>
+              </attribute>
+            </optional>
+            if(serialuid!=null)
+              serializable = new BISerializable(Long.parseLong(serialuid));
+            else
+              serializable = new BISerializable(null);
+          </element>
+
+          <!-- global vendor extensions -->
+          serializable = <ref name="serializable"/>
+          xSuperClass = <ref name="superClass"/>
+          xSuperInterface = <ref name="superInterface"/>
+          <ref name="typeSubstitution" />
+          <element name="xjc:smartWildcardDefaultBinding">
+            <!--
+              changes the default binding of wildcards so that unknown elements will be
+              bound to DOM. This feature is not publicly available, and we may change it
+              later.
+            -->
+            xSmartWildcardDefaultBinding = true;
+            <empty />
+          </element>
+
+          <element name="xjc:simple">
+            xSimpleMode = true;
+            <empty />
+          </element>
+
+          <!--
+            light-weight runtime. we no longer support them,
+            but we don't issue an error when we see them.
+          -->
+          <element name="xjc:noMarshaller">
+            <empty />
+          </element>
+          <element name="xjc:noUnmarshaller">
+            <empty />
+          </element>
+          <element name="xjc:noValidator">
+            <empty />
+          </element>
+          <element name="xjc:noValidatingUnmarshaller">
+            <empty />
+          </element>
+        </choice>
+      </zeroOrMore>
+    </element>
+  </define>
+  
+  
+  <define name="schemaBindings"
+    cc:return-type="BISchemaBinding" cc:return-value="makeResult()">
+    
+    <cc:java-body>
+      private Locator loc;
+      public BISchemaBinding makeResult() {
+        return new BISchemaBinding(packageName,javadoc,tt,et,at,mt,nt,loc);
+      }
+    </cc:java-body>
+    
+    <element name="schemaBindings">
+      loc = $runtime.copyLocator();
+      
+      <optional>
+        <element name="package">
+          <optional>
+            packageName = <attribute name="name"/>
+          </optional>
+          <optional>
+            javadoc = <ref name="javadoc"/>
+          </optional>
+        </element>
+      </optional>
+      
+      <optional>
+        <element name="nameXmlTransform">
+          <!-- use newer version of RELAXNGCC and wrap them by <interleave> -->
+          <zeroOrMore>
+            <choice>
+              <element name="typeName">
+                tt = <ref name="nameXmlTransformRule"/>
+              </element>
+              <element name="elementName">
+                et = <ref name="nameXmlTransformRule"/>
+              </element>
+              <element name="attributeName">
+                at = <ref name="nameXmlTransformRule"/>
+              </element>
+              <element name="modelGroupName">
+                mt = <ref name="nameXmlTransformRule"/>
+              </element>
+              <element name="anonymousTypeName">
+                nt = <ref name="nameXmlTransformRule"/>
+              </element>
+            </choice>
+          </zeroOrMore>
+        </element>
+      </optional>
+    </element>
+  </define>
+  
+  <define name="nameXmlTransformRule"
+    cc:return-type="BISchemaBinding.NamingRule"
+    cc:return-value="new BISchemaBinding.NamingRule(prefix,suffix)">
+    
+    <cc:java-body>
+      private String prefix="";
+      private String suffix="";
+    </cc:java-body>
+    
+    
+    <optional>
+      <attribute name="prefix">
+        prefix = <data type="NCName"/>
+      </attribute>
+    </optional>
+    <optional>
+      <attribute name="suffix">
+        suffix = <data type="NCName"/>
+      </attribute>
+    </optional>
+  </define>
+  
+  
+  
+  <define name="javadoc" cc:return-type="String" cc:return-value="javadoc">
+      <element name="javadoc">
+        javadoc = <text />
+        javadoc = $runtime.truncateDocComment(javadoc);
+      </element>
+  </define>
+  
+  <define name="collectionType" cc:class="CollectionTypeState"
+    cc:return-type="FieldRenderer" cc:return-value="r">
+    <cc:java-body>
+      private FieldRenderer r = null;
+    </cc:java-body>
+    type = <data type="token"/>
+    
+    if( type.equals("indexed") )
+      r = FieldRenderer.ARRAY;
+    else
+      try {
+        r = new UntypedListFieldRenderer( $runtime.codeModel.ref(type) );
+      } catch( ClassNotFoundException e ) {
+        throw new NoClassDefFoundError(e.getMessage());
+      }
+  </define>
+  
+  
+  
+  <define name="class" cc:class="BIClassState"
+    cc:return-type="BIClass" cc:return-value="makeResult()">
+    
+    <cc:java-body>
+      private Locator loc;
+      public BIClass makeResult() {
+        return new BIClass(loc,name,implClass,javadoc);
+      }
+    </cc:java-body>
+    
+    <element name="class">
+      loc = $runtime.copyLocator();
+      <optional>
+        javadoc = <ref name="javadoc"/>
+      </optional>
+      <optional>
+        <attribute name="name">
+          name = <data type="identifier" datatypeLibrary="http://java.sun.com/xml/ns/relaxng/java-datatypes"/>
+        </attribute>
+      </optional>
+      <optional>
+        implClass = <attribute name="implClass"/>
+      </optional>
+    </element>
+  </define>
+  
+  <define name="property"
+    cc:return-type="BIProperty" cc:return-value="makeResult()">
+    
+    <cc:java-body>
+      private Locator loc;
+      private Boolean isConst = null;
+      private Boolean isSet = null;
+      private Boolean genElemProp = null;
+
+      public BIProperty makeResult() throws SAXException {
+        JType baseTypeRef = null;
+        if(baseType!=null)
+          baseTypeRef = $runtime.getType(baseType);
+          
+        return new BIProperty(loc,name,javadoc,baseTypeRef,conv,ct,isConst,isSet,genElemProp);
+      }
+    </cc:java-body>
+    
+    <element name="property">
+      loc = $runtime.copyLocator();
+      <optional>
+        name = <attribute name="name"/>
+      </optional>
+      <optional>
+        baseType = <attribute name="baseType"/>
+      </optional>
+      <optional>
+        <attribute name="collectionType">
+          ct = <ref name="collectionType" />
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="fixedAttributeAsConstantProperty">
+          isConstStr = <data type="boolean"/>
+          isConst = $runtime.parseBoolean(isConstStr)?Boolean.TRUE:Boolean.FALSE;
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="generateIsSetMethod">
+          isSetStr = <data type="boolean"/>
+          isSet = $runtime.parseBoolean(isSetStr)?Boolean.TRUE:Boolean.FALSE;
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="generateElementProperty">
+          genElemPropStr = <data type="boolean"/>
+          genElemProp = $runtime.parseBoolean(genElemPropStr)?Boolean.TRUE:Boolean.FALSE;
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="generateFailFastSetterMethod">
+          failFast = <data type="boolean"/>
+        </attribute>
+        if( $runtime.parseBoolean(failFast) ) {
+          $runtime.reportUnimplementedFeature("generateFailFastSetterMethod");
+        }
+      </optional>
+
+
+      <interleave>
+        <optional>
+          javadoc = <ref name="javadoc"/>
+        </optional>
+        <optional>
+          <element name="baseType">
+            conv = <ref name="conversion"/>
+          </element>
+        </optional>
+      </interleave>
+    </element>
+  </define>
+  
+  <define name="conversion"
+    cc:return-type="BIConversion" cc:return-value="r">
+    <element name="javaType">
+      r = <ref name="conversionBody"/>
+    </element>
+  </define>
+  
+  
+  <define name="conversionBody"
+    cc:return-type="BIConversion" cc:return-value="makeResult()">
+    
+    <cc:java-import>
+      import com.sun.tools.internal.xjc.generator.util.WhitespaceNormalizer;
+    </cc:java-import>
+    <cc:java-body><![CDATA[
+      public BIConversion makeResult() throws SAXException {
+        return new BIConversion.User( $runtime.copyLocator(), parse, print, $runtime.getType(type) );
+      }
+
+      // initialize with default values.
+      private String type  = "java.lang.String"; // in case a schema has an error
+      private String parse = null;
+      private String print = null;
+      private boolean context = false;
+    ]]></cc:java-body>
+    
+    
+    <optional>
+      parse = <attribute name="parseMethod" />
+    </optional>
+    <optional>
+      print = <attribute name="printMethod" />
+    </optional>
+    <attribute name="name" cc:alias="type"/>
+    <optional>
+      <attribute name="hasNsContext">
+        _context = <data type="boolean"/>
+        context = $runtime.parseBoolean(_context);
+      </attribute>
+    </optional>
+  </define>
+  
+  
+  <!-- type safe enum customization -->
+  <define name="typesafeEnum"
+    cc:return-type="BIEnum" cc:return-value="makeResult()">
+    
+    <cc:java-import>
+      import java.util.HashMap;
+    </cc:java-import>
+    <cc:java-body>
+      private HashMap members = new HashMap();
+      private boolean dontBind = false;
+      private Locator loc,loc2;
+      
+      private BIEnum makeResult() {
+        return new BIEnum(loc,dontBind,name,javadoc,members);
+      }
+    </cc:java-body>
+    
+    <element name="typesafeEnumClass">
+      loc = $runtime.copyLocator();
+      <choice>
+        <attribute name="map">
+          <value>false</value>
+          dontBind = true;
+        </attribute>
+        <group>
+          <optional>
+            name = <attribute name="name"/>
+          </optional>
+          <optional>
+            javadoc = <ref name="javadoc" />
+          </optional>
+          <zeroOrMore>
+            jname = null;
+            javadoc = null;
+            <element name="typesafeEnumMember">
+              loc2 = $runtime.copyLocator();
+              <optional>
+                jname = <attribute name="name"/>
+              </optional>
+              value = <attribute name="value"/>
+              <optional>
+                javadoc = <ref name="javadoc" />
+              </optional>
+              members.put( value, new BIEnumMember(loc2,jname,javadoc) );
+            </element>
+          </zeroOrMore>
+        </group>
+      </choice>
+    </element>
+  </define>
+  
+  
+  <!-- stand-alone type safe enum member customization -->
+  <!--
+     Note that only the name attribute is allowed here, and the same element
+     under the typesafeEnumClass is handled differently.
+  -->
+  <define name="enumMember"
+    cc:return-type="BIEnumMember" cc:return-value="makeResult()">
+    <cc:java-body>
+      private Locator loc;
+      private BIEnumMember makeResult() {
+        return new BIEnumMember(loc,name,javadoc);
+      }
+    </cc:java-body>
+  
+    <element name="typesafeEnumMember">
+      loc = $runtime.copyLocator();
+      name = <attribute name="name"/>
+      <optional>
+        javadoc = <ref name="javadoc" />
+      </optional>
+    </element>
+  </define>
+  
+  
+  <!-- XJC-exntension: root class support -->
+  <define name="superClass" cc:return-type="JDefinedClass" cc:return-value="makeResult()">
+    <cc:java-body>
+      private JDefinedClass makeResult() {
+        try {
+          JDefinedClass c = $runtime.codeModel._class(name);
+          c.hide();
+          return c;
+        } catch( JClassAlreadyExistsException e ) {
+          return e.getExistingClass();
+        }
+      }
+    </cc:java-body>
+    
+    <element name="xjc:superClass">
+      name = <attribute name="name" />
+    </element>
+  </define>
+  
+  <!-- XJC-exntension: root interface support -->
+  <define name="superInterface" cc:return-type="JDefinedClass" cc:return-value="makeResult()">
+    <cc:java-body>
+      private JDefinedClass makeResult() {
+        try {
+          JDefinedClass c = $runtime.codeModel._class(name,ClassType.INTERFACE);
+          c.hide();
+          return c;
+        } catch( JClassAlreadyExistsException e ) {
+          return e.getExistingClass();
+        }
+      }
+    </cc:java-body>
+
+    <element name="xjc:superInterface">
+      name = <attribute name="name" />
+    </element>
+  </define>
+
+  <!-- XJC-exntension: serialization support -->
+  <define name="serializable" cc:return-type="BISerializable" cc:return-value="makeResult()">
+    <cc:java-body>
+      private long uid = 1;
+      private BISerializable makeResult() {
+        return new BISerializable(uid);
+      }
+    </cc:java-body>
+    
+    <element name="xjc:serializable">
+//      loc = $runtime.copyLocator();
+      <optional>
+        <attribute name="uid">
+          v = <data type="long"/>
+          uid = Long.parseLong(v);
+        </attribute>
+      </optional>
+    </element>
+  </define>
+  
+  
+  <!-- XJC extension: type substitution -->
+  <define name="typeSubstitution" cc:return-type="boolean" cc:return-value="true">
+    <element name="xjc:typeSubstitution">
+      <attribute name="type"><value>complex</value></attribute>
+    </element>
+  </define>
+  
+  
+  <!-- XJC extension: ID symbol space support -->
+  <!--define name="idSymbolSpace" cc:return-type="BIXIdSymbolSpace" cc:return-value="makeResult()">
+    <cc:java-body>
+      private Locator loc;
+      private BIXIdSymbolSpace makeResult() {
+        return new BIXIdSymbolSpace(loc,name);
+      }
+    </cc:java-body>
+    
+    <element name="xjc:idSymbolSpace">
+      loc = $runtime.copyLocator();
+      name = <attribute name="name"/>
+    </element>
+  </define-->
+  
+  
+  <!-- XJC extension: DOM support -->
+  <!--define name="dom" cc:return-type="BIXDom" cc:return-value="makeResult()">
+    <cc:java-import>
+      import com.sun.tools.internal.xjc.grammar.ext.*;
+    </cc:java-import>
+    <cc:java-body>
+      private String factoryName = "w3c";
+      private Locator loc;
+      private BIXDom makeResult() {
+        try {
+          return new BIXDom(DOMItemFactory.getInstance(factoryName),loc);
+        } catch( DOMItemFactory.UndefinedNameException e ) {
+          throw new InternalError(); // impossible since we use validation to reject incorrect values
+        }
+      }
+    </cc:java-body>
+    
+    <element name="xjc:dom">
+      loc = $runtime.copyLocator();
+      <optional>
+        <attribute name="type">
+          <choice>
+            factoryName = <value>dom4j</value>
+            factoryName = <value>w3c</value>
+          </choice>
+        </attribute>
+      </optional>
+    </element>
+  </define-->
+  
+  
+  
+  
+  
+  
+  <p:ignore>
+    <!-- these patterns are ignored when using RelaxNGCC -->
+    <define name="anyContents">
+      <zeroOrMore>
+        <choice>
+          <text/>
+          <ref name="anyAttributes"/>
+          <element>
+            <anyName/>
+            <ref name="anyContents"/>
+          </element>
+        </choice>
+      </zeroOrMore>
+    </define>
+    
+    <define name="anyAttributes">
+      <zeroOrMore>
+        <attribute>
+          <anyName/>
+          <text/>
+        </attribute>
+      </zeroOrMore>
+    </define>
+  </p:ignore>
+</grammar>

@@ -180,7 +180,7 @@ public abstract class Executable extends AccessibleObject
 
     /**
      * Returns the {@code Class} object representing the class or interface
-     * that declares the method represented by this executable object.
+     * that declares the executable represented by this object.
      */
     public abstract Class<?> getDeclaringClass();
 
@@ -215,18 +215,18 @@ public abstract class Executable extends AccessibleObject
      * Returns an array of {@code Class} objects that represent the formal
      * parameter types, in declaration order, of the executable
      * represented by this object.  Returns an array of length
-     * 0 if the underlying method takes no parameters.
+     * 0 if the underlying executable takes no parameters.
      *
-     * @return the parameter types for the method this object
+     * @return the parameter types for the executable this object
      * represents
      */
     public abstract Class<?>[] getParameterTypes();
 
     /**
      * Returns an array of {@code Type} objects that represent the formal
-     * parameter types, in declaration order, of the method represented by
-     * this executable object. Returns an array of length 0 if the
-     * underlying method takes no parameters.
+     * parameter types, in declaration order, of the executable represented by
+     * this object. Returns an array of length 0 if the
+     * underlying executable takes no parameters.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
@@ -236,16 +236,16 @@ public abstract class Executable extends AccessibleObject
      * type, it is created. Otherwise, it is resolved.
      *
      * @return an array of {@code Type}s that represent the formal
-     *     parameter types of the underlying method, in declaration order
+     *     parameter types of the underlying executable, in declaration order
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
      *     specified in
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if any of the parameter
-     *     types of the underlying method refers to a non-existent type
+     *     types of the underlying executable refers to a non-existent type
      *     declaration
      * @throws MalformedParameterizedTypeException if any of
-     *     the underlying method's parameter types refer to a parameterized
+     *     the underlying executable's parameter types refer to a parameterized
      *     type that cannot be instantiated for any reason
      */
     public Type[] getGenericParameterTypes() {
@@ -277,15 +277,15 @@ public abstract class Executable extends AccessibleObject
      * type, it is created. Otherwise, it is resolved.
      *
      * @return an array of Types that represent the exception types
-     *     thrown by the underlying method
+     *     thrown by the underlying executable
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
      *     specified in
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
-     * @throws TypeNotPresentException if the underlying method's
+     * @throws TypeNotPresentException if the underlying executable's
      *     {@code throws} clause refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if
-     *     the underlying method's {@code throws} clause refers to a
+     *     the underlying executable's {@code throws} clause refers to a
      *     parameterized type that cannot be instantiated for any reason
      */
     public Type[] getGenericExceptionTypes() {
@@ -330,7 +330,7 @@ public abstract class Executable extends AccessibleObject
      * Returns an array of arrays that represent the annotations on
      * the formal parameters, in declaration order, of the executable
      * represented by this object. (Returns an array of length zero if
-     * the underlying method is parameterless.  If the executable has
+     * the underlying executable is parameterless.  If the executable has
      * one or more parameters, a nested array of length zero is
      * returned for each parameter with no annotations.) The
      * annotation objects contained in the returned arrays are
@@ -339,7 +339,7 @@ public abstract class Executable extends AccessibleObject
      * to other callers.
      *
      * @return an array of arrays that represent the annotations on the formal
-     *    parameters, in declaration order, of the exectuable represented by this
+     *    parameters, in declaration order, of the executable represented by this
      *    object
      */
     public abstract Annotation[][] getParameterAnnotations();

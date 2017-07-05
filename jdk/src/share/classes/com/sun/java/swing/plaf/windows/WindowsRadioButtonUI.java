@@ -89,6 +89,11 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
         }
     }
 
+    protected void uninstallDefaults(AbstractButton b) {
+        super.uninstallDefaults(b);
+        initialized = false;
+    }
+
     protected Color getFocusColor() {
         return focusColor;
     }
