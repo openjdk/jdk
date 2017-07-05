@@ -108,7 +108,8 @@ public abstract class AbstractPerfDataBuffer {
      *
      * @param patternString  a string containing a pattern as described in
      *                       {@link java.util.regex.Pattern}.
-     * @return List<Monitor> - a List of {@link Monitor} objects that can be used to
+     * @return {@code List<Monitor>} - a List of {@link Monitor}
+     *                objects that can be used to
      *                monitor the instrumentation objects whose names match
      *                the given pattern. If no instrumentation objects have`
      *                names matching the given pattern, then an empty List

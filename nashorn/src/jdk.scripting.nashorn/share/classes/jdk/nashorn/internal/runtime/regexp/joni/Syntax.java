@@ -57,10 +57,10 @@ public final class Syntax implements SyntaxProperties {
         }
     }
 
-    /**
-     * OP
-     *
-     */
+    //
+    // OP
+    //
+
     protected boolean isOp(final int opm) {
         return (op & opm) != 0;
     }
@@ -189,11 +189,10 @@ public final class Syntax implements SyntaxProperties {
         return isOp(OP_ESC_X_BRACE_HEX8);
     }
 
+    //
+    // OP2
+    //
 
-    /**
-     * OP
-     *
-     */
     protected boolean isOp2(final int opm) {
         return (op2 & opm) != 0;
     }
@@ -278,10 +277,10 @@ public final class Syntax implements SyntaxProperties {
         return isOp2(OP2_INEFFECTIVE_ESCAPE);
     }
 
-    /**
-     * BEHAVIOR
-     *
-     */
+    //
+    // BEHAVIOR
+    //
+
     protected boolean isBehavior(final int bvm) {
         return (behavior & bvm) != 0;
     }
