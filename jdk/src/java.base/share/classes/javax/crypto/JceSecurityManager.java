@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.crypto;
 
+import java.lang.reflect.Module;
 import java.security.*;
 import java.net.*;
 import java.util.*;
@@ -227,38 +228,55 @@ final class JceSecurityManager extends SecurityManager {
         return (CryptoPermission)enum_.nextElement();
     }
 
-    // See  bug 4341369 & 4334690 for more info.
+    // Only used by javax.crypto.Cipher constructor to disallow Cipher
+    // objects being constructed by untrusted code (See bug 4341369 &
+    // 4334690 for more info).
     boolean isCallerTrusted(Provider provider) {
-        if (ProviderVerifier.isTrustedCryptoProvider(provider)) {
-            // fast path
-            return true;
-        }
-
         // Get the caller and its codebase.
         Class<?>[] context = getClassContext();
-        URL callerCodeBase = null;
-        int i;
-        for (i=0; i<context.length; i++) {
-            callerCodeBase = JceSecurity.getCodeBase(context[i]);
-            if (callerCodeBase != null) {
-                break;
+        if (context.length >= 3) {
+            // context[0]: class javax.crypto.JceSecurityManager
+            // context[1]: class javax.crypto.Cipher (or other JCE API class)
+            // context[2]: this is what we are gonna check
+            Class<?> caller = context[2];
+            URL callerCodeBase = JceSecurity.getCodeBase(caller);
+            if (callerCodeBase == null) {
+                return true;
             }
-        }
-        // The caller is in the JCE framework.
-        if (i == context.length) {
+            // The caller has been verified.
+            if (TrustedCallersCache.contains(caller)) {
+                return true;
+            }
+
+            // Check the association between caller and provider
+            Class<?> pCls = provider.getClass();
+            Module pMod = pCls.getModule();
+            // If they are in the same named module or share
+            // the same codebase, then they are associated
+            boolean sameOrigin = (pMod.isNamed()?
+                caller.getModule().equals(pMod) :
+                callerCodeBase.equals(JceSecurity.getCodeBase(pCls)));
+            if (sameOrigin) {
+                // The caller is from trusted provider
+                if (ProviderVerifier.isTrustedCryptoProvider(provider)) {
+                    TrustedCallersCache.addElement(caller);
+                    return true;
+                }
+            } else {
+                // Don't include the provider in the subsequent
+                // JceSecurity.verifyProvider(...) call
+                provider = null;
+            }
+
+            // Check whether the caller is a trusted provider.
+            try {
+                JceSecurity.verifyProvider(callerCodeBase, provider);
+            } catch (Exception e2) {
+                return false;
+            }
+            TrustedCallersCache.addElement(caller);
             return true;
         }
-        //The caller has been verified.
-        if (TrustedCallersCache.contains(context[i])) {
-            return true;
-        }
-        // Check whether the caller is a trusted provider.
-        try {
-            JceSecurity.verifyProvider(callerCodeBase, provider);
-        } catch (Exception e2) {
-            return false;
-        }
-        TrustedCallersCache.addElement(context[i]);
-        return true;
+        return false;
     }
 }

@@ -18,7 +18,7 @@ Information about the forest extension can be found at
 
     http://mercurial.selenic.com/wiki/ForestExtension
 
-and downlaoded using
+and downloaded using
 
     hg clone https://bitbucket.org/gxti/hgforest
 
@@ -39,7 +39,7 @@ To learn about Mercurial in detail, please visit http://hgbook.red-bean.com.
 - How to build?
 
 To build Nashorn, you need to install JDK 9. You may use the Nashorn
-forest build (recommended) or down load from java.net.  You will need to
+forest build (recommended) or download from java.net.  You will need to
 set JAVA_HOME environmental variable to point to your JDK installation
 directory.
 

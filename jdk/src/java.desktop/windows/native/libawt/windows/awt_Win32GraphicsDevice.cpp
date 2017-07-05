@@ -854,6 +854,10 @@ int AwtWin32GraphicsDevice::GetScreenFromHMONITOR(HMONITOR mon) {
                 "AwtWin32GraphicsDevice::GetScreenFromHMONITOR mhnd=%x", mon);
 
     DASSERT(mon != NULL);
+    JNIEnv *env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (!Devices::GetInstance()) {
+       Devices::UpdateInstance(env);
+    }
     Devices::InstanceAccess devices;
 
     for (int i = 0; i < devices->GetNumDevices(); i++) {

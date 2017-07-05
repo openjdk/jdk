@@ -48,6 +48,7 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Vector;
 import javax.swing.plaf.OptionPaneUI;
 import javax.swing.event.InternalFrameEvent;
@@ -1812,7 +1813,7 @@ public class JOptionPane extends JComponent implements Accessible
                        Icon icon, Object[] options, Object initialValue) {
 
         this.message = message;
-        this.options = options;
+        this.options = options == null ? null : Arrays.copyOf(options, options.length);
         this.initialValue = initialValue;
         this.icon = icon;
         setMessageType(messageType);
@@ -1972,7 +1973,9 @@ public class JOptionPane extends JComponent implements Accessible
     public void setOptions(Object[] newOptions) {
         Object[]           oldOptions = options;
 
-        options = newOptions;
+        options = newOptions == null
+                ? null
+                : Arrays.copyOf(newOptions, newOptions.length);
         firePropertyChange(OPTIONS_PROPERTY, oldOptions, options);
     }
 
@@ -1983,14 +1986,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @see #setOptions
      */
     public Object[] getOptions() {
-        if(options != null) {
-            int             optionCount = options.length;
-            Object[]        retOptions = new Object[optionCount];
-
-            System.arraycopy(options, 0, retOptions, 0, optionCount);
-            return retOptions;
-        }
-        return options;
+        return options == null ? null : Arrays.copyOf(options, options.length);
     }
 
     /**
@@ -2139,7 +2135,9 @@ public class JOptionPane extends JComponent implements Accessible
     public void setSelectionValues(Object[] newValues) {
         Object[]           oldValues = selectionValues;
 
-        selectionValues = newValues;
+        selectionValues = newValues == null
+                ? null
+                : Arrays.copyOf(newValues, newValues.length);
         firePropertyChange(SELECTION_VALUES_PROPERTY, oldValues, newValues);
         if(selectionValues != null)
             setWantsInput(true);
@@ -2152,7 +2150,9 @@ public class JOptionPane extends JComponent implements Accessible
      * @see #setSelectionValues
      */
     public Object[] getSelectionValues() {
-        return selectionValues;
+        return selectionValues == null
+                ? null
+                : Arrays.copyOf(selectionValues, selectionValues.length);
     }
 
     /**
