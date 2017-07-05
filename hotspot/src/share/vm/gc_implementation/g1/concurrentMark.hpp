@@ -366,8 +366,8 @@ class ConcurrentMark: public CHeapObj {
   friend class CMConcurrentMarkingTask;
   friend class G1ParNoteEndTask;
   friend class CalcLiveObjectsClosure;
-  friend class G1RefProcTaskProxy;
-  friend class G1RefProcTaskExecutor;
+  friend class G1CMRefProcTaskProxy;
+  friend class G1CMRefProcTaskExecutor;
   friend class G1CMParKeepAliveAndDrainClosure;
   friend class G1CMParDrainMarkingStackClosure;
 

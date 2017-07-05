@@ -115,9 +115,9 @@ public final class Init {
             // provider mechanism instead if implementing their own
             // transform or canonicalization algorithms.
             // InputStream is = Class.forName("com.sun.org.apache.xml.internal.security.Init").getResourceAsStream("resource/config.xml");
-            InputStream is = (InputStream) AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public Object run() {
+            InputStream is = AccessController.doPrivileged(
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
 //                        String cfile = System.getProperty
 //                            ("com.sun.org.apache.xml.internal.security.resource.config");
                         return getClass().getResourceAsStream

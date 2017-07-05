@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ EMACS=emacs
 #
 
 # Make sure the paths are fully specified, i.e. they must begin with /.
-SCRIPT=$(cd $(dirname $0) && pwd)/$(basename $0)
-RUNDIR=$(pwd)
+REL_MYDIR=`dirname $0`
+MYDIR=`cd $REL_MYDIR && pwd`
 
 # Look whether the user wants to run inside gdb
 case "$1" in
@@ -95,12 +95,9 @@ case "$1" in
         ;;
 esac
 
-# Find out the absolute path to this script
-MYDIR=$(cd $(dirname $SCRIPT) && pwd)
-
 JDK=
 if [ "${ALT_JAVA_HOME}" = "" ]; then
-    source ${MYDIR}/jdkpath.sh
+    . ${MYDIR}/jdkpath.sh
 else 
     JDK=${ALT_JAVA_HOME%%/jre};
 fi
@@ -118,9 +115,6 @@ fi
 JRE=$JDK/jre
 JAVA_HOME=$JDK
 ARCH=@@LIBARCH@@
-
-# Find out the absolute path to this script
-MYDIR=$(cd $(dirname $SCRIPT) && pwd)
 
 SBP=${MYDIR}:${JRE}/lib/${ARCH}
 
@@ -146,7 +140,7 @@ if [ ! -x $LAUNCHER ] ; then
 fi
 
 GDBSRCDIR=$MYDIR
-BASEDIR=$(cd $MYDIR/../../.. && pwd)
+BASEDIR=`cd $MYDIR/../../.. && pwd`
 
 init_gdb() {
 # Create a gdb script in case we should run inside gdb
@@ -179,7 +173,7 @@ case "$MODE" in
 	init_gdb
 # First find out what emacs version we're using, so that we can
 # use the new pretty GDB mode if emacs -version >= 22.1
-	case $($EMACS -version 2> /dev/null) in
+	case `$EMACS -version 2> /dev/null` in
 	    *GNU\ Emacs\ 2[23]*)
 	    emacs_gud_cmd="gdba"
 	    emacs_gud_args="--annotate=3"

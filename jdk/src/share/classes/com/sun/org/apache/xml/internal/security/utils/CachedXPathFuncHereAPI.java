@@ -173,6 +173,7 @@ public class CachedXPathFuncHereAPI {
     * @throws TransformerException
     * @deprecated
     */
+   @Deprecated
    public NodeIterator selectNodeIterator(
            Node contextNode, Node xpathnode, Node namespaceNode)
               throws TransformerException {
@@ -195,6 +196,7 @@ public class CachedXPathFuncHereAPI {
     * @throws TransformerException
     * @deprecated
     */
+   @Deprecated
    public NodeList selectNodeList(Node contextNode, Node xpathnode)
            throws TransformerException {
       return selectNodeList(contextNode, xpathnode, getStrFromNode(xpathnode), contextNode);
@@ -239,6 +241,7 @@ public class CachedXPathFuncHereAPI {
     * @throws TransformerException
     * @deprecated
     */
+   @Deprecated
    public XObject eval(Node contextNode, Node xpathnode)
            throws TransformerException {
       return eval(contextNode, xpathnode, getStrFromNode(xpathnode),contextNode);
@@ -375,12 +378,12 @@ public class CachedXPathFuncHereAPI {
 
     private XPath createXPath(String str, PrefixResolver prefixResolver) throws TransformerException {
         XPath xpath = null;
-        Class[] classes = new Class[]{String.class, SourceLocator.class, PrefixResolver.class, int.class,
+        Class<?>[] classes = new Class<?>[]{String.class, SourceLocator.class, PrefixResolver.class, int.class,
                 ErrorListener.class, FunctionTable.class};
         Object[] objects = new Object[]{str, null, prefixResolver, new Integer(XPath.SELECT), null, _funcTable};
         try {
-            Constructor constructor = XPath.class.getConstructor(classes);
-            xpath = (XPath) constructor.newInstance(objects);
+            Constructor<XPath> constructor = XPath.class.getConstructor(classes);
+            xpath = constructor.newInstance(objects);
         } catch (Throwable t) {
         }
         if (xpath == null) {
