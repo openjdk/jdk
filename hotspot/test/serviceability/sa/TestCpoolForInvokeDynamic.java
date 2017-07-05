@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import jdk.test.lib.Asserts;
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.ui.classbrowser
- * @ignore 8169232
  * @run main/othervm TestCpoolForInvokeDynamic
  */
 

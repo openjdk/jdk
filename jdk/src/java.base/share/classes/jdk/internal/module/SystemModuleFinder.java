@@ -80,8 +80,6 @@ public class SystemModuleFinder implements ModuleFinder {
         = PerfCounter.newPerfCounter("jdk.module.finder.jimage.packages");
     private static final PerfCounter exportsCount
         = PerfCounter.newPerfCounter("jdk.module.finder.jimage.exports");
-    // ImageReader used to access all modules in the image
-    private static final ImageReader imageReader;
 
     // singleton finder to find modules in the run-time images
     private static final SystemModuleFinder INSTANCE;
@@ -96,11 +94,26 @@ public class SystemModuleFinder implements ModuleFinder {
      */
     static {
         long t0 = System.nanoTime();
-        imageReader = ImageReaderFactory.getImageReader();
 
         INSTANCE = new SystemModuleFinder();
 
         initTime.addElapsedTimeFrom(t0);
+    }
+
+    /**
+     * Holder class for the ImageReader
+     */
+    private static class SystemImage {
+        static final ImageReader READER;
+        static {
+            long t0 = System.nanoTime();
+            READER = ImageReaderFactory.getImageReader();
+            initTime.addElapsedTimeFrom(t0);
+        }
+
+        static ImageReader reader() {
+            return READER;
+        }
     }
 
     private static boolean isFastPathSupported() {
@@ -114,7 +127,7 @@ public class SystemModuleFinder implements ModuleFinder {
 
         // this happens when java.base is patched with java.base
         // from an exploded image
-        return imageReader.getModuleNames();
+        return SystemImage.reader().getModuleNames();
     }
 
     // the set of modules in the run-time image
@@ -151,6 +164,7 @@ public class SystemModuleFinder implements ModuleFinder {
             descriptors = new ModuleDescriptor[n];
             recordedHashes = new ModuleHashes[n];
             moduleResolutions = new ModuleResolution[n];
+            ImageReader imageReader = SystemImage.reader();
             for (int i = 0; i < names.length; i++) {
                 String mn = names[i];
                 ImageLocation loc = imageReader.findLocation(mn, "module-info.class");
@@ -291,6 +305,7 @@ public class SystemModuleFinder implements ModuleFinder {
             Objects.requireNonNull(name);
             if (closed)
                 throw new IOException("ModuleReader is closed");
+            ImageReader imageReader = SystemImage.reader();
             if (imageReader != null) {
                 return imageReader.findLocation(module, name);
             } else {
@@ -330,7 +345,7 @@ public class SystemModuleFinder implements ModuleFinder {
         public Optional<ByteBuffer> read(String name) throws IOException {
             ImageLocation location = findImageLocation(name);
             if (location != null) {
-                return Optional.of(imageReader.getResourceBuffer(location));
+                return Optional.of(SystemImage.reader().getResourceBuffer(location));
             } else {
                 return Optional.empty();
             }
@@ -372,7 +387,7 @@ public class SystemModuleFinder implements ModuleFinder {
             stack = new ArrayDeque<>();
 
             // push the root node to the stack to get started
-            ImageReader.Node dir = imageReader.findNode(moduleRoot);
+            ImageReader.Node dir = SystemImage.reader().findNode(moduleRoot);
             if (dir == null || !dir.isDirectory())
                 throw new IOException(moduleRoot + " not a directory");
             stack.push(dir);
@@ -390,7 +405,7 @@ public class SystemModuleFinder implements ModuleFinder {
                     String name = node.getName();
                     if (node.isDirectory()) {
                         // build node
-                        ImageReader.Node dir = imageReader.findNode(name);
+                        ImageReader.Node dir = SystemImage.reader().findNode(name);
                         assert dir.isDirectory();
                         stack.push(dir);
                     } else {
