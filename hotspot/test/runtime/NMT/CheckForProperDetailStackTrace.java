@@ -57,11 +57,6 @@ public class CheckForProperDetailStackTrace {
     private static String expectedSymbol =
         "locked_create_entry_or_null";
 
-    private static final String jdkDebug = System.getProperty("jdk.debug");
-    private static boolean isSlowDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("slowdebug"));
-    }
-
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -76,11 +71,12 @@ public class CheckForProperDetailStackTrace {
         output.shouldNotContain("NativeCallStack::NativeCallStack");
         output.shouldNotContain("os::get_native_stack");
 
-        // AllocateHeap shouldn't be in the output because it is suppose to always be inlined.
-        // We check for that here, but allow it for Windows and Solaris slowdebug builds because
-        // the compiler ends up not inlining AllocateHeap.
+        // AllocateHeap shouldn't be in the output because it is supposed to always be inlined.
+        // We check for that here, but allow it for Aix, Solaris and Windows slowdebug builds
+        // because the compiler ends up not inlining AllocateHeap.
         Boolean okToHaveAllocateHeap =
-            isSlowDebugBuild() && (Platform.isSolaris() || Platform.isWindows());
+            Platform.isSlowDebugBuild() &&
+            (Platform.isAix() || Platform.isSolaris() || Platform.isWindows());
         if (!okToHaveAllocateHeap) {
             output.shouldNotContain("AllocateHeap");
         }

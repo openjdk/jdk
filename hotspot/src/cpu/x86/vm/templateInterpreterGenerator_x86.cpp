@@ -1169,6 +1169,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // reset_last_Java_frame
   __ reset_last_Java_frame(thread, true);
 
+  if (CheckJNICalls) {
+    // clear_pending_jni_exception_check
+    __ movptr(Address(thread, JavaThread::pending_jni_exception_check_fn_offset()), NULL_WORD);
+  }
+
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
   __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);

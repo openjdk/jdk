@@ -21,32 +21,27 @@
  * questions.
  */
 
-package jdk.test.lib.unsafe;
 
-import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
-
-
-/**
- * Helper class for accessing the jdk.internal.misc.Unsafe functionality
+/*
+ * @test LocalLongTest
+ * @bug 8163014
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @compile LocalLongHelper.java
+ * @run driver LocalLongTest
  */
-public final class UnsafeHelper {
-    private static Unsafe unsafe = null;
 
-    /**
-     * @return Unsafe instance.
-     */
-    public static synchronized Unsafe getUnsafe() {
-        if (unsafe == null) {
-            try {
-                Field f = Unsafe.class.getDeclaredField("theUnsafe");
-                f.setAccessible(true);
-                unsafe = (Unsafe) f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Unable to get Unsafe instance.", e);
-            }
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class LocalLongTest {
+    public static void main(String... args) throws Exception {
+        if (Platform.is64bit()) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xint",
+                                                                      "LocalLongHelper");
+            OutputAnalyzer o = new OutputAnalyzer(pb.start());
+            o.shouldHaveExitValue(0);
         }
-        return unsafe;
-    }
+    };
 }
-

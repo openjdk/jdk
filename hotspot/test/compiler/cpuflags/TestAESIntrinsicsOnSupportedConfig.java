@@ -27,11 +27,11 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @ignore 8146128
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch
  *                   compiler.cpuflags.TestAESIntrinsicsOnSupportedConfig
  */
