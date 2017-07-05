@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {
+#ifdef SHARK
+  return SharkCompiler::compiler()->generate_native_wrapper(masm,
+                                                            method,
+                                                            in_sig_bt,
+                                                            ret_type);
+#else
   ShouldNotCallThis();
+#endif // SHARK
 }
 
 int Deoptimization::last_frame_adjust(int callee_parameters,

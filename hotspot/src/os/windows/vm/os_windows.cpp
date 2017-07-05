@@ -3150,7 +3150,7 @@ void os::win32::initialize_system_info() {
   _vm_allocation_granularity = si.dwAllocationGranularity;
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
-  _processor_count = si.dwNumberOfProcessors;
+  set_processor_count(si.dwNumberOfProcessors);
 
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);

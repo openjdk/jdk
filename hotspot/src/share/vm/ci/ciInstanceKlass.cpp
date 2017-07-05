@@ -341,6 +341,20 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
 }
 
 // ------------------------------------------------------------------
+// ciInstanceKlass::get_field_by_name
+ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static) {
+  VM_ENTRY_MARK;
+  instanceKlass* k = get_instanceKlass();
+  fieldDescriptor fd;
+  klassOop def = k->find_field(name->get_symbolOop(), signature->get_symbolOop(), is_static, &fd);
+  if (def == NULL) {
+    return NULL;
+  }
+  ciField* field = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);
+  return field;
+}
+
+// ------------------------------------------------------------------
 // ciInstanceKlass::non_static_fields.
 
 class NonStaticFieldFiller: public FieldClosure {

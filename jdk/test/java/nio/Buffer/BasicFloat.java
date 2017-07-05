@@ -38,6 +38,26 @@ public class BasicFloat
     extends Basic
 {
 
+    private static final float[] VALUES = {
+        Float.MIN_VALUE,
+        (float) -1,
+        (float) 0,
+        (float) 1,
+        Float.MAX_VALUE,
+
+        Float.NEGATIVE_INFINITY,
+        Float.POSITIVE_INFINITY,
+        Float.NaN,
+        (float) -0.0,
+
+
+
+
+
+
+
+    };
+
     private static void relGet(FloatBuffer b) {
         int n = b.capacity();
         float v;
@@ -309,6 +329,12 @@ public class BasicFloat
 
 
 
+    private static void fail(String problem,
+                             FloatBuffer xb, FloatBuffer yb,
+                             float x, float y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicFloat
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (float x : VALUES) {
+            FloatBuffer xb = FloatBuffer.wrap(new float[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (float y : VALUES) {
+                FloatBuffer yb = FloatBuffer.wrap(new float[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Float.compare(x, y)) {
+
+                    if (x == 0.0 && y == 0.0) continue;
+
+
+
+
+                    fail("Incorrect results for FloatBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for FloatBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

@@ -32,7 +32,7 @@ import java.util.List;
 import sun.dyn.Access;
 import sun.dyn.Invokers;
 import sun.dyn.MethodTypeImpl;
-import sun.dyn.util.BytecodeSignature;
+import sun.dyn.util.BytecodeDescriptor;
 import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
@@ -63,7 +63,7 @@ class MethodType {
 
     static {
         // This hack allows the implementation package special access to
-        // the internals of MethodType.  In particular, the Form has all sorts
+        // the internals of MethodType.  In particular, the MTImpl has all sorts
         // of cached information useful to the implementation code.
         MethodTypeImpl.setMethodTypeFriend(IMPL_TOKEN, new MethodTypeImpl.MethodTypeFriend() {
             public Class<?>[] ptypes(MethodType mt)        { return mt.ptypes; }
@@ -114,50 +114,75 @@ class MethodType {
      * @throws IllegalArgumentException if any of the ptypes is void
      */
     public static
-    MethodType make(Class<?> rtype, Class<?>[] ptypes) {
+    MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
         return makeImpl(rtype, ptypes, false);
     }
-
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}. */
-    public static
-    MethodType make(Class<?> rtype, List<? extends Class<?>> ptypes) {
-        return makeImpl(rtype, ptypes.toArray(NO_PTYPES), true);
+    @Deprecated public static
+    MethodType make(Class<?> rtype, Class<?>[] ptypes) {
+        return methodType(rtype, ptypes);
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}. */
+    public static
+    MethodType methodType(Class<?> rtype, List<? extends Class<?>> ptypes) {
+        boolean notrust = false;  // random List impl. could return evil ptypes array
+        return makeImpl(rtype, ptypes.toArray(NO_PTYPES), notrust);
+    }
+    @Deprecated public static
+    MethodType make(Class<?> rtype, List<? extends Class<?>> ptypes) {
+        return methodType(rtype, ptypes);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The leading parameter type is prepended to the remaining array.
      */
     public static
-    MethodType make(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
+    MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
         Class<?>[] ptypes1 = new Class<?>[1+ptypes.length];
         ptypes1[0] = ptype0;
         System.arraycopy(ptypes, 0, ptypes1, 1, ptypes.length);
         return makeImpl(rtype, ptypes1, true);
     }
+    @Deprecated public static
+    MethodType make(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
+        return methodType(rtype, ptype0, ptypes);
+    }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has no parameter types.
      */
     public static
-    MethodType make(Class<?> rtype) {
+    MethodType methodType(Class<?> rtype) {
         return makeImpl(rtype, NO_PTYPES, true);
     }
+    @Deprecated public static
+    MethodType make(Class<?> rtype) {
+        return methodType(rtype);
+    }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has the single given parameter type.
      */
     public static
-    MethodType make(Class<?> rtype, Class<?> ptype0) {
+    MethodType methodType(Class<?> rtype, Class<?> ptype0) {
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
+    @Deprecated public static
+    MethodType make(Class<?> rtype, Class<?> ptype0) {
+        return methodType(rtype, ptype0);
+    }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      *  The resulting method has the same parameter types as {@code ptypes},
      *  and the specified return type.
      */
     public static
-    MethodType make(Class<?> rtype, MethodType ptypes) {
+    MethodType methodType(Class<?> rtype, MethodType ptypes) {
         return makeImpl(rtype, ptypes.ptypes, true);
+    }
+    @Deprecated public static
+    MethodType make(Class<?> rtype, MethodType ptypes) {
+        return methodType(rtype, ptypes);
     }
 
     /**
@@ -202,15 +227,16 @@ class MethodType {
     private static final MethodType[] objectOnlyTypes = new MethodType[20];
 
     /**
-     * Convenience method for {@link #make(java.lang.Class, java.lang.Class[], boolean)}.
-     * All parameters and the return type will be Object, except the final varargs parameter if any.
+     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * All parameters and the return type will be {@code Object},
+     * except the final varargs parameter if any, which will be {@code Object[]}.
      * @param objectArgCount number of parameters (excluding the varargs parameter if any)
-     * @param varargs whether there will be a varargs parameter, of type Object[]
+     * @param varargs whether there will be a varargs parameter, of type {@code Object[]}
      * @return a totally generic method type, given only its count of parameters and varargs
-     * @see #makeGeneric(int)
+     * @see #genericMethodType(int)
      */
     public static
-    MethodType makeGeneric(int objectArgCount, boolean varargs) {
+    MethodType genericMethodType(int objectArgCount, boolean varargs) {
         MethodType mt;
         int ivarargs = (!varargs ? 0 : 1);
         int ootIndex = objectArgCount*2 + ivarargs;
@@ -227,19 +253,27 @@ class MethodType {
         }
         return mt;
     }
+    @Deprecated public static
+    MethodType makeGeneric(int objectArgCount, boolean varargs) {
+        return genericMethodType(objectArgCount, varargs);
+    }
 
     /**
      * All parameters and the return type will be Object.
      * @param objectArgCount number of parameters
      * @return a totally generic method type, given only its count of parameters
-     * @see #makeGeneric(int, boolean)
+     * @see #genericMethodType(int, boolean)
      */
     public static
+    MethodType genericMethodType(int objectArgCount) {
+        return genericMethodType(objectArgCount, false);
+    }
+    @Deprecated public static
     MethodType makeGeneric(int objectArgCount) {
-        return makeGeneric(objectArgCount, false);
+        return genericMethodType(objectArgCount);
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[], boolean)}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * @param num    the index (zero-based) of the parameter type to change
      * @param nptype a new parameter type to replace the old one with
      * @return the same type, except with the selected parameter changed
@@ -251,11 +285,10 @@ class MethodType {
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[], boolean)}.
-     * @param num    the position (zero-based) of the inserted parameter type
-     * @param nptype a new parameter type to insert into the parameter list
-     * @return the same type, except with the selected parameter inserted
+    /** Convenience method for {@link #insertParameterTypes}.
+     * @deprecated Use {@link #insertParameterTypes} instead.
      */
+    @Deprecated
     public MethodType insertParameterType(int num, Class<?> nptype) {
         int len = ptypes.length;
         Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+1);
@@ -264,23 +297,73 @@ class MethodType {
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[], boolean)}.
-     * @param num    the index (zero-based) of the parameter type to remove
-     * @return the same type, except with the selected parameter removed
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param num    the position (zero-based) of the inserted parameter type(s)
+     * @param ptypesToInsert zero or more a new parameter types to insert into the parameter list
+     * @return the same type, except with the selected parameter(s) inserted
      */
-    public MethodType dropParameterType(int num) {
+    public MethodType insertParameterTypes(int num, Class<?>... ptypesToInsert) {
         int len = ptypes.length;
+        if (num < 0 || num > len)
+            throw newIllegalArgumentException("num="+num); //SPECME
+        int ilen = ptypesToInsert.length;
+        if (ilen == 0)  return this;
+        Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+ilen);
+        System.arraycopy(nptypes, num, nptypes, num+ilen, len-num);
+        System.arraycopy(ptypesToInsert, 0, nptypes, num, ilen);
+        return makeImpl(rtype, nptypes, true);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param num    the position (zero-based) of the inserted parameter type(s)
+     * @param ptypesToInsert zero or more a new parameter types to insert into the parameter list
+     * @return the same type, except with the selected parameter(s) inserted
+     */
+    public MethodType insertParameterTypes(int num, List<Class<?>> ptypesToInsert) {
+        return insertParameterTypes(num, ptypesToInsert.toArray(NO_PTYPES));
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * @param start  the index (zero-based) of the first parameter type to remove
+     * @param end    the index (greater than {@code start}) of the first parameter type after not to remove
+     * @return the same type, except with the selected parameter(s) removed
+     */
+    public MethodType dropParameterTypes(int start, int end) {
+        int len = ptypes.length;
+        if (!(0 <= start && start <= end && end <= len))
+            throw newIllegalArgumentException("start="+start+" end="+end); //SPECME
+        if (start == end)  return this;
         Class<?>[] nptypes;
-        if (num == 0) {
-            nptypes = Arrays.copyOfRange(ptypes, 1, len);
+        if (start == 0) {
+            if (end == len) {
+                // drop all parameters
+                nptypes = NO_PTYPES;
+            } else {
+                // drop initial parameter(s)
+                nptypes = Arrays.copyOfRange(ptypes, end, len);
+            }
         } else {
-            nptypes = Arrays.copyOfRange(ptypes, 0, len-1);
-            System.arraycopy(ptypes, num+1, nptypes, num, (len-1)-num);
+            if (end == len) {
+                // drop trailing parameter(s)
+                nptypes = Arrays.copyOfRange(ptypes, 0, start);
+            } else {
+                int tail = len - end;
+                nptypes = Arrays.copyOfRange(ptypes, 0, start + tail);
+                System.arraycopy(ptypes, end, nptypes, start, tail);
+            }
         }
         return makeImpl(rtype, nptypes, true);
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[], boolean)}.
+    /** Convenience method for {@link #dropParameterTypes}.
+     * @deprecated Use {@link #dropParameterTypes} instead.
+     */
+    @Deprecated
+    public MethodType dropParameterType(int num) {
+        return dropParameterTypes(num, num+1);
+    }
+
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * @param nrtype a return parameter type to replace the old one with
      * @return the same type, except with the return type change
      */
@@ -291,6 +374,7 @@ class MethodType {
 
     /** Convenience method.
      * Report if this type contains a primitive argument or return value.
+     * The return type {@code void} counts as a primitive.
      * @return true if any of the types are primitives
      */
     public boolean hasPrimitives() {
@@ -300,39 +384,47 @@ class MethodType {
     /** Convenience method.
      * Report if this type contains a wrapper argument or return value.
      * Wrappers are types which box primitive values, such as {@link Integer}.
+     * The reference type {@code java.lang.Void} counts as a wrapper.
      * @return true if any of the types are wrappers
      */
     public boolean hasWrappers() {
         return unwrap() != this;
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
-     * Erase all reference types to Object.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
+     * Erase all reference types to {@code Object}.
+     * All primitive types (including {@code void}) will remain unchanged.
      * @return a version of the original type with all reference types replaced
      */
     public MethodType erase() {
         return form.erasedType();
     }
 
-    /** Convenience method for {@link #makeGeneric(int)}.
-     * Convert all types, both reference and primitive, to Object.
+    /** Convenience method for {@link #genericMethodType(int)}.
+     * Convert all types, both reference and primitive, to {@code Object}.
+     * The expression {@code type.wrap().erase()} produces the same value
+     * as {@code type.generic()}.
      * @return a version of the original type with all types replaced
      */
     public MethodType generic() {
-        return makeGeneric(parameterCount());
+        return genericMethodType(parameterCount());
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * Convert all primitive types to their corresponding wrapper types.
+     * All reference types (including wrapper types) will remain unchanged.
      * A {@code void} return type is changed to the type {@code java.lang.Void}.
+     * The expression {@code type.wrap().erase()} produces the same value
+     * as {@code type.generic()}.
      * @return a version of the original type with all primitive types replaced
      */
     public MethodType wrap() {
         return hasPrimitives() ? wrapWithPrims(this) : this;
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * Convert all wrapper types to their corresponding primitive types.
+     * All primitive types (including {@code void}) will remain unchanged.
      * A return type of {@code java.lang.Void} is changed to {@code void}.
      * @return a version of the original type with all wrapper types replaced
      */
@@ -391,6 +483,7 @@ class MethodType {
 
     /**
      * Convenience method to present the arguments as an array.
+     * Changes to the array will not result in changes to the type.
      * @return the parameter types (as a fresh copy if necessary)
      */
     public Class<?>[] parameterArray() {
@@ -491,7 +584,7 @@ class MethodType {
         return form.parameterSlotCount();
     }
 
-    /** Number of JVM stack slots which carry all parameters after
+    /** Number of JVM stack slots which carry all parameters including and after
      * the given position, which must be in the range of 0 to
      * {@code parameterCount} inclusive.  Successive parameters are
      * more shallowly stacked, and parameters are indexed in the bytecodes
@@ -532,7 +625,7 @@ class MethodType {
         return form.returnSlotCount();
     }
 
-    /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
+    /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * Find or create an instance (interned) of the given method type.
      * Any class or interface name embedded in the signature string
      * will be resolved by calling {@link ClassLoader#loadClass(java.lang.String)}
@@ -544,16 +637,16 @@ class MethodType {
      * <p>
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
-     * @param bytecodeSignature a bytecode-level signature string "(T...)T"
+     * @param descriptor a bytecode-level signature string "(T...)T"
      * @param loader the class loader in which to look up the types
      * @return a method type matching the bytecode-level signature
      * @throws IllegalArgumentException if the string is not well-formed
      * @throws TypeNotPresentException if a named type cannot be found
      */
-    public static MethodType fromBytecodeString(String bytecodeSignature, ClassLoader loader)
+    public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
-        List<Class<?>> types = BytecodeSignature.parseMethod(bytecodeSignature, loader);
+        List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
         Class<?>[] ptypes = types.toArray(NO_PTYPES);
         return makeImpl(rtype, ptypes, true);
@@ -565,11 +658,21 @@ class MethodType {
      * <p>
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.
-     * {@link #fromBytecodeString(java.lang.String, java.lang.ClassLoader)},
+     * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader)},
      * because the latter requires a suitable class loader argument.
      * @return the bytecode signature representation
      */
+    public String toMethodDescriptorString() {
+        return BytecodeDescriptor.unparse(this);
+    }
+
+    /** Temporary alias for toMethodDescriptorString; delete after M3. */
     public String toBytecodeString() {
-        return BytecodeSignature.unparse(this);
+        return toMethodDescriptorString();
+    }
+    /** Temporary alias for fromMethodDescriptorString; delete after M3. */
+    public static MethodType fromBytecodeString(String descriptor, ClassLoader loader)
+        throws IllegalArgumentException, TypeNotPresentException {
+        return fromMethodDescriptorString(descriptor, loader);
     }
 }

@@ -1832,67 +1832,23 @@ void Matcher::find_shared( Node *n ) {
       case Op_Binary:         // These are introduced in the Post_Visit state.
         ShouldNotReachHere();
         break;
-      case Op_StoreB:         // Do match these, despite no ideal reg
-      case Op_StoreC:
-      case Op_StoreCM:
-      case Op_StoreD:
-      case Op_StoreF:
-      case Op_StoreI:
-      case Op_StoreL:
-      case Op_StoreP:
-      case Op_StoreN:
-      case Op_Store16B:
-      case Op_Store8B:
-      case Op_Store4B:
-      case Op_Store8C:
-      case Op_Store4C:
-      case Op_Store2C:
-      case Op_Store4I:
-      case Op_Store2I:
-      case Op_Store2L:
-      case Op_Store4F:
-      case Op_Store2F:
-      case Op_Store2D:
       case Op_ClearArray:
       case Op_SafePoint:
         mem_op = true;
         break;
-      case Op_LoadB:
-      case Op_LoadUS:
-      case Op_LoadD:
-      case Op_LoadF:
-      case Op_LoadI:
-      case Op_LoadKlass:
-      case Op_LoadNKlass:
-      case Op_LoadL:
-      case Op_LoadS:
-      case Op_LoadP:
-      case Op_LoadN:
-      case Op_LoadRange:
-      case Op_LoadD_unaligned:
-      case Op_LoadL_unaligned:
-      case Op_Load16B:
-      case Op_Load8B:
-      case Op_Load4B:
-      case Op_Load4C:
-      case Op_Load2C:
-      case Op_Load8C:
-      case Op_Load8S:
-      case Op_Load4S:
-      case Op_Load2S:
-      case Op_Load4I:
-      case Op_Load2I:
-      case Op_Load2L:
-      case Op_Load4F:
-      case Op_Load2F:
-      case Op_Load2D:
-        mem_op = true;
-        // Must be root of match tree due to prior load conflict
-        if( C->subsume_loads() == false ) {
-          set_shared(n);
+      default:
+        if( n->is_Store() ) {
+          // Do match stores, despite no ideal reg
+          mem_op = true;
+          break;
+        }
+        if( n->is_Mem() ) { // Loads and LoadStores
+          mem_op = true;
+          // Loads must be root of match tree due to prior load conflict
+          if( C->subsume_loads() == false )
+            set_shared(n);
         }
         // Fall into default case
-      default:
         if( !n->ideal_reg() )
           set_dontcare(n);  // Unmatchable Nodes
       } // end_switch
@@ -1913,15 +1869,15 @@ void Matcher::find_shared( Node *n ) {
           continue; // for(int i = ...)
         }
 
-        // Clone addressing expressions as they are "free" in most instructions
-        if( mem_op && i == MemNode::Address && mop == Op_AddP ) {
-          if (m->in(AddPNode::Base)->Opcode() == Op_DecodeN) {
-            // Bases used in addresses must be shared but since
-            // they are shared through a DecodeN they may appear
-            // to have a single use so force sharing here.
-            set_shared(m->in(AddPNode::Base)->in(1));
-          }
+        if( mop == Op_AddP && m->in(AddPNode::Base)->Opcode() == Op_DecodeN ) {
+          // Bases used in addresses must be shared but since
+          // they are shared through a DecodeN they may appear
+          // to have a single use so force sharing here.
+          set_shared(m->in(AddPNode::Base)->in(1));
+        }
 
+        // Clone addressing expressions as they are "free" in memory access instructions
+        if( mem_op && i == MemNode::Address && mop == Op_AddP ) {
           // Some inputs for address expression are not put on stack
           // to avoid marking them as shared and forcing them into register
           // if they are used only in address expressions.

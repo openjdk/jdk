@@ -90,7 +90,6 @@ endif # Platform_compiler == sparcWorks
 # for this method for now. (fix this when dtrace bug 6258412 is fixed)
 OPT_CFLAGS/ciEnv.o = $(OPT_CFLAGS) -xinline=no%__1cFciEnvbFpost_compiled_method_load_event6MpnHnmethod__v_
 
-
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
 
 # If you set HOTSPARC_GENERIC=yes, you disable all OPT_CFLAGS settings
@@ -115,8 +114,7 @@ MAPFILE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers \
 # and mustn't be otherwise.
 MAPFILE_DTRACE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-$(TYPE)
 
-
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = optimized
 SYSDEFS += -DASSERT -DFASTDEBUG -DCHECK_UNHANDLED_OOPS
 PICFLAGS = DEFAULT

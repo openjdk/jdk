@@ -26,6 +26,7 @@
  * @bug 4624534
  * @summary Make sure jar certificates work for Turkish locale
  * @author kladko
+ * @run main/othervm TurkCert
  */
 
 import java.util.*;
