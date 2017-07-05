@@ -321,7 +321,7 @@ class UseCountComputer: public ValueVisitor, BlockClosure {
   void visit(Value* n) {
     // Local instructions and Phis for expression stack values at the
     // start of basic blocks are not added to the instruction list
-    if (!(*n)->is_linked()&& (*n)->can_be_linked()) {
+    if (!(*n)->is_linked() && (*n)->can_be_linked()) {
       assert(false, "a node was not appended to the graph");
       Compilation::current()->bailout("a node was not appended to the graph");
     }
