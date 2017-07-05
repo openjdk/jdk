@@ -133,9 +133,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8133552
-java/lang/ProcessHandle/InfoTest.java                           generic-all
-
 ############################################################################
 
 # jdk_instrument
@@ -363,10 +360,6 @@ com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
 
-# 8029453
-java/util/concurrent/locks/ReentrantLock/TimeoutLockLoops.java linux-all
-
-
 ############################################################################
 
 # jdk_instrument
@@ -386,11 +379,6 @@ sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333
 sun/tools/jps/TestJpsJarRelative.java				generic-all
-
-# 8134420
-sun/tools/jps/TestJpsClass.java				generic-all
-sun/tools/jps/TestJpsJar.java					generic-all
-sun/tools/jps/TestJpsSanity.java				generic-all
 
 # 6734748
 sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all

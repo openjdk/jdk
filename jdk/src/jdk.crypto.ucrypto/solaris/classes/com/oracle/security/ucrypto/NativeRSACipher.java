@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,11 @@ import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 import java.security.KeyFactory;
@@ -205,8 +207,8 @@ public class NativeRSACipher extends CipherSpi {
         // Make sure the proper opmode uses the proper key
         if (doEncrypt && (!(newKey instanceof RSAPublicKey))) {
             throw new InvalidKeyException("RSAPublicKey required for encryption");
-        } else if (!doEncrypt && (!(newKey instanceof RSAPrivateCrtKey))) {
-            throw new InvalidKeyException("RSAPrivateCrtKey required for decryption");
+        } else if (!doEncrypt && (!(newKey instanceof RSAPrivateKey))) {
+            throw new InvalidKeyException("RSAPrivateKey required for decryption");
         }
 
         NativeKey nativeKey = null;
@@ -223,17 +225,26 @@ public class NativeRSACipher extends CipherSpi {
                     throw new InvalidKeyException(ikse);
                 }
             } else {
-                RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) newKey;
                 try {
-                    nativeKey = (NativeKey) keyFactory.engineGeneratePrivate
-                        (new RSAPrivateCrtKeySpec(privateKey.getModulus(),
-                                                  privateKey.getPublicExponent(),
-                                                  privateKey.getPrivateExponent(),
-                                                  privateKey.getPrimeP(),
-                                                  privateKey.getPrimeQ(),
-                                                  privateKey.getPrimeExponentP(),
-                                                  privateKey.getPrimeExponentQ(),
-                                                  privateKey.getCrtCoefficient()));
+                    if (newKey instanceof RSAPrivateCrtKey) {
+                        RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) newKey;
+                        nativeKey = (NativeKey) keyFactory.engineGeneratePrivate
+                            (new RSAPrivateCrtKeySpec(privateKey.getModulus(),
+                                                      privateKey.getPublicExponent(),
+                                                      privateKey.getPrivateExponent(),
+                                                      privateKey.getPrimeP(),
+                                                      privateKey.getPrimeQ(),
+                                                      privateKey.getPrimeExponentP(),
+                                                      privateKey.getPrimeExponentQ(),
+                                                      privateKey.getCrtCoefficient()));
+                   } else if (newKey instanceof RSAPrivateKey) {
+                        RSAPrivateKey privateKey = (RSAPrivateKey) newKey;
+                        nativeKey = (NativeKey) keyFactory.engineGeneratePrivate
+                            (new RSAPrivateKeySpec(privateKey.getModulus(),
+                                                   privateKey.getPrivateExponent()));
+                    } else {
+                        throw new InvalidKeyException("Unsupported type of RSAPrivateKey");
+                    }
                 } catch (InvalidKeySpecException ikse) {
                     throw new InvalidKeyException(ikse);
                 }

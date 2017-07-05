@@ -103,7 +103,7 @@ public final class URLReader extends Reader {
     /**
      * Charset used by this reader
      *
-     * @return the Chartset used to convert bytes to chars
+     * @return the Charset used to convert bytes to chars
      */
     public Charset getCharset() {
         return cs;

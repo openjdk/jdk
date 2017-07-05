@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.linker;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -42,13 +41,11 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
 import jdk.internal.dynalink.support.DefaultInternalObjectFilter;
-import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**

@@ -25,6 +25,7 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.Bundle.jreTimeZoneNames;
 import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
 import java.nio.file.DirectoryStream;
@@ -564,6 +565,44 @@ public class CLDRConverter {
 
     private static Map<String, Object> extractZoneNames(Map<String, Object> map, String id) {
         Map<String, Object> names = new HashMap<>();
+
+        // Copy over missing time zone ids from JRE for English locale
+        if (id.equals("en")) {
+            Map<String[], String> jreMetaMap = new HashMap<>();
+            jreTimeZoneNames.stream().forEach(e -> {
+                String tzid = (String)e[0];
+                String[] data = (String[])e[1];
+
+                if (map.get(TIMEZONE_ID_PREFIX + tzid) == null &&
+                    handlerMetaZones.get(tzid) == null) {
+                    // First, check the CLDR meta key
+                    Optional<Map.Entry<String, String>> cldrMeta =
+                        handlerMetaZones.getData().entrySet().stream()
+                            .filter(me ->
+                                Arrays.deepEquals(data,
+                                    (String[])map.get(METAZONE_ID_PREFIX + me.getValue())))
+                            .findAny();
+                    if (cldrMeta.isPresent()) {
+                        names.put(tzid, cldrMeta.get().getValue());
+                    } else {
+                        // check the JRE meta key, add if there is not.
+                        Optional<Map.Entry<String[], String>> jreMeta =
+                            jreMetaMap.entrySet().stream()
+                                .filter(jm -> Arrays.deepEquals(data, jm.getKey()))
+                                .findAny();
+                        if (jreMeta.isPresent()) {
+                            names.put(tzid, jreMeta.get().getValue());
+                        } else {
+                            String metaName = "JRE_" + tzid.replaceAll("[/-]", "_");
+                            names.put(METAZONE_ID_PREFIX + metaName, data);
+                            names.put(tzid, metaName);
+                            jreMetaMap.put(data, metaName);
+                        }
+                    }
+                }
+            });
+        }
+
         for (String tzid : handlerMetaZones.keySet()) {
             String tzKey = TIMEZONE_ID_PREFIX + tzid;
             Object data = map.get(tzKey);

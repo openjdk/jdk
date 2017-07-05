@@ -1967,7 +1967,7 @@ public enum JSType {
     /**
      * Get the unboxed (primitive) type for an object
      * @param o object
-     * @return primive type or Object.class if not primitive
+     * @return primitive type or Object.class if not primitive
      */
     public static Class<?> unboxedFieldType(final Object o) {
         if (o == null) {

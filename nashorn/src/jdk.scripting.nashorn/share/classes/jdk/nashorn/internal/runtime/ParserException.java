@@ -38,7 +38,7 @@ public final class ParserException extends NashornException {
     private final Source source;
     // token responsible for this exception
     private final long token;
-    // if this is traslated as ECMA error, which type should be used?
+    // if this is translated as ECMA error, which type should be used?
     private final JSErrorType errorType;
 
     /**

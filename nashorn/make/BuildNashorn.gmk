@@ -31,7 +31,7 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
-JDK_CLASSES := $(subst $(SPACE),$(PATH_SEP),$(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
+JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
       java.base java.logging java.scripting)))
 
 NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
@@ -48,7 +48,7 @@ endif
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -g -source 8 -target 8 -bootclasspath "$(JDK_CLASSES)", \
+    FLAGS := -g -source 8 -target 8 -bootclasspath $(JDK_CLASSES), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -86,7 +86,8 @@ $(NASGEN_RUN_FILE): $(BUILD_NASGEN)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
 	$(CP) -R -p $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes/* $(@D)/
 	$(FIXPATH) $(JAVA) \
-	    -Xbootclasspath/p:"$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes" \
+	    -Xbootclasspath/p:$(call PathList, $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+            $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes) \
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
 
