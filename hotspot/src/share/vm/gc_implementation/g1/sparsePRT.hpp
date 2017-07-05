@@ -102,13 +102,6 @@ class RSHashTable : public CHeapObj {
   int  _free_region;
   int  _free_list;
 
-  static RSHashTable* _head_deleted_list;
-  RSHashTable* _next_deleted;
-  RSHashTable* next_deleted() { return _next_deleted; }
-  void set_next_deleted(RSHashTable* rsht) { _next_deleted = rsht; }
-  bool _deleted;
-  void set_deleted(bool b) { _deleted = b; }
-
   // Requires that the caller hold a lock preventing parallel modifying
   // operations, and that the the table be less than completely full.  If
   // an entry for "region_ind" is already in the table, finds it and
@@ -154,14 +147,10 @@ public:
   size_t occupied_entries() const { return _occupied_entries; }
   size_t occupied_cards() const   { return _occupied_cards;   }
   size_t mem_size() const;
-  bool deleted() { return _deleted; }
 
   SparsePRTEntry* entry(int i) const { return &_entries[i]; }
 
   void print();
-
-  static void add_to_deleted_list(RSHashTable* rsht);
-  static RSHashTable* get_from_deleted_list();
 };
 
 // ValueObj because will be embedded in HRRS iterator.

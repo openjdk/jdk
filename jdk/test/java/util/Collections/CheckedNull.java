@@ -52,7 +52,7 @@ public class CheckedNull {
 
         testMap(Collections.checkedMap(
                     new HashMap<String, String>(),
-                    String.class, String.class));;
+                    String.class, String.class));
     }
 
     ClassCastException cce(F f) {

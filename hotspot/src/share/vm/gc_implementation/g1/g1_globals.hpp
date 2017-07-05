@@ -55,8 +55,14 @@
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
                                                                             \
-  develop(bool, G1VerifyConcMarkPrintReachable, false,                      \
-          "If conc mark verification fails, print reachable objects")       \
+  develop(bool, G1PrintReachableAtInitialMark, false,                       \
+          "Reachable object dump at the initial mark pause")                \
+                                                                            \
+  develop(bool, G1VerifyDuringGCPrintReachable, false,                      \
+          "If conc mark verification fails, dump reachable objects")        \
+                                                                            \
+  develop(ccstr, G1PrintReachableBaseFile, NULL,                            \
+          "The base file name for the reachable object dumps")              \
                                                                             \
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
