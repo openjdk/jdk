@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Map;
 
 import com.sun.codemodel.internal.writer.FileCodeWriter;
 import com.sun.codemodel.internal.writer.ProgressCodeWriter;
-
 
 /**
  * Root of the code DOM.
@@ -80,10 +79,13 @@ import com.sun.codemodel.internal.writer.ProgressCodeWriter;
 public final class JCodeModel {
 
     /** The packages that this JCodeWriter contains. */
-    private HashMap<String,JPackage> packages = new HashMap<String,JPackage>();
+    private final HashMap<String,JPackage> packages = new HashMap<>();
+
+    /** Java module in {@code module-info.java} file. */
+    private JModule module;
 
     /** All JReferencedClasses are pooled here. */
-    private final HashMap<Class<?>,JReferencedClass> refClasses = new HashMap<Class<?>,JReferencedClass>();
+    private final HashMap<Class<?>,JReferencedClass> refClasses = new HashMap<>();
 
 
     /** Obtains a reference to the special "null" type. */
@@ -121,7 +123,7 @@ public final class JCodeModel {
     public JCodeModel() {}
 
     /**
-     * Add a package to the list of packages to be generated
+     * Add a package to the list of packages to be generated.
      *
      * @param name
      *        Name of the package. Use "" to indicate the root package.
@@ -135,6 +137,50 @@ public final class JCodeModel {
             packages.put(name, p);
         }
         return p;
+    }
+
+    /**
+     * Creates and returns Java module to be generated.
+     * @param name The Name of Java module.
+     * @return New Java module.
+     */
+    public JModule _moduleInfo(final String name) {
+        return module = new JModule(name);
+    }
+
+    /**
+     * Returns existing Java module to be generated.
+     * @return Java module or {@code null} if Java module was not created yet.
+     */
+    public JModule _getModuleInfo() {
+        return module;
+    }
+
+    /**
+     * Creates Java module instance and adds existing packages with classes to the Java module info.
+     * Used to initialize and build Java module instance with existing packages content.
+     * @param name The Name of Java module.
+     * @param requires Requires directives to add.
+     * @throws IllegalStateException when Java module instance was not initialized.
+     */
+    public void _prepareModuleInfo(final String name, final String ...requires) {
+        _moduleInfo(name);
+        _updateModuleInfo(requires);
+    }
+
+    /**
+     * Adds existing packages with classes to the Java module info.
+     * Java module instance must exist before calling this method.
+     * Used to update Java module instance with existing packages content after it was prepared on client side.
+     * @param requires Requires directives to add.
+     * @throws IllegalStateException when Java module instance was not initialized.
+     */
+    public void _updateModuleInfo(final String ...requires) {
+        if (module == null) {
+            throw new IllegalStateException("Java module instance was not initialized yet.");
+        }
+        module._exports(packages.values(), false);
+        module._requires(requires);
     }
 
     public final JPackage rootPackage() {
@@ -292,8 +338,12 @@ public final class JCodeModel {
     public void build( CodeWriter source, CodeWriter resource ) throws IOException {
         JPackage[] pkgs = packages.values().toArray(new JPackage[packages.size()]);
         // avoid concurrent modification exception
-        for( JPackage pkg : pkgs )
+        for( JPackage pkg : pkgs ) {
             pkg.build(source,resource);
+        }
+        if (module != null) {
+            module.build(source);
+        }
         source.close();
         resource.close();
     }

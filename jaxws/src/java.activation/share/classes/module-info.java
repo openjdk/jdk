@@ -28,8 +28,6 @@
  */
 module java.activation {
     requires public java.datatransfer;
-    // dependence on java.beans.Beans to be eliminated
-    requires java.desktop;
     requires java.logging;
 
     exports javax.activation;

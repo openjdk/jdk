@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ protected:
   bool              _lookup_warning;
   mutable int       _lookup_count;
   mutable int       _lookup_length;
-  bool verify_lookup_length(double load);
+  bool verify_lookup_length(double load, const char *table_name);
 #endif
 
   void initialize(int table_size, int entry_size, int number_of_entries);

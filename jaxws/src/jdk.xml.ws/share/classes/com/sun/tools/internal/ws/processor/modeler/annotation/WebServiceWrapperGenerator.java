@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,11 +171,10 @@ public class WebServiceWrapperGenerator extends WebServiceVisitor {
     @SuppressWarnings("CallToThreadDumpStack")
     protected void doPostProcessWebService(WebService webService, TypeElement d) {
         if (cm != null) {
-            File sourceDir = builder.getSourceDir();
-            assert(sourceDir != null);
             WsgenOptions options = builder.getOptions();
+            assert options.filer != null;
             try {
-                CodeWriter cw = new FilerCodeWriter(sourceDir, options);
+                CodeWriter cw = new FilerCodeWriter(options);
                 if(options.verbose)
                     cw = new ProgressCodeWriter(cw, System.out);
                 cm.build(cw);
@@ -248,9 +247,7 @@ public class WebServiceWrapperGenerator extends WebServiceVisitor {
         }
         builder.log("requestWrapper: "+requestClassName);
 ///// fix for wsgen CR 6442344
-        File file = new File(DirectoryUtil.getOutputDirectoryFor(requestClassName, builder.getSourceDir()),
-                Names.stripQualifier(requestClassName) + GeneratorConstants.JAVA_SRC_SUFFIX.getValue());
-        builder.getOptions().addGeneratedFile(file);
+        addGeneratedFile(requestClassName);
 //////////
         boolean canOverwriteRequest = builder.canOverWriteClass(requestClassName);
         if (!canOverwriteRequest) {
@@ -282,9 +279,7 @@ public class WebServiceWrapperGenerator extends WebServiceVisitor {
                 builder.processError(WebserviceapMessages.WEBSERVICEAP_METHOD_RESPONSE_WRAPPER_BEAN_NAME_NOT_UNIQUE(
                         typeElement.getQualifiedName(), method.toString()));
             }
-            file = new File(DirectoryUtil.getOutputDirectoryFor(responseClassName, builder.getSourceDir()),
-                    Names.stripQualifier(responseClassName) + GeneratorConstants.JAVA_SRC_SUFFIX.getValue());
-            builder.getOptions().addGeneratedFile(file);
+            addGeneratedFile(responseClassName);
         }
         //ArrayList<MemberInfo> reqMembers = new ArrayList<MemberInfo>();
         //ArrayList<MemberInfo> resMembers = new ArrayList<MemberInfo>();
@@ -332,6 +327,12 @@ public class WebServiceWrapperGenerator extends WebServiceVisitor {
             throw new ModelerException("modeler.nestedGeneratorError",e);
         }
         return true;
+    }
+
+    private void addGeneratedFile(String requestClassName) {
+        File file = new File(DirectoryUtil.getOutputDirectoryFor(requestClassName, builder.getSourceDir()),
+                Names.stripQualifier(requestClassName) + GeneratorConstants.JAVA_SRC_SUFFIX.getValue());
+        builder.getOptions().addGeneratedFile(file);
     }
 
 //    private List<Annotation> collectJAXBAnnotations(Declaration decl) {
@@ -471,8 +472,11 @@ public class WebServiceWrapperGenerator extends WebServiceVisitor {
             seiContext.addExceptionBeanEntry(thrownDecl.getQualifiedName(), faultInfo, builder);
             return false;
         }
-        if (seiContext.getExceptionBeanName(thrownDecl.getQualifiedName()) != null)
+        if (seiContext.getExceptionBeanName(thrownDecl.getQualifiedName()) != null) {
             return false;
+        }
+
+        addGeneratedFile(className);
 
         //write class comment - JAXWS warning
         JDocComment comment = cls.javadoc();

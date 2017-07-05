@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
 package javax.activation;
 
 import java.io.*;
-import java.beans.Beans;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * The CommandInfo class is used by CommandMap implementations to
@@ -84,8 +87,15 @@ public class CommandInfo {
     /**
      * Return the instantiated JavaBean component.
      * <p>
-     * Begin by instantiating the component with
-     * {@code Beans.instantiate()}.
+     * If {@code java.beans.Beans} is visible then it's
+     * {@code java.beans.Beans#instantiate} method is invoked to instantiate
+     * the component as a JavaBeans component.
+     * When {@code java.beans.Beans} is not visible (when {@code java.desktop}
+     * module is not  readable or when the runtime image does not contain the
+     * {@code java.desktop} module) then the command's class is loaded and
+     * instantiated with its public no-args constructor.
+     * <p>
+     * The component class needs to be public.
      * <p>
      * If the bean implements the {@code javax.activation.CommandObject}
      * interface, call its {@code setCommandContext} method.
@@ -102,7 +112,7 @@ public class CommandInfo {
      * this method will check if it implements the
      * java.io.Externalizable interface. If it does, the bean's
      * readExternal method will be called if an InputStream
-     * can be acquired from the DataHandler.
+     * can be acquired from the DataHandler.<p>
      *
      * @param dh        The DataHandler that describes the data to be
      *                  passed to the command.
@@ -116,7 +126,7 @@ public class CommandInfo {
         Object new_bean = null;
 
         // try to instantiate the bean
-        new_bean = java.beans.Beans.instantiate(loader, className);
+        new_bean = Beans.instantiate(loader, className);
 
         // if we got one and it is a CommandObject
         if (new_bean != null) {
@@ -134,5 +144,87 @@ public class CommandInfo {
         }
 
         return new_bean;
+    }
+
+    /**
+     * Helper class to invoke Beans.instantiate reflectively or the equivalent
+     * with core reflection when module java.desktop is not readable.
+     */
+    private static final class Beans {
+        static final Method instantiateMethod;
+
+        static {
+            Method m;
+            try {
+                Class<?> c = Class.forName("java.beans.Beans");
+                m = c.getDeclaredMethod("instantiate", ClassLoader.class, String.class);
+            } catch (ClassNotFoundException e) {
+                m = null;
+            } catch (NoSuchMethodException e) {
+                m = null;
+            }
+            instantiateMethod = m;
+        }
+
+        /**
+         * Equivalent to invoking java.beans.Beans.instantiate(loader, cn)
+         */
+        static Object instantiate(ClassLoader loader, String cn)
+                throws IOException, ClassNotFoundException {
+
+            Exception exception;
+
+            if (instantiateMethod != null) {
+
+                // invoke Beans.instantiate
+                try {
+                    return instantiateMethod.invoke(null, loader, cn);
+                } catch (InvocationTargetException e) {
+                    exception = e;
+                } catch (IllegalAccessException e) {
+                    exception = e;
+                }
+
+            } else {
+
+                SecurityManager security = System.getSecurityManager();
+                if (security != null) {
+                    // if it's ok with the SecurityManager, it's ok with me.
+                    String cname = cn.replace('/', '.');
+                    if (cname.startsWith("[")) {
+                        int b = cname.lastIndexOf('[') + 2;
+                        if (b > 1 && b < cname.length()) {
+                            cname = cname.substring(b);
+                        }
+                    }
+                    int i = cname.lastIndexOf('.');
+                    if (i != -1) {
+                        security.checkPackageAccess(cname.substring(0, i));
+                    }
+                }
+
+                // Beans.instantiate specified to use SCL when loader is null
+                if (loader == null) {
+                    loader = (ClassLoader)
+                        AccessController.doPrivileged(new PrivilegedAction() {
+                            public Object run() {
+                                ClassLoader cl = null;
+                                try {
+                                    cl = ClassLoader.getSystemClassLoader();
+                                } catch (SecurityException ex) { }
+                                return cl;
+                            }
+                        });
+                }
+                Class<?> beanClass = Class.forName(cn, false, loader);
+                try {
+                    return beanClass.getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    throw new ClassNotFoundException(beanClass + ": " + ex, ex);
+                }
+
+            }
+            return null;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class Constructor
 {
     // Since Constructor is typically built when there is no FieldItem
     // nor FieldUse, we need to rely on Strings.
-    public Constructor( String[] _fields ) { this.fields = _fields; }
+    public Constructor( String[] _fields ) { this.fields = _fields.clone(); }
 
     /** array of field names to be initialized. */
     public final String[] fields;

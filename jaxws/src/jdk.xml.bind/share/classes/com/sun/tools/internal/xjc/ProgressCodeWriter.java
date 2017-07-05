@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,23 +52,42 @@ final class ProgressCodeWriter extends FilterCodeWriter {
 
     private final XJCListener progress;
 
+    @Override
     public Writer openSource(JPackage pkg, String fileName) throws IOException {
         report(pkg,fileName);
         return super.openSource(pkg, fileName);
     }
 
+    @Override
     public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
         report(pkg,fileName);
         return super.openBinary(pkg,fileName);
     }
 
-    private void report(JPackage pkg, String fileName) {
-        String name = pkg.name().replace('.', File.separatorChar);
-        if(name.length()!=0)    name +=     File.separatorChar;
-        name += fileName;
+    /**
+     * Report progress to {@link XJCListener}.
+     * @param pkg The package of file being written. Value of {@code null} means that file has no package.
+     * @param fileName The file name being written. Value can't be {@code null}.
+     */
+    private void report(final JPackage pkg, final String fileName) {
+        if (fileName == null) {
+            throw new IllegalArgumentException("File name is null");
+        }
+
+        final String pkgName;
+        final String fileNameOut;
+        if (pkg != null && (pkgName = pkg.name().replace('.', File.separatorChar)).length() > 0 ) {
+            final StringBuilder sb = new StringBuilder(fileName.length() + pkgName.length() + 1);
+            sb.append(pkgName);
+            sb.append(File.separatorChar);
+            sb.append(fileName);
+            fileNameOut = sb.toString();
+        } else {
+            fileNameOut = fileName;
+        }
 
         if(progress.isCanceled())
             throw new AbortException();
-        progress.generatedFile(name,current++,totalFileCount);
+        progress.generatedFile(fileNameOut, current++, totalFileCount);
     }
 }

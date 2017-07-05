@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,21 @@
 
 package com.sun.tools.internal.xjc;
 
+import com.sun.codemodel.internal.CodeWriter;
+import com.sun.codemodel.internal.JPackage;
+import com.sun.codemodel.internal.JResourceFile;
+import com.sun.codemodel.internal.writer.FileCodeWriter;
+import com.sun.codemodel.internal.writer.PrologCodeWriter;
+import com.sun.istack.internal.tools.DefaultAuthenticator;
+import com.sun.tools.internal.xjc.api.ClassNameAllocator;
+import com.sun.tools.internal.xjc.api.SpecVersion;
+import com.sun.tools.internal.xjc.generator.bean.field.FieldRendererFactory;
+import com.sun.tools.internal.xjc.model.Model;
+import com.sun.tools.internal.xjc.reader.Util;
+import com.sun.xml.internal.bind.api.impl.NameConverter;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,8 +48,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -43,33 +62,15 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
-
-import com.sun.codemodel.internal.CodeWriter;
-import com.sun.codemodel.internal.JPackage;
-import com.sun.codemodel.internal.JResourceFile;
-import com.sun.codemodel.internal.writer.FileCodeWriter;
-import com.sun.codemodel.internal.writer.PrologCodeWriter;
-import com.sun.istack.internal.tools.DefaultAuthenticator;
-import com.sun.org.apache.xml.internal.resolver.CatalogManager;
-import com.sun.org.apache.xml.internal.resolver.tools.CatalogResolver;
-import com.sun.tools.internal.xjc.api.ClassNameAllocator;
-import com.sun.tools.internal.xjc.api.SpecVersion;
-import com.sun.tools.internal.xjc.generator.bean.field.FieldRendererFactory;
-import com.sun.tools.internal.xjc.model.Model;
-import com.sun.tools.internal.xjc.reader.Util;
-import com.sun.xml.internal.bind.api.impl.NameConverter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.catalog.CatalogManager;
 
 /**
  * Global options.
@@ -262,6 +263,11 @@ public class Options
      * Used to detect if two {@link Plugin}s try to overwrite {@link #nameConverter}.
      */
     private Plugin nameConverterOwner = null;
+
+    /**
+     * Java module name in {@code module-info.java}.
+     */
+    private String javaModule = null;
 
     /**
      * Gets the active {@link FieldRendererFactory} that shall be used to build {@link Model}.
@@ -464,6 +470,13 @@ public class Options
                 classpaths.toArray(new URL[classpaths.size()]),parent);
     }
 
+    /**
+     * Gets Java module name option.
+     * @return Java module name option or {@code null} if this option was not set.
+     */
+    public String getModuleName() {
+        return javaModule;
+    }
 
     /**
      * Parses an option {@code args[i]} and return
@@ -507,6 +520,10 @@ public class Options
                 // automatically as a usability feature
                 packageLevelAnnotations = false;
             }
+            return 2;
+        }
+        if (args[i].equals("-m")) {
+            javaModule = requireArgument("-m", args, ++i);
             return 2;
         }
         if (args[i].equals("-debug")) {
@@ -622,9 +639,7 @@ public class Options
             return 2;
         }
         if( args[i].equals("-catalog") ) {
-            // use Sun's "XML Entity and URI Resolvers" by Norman Walsh
-            // to resolve external entities.
-            // http://www.sun.com/xml/developers/resolver/
+            // use javax.xml.catalog to resolve external entities.
 
             File catalogFile = new File(requireArgument("-catalog",args,++i));
             try {
@@ -735,7 +750,7 @@ public class Options
      * and add them as {@link InputSource} to the specified list.
      *
      * @param suffix
-     *      If the given token is a directory name, we do a recusive search
+     *      If the given token is a directory name, we do a recursive search
      *      and find all files that have the given suffix.
      */
     private void addFile(String name, List<InputSource> target, String suffix) throws BadCommandLineException {
@@ -762,16 +777,27 @@ public class Options
      * Adds a new catalog file.
      */
     public void addCatalog(File catalogFile) throws IOException {
-        if(entityResolver==null) {
-            final CatalogManager staticManager = CatalogManager.getStaticManager();
-            // hack to force initialization so catalog manager system properties take effect
-            staticManager.getVerbosity();
-            staticManager.setIgnoreMissingProperties(true);
-            entityResolver = new CatalogResolver(true);
+        String newUrl = catalogFile.getPath();
+        if (!catalogUrls.contains(newUrl)) {
+            catalogUrls.add(newUrl);
         }
-        ((CatalogResolver)entityResolver).getCatalog().parseCatalog(catalogFile.getPath());
+        try {
+            entityResolver = CatalogManager.catalogResolver(catalogFeatures,
+                                catalogUrls.toArray(new String[0]));
+        } catch (Exception ex) {
+            entityResolver = null;
+        }
     }
 
+    // Since javax.xml.catalog is unmodifiable we need to track catalog
+    // URLs added and create new catalog each time addCatalog is called
+    private final ArrayList<String> catalogUrls = new ArrayList<String>();
+
+    // Cache CatalogFeatures instance for future usages.
+    // Resolve feature is set to "continue" value for backward compatibility.
+    private static CatalogFeatures catalogFeatures = CatalogFeatures.builder()
+                                                    .with(Feature.RESOLVE, "continue")
+                                                    .build();
     /**
      * Parses arguments and fill fields of this object.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,17 @@ public class FilterCodeWriter extends CodeWriter {
         this.core = core;
     }
 
+    @Override
     public OutputStream openBinary( JPackage pkg, String fileName ) throws IOException {
         return core.openBinary(pkg, fileName);
     }
 
+    @Override
     public Writer openSource( JPackage pkg, String fileName ) throws IOException {
         return core.openSource(pkg, fileName);
     }
 
+    @Override
     public void close() throws IOException {
         core.close();
     }

@@ -379,11 +379,13 @@ class MethodHandleNatives {
                             name, fixMethodType(callerClass, type), appendixResult);
                 }
             }
+        } catch (Error e) {
+            // Pass through an Error, including say StackOverflowError or
+            // OutOfMemoryError
+            throw e;
         } catch (Throwable ex) {
-            if (ex instanceof LinkageError)
-                throw (LinkageError) ex;
-            else
-                throw new LinkageError(ex.getMessage(), ex);
+            // Wrap anything else in LinkageError
+            throw new LinkageError(ex.getMessage(), ex);
         }
         throw new LinkageError("no such method "+defc.getName()+"."+name+type);
     }
