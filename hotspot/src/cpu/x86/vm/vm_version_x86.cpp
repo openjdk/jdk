@@ -595,8 +595,7 @@ void VM_Version::initialize() {
   if (stub_blob == NULL) {
     vm_exit_during_initialization("Unable to allocate getPsrInfo_stub");
   }
-  CodeBuffer c(stub_blob->instructions_begin(),
-               stub_blob->instructions_size());
+  CodeBuffer c(stub_blob);
   VM_Version_StubGenerator g(&c);
   getPsrInfo_stub = CAST_TO_FN_PTR(getPsrInfo_stub_t,
                                    g.generate_getPsrInfo());

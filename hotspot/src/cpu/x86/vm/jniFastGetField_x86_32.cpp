@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     default:        ShouldNotReachHere();
   }
   ResourceMark rm;
-  BufferBlob* b = BufferBlob::create(name, BUFFER_SIZE*wordSize);
-  address fast_entry = b->instructions_begin();
-  CodeBuffer cbuf(fast_entry, b->instructions_size());
+  BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE*wordSize);
+  CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
+  address fast_entry = __ pc();
 
   Label slow;
 
@@ -135,11 +135,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   return fast_entry;
 #else
   switch (type) {
-    case T_BOOLEAN: jni_fast_GetBooleanField_fp = (GetBooleanField_t)fast_entry; break;
-    case T_BYTE:    jni_fast_GetByteField_fp = (GetByteField_t)fast_entry; break;
-    case T_CHAR:    jni_fast_GetCharField_fp = (GetCharField_t)fast_entry; break;
-    case T_SHORT:   jni_fast_GetShortField_fp = (GetShortField_t)fast_entry; break;
-    case T_INT:     jni_fast_GetIntField_fp = (GetIntField_t)fast_entry;
+  case T_BOOLEAN: jni_fast_GetBooleanField_fp = (GetBooleanField_t) fast_entry; break;
+  case T_BYTE:    jni_fast_GetByteField_fp    = (GetByteField_t)    fast_entry; break;
+  case T_CHAR:    jni_fast_GetCharField_fp    = (GetCharField_t)    fast_entry; break;
+  case T_SHORT:   jni_fast_GetShortField_fp   = (GetShortField_t)   fast_entry; break;
+  case T_INT:     jni_fast_GetIntField_fp     = (GetIntField_t)     fast_entry; break;
   }
   return os::win32::fast_jni_accessor_wrapper(type);
 #endif
@@ -168,10 +168,10 @@ address JNI_FastGetField::generate_fast_get_int_field() {
 address JNI_FastGetField::generate_fast_get_long_field() {
   const char *name = "jni_fast_GetLongField";
   ResourceMark rm;
-  BufferBlob* b = BufferBlob::create(name, BUFFER_SIZE*wordSize);
-  address fast_entry = b->instructions_begin();
-  CodeBuffer cbuf(fast_entry, b->instructions_size());
+  BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE*wordSize);
+  CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
+  address fast_entry = __ pc();
 
   Label slow;
 
@@ -246,7 +246,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 #ifndef _WINDOWS
   return fast_entry;
 #else
-  jni_fast_GetLongField_fp = (GetLongField_t)fast_entry;
+  jni_fast_GetLongField_fp = (GetLongField_t) fast_entry;
   return os::win32::fast_jni_accessor_wrapper(T_LONG);
 #endif
 }
@@ -259,10 +259,10 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     default:       ShouldNotReachHere();
   }
   ResourceMark rm;
-  BufferBlob* b = BufferBlob::create(name, BUFFER_SIZE*wordSize);
-  address fast_entry = b->instructions_begin();
-  CodeBuffer cbuf(fast_entry, b->instructions_size());
+  BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE*wordSize);
+  CodeBuffer cbuf(blob);
   MacroAssembler* masm = new MacroAssembler(&cbuf);
+  address fast_entry = __ pc();
 
   Label slow_with_pop, slow;
 
@@ -348,8 +348,8 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   return fast_entry;
 #else
   switch (type) {
-    case T_FLOAT:  jni_fast_GetFloatField_fp = (GetFloatField_t)fast_entry; break;
-    case T_DOUBLE: jni_fast_GetDoubleField_fp = (GetDoubleField_t)fast_entry;
+  case T_FLOAT:  jni_fast_GetFloatField_fp  = (GetFloatField_t)  fast_entry; break;
+  case T_DOUBLE: jni_fast_GetDoubleField_fp = (GetDoubleField_t) fast_entry; break;
   }
   return os::win32::fast_jni_accessor_wrapper(type);
 #endif

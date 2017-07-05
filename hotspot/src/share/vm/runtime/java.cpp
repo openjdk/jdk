@@ -198,7 +198,7 @@ void print_statistics() {
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
   }
-  if (ProfileInterpreter || Tier1UpdateMethodData) {
+  if (ProfileInterpreter || C1UpdateMethodData) {
     print_method_profiling_data();
   }
   if (TimeCompiler) {

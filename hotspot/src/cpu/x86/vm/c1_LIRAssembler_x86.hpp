@@ -42,7 +42,10 @@
   // method.
   Address as_Address(LIR_Address* addr, Register tmp);
 
-
+  // Record the type of the receiver in ReceiverTypeData
+  void type_profile_helper(Register mdo,
+                           ciMethodData *md, ciProfileData *data,
+                           Register recv, Label* update_done);
 public:
 
   void store_parameter(Register r, int offset_from_esp_in_words);

@@ -204,6 +204,9 @@ public interface MidiDevice extends AutoCloseable {
      * MIDI data.  The returned receiver must be closed when the application
      * has finished using it.
      *
+     * <p>Usually the returned receiver implements
+     * the {@code MidiDeviceReceiver} interface.
+     *
      * <p>Obtaining a <code>Receiver</code> with this method does not
      * open the device. To be able to use the device, it has to be
      * opened explicitly by calling {@link #open}. Also, closing the
@@ -223,6 +226,10 @@ public interface MidiDevice extends AutoCloseable {
      * connected with this MidiDevice.
      * A receiver can be removed
      * from the device by closing it.
+     *
+     * <p>Usually the returned receivers implement
+     * the {@code MidiDeviceReceiver} interface.
+     *
      * @return an unmodifiable list of the open receivers
      * @since 1.5
      */
@@ -233,6 +240,9 @@ public interface MidiDevice extends AutoCloseable {
      * Obtains a MIDI OUT connection from which the MIDI device will transmit
      * MIDI data  The returned transmitter must be closed when the application
      * has finished using it.
+     *
+     * <p>Usually the returned transmitter implements
+     * the {@code MidiDeviceTransmitter} interface.
      *
      * <p>Obtaining a <code>Transmitter</code> with this method does not
      * open the device. To be able to use the device, it has to be
@@ -253,6 +263,10 @@ public interface MidiDevice extends AutoCloseable {
      * connected with this MidiDevice.
      * A transmitter can be removed
      * from the device by closing it.
+     *
+     * <p>Usually the returned transmitters implement
+     * the {@code MidiDeviceTransmitter} interface.
+     *
      * @return an unmodifiable list of the open transmitters
      * @since 1.5
      */

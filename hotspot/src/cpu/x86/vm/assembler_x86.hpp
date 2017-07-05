@@ -2242,6 +2242,11 @@ public:
                           Register limit, Register result, Register chr,
                           XMMRegister vec1, XMMRegister vec2);
 
+  // Fill primitive arrays
+  void generate_fill(BasicType t, bool aligned,
+                     Register to, Register value, Register count,
+                     Register rtmp, XMMRegister xtmp);
+
 #undef VIRTUAL
 
 };

@@ -42,7 +42,7 @@ else
 endif
 
 # 
-# All java tools (javac, javah, and javadoc) run faster with certain java
+# All java tools (javac and javadoc) run faster with certain java
 #    options, this macro should be used with all these tools.
 #    In particular, the client VM makes these tools run faster when
 #    it's available.
@@ -134,21 +134,14 @@ JAVACFLAGS  += -encoding ascii
 JAVACFLAGS  += -classpath $(BOOTDIR)/lib/tools.jar
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
-# Needed for javah
-JAVAHFLAGS += -classpath $(CLASSBINDIR)
-
 # Langtools
 ifdef LANGTOOLS_DIST
   JAVAC_JAR   = $(LANGTOOLS_DIST)/bootstrap/lib/javac.jar
-  JAVAH_JAR   = $(LANGTOOLS_DIST)/bootstrap/lib/javah.jar
   JAVADOC_JAR = $(LANGTOOLS_DIST)/bootstrap/lib/javadoc.jar
   DOCLETS_JAR = $(LANGTOOLS_DIST)/bootstrap/lib/doclets.jar
   JAVAC_CMD   = $(BOOT_JAVA_CMD) \
 		"-Xbootclasspath/p:$(JAVAC_JAR)" \
 		-jar $(JAVAC_JAR) $(JAVACFLAGS)
-  JAVAH_CMD   = $(BOOT_JAVA_CMD) \
-		"-Xbootclasspath/p:$(JAVAH_JAR)$(CLASSPATH_SEPARATOR)$(JAVADOC_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)"  \
-		-jar $(JAVAH_JAR) $(JAVAHFLAGS)
   JAVADOC_CMD = $(BOOT_JAVA_CMD) \
 		"-Xbootclasspath/p:$(JAVADOC_JAR)$(CLASSPATH_SEPARATOR)$(JAVAC_JAR)$(CLASSPATH_SEPARATOR)$(DOCLETS_JAR)" \
 		-jar $(JAVADOC_JAR)
@@ -156,8 +149,6 @@ else
   # If no explicit tools, use boot tools (add VM flags in this case)
   JAVAC_CMD     = $(JAVA_TOOLS_DIR)/javac $(JAVAC_JVM_FLAGS) \
 		  $(JAVACFLAGS)
-  JAVAH_CMD     = $(JAVA_TOOLS_DIR)/javah \
-		  $(JAVAHFLAGS)
   JAVADOC_CMD   = $(JAVA_TOOLS_DIR)/javadoc $(JAVA_TOOLS_FLAGS:%=-J%)
 endif
 

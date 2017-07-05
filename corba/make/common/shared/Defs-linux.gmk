@@ -94,14 +94,6 @@ else
   JDK_DEVTOOLS_DIR =$(SLASH_JAVA)/devtools
 endif
 
-# COMPILER_PATH: path to where the compiler and tools are installed.
-#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifneq "$(origin ALT_COMPILER_PATH)" "undefined"
-  COMPILER_PATH :=$(call PrefixPath,$(ALT_COMPILER_PATH))
-else
-  COMPILER_PATH  =/usr/bin/
-endif
-
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
 ifneq "$(origin ALT_DEVTOOLS_PATH)" "undefined"

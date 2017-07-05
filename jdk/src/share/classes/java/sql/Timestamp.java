@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,19 +155,26 @@ public class Timestamp extends java.util.Date {
      * Converts a <code>String</code> object in JDBC timestamp escape format to a
      * <code>Timestamp</code> value.
      *
-     * @param s timestamp in format <code>yyyy-mm-dd hh:mm:ss[.f...]</code>.  The
-     * fractional seconds may be omitted.
+     * @param s timestamp in format <code>yyyy-[m]m-[d]d hh:mm:ss[.f...]</code>.  The
+     * fractional seconds may be omitted. The leading zero for <code>mm</code>
+     * and <code>dd</code> may also be omitted.
+     *
      * @return corresponding <code>Timestamp</code> value
      * @exception java.lang.IllegalArgumentException if the given argument
-     * does not have the format <code>yyyy-mm-dd hh:mm:ss[.f...]</code>
+     * does not have the format <code>yyyy-[m]m-[d]d hh:mm:ss[.f...]</code>
      */
     public static Timestamp valueOf(String s) {
+        final int YEAR_LENGTH = 4;
+        final int MONTH_LENGTH = 2;
+        final int DAY_LENGTH = 2;
+        final int MAX_MONTH = 12;
+        final int MAX_DAY = 31;
         String date_s;
         String time_s;
         String nanos_s;
-        int year;
-        int month;
-        int day;
+        int year = 0;
+        int month = 0;
+        int day = 0;
         int hour;
         int minute;
         int second;
@@ -182,16 +189,8 @@ public class Timestamp extends java.util.Date {
         String zeros = "000000000";
         String delimiterDate = "-";
         String delimiterTime = ":";
-        StringTokenizer stringTokeninzerDate;
-        StringTokenizer stringTokeninzerTime;
 
         if (s == null) throw new java.lang.IllegalArgumentException("null string");
-
-        int counterD = 0;
-        int intDate[] = {4,2,2};
-
-        int counterT = 0;
-        int intTime[] = {2,2,12};
 
         // Split the string into date and time components
         s = s.trim();
@@ -202,30 +201,6 @@ public class Timestamp extends java.util.Date {
         } else {
             throw new java.lang.IllegalArgumentException(formatError);
         }
-
-        stringTokeninzerTime = new StringTokenizer(time_s, delimiterTime);
-        stringTokeninzerDate = new StringTokenizer(date_s, delimiterDate);
-
-        while(stringTokeninzerDate.hasMoreTokens()) {
-             String tokenDate = stringTokeninzerDate.nextToken();
-             if(tokenDate.length() != intDate[counterD] ) {
-                throw new java.lang.IllegalArgumentException(formatError);
-             }
-             counterD++;
-        }
-
-        /*
-         //Commenting this portion out for checking of time
-
-        while(stringTokeninzerTime.hasMoreTokens()) {
-             String tokenTime = stringTokeninzerTime.nextToken();
-
-             if (counterT < 2 && tokenTime.length() != intTime[counterT]  ) {
-                throw new java.lang.IllegalArgumentException(formatError);
-             }
-             counterT++;
-        }
-        */
 
         // Parse the date
         firstDash = date_s.indexOf('-');
@@ -239,14 +214,24 @@ public class Timestamp extends java.util.Date {
         period = time_s.indexOf('.', secondColon+1);
 
         // Convert the date
-        if ((firstDash > 0) && (secondDash > 0) &&
-            (secondDash < date_s.length()-1)) {
-            year = Integer.parseInt(date_s.substring(0, firstDash)) - 1900;
-            month =
-                Integer.parseInt(date_s.substring
-                                 (firstDash+1, secondDash)) - 1;
-            day = Integer.parseInt(date_s.substring(secondDash+1));
-        } else {
+        boolean parsedDate = false;
+        if ((firstDash > 0) && (secondDash > 0) && (secondDash < date_s.length() - 1)) {
+            String yyyy = date_s.substring(0, firstDash);
+            String mm = date_s.substring(firstDash + 1, secondDash);
+            String dd = date_s.substring(secondDash + 1);
+            if (yyyy.length() == YEAR_LENGTH &&
+                    (mm.length() >= 1 && mm.length() <= MONTH_LENGTH) &&
+                    (dd.length() >= 1 && dd.length() <= DAY_LENGTH)) {
+                 year = Integer.parseInt(yyyy);
+                 month = Integer.parseInt(mm);
+                 day = Integer.parseInt(dd);
+
+                if ((month >= 1 && month <= MAX_MONTH) && (day >= 1 && day <= MAX_DAY)) {
+                    parsedDate = true;
+                }
+            }
+        }
+        if (! parsedDate) {
             throw new java.lang.IllegalArgumentException(formatError);
         }
 
@@ -272,10 +257,10 @@ public class Timestamp extends java.util.Date {
                 second = Integer.parseInt(time_s.substring(secondColon+1));
             }
         } else {
-            throw new java.lang.IllegalArgumentException();
+            throw new java.lang.IllegalArgumentException(formatError);
         }
 
-        return new Timestamp(year, month, day, hour, minute, second, a_nanos);
+        return new Timestamp(year - 1900, month - 1, day, hour, minute, second, a_nanos);
     }
 
     /**
@@ -502,14 +487,10 @@ public class Timestamp extends java.util.Date {
 
     /**
      * Compares this <code>Timestamp</code> object to the given
-     * <code>Date</code>, which must be a <code>Timestamp</code>
-     * object. If the argument is not a <code>Timestamp</code> object,
-     * this method throws a <code>ClassCastException</code> object.
-     * (<code>Timestamp</code> objects are
-     * comparable only to other <code>Timestamp</code> objects.)
+     * <code>Date</code> object.
      *
-     * @param o the <code>Date</code> to be compared, which must be a
-     *        <code>Timestamp</code> object
+     * @param o the <code>Date</code> to be compared to
+     *          this <code>Timestamp</code> object
      * @return  the value <code>0</code> if this <code>Timestamp</code> object
      *          and the given object are equal; a value less than <code>0</code>
      *          if this  <code>Timestamp</code> object is before the given argument;

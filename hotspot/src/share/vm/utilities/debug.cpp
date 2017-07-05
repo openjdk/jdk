@@ -234,7 +234,7 @@ void report_java_out_of_memory(const char* message) {
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
-      HeapDumper::dump_heap();
+      HeapDumper::dump_heap_from_oome();
     }
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {

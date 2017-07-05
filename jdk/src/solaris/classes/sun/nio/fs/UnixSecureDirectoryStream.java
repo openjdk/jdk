@@ -166,7 +166,7 @@ class UnixSecureDirectoryStream
      * Deletes file/directory in this directory. Works in a race-free manner
      * when invoked with flags.
      */
-    void implDelete(Path obj, boolean haveFlags, int flags)
+    private void implDelete(Path obj, boolean haveFlags, int flags)
         throws IOException
     {
         UnixPath file = getName(obj);

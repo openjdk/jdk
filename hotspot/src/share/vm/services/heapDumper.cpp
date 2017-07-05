@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1305,6 +1305,8 @@ class VM_HeapDumper : public VM_GC_Operation {
   static VM_HeapDumper* _global_dumper;
   static DumpWriter*    _global_writer;
   DumpWriter*           _local_writer;
+  JavaThread*           _oome_thread;
+  methodOop             _oome_constructor;
   bool _gc_before_heap_dump;
   bool _is_segmented_dump;
   jlong _dump_start;
@@ -1366,7 +1368,7 @@ class VM_HeapDumper : public VM_GC_Operation {
   void end_of_dump();
 
  public:
-  VM_HeapDumper(DumpWriter* writer, bool gc_before_heap_dump) :
+  VM_HeapDumper(DumpWriter* writer, bool gc_before_heap_dump, bool oome) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump) {
@@ -1377,6 +1379,18 @@ class VM_HeapDumper : public VM_GC_Operation {
     _klass_map = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, true);
     _stack_traces = NULL;
     _num_threads = 0;
+    if (oome) {
+      assert(!Thread::current()->is_VM_thread(), "Dump from OutOfMemoryError cannot be called by the VMThread");
+      // get OutOfMemoryError zero-parameter constructor
+      instanceKlass* oome_ik = instanceKlass::cast(SystemDictionary::OutOfMemoryError_klass());
+      _oome_constructor = oome_ik->find_method(vmSymbols::object_initializer_name(),
+                                                          vmSymbols::void_method_signature());
+      // get thread throwing OOME when generating the heap dump at OOME
+      _oome_thread = JavaThread::current();
+    } else {
+      _oome_thread = NULL;
+      _oome_constructor = NULL;
+    }
   }
   ~VM_HeapDumper() {
     if (_stack_traces != NULL) {
@@ -1557,7 +1571,11 @@ int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
     frame f = java_thread->last_frame();
     vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
     frame* last_entry_frame = NULL;
+    int extra_frames = 0;
 
+    if (java_thread == _oome_thread && _oome_constructor != NULL) {
+      extra_frames++;
+    }
     while (vf != NULL) {
       blk.set_frame_number(stack_depth);
       if (vf->is_java_frame()) {
@@ -1574,7 +1592,7 @@ int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
                 writer()->write_u1(HPROF_GC_ROOT_JAVA_FRAME);
                 writer()->write_objectID(o);
                 writer()->write_u4(thread_serial_num);
-                writer()->write_u4((u4) stack_depth);
+                writer()->write_u4((u4) (stack_depth + extra_frames));
               }
             }
           }
@@ -1764,6 +1782,17 @@ void VM_HeapDumper::dump_stack_traces() {
       // write HPROF_FRAME records for this thread's stack trace
       int depth = stack_trace->get_stack_depth();
       int thread_frame_start = frame_serial_num;
+      int extra_frames = 0;
+      // write fake frame that makes it look like the thread, which caused OOME,
+      // is in the OutOfMemoryError zero-parameter constructor
+      if (thread == _oome_thread && _oome_constructor != NULL) {
+        int oome_serial_num = _klass_map->find(Klass::cast(_oome_constructor->method_holder()));
+        // the class serial number starts from 1
+        assert(oome_serial_num > 0, "OutOfMemoryError class not found");
+        DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, oome_serial_num,
+                                        _oome_constructor, 0);
+        extra_frames++;
+      }
       for (int j=0; j < depth; j++) {
         StackFrameInfo* frame = stack_trace->stack_frame_at(j);
         methodOop m = frame->method();
@@ -1772,6 +1801,7 @@ void VM_HeapDumper::dump_stack_traces() {
         assert(class_serial_num > 0, "class not found");
         DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, class_serial_num, m, frame->bci());
       }
+      depth += extra_frames;
 
       // write HPROF_TRACE record for one thread
       DumperSupport::write_header(writer(), HPROF_TRACE, 3*sizeof(u4) + depth*oopSize);
@@ -1808,7 +1838,7 @@ int HeapDumper::dump(const char* path) {
   }
 
   // generate the dump
-  VM_HeapDumper dumper(&writer, _gc_before_heap_dump);
+  VM_HeapDumper dumper(&writer, _gc_before_heap_dump, _oome);
   if (Thread::current()->is_VM_thread()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Expected to be called at a safepoint");
     dumper.doit();
@@ -1869,12 +1899,22 @@ void HeapDumper::set_error(char* error) {
   }
 }
 
+// Called by out-of-memory error reporting by a single Java thread
+// outside of a JVM safepoint
+void HeapDumper::dump_heap_from_oome() {
+  HeapDumper::dump_heap(true);
+}
+
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
 // or by heap dumping by the VM thread during a (GC) safepoint. Thus, these various
 // callers are strictly serialized and guaranteed not to interfere below. For more
 // general use, however, this method will need modification to prevent
 // inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
+  HeapDumper::dump_heap(false);
+}
+
+void HeapDumper::dump_heap(bool oome) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
   char   my_path[JVM_MAXPATHLEN] = {'\0'};
@@ -1930,6 +1970,7 @@ void HeapDumper::dump_heap() {
   dump_file_seq++;   // increment seq number for next time we dump
 
   HeapDumper dumper(false /* no GC before heap dump */,
-                    true  /* send to tty */);
+                    true  /* send to tty */,
+                    oome  /* pass along out-of-memory-error flag */);
   dumper.dump(my_path);
 }

@@ -24,11 +24,13 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
 #include "sun_java2d_cmm_lcms_LCMS.h"
 #include "jni_util.h"
 #include "Trace.h"
 #include "Disposer.h"
-#include "lcms.h"
+#include "lcms2.h"
 
 
 #define ALIGNLONG(x) (((x)+3) & ~(3))         // Aligns to DWORD boundary
@@ -38,10 +40,10 @@
 #else
 
 static
-void AdjustEndianess32(LPBYTE pByte)
+void AdjustEndianess32(cmsUInt8Number *pByte)
 {
-    BYTE temp1;
-    BYTE temp2;
+    cmsUInt8Number temp1;
+    cmsUInt8Number temp2;
 
     temp1 = *pByte++;
     temp2 = *pByte++;
@@ -57,11 +59,11 @@ void AdjustEndianess32(LPBYTE pByte)
 // big endian notation.
 
 static
-icInt32Number TransportValue32(icInt32Number Value)
+cmsInt32Number TransportValue32(cmsInt32Number Value)
 {
-    icInt32Number Temp = Value;
+    cmsInt32Number Temp = Value;
 
-    AdjustEndianess32((LPBYTE) &Temp);
+    AdjustEndianess32((cmsUInt8Number*) &Temp);
     return Temp;
 }
 
@@ -84,7 +86,13 @@ icInt32Number TransportValue32(icInt32Number Value)
 /* Default temp profile list size */
 #define DF_ICC_BUF_SIZE 32
 
-#define ERR_MSG_SIZE 20
+#define ERR_MSG_SIZE 256
+
+#ifdef _MSC_VER
+# ifndef snprintf
+#       define snprintf  _snprintf
+# endif
+#endif
 
 typedef union storeID_s {    /* store SProfile stuff in a Java Long */
     cmsHPROFILE pf;
@@ -92,6 +100,11 @@ typedef union storeID_s {    /* store SProfile stuff in a Java Long */
     jobject jobj;
     jlong j;
 } storeID_t, *storeID_p;
+
+typedef union {
+    cmsTagSignature cms;
+    jint j;
+} TagSignature_t, *TagSignature_p;
 
 static jfieldID Trans_profileIDs_fID;
 static jfieldID Trans_renderType_fID;
@@ -108,21 +121,26 @@ static jfieldID PF_ID_fID;
 
 JavaVM *javaVM;
 
-int errorHandler(int errorCode, const char *errorText) {
+void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
+                  const char *errorText) {
     JNIEnv *env;
     char errMsg[ERR_MSG_SIZE];
-    /* We can safely use sprintf here because error message has limited size */
-    sprintf(errMsg, "LCMS error %d", errorCode);
+
+    int count = snprintf(errMsg, ERR_MSG_SIZE,
+                          "LCMS error %d: %s", errorCode, errorText);
+    if (count < 0 || count >= ERR_MSG_SIZE) {
+        count = ERR_MSG_SIZE - 1;
+    }
+    errMsg[count] = 0;
 
     (*javaVM)->AttachCurrentThread(javaVM, (void**)&env, NULL);
     JNU_ThrowByName(env, "java/awt/color/CMMException", errMsg);
-    return 1;
 }
 
 JNIEXPORT int JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     javaVM = jvm;
 
-    cmsSetErrorHandler(errorHandler);
+    cmsSetLogErrorHandler(errorHandler);
     return JNI_VERSION_1_6;
 }
 
@@ -141,11 +159,10 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
   (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderType,
-   jobject disposerRef)
+   jint inFormatter, jint outFormatter, jobject disposerRef)
 {
-    LPLCMSICCPROFILE _iccArray[DF_ICC_BUF_SIZE];
-    LPLCMSICCPROFILE *iccArray = &_iccArray[0];
-    cmsHTRANSFORM transform;
+    cmsHPROFILE _iccArray[DF_ICC_BUF_SIZE];
+    cmsHPROFILE *iccArray = &_iccArray[0];
     storeID_t sTrans;
     int i, j, size;
     jlong* ids;
@@ -154,17 +171,19 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
     ids = (*env)->GetPrimitiveArrayCritical(env, profileIDs, 0);
 
     if (DF_ICC_BUF_SIZE < size*2) {
-        iccArray = (LPLCMSICCPROFILE*) malloc(
-            size*2*sizeof(LPLCMSICCPROFILE));
+        iccArray = (cmsHPROFILE*) malloc(
+            size*2*sizeof(cmsHPROFILE));
         if (iccArray == NULL) {
             J2dRlsTraceLn(J2D_TRACE_ERROR, "getXForm: iccArray == NULL");
-            return NULL;
+            return 0L;
         }
     }
 
     j = 0;
     for (i = 0; i < size; i++) {
-        LPLCMSICCPROFILE icc;
+        cmsHPROFILE icc;
+        cmsColorSpaceSignature cs;
+
         sTrans.j = ids[i];
         icc = sTrans.pf;
         iccArray[j++] = icc;
@@ -172,16 +191,17 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         /* Middle non-abstract profiles should be doubled before passing to
          * the cmsCreateMultiprofileTransform function
          */
+
+        cs = cmsGetColorSpace(icc);
         if (size > 2 && i != 0 && i != size - 1 &&
-            icc->ColorSpace != icSigXYZData &&
-            icc->ColorSpace != icSigLabData)
+            cs != cmsSigXYZData && cs != cmsSigLabData)
         {
             iccArray[j++] = icc;
         }
     }
 
     sTrans.xf = cmsCreateMultiprofileTransform(iccArray, j,
-        0, 0, renderType, 0);
+        inFormatter, outFormatter, renderType, 0);
 
     (*env)->ReleasePrimitiveArrayCritical(env, profileIDs, ids, 0);
 
@@ -190,12 +210,13 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
                                        "sTrans.xf == NULL");
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Cannot get color transform");
+    } else {
+        Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sTrans.j);
     }
 
     if (iccArray != &_iccArray[0]) {
         free(iccArray);
     }
-    Disposer_AddRecord(env, disposerRef, LCMS_freeTransform, sTrans.j);
     return sTrans.j;
 }
 
@@ -215,7 +236,8 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfile
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
     dataSize = (*env)->GetArrayLength (env, data);
 
-    sProf.pf = cmsOpenProfileFromMem((LPVOID)dataArray, (DWORD) dataSize);
+    sProf.pf = cmsOpenProfileFromMem((const void *)dataArray,
+                                     (cmsUInt32Number) dataSize);
 
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
@@ -254,20 +276,17 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_freeProfile
 JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileSize
   (JNIEnv *env, jobject obj, jlong id)
 {
-    LPLCMSICCPROFILE Icc;
     storeID_t sProf;
-    unsigned char pfSize[4];
-
+    cmsUInt32Number pfSize = 0;
     sProf.j = id;
-    Icc = (LPLCMSICCPROFILE) sProf.pf;
-    Icc -> Seek(Icc, 0);
-    Icc -> Read(pfSize, 4, 1, Icc);
 
-    /* TODO: It's a correct but non-optimal for BE machines code, so should
-     * be special cased for them
-     */
-    return (pfSize[0]<<24) | (pfSize[1]<<16) | (pfSize[2]<<8) |
-        pfSize[3];
+    if (cmsSaveProfileToMem(sProf.pf, NULL, &pfSize) && ((jint)pfSize > 0)) {
+        return (jint)pfSize;
+    } else {
+      JNU_ThrowByName(env, "java/awt/color/CMMException",
+                      "Can not access specified profile.");
+        return -1;
+    }
 }
 
 /*
@@ -278,28 +297,45 @@ JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileSize
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileData
   (JNIEnv *env, jobject obj, jlong id, jbyteArray data)
 {
-    LPLCMSICCPROFILE Icc;
     storeID_t sProf;
-    unsigned char pfSize[4];
     jint size;
     jbyte* dataArray;
+    cmsUInt32Number pfSize = 0;
+    cmsBool status;
 
     sProf.j = id;
-    Icc = (LPLCMSICCPROFILE) sProf.pf;
-    Icc -> Seek(Icc, 0);
-    Icc -> Read(pfSize, 4, 1, Icc);
+
+    // determine actual profile size
+    if (!cmsSaveProfileToMem(sProf.pf, NULL, &pfSize)) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Can not access specified profile.");
+        return;
+    }
+
+    // verify java buffer capacity
+    size = (*env)->GetArrayLength(env, data);
+    if (0 >= size || pfSize > (cmsUInt32Number)size) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Insufficient buffer capacity.");
+        return;
+    }
 
     dataArray = (*env)->GetByteArrayElements (env, data, 0);
-    Icc->Seek(Icc, 0);
 
-    /* TODO: It's a correct but non-optimal for BE machines code, so should
-     * be special cased for them
-     */
-    Icc->Read(dataArray, 1,
-              (pfSize[0]<<24) | (pfSize[1]<<16) | (pfSize[2]<<8) | pfSize[3],
-              Icc);
+    status = cmsSaveProfileToMem(sProf.pf, dataArray, &pfSize);
+
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
+
+    if (!status) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Can not access specified profile.");
+        return;
+    }
 }
+
+/* Get profile header info */
+cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
+cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize);
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
@@ -309,24 +345,21 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileData
 JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagSize
   (JNIEnv *env, jobject obj, jlong id, jint tagSig)
 {
-    LPLCMSICCPROFILE Icc;
     storeID_t sProf;
-    int i;
-    jint result;
+    TagSignature_t sig;
+    jint result = -1;
 
     sProf.j = id;
-    Icc = (LPLCMSICCPROFILE) sProf.pf;
+    sig.j = tagSig;
 
     if (tagSig == SigHead) {
-        result = sizeof(icHeader);
+        result = sizeof(cmsICCHeader);
     } else {
-        i =  _cmsSearchTag(Icc, tagSig, FALSE);
-        if (i >= 0) {
-            result = Icc->TagSizes[i];
+      if (cmsIsTag(sProf.pf, sig.cms)) {
+            result = cmsReadRawTag(sProf.pf, sig.cms, NULL, 0);
         } else {
             JNU_ThrowByName(env, "java/awt/color/CMMException",
                             "ICC profile tag not found");
-            result = -1;
         }
     }
 
@@ -341,42 +374,82 @@ JNIEXPORT jint JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagSize
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagData
   (JNIEnv *env, jobject obj, jlong id, jint tagSig, jbyteArray data)
 {
-    LPLCMSICCPROFILE Icc;
     storeID_t sProf;
+    TagSignature_t sig;
+    cmsInt32Number tagSize;
+
     jbyte* dataArray;
-    int i, tagSize;
+    jint bufSize;
 
     sProf.j = id;
-    Icc = (LPLCMSICCPROFILE) sProf.pf;
+    sig.j = tagSig;
 
     if (tagSig == SigHead) {
+        cmsBool status;
+
+        bufSize =(*env)->GetArrayLength(env, data);
+
+        if (bufSize < sizeof(cmsICCHeader)) {
+           JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "Insufficient buffer capacity");
+           return;
+        }
+
         dataArray = (*env)->GetByteArrayElements (env, data, 0);
-        tagSize =(*env)->GetArrayLength(env, data);
-        Icc -> Seek(Icc, 0);
-        Icc -> Read(dataArray, sizeof(icHeader), 1, Icc);
+
+        if (dataArray == NULL) {
+           JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "Unable to get buffer");
+           return;
+        }
+
+        status = _getHeaderInfo(sProf.pf, dataArray, bufSize);
+
         (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
+
+        if (!status) {
+            JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "ICC Profile header not found");
+        }
+
         return;
     }
 
-
-    i =  _cmsSearchTag(Icc, tagSig, FALSE);
-    if (i >=0) {
-        tagSize = Icc->TagSizes[i];
-        dataArray = (*env)->GetByteArrayElements (env, data, 0);
-        Icc->Seek(Icc, Icc->TagOffsets[i]);
-        Icc->Read(dataArray, 1, tagSize, Icc);
-        (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
+    if (cmsIsTag(sProf.pf, sig.cms)) {
+        tagSize = cmsReadRawTag(sProf.pf, sig.cms, NULL, 0);
+    } else {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "ICC profile tag not found");
         return;
     }
 
-    JNU_ThrowByName(env, "java/awt/color/CMMException",
-                    "ICC profile tag not found");
+    // verify data buffer capacity
+    bufSize = (*env)->GetArrayLength(env, data);
+
+    if (tagSize < 0 || 0 > bufSize || tagSize > bufSize) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Insufficient buffer capacity.");
+        return;
+    }
+
+    dataArray = (*env)->GetByteArrayElements (env, data, 0);
+
+    if (dataArray == NULL) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Unable to get buffer");
+        return;
+    }
+
+    bufSize = cmsReadRawTag(sProf.pf, sig.cms, dataArray, tagSize);
+
+    (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
+
+    if (bufSize != tagSize) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Can not get tag data.");
+    }
     return;
 }
-
-// Modify data for a tag in a profile
-LCMSBOOL LCMSEXPORT _cmsModifyTagData(cmsHPROFILE hProfile,
-                                 icTagSignature sig, void *data, size_t size);
 
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
@@ -386,23 +459,32 @@ LCMSBOOL LCMSEXPORT _cmsModifyTagData(cmsHPROFILE hProfile,
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagData
   (JNIEnv *env, jobject obj, jlong id, jint tagSig, jbyteArray data)
 {
-    cmsHPROFILE profile;
     storeID_t sProf;
+    TagSignature_t sig;
+    cmsBool status;
     jbyte* dataArray;
     int tagSize;
 
+    sProf.j = id;
+    sig.j = tagSig;
+
+
+    tagSize =(*env)->GetArrayLength(env, data);
+
+    dataArray = (*env)->GetByteArrayElements(env, data, 0);
+
     if (tagSig == SigHead) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_setTagData on icSigHead not "
-                      "permitted");
-        return;
+        status = _setHeaderInfo(sProf.pf, dataArray, tagSize);
+    } else {
+        status = cmsWriteRawTag(sProf.pf, sig.cms, dataArray, tagSize);
     }
 
-    sProf.j = id;
-    profile = (cmsHPROFILE) sProf.pf;
-    dataArray = (*env)->GetByteArrayElements(env, data, 0);
-    tagSize =(*env)->GetArrayLength(env, data);
-    _cmsModifyTagData(profile, (icTagSignature) tagSig, dataArray, tagSize);
     (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
+
+    if (!status) {
+        JNU_ThrowByName(env, "java/awt/color/CMMException",
+                        "Can not write tag data.");
+    }
 }
 
 void* getILData (JNIEnv *env, jobject img, jint* pDataType,
@@ -456,7 +538,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass obj, jobject trans, jobject src, jobject dst)
 {
     storeID_t sTrans;
-    int size, inFmt, outFmt, srcDType, dstDType, outSize, renderType;
+    int inFmt, outFmt, srcDType, dstDType;
     int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
     int width, height, i;
     void* inputBuffer;
@@ -483,8 +565,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     }
 #endif
     sTrans.j = (*env)->GetLongField (env, trans, Trans_ID_fID);
-    cmsChangeBuffersFormat(sTrans.xf, inFmt, outFmt);
-
 
     if (sTrans.xf == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_colorConvert: transform == NULL");
@@ -565,190 +645,54 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
     PF_ID_fID = (*env)->GetFieldID (env, Pf, "ID", "J");
 }
 
-LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
-                       void *data, size_t size)
+cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 {
-    LCMSBOOL isNew;
-    int i, idx, delta, count;
-    LPBYTE padChars[3] = {0, 0, 0};
-    LPBYTE beforeBuf, afterBuf, ptr;
-    size_t beforeSize, afterSize;
-    icUInt32Number profileSize, temp;
-    LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
+  cmsUInt32Number pfSize = 0;
+  cmsUInt8Number* pfBuffer = NULL;
+  cmsBool status = FALSE;
 
-    isNew = FALSE;
-    idx = _cmsSearchTag(Icc, sig, FALSE);
-    if (idx < 0) {
-        isNew = TRUE;
-        idx = Icc->TagCount++;
-        if (Icc->TagCount >= MAX_TABLE_TAG) {
-            J2dRlsTraceLn1(J2D_TRACE_ERROR, "_cmsModifyTagData: Too many tags "
-                           "(%d)\n", Icc->TagCount);
-            Icc->TagCount = MAX_TABLE_TAG-1;
-            return FALSE;
-        }
-    }
+  if (!cmsSaveProfileToMem(pf, NULL, &pfSize) ||
+      pfSize < sizeof(cmsICCHeader) ||
+      bufferSize < sizeof(cmsICCHeader))
+  {
+    return FALSE;
+  }
 
-    /* Read in size from header */
-    Icc->Seek(Icc, 0);
-    Icc->Read(&profileSize, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &profileSize);
+  pfBuffer = malloc(pfSize);
+  if (pfBuffer == NULL) {
+    return FALSE;
+  }
 
-    /* Compute the change in profile size */
-    if (isNew) {
-        delta = sizeof(icTag) + ALIGNLONG(size);
-    } else {
-        delta = ALIGNLONG(size) - ALIGNLONG(Icc->TagSizes[idx]);
-    }
-    /* Add tag to internal structures */
-    ptr = malloc(size);
-    if (ptr == NULL) {
-        if(isNew) {
-            Icc->TagCount--;
-        }
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "_cmsModifyTagData: ptr == NULL");
-        return FALSE;
-    }
+  // load raw profile data into the buffer
+  if (cmsSaveProfileToMem(pf, pfBuffer, &pfSize)) {
+    memcpy(pBuffer, pfBuffer, sizeof(cmsICCHeader));
+    status = TRUE;
+  }
+  free(pfBuffer);
+  return status;
+}
 
-    /* We change the size of Icc here only if we know it'll actually
-     * grow: if Icc is about to shrink we must wait until we've read
-     * the previous data.  */
-    if (delta > 0) {
-        if (!Icc->Grow(Icc, delta)) {
-            free(ptr);
-            if(isNew) {
-                Icc->TagCount--;
-            }
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "_cmsModifyTagData: Icc->Grow() == FALSE");
-            return FALSE;
-        }
-    }
+cmsBool _setHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
+{
+  cmsICCHeader pfHeader = { 0 };
 
-    /* Compute size of tag data before/after the modified tag */
-    beforeSize = ((isNew)?profileSize:Icc->TagOffsets[idx]) -
-                 Icc->TagOffsets[0];
-    if (Icc->TagCount == (idx + 1)) {
-        afterSize = 0;
-    } else {
-        afterSize = profileSize - Icc->TagOffsets[idx+1];
-    }
-    /* Make copies of the data before/after the modified tag */
-    if (beforeSize > 0) {
-        beforeBuf = malloc(beforeSize);
-        if (!beforeBuf) {
-            if(isNew) {
-                Icc->TagCount--;
-            }
-            free(ptr);
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "_cmsModifyTagData: beforeBuf == NULL");
-            return FALSE;
-        }
-        Icc->Seek(Icc, Icc->TagOffsets[0]);
-        Icc->Read(beforeBuf, beforeSize, 1, Icc);
-    }
+  if (pBuffer == NULL || bufferSize < sizeof(cmsICCHeader)) {
+    return FALSE;
+  }
 
-    if (afterSize > 0) {
-        afterBuf = malloc(afterSize);
-        if (!afterBuf) {
-            free(ptr);
-            if(isNew) {
-                Icc->TagCount--;
-            }
-            if (beforeSize > 0) {
-                free(beforeBuf);
-            }
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "_cmsModifyTagData: afterBuf == NULL");
-            return FALSE;
-        }
-        Icc->Seek(Icc, Icc->TagOffsets[idx+1]);
-        Icc->Read(afterBuf, afterSize, 1, Icc);
-    }
+  memcpy(&pfHeader, pBuffer, sizeof(cmsICCHeader));
 
-    CopyMemory(ptr, data, size);
-    Icc->TagSizes[idx] = size;
-    Icc->TagNames[idx] = sig;
-    if (Icc->TagPtrs[idx]) {
-        free(Icc->TagPtrs[idx]);
-    }
-    Icc->TagPtrs[idx] = ptr;
-    if (isNew) {
-        Icc->TagOffsets[idx] = profileSize;
-    }
+  // now set header fields, which we can access using the lcms2 public API
+  cmsSetHeaderFlags(pf, pfHeader.flags);
+  cmsSetHeaderManufacturer(pf, pfHeader.manufacturer);
+  cmsSetHeaderModel(pf, pfHeader.model);
+  cmsSetHeaderAttributes(pf, pfHeader.attributes);
+  cmsSetHeaderProfileID(pf, (cmsUInt8Number*)&(pfHeader.profileID));
+  cmsSetHeaderRenderingIntent(pf, pfHeader.renderingIntent);
+  cmsSetPCS(pf, pfHeader.pcs);
+  cmsSetColorSpace(pf, pfHeader.colorSpace);
+  cmsSetDeviceClass(pf, pfHeader.deviceClass);
+  cmsSetEncodedICCversion(pf, pfHeader.version);
 
-
-    /* Update the profile size in the header */
-    profileSize += delta;
-    Icc->Seek(Icc, 0);
-    temp = TransportValue32(profileSize);
-    Icc->Write(Icc, sizeof(icUInt32Number), &temp);
-
-    /* Shrink Icc, if needed.  */
-    if (delta < 0) {
-        if (!Icc->Grow(Icc, delta)) {
-            free(ptr);
-            if(isNew) {
-                Icc->TagCount--;
-            }
-            J2dRlsTraceLn(J2D_TRACE_ERROR,
-                          "_cmsModifyTagData: Icc->Grow() == FALSE");
-            return FALSE;
-        }
-    }
-
-    /* Adjust tag offsets: if the tag is new, we must account
-       for the new tag table entry; otherwise, only those tags after
-       the modified tag are changed (by delta) */
-    if (isNew) {
-        for (i = 0; i < Icc->TagCount; ++i) {
-            Icc->TagOffsets[i] += sizeof(icTag);
-        }
-    } else {
-        for (i = idx+1; i < Icc->TagCount; ++i) {
-            Icc->TagOffsets[i] += delta;
-        }
-    }
-
-    /* Write out a new tag table */
-    count = 0;
-    for (i = 0; i < Icc->TagCount; ++i) {
-        if (Icc->TagNames[i] != 0) {
-            ++count;
-        }
-    }
-    Icc->Seek(Icc, sizeof(icHeader));
-    temp = TransportValue32(count);
-    Icc->Write(Icc, sizeof(icUInt32Number), &temp);
-
-    for (i = 0; i < Icc->TagCount; ++i) {
-        if (Icc->TagNames[i] != 0) {
-            icTag tag;
-            tag.sig = TransportValue32(Icc->TagNames[i]);
-            tag.offset = TransportValue32((icInt32Number) Icc->TagOffsets[i]);
-            tag.size = TransportValue32((icInt32Number) Icc->TagSizes[i]);
-            Icc->Write(Icc, sizeof(icTag), &tag);
-        }
-    }
-
-    /* Write unchanged data before the modified tag */
-    if (beforeSize > 0) {
-        Icc->Write(Icc, beforeSize, beforeBuf);
-        free(beforeBuf);
-    }
-
-    /* Write modified tag data */
-    Icc->Write(Icc, size, data);
-    if (size % 4) {
-        Icc->Write(Icc, 4 - (size % 4), padChars);
-    }
-
-    /* Write unchanged data after the modified tag */
-    if (afterSize > 0) {
-        Icc->Write(Icc, afterSize, afterBuf);
-        free(afterBuf);
-    }
-
-    return TRUE;
+  return TRUE;
 }

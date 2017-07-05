@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,25 @@
 
 package com.sun.media.sound;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MidiChannel;
@@ -182,6 +191,7 @@ public class SoftSynthesizer implements AudioSynthesizer,
     // 1: DLS Voice Allocation
     protected int voice_allocation_mode = 0;
 
+    protected boolean load_default_soundbank = false;
     protected boolean reverb_light = true;
     protected boolean reverb_on = true;
     protected boolean chorus_on = true;
@@ -226,8 +236,6 @@ public class SoftSynthesizer implements AudioSynthesizer,
             = new HashMap<String, SoftTuning>();
     private Map<String, SoftInstrument> inslist
             = new HashMap<String, SoftInstrument>();
-    private Map<String, ModelInstrument> availlist
-            = new HashMap<String, ModelInstrument>();
     private Map<String, ModelInstrument> loadedlist
             = new HashMap<String, ModelInstrument>();
 
@@ -275,10 +283,12 @@ public class SoftSynthesizer implements AudioSynthesizer,
         synchronized (control_mutex) {
             if (channels != null)
                 for (SoftChannel c : channels)
+                {
                     c.current_instrument = null;
+                    c.current_director = null;
+                }
             for (Instrument instrument : instruments) {
                 String pat = patchToString(instrument.getPatch());
-                availlist.remove(pat);
                 SoftInstrument softins
                         = new SoftInstrument((ModelInstrument) instrument);
                 inslist.put(pat, softins);
@@ -341,6 +351,7 @@ public class SoftSynthesizer implements AudioSynthesizer,
         number_of_midi_channels = (Integer)items[10].value;
         jitter_correction = (Boolean)items[11].value;
         reverb_light = (Boolean)items[12].value;
+        load_default_soundbank = (Boolean)items[13].value;
     }
 
     private String patchToString(Patch patch) {
@@ -578,7 +589,9 @@ public class SoftSynthesizer implements AudioSynthesizer,
                 c.current_instrument = null;
             inslist.remove(pat);
             loadedlist.remove(pat);
-            availlist.remove(pat);
+            for (int i = 0; i < channels.length; i++) {
+                channels[i].allSoundOff();
+            }
         }
     }
 
@@ -600,7 +613,7 @@ public class SoftSynthesizer implements AudioSynthesizer,
             return false;
 
         synchronized (control_mutex) {
-            if (!loadedlist.containsValue(to) && !availlist.containsValue(to))
+            if (!loadedlist.containsValue(to))
                 throw new IllegalArgumentException("Instrument to is not loaded.");
             unloadInstrument(from);
             ModelMappedInstrument mfrom = new ModelMappedInstrument(
@@ -609,118 +622,155 @@ public class SoftSynthesizer implements AudioSynthesizer,
         }
     }
 
-    public synchronized Soundbank getDefaultSoundbank() {
-        if (defaultSoundBank == null) {
-            try {
-                File javahome = new File(System.getProperties().getProperty(
-                        "java.home"));
-                File libaudio = new File(new File(javahome, "lib"), "audio");
+    public Soundbank getDefaultSoundbank() {
+        synchronized (SoftSynthesizer.class) {
+            if (defaultSoundBank != null)
+                return defaultSoundBank;
 
-                if (libaudio.exists()) {
-                    File foundfile = null;
-                    File[] files = libaudio.listFiles();
-                    if (files != null) {
-                        for (int i = 0; i < files.length; i++) {
-                            File file = files[i];
-                            if (file.isFile()) {
-                                String lname = file.getName().toLowerCase();
-                                if (lname.endsWith(".sf2") ||
-                                        lname.endsWith(".dls")) {
-                                    if (foundfile == null || (file.length() >
-                                            foundfile.length())) {
-                                        foundfile = file;
+            List<PrivilegedAction<InputStream>> actions =
+                new ArrayList<PrivilegedAction<InputStream>>();
+
+            actions.add(new PrivilegedAction<InputStream>() {
+                public InputStream run() {
+                    File javahome = new File(System.getProperties()
+                            .getProperty("java.home"));
+                    File libaudio = new File(new File(javahome, "lib"), "audio");
+                    if (libaudio.exists()) {
+                        File foundfile = null;
+                        File[] files = libaudio.listFiles();
+                        if (files != null) {
+                            for (int i = 0; i < files.length; i++) {
+                                File file = files[i];
+                                if (file.isFile()) {
+                                    String lname = file.getName().toLowerCase();
+                                    if (lname.endsWith(".sf2")
+                                            || lname.endsWith(".dls")) {
+                                        if (foundfile == null
+                                                || (file.length() > foundfile
+                                                        .length())) {
+                                            foundfile = file;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    if (foundfile != null) {
-                        try {
-                            Soundbank sbk = MidiSystem.getSoundbank(foundfile);
-                            defaultSoundBank = sbk;
-                            return defaultSoundBank;
-                        } catch (Exception e) {
-                            //e.printStackTrace();
+                        if (foundfile != null) {
+                            try {
+                                return new FileInputStream(foundfile);
+                            } catch (IOException e) {
+                            }
                         }
                     }
+                    return null;
                 }
+            });
 
-                if (System.getProperties().getProperty("os.name")
-                        .startsWith("Windows")) {
-                    File gm_dls = new File(System.getenv("SystemRoot")
-                            + "\\system32\\drivers\\gm.dls");
-                    if (gm_dls.exists()) {
-                        try {
-                            Soundbank sbk = MidiSystem.getSoundbank(gm_dls);
-                            defaultSoundBank = sbk;
-                            return defaultSoundBank;
-                        } catch (Exception e) {
-                            //e.printStackTrace();
+            actions.add(new PrivilegedAction<InputStream>() {
+                public InputStream run() {
+                    if (System.getProperties().getProperty("os.name")
+                            .startsWith("Windows")) {
+                        File gm_dls = new File(System.getenv("SystemRoot")
+                                + "\\system32\\drivers\\gm.dls");
+                        if (gm_dls.exists()) {
+                            try {
+                                return new FileInputStream(gm_dls);
+                            } catch (IOException e) {
+                            }
                         }
                     }
+                    return null;
                 }
-            } catch (AccessControlException e) {
-            } catch (Exception e) {
-                //e.printStackTrace();
+            });
+
+            actions.add(new PrivilegedAction<InputStream>() {
+                public InputStream run() {
+                    /*
+                     * Try to load saved generated soundbank
+                     */
+                    File userhome = new File(System.getProperty("user.home"),
+                            ".gervill");
+                    File emg_soundbank_file = new File(userhome,
+                            "soundbank-emg.sf2");
+                    if (emg_soundbank_file.exists()) {
+                        try {
+                            return new FileInputStream(emg_soundbank_file);
+                        } catch (IOException e) {
+                        }
+                    }
+                    return null;
+                }
+            });
+
+            for (PrivilegedAction<InputStream> action : actions) {
+                try {
+                    InputStream is = AccessController.doPrivileged(action);
+                    if(is == null) continue;
+                    Soundbank sbk;
+                    try {
+                        sbk = MidiSystem.getSoundbank(new BufferedInputStream(is));
+                    } finally {
+                        is.close();
+                    }
+                    if (sbk != null) {
+                        defaultSoundBank = sbk;
+                        return defaultSoundBank;
+                    }
+                } catch (Exception e) {
+                }
             }
 
-            File userhome = null;
-            File emg_soundbank_file = null;
-
-            /*
-             *  Try to load saved generated soundbank
-             */
             try {
-                userhome = new File(System.getProperty("user.home"),
-                     ".gervill");
-                emg_soundbank_file = new File(userhome, "soundbank-emg.sf2");
-                Soundbank sbk = MidiSystem.getSoundbank(emg_soundbank_file);
-                defaultSoundBank = sbk;
-                return defaultSoundBank;
-            } catch (AccessControlException e) {
-            } catch (Exception e) {
-                //e.printStackTrace();
-            }
-
-            try {
-
                 /*
-                 *  Generate emergency soundbank
+                 * Generate emergency soundbank
                  */
                 defaultSoundBank = EmergencySoundbank.createSoundbank();
-
-                /*
-                 *  Save generated soundbank to disk for faster future use.
-                 */
-                if(defaultSoundBank != null)
-                {
-                    if(!userhome.exists()) userhome.mkdirs();
-                    if(!emg_soundbank_file.exists())
-                        ((SF2Soundbank)defaultSoundBank).save(emg_soundbank_file);
-                }
             } catch (Exception e) {
-                //e.printStackTrace();
             }
 
+            if (defaultSoundBank != null) {
+                /*
+                 * Save generated soundbank to disk for faster future use.
+                 */
+                OutputStream out = AccessController
+                        .doPrivileged(new PrivilegedAction<OutputStream>() {
+                            public OutputStream run() {
+                                try {
+                                    File userhome = new File(System
+                                            .getProperty("user.home"),
+                                            ".gervill");
+                                    if (!userhome.exists())
+                                        userhome.mkdirs();
+                                    File emg_soundbank_file = new File(
+                                            userhome, "soundbank-emg.sf2");
+                                    if (emg_soundbank_file.exists())
+                                        return null;
+                                    return new FileOutputStream(
+                                            emg_soundbank_file);
+                                } catch (IOException e) {
+                                } catch (SecurityException e) {
+                                }
+                                return null;
+                            }
+                        });
+                if (out != null) {
+                    try {
+                        ((SF2Soundbank) defaultSoundBank).save(out);
+                        out.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
         }
         return defaultSoundBank;
     }
 
     public Instrument[] getAvailableInstruments() {
-        if (!isOpen()) {
-            Soundbank defsbk = getDefaultSoundbank();
-            if (defsbk == null)
-                return new Instrument[0];
-            return defsbk.getInstruments();
-        }
-
-        synchronized (control_mutex) {
-            ModelInstrument[] inslist_array =
-                    new ModelInstrument[availlist.values().size()];
-            availlist.values().toArray(inslist_array);
-            Arrays.sort(inslist_array, new ModelInstrumentComparator());
-            return inslist_array;
-        }
+        Soundbank defsbk = getDefaultSoundbank();
+        if (defsbk == null)
+            return new Instrument[0];
+        Instrument[] inslist_array = defsbk.getInstruments();
+        Arrays.sort(inslist_array, new ModelInstrumentComparator());
+        return inslist_array;
     }
 
     public Instrument[] getLoadedInstruments() {
@@ -794,6 +844,31 @@ public class SoftSynthesizer implements AudioSynthesizer,
         return info;
     }
 
+    private Properties getStoredProperties() {
+        return AccessController
+                .doPrivileged(new PrivilegedAction<Properties>() {
+                    public Properties run() {
+                        Properties p = new Properties();
+                        String notePath = "/com/sun/media/sound/softsynthesizer";
+                        try {
+                            Preferences prefroot = Preferences.userRoot();
+                            if (prefroot.nodeExists(notePath)) {
+                                Preferences prefs = prefroot.node(notePath);
+                                String[] prefs_keys = prefs.keys();
+                                for (String prefs_key : prefs_keys) {
+                                    String val = prefs.get(prefs_key, null);
+                                    if (val != null)
+                                        p.setProperty(prefs_key, val);
+                                }
+                            }
+                        } catch (BackingStoreException e) {
+                        } catch (SecurityException e) {
+                        }
+                        return p;
+                    }
+                });
+    }
+
     public AudioSynthesizerPropertyInfo[] getPropertyInfo(Map<String, Object> info) {
         List<AudioSynthesizerPropertyInfo> list =
                 new ArrayList<AudioSynthesizerPropertyInfo>();
@@ -861,17 +936,92 @@ public class SoftSynthesizer implements AudioSynthesizer,
         item.description = "Turn light reverb mode on or off";
         list.add(item);
 
+        item = new AudioSynthesizerPropertyInfo("load default soundbank", o?load_default_soundbank:true);
+        item.description = "Enabled/disable loading default soundbank";
+        list.add(item);
+
         AudioSynthesizerPropertyInfo[] items;
         items = list.toArray(new AudioSynthesizerPropertyInfo[list.size()]);
 
-        if (info != null)
-            for (AudioSynthesizerPropertyInfo item2: items) {
-                Object v = info.get(item2.name);
+        Properties storedProperties = getStoredProperties();
+
+        for (AudioSynthesizerPropertyInfo item2 : items) {
+            Object v = (info == null) ? null : info.get(item2.name);
+            v = (v != null) ? v : storedProperties.getProperty(item2.name);
+            if (v != null) {
                 Class c = (item2.valueClass);
-                if (v != null)
-                    if (c.isInstance(v))
-                        item2.value = v;
+                if (c.isInstance(v))
+                    item2.value = v;
+                else if (v instanceof String) {
+                    String s = (String) v;
+                    if (c == Boolean.class) {
+                        if (s.equalsIgnoreCase("true"))
+                            item2.value = Boolean.TRUE;
+                        if (s.equalsIgnoreCase("false"))
+                            item2.value = Boolean.FALSE;
+                    } else if (c == AudioFormat.class) {
+                        int channels = 2;
+                        boolean signed = true;
+                        boolean bigendian = false;
+                        int bits = 16;
+                        float sampleRate = 44100f;
+                        try {
+                            StringTokenizer st = new StringTokenizer(s, ", ");
+                            String prevToken = "";
+                            while (st.hasMoreTokens()) {
+                                String token = st.nextToken().toLowerCase();
+                                if (token.equals("mono"))
+                                    channels = 1;
+                                if (token.startsWith("channel"))
+                                    channels = Integer.parseInt(prevToken);
+                                if (token.contains("unsigned"))
+                                    signed = false;
+                                if (token.equals("big-endian"))
+                                    bigendian = true;
+                                if (token.equals("bit"))
+                                    bits = Integer.parseInt(prevToken);
+                                if (token.equals("hz"))
+                                    sampleRate = Float.parseFloat(prevToken);
+                                prevToken = token;
+                            }
+                            item2.value = new AudioFormat(sampleRate, bits,
+                                    channels, signed, bigendian);
+                        } catch (NumberFormatException e) {
+                        }
+
+                    } else
+                        try {
+                            if (c == Byte.class)
+                                item2.value = Byte.valueOf(s);
+                            else if (c == Short.class)
+                                item2.value = Short.valueOf(s);
+                            else if (c == Integer.class)
+                                item2.value = Integer.valueOf(s);
+                            else if (c == Long.class)
+                                item2.value = Long.valueOf(s);
+                            else if (c == Float.class)
+                                item2.value = Float.valueOf(s);
+                            else if (c == Double.class)
+                                item2.value = Double.valueOf(s);
+                        } catch (NumberFormatException e) {
+                        }
+                } else if (v instanceof Number) {
+                    Number n = (Number) v;
+                    if (c == Byte.class)
+                        item2.value = Byte.valueOf(n.byteValue());
+                    if (c == Short.class)
+                        item2.value = Short.valueOf(n.shortValue());
+                    if (c == Integer.class)
+                        item2.value = Integer.valueOf(n.intValue());
+                    if (c == Long.class)
+                        item2.value = Long.valueOf(n.longValue());
+                    if (c == Float.class)
+                        item2.value = Float.valueOf(n.floatValue());
+                    if (c == Double.class)
+                        item2.value = Double.valueOf(n.doubleValue());
+                }
             }
+        }
 
         return items;
     }
@@ -1007,11 +1157,12 @@ public class SoftSynthesizer implements AudioSynthesizer,
             if (targetFormat != null)
                 setFormat(targetFormat);
 
-            Soundbank defbank = getDefaultSoundbank();
-            if (defbank != null) {
-                loadAllInstruments(defbank);
-                availlist.putAll(loadedlist);
-                loadedlist.clear();
+            if (load_default_soundbank)
+            {
+                Soundbank defbank = getDefaultSoundbank();
+                if (defbank != null) {
+                    loadAllInstruments(defbank);
+                }
             }
 
             voices = new SoftVoice[maxpoly];
@@ -1117,7 +1268,6 @@ public class SoftSynthesizer implements AudioSynthesizer,
             }
 
             inslist.clear();
-            availlist.clear();
             loadedlist.clear();
             tunings.clear();
 
