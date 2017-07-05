@@ -42,7 +42,8 @@ java.activation_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
-java.base_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
+java.base_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline \
+    --doclint-format html4
 java.base_COPY := .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN := intrinsic.properties
 
@@ -95,7 +96,8 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:exports
+    '-Xdoclint/package:java.*,javax.*' -Xlint:exports \
+    --doclint-format html4
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
