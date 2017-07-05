@@ -40,12 +40,15 @@ abstract class UnsafeFieldAccessorImpl extends FieldAccessorImpl {
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
     protected final Field   field;
-    protected final int     fieldOffset;
+    protected final long    fieldOffset;
     protected final boolean isFinal;
 
     UnsafeFieldAccessorImpl(Field field) {
         this.field = field;
-        fieldOffset = unsafe.fieldOffset(field);
+        if (Modifier.isStatic(field.getModifiers()))
+            fieldOffset = unsafe.staticFieldOffset(field);
+        else
+            fieldOffset = unsafe.objectFieldOffset(field);
         isFinal = Modifier.isFinal(field.getModifiers());
     }
 

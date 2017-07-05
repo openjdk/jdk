@@ -22,8 +22,12 @@
  */
 
 /* @test
- * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
  * @bug 6766775
+ * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
+ * @run main/othervm DNSIdentities
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Xuelei Fan
  */
 
@@ -691,34 +695,39 @@ public class DNSIdentities {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-        SSLContext context = getSSLContext(trusedCertStr, clientCertStr,
-            clientModulus, clientPrivateExponent, passphrase);
-
-        SSLContext.setDefault(context);
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        HttpsURLConnection http = null;
-
-        /* establish http connection to server */
-        URL url = new URL("https://localhost:" + serverPort+"/");
-        System.out.println("url is "+url.toString());
-
+        SSLContext reservedSSLContext = SSLContext.getDefault();
         try {
-            http = (HttpsURLConnection)url.openConnection();
+            SSLContext context = getSSLContext(trusedCertStr, clientCertStr,
+                clientModulus, clientPrivateExponent, passphrase);
 
-            int respCode = http.getResponseCode();
-            System.out.println("respCode = "+respCode);
-        } finally {
-            if (http != null) {
-                http.disconnect();
+            SSLContext.setDefault(context);
+
+            /*
+             * Wait for server to get started.
+             */
+            while (!serverReady) {
+                Thread.sleep(50);
             }
-            closeReady = true;
+
+            HttpsURLConnection http = null;
+
+            /* establish http connection to server */
+            URL url = new URL("https://localhost:" + serverPort+"/");
+            System.out.println("url is "+url.toString());
+
+            try {
+                http = (HttpsURLConnection)url.openConnection();
+
+                int respCode = http.getResponseCode();
+                System.out.println("respCode = "+respCode);
+            } finally {
+                if (http != null) {
+                    http.disconnect();
+                }
+                closeReady = true;
+            }
+        } finally {
+            SSLContext.setDefault(reservedSSLContext);
         }
     }
 

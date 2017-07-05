@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class HierMemDirCtx implements DirContext {
     static private final boolean debug = false;
     private static final NameParser defaultParser = new HierarchicalNameParser();
 
-    protected Hashtable myEnv;
-    protected Hashtable bindings;
+    protected Hashtable<String, Object> myEnv;
+    protected Hashtable<Name, Object> bindings;
     protected Attributes attrs;
     protected boolean ignoreCase = false;
     protected NamingException readOnlyEx = null;
@@ -70,12 +70,12 @@ public class HierMemDirCtx implements DirContext {
         this(null, ignoreCase, false);
     }
 
-    public HierMemDirCtx(Hashtable environment, boolean ignoreCase) {
+    public HierMemDirCtx(Hashtable<String, Object> environment, boolean ignoreCase) {
         this(environment, ignoreCase, false);
     }
 
-    protected HierMemDirCtx(Hashtable environment, boolean ignoreCase,
-        boolean useFac) {
+    protected HierMemDirCtx(Hashtable<String, Object> environment,
+        boolean ignoreCase, boolean useFac) {
         myEnv = environment;
         this.ignoreCase = ignoreCase;
         init();
@@ -84,7 +84,7 @@ public class HierMemDirCtx implements DirContext {
 
     private void init() {
         attrs = new BasicAttributes(ignoreCase);
-        bindings = new Hashtable(11, 0.75f);
+        bindings = new Hashtable<>(11, 0.75f);
     }
 
     public Object lookup(String name) throws NamingException {
@@ -326,30 +326,30 @@ public class HierMemDirCtx implements DirContext {
         bindings.put(newname, oldBinding);
     }
 
-    public NamingEnumeration list(String name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         return list(myParser.parse(name));
     }
 
-    public NamingEnumeration list(Name name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(Name name) throws NamingException {
         HierMemDirCtx ctx = (HierMemDirCtx) doLookup(name, false);
         return ctx.doList();
     }
 
-    protected NamingEnumeration doList () throws NamingException {
+    protected NamingEnumeration<NameClassPair> doList () throws NamingException {
         return new FlatNames(bindings.keys());
     }
 
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(String name) throws NamingException {
         return listBindings(myParser.parse(name));
     }
 
-    public NamingEnumeration listBindings(Name name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(Name name) throws NamingException {
         HierMemDirCtx ctx = (HierMemDirCtx)doLookup(name, false);
         return ctx.doListBindings(alwaysUseFactory);
     }
 
-    protected NamingEnumeration doListBindings(boolean useFactory)
+    protected NamingEnumeration<Binding> doListBindings(boolean useFactory)
         throws NamingException {
         return new FlatBindings(bindings, myEnv, useFactory);
     }
@@ -447,28 +447,32 @@ public class HierMemDirCtx implements DirContext {
         return result;
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object addToEnvironment(String propName, Object propVal)
             throws NamingException {
-        myEnv = (myEnv == null) ?
-            new Hashtable(11, 0.75f) : (Hashtable)myEnv.clone();
+        myEnv = (myEnv == null)
+                ? new Hashtable<String, Object>(11, 0.75f)
+                : (Hashtable<String, Object>)myEnv.clone();
 
         return myEnv.put(propName, propVal);
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object removeFromEnvironment(String propName)
             throws NamingException {
         if (myEnv == null)
             return null;
 
-        myEnv = (Hashtable)myEnv.clone();
+        myEnv = (Hashtable<String, Object>)myEnv.clone();
         return myEnv.remove(propName);
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    @SuppressWarnings("unchecked") // clone()
+    public Hashtable<String, Object> getEnvironment() throws NamingException {
         if (myEnv == null) {
-            return new Hashtable(5, 0.75f);
+            return new Hashtable<>(5, 0.75f);
         } else {
-            return (Hashtable)myEnv.clone();
+            return (Hashtable<String, Object>)myEnv.clone();
         }
     }
 
@@ -529,10 +533,10 @@ public class HierMemDirCtx implements DirContext {
         }
 
         // turn it into a modification Enumeration and pass it on
-        NamingEnumeration attrEnum = attrs.getAll();
+        NamingEnumeration<? extends Attribute> attrEnum = attrs.getAll();
         ModificationItem[] mods = new ModificationItem[attrs.size()];
         for (int i = 0; i < mods.length && attrEnum.hasMoreElements(); i++) {
-            mods[i] = new ModificationItem(mod_op, (Attribute)attrEnum.next());
+            mods[i] = new ModificationItem(mod_op, attrEnum.next());
         }
 
         modifyAttributes(name, mods);
@@ -564,7 +568,7 @@ public class HierMemDirCtx implements DirContext {
 
         ModificationItem mod;
         Attribute existingAttr, modAttr;
-        NamingEnumeration modVals;
+        NamingEnumeration<?> modVals;
 
         for (int i = 0; i < mods.length; i++) {
             mod = mods[i];
@@ -619,29 +623,29 @@ public class HierMemDirCtx implements DirContext {
         return orig;
     }
 
-    public NamingEnumeration search(String name,
-                                    Attributes matchingAttributes)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  Attributes matchingAttributes)
         throws NamingException {
         return search(name, matchingAttributes, null);
     }
 
-    public NamingEnumeration search(Name name,
-                                    Attributes matchingAttributes)
+    public NamingEnumeration<SearchResult> search(Name name,
+                                                  Attributes matchingAttributes)
         throws NamingException {
             return search(name, matchingAttributes, null);
     }
 
-     public NamingEnumeration search(String name,
-                                    Attributes matchingAttributes,
-                                    String[] attributesToReturn)
+     public NamingEnumeration<SearchResult> search(String name,
+                                                   Attributes matchingAttributes,
+                                                   String[] attributesToReturn)
         throws NamingException {
         return search(myParser.parse(name), matchingAttributes,
             attributesToReturn);
     }
 
-     public NamingEnumeration search(Name name,
-                                    Attributes matchingAttributes,
-                                    String[] attributesToReturn)
+     public NamingEnumeration<SearchResult> search(Name name,
+                                                   Attributes matchingAttributes,
+                                                   String[] attributesToReturn)
          throws NamingException {
 
         HierMemDirCtx target = (HierMemDirCtx) doLookup(name, false);
@@ -656,9 +660,9 @@ public class HierMemDirCtx implements DirContext {
             false); // alwaysUseFactory ignored because objReturnFlag == false
     }
 
-    public NamingEnumeration search(Name name,
-                                    String filter,
-                                    SearchControls cons)
+    public NamingEnumeration<SearchResult> search(Name name,
+                                                  String filter,
+                                                  SearchControls cons)
         throws NamingException {
         DirContext target = (DirContext) doLookup(name, false);
 
@@ -671,27 +675,27 @@ public class HierMemDirCtx implements DirContext {
             cons, this, myEnv, alwaysUseFactory);
     }
 
-     public NamingEnumeration search(Name name,
-                                    String filterExpr,
-                                    Object[] filterArgs,
-                                    SearchControls cons)
+     public NamingEnumeration<SearchResult> search(Name name,
+                                                   String filterExpr,
+                                                   Object[] filterArgs,
+                                                   SearchControls cons)
             throws NamingException {
 
         String strfilter = SearchFilter.format(filterExpr, filterArgs);
         return search(name, strfilter, cons);
     }
 
-    public NamingEnumeration search(String name,
-                                    String filter,
-                                    SearchControls cons)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  String filter,
+                                                  SearchControls cons)
         throws NamingException {
         return search(myParser.parse(name), filter, cons);
     }
 
-    public NamingEnumeration search(String name,
-                                    String filterExpr,
-                                    Object[] filterArgs,
-                                    SearchControls cons)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  String filterExpr,
+                                                  Object[] filterArgs,
+                                                  SearchControls cons)
             throws NamingException {
         return search(myParser.parse(name), filterExpr, filterArgs, cons);
     }
@@ -761,15 +765,17 @@ public class HierMemDirCtx implements DirContext {
         myParser = parser;
     }
 
-    // Class for enumerating name/class pairs
-    private class FlatNames implements NamingEnumeration {
-        Enumeration names;
+    /*
+     * Common base class for FlatNames and FlatBindings.
+     */
+    private abstract class BaseFlatNames<T> implements NamingEnumeration<T> {
+        Enumeration<Name> names;
 
-        FlatNames (Enumeration names) {
+        BaseFlatNames (Enumeration<Name> names) {
             this.names = names;
         }
 
-        public boolean hasMoreElements() {
+        public final boolean hasMoreElements() {
             try {
                 return hasMore();
             } catch (NamingException e) {
@@ -777,11 +783,11 @@ public class HierMemDirCtx implements DirContext {
             }
         }
 
-        public boolean hasMore() throws NamingException {
+        public final boolean hasMore() throws NamingException {
             return names.hasMoreElements();
         }
 
-        public Object nextElement() {
+        public final T nextElement() {
             try {
                 return next();
             } catch (NamingException e) {
@@ -789,32 +795,45 @@ public class HierMemDirCtx implements DirContext {
             }
         }
 
-        public Object next() throws NamingException {
-            Name name = (Name)names.nextElement();
-            String className = bindings.get(name).getClass().getName();
-            return new NameClassPair(name.toString(), className);
-        }
+        public abstract T next() throws NamingException;
 
-        public void close() {
+        public final void close() {
             names = null;
         }
     }
 
-   // Class for enumerating bindings
-    private final class FlatBindings extends FlatNames {
-        private Hashtable bds;
-        private Hashtable env;
+    // Class for enumerating name/class pairs
+    private final class FlatNames extends BaseFlatNames<NameClassPair> {
+        FlatNames (Enumeration<Name> names) {
+            super(names);
+        }
+
+        @Override
+        public NameClassPair next() throws NamingException {
+            Name name = names.nextElement();
+            String className = bindings.get(name).getClass().getName();
+            return new NameClassPair(name.toString(), className);
+        }
+    }
+
+    // Class for enumerating bindings
+    private final class FlatBindings extends BaseFlatNames<Binding> {
+        private Hashtable<Name, Object> bds;
+        private Hashtable<String, Object> env;
         private boolean useFactory;
 
-        FlatBindings(Hashtable bindings, Hashtable env, boolean useFactory) {
+        FlatBindings(Hashtable<Name, Object> bindings,
+                     Hashtable<String, Object> env,
+                     boolean useFactory) {
             super(bindings.keys());
             this.env = env;
             this.bds = bindings;
             this.useFactory = useFactory;
         }
 
-        public Object next() throws NamingException {
-            Name name = (Name)names.nextElement();
+        @Override
+        public Binding next() throws NamingException {
+            Name name = names.nextElement();
 
             HierMemDirCtx obj = (HierMemDirCtx)bds.get(name);
 
@@ -849,7 +868,7 @@ public class HierMemDirCtx implements DirContext {
             super(context, scope, contextName, returnSelf);
         }
 
-        protected NamingEnumeration getImmediateChildren(Context ctx)
+        protected NamingEnumeration<Binding> getImmediateChildren(Context ctx)
             throws NamingException {
                 return ((HierMemDirCtx)ctx).doListBindings(false);
         }
@@ -872,14 +891,14 @@ final class HierarchicalName extends CompoundName {
 
     // Creates an empty name
     HierarchicalName() {
-        super(new Enumeration() {
-            public boolean hasMoreElements() {return false;}
-            public Object nextElement() {throw new NoSuchElementException();}
-        },
-            HierarchicalNameParser.mySyntax);
+        super(new Enumeration<String>() {
+                  public boolean hasMoreElements() {return false;}
+                  public String nextElement() {throw new NoSuchElementException();}
+              },
+              HierarchicalNameParser.mySyntax);
     }
 
-    HierarchicalName(Enumeration comps, Properties syntax) {
+    HierarchicalName(Enumeration<String> comps, Properties syntax) {
         super(comps, syntax);
     }
 
@@ -891,7 +910,7 @@ final class HierarchicalName extends CompoundName {
     public int hashCode() {
         if (hashValue == -1) {
 
-            String name = toString().toUpperCase();
+            String name = toString().toUpperCase(Locale.ENGLISH);
             int len = name.length();
             int off = 0;
             char val[] = new char[len];
@@ -907,12 +926,12 @@ final class HierarchicalName extends CompoundName {
     }
 
     public Name getPrefix(int posn) {
-        Enumeration comps = super.getPrefix(posn).getAll();
+        Enumeration<String> comps = super.getPrefix(posn).getAll();
         return (new HierarchicalName(comps, mySyntax));
     }
 
     public Name getSuffix(int posn) {
-        Enumeration comps = super.getSuffix(posn).getAll();
+        Enumeration<String> comps = super.getSuffix(posn).getAll();
         return (new HierarchicalName(comps, mySyntax));
     }
 

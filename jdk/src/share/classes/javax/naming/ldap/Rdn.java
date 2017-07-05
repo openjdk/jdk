@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.naming.ldap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Collections;
 
 import javax.naming.InvalidNameException;
@@ -104,8 +105,7 @@ import java.io.IOException;
 
 public class Rdn implements Serializable, Comparable<Object> {
 
-    // private transient ArrayList<RdnEntry> entries;
-    private transient ArrayList entries;
+    private transient ArrayList<RdnEntry> entries;
 
     // The common case.
     private static final int DEFAULT_SIZE = 1;
@@ -130,12 +130,12 @@ public class Rdn implements Serializable, Comparable<Object> {
         if (attrSet.size() == 0) {
             throw new InvalidNameException("Attributes cannot be empty");
         }
-        entries = new ArrayList(attrSet.size());
-        NamingEnumeration attrs = attrSet.getAll();
+        entries = new ArrayList<>(attrSet.size());
+        NamingEnumeration<? extends Attribute> attrs = attrSet.getAll();
         try {
             for (int nEntries = 0; attrs.hasMore(); nEntries++) {
                 RdnEntry entry = new RdnEntry();
-                Attribute attr = (Attribute) attrs.next();
+                Attribute attr = attrs.next();
                 entry.type = attr.getID();
                 entry.value = attr.get();
                 entries.add(nEntries, entry);
@@ -161,7 +161,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      *                  parsing of the rdnString.
      */
     public Rdn(String rdnString) throws InvalidNameException {
-        entries = new ArrayList(DEFAULT_SIZE);
+        entries = new ArrayList<>(DEFAULT_SIZE);
         (new Rfc2253Parser(rdnString)).parseRdn(this);
     }
 
@@ -172,7 +172,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @param rdn The non-null Rdn to be copied.
      */
     public Rdn(Rdn rdn) {
-        entries = new ArrayList(rdn.entries.size());
+        entries = new ArrayList<>(rdn.entries.size());
         entries.addAll(rdn.entries);
     }
 
@@ -199,7 +199,7 @@ public class Rdn implements Serializable, Comparable<Object> {
                 "type or value cannot be empty, type:" + type +
                 " value:" + value);
         }
-        entries = new ArrayList(DEFAULT_SIZE);
+        entries = new ArrayList<>(DEFAULT_SIZE);
         put(type, value);
     }
 
@@ -210,7 +210,7 @@ public class Rdn implements Serializable, Comparable<Object> {
 
     // An empty constructor used by the parser
     Rdn() {
-        entries = new ArrayList(DEFAULT_SIZE);
+        entries = new ArrayList<>(DEFAULT_SIZE);
     }
 
     /*
@@ -257,7 +257,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @return The non-null attribute value.
      */
     public Object getValue() {
-        return ((RdnEntry) entries.get(0)).getValue();
+        return entries.get(0).getValue();
     }
 
     /**
@@ -275,7 +275,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @return The non-null attribute type.
      */
     public String getType() {
-        return ((RdnEntry) entries.get(0)).getType();
+        return entries.get(0).getType();
     }
 
     /**
@@ -329,8 +329,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         for (int i = 0; i < minSize; i++) {
 
             // Compare a single pair of type/value pairs.
-            int diff = ((RdnEntry) entries.get(i)).compareTo(
-                                        that.entries.get(i));
+            int diff = entries.get(i).compareTo(that.entries.get(i));
             if (diff != 0) {
                 return diff;
             }
@@ -408,7 +407,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     public Attributes toAttributes() {
         Attributes attrs = new BasicAttributes(true);
         for (int i = 0; i < entries.size(); i++) {
-            RdnEntry entry = (RdnEntry) entries.get(i);
+            RdnEntry entry = entries.get(i);
             Attribute attr = attrs.put(entry.getType(), entry.getValue());
             if (attr != null) {
                 attr.add(entry.getValue());
@@ -419,7 +418,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     }
 
 
-    private static class RdnEntry implements Comparable {
+    private static class RdnEntry implements Comparable<RdnEntry> {
         private String type;
         private Object value;
 
@@ -435,14 +434,8 @@ public class Rdn implements Serializable, Comparable<Object> {
             return value;
         }
 
-        public int compareTo(Object obj) {
-
-            // Any change here affecting equality must be
-            // reflected in hashCode().
-            RdnEntry that = (RdnEntry) obj;
-
-            int diff = type.toUpperCase().compareTo(
-                        that.type.toUpperCase());
+        public int compareTo(RdnEntry that) {
+            int diff = type.compareToIgnoreCase(that.type);
             if (diff != 0) {
                 return diff;
             }
@@ -469,7 +462,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         }
 
         public int hashCode() {
-            return (type.toUpperCase().hashCode() +
+            return (type.toUpperCase(Locale.ENGLISH).hashCode() +
                 getValueComparable().hashCode());
         }
 
@@ -486,7 +479,7 @@ public class Rdn implements Serializable, Comparable<Object> {
             if (value instanceof byte[]) {
                 comparable = escapeBinaryValue((byte[]) value);
             } else {
-                comparable = ((String) value).toUpperCase();
+                comparable = ((String) value).toUpperCase(Locale.ENGLISH);
             }
             return comparable;
         }
@@ -576,7 +569,6 @@ public class Rdn implements Serializable, Comparable<Object> {
             builder.append(Character.forDigit(0xF & b, 16));
         }
         return builder.toString();
-        // return builder.toString().toUpperCase();
     }
 
     /**
@@ -755,7 +747,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        entries = new ArrayList(DEFAULT_SIZE);
+        entries = new ArrayList<>(DEFAULT_SIZE);
         String unparsed = (String) s.readObject();
         try {
             (new Rfc2253Parser(unparsed)).parseRdn(this);

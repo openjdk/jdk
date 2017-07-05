@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class ManifestDigester {
      * @returns false if end of bytes has been reached, otherwise returns
      *          true
      */
+    @SuppressWarnings("fallthrough")
     private boolean findSection(int offset, Position pos)
     {
         int i = offset, len = rawBytes.length;
@@ -79,6 +80,7 @@ public class ManifestDigester {
                     pos.endOfFirstLine = i-1;
                 if ((i < len) &&  (rawBytes[i+1] == '\n'))
                     i++;
+                /* fall through */
             case '\n':
                 if (pos.endOfFirstLine == -1)
                     pos.endOfFirstLine = i-1;

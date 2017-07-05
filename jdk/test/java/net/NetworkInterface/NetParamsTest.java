@@ -45,7 +45,9 @@ public class NetParamsTest {
         System.out.println("\tPoint to Point: " + netif.isPointToPoint());
         System.out.println("\tVirtual: " + netif.isVirtual());
         if (netif.isVirtual()) {
-            System.out.println("\tParent Interface: " + netif.getParent().getName());
+            NetworkInterface parent = netif.getParent();
+            String parentName = parent == null ? "null" : parent.getName();
+            System.out.println("\tParent Interface: " + parentName);
         }
         System.out.println("\tMulticast: " + netif.supportsMulticast());
 

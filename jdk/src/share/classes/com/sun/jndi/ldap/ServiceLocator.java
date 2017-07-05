@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package com.sun.jndi.ldap;
 
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.List;
@@ -38,8 +36,6 @@ import javax.naming.directory.*;
 import javax.naming.spi.NamingManager;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-
-import com.sun.jndi.ldap.LdapURL;
 
 /**
  * This class discovers the location of LDAP services by querying DNS.
@@ -78,10 +74,10 @@ class ServiceLocator {
         // process RDNs left-to-right
         //List<Rdn> rdnList = ldapName.getRdns();
 
-        List rdnList = ldapName.getRdns();
+        List<Rdn> rdnList = ldapName.getRdns();
         for (int i = rdnList.size() - 1; i >= 0; i--) {
             //Rdn rdn = rdnList.get(i);
-            Rdn rdn = (Rdn) rdnList.get(i);
+            Rdn rdn = rdnList.get(i);
 
             // single-valued RDN with a DC attribute
             if ((rdn.size() == 1) &&
@@ -117,7 +113,7 @@ class ServiceLocator {
      * @return An ordered list of hostports for the LDAP service or null if
      *         the service has not been located.
      */
-    static String[] getLdapService(String domainName, Hashtable environment) {
+    static String[] getLdapService(String domainName, Hashtable<?,?> environment) {
 
         if (domainName == null || domainName.length() == 0) {
             return null;
@@ -252,7 +248,7 @@ class ServiceLocator {
  * See http://www.ietf.org/rfc/rfc2782.txt
  */
 
-static class SrvRecord implements Comparable {
+static class SrvRecord implements Comparable<SrvRecord> {
 
     int priority;
     int weight;
@@ -284,8 +280,7 @@ static class SrvRecord implements Comparable {
      * Sort records in ascending order of priority value. For records with
      * equal priority move those with weight 0 to the top of the list.
      */
-    public int compareTo(Object o) {
-        SrvRecord that = (SrvRecord) o;
+    public int compareTo(SrvRecord that) {
         if (priority > that.priority) {
             return 1; // this > that
         } else if (priority < that.priority) {

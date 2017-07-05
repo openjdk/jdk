@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ class CipherBlockChaining extends FeedbackCipher  {
             // This is necessary because in this constellation, a
             // ciphertext block (or parts of it) will be overridden by
             // the plaintext result.
-            cipherOrig = (byte[])cipher.clone();
+            cipherOrig = cipher.clone();
         }
 
         for (; cipherOffset < endIndex;

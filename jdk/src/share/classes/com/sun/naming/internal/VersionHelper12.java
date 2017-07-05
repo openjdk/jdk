@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
@@ -58,7 +57,7 @@ final class VersionHelper12 extends VersionHelper {
 
     VersionHelper12() {} // Disallow external from creating one of these.
 
-    public Class loadClass(String className) throws ClassNotFoundException {
+    public Class<?> loadClass(String className) throws ClassNotFoundException {
         ClassLoader cl = getContextClassLoader();
         return Class.forName(className, true, cl);
     }
@@ -66,7 +65,7 @@ final class VersionHelper12 extends VersionHelper {
     /**
       * Package private.
       */
-    Class loadClass(String className, ClassLoader cl)
+    Class<?> loadClass(String className, ClassLoader cl)
         throws ClassNotFoundException {
         return Class.forName(className, true, cl);
     }
@@ -75,7 +74,7 @@ final class VersionHelper12 extends VersionHelper {
      * @param className A non-null fully qualified class name.
      * @param codebase A non-null, space-separated list of URL strings.
      */
-    public Class loadClass(String className, String codebase)
+    public Class<?> loadClass(String className, String codebase)
         throws ClassNotFoundException, MalformedURLException {
         ClassLoader cl;
 
@@ -86,9 +85,9 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     String getJndiProperty(final int i) {
-        return (String) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                public String run() {
                     try {
                         return System.getProperty(PROPS[i]);
                     } catch (SecurityException e) {
@@ -103,9 +102,9 @@ final class VersionHelper12 extends VersionHelper {
         if (getSystemPropsFailed) {
             return null;        // after one failure, don't bother trying again
         }
-        Properties sysProps = (Properties) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        Properties sysProps = AccessController.doPrivileged(
+            new PrivilegedAction<Properties>() {
+                public Properties run() {
                     try {
                         return System.getProperties();
                     } catch (SecurityException e) {
@@ -125,10 +124,10 @@ final class VersionHelper12 extends VersionHelper {
         return jProps;
     }
 
-    InputStream getResourceAsStream(final Class c, final String name) {
-        return (InputStream) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+    InputStream getResourceAsStream(final Class<?> c, final String name) {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<InputStream>() {
+                public InputStream run() {
                     return c.getResourceAsStream(name);
                 }
             }
@@ -136,9 +135,9 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     InputStream getJavaHomeLibStream(final String filename) {
-        return (InputStream) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<InputStream>() {
+                public InputStream run() {
                     try {
                         String javahome = System.getProperty("java.home");
                         if (javahome == null) {
@@ -155,14 +154,13 @@ final class VersionHelper12 extends VersionHelper {
         );
     }
 
-    NamingEnumeration getResources(final ClassLoader cl, final String name)
-            throws IOException
-    {
-        Enumeration urls;
+    NamingEnumeration<InputStream> getResources(final ClassLoader cl,
+            final String name) throws IOException {
+        Enumeration<URL> urls;
         try {
-            urls = (Enumeration) AccessController.doPrivileged(
-                new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
+            urls = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Enumeration<URL>>() {
+                    public Enumeration<URL> run() throws IOException {
                         return (cl == null)
                             ? ClassLoader.getSystemResources(name)
                             : cl.getResources(name);
@@ -176,9 +174,9 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     ClassLoader getContextClassLoader() {
-        return (ClassLoader) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
                     return Thread.currentThread().getContextClassLoader();
                 }
             }
@@ -193,13 +191,13 @@ final class VersionHelper12 extends VersionHelper {
      * This is used to enumerate the resources under a foreign codebase.
      * This class is not MT-safe.
      */
-    class InputStreamEnumeration implements NamingEnumeration {
+    class InputStreamEnumeration implements NamingEnumeration<InputStream> {
 
-        private final Enumeration urls;
+        private final Enumeration<URL> urls;
 
-        private Object nextElement = null;
+        private InputStream nextElement = null;
 
-        InputStreamEnumeration(Enumeration urls) {
+        InputStreamEnumeration(Enumeration<URL> urls) {
             this.urls = urls;
         }
 
@@ -207,13 +205,13 @@ final class VersionHelper12 extends VersionHelper {
          * Returns the next InputStream, or null if there are no more.
          * An InputStream that cannot be opened is skipped.
          */
-        private Object getNextElement() {
+        private InputStream getNextElement() {
             return AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public Object run() {
+                new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
                         while (urls.hasMoreElements()) {
                             try {
-                                return ((URL)urls.nextElement()).openStream();
+                                return urls.nextElement().openStream();
                             } catch (IOException e) {
                                 // skip this URL
                             }
@@ -236,9 +234,9 @@ final class VersionHelper12 extends VersionHelper {
             return hasMore();
         }
 
-        public Object next() {
+        public InputStream next() {
             if (hasMore()) {
-                Object res = nextElement;
+                InputStream res = nextElement;
                 nextElement = null;
                 return res;
             } else {
@@ -246,7 +244,7 @@ final class VersionHelper12 extends VersionHelper {
             }
         }
 
-        public Object nextElement() {
+        public InputStream nextElement() {
             return next();
         }
 

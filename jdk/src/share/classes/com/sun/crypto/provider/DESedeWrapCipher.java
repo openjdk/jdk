@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.util.Arrays;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
@@ -151,7 +150,7 @@ public final class DESedeWrapCipher extends CipherSpi {
      * been set.
      */
     protected byte[] engineGetIV() {
-        return (iv == null? null:(byte[]) iv.clone());
+        return (iv == null) ? null : iv.clone();
     }
 
     /**
@@ -277,8 +276,7 @@ public final class DESedeWrapCipher extends CipherSpi {
             try {
                 DESedeParameters paramsEng = new DESedeParameters();
                 paramsEng.engineInit(params.getEncoded());
-                ivSpec = (IvParameterSpec)
-                    paramsEng.engineGetParameterSpec(IvParameterSpec.class);
+                ivSpec = paramsEng.engineGetParameterSpec(IvParameterSpec.class);
             } catch (Exception ex) {
                 InvalidAlgorithmParameterException iape =
                     new InvalidAlgorithmParameterException

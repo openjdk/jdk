@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.security.sasl.gsskerb;
 import javax.security.sasl.*;
 import java.io.*;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 
 // JAAS
@@ -77,7 +76,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
      * with the client.
      */
     GssKrb5Server(String protocol, String serverName,
-        Map props, CallbackHandler cbh) throws SaslException {
+        Map<String, ?> props, CallbackHandler cbh) throws SaslException {
 
         super(props, MY_CLASS_NAME);
 

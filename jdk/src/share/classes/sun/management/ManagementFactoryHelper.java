@@ -171,7 +171,8 @@ public class ManagementFactoryHelper {
             ObjectName result = objname;
             if (result == null) {
                 synchronized (this) {
-                    if (objname == null) {
+                    result = objname;
+                    if (result == null) {
                         result = Util.newObjectName(LOGGING_MXBEAN_NAME);
                         objname = result;
                     }
@@ -228,7 +229,8 @@ public class ManagementFactoryHelper {
                 ObjectName result = objname;
                 if (result == null) {
                     synchronized (this) {
-                        if (objname == null) {
+                        result = objname;
+                        if (result == null) {
                             result = Util.newObjectName(BUFFER_POOL_MXBEAN_NAME +
                                 ",name=" + pool.getName());
                             objname = result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,7 @@ package com.sun.jndi.ldap.ext;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-
-import java.net.Socket;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -45,11 +37,9 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.HostnameVerifier;
 import sun.security.util.HostnameChecker;
 
-import javax.naming.*;
 import javax.naming.ldap.*;
 import com.sun.jndi.ldap.Connection;
 
@@ -415,7 +405,7 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
             // Use ciphersuite to determine whether Kerberos is active.
             if (session.getCipherSuite().startsWith("TLS_KRB5")) {
                 Principal principal = getPeerPrincipal(session);
-                if (!checker.match(hostname, principal)) {
+                if (!HostnameChecker.match(hostname, principal)) {
                     throw new SSLPeerUnverifiedException(
                         "hostname of the kerberos principal:" + principal +
                         " does not match the hostname:" + hostname);

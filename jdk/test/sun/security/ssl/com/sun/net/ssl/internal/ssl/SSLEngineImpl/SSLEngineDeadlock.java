@@ -25,6 +25,10 @@
  * @test
  * @bug 6492872
  * @summary Deadlock in SSLEngine
+ * @run main/othervm SSLEngineDeadlock
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  *
  * @author Brad R. Wetmore
  */

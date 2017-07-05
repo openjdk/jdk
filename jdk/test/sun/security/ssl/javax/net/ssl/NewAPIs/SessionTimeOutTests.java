@@ -25,6 +25,10 @@
  * @test
  * @bug   4366807
  * @summary Need new APIs to get/set session timeout and session cache size.
+ * @run main/othervm SessionTimeOutTests
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -207,7 +211,7 @@ public class SessionTimeOutTests {
                 timeout = sessCtx.getSessionTimeout();
                 System.out.println("timeout is changed to: " + timeout);
                 System.out.println();
-            }
+           }
         }
 
         // check the ids returned by the enumerator

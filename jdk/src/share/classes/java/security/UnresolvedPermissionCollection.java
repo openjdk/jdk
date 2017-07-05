@@ -197,8 +197,12 @@ implements java.io.Serializable
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get permissions
+        @SuppressWarnings("unchecked")
+        // writeObject writes a Hashtable<String, Vector<UnresolvedPermission>>
+        // for the permissions key, so this cast is safe, unless the data is corrupt.
         Hashtable<String, Vector<UnresolvedPermission>> permissions =
-                (Hashtable<String, Vector<UnresolvedPermission>>)gfields.get("permissions", null);
+                (Hashtable<String, Vector<UnresolvedPermission>>)
+                gfields.get("permissions", null);
         perms = new HashMap<String, List<UnresolvedPermission>>(permissions.size()*2);
 
         // Convert each entry (Vector) into a List
