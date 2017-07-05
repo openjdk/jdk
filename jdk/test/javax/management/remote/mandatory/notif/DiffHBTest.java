@@ -32,11 +32,8 @@
  */
 
 
-import java.util.Collections;
-import java.util.Map;
 import javax.management.*;
 import javax.management.remote.*;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 /**
  * This test registeres an unique listener with two different handbacks,
@@ -80,33 +77,14 @@ public class DiffHBTest {
     }
 
     private static String test(String proto) throws Exception {
-        String ret = null;
-        for (boolean eventService : new boolean[] {false, true}) {
-            String s = test(proto, eventService);
-            if (s != null) {
-                if (ret == null)
-                    ret = s;
-                else
-                    ret = ret + "; " + s;
-            }
-        }
-        return ret;
-    }
-
-    private static String test(String proto, boolean eventService)
-            throws Exception {
-        System.out.println(">>> Test for protocol " + proto + " with" +
-                (eventService ? "" : "out") + " event service");
+        System.out.println(">>> Test for protocol " + proto);
         JMXServiceURL u = new JMXServiceURL(proto, null, 0);
         JMXConnectorServer server;
         JMXConnector client;
 
         try {
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                    Boolean.toString(eventService));
             server =
-                    JMXConnectorServerFactory.newJMXConnectorServer(u, env, mbs);
+                    JMXConnectorServerFactory.newJMXConnectorServer(u, null, mbs);
             server.start();
             JMXServiceURL addr = server.getAddress();
             client = JMXConnectorFactory.connect(addr, null);

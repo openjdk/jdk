@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,6 +297,7 @@ class JarFile extends ZipFile {
                     String name = names[i].toUpperCase(Locale.ENGLISH);
                     if (name.endsWith(".DSA") ||
                         name.endsWith(".RSA") ||
+                        name.endsWith(".EC") ||
                         name.endsWith(".SF")) {
                         // Assume since we found a signature-related file
                         // that the jar is signed and that we therefore

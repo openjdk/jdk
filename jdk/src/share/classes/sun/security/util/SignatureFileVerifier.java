@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ public class SignatureFileVerifier {
         ("-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS).toUpperCase
         (Locale.ENGLISH);
 
-    /** the PKCS7 block for this .DSA/.RSA file */
+    /** the PKCS7 block for this .DSA/.RSA/.EC file */
     private PKCS7 block;
 
     /** the raw bytes of the .SF file */
     private byte sfBytes[];
 
     /** the name of the signature block file, uppercased and without
-     *  the extension (.DSA/.RSA)
+     *  the extension (.DSA/.RSA/.EC)
      */
     private String name;
 
@@ -80,7 +80,7 @@ public class SignatureFileVerifier {
     /**
      * Create the named SignatureFileVerifier.
      *
-     * @param name the name of the signature block file (.DSA/.RSA)
+     * @param name the name of the signature block file (.DSA/.RSA/.EC)
      *
      * @param rawBytes the raw bytes of the signature block file
      */
@@ -148,7 +148,8 @@ public class SignatureFileVerifier {
      */
     public static boolean isBlockOrSF(String s) {
         // we currently only support DSA and RSA PKCS7 blocks
-        if (s.endsWith(".SF") || s.endsWith(".DSA") || s.endsWith(".RSA")) {
+        if (s.endsWith(".SF") || s.endsWith(".DSA") ||
+                s.endsWith(".RSA") || s.endsWith(".EC")) {
             return true;
         }
         return false;

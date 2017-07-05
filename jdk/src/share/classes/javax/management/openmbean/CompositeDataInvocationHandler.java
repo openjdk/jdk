@@ -26,6 +26,8 @@
 package javax.management.openmbean;
 
 import com.sun.jmx.mbeanserver.MXBeanLookup;
+import com.sun.jmx.mbeanserver.MXBeanMapping;
+import com.sun.jmx.mbeanserver.MXBeanMappingFactory;
 import com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -115,12 +117,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
        is null.
     */
     public CompositeDataInvocationHandler(CompositeData compositeData) {
-        this(compositeData, MXBeanMappingFactory.DEFAULT);
-    }
-
-    public CompositeDataInvocationHandler(CompositeData compositeData,
-                                          MXBeanMappingFactory mappingFactory) {
-        this(compositeData, mappingFactory, null);
+        this(compositeData, null);
     }
 
     /**
@@ -139,13 +136,11 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
        is null.
     */
     CompositeDataInvocationHandler(CompositeData compositeData,
-                                   MXBeanMappingFactory mappingFactory,
                                    MXBeanLookup lookup) {
         if (compositeData == null)
             throw new IllegalArgumentException("compositeData");
         this.compositeData = compositeData;
         this.lookup = lookup;
-        this.mappingFactory = mappingFactory;
     }
 
     /**
@@ -204,7 +199,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
             }
         }
         MXBeanMapping mapping =
-            mappingFactory.mappingForType(method.getGenericReturnType(),
+            MXBeanMappingFactory.DEFAULT.mappingForType(method.getGenericReturnType(),
                                    MXBeanMappingFactory.DEFAULT);
         return mapping.fromOpenValue(openValue);
     }
@@ -250,5 +245,4 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
 
     private final CompositeData compositeData;
     private final MXBeanLookup lookup;
-    private final MXBeanMappingFactory mappingFactory;
 }

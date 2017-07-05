@@ -101,11 +101,21 @@ public abstract class CookieHandler {
      * Gets all the applicable cookies from a cookie cache for the
      * specified uri in the request header.
      *
-     * HTTP protocol implementers should make sure that this method is
-     * called after all request headers related to choosing cookies
-     * are added, and before the request is sent.
+     * <P>The {@code URI} passed as an argument specifies the intended use for
+     * the cookies. In particular the scheme should reflect whether the cookies
+     * will be sent over http, https or used in another context like javascript.
+     * The host part should reflect either the destination of the cookies or
+     * their origin in the case of javascript.</P>
+     * <P>It is up to the implementation to take into account the {@code URI} and
+     * the cookies attributes and security settings to determine which ones
+     * should be returned.</P>
      *
-     * @param uri a <code>URI</code> to send cookies to in a request
+     * <P>HTTP protocol implementers should make sure that this method is
+     * called after all request headers related to choosing cookies
+     * are added, and before the request is sent.</P>
+     *
+     * @param uri a <code>URI</code> representing the intended use for the
+     *            cookies
      * @param requestHeaders - a Map from request header
      *            field names to lists of field values representing
      *            the current request headers

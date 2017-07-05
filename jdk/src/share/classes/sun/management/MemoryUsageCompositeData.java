@@ -126,4 +126,6 @@ public class MemoryUsageCompositeData extends LazyCompositeData {
                 "Unexpected composite type for MemoryUsage");
         }
     }
+
+    private static final long serialVersionUID = -8504291541083874143L;
 }

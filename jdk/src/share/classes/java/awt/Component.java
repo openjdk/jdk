@@ -2764,8 +2764,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Ensures that this component has a valid layout.  This method is
-     * primarily intended to operate on instances of <code>Container</code>.
+     * Validates this component.
+     * <p>
+     * The meaning of the term <i>validating</i> is defined by the ancestors of
+     * this class. See {@link Container#validate} for more details.
+     *
      * @see       #invalidate
      * @see       #doLayout()
      * @see       LayoutManager
@@ -2794,12 +2797,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Invalidates this component.  This component and all parents
-     * above it are marked as needing to be laid out.  This method can
-     * be called often, so it needs to execute quickly.
+     * Invalidates this component and its ancestors.
+     * <p>
+     * All the ancestors of this component up to the nearest validate root are
+     * marked invalid also. If there is no a validate root container for this
+     * component, all of its ancestors up to the root of the hierarchy are
+     * marked invalid as well. Marking a container <i>invalid</i> indicates
+     * that the container needs to be laid out.
+     * <p>
+     * This method is called automatically when any layout-related information
+     * changes (e.g. setting the bounds of the component, or adding the
+     * component to a container).
+     * <p>
+     * This method might be called often, so it should work fast.
+     *
      * @see       #validate
      * @see       #doLayout
      * @see       LayoutManager
+     * @see       java.awt.Container#isValidateRoot
      * @since     JDK1.0
      */
     public void invalidate() {
@@ -2818,9 +2833,18 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (!isMaximumSizeSet()) {
                 maxSize = null;
             }
-            if (parent != null) {
-                parent.invalidateIfValid();
-            }
+            invalidateParent();
+        }
+    }
+
+    /**
+     * Invalidates the parent of this component if any.
+     *
+     * This method MUST BE invoked under the TreeLock.
+     */
+    void invalidateParent() {
+        if (parent != null) {
+            parent.invalidateIfValid();
         }
     }
 
@@ -6727,12 +6751,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     }
                 }
             } else {
-                // It's native.  If the parent is lightweight it
-                // will need some help.
-                Container parent = this.parent;
-                if (parent != null && parent.peer instanceof LightweightPeer) {
+                // It's native. If the parent is lightweight it will need some
+                // help.
+                Container parent = getContainer();
+                if (parent != null && parent.isLightweight()) {
                     relocateComponent();
-                    if (!isRecursivelyVisible()) {
+                    if (!parent.isRecursivelyVisibleUpToHeavyweightContainer())
+                    {
                         peer.setVisible(false);
                     }
                 }

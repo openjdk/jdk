@@ -229,6 +229,7 @@ public:
     static void _SetOpaque(void* param);
     static void _UpdateWindow(void* param);
     static void _RepositionSecurityWarning(void* param);
+    static void _SetFullScreenExclusiveModeState(void* param);
 
     inline static BOOL IsResizing() {
         return sm_resizing;
@@ -330,6 +331,16 @@ private:
 
     static void SetLayered(HWND window, bool layered);
     static bool IsLayered(HWND window);
+
+    BOOL fullScreenExclusiveModeState;
+    inline void setFullScreenExclusiveModeState(BOOL isEntered) {
+        fullScreenExclusiveModeState = isEntered;
+        UpdateSecurityWarningVisibility();
+    }
+    inline BOOL isFullScreenExclusiveMode() {
+        return fullScreenExclusiveModeState;
+    }
+
 
 public:
     void UpdateSecurityWarningVisibility();

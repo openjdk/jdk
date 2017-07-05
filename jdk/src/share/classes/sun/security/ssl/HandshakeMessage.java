@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 
 package sun.security.ssl;
 
@@ -73,7 +72,7 @@ import sun.security.ssl.CipherSuite.*;
  *
  * @author David Brownell
  */
-abstract class HandshakeMessage {
+public abstract class HandshakeMessage {
 
     HandshakeMessage() { }
 
@@ -92,7 +91,7 @@ abstract class HandshakeMessage {
     static final byte   ht_finished = 20;
 
     /* Class and subclass dynamic debugging support */
-    static final Debug debug = Debug.getInstance("ssl");
+    public static final Debug debug = Debug.getInstance("ssl");
 
     /**
      * Utility method to convert a BigInteger to a byte array in unsigned
@@ -467,7 +466,6 @@ class CertificateMsg extends HandshakeMessage
         return chain;
     }
 }
-
 
 /*
  * ServerKeyExchange ... SERVER --> CLIENT

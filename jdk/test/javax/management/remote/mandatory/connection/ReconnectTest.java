@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@
 
 import java.util.*;
 import java.net.MalformedURLException;
+import java.io.IOException;
 
 import javax.management.*;
 import javax.management.remote.*;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 public class ReconnectTest {
     private static final String[] protocols = {"rmi", "iiop", "jmxmp"};
@@ -48,7 +48,6 @@ public class ReconnectTest {
         String timeout = "1000";
         env.put("jmx.remote.x.server.connection.timeout", timeout);
         env.put("jmx.remote.x.client.connection.check.period", timeout);
-        env.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
     }
 
     public static void main(String[] args) throws Exception {

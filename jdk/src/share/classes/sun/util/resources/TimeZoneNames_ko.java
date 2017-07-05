@@ -141,6 +141,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                      "\ub9d0\ub808\uc774\uc2dc\uc544 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MYST"};
         String NORONHA[] = new String[] {"Fernando de Noronha \uc2dc\uac04", "FNT",
                                          "Fernando de Noronha \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "FNST"};
+        String NOVT[] = new String[] {"\ub178\ube0c\uc2dc\ube4c\uc2a4\ud06c \uc2dc\uac04", "NOVT",
+                                      "\ub178\ube0c\uc2dc\ube4c\uc2a4\ud06c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "NOVST"};
         String NPT[] = new String[] {"\ub124\ud314 \uc2dc\uac04", "NPT",
                                       "\ub124\ud314 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "NPST"};
         String NST[] = new String[] {"\ub274\ud380\ub4e4\ub79c\ub4dc \ud45c\uc900\uc2dc", "NST",
@@ -441,7 +443,6 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
-            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Davis \uc2dc\uac04", "DAVT",
                                                "Davis \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"\ub4a4\ubabd \ub4a4\ub974\ube4c \uc2dc\uac04", "DDUT",
@@ -529,8 +530,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                           "\ud544\ub9ac\ud540 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-            {"Asia/Novosibirsk", new String[] {"\ub178\ube0c\uc2dc\ube4c\uc2a4\ud06c \uc2dc\uac04", "NOVT",
-                                               "\ub178\ube0c\uc2dc\ube4c\uc2a4\ud06c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "NOVST"}},
+            {"Asia/Novokuznetsk", NOVT},
+            {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Oral \ud45c\uc900\uc2dc", "ORAT",
                                         "Oral \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ORAST"}},
             {"Asia/Omsk", new String[] {"Omsk \uc2dc\uac04", "OMST",

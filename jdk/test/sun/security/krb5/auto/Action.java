@@ -30,4 +30,3 @@ public interface Action {
      */
     byte[] run(Context s, byte[] input) throws Exception;
 }
-

@@ -307,7 +307,7 @@ EOF
              #The alternative would be to use /usr/bin/pargs [pid] to get
              #all the args for a process, splice them back into one
              #long string, then grep.
-             UU=`/usr/bin/id -un`
+             UU=`/usr/xpg4/bin/id -u -n`
              psCmd="pgrep -f -l -U $UU"
          else
              ulimit -c 0

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class X11GraphicsDevice
                 makeConfigurations();
             }
         }
-        return configs;
+        return configs.clone();
     }
 
     private void makeConfigurations() {
@@ -306,12 +306,14 @@ public class X11GraphicsDevice
         X11ComponentPeer peer = (X11ComponentPeer)w.getPeer();
         if (peer != null) {
             enterFullScreenExclusive(peer.getContentWindow());
+            peer.setFullScreenExclusiveModeState(true);
         }
     }
 
     private static void exitFullScreenExclusive(Window w) {
         X11ComponentPeer peer = (X11ComponentPeer)w.getPeer();
         if (peer != null) {
+            peer.setFullScreenExclusiveModeState(false);
             exitFullScreenExclusive(peer.getContentWindow());
         }
     }
