@@ -2350,7 +2350,7 @@ void LIRGenerator::do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegi
     } else {
       LabelObj* L = new LabelObj();
       __ cmp(lir_cond_less, value, low_key);
-      __ branch(lir_cond_less, L->label());
+      __ branch(lir_cond_less, T_INT, L->label());
       __ cmp(lir_cond_lessEqual, value, high_key);
       __ branch(lir_cond_lessEqual, T_INT, dest);
       __ branch_destination(L->label());

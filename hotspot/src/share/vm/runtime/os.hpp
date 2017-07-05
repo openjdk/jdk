@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,9 @@ enum ThreadPriority {        // JLS 20.20.1-3
   MinPriority      =  1,     // Minimum priority
   NormPriority     =  5,     // Normal (non-daemon) priority
   NearMaxPriority  =  9,     // High priority, used for VMThread
-  MaxPriority      = 10      // Highest priority, used for WatcherThread
+  MaxPriority      = 10,     // Highest priority, used for WatcherThread
                              // ensures that VMThread doesn't starve profiler
+  CriticalPriority = 11      // Critical thread priority
 };
 
 // Typedef for structured exception handling support
@@ -733,7 +734,7 @@ class os: AllStatic {
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);
   static OSReturn get_native_priority(const Thread* const thread, int* priority_ptr);
-  static int java_to_os_priority[MaxPriority + 1];
+  static int java_to_os_priority[CriticalPriority + 1];
   // Hint to the underlying OS that a task switch would not be good.
   // Void return because it's a hint and can fail.
   static void hint_no_preempt();

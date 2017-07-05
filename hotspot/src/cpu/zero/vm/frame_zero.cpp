@@ -418,7 +418,7 @@ void ZeroFrame::identify_vp_word(int       frame_index,
   }
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
 

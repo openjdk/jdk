@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,25 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
   set_name("Concurrent Mark-Sweep GC Thread");
 
   if (os::create_thread(this, os::cgc_thread)) {
-    // XXX: need to set this to low priority
-    // unless "agressive mode" set; priority
-    // should be just less than that of VMThread.
-    os::set_priority(this, NearMaxPriority);
+    // An old comment here said: "Priority should be just less
+    // than that of VMThread".  Since the VMThread runs at
+    // NearMaxPriority, the old comment was inaccurate, but
+    // changing the default priority to NearMaxPriority-1
+    // could change current behavior, so the default of
+    // NearMaxPriority stays in place.
+    //
+    // Note that there's a possibility of the VMThread
+    // starving if UseCriticalCMSThreadPriority is on.
+    // That won't happen on Solaris for various reasons,
+    // but may well happen on non-Solaris platforms.
+    int native_prio;
+    if (UseCriticalCMSThreadPriority) {
+      native_prio = os::java_to_os_priority[CriticalPriority];
+    } else {
+      native_prio = os::java_to_os_priority[NearMaxPriority];
+    }
+    os::set_native_priority(this, native_prio);
+
     if (!DisableStartThread) {
       os::start_thread(this);
     }
