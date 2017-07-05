@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 6529796 6710199
-   @summary Test SJIS/MS932_0213 charsets
+ * @bug 6529796 6710199
+ * @summary Test SJIS/MS932_0213 charsets
+ * @modules jdk.charsets
  */
 
 import java.util.Arrays;

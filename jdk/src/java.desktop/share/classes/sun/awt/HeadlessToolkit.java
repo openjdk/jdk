@@ -172,16 +172,6 @@ public final class HeadlessToolkit extends Toolkit
         return null;
     }
 
-    public int getScreenHeight()
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public int getScreenWidth()
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
     @Override
     public Dimension getScreenSize()
         throws HeadlessException {

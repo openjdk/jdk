@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import sun.util.logging.PlatformLogger;
 
 // TODO: make painting more efficient (i.e. when down arrow is pressed, only two items should need to be repainted.
 
-public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelStateListener {
+public final class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelStateListener {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XChoicePeer");
 
     private static final int MAX_UNFURLED_ITEMS = 10;  // Maximum number of
@@ -482,7 +482,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
         firstPress = false;
         dragStartIdx = -1;
     }
-
+    @SuppressWarnings("deprecation")
     public void mouseDragged(MouseEvent e) {
         /*
          * fix for 5003166. On Motif user are unable to drag
@@ -741,6 +741,16 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
         }
     }
 
+    @Override
+    protected void initGraphicsConfiguration() {
+        super.initGraphicsConfiguration();
+        // The popup have the same graphic config, so update it at the same time
+        if (unfurledChoice != null) {
+            unfurledChoice.initGraphicsConfiguration();
+            unfurledChoice.doValidateSurface();
+        }
+    }
+
     /**************************************************************************/
     /* Common functionality between List & Choice
        /**************************************************************************/
@@ -749,7 +759,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
      * Inner class for the unfurled Choice list
      * Much, much more docs
      */
-    class UnfurledChoice extends XWindow /*implements XScrollbarClient*/ {
+    final class UnfurledChoice extends XWindow /*implements XScrollbarClient*/ {
 
         // First try - use Choice as the target
 
@@ -785,7 +795,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 numItemsDisplayed = Math.min(MAX_UNFURLED_ITEMS, numItems);
             }
             Point global = XChoicePeer.this.toGlobal(0,0);
-            Rectangle screen = graphicsConfig.getBounds();
+            Rectangle screenBounds = graphicsConfig.getBounds();
 
             if (alignUnder != null) {
                 Rectangle choiceRec = XChoicePeer.this.getBounds();
@@ -807,19 +817,19 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 height = 2*BORDER_WIDTH +
                     numItemsDisplayed*(helper.getItemHeight()+2*ITEM_MARGIN);
             }
-            // Don't run off the edge of the screen
-            if (x < 0) {
-                x = 0;
+            // Don't run off the edge of the screenBounds
+            if (x < screenBounds.x) {
+                x = screenBounds.x;
             }
-            else if (x + width > screen.width) {
-                x = screen.width - width;
+            else if (x + width > screenBounds.x + screenBounds.width) {
+                x = screenBounds.x + screenBounds.width - width;
             }
 
-            if (y + height > screen.height) {
+            if (y + height > screenBounds.y + screenBounds.height) {
                 y = global.y - height;
             }
-            if (y < 0) {
-                y = 0;
+            if (y < screenBounds.y) {
+                y = screenBounds.y;
             }
             return new Rectangle(x, y, width, height);
         }

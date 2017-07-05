@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4697605 4741233
-   @summary Check decoder behaves correctly in ISO2022_JP
+ * @bug 4697605 4741233
+ * @summary Check decoder behaves correctly in ISO2022_JP
+ * @modules jdk.charsets
  */
 
 import java.io.*;
