@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ public class BasicBorders {
      * Special thin border for rollover toolbar buttons.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RolloverButtonBorder extends ButtonBorder {
 
         public RolloverButtonBorder(Color shadow, Color darkShadow,
@@ -196,6 +197,7 @@ public class BasicBorders {
      * Note: This is identical to the package private class
      * MetalBorders.RolloverMarginBorder and should probably be consolidated.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class RolloverMarginBorder extends EmptyBorder {
 
         public RolloverMarginBorder() {
@@ -225,6 +227,7 @@ public class BasicBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
    public static class ButtonBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color darkShadow;
@@ -267,6 +270,7 @@ public class BasicBorders {
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToggleButtonBorder extends ButtonBorder {
 
         public ToggleButtonBorder(Color shadow, Color darkShadow,
@@ -288,6 +292,7 @@ public class BasicBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RadioButtonBorder extends ButtonBorder {
 
         public RadioButtonBorder(Color shadow, Color darkShadow,
@@ -324,6 +329,7 @@ public class BasicBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuBarBorder extends AbstractBorder implements UIResource {
         private Color shadow;
         private Color highlight;
@@ -350,6 +356,7 @@ public class BasicBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MarginBorder extends AbstractBorder implements UIResource {
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
@@ -377,6 +384,7 @@ public class BasicBorders {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class FieldBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color darkShadow;

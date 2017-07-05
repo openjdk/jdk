@@ -39,7 +39,6 @@ import javax.swing.text.View;
 
 /**
  * BasicToggleButton implementation
- * <p>
  *
  * @author Jeff Dinkins
  */

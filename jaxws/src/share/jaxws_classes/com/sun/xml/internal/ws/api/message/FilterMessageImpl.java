@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class FilterMessageImpl extends Message {
     }
 
     public Message copy() {
-        return delegate.copy();
+        return delegate.copy().copyFrom(delegate);
     }
 
     public @NotNull String getID(@NotNull WSBinding binding) {

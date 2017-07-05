@@ -27,12 +27,11 @@ package sun.security.smartcardio;
 
 import java.nio.*;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.smartcardio.*;
 
 import static sun.security.smartcardio.PCSC.*;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * CardChannel implementation.
@@ -125,7 +124,8 @@ final class ChannelImpl extends CardChannel {
         getBooleanProperty("sun.security.smartcardio.t1StripLe", false);
 
     private static boolean getBooleanProperty(String name, boolean def) {
-        String val = AccessController.doPrivileged(new GetPropertyAction(name));
+        String val = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty(name));
         if (val == null) {
             return def;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
 import com.sun.xml.internal.ws.util.xml.DummyLocation;
 import com.sun.xml.internal.ws.util.xml.StAXSource;
 import com.sun.xml.internal.ws.util.xml.XMLReaderComposite;
-import com.sun.xml.internal.ws.util.xml.XMLStreamReaderToXMLStreamWriter;
+import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWriter;
 import com.sun.xml.internal.ws.util.xml.XMLReaderComposite.ElemInfo;
 
 import org.xml.sax.ContentHandler;
@@ -61,6 +61,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
 
 import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
@@ -415,11 +416,7 @@ public class StreamMessage extends AbstractMessageImpl implements StreamingSOAP 
         writeEnvelope(sw);
     }
 
-    /**
-     * This method should be called when the StreamMessage is created with a payload
-     * @param writer
-     */
-    private void writeEnvelope(XMLStreamWriter writer) throws XMLStreamException {
+    public void writeToBodyStart(XMLStreamWriter writer) throws XMLStreamException {
         if ( envelopeReader != null ) readEnvelope(this);
         writer.writeStartDocument();
         envelopeTag.writeStart(writer);
@@ -437,6 +434,15 @@ public class StreamMessage extends AbstractMessageImpl implements StreamingSOAP 
             writer.writeEndElement();
         }
         bodyTag.writeStart(writer);
+
+    }
+
+    /**
+     * This method should be called when the StreamMessage is created with a payload
+     * @param writer
+     */
+    private void writeEnvelope(XMLStreamWriter writer) throws XMLStreamException {
+        writeToBodyStart(writer);
         if(hasPayload())
             writePayloadTo(writer);
         writer.writeEndElement();
@@ -550,7 +556,7 @@ public class StreamMessage extends AbstractMessageImpl implements StreamingSOAP 
             proceedToRootElement(reader);
             proceedToRootElement(clone);
 
-            return new StreamMessage(envelopeTag, headerTag, attachmentSet, HeaderList.copy(headers), bodyPrologue, bodyTag, bodyEpilogue, clone, soapVersion);
+            return new StreamMessage(envelopeTag, headerTag, attachmentSet, HeaderList.copy(headers), bodyPrologue, bodyTag, bodyEpilogue, clone, soapVersion).copyFrom(this);
         } catch (XMLStreamException e) {
             throw new WebServiceException("Failed to copy a message",e);
         }
@@ -762,5 +768,31 @@ public class StreamMessage extends AbstractMessageImpl implements StreamingSOAP 
         // lifetime of information in the buffer if accessed beyond
         // the pipe line.
         return new MutableXMLStreamBuffer();
+    }
+
+    public boolean isPayloadStreamReader() { return true; }
+
+    public QName getPayloadQName() {
+        return this.hasPayload() ? new QName(payloadNamespaceURI, payloadLocalName) : null;
+    }
+
+    public XMLStreamReader readToBodyStarTag() {
+        if ( envelopeReader != null ) readEnvelope(this);
+        List<XMLStreamReader> hReaders = new java.util.ArrayList<XMLStreamReader>();
+        ElemInfo envElem =  new ElemInfo(envelopeTag, null);
+        ElemInfo hdrElem =  (headerTag != null) ? new ElemInfo(headerTag, envElem) : null;
+        ElemInfo bdyElem =  new ElemInfo(bodyTag, envElem);
+        for (Header h : getHeaders().asList()) {
+            try {
+                hReaders.add(h.readHeader());
+            } catch (XMLStreamException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        XMLStreamReader soapHeader = (hdrElem != null) ? new XMLReaderComposite(hdrElem, hReaders.toArray(new XMLStreamReader[hReaders.size()])) : null;
+        XMLStreamReader[] payload = {};
+        XMLStreamReader soapBody = new XMLReaderComposite(bdyElem, payload);
+        XMLStreamReader[] soapContent = (soapHeader != null) ? new XMLStreamReader[]{soapHeader, soapBody} : new XMLStreamReader[]{soapBody};
+        return new XMLReaderComposite(envElem, soapContent);
     }
 }

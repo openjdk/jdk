@@ -319,7 +319,7 @@ public interface LdapContext extends DirContext {
      * clear the response controls. You can call it many times (and get
      * back the same controls) until the next context method that may return
      * controls is invoked.
-     *<p>
+     *
      * @return A possibly null array of controls. If null, the previous
      * method invoked on this context did not produce any controls.
      * @exception NamingException If an error occurred while getting the response

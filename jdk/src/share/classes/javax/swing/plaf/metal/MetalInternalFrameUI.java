@@ -37,7 +37,6 @@ import javax.swing.plaf.*;
 
 /**
  * Metal implementation of JInternalFrame.
- * <p>
  *
  * @author Steve Wilson
  */

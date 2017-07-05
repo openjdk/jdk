@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3237,6 +3237,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabViewport extends JViewport implements UIResource {
         public ScrollableTabViewport() {
             super();
@@ -3251,6 +3252,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabPanel extends JPanel implements UIResource {
         public ScrollableTabPanel() {
             super(null);
@@ -3281,6 +3283,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
         public ScrollableTabButton(final int direction) {
             super(direction, UIManager.getColor("TabbedPane.selected"), UIManager.getColor("TabbedPane.shadow"), UIManager.getColor("TabbedPane.darkShadow"), UIManager.getColor("TabbedPane.highlight"));
@@ -3585,6 +3588,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         return htmlViews;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class TabContainer extends JPanel implements UIResource {
         private boolean notifyTabbedPane = true;
 
@@ -3629,6 +3633,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class CroppedEdge extends JPanel implements UIResource {
         private Shape shape;
         private int tabIndex;
@@ -3708,6 +3713,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * @version 1.6, 11/17/05
      * @author Scott Violet
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class LazyActionMap extends ActionMapUIResource {
         /**
          * Object to invoke <code>loadActionMap</code> on. This may be

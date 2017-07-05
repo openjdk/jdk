@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import javax.swing.SwingConstants;
  * @author Leif Samuelsson
  * @author Kenneth Russell
  * @since 1.4 */
-
+@SuppressWarnings("serial") // JDK-implementation class
 final class Win32ShellFolder2 extends ShellFolder {
 
     private static native void initIDs();

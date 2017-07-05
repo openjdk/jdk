@@ -2986,7 +2986,11 @@ Zone Europe/Simferopol	2:16:24 -	LMT	1880
 # Assume it happened in March by not changing the clocks.
 			3:00	Russia	MSK/MSD	1997
 			3:00	-	MSK	1997 Mar lastSun 1:00u
-			2:00	EU	EE%sT
+# From Alexander Krivenyshev (2014-03-17):
+# time change at 2:00 (2am) on March 30, 2014
+# http://vz.ru/news/2014/3/17/677464.html
+			2:00	EU	EE%sT	2014 Mar 30 2:00
+			4:00	-	MSK
 
 # Vatican City
 # See Europe/Rome.

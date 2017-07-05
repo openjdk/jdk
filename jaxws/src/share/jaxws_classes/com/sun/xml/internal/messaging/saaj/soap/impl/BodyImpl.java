@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,18 @@ import java.util.logging.Level;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.*;
+import org.w3c.dom.Node;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocument;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
+import com.sun.xml.internal.messaging.saaj.soap.StaxBridge;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 
 /**
@@ -48,6 +52,9 @@ import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
  */
 public abstract class BodyImpl extends ElementImpl implements SOAPBody {
     private SOAPFault fault;
+//  private XMLStreamReaderToXMLStreamWriter staxBridge;
+    private StaxBridge staxBridge;
+    private boolean payloadStreamRead = false;
 
     protected BodyImpl(SOAPDocumentImpl ownerDoc, NameImpl bodyName) {
         super(ownerDoc, bodyName);
@@ -136,13 +143,22 @@ public abstract class BodyImpl extends ElementImpl implements SOAPBody {
     }
 
     public boolean hasFault() {
-        initializeFault();
-        return fault != null;
+        QName payloadQName = getPayloadQName();
+        return getFaultQName().equals(payloadQName);
+    }
+
+    private Object getFaultQName() {
+        return new QName(getNamespaceURI(), "Fault");
     }
 
     public SOAPFault getFault() {
-        if (hasFault())
+        if (hasFault()) {
+            if (fault == null) {
+                //initialize fault member
+                fault = (SOAPFault) getFirstChildElement();
+            }
             return fault;
+        }
         return null;
     }
 
@@ -320,6 +336,132 @@ public abstract class BodyImpl extends ElementImpl implements SOAPBody {
         firstBodyElement.detachNode();
 
         return document;
+    }
+
+    private void materializePayloadWrapException() {
+        try {
+            materializePayload();
+        } catch (SOAPException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void materializePayload() throws SOAPException {
+        if (staxBridge != null) {
+            if (payloadStreamRead) {
+                //the payload has already been read via stream reader and the
+                //stream has been exhausted already. Throw an
+                //exception since we are now trying to materialize as DOM and
+                //there is no stream left to read
+                throw new SOAPException("SOAPBody payload stream has been fully read - cannot materialize as DOM!");
+            }
+            try {
+                staxBridge.bridgePayload();
+                staxBridge = null;
+                payloadStreamRead = true;
+            } catch (XMLStreamException e) {
+                throw new SOAPException(e);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasChildNodes() {
+        boolean hasChildren = super.hasChildNodes();
+        //to answer this question we need to know _whether_ we have at least one child
+        //So no need to materialize body if we already know we have a header child
+        if (!hasChildren) {
+            materializePayloadWrapException();
+        }
+        return super.hasChildNodes();
+    }
+
+    @Override
+    public NodeList getChildNodes() {
+        materializePayloadWrapException();
+        return super.getChildNodes();
+    }
+
+    @Override
+    public Node getFirstChild() {
+        Node child = super.getFirstChild();
+        if (child == null) {
+            materializePayloadWrapException();
+        }
+        return super.getFirstChild();
+    }
+
+    public Node getFirstChildNoMaterialize() {
+        return super.getFirstChild();
+    }
+
+    @Override
+    public Node getLastChild() {
+        materializePayloadWrapException();
+        return super.getLastChild();
+    }
+
+    XMLStreamReader getPayloadReader() {
+        return staxBridge.getPayloadReader();
+    }
+
+    void setStaxBridge(StaxBridge bridge) {
+        this.staxBridge = bridge;
+    }
+
+    StaxBridge getStaxBridge() {
+        return staxBridge;
+    }
+
+    void setPayloadStreamRead() {
+        this.payloadStreamRead = true;
+    }
+
+    QName getPayloadQName() {
+        if (staxBridge != null) {
+                return staxBridge.getPayloadQName();
+        } else {
+            //not lazy - Just get first child element and return its name
+            Element elem = getFirstChildElement();
+            if (elem != null) {
+                String ns = elem.getNamespaceURI();
+                String pref = elem.getPrefix();
+                String local = elem.getLocalName();
+                if (pref != null) return new QName(ns, local, pref);
+                if (ns != null) return new QName(ns, local);
+                return new QName(local);
+            }
+        }
+        return null;
+    }
+
+    String getPayloadAttributeValue(String attName) {
+        if (staxBridge != null) {
+            return staxBridge.getPayloadAttributeValue(attName);
+        } else {
+            //not lazy -Just get first child element and return its attribute
+            Element elem = getFirstChildElement();
+            if (elem != null) {
+                return elem.getAttribute(localName);
+            }
+        }
+        return null;
+    }
+
+    String getPayloadAttributeValue(QName attNAme) {
+        if (staxBridge != null) {
+            return staxBridge.getPayloadAttributeValue(attNAme);
+        } else {
+            //not lazy -Just get first child element and return its attribute
+            Element elem = getFirstChildElement();
+            if (elem != null) {
+                return elem.getAttributeNS(attNAme.getNamespaceURI(), attNAme.getLocalPart());
+            }
+        }
+        return null;
+    }
+
+    public boolean isLazy() {
+        return (staxBridge != null && !payloadStreamRead);
     }
 
 }

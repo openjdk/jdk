@@ -446,6 +446,9 @@
   diagnostic(bool, PrintPreciseBiasedLockingStatistics, false,              \
           "Print per-lock-site statistics of biased locking in JVM")        \
                                                                             \
+  diagnostic(bool, PrintPreciseRTMLockingStatistics, false,                 \
+          "Print per-lock-site statistics of rtm locking in JVM")           \
+                                                                            \
   notproduct(bool, PrintEliminateLocks, false,                              \
           "Print out when locks are eliminated")                            \
                                                                             \

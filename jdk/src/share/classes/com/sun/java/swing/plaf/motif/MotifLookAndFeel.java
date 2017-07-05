@@ -60,6 +60,7 @@ import sun.awt.OSInfo;
  *
  * @author unattributed
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class MotifLookAndFeel extends BasicLookAndFeel
 {
     public String getName() {

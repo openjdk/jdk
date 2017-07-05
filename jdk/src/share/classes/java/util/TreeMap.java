@@ -120,7 +120,7 @@ public class TreeMap<K,V>
      */
     private final Comparator<? super K> comparator;
 
-    private transient Entry<K,V> root = null;
+    private transient Entry<K,V> root;
 
     /**
      * The number of entries in the tree
@@ -781,9 +781,9 @@ public class TreeMap<K,V>
      * the first time this view is requested.  Views are stateless, so
      * there's no reason to create more than one.
      */
-    private transient EntrySet entrySet = null;
-    private transient KeySet<K> navigableKeySet = null;
-    private transient NavigableMap<K,V> descendingMap = null;
+    private transient EntrySet entrySet;
+    private transient KeySet<K> navigableKeySet;
+    private transient NavigableMap<K,V> descendingMap;
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
@@ -1583,9 +1583,9 @@ public class TreeMap<K,V>
         }
 
         // Views
-        transient NavigableMap<K,V> descendingMapView = null;
-        transient EntrySetView entrySetView = null;
-        transient KeySet<K> navigableKeySetView = null;
+        transient NavigableMap<K,V> descendingMapView;
+        transient EntrySetView entrySetView;
+        transient KeySet<K> navigableKeySetView;
 
         public final NavigableSet<K> navigableKeySet() {
             KeySet<K> nksv = navigableKeySetView;
@@ -2046,8 +2046,8 @@ public class TreeMap<K,V>
     static final class Entry<K,V> implements Map.Entry<K,V> {
         K key;
         V value;
-        Entry<K,V> left = null;
-        Entry<K,V> right = null;
+        Entry<K,V> left;
+        Entry<K,V> right;
         Entry<K,V> parent;
         boolean color = BLACK;
 

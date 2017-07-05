@@ -317,7 +317,7 @@ public interface Clob {
      * method other than <code>free</code> will result in a <code>SQLException</code>
      * being thrown.  If <code>free</code> is called multiple times, the subsequent
      * calls to <code>free</code> are treated as a no-op.
-     * <p>
+     *
      * @throws SQLException if an error occurs releasing
      * the Clob's resources
      *

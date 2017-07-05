@@ -1,208 +1,206 @@
-." Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jrunscript 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jrunscript \- コマンド行スクリプトシェル
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-引数 
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jrunscript
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: スクリプティング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jrunscript" "1" "2013年11月21日" "JDK 8" "スクリプティング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jrunscript \- 対話型モードとバッチ・モードをサポートするコマンドライン・スクリプト・シェルを実行します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jrunscript\fP [ \f2options\fP ] [ arguments... ]
-.fl
+\fIjrunscript\fR [\fIoptions\fR] [\fIarguments\fR]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-options 
-オプションを使用する場合、コマンド名の直後に記述してください。 
-.TP 3
-arguments 
-引数を使用する場合、オプションまたはコマンド名の直後に記述してください。 
+.if n \{\
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f3jrunscript\fP はコマンド行スクリプトシェルです。jrunscript は、対話型 (読み取り \- 評価 \- 出力) モードとバッチ (\-f オプション) モードの両方のスクリプト実行をサポートします。これはスクリプト言語に依存しないシェルです。デフォルトの使用言語は JavaScript ですが、\-l オプションを使えばほかの言語も指定できます。jrunscript は、Java とスクリプト言語との通信によって「探求的なプログラミング」スタイルをサポートします。
-.LP
-.LP
-\f3注:\fP このツールは\f3試験的なもの\fPであり、将来の JDK のバージョンでは\f3利用できなくなる\fP可能性があります。
-.LP
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIarguments\fR
+.RS 4
+引数を使用する場合、オプションまたはコマンド名の直後に記述してください。引数を参照してください。
+.RE
+.SH "説明"
+.PP
+\fIjrunscript\fRコマンドは、言語に依存しないコマンドライン・スクリプト・シェルです。\fIjrunscript\fRは、対話型(read\-eval\-print)モードとバッチ(\fI\-f\fRオプション)・モードの両方のスクリプト実行をサポートします。デフォルトの使用言語はJavaScriptですが、\fI\-l\fRオプションを使用すれば他の言語も指定できます。\fIjrunscript\fRコマンドは、Javaとスクリプト言語との通信を使用して探求的なプログラミング・スタイルをサポートします。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-classpath path 
-スクリプトからのアクセス対象となるユーザーの .class ファイルの検索場所を指定します。 
-.TP 3
-\-cp path 
-\-classpath \f2path\fP と同義です。 
-.TP 3
-\-Dname=value 
-Java のシステムプロパティーを設定します。 
-.TP 3
-\-J<flag> 
-jrunscript が実行されている Java 仮想マシンに <flag> を渡します。 
-.TP 3
-\-l language 
-指定されたスクリプト言語を使用します。デフォルトでは JavaScript が使用されます。ほかのスクリプト言語を使用するには、対応するスクリプトエンジンの JAR ファイルも指定する必要があります。それには、\-cp、\-classpath のいずれかのオプションを使用します。 
-.TP 3
-\-e script 
-指定されたスクリプトを評価します。このオプションを使えば、コマンド行にすべてが指定された「1 行」スクリプトを実行できます。 
-.TP 3
-\-encoding encoding 
-スクリプトファイルの読み取り時に使用する文字エンコーディングを指定します。 
-.TP 3
-\-f script\-file 
-指定されたスクリプトファイルを評価します (バッチモード)。 
-.TP 3
-\-f \- 
-標準入力からスクリプトを読み取り、それを評価します (対話型モード)。 
-.TP 3
-\-help\  
-ヘルプメッセージを出力して終了します。 
-.TP 3
-\-?\  
-ヘルプメッセージを出力して終了します。 
-.TP 3
-\-q\  
-利用可能なすべてのスクリプトエンジンを一覧表示したあと、終了します。 
+.PP
+\-classpath \fIpath\fR
+.RS 4
+スクリプトがアクセスする必要のあるクラス・ファイルの場所を示します。
 .RE
-
-.LP
+.PP
+\-cp \fIpath\fR
+.RS 4
+\fI\-classpath\fR
+\fIpath\fRと同じです。
+.RE
+.PP
+\-D\fIname\fR=\fIvalue\fR
+.RS 4
+Javaのシステム・プロパティを設定します。
+.RE
+.PP
+\-J\fIflag\fR
+.RS 4
+\fIflag\fRを、\fIjrunscript\fRコマンドが実行されているJava仮想マシンに直接渡します。
+.RE
+.PP
+\-I \fIlanguage\fR
+.RS 4
+指定されたスクリプト言語を使用します。デフォルトではJavaScriptが使用されます。他のスクリプト言語を使用するには、\fI\-cp\fRまたは\fI\-classpath\fRオプションを使用して、対応するスクリプト・エンジンのJARファイルを指定する必要があります。
+.RE
+.PP
+\-e \fIscript\fR
+.RS 4
+指定されたスクリプトを評価します。このオプションを使用すれば、コマンドラインにすべてが指定された1行スクリプトを実行できます。
+.RE
+.PP
+\-encoding \fIencoding\fR
+.RS 4
+スクリプト・ファイルの読取り時に使用する文字エンコーディングを指定します。
+.RE
+.PP
+\-f \fIscript\-file\fR
+.RS 4
+指定されたスクリプト・ファイル(バッチ・モード)を評価します。
+.RE
+.PP
+\-f \-
+.RS 4
+標準入力からスクリプトを読み取り、それを評価します(対話型モード)。
+.RE
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージを表示して終了します。
+.RE
+.PP
+\-?
+.RS 4
+ヘルプ・メッセージを表示して終了します。
+.RE
+.PP
+\-q
+.RS 4
+利用可能なすべてのスクリプト・エンジンを一覧表示したあと、終了します。
+.RE
 .SH "引数"
-.LP
-.LP
-[arguments...] が存在していて、かつ \f3\-e\fP、\f3\-f\fP のいずれのオプションも使用されなかった場合、最初の引数がスクリプトファイルとなり、他の引数が存在する場合はスクリプト引数として渡されます。[arguments..] と、\f3\-e\fP または \f3\-f\fP が使用されている場合、すべての [arguments..] がスクリプト引数として渡されます。[arguments..]、\f3\-e\fP、\f3\-f\fP がどれも存在しなかった場合は、対話型モードが使用されます。スクリプトからスクリプト引数を使用するには、「arguments」という名前の String 配列型のエンジン変数を使用します。
-.LP
+.PP
+argumentsが存在していて、かつ\fI\-e\fR、\fI\-f\fRのいずれのオプションも使用されなかった場合、最初の引数がスクリプト・ファイルとなり、他の引数が存在する場合はスクリプトに渡されます。argumentsと、\fI\-e\fRまたは\fI\-f\fRオプションが使用されている場合、すべてのargumentsがスクリプトに渡されます。arguments、\fI\-e\fR、\fI\-f\fRがどれも存在しなかった場合は、対話型モードが使用されます。スクリプトからスクリプト引数を使用するには、\fIarguments\fRという名前の\fIString\fR配列型のエンジン変数を使用します。
 .SH "例"
-.LP
-.SS 
-インラインスクリプトの実行
-.LP
+.SS "インライン・スクリプトの実行"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-jrunscript \-e "print('hello world')"
-.fl
-jrunscript \-e "cat('http://java.sun.com')"
-.fl
-\fP
+jrunscript \-e "print(\*(Aqhello world\*(Aq)"
+jrunscript \-e "cat(\*(Aqhttp://www\&.example\&.com\*(Aq)"
 .fi
-
-.LP
-.SS 
-指定された言語を使用し、指定されたスクリプトファイルを評価する
-.LP
+.if n \{\
+.RE
+.\}
+.SS "指定された言語の使用およびスクリプト・ファイルの評価"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-jrunscript \-l js \-f test.js
-.fl
-\fP
+jrunscript \-l js \-f test\&.js
 .fi
-
-.LP
-.SS 
-対話型モード
-.LP
+.if n \{\
+.RE
+.\}
+.SS "対話型モード"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
 jrunscript
-.fl
-js> print('Hello World\\n');
-.fl
+js> print(\*(AqHello World\en\*(Aq);
 Hello World
-.fl
 js> 34 + 55
-.fl
-89.0
-.fl
-js> t = new java.lang.Thread(function() { print('Hello World\\n'); })
-.fl
+89\&.0
+js> t = new java\&.lang\&.Thread(function() { print(\*(AqHello World\en\*(Aq); })
 Thread[Thread\-0,5,main]
-.fl
-js> t.start()
-.fl
+js> t\&.start()
 js> Hello World
-.fl
-
-.fl
-js>
-.fl
-\fP
-.fi
-
-.LP
-.SS 
-スクリプト引数を指定してスクリプトファイルを実行する
-.LP
-.nf
-\f3
-.fl
-jrunscript test.js arg1 arg2 arg3
-.fl
-\fP
-.fi
-
-.LP
-test.js が実行対象となるスクリプトファイルであり、arg1、arg2、および arg3 はスクリプト引数としてスクリプトに渡されます。スクリプトは「arguments」配列を使ってこれらにアクセスできます。 
-.SH "関連項目"
-.LP
-.LP
-JavaScript が使用される場合、jrunscript は、最初のユーザー定義スクリプトを評価する前に、いくつかの組み込み関数や組み込みオブジェクトを初期化します。これらの JavaScript 組み込み機能については、jsdocs を参照してください。
-.LP
  
+js>
+.fi
+.if n \{\
+.RE
+.\}
+.SS "スクリプト引数を指定したスクリプト・ファイルの実行"
+.PP
+test\&.jsファイルはスクリプト・ファイルです。\fIarg1\fR、\fIarg2\fRおよび\fIarg3\fRの各引数がスクリプトに渡されます。スクリプトはarguments配列を使用してこれらの引数にアクセスできます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jrunscript test\&.js arg1 arg2 arg3
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.PP
+JavaScriptが使用される場合、ユーザー定義スクリプトを評価する前に、\fIjrunscript\fRコマンドはいくつかの組込み関数や組込みオブジェクトを初期化します。これらのJavaScriptの組込みについては、http://code\&.google\&.com/p/jsdoc\-toolkit/にある
+JsDoc\-Toolkitを参照してください。
+.br
+'pl 8.5i
+'bp

@@ -474,7 +474,125 @@ reg_class vectory_reg(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM
 
 %}
 
+
+//----------SOURCE BLOCK-------------------------------------------------------
+// This is a block of C++ code which provides values, functions, and
+// definitions necessary in the rest of the architecture description
+
+source_hpp %{
+// Header information of the source block.
+// Method declarations/definitions which are used outside
+// the ad-scope can conveniently be defined here.
+//
+// To keep related declarations/definitions/uses close together,
+// we switch between source %{ }% and source_hpp %{ }% freely as needed.
+
+class CallStubImpl {
+ 
+  //--------------------------------------------------------------
+  //---<  Used for optimization in Compile::shorten_branches  >---
+  //--------------------------------------------------------------
+
+ public:
+  // Size of call trampoline stub.
+  static uint size_call_trampoline() {
+    return 0; // no call trampolines on this platform
+  }
+  
+  // number of relocations needed by a call trampoline stub
+  static uint reloc_call_trampoline() { 
+    return 0; // no call trampolines on this platform
+  }
+};
+
+class HandlerImpl {
+
+ public:
+
+  static int emit_exception_handler(CodeBuffer &cbuf);
+  static int emit_deopt_handler(CodeBuffer& cbuf);
+
+  static uint size_exception_handler() {
+    // NativeCall instruction size is the same as NativeJump.
+    // exception handler starts out as jump and can be patched to
+    // a call be deoptimization.  (4932387)
+    // Note that this value is also credited (in output.cpp) to
+    // the size of the code section.
+    return NativeJump::instruction_size;
+  }
+
+#ifdef _LP64
+  static uint size_deopt_handler() {
+    // three 5 byte instructions
+    return 15;
+  }
+#else
+  static uint size_deopt_handler() {
+    // NativeCall instruction size is the same as NativeJump.
+    // exception handler starts out as jump and can be patched to
+    // a call be deoptimization.  (4932387)
+    // Note that this value is also credited (in output.cpp) to
+    // the size of the code section.
+    return 5 + NativeJump::instruction_size; // pushl(); jmp;
+  }
+#endif
+};
+
+%} // end source_hpp
+
 source %{
+
+// Emit exception handler code.
+// Stuff framesize into a register and call a VM stub routine.
+int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
+
+  // Note that the code buffer's insts_mark is always relative to insts.
+  // That's why we must use the macroassembler to generate a handler.
+  MacroAssembler _masm(&cbuf);
+  address base = __ start_a_stub(size_exception_handler());
+  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  int offset = __ offset();
+  __ jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
+  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
+  __ end_a_stub();
+  return offset;
+}
+
+// Emit deopt handler code.
+int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
+
+  // Note that the code buffer's insts_mark is always relative to insts.
+  // That's why we must use the macroassembler to generate a handler.
+  MacroAssembler _masm(&cbuf);
+  address base = __ start_a_stub(size_deopt_handler());
+  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  int offset = __ offset();
+
+#ifdef _LP64
+  address the_pc = (address) __ pc();
+  Label next;
+  // push a "the_pc" on the stack without destroying any registers
+  // as they all may be live.
+
+  // push address of "next"
+  __ call(next, relocInfo::none); // reloc none is fine since it is a disp32
+  __ bind(next);
+  // adjust it so it matches "the_pc"
+  __ subptr(Address(rsp, 0), __ offset() - offset);
+#else
+  InternalAddress here(__ pc());
+  __ pushptr(here.addr());
+#endif
+
+  __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  __ end_a_stub();
+  return offset;
+}
+
+
+//=============================================================================
+
   // Float masks come from different places depending on platform.
 #ifdef _LP64
   static address float_signmask()  { return StubRoutines::x86::float_sign_mask(); }

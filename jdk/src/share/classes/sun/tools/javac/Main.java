@@ -192,6 +192,7 @@ class Main implements Constants {
     /**
      * Run the compiler
      */
+    @SuppressWarnings("fallthrough")
     public synchronized boolean compile(String argv[]) {
         String sourcePathArg = null;
         String classPathArg = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
 import javax.xml.transform.Source;
 
 /**
@@ -52,4 +53,8 @@ public interface Envelope extends SOAPEnvelope {
      * Output the content.
      */
     void output(OutputStream out, boolean isFastInfoset) throws IOException;
+
+    void setStaxBridge(StaxBridge bridge) throws SOAPException;
+
+    StaxBridge getStaxBridge() throws SOAPException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,11 @@ class MessageWrapper extends StreamMessage {
     }
 
     @Override
+    boolean  isProtocolMessage() { return delegate.isProtocolMessage(); }
+    @Override
+    void  setIsProtocolMessage() { delegate.setIsProtocolMessage(); }
+
+    @Override
     public boolean hasHeaders() {
         return delegate.hasHeaders();
     }
@@ -105,7 +110,7 @@ class MessageWrapper extends StreamMessage {
 
     @Override
     public String toString() {
-        return delegate.toString();
+        return "{MessageWrapper: " + delegate.toString() + "}";
     }
 
     @Override
@@ -214,7 +219,7 @@ class MessageWrapper extends StreamMessage {
 
     @Override
     public Message copy() {
-        return delegate.copy();
+        return delegate.copy().copyFrom(delegate);
     }
 
     @Override

@@ -338,6 +338,11 @@ JVM_handle_linux_signal(int sig,
       }
     }
 
+    if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr(pc)) {
+      // Verify that OS save/restore AVX registers.
+      stub = VM_Version::cpuinfo_cont_addr();
+    }
+
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub

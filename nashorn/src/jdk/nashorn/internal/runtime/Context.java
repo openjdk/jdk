@@ -25,7 +25,9 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
+import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
@@ -38,6 +40,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,7 +50,10 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -133,8 +139,32 @@ public final class Context {
         }
 
         @Override
-        public Class<?> install(final String className, final byte[] bytecode) {
-            return loader.installClass(className, bytecode, codeSource);
+        public Class<?> install(final String className, final byte[] bytecode, final Source source, final Object[] constants) {
+            Compiler.LOG.fine("Installing class ", className);
+
+            final String   binaryName = Compiler.binaryName(className);
+            final Class<?> clazz      = loader.installClass(binaryName, bytecode, codeSource);
+
+            try {
+                // Need doPrivileged because these fields are private
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                    @Override
+                    public Void run() throws Exception {
+                        //use reflection to write source and constants table to installed classes
+                        final Field sourceField    = clazz.getDeclaredField(SOURCE.symbolName());
+                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                        sourceField.setAccessible(true);
+                        constantsField.setAccessible(true);
+                        sourceField.set(null, source);
+                        constantsField.set(null, constants);
+                        return null;
+                    }
+                });
+            } catch (final PrivilegedActionException e) {
+                throw new RuntimeException(e);
+            }
+
+            return clazz;
         }
 
         @Override
@@ -151,6 +181,18 @@ public final class Context {
         public long getUniqueEvalId() {
             return context.getUniqueEvalId();
         }
+
+        @Override
+        public void storeCompiledScript(final Source source, final String mainClassName,
+                                        final Map<String, byte[]> classBytes, final Object[] constants) {
+            if (context.codeStore != null) {
+                try {
+                    context.codeStore.putScript(source, mainClassName, classBytes, constants);
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     /** Is Context global debug mode enabled ? */
@@ -158,8 +200,11 @@ public final class Context {
 
     private static final ThreadLocal<Global> currentGlobal = new ThreadLocal<>();
 
-    // class cache
+    // in-memory cache for loaded classes
     private ClassCache classCache;
+
+    // persistent code store
+    private CodeStore codeStore;
 
     /**
      * Get the current global scope
@@ -366,6 +411,19 @@ public final class Context {
         final int cacheSize = env._class_cache_size;
         if (cacheSize > 0) {
             classCache = new ClassCache(cacheSize);
+        }
+
+        if (env._persistent_cache) {
+            if (env._lazy_compilation || env._specialize_calls != null) {
+                getErr().println("Can not use persistent class caching with lazy compilation or call specialization.");
+            } else {
+                try {
+                    final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
+                    codeStore = new CodeStore(cacheDir);
+                } catch (IOException e) {
+                    throw new RuntimeException("Error initializing code cache", e);
+                }
+            }
         }
 
         // print version info if asked.
@@ -932,17 +990,32 @@ public final class Context {
             return script;
         }
 
-        final FunctionNode functionNode = new Parser(env, source, errMan, strict).parse();
-        if (errors.hasErrors()) {
-            return null;
+        CompiledScript compiledScript = null;
+        FunctionNode functionNode = null;
+
+        if (!env._parse_only && codeStore != null) {
+            try {
+                compiledScript = codeStore.getScript(source);
+            } catch (IOException | ClassNotFoundException e) {
+                Compiler.LOG.warning("Error loading ", source, " from cache: ", e);
+                // Fall back to normal compilation
+            }
         }
 
-        if (env._print_ast) {
-            getErr().println(new ASTWriter(functionNode));
-        }
+        if (compiledScript == null) {
+            functionNode = new Parser(env, source, errMan, strict).parse();
 
-        if (env._print_parse) {
-            getErr().println(new PrintVisitor(functionNode));
+            if (errors.hasErrors()) {
+                return null;
+            }
+
+            if (env._print_ast) {
+                getErr().println(new ASTWriter(functionNode));
+            }
+
+            if (env._print_parse) {
+                getErr().println(new PrintVisitor(functionNode));
+            }
         }
 
         if (env._parse_only) {
@@ -954,12 +1027,15 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        final Compiler compiler = new Compiler(installer, strict);
+        if (functionNode != null) {
+            final Compiler compiler = new Compiler(installer, strict);
+            final FunctionNode newFunctionNode = compiler.compile(functionNode);
+            script = compiler.install(newFunctionNode);
+        } else {
+            script = install(compiledScript, installer);
+        }
 
-        final FunctionNode newFunctionNode = compiler.compile(functionNode);
-        script = compiler.install(newFunctionNode);
         cacheClass(source, script);
-
         return script;
     }
 
@@ -979,6 +1055,42 @@ public final class Context {
 
     private long getUniqueScriptId() {
         return uniqueScriptId.getAndIncrement();
+    }
+
+
+    /**
+     * Install a previously compiled class from the code cache.
+     *
+     * @param compiledScript cached script containing class bytes and constants
+     * @return main script class
+     */
+    private Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
+
+        final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final Source   source        = compiledScript.getSource();
+        final Object[] constants     = compiledScript.getConstants();
+        final String   rootClassName = compiledScript.getMainClassName();
+        final byte[]   rootByteCode  = compiledScript.getClassBytes().get(rootClassName);
+        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode, source, constants);
+
+        installedClasses.put(rootClassName, rootClass);
+
+        for (final Map.Entry<String, byte[]> entry : compiledScript.getClassBytes().entrySet()) {
+            final String className = entry.getKey();
+            if (className.equals(rootClassName)) {
+                continue;
+            }
+            final byte[] code = entry.getValue();
+
+            installedClasses.put(className, installer.install(className, code, source, constants));
+        }
+        for (Object constant : constants) {
+            if (constant instanceof RecompilableScriptFunctionData) {
+                ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
+            }
+        }
+
+        return rootClass;
     }
 
     /**

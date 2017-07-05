@@ -27,6 +27,7 @@
 
 #include "asm/assembler.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/rtmLocking.hpp"
 
 
 // MacroAssembler extends Assembler by frequently used macros.
@@ -111,7 +112,8 @@ class MacroAssembler: public Assembler {
         op == 0xE9 /* jmp */ ||
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
-        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */,
+        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */ ||
+        op == 0xC7 && branch[1] == 0xF8 /* xbegin */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
@@ -121,7 +123,7 @@ class MacroAssembler: public Assembler {
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset");
       *disp = imm8;
     } else {
-      int* disp = (int*) &branch[(op == 0x0F)? 2: 1];
+      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
       int imm32 = target - (address) &disp[1];
       *disp = imm32;
     }
@@ -161,7 +163,6 @@ class MacroAssembler: public Assembler {
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
-
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (UseXmmRegToRegMoveAll) { movaps(dst, src); return; }
@@ -186,6 +187,8 @@ class MacroAssembler: public Assembler {
 
   void incrementl(AddressLiteral dst);
   void incrementl(ArrayAddress dst);
+
+  void incrementq(AddressLiteral dst);
 
   // Alignment
   void align(int modulus);
@@ -654,8 +657,36 @@ class MacroAssembler: public Assembler {
 #ifdef COMPILER2
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full desription in macroAssembler_x86.cpp.
-  void fast_lock(Register obj, Register box, Register tmp, Register scr, BiasedLockingCounters* counters);
-  void fast_unlock(Register obj, Register box, Register tmp);
+  void fast_lock(Register obj, Register box, Register tmp,
+                 Register scr, Register cx1, Register cx2,
+                 BiasedLockingCounters* counters,
+                 RTMLockingCounters* rtm_counters,
+                 RTMLockingCounters* stack_rtm_counters,
+                 Metadata* method_data,
+                 bool use_rtm, bool profile_rtm);
+  void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+#if INCLUDE_RTM_OPT
+  void rtm_counters_update(Register abort_status, Register rtm_counters);
+  void branch_on_random_using_rdtsc(Register tmp, Register scr, int count, Label& brLabel);
+  void rtm_abort_ratio_calculation(Register tmp, Register rtm_counters_reg,
+                                   RTMLockingCounters* rtm_counters,
+                                   Metadata* method_data);
+  void rtm_profiling(Register abort_status_Reg, Register rtm_counters_Reg,
+                     RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
+  void rtm_retry_lock_on_abort(Register retry_count, Register abort_status, Label& retryLabel);
+  void rtm_retry_lock_on_busy(Register retry_count, Register box, Register tmp, Register scr, Label& retryLabel);
+  void rtm_stack_locking(Register obj, Register tmp, Register scr,
+                         Register retry_on_abort_count,
+                         RTMLockingCounters* stack_rtm_counters,
+                         Metadata* method_data, bool profile_rtm,
+                         Label& DONE_LABEL, Label& IsInflated);
+  void rtm_inflated_locking(Register obj, Register box, Register tmp,
+                            Register scr, Register retry_on_busy_count,
+                            Register retry_on_abort_count,
+                            RTMLockingCounters* rtm_counters,
+                            Metadata* method_data, bool profile_rtm,
+                            Label& DONE_LABEL);
+#endif
 #endif
 
   Condition negate_condition(Condition cond);
@@ -721,6 +752,7 @@ class MacroAssembler: public Assembler {
 
 
   void imulptr(Register dst, Register src) { LP64_ONLY(imulq(dst, src)) NOT_LP64(imull(dst, src)); }
+  void imulptr(Register dst, Register src, int imm32) { LP64_ONLY(imulq(dst, src, imm32)) NOT_LP64(imull(dst, src, imm32)); }
 
 
   void negptr(Register dst) { LP64_ONLY(negq(dst)) NOT_LP64(negl(dst)); }
@@ -762,7 +794,14 @@ class MacroAssembler: public Assembler {
   // Conditionally (atomically, on MPs) increments passed counter address, preserving condition codes.
   void cond_inc32(Condition cond, AddressLiteral counter_addr);
   // Unconditional atomic increment.
-  void atomic_incl(AddressLiteral counter_addr);
+  void atomic_incl(Address counter_addr);
+  void atomic_incl(AddressLiteral counter_addr, Register scr = rscratch1);
+#ifdef _LP64
+  void atomic_incq(Address counter_addr);
+  void atomic_incq(AddressLiteral counter_addr, Register scr = rscratch1);
+#endif
+  void atomic_incptr(AddressLiteral counter_addr, Register scr = rscratch1) { LP64_ONLY(atomic_incq(counter_addr, scr)) NOT_LP64(atomic_incl(counter_addr, scr)) ; }
+  void atomic_incptr(Address counter_addr) { LP64_ONLY(atomic_incq(counter_addr)) NOT_LP64(atomic_incl(counter_addr)) ; }
 
   void lea(Register dst, AddressLiteral adr);
   void lea(Address dst, AddressLiteral adr);
@@ -1074,7 +1113,11 @@ public:
 
   void movptr(Register dst, Address src);
 
-  void movptr(Register dst, AddressLiteral src);
+#ifdef _LP64
+  void movptr(Register dst, AddressLiteral src, Register scratch=rscratch1);
+#else
+  void movptr(Register dst, AddressLiteral src, Register scratch=noreg); // Scratch reg is ignored in 32-bit
+#endif
 
   void movptr(Register dst, intptr_t src);
   void movptr(Register dst, Register src);

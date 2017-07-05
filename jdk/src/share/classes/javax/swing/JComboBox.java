@@ -65,7 +65,7 @@ import javax.accessibility.*;
  * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html">How to Use Combo Boxes</a>
  * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further information.
- * <p>
+ *
  * @see ComboBoxModel
  * @see DefaultComboBoxModel
  *
@@ -1414,6 +1414,28 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             hidePopup();
         }
         super.processKeyEvent(e);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+        if (super.processKeyBinding(ks, e, condition, pressed)) {
+            return true;
+        }
+
+        if (!isEditable() || condition != WHEN_FOCUSED || getEditor() == null
+                || !Boolean.TRUE.equals(getClientProperty("JComboBox.isTableCellEditor"))) {
+            return false;
+        }
+
+        Component editorComponent = getEditor().getEditorComponent();
+        if (editorComponent instanceof JComponent) {
+            JComponent component = (JComponent) editorComponent;
+            return component.processKeyBinding(ks, e, WHEN_FOCUSED, pressed);
+        }
+        return false;
     }
 
     /**

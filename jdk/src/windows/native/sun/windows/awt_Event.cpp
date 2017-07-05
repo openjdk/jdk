@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,16 @@ Java_java_awt_Event_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
     AwtEvent::targetID = env->GetFieldID(cls, "target", "Ljava/lang/Object;");
-    AwtEvent::xID = env->GetFieldID(cls, "x", "I");
-    AwtEvent::yID = env->GetFieldID(cls, "y", "I");
-
     DASSERT(AwtEvent::targetID != NULL);
+    CHECK_NULL(AwtEvent::targetID);
+
+    AwtEvent::xID = env->GetFieldID(cls, "x", "I");
     DASSERT(AwtEvent::xID != NULL);
+    CHECK_NULL(AwtEvent::xID);
+
+    AwtEvent::yID = env->GetFieldID(cls, "y", "I");
     DASSERT(AwtEvent::yID != NULL);
+    CHECK_NULL(AwtEvent::yID);
 
     CATCH_BAD_ALLOC;
 }

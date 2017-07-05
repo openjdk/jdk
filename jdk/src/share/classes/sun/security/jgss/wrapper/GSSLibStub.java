@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,11 @@ class GSSLibStub {
     /**
      * Initialization routine to dynamically load function pointers.
      *
-     * @param library name to dlopen
+     * @param lib library name to dlopen
+     * @param debug set to true for reporting native debugging info
      * @return true if succeeded, false otherwise.
      */
-    static native boolean init(String lib);
+    static native boolean init(String lib, boolean debug);
     private static native long getMechPtr(byte[] oidDerEncoding);
 
     // Miscellaneous routines

@@ -27,7 +27,7 @@ package java.sql;
 /**
  * <P>Defines the constants that are used to identify generic
  * SQL types, called JDBC types.
- * <p>
+ *
  * @see SQLType
  * @since 1.8
  */

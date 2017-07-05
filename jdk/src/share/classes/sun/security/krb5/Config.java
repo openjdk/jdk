@@ -32,20 +32,15 @@ package sun.security.krb5;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+
 import sun.net.dns.ResolverConfiguration;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
@@ -232,6 +227,31 @@ public class Config {
     }
 
     /**
+     * Gets the boolean value for the specified keys. Returns TRUE if the
+     * string value is "yes", or "true", FALSE if "no", or "false", or null
+     * if otherwise or not defined. The comparision is case-insensitive.
+     *
+     * @param keys the keys, see {@link #get(String...)}
+     * @return the boolean value, or null if there is no value defined or the
+     * value does not look like a boolean value.
+     * @throws IllegalArgumentException see {@link #get(String...)}
+     */
+    public Boolean getBooleanObject(String... keys) {
+        String s = get(keys);
+        if (s == null) {
+            return null;
+        }
+        switch (s.toLowerCase(Locale.US)) {
+            case "yes": case "true":
+                return Boolean.TRUE;
+            case "no": case "false":
+                return Boolean.FALSE;
+            default:
+                return null;
+        }
+    }
+
+    /**
      * Gets all values for the specified keys.
      * @throws IllegalArgumentException if any of the keys is illegal
      *         (See {@link #get})
@@ -317,23 +337,6 @@ public class Config {
     }
 
     /**
-     * Gets the boolean value for the specified keys.
-     * @param keys the keys
-     * @return the boolean value, false is returned if it cannot be
-     * found or the value is not "true" (case insensitive).
-     * @throw IllegalArgumentException if any of the keys is illegal
-     * @see #get(java.lang.String[])
-     */
-    public boolean getBooleanValue(String... keys) {
-        String val = get(keys);
-        if (val != null && val.equalsIgnoreCase("true")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Parses a string to an integer. The convertible strings include the
      * string representations of positive integers, negative integers, and
      * hex decimal integers.  Valid inputs are, e.g., -1234, +1234,
@@ -341,7 +344,7 @@ public class Config {
      *
      * @param input the String to be converted to an Integer.
      * @return an numeric value represented by the string
-     * @exception NumberFormationException if the String does not contain a
+     * @exception NumberFormatException if the String does not contain a
      * parsable integer.
      */
     private int parseIntValue(String input) throws NumberFormatException {
@@ -927,32 +930,20 @@ public class Config {
      * use addresses if "no_addresses" or "noaddresses" is set to false
      */
     public boolean useAddresses() {
-        boolean useAddr = false;
-        // use addresses if "no_addresses" is set to false
-        String value = get("libdefaults", "no_addresses");
-        useAddr = (value != null && value.equalsIgnoreCase("false"));
-        if (useAddr == false) {
-            // use addresses if "noaddresses" is set to false
-            value = get("libdefaults", "noaddresses");
-            useAddr = (value != null && value.equalsIgnoreCase("false"));
-        }
-        return useAddr;
+        return getBooleanObject("libdefaults", "no_addresses") == Boolean.FALSE ||
+                getBooleanObject("libdefaults", "noaddresses") == Boolean.FALSE;
     }
 
     /**
-     * Check if need to use DNS to locate Kerberos services
+     * Check if need to use DNS to locate Kerberos services for name. If not
+     * defined, check dns_fallback, whose default value is true.
      */
     private boolean useDNS(String name) {
-        String value = get("libdefaults", name);
-        if (value == null) {
-            value = get("libdefaults", "dns_fallback");
-            if ("false".equalsIgnoreCase(value)) {
-                return false;
-            } else {
-                return true;
-            }
+        Boolean value = getBooleanObject("libdefaults", name);
+        if (value != null) {
+            return value.booleanValue();
         } else {
-            return value.equalsIgnoreCase("true");
+            return getBooleanObject("libdefaults", "dns_fallback") != Boolean.FALSE;
         }
     }
 

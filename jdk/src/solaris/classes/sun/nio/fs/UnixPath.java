@@ -482,7 +482,7 @@ class UnixPath
     @Override
     public Path normalize() {
         final int count = getNameCount();
-        if (count == 0)
+        if (count == 0 || isEmpty())
             return this;
 
         boolean[] ignore = new boolean[count];      // true => ignore name

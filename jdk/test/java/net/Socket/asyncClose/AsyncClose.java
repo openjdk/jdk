@@ -21,15 +21,17 @@
  * questions.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import static java.util.concurrent.CompletableFuture.*;
+
 /*
  * @test
  * @bug 4344135
  * @summary Check that {Socket,ServerSocket,DatagramSocket}.close will
  *          cause any thread blocked on the socket to throw a SocketException.
- * @run main/timeout=60 AsyncClose
  */
-import java.net.*;
-import java.io.*;
 
 public class AsyncClose {
 
@@ -37,34 +39,35 @@ public class AsyncClose {
 
         AsyncCloseTest tests[] = {
             new Socket_getInputStream_read(),
-            new Socket_getInputStream_read(5000),
+            new Socket_getInputStream_read(20000),
             new Socket_getOutputStream_write(),
             new DatagramSocket_receive(),
-            new DatagramSocket_receive(5000),
+            new DatagramSocket_receive(20000),
             new ServerSocket_accept(),
-            new ServerSocket_accept(5000),
+            new ServerSocket_accept(20000),
         };
 
         int failures = 0;
 
-        for (int i=0; i<tests.length; i++) {
-            AsyncCloseTest tst = tests[i];
+        List<CompletableFuture<AsyncCloseTest>> cfs = new ArrayList<>();
+        for (AsyncCloseTest test : tests)
+            cfs.add( supplyAsync(() -> test.go()));
+
+        for (CompletableFuture<AsyncCloseTest> cf : cfs) {
+            AsyncCloseTest test = cf.get();
 
             System.out.println("******************************");
-            System.out.println("Test: " + tst.description());
-
-            if (tst.go()) {
+            System.out.println("Test: " + test.description());
+            if (test.hasPassed()) {
                 System.out.println("Passed.");
             } else {
-                System.out.println("Failed: " + tst.failureReason());
+                System.out.println("Failed: " + test.failureReason());
                 failures++;
             }
             System.out.println("");
-
         }
 
-        if (failures > 0) {
+        if (failures > 0)
             throw new Exception(failures + " sub-tests failed - see log.");
-        }
     }
 }

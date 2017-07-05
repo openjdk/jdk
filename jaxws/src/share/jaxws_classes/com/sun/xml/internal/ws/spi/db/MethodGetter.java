@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package com.sun.xml.internal.ws.spi.db;
 
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import javax.xml.ws.WebServiceException;
 
 
 /**
@@ -41,6 +39,7 @@ public class MethodGetter extends PropertyGetterBase {
     private Method method;
 
     public MethodGetter(Method m) {
+        verifyWrapperType(m.getDeclaringClass());
         method = m;
         type = m.getReturnType();
     }
@@ -54,49 +53,12 @@ public class MethodGetter extends PropertyGetterBase {
         return (A) method.getAnnotation(c);
     }
 
-
-    static class PrivilegedGetter implements PrivilegedExceptionAction {
-        private Object value;
-        private Method method;
-        private Object instance;
-        public PrivilegedGetter(Method m, Object instance) {
-            super();
-            this.method = m;
-            this.instance = instance;
-        }
-        public Object run() throws IllegalAccessException {
-            if (!method.isAccessible()) {
-                method.setAccessible(true);
-            }
-            try {
-                value = method.invoke(instance, new Object[0]);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
     public Object get(final Object instance) {
         final Object[] args = new Object[0];
         try {
-            if (method.isAccessible()) {
-                return method.invoke(instance, args);
-            } else {
-                PrivilegedGetter privilegedGetter = new PrivilegedGetter(method, instance);
-                try {
-                    AccessController.doPrivileged(privilegedGetter);
-                } catch (PrivilegedActionException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                return privilegedGetter.value;
-            }
+            return method.invoke(instance, args);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new WebServiceException(e);
         }
-        return null;
     }
 }

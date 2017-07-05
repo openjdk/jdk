@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,6 @@ class java_lang_String : AllStatic {
 
   static Handle basic_create(int length, TRAPS);
 
-  static void set_value( oop string, typeArrayOop buffer) {
-    assert(initialized, "Must be initialized");
-    string->obj_field_put(value_offset,  (oop)buffer);
-  }
   static void set_offset(oop string, int offset) {
     assert(initialized, "Must be initialized");
     if (offset_offset > 0) {
@@ -122,11 +118,25 @@ class java_lang_String : AllStatic {
     return hash_offset;
   }
 
+  static void set_value(oop string, typeArrayOop buffer) {
+    assert(initialized && (value_offset > 0), "Must be initialized");
+    string->obj_field_put(value_offset, (oop)buffer);
+  }
+  static void set_hash(oop string, unsigned int hash) {
+    assert(initialized && (hash_offset > 0), "Must be initialized");
+    string->int_field_put(hash_offset, hash);
+  }
+
   // Accessors
   static typeArrayOop value(oop java_string) {
     assert(initialized && (value_offset > 0), "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
     return (typeArrayOop) java_string->obj_field(value_offset);
+  }
+  static unsigned int hash(oop java_string) {
+    assert(initialized && (hash_offset > 0), "Must be initialized");
+    assert(is_instance(java_string), "must be java_string");
+    return java_string->int_field(hash_offset);
   }
   static int offset(oop java_string) {
     assert(initialized, "Must be initialized");

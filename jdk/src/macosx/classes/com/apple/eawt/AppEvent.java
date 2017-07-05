@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.Window;
  * @since Java for Mac OS X 10.6 Update 3
  * @since Java for Mac OS X 10.5 Update 8
  */
+@SuppressWarnings("serial") // JDK implementation class
 public abstract class AppEvent extends EventObject {
     AppEvent() {
         super(Application.getApplication());
@@ -44,6 +45,7 @@ public abstract class AppEvent extends EventObject {
     /**
      * Contains a list of files.
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public abstract static class FilesEvent extends AppEvent {
         final List<File> files;
 
@@ -64,6 +66,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see OpenFilesHandler#openFiles(OpenFilesEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class OpenFilesEvent extends FilesEvent {
         final String searchTerm;
 
@@ -87,6 +90,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see PrintFilesHandler#printFiles(PrintFilesEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class PrintFilesEvent extends FilesEvent {
         PrintFilesEvent(final List<File> files) {
             super(files);
@@ -98,6 +102,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see OpenURIHandler#openURI(OpenURIEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class OpenURIEvent extends AppEvent {
         final URI uri;
 
@@ -118,6 +123,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see AboutHandler#handleAbout()
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class AboutEvent extends AppEvent { AboutEvent() { } }
 
     /**
@@ -125,6 +131,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see PreferencesHandler#handlePreferences()
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class PreferencesEvent extends AppEvent { PreferencesEvent() { } }
 
     /**
@@ -132,6 +139,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see QuitHandler#handleQuitRequestWith(QuitEvent, QuitResponse)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class QuitEvent extends AppEvent { QuitEvent() { } }
 
     /**
@@ -139,6 +147,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @see AppReOpenedListener#appReOpened(AppReOpenedEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class AppReOpenedEvent extends AppEvent { AppReOpenedEvent() { } }
 
     /**
@@ -147,6 +156,7 @@ public abstract class AppEvent extends EventObject {
      * @see AppForegroundListener#appRaisedToForeground(AppForegroundEvent)
      * @see AppForegroundListener#appMovedToBackground(AppForegroundEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class AppForegroundEvent extends AppEvent { AppForegroundEvent() { } }
 
     /**
@@ -155,6 +165,7 @@ public abstract class AppEvent extends EventObject {
      * @see AppHiddenListener#appHidden(AppHiddenEvent)
      * @see AppHiddenListener#appUnhidden(AppHiddenEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class AppHiddenEvent extends AppEvent { AppHiddenEvent() { } }
 
     /**
@@ -163,6 +174,7 @@ public abstract class AppEvent extends EventObject {
      * @see UserSessionListener#userSessionActivated(UserSessionEvent)
      * @see UserSessionListener#userSessionDeactivated(UserSessionEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class UserSessionEvent extends AppEvent { UserSessionEvent() { } }
 
     /**
@@ -171,6 +183,7 @@ public abstract class AppEvent extends EventObject {
      * @see ScreenSleepListener#screenAboutToSleep(ScreenSleepEvent)
      * @see ScreenSleepListener#screenAwoke(ScreenSleepEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class ScreenSleepEvent extends AppEvent { ScreenSleepEvent() { } }
 
     /**
@@ -179,6 +192,7 @@ public abstract class AppEvent extends EventObject {
      * @see SystemSleepListener#systemAboutToSleep(SystemSleepEvent)
      * @see SystemSleepListener#systemAwoke(SystemSleepEvent)
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class SystemSleepEvent extends AppEvent { SystemSleepEvent() { } }
 
     /**
@@ -188,6 +202,7 @@ public abstract class AppEvent extends EventObject {
      *
      * @since Java for Mac OS X 10.7 Update 1
      */
+    @SuppressWarnings("serial") // JDK implementation class
     public static class FullScreenEvent extends AppEvent {
         final Window window;
 

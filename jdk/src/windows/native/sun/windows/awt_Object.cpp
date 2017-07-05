@@ -232,22 +232,31 @@ Java_sun_awt_windows_WObjectPeer_initIDs(JNIEnv *env, jclass cls) {
     TRY;
 
     AwtObject::wObjectPeerClass = (jclass)env->NewGlobalRef(cls);
+    DASSERT(AwtObject::wObjectPeerClass != NULL);
+    CHECK_NULL(AwtObject::wObjectPeerClass);
+
     AwtObject::pDataID = env->GetFieldID(cls, "pData", "J");
+    DASSERT(AwtObject::pDataID != NULL);
+    CHECK_NULL(AwtObject::pDataID);
+
     AwtObject::destroyedID = env->GetFieldID(cls, "destroyed", "Z");
+    DASSERT(AwtObject::destroyedID != NULL);
+    CHECK_NULL(AwtObject::destroyedID);
+
     AwtObject::targetID = env->GetFieldID(cls, "target",
                                               "Ljava/lang/Object;");
+    DASSERT(AwtObject::targetID != NULL);
+    CHECK_NULL(AwtObject::targetID);
 
     AwtObject::getPeerForTargetMID =
         env->GetStaticMethodID(cls, "getPeerForTarget",
                          "(Ljava/lang/Object;)Lsun/awt/windows/WObjectPeer;");
+    DASSERT(AwtObject::getPeerForTargetMID != NULL);
+    CHECK_NULL(AwtObject::getPeerForTargetMID);
 
     AwtObject::createErrorID = env->GetFieldID(cls, "createError", "Ljava/lang/Error;");
-
-    DASSERT(AwtObject::pDataID != NULL);
-    DASSERT(AwtObject::destroyedID != NULL);
-    DASSERT(AwtObject::targetID != NULL);
-    DASSERT(AwtObject::getPeerForTargetMID != NULL);
     DASSERT(AwtObject::createErrorID != NULL);
+    CHECK_NULL(AwtObject::createErrorID);
 
     CATCH_BAD_ALLOC;
 }

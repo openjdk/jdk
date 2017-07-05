@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -1120,7 +1118,7 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
   }
   return _last_calls_return_pc;
 }
-#endif
+#endif // ABI_ELFv2
 
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
@@ -1794,7 +1792,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   cmpwi(cr_reg, temp_reg, markOopDesc::biased_lock_pattern);
   bne(cr_reg, cas_label);
 
-  load_klass_with_trap_null_check(temp_reg, obj_reg);
+  load_klass(temp_reg, obj_reg);
 
   load_const_optimized(temp2_reg, ~((int) markOopDesc::age_mask_in_place));
   ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
@@ -1891,7 +1889,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   // the bias from one thread to another directly in this situation.
   andi(temp_reg, mark_reg, markOopDesc::age_mask_in_place);
   orr(temp_reg, R16_thread, temp_reg);
-  load_klass_with_trap_null_check(temp2_reg, obj_reg);
+  load_klass(temp2_reg, obj_reg);
   ld(temp2_reg, in_bytes(Klass::prototype_header_offset()), temp2_reg);
   orr(temp_reg, temp_reg, temp2_reg);
 
@@ -1927,7 +1925,7 @@ void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj
   // that another thread raced us for the privilege of revoking the
   // bias of this particular object, so it's okay to continue in the
   // normal locking code.
-  load_klass_with_trap_null_check(temp_reg, obj_reg);
+  load_klass(temp_reg, obj_reg);
   ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
   andi(temp2_reg, mark_reg, markOopDesc::age_mask_in_place);
   orr(temp_reg, temp_reg, temp2_reg);
@@ -2213,8 +2211,7 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Regis
   stbx(R0, Rtmp, Robj);
 }
 
-#ifndef SERIALGC
-
+#if INCLUDE_ALL_GCS
 // General G1 pre-barrier generator.
 // Goal: record the previous value if it is not null.
 void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
@@ -2328,14 +2325,17 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   // Get the address of the card.
   lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);
+  cmpwi(CCR0, Rtmp3, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  beq(CCR0, filtered);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
-  cmpwi(CCR0, Rtmp3 /* card value */, 0);
+  membar(Assembler::StoreLoad);
+  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);  // Reload after membar.
+  cmpwi(CCR0, Rtmp3 /* card value */, CardTableModRefBS::dirty_card_val());
   beq(CCR0, filtered);
 
   // Storing a region crossing, non-NULL oop, card is clean.
   // Dirty card and log.
-  li(Rtmp3, 0); // dirty
+  li(Rtmp3, CardTableModRefBS::dirty_card_val());
   //release(); // G1: oops are allowed to get visible after dirty marking.
   stbx(Rtmp3, Rbase, Rcard_addr);
 
@@ -2362,7 +2362,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   bind(filtered_int);
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
 // in frame_ppc64.hpp.
@@ -2453,7 +2453,8 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided.
   if (Universe::narrow_klass_base() != 0) {
-    load_const(R0, Universe::narrow_klass_base(), (dst != current) ? dst : noreg); // Use dst as temp if it is free.
+    // Use dst as temp if it is free.
+    load_const(R0, Universe::narrow_klass_base(), (dst != current && dst != R0) ? dst : noreg);
     sub(dst, current, R0);
     current = dst;
   }

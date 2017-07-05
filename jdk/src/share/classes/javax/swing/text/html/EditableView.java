@@ -73,7 +73,7 @@ class EditableView extends ComponentView {
         Component c = getComponent();
         Container host = getContainer();
 
-        if (host != null &&
+        if (host instanceof JTextComponent &&
             isVisible != ((JTextComponent)host).isEditable()) {
             isVisible = ((JTextComponent)host).isEditable();
             preferenceChanged(null, true, true);

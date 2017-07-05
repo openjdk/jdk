@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ElementImpl
     public static final String XENC_NS = "http://www.w3.org/2001/04/xmlenc#".intern();
     public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd".intern();
 
-    private AttributeManager encodingStyleAttribute = new AttributeManager();
+    private transient AttributeManager encodingStyleAttribute = new AttributeManager();
 
     protected QName elementQName;
 
@@ -424,7 +424,32 @@ public class ElementImpl
 
     }
 
+    Element getFirstChildElement() {
+        Node child = getFirstChild();
+        while (child != null) {
+            if (child instanceof Element) {
+                return ((Element) child);
+            }
+            child = child.getNextSibling();
+        }
+        return null;
+    }
+
     protected SOAPElement findChild(NameImpl name) {
+        Node eachChild = getFirstChild();
+        while (eachChild != null) {
+            if (eachChild instanceof SOAPElement) {
+                SOAPElement eachChildSoap = (SOAPElement) eachChild;
+                if (eachChildSoap.getElementName().equals(name)) {
+                    return eachChildSoap;
+                }
+            }
+            eachChild = eachChild.getNextSibling();
+        }
+        return null;
+    }
+
+    protected SOAPElement findAndConvertChildElement(NameImpl name) {
         Iterator eachChild = getChildElementNodes();
         while (eachChild.hasNext()) {
             SOAPElement child = (SOAPElement) eachChild.next();

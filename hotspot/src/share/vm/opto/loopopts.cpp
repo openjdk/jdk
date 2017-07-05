@@ -30,6 +30,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/movenode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 

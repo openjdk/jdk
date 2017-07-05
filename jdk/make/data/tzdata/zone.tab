@@ -74,6 +74,7 @@ AQ	-6617+11031	Antarctica/Casey	Casey Station, Bailey Peninsula
 AQ	-7824+10654	Antarctica/Vostok	Vostok Station, Lake Vostok
 AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
+AQ	-720041+0023206	Antarctica/Troll	Troll Station, Queen Maud Land
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
 AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, MN, SE, SF)
 AR	-2447-06525	America/Argentina/Salta	(SA, LP, NQ, RN)
@@ -366,6 +367,7 @@ RU	+5443+02030	Europe/Kaliningrad	Moscow-01 - Kaliningrad
 RU	+5545+03735	Europe/Moscow	Moscow+00 - west Russia
 RU	+4844+04425	Europe/Volgograd	Moscow+00 - Caspian Sea
 RU	+5312+05009	Europe/Samara	Moscow+00 - Samara, Udmurtia
+RU	+4457+03406	Europe/Simferopol	Moscow+00 - Crimea
 RU	+5651+06036	Asia/Yekaterinburg	Moscow+02 - Urals
 RU	+5500+07324	Asia/Omsk	Moscow+03 - west Siberia
 RU	+5502+08255	Asia/Novosibirsk	Moscow+03 - Novosibirsk
@@ -421,7 +423,6 @@ TZ	-0648+03917	Africa/Dar_es_Salaam
 UA	+5026+03031	Europe/Kiev	most locations
 UA	+4837+02218	Europe/Uzhgorod	Ruthenia
 UA	+4750+03510	Europe/Zaporozhye	Zaporozh'ye, E Lugansk / Zaporizhia, E Luhansk
-UA	+4457+03406	Europe/Simferopol	central Crimea
 UG	+0019+03225	Africa/Kampala
 UM	+1645-16931	Pacific/Johnston	Johnston Atoll
 UM	+2813-17722	Pacific/Midway	Midway Islands

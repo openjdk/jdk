@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ public abstract class AbstractMessageImpl extends Message {
      */
     protected AbstractMessageImpl(AbstractMessageImpl that) {
         this.soapVersion = that.soapVersion;
+        this.copyFrom(that);
     }
 
     @Override
@@ -150,11 +151,7 @@ public abstract class AbstractMessageImpl extends Message {
             hasAttachments()? new AttachmentUnmarshallerImpl(getAttachments()) : null );
     }
 
-    /**
-     * Default implementation that relies on {@link #writePayloadTo(XMLStreamWriter)}
-     */
-    @Override
-    public void writeTo(XMLStreamWriter w) throws XMLStreamException {
+    public void writeToBodyStart(XMLStreamWriter w) throws XMLStreamException {
         String soapNsUri = soapVersion.nsUri;
         w.writeStartDocument();
         w.writeStartElement("S","Envelope",soapNsUri);
@@ -169,7 +166,14 @@ public abstract class AbstractMessageImpl extends Message {
         }
         // write the body
         w.writeStartElement("S","Body",soapNsUri);
+    }
 
+    /**
+     * Default implementation that relies on {@link #writePayloadTo(XMLStreamWriter)}
+     */
+    @Override
+    public void writeTo(XMLStreamWriter w) throws XMLStreamException {
+        writeToBodyStart(w);
         writePayloadTo(w);
 
         w.writeEndElement();
