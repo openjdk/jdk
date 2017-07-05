@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,10 +130,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 rs.getModulus(),
                 rs.getPublicExponent()
             );
-        } catch (PKCS11Exception e) {
-            throw new InvalidKeySpecException
-                ("Could not create RSA public key", e);
-        } catch (InvalidKeyException e) {
+        } catch (PKCS11Exception | InvalidKeyException e) {
             throw new InvalidKeySpecException
                 ("Could not create RSA public key", e);
         }
@@ -177,10 +174,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 throw new InvalidKeySpecException("Only RSAPrivate(Crt)KeySpec "
                     + "and PKCS8EncodedKeySpec supported for RSA private keys");
             }
-        } catch (PKCS11Exception e) {
-            throw new InvalidKeySpecException
-                ("Could not create RSA private key", e);
-        } catch (InvalidKeyException e) {
+        } catch (PKCS11Exception | InvalidKeyException e) {
             throw new InvalidKeySpecException
                 ("Could not create RSA private key", e);
         }
@@ -260,8 +254,8 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         }
     }
 
-    KeySpec implGetPublicKeySpec(P11Key key, Class keySpec, Session[] session)
-            throws PKCS11Exception, InvalidKeySpecException {
+    <T extends KeySpec> T implGetPublicKeySpec(P11Key key, Class<T> keySpec,
+            Session[] session) throws PKCS11Exception, InvalidKeySpecException {
         if (RSAPublicKeySpec.class.isAssignableFrom(keySpec)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
@@ -273,15 +267,15 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger()
             );
-            return spec;
+            return keySpec.cast(spec);
         } else { // X.509 handled in superclass
             throw new InvalidKeySpecException("Only RSAPublicKeySpec and "
                 + "X509EncodedKeySpec supported for RSA public keys");
         }
     }
 
-    KeySpec implGetPrivateKeySpec(P11Key key, Class keySpec, Session[] session)
-            throws PKCS11Exception, InvalidKeySpecException {
+    <T extends KeySpec> T implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
+            Session[] session) throws PKCS11Exception, InvalidKeySpecException {
         if (RSAPrivateCrtKeySpec.class.isAssignableFrom(keySpec)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
@@ -305,7 +299,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 attributes[6].getBigInteger(),
                 attributes[7].getBigInteger()
             );
-            return spec;
+            return keySpec.cast(spec);
         } else if (RSAPrivateKeySpec.class.isAssignableFrom(keySpec)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
@@ -317,7 +311,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
                 attributes[0].getBigInteger(),
                 attributes[1].getBigInteger()
             );
-            return spec;
+            return keySpec.cast(spec);
         } else { // PKCS#8 handled in superclass
             throw new InvalidKeySpecException("Only RSAPrivate(Crt)KeySpec "
                 + "and PKCS8EncodedKeySpec supported for RSA private keys");

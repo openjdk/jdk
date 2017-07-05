@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,12 @@ final class JceSecurity {
     // Map<Provider,?> of the providers we already have verified
     // value == PROVIDER_VERIFIED is successfully verified
     // value is failure cause Exception in error case
-    private final static Map verificationResults = new IdentityHashMap();
+    private final static Map<Provider, Object> verificationResults =
+            new IdentityHashMap<>();
 
     // Map<Provider,?> of the providers currently being verified
-    private final static Map verifyingProviders = new IdentityHashMap();
+    private final static Map<Provider, Object> verifyingProviders =
+            new IdentityHashMap<>();
 
     // Set the default value. May be changed in the static initializer.
     private static boolean isRestricted = true;
@@ -73,25 +75,23 @@ final class JceSecurity {
 
     static {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
-                    setupJurisdictionPolicies();
-                    return null;
-                }
-            });
+            AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Object>() {
+                    public Object run() throws Exception {
+                        setupJurisdictionPolicies();
+                        return null;
+                    }
+                });
 
             isRestricted = defaultPolicy.implies(
                 CryptoAllPermission.INSTANCE) ? false : true;
         } catch (Exception e) {
-            SecurityException se =
-                new SecurityException(
-                    "Can not initialize cryptographic mechanism");
-            se.initCause(e);
-            throw se;
+            throw new SecurityException(
+                    "Can not initialize cryptographic mechanism", e);
         }
     }
 
-    static Instance getInstance(String type, Class clazz, String algorithm,
+    static Instance getInstance(String type, Class<?> clazz, String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Service s = GetInstance.getService(type, algorithm, provider);
@@ -104,7 +104,7 @@ final class JceSecurity {
         return GetInstance.getInstance(s, clazz);
     }
 
-    static Instance getInstance(String type, Class clazz, String algorithm,
+    static Instance getInstance(String type, Class<?> clazz, String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Service s = GetInstance.getService(type, algorithm, provider);
         Exception ve = JceSecurity.getVerificationResult(provider);
@@ -116,12 +116,11 @@ final class JceSecurity {
         return GetInstance.getInstance(s, clazz);
     }
 
-    static Instance getInstance(String type, Class clazz, String algorithm)
+    static Instance getInstance(String type, Class<?> clazz, String algorithm)
             throws NoSuchAlgorithmException {
-        List services = GetInstance.getServices(type, algorithm);
+        List<Service> services = GetInstance.getServices(type, algorithm);
         NoSuchAlgorithmException failure = null;
-        for (Iterator t = services.iterator(); t.hasNext(); ) {
-            Service s = (Service)t.next();
+        for (Service s : services) {
             if (canUseProvider(s.getProvider()) == false) {
                 // allow only signed providers
                 continue;
@@ -213,16 +212,17 @@ final class JceSecurity {
     }
 
     // reference to a Map we use as a cache for codebases
-    private static final Map codeBaseCacheRef = new WeakHashMap();
+    private static final Map<Class<?>, URL> codeBaseCacheRef =
+            new WeakHashMap<>();
 
     /*
      * Retuns the CodeBase for the given class.
      */
-    static URL getCodeBase(final Class clazz) {
-        URL url = (URL)codeBaseCacheRef.get(clazz);
+    static URL getCodeBase(final Class<?> clazz) {
+        URL url = codeBaseCacheRef.get(clazz);
         if (url == null) {
-            url = (URL)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            url = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                public URL run() {
                     ProtectionDomain pd = clazz.getProtectionDomain();
                     if (pd != null) {
                         CodeSource cs = pd.getCodeSource();
@@ -290,9 +290,9 @@ final class JceSecurity {
 
         JarFile jf = new JarFile(jarPathName);
 
-        Enumeration entries = jf.entries();
+        Enumeration<JarEntry> entries = jf.entries();
         while (entries.hasMoreElements()) {
-            JarEntry je = (JarEntry)entries.nextElement();
+            JarEntry je = entries.nextElement();
             InputStream is = null;
             try {
                 if (je.getName().startsWith("default_")) {

@@ -181,7 +181,7 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List manifestDigests)
+            List<Object> manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -198,7 +198,7 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List manifestDigests)
+            List<Object> manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -277,7 +277,7 @@ public class SignatureFileVerifier {
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
                                        BASE64Decoder decoder,
-                                       List manifestDigests)
+                                       List<Object> manifestDigests)
          throws IOException
     {
         Attributes mattr = sf.getMainAttributes();

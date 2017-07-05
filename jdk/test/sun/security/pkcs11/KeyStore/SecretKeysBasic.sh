@@ -25,6 +25,8 @@
 # @bug 6599979
 # @summary Ensure that re-assigning the alias works
 #
+# @library ..
+# @build SecretKeysBasic
 # @run shell SecretKeysBasic.sh
 #
 # To run by hand:
@@ -43,10 +45,9 @@ fi
 if [ "${TESTCLASSES}" = "" ] ; then
     TESTCLASSES=`pwd`
 fi
-
-# if running by hand on windows, change this to appropriate value
 if [ "${TESTJAVA}" = "" ] ; then
-    TESTJAVA="/net/shimmer/export/valeriep/jdk7/build/solaris-sparc"
+    JAVAC_CMD=`which javac`
+    TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
@@ -63,19 +64,41 @@ case "$OS" in
   SunOS )
     FS="/"
     PS=":"
-    SCCS="${FS}usr${FS}ccs${FS}bin${FS}sccs"
-    CP="${FS}bin${FS}cp -f"
-    RM="${FS}bin${FS}rm -rf"
-    MKDIR="${FS}bin${FS}mkdir -p"
-    CHMOD="${FS}bin${FS}chmod"
+    OS_VERSION=`uname -r`
+    case "${OS_VERSION}" in
+      5.1* )
+        SOFTTOKEN_DIR=${TESTCLASSES}
+        export SOFTTOKEN_DIR
+        TOKENS="nss solaris"
+        ;;
+      * )
+        # SunPKCS11-Solaris Test only runs on Solaris 5.10 and later
+        TOKENS="nss"
+        ;;
+    esac
+    ;;
+  Windows_* )
+    FS="\\"
+    PS=";"
+    TOKENS="nss"
+    ;;
+  CYGWIN* )
+    FS="/"
+    PS=";"
+    TOKENS="nss"
     ;;
   * )
-    echo "Unsupported System ${OS} - Test only runs on Solaris"
-    exit 0;
+    FS="/"
+    PS=":"
+    TOKENS="nss"
     ;;
 esac
 
-TOKENS="nss solaris"
+CP="cp -f"
+RM="rm -rf"
+MKDIR="mkdir -p"
+CHMOD="chmod"
+
 STATUS=0
 for token in ${TOKENS}
 do
@@ -91,18 +114,6 @@ then
     USED_FILE_LIST="${TESTCLASSES}${FS}cert8.db ${TESTCLASSES}${FS}key3.db"
 elif [ ${token} = "solaris" ]
 then
-    OS_VERSION=`uname -r`
-    case "${OS_VERSION}" in
-      5.1* )
-        SOFTTOKEN_DIR=${TESTCLASSES}
-        export SOFTTOKEN_DIR
-        ;;
-      * )
-        echo "Unsupported Version ${OS_VERSION} - Test only runs on Solaris"
-        exit 0;
-        ;;
-    esac
-
     # copy keystore into write-able location
     if [ -d ${TESTCLASSES}${FS}pkcs11_softtoken ]
     then
@@ -126,12 +137,6 @@ then
     ${CHMOD} 600 ${TESTCLASSES}${FS}pkcs11_softtoken${FS}objstore_info
     USED_FILE_LIST="${TESTCLASSES}${FS}pkcs11_softtoken"
 fi
-
-cd ${TESTCLASSES}
-${TESTJAVA}${FS}bin${FS}javac \
-        -classpath ${TESTCLASSES} \
-        -d ${TESTCLASSES} \
-        ${TESTSRC}${FS}SecretKeysBasic.java
 
 # run test
 cd ${TESTSRC}

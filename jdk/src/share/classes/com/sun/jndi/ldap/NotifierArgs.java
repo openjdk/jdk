@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ final class NotifierArgs {
     private int controlsCode() {
         if (controls == null) return 0;
 
-        int total = (int)controls.getTimeLimit() + (int)controls.getCountLimit() +
+        int total = controls.getTimeLimit() + (int)controls.getCountLimit() +
             (controls.getDerefLinkFlag() ? 1 : 0) +
             (controls.getReturningObjFlag() ? 1 : 0);
 

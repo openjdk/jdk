@@ -1274,8 +1274,7 @@ public class SwingUtilities implements SwingConstants
      * <p>
      * Additional documentation and examples for this method can be
      * found in
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How to Use Threads</a>,
-     * in <em>The Java Tutorial</em>.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency in Swing</a>.
      * <p>
      * As of 1.3 this method is just a cover for <code>java.awt.EventQueue.invokeLater()</code>.
      * <p>
@@ -1326,8 +1325,7 @@ public class SwingUtilities implements SwingConstants
      * <p>
      * Additional documentation and examples for this method can be
      * found in
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How to Use Threads</a>,
-     * in <em>The Java Tutorial</em>.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency in Swing</a>.
      * <p>
      * As of 1.3 this method is just a cover for
      * <code>java.awt.EventQueue.invokeAndWait()</code>.

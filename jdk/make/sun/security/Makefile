@@ -34,6 +34,8 @@
 #
 
 BUILDDIR = ../..
+SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
+SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
 # build sun/security/jgss/wrapper on non-windows platform

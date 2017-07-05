@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,14 +475,14 @@ implements Serializable {
 
     private static final long serialVersionUID = -511215555898802763L;
 
-    private Vector permissions;
+    private Vector<Permission> permissions;
 
     /**
      * Creates an empty CryptoPermissionCollection
      * object.
      */
     CryptoPermissionCollection() {
-        permissions = new Vector(3);
+        permissions = new Vector<Permission>(3);
     }
 
     /**
@@ -520,7 +520,7 @@ implements Serializable {
 
         CryptoPermission cp = (CryptoPermission)permission;
 
-        Enumeration e = permissions.elements();
+        Enumeration<Permission> e = permissions.elements();
 
         while (e.hasMoreElements()) {
             CryptoPermission x = (CryptoPermission) e.nextElement();
@@ -538,7 +538,7 @@ implements Serializable {
      * @return an enumeration of all the CryptoPermission objects.
      */
 
-    public Enumeration elements()
+    public Enumeration<Permission> elements()
     {
         return permissions.elements();
     }

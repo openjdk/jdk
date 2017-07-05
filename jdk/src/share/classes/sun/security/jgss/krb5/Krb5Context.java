@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1310,6 +1310,8 @@ class Krb5Context implements GSSContextSpi {
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
     static class KerberosSessionKey implements Key {
+        private static final long serialVersionUID = 699307378954123869L;
+
         private final EncryptionKey key;
 
         KerberosSessionKey(EncryptionKey key) {

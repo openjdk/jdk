@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,16 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
      * @see #reconnect
      * @see LdapContext#reconnect
      */
+    @SuppressWarnings("unchecked")
     public InitialLdapContext(Hashtable<?,?> environment,
                               Control[] connCtls)
             throws NamingException {
         super(true); // don't initialize yet
 
         // Clone environment since caller owns it.
-        Hashtable env = (environment == null)
-            ? new Hashtable(11)
-            : (Hashtable)environment.clone();
+        Hashtable<Object,Object> env = (environment == null)
+            ? new Hashtable<>(11)
+            : (Hashtable<Object,Object>)environment.clone();
 
         // Put connect controls into environment.  Copy them first since
         // caller owns the array.
