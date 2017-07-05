@@ -45,7 +45,6 @@ package com.sun.jdi.connect.spi;
  *
  * @since 1.5
  */
-@jdk.Exported
 public class ClosedConnectionException extends java.io.IOException {
     private static final long serialVersionUID = 3877032124297204774L;
     /**

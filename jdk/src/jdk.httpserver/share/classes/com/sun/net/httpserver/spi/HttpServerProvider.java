@@ -40,7 +40,6 @@ import com.sun.net.httpserver.*;
  * {@link HttpServer} and associated classes. Applications do not normally use
  * this class. See {@link #provider()} for how providers are found and loaded.
  */
-@jdk.Exported
 public abstract class HttpServerProvider {
 
     /**

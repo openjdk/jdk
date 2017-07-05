@@ -22,7 +22,6 @@
  */
 
 import java.io.IOException;
-import java.lang.InterruptedException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -39,7 +38,9 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @build jdk.testlibrary.Utils
+ * @library /test/lib/share/classes
+ * @build jdk.test.lib.Platform jdk.test.lib.Utils
+ * @run testng OnExitTest
  * @summary Functions of Process.onExit and ProcessHandle.onExit
  * @author Roger Riggs
  */

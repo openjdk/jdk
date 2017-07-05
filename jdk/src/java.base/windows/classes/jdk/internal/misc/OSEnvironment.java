@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-/** @deprecated */
-@Deprecated
-public interface VMNotification {
+import sun.io.Win32ErrorMode;
 
-    // when the vm switches allocation states, we get notified
-    // (possible semantics: if the state changes while in this
-    // notification, don't recursively notify).
-    // oldState and newState may be the same if we are just releasing
-    // suspended threads.
-    void newAllocState(int oldState, int newState,
-                       boolean threadsSuspended);
+public class OSEnvironment {
+
+    /*
+     * Initialize any miscellaneous operating system settings that need to be set
+     * for the class libraries.
+     * <p>
+     * At this time only the process-wide error mode needs to be set.
+     */
+    public static void initialize() {
+        Win32ErrorMode.initialize();
+    }
+
 }

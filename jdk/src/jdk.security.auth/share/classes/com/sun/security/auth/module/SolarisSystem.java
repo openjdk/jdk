@@ -31,7 +31,6 @@ package com.sun.security.auth.module;
  *
  * @deprecated replaced by {@link UnixSystem}.
  */
-@jdk.Exported(false)
 @Deprecated
 public class SolarisSystem {
 

@@ -26,11 +26,10 @@
 #include <stdlib.h>
 #include <jni.h>
 #include <jni_util.h>
-#include <jlong.h>
 #include <stdio.h>
 #include <jvm.h>
 
-#include "sun_misc_MessageUtils.h"
+#include "java_lang_StringCoding.h"
 
 static void
 printToFile(JNIEnv *env, jstring s, FILE *file)
@@ -41,8 +40,8 @@ printToFile(JNIEnv *env, jstring s, FILE *file)
     const jchar *sAsArray;
 
     if (s == NULL) {
-      s = (*env)->NewStringUTF(env, "null");
-      if (s == NULL) return;
+        JNU_ThrowNullPointerException(env, NULL);
+        return;
     }
 
     sAsArray = (*env)->GetStringChars(env, s, NULL);
@@ -70,13 +69,7 @@ printToFile(JNIEnv *env, jstring s, FILE *file)
 }
 
 JNIEXPORT void JNICALL
-Java_sun_misc_MessageUtils_toStderr(JNIEnv *env, jclass cls, jstring s)
+Java_java_lang_StringCoding_err(JNIEnv *env, jclass cls, jstring s)
 {
     printToFile(env, s, stderr);
-}
-
-JNIEXPORT void JNICALL
-Java_sun_misc_MessageUtils_toStdout(JNIEnv *env, jclass cls, jstring s)
-{
-    printToFile(env, s, stdout);
 }

@@ -44,7 +44,6 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface TypeComponent extends Mirror, Accessible {
 
     /**

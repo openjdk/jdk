@@ -37,7 +37,6 @@ import java.io.IOException;
  *
  * @since 1.9
  */
-@jdk.Exported
 public class AttachOperationFailedException extends IOException {
 
     private static final long serialVersionUID = 2140308168167478043L;

@@ -45,7 +45,6 @@ import com.sun.net.httpserver.spi.*;
  * @since 1.6
  */
 
-@jdk.Exported
 public abstract class HttpsServer extends HttpServer {
 
     /**
