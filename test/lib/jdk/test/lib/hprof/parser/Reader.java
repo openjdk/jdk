@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,44 @@ public abstract class Reader {
                     = new HprofReader(heapFile, in, dumpNumber,
                                       callStack, debugLevel);
                 return r.read();
+            } else {
+                throw new IOException("Unrecognized magic number: " + i);
+            }
+        }
+    }
+
+    /**
+     * Get Stack Traces from a Hprof file.
+     *
+     * @param heapFile The name of a file containing a heap dump
+     */
+    public static String getStack(String heapFile, int debugLevel)
+            throws IOException {
+        int dumpNumber = 1;
+        int pos = heapFile.lastIndexOf('#');
+        if (pos > -1) {
+            String num = heapFile.substring(pos+1, heapFile.length());
+            try {
+                dumpNumber = Integer.parseInt(num, 10);
+            } catch (java.lang.NumberFormatException ex) {
+                String msg = "In file name \"" + heapFile
+                             + "\", a dump number was "
+                             + "expected after the :, but \""
+                             + num + "\" was found instead.";
+                System.err.println(msg);
+                throw new IOException(msg);
+            }
+            heapFile = heapFile.substring(0, pos);
+        }
+        try (PositionDataInputStream in = new PositionDataInputStream(
+                new BufferedInputStream(new FileInputStream(heapFile)))) {
+            int i = in.readInt();
+            if (i == HprofReader.MAGIC_NUMBER) {
+                HprofReader r
+                    = new HprofReader(heapFile, in, dumpNumber,
+                                      true, debugLevel);
+                r.read();
+                return r.printStackTraces();
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
             }

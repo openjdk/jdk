@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.executeTestJava;
 
 import org.testng.annotations.BeforeTest;
@@ -34,9 +35,9 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AccessTest CompilerUtils jdk.testlibrary.*
+ * @build AccessTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng AccessTest
  * @summary Driver for test that checks access to access to types in
  *          exported and non-exported packages.
