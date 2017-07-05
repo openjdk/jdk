@@ -700,6 +700,26 @@ inline void Assembler::fdiv_( FloatRegister d, FloatRegister a, FloatRegister b)
 inline void Assembler::fdivs( FloatRegister d, FloatRegister a, FloatRegister b) { emit_int32( FDIVS_OPCODE | frt(d) | fra(a) | frb(b) | rc(0)); }
 inline void Assembler::fdivs_(FloatRegister d, FloatRegister a, FloatRegister b) { emit_int32( FDIVS_OPCODE | frt(d) | fra(a) | frb(b) | rc(1)); }
 
+// Fused multiply-accumulate instructions.
+// WARNING: Use only when rounding between the 2 parts is not desired.
+// Some floating point tck tests will fail if used incorrectly.
+inline void Assembler::fmadd(   FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMADD_OPCODE   | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fmadd_(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMADD_OPCODE   | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fmadds(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMADDS_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fmadds_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMADDS_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fmsub(   FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMSUB_OPCODE   | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fmsub_(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMSUB_OPCODE   | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fmsubs(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMSUBS_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fmsubs_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FMSUBS_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fnmadd(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMADD_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fnmadd_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMADD_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fnmadds( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMADDS_OPCODE | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fnmadds_(FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMADDS_OPCODE | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fnmsub(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMSUB_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fnmsub_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMSUB_OPCODE  | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+inline void Assembler::fnmsubs( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMSUBS_OPCODE | frt(d) | fra(a) | frb(b) | frc(c) | rc(0)); }
+inline void Assembler::fnmsubs_(FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b) { emit_int32( FNMSUBS_OPCODE | frt(d) | fra(a) | frb(b) | frc(c) | rc(1)); }
+
 // PPC 1, section 4.6.6 Floating-Point Rounding and Conversion Instructions
 inline void Assembler::frsp(  FloatRegister d, FloatRegister b) { emit_int32( FRSP_OPCODE   | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fctid( FloatRegister d, FloatRegister b) { emit_int32( FCTID_OPCODE  | frt(d) | frb(b) | rc(0)); }

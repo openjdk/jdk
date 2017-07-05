@@ -136,11 +136,7 @@ public class LoadAgentDcmdTest {
         if (Platform.isWindows()) {
             return "bin";
         }
-        if (Platform.isOSX()) {
-            return "lib";
-        }
-
-        return "lib/" + Platform.getOsArch();
+        return "lib";
     }
 
     /**
