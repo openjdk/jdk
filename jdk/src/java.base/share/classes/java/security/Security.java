@@ -25,11 +25,12 @@
 
 package java.security;
 
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
+
+import jdk.internal.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -800,9 +801,6 @@ public final class Security {
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
      * invalidate it's local cache values.
-     *
-     * Rather than create a new API entry for this function,
-     * we use reflection to set a private variable.
      */
     private static void invalidateSMCache(String key) {
 
@@ -810,42 +808,8 @@ public final class Security {
         final boolean pd = key.equals("package.definition");
 
         if (pa || pd) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Void run() {
-                    try {
-                        /* Get the class via the bootstrap class loader. */
-                        Class<?> cl = Class.forName(
-                            "java.lang.SecurityManager", false, null);
-                        Field f = null;
-                        boolean accessible = false;
-
-                        if (pa) {
-                            f = cl.getDeclaredField("packageAccessValid");
-                            accessible = f.isAccessible();
-                            f.setAccessible(true);
-                        } else {
-                            f = cl.getDeclaredField("packageDefinitionValid");
-                            accessible = f.isAccessible();
-                            f.setAccessible(true);
-                        }
-                        f.setBoolean(f, false);
-                        f.setAccessible(accessible);
-                    }
-                    catch (Exception e1) {
-                        /* If we couldn't get the class, it hasn't
-                         * been loaded yet.  If there is no such
-                         * field, we shouldn't try to set it.  There
-                         * shouldn't be a security execption, as we
-                         * are loaded by boot class loader, and we
-                         * are inside a doPrivileged() here.
-                         *
-                         * NOOP: don't do anything...
-                         */
-                    }
-                    return null;
-                }  /* run */
-            });  /* PrivilegedAction */
-        }  /* if */
+            SharedSecrets.getJavaLangAccess().invalidatePackageAccessCache();
+        }
     }
 
     private static void check(String directive) {

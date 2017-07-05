@@ -1942,13 +1942,12 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // Initialize publicLookup early, to avoid bootstrapping circularities
-        // with security manager using java.lang.invoke infrastructure.
-        java.lang.invoke.MethodHandles.publicLookup();
-
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
+            // ensure image reader for java.base is initialized before security manager
+            Object.class.getResource("module-info.class");
+
             if (cn.isEmpty() || "default".equals(cn)) {
                 System.setSecurityManager(new SecurityManager());
             } else {
@@ -2052,6 +2051,9 @@ public final class System {
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void invalidatePackageAccessCache() {
+                SecurityManager.invalidatePackageAccessCache();
             }
         });
     }

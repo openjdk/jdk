@@ -1344,6 +1344,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             }
         }
 
+        @SuppressWarnings("deprecation")
         private static MouseEvent newMouseEvent(
             Component source, Point point, MouseEvent template )
         {
