@@ -2580,7 +2580,7 @@ class CommandLineFlags {
   diagnostic(bool, DebugInlinedCalls, true,                                 \
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
-  product(bool, PrintVMOptions, trueInDebug,                                \
+  product(bool, PrintVMOptions, NOT_EMBEDDED(trueInDebug) EMBEDDED_ONLY(false),\
          "Print flags that appeared on the command line")                   \
                                                                             \
   product(bool, IgnoreUnrecognizedVMOptions, false,                         \
