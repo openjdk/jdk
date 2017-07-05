@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: ErrorMessages_zh_CN.java,v 1.2.4.1 2005/09/14 05:52:21 pvedula Exp $
+ * $Id: ErrorMessages_zh_CN.java /st_wptg_1.8.0.0.0jdk/3 2013/11/11 11:39:28 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
@@ -212,7 +212,7 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "\u4F7F\u7528\u7684 SAX \u8BED\u6CD5\u5206\u6790\u5668\u4E0D\u4F1A\u5904\u7406 DTD \u58F0\u660E\u4E8B\u4EF6\u3002"},
+        "\u4F7F\u7528\u7684 SAX \u89E3\u6790\u5668\u4E0D\u4F1A\u5904\u7406 DTD \u58F0\u660E\u4E8B\u4EF6\u3002"},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -221,7 +221,7 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "\u4F7F\u7528\u7684 SAX \u8BED\u6CD5\u5206\u6790\u5668\u4E0D\u652F\u6301 XML \u540D\u79F0\u7A7A\u95F4\u3002"},
+        "\u4F7F\u7528\u7684 SAX \u89E3\u6790\u5668\u4E0D\u652F\u6301 XML \u540D\u79F0\u7A7A\u95F4\u3002"},
 
         /*
          * Note to translators:  The substitution text is the URI that was in

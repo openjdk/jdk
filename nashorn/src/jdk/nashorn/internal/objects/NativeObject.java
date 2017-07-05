@@ -484,10 +484,12 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object hasOwnProperty(final Object self, final Object v) {
-        final String str = JSType.toString(v);
+        // Convert ScriptObjects to primitive with String.class hint
+        // but no need to convert other primitives to string.
+        final Object key = JSType.toPrimitive(v, String.class);
         final Object obj = Global.toObject(self);
 
-        return (obj instanceof ScriptObject) && ((ScriptObject)obj).hasOwnProperty(str);
+        return (obj instanceof ScriptObject) && ((ScriptObject)obj).hasOwnProperty(key);
     }
 
     /**

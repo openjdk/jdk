@@ -31,7 +31,7 @@ import sun.awt.SunToolkit;
 
 /*
  * @test
- * @bug 8007156
+ * @bug 8007156 8025126
  * @summary Extended key code is not set for a key event
  * @author Alexandr Scherbatiy
  * @run main ExtendedKeyCodeTest
@@ -44,6 +44,7 @@ public class ExtendedKeyCodeTest {
     public static void main(String[] args) throws Exception {
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
+        robot.setAutoDelay(50);
 
         Frame frame = new Frame();
         frame.setSize(300, 300);
@@ -54,14 +55,14 @@ public class ExtendedKeyCodeTest {
             public void keyPressed(KeyEvent e) {
                 eventsCount++;
                 setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                    == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
+                        == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
                 eventsCount++;
                 setExtendedKeyCode = setExtendedKeyCode && (e.getExtendedKeyCode()
-                    == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
+                        == ExtendedKeyCodes.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
         });
 
@@ -76,6 +77,30 @@ public class ExtendedKeyCodeTest {
 
         if (eventsCount != 2 || !setExtendedKeyCode) {
             throw new RuntimeException("Wrong extended key code");
+        }
+
+        frame = new Frame();
+        frame.setSize(300, 300);
+        setExtendedKeyCode = false;
+
+        frame.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                setExtendedKeyCode = e.getExtendedKeyCode() == KeyEvent.VK_LEFT;
+            }
+        });
+
+        frame.setVisible(true);
+        toolkit.realSync();
+
+        robot.keyPress(KeyEvent.VK_LEFT);
+        robot.keyRelease(KeyEvent.VK_LEFT);
+        toolkit.realSync();
+        frame.dispose();
+
+        if (!setExtendedKeyCode) {
+            throw new RuntimeException("Wrong extended key code!");
         }
     }
 }
