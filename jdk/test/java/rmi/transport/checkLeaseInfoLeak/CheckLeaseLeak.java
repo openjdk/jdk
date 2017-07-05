@@ -28,8 +28,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build CheckLeaseLeak CheckLeaseLeak_Stub LeaseLeakClient LeaseLeak
- * @build TestLibrary
+ * @build TestLibrary CheckLeaseLeak_Stub LeaseLeakClient LeaseLeak
  * @run main/othervm/timeout=240 CheckLeaseLeak
  *
  */

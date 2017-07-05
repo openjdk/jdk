@@ -28,10 +28,7 @@
  * @author Laird Dornin; code borrowed from Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build MyRMI
- * @build CheckAnnotations
- * @build CheckAnnotations_Stub
+ * @build TestLibrary RMID MyRMI CheckAnnotations_Stub
  * @run main/othervm/policy=security.policy/timeout=480 CheckAnnotations
  */
 

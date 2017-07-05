@@ -30,7 +30,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build ClassPathCodebase Dummy TestLibrary
+ * @build TestLibrary Dummy
  * @run main/othervm/policy=security.policy ClassPathCodebase
  */
 

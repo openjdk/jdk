@@ -31,12 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build Receiver
- * @build UseCodebaseOnly
- * @build UseCodebaseOnly_Stub
- * @build Foo
- * @build Bar
+ * @build TestLibrary Receiver UseCodebaseOnly_Stub Foo Bar
  * @run main/othervm/policy=security.policy UseCodebaseOnly
  */
 

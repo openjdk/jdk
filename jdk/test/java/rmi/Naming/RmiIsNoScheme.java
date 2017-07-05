@@ -30,7 +30,6 @@
  *
  * @library ../testlibrary
  * @build TestLibrary
- * @build RmiIsNoScheme
  * @run main/othervm RmiIsNoScheme
  */
 

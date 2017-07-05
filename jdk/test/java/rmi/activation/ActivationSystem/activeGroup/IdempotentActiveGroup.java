@@ -23,15 +23,13 @@
 
 /* @test
  * @bug 4720528
- *
  * @summary synopsis: (spec) ActivationSystem.activeGroup spec should be
  * relaxed (duplicate call to activeGroup with same instantiator and
  * incarnation should not throw ActivationException; it should succeed)
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID
- * @build IdempotentActiveGroup
+ * @build TestLibrary RMID ActivationLibrary
  * @run main/othervm/policy=security.policy/timeout=480 IdempotentActiveGroup
  */
 

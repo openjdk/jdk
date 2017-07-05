@@ -5,3 +5,4 @@
 # implementation class
 #
 com.bar.TimeZoneNameProviderImpl
+com.bar.GenericTimeZoneNameProviderImpl

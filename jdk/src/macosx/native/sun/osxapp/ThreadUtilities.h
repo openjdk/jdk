@@ -139,7 +139,7 @@ __attribute__((visibility("default")))
 + (JNIEnv*)getJNIEnvUncached;
 
 + (void)performOnMainThread:(SEL)aSelector onObject:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait awtMode:(BOOL)inAWT;
-
++ (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block;
 @end
 
 void OSXAPP_SetJavaVM(JavaVM *vm);

@@ -51,7 +51,7 @@ export CLASSPATH
 
 TMPFILE="$$.tmp"
 touch $TMPFILE
-$JAVA DeleteOnClose $TMPFILE 2>&1
+$JAVA ${TESTVMOPTS} DeleteOnClose $TMPFILE 2>&1
 if [ $? != 0 ]; then exit 1; fi
 if [ -f $TMPFILE ]; then
     echo "$TMPFILE was not deleted"

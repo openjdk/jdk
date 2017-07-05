@@ -55,11 +55,10 @@
  * has been reached.
  *
  * @library ../../testlibrary
- *
- * @build Apple AppleEvent AppleImpl AppleUserImpl
- * @build Orange OrangeEcho OrangeEchoImpl OrangeImpl
- * @build ApplicationServer
  * @build TestLibrary
+ *     Apple AppleEvent AppleImpl
+ *     Orange OrangeEcho OrangeEchoImpl OrangeImpl
+ *     ApplicationServer
  *
  * @run main/othervm/policy=security.policy AppleUserImpl -seconds 30
  *

@@ -103,6 +103,17 @@ public class FormatData_mt extends ListResourceBundle {
                     "Sib",
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u0126",
+                    "T",
+                    "T",
+                    "E",
+                    "\u0126",
+                    "\u0120",
+                    "S",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "QN",

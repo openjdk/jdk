@@ -28,8 +28,7 @@
  *
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
- * @build RestartLatecomer
- * @build RestartLatecomer_Stub
+ *     RestartLatecomer RestartLatecomer_Stub
  * @run main/othervm/policy=security.policy/timeout=240 RestartLatecomer
  */
 

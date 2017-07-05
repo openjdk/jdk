@@ -604,5 +604,12 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
             assert tznp != null;
             return tznp.getDisplayName(ID, daylight, style, locale);
         }
+
+        @Override
+        public String getGenericDisplayName(String ID, int style, Locale locale) {
+            TimeZoneNameProvider tznp = getImpl(locale);
+            assert tznp != null;
+            return tznp.getGenericDisplayName(ID, style, locale);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,8 @@ import sun.security.util.SecurityConstants;
  * <code>getPolicy</code> installs an instance of the default Policy
  * implementation (a default subclass implementation of this abstract class).
  * The default Policy implementation can be changed by setting the value
- * of the "policy.provider" security property (in the Java security properties
- * file) to the fully qualified name of the desired Policy subclass
- * implementation.  The Java security properties file is located in the
- * file named &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
+ * of the {@code policy.provider} security property to the fully qualified
+ * name of the desired Policy subclass implementation.
  *
  * <p> Application code can directly subclass Policy to provide a custom
  * implementation.  In addition, an instance of a Policy object can be
@@ -84,6 +80,7 @@ import sun.security.util.SecurityConstants;
  * @see java.security.Provider
  * @see java.security.ProtectionDomain
  * @see java.security.Permission
+ * @see java.security.Security security properties
  */
 
 public abstract class Policy {

@@ -104,6 +104,17 @@ public class FormatData_ja extends ListResourceBundle {
                     "\u571f"  // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "\u65e5",
+                    "\u6708",
+                    "\u706b",
+                    "\u6c34",
+                    "\u6728",
+                    "\u91d1",
+                    "\u571f",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "\u5348\u524d", // am marker

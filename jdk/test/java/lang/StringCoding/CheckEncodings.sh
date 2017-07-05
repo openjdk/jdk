@@ -49,7 +49,7 @@ runTest() {
   echo "Testing:" ${1}
   set LC_ALL="${1}"; export LC_ALL
   locale
-  ${TESTJAVA}/bin/java -version 2>&1
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} -version 2>&1
   expectPass $?
 }
 

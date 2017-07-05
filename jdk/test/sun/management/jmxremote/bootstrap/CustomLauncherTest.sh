@@ -150,7 +150,7 @@ while true; do
 done
 
 # Start the manager - this should connect to VM
-${TESTJAVA}/bin/java -classpath ${TESTCLASSES}:${TESTJAVA}/lib/tools.jar \
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTCLASSES}:${TESTJAVA}/lib/tools.jar \
   TestManager $pid $port true
 if [ $? != 0 ]; then 
     echo "Test failed"
