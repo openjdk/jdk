@@ -245,6 +245,8 @@ struct Flag {
 
   bool is_unlocker_ext() const;
   bool is_unlocked_ext() const;
+  bool is_writeable_ext() const;
+  bool is_external_ext() const;
 
   void print_on(outputStream* st, bool withComments = false );
   void print_as_flag(outputStream* st);

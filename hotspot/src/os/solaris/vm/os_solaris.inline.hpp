@@ -243,24 +243,25 @@ inline int os::socket_shutdown(int fd, int howto){
   return ::shutdown(fd, howto);
 }
 
-inline int os::get_sock_name(int fd, struct sockaddr *him, int *len){
-  return ::getsockname(fd, him, (socklen_t*) len);
+inline int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len){
+  return ::getsockname(fd, him, len);
 }
 
 inline int os::get_host_name(char* name, int namelen){
   return ::gethostname(name, namelen);
 }
 
-inline struct hostent*  os::get_host_by_name(char* name) {
+inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
 }
+
 inline int os::get_sock_opt(int fd, int level, int optname,
-                             char *optval, int* optlen){
-  return ::getsockopt(fd, level, optname, optval, (socklen_t*) optlen);
+                            char* optval, socklen_t* optlen) {
+  return ::getsockopt(fd, level, optname, optval, optlen);
 }
 
 inline int os::set_sock_opt(int fd, int level, int optname,
-                             const char *optval, int optlen){
+                            const char *optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif // OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP

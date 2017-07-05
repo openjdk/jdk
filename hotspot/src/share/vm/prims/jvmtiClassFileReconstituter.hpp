@@ -119,6 +119,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_source_debug_extension_attribute();
   u2 line_number_table_entries(methodHandle method);
   void write_line_number_table_attribute(methodHandle method, u2 num_entries);
+  void write_local_variable_table_attribute(methodHandle method, u2 num_entries);
   void write_stackmap_table_attribute(methodHandle method, int stackmap_table_len);
   u2 inner_classes_attribute_length();
   void write_inner_classes_attribute(int length);
