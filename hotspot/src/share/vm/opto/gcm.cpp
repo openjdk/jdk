@@ -617,6 +617,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
             assert(!LCA_orig->dominates(pred_block) ||
                    early->dominates(pred_block), "early is high enough");
             must_raise_LCA = true;
+          } else {
+            // anti-dependent upon PHI pinned below 'early', no edge needed
+            LCA = early;             // but can not schedule below 'early'
           }
         }
       }

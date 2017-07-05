@@ -2052,7 +2052,7 @@ void Parse::do_one_bytecode() {
     // null exception oop throws NULL pointer exception
     do_null_check(peek(), T_OBJECT);
     if (stopped())  return;
-    if (JvmtiExport::can_post_exceptions()) {
+    if (env()->jvmti_can_post_exceptions()) {
       // "Full-speed throwing" is not necessary here,
       // since we're notifying the VM on every throw.
       uncommon_trap(Deoptimization::Reason_unhandled,
