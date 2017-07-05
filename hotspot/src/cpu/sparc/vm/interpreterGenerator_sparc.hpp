@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
   address generate_normal_entry(bool synchronized);
   address generate_native_entry(bool synchronized);
   address generate_abstract_entry(void);
+  address generate_method_handle_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_empty_entry(void);
   address generate_accessor_entry(void);
