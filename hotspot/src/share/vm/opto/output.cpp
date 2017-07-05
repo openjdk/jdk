@@ -48,6 +48,7 @@ void Compile::Output() {
   // Initialize the space for the BufferBlob used to find and verify
   // instruction size in MachNode::emit_size()
   init_scratch_buffer_blob();
+  if (failing())  return; // Out of memory
 
   // Make sure I can find the Start Node
   Block_Array& bbs = _cfg->_bbs;

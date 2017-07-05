@@ -29,7 +29,8 @@ DEBUG_CFLAGS/DEFAULT= $(DEBUG_CFLAGS)
 DEBUG_CFLAGS/BYFILE = $(DEBUG_CFLAGS/$@)$(DEBUG_CFLAGS/DEFAULT$(DEBUG_CFLAGS/$@))
 
 ifeq ("${Platform_compiler}", "sparcWorks")
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.8), 1)
+
+ifeq ($(COMPILER_REV),5.8))
   # SS11 SEGV when compiling with -g and -xarch=v8, using different backend
   DEBUG_CFLAGS/compileBroker.o = $(DEBUG_CFLAGS) -xO0
   DEBUG_CFLAGS/jvmtiTagMap.o   = $(DEBUG_CFLAGS) -xO0
