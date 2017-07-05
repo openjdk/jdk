@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ class CopyrightHeaders {
         " * Copyright (c) 2012, %d, Oracle and/or its affiliates. All rights reserved.\n" +
         " */\n";
 
-    // Last updated:  - 1/16/2015, 1:42:31 PM
+    // Last updated:  - 6/06/2016, 1:42:31 PM
     private static final String UNICODE =
         "/*\n" +
         " * COPYRIGHT AND PERMISSION NOTICE\n" +
         " *\n" +
-        " * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.\n" +
+        " * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.\n" +
         " * Distributed under the Terms of Use in \n" +
         " * http://www.unicode.org/copyright.html.\n" +
         " *\n" +

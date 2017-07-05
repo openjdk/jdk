@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -67,7 +67,7 @@ public final class ClassForNamePlugin implements Plugin {
         return index == -1 ? "" : binaryName.substring(0, index);
     }
 
-    private ModuleEntry transform(ModuleEntry resource, Map<String, ModuleEntry> classes) {
+    private ModuleEntry transform(ModuleEntry resource, ModulePool pool) {
         byte[] inBytes = resource.getBytes();
         ClassReader cr = new ClassReader(inBytes);
         ClassNode cn = new ClassNode();
@@ -96,10 +96,11 @@ public final class ClassForNamePlugin implements Plugin {
                         min.desc.equals("(Ljava/lang/String;)Ljava/lang/Class;")) {
                         String ldcClassName = ldc.cst.toString();
                         String thatClassName = ldcClassName.replaceAll("\\.", "/");
-                        ModuleEntry thatClass = classes.get(thatClassName);
+                        Optional<ModuleEntry> thatClass =
+                            pool.findEntryInContext(thatClassName + ".class", resource);
 
-                        if (thatClass != null) {
-                            int thatAccess = getAccess(thatClass);
+                        if (thatClass.isPresent()) {
+                            int thatAccess = getAccess(thatClass.get());
                             String thatPackage = getPackage(thatClassName);
 
                             if ((thatAccess & Opcodes.ACC_PRIVATE) != Opcodes.ACC_PRIVATE &&
@@ -142,19 +143,13 @@ public final class ClassForNamePlugin implements Plugin {
     public void visit(ModulePool in, ModulePool out) {
         Objects.requireNonNull(in);
         Objects.requireNonNull(out);
-        Map<String, ModuleEntry> classes = in.entries()
-            .filter(resource -> resource != null &&
-                    resource.getPath().endsWith(".class") &&
-                    !resource.getPath().endsWith("/module-info.class"))
-            .collect(Collectors.toMap(resource -> binaryClassName(resource.getPath()),
-                                      resource -> resource));
+
         in.entries()
-            .filter(resource -> resource != null)
             .forEach(resource -> {
                 String path = resource.getPath();
 
                 if (path.endsWith(".class") && !path.endsWith("/module-info.class")) {
-                    out.add(transform(resource, classes));
+                    out.add(transform(resource, in));
                 } else {
                     out.add(resource);
                 }

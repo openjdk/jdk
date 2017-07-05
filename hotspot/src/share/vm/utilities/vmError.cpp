@@ -205,16 +205,39 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 static void print_oom_reasons(outputStream* st) {
   st->print_cr("# Possible reasons:");
   st->print_cr("#   The system is out of physical RAM or swap space");
-  st->print_cr("#   In 32 bit mode, the process size limit was hit");
+  if (UseCompressedOops) {
+    st->print_cr("#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
+  }
+  if (LogBytesPerWord == 2) {
+    st->print_cr("#   In 32 bit mode, the process size limit was hit");
+  }
   st->print_cr("# Possible solutions:");
   st->print_cr("#   Reduce memory load on the system");
   st->print_cr("#   Increase physical memory or swap space");
   st->print_cr("#   Check if swap backing store is full");
-  st->print_cr("#   Use 64 bit Java on a 64 bit OS");
+  if (LogBytesPerWord == 2) {
+    st->print_cr("#   Use 64 bit Java on a 64 bit OS");
+  }
   st->print_cr("#   Decrease Java heap size (-Xmx/-Xms)");
   st->print_cr("#   Decrease number of Java threads");
   st->print_cr("#   Decrease Java thread stack sizes (-Xss)");
   st->print_cr("#   Set larger code cache with -XX:ReservedCodeCacheSize=");
+  if (UseCompressedOops) {
+    switch (Universe::narrow_oop_mode()) {
+      case Universe::UnscaledNarrowOop:
+        st->print_cr("#   JVM is running with Unscaled Compressed Oops mode in which the Java heap is");
+        st->print_cr("#     placed in the first 4GB address space. The Java Heap base address is the");
+        st->print_cr("#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress");
+        st->print_cr("#     to set the Java Heap base and to place the Java Heap above 4GB virtual address.");
+        break;
+      case Universe::ZeroBasedNarrowOop:
+        st->print_cr("#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is");
+        st->print_cr("#     placed in the first 32GB address space. The Java Heap base address is the");
+        st->print_cr("#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress");
+        st->print_cr("#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.");
+        break;
+    }
+  }
   st->print_cr("# This output file may be truncated or incomplete.");
 }
 

@@ -417,6 +417,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "timeZoneNames":
             pushContainer(qName, attributes);
             break;
+        case "hourFormat":
+            pushStringEntry(qName, attributes, "timezone.hourFormat");
+            break;
+        case "gmtFormat":
+            pushStringEntry(qName, attributes, "timezone.gmtFormat");
+            break;
         case "zone":
             {
                 String tzid = attributes.getValue("type"); // Olson tz id

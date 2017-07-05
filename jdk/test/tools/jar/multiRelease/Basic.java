@@ -220,7 +220,7 @@ public class Basic {
 
     private void checkMultiRelease(String jarFile, boolean expected) throws IOException {
         try (JarFile jf = new JarFile(new File(jarFile), true, ZipFile.OPEN_READ,
-                JarFile.Release.RUNTIME)) {
+                JarFile.runtimeVersion())) {
             assertEquals(jf.isMultiRelease(), expected);
         }
     }
