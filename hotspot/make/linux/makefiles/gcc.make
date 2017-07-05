@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 #------------------------------------------------------------------------
@@ -62,7 +62,6 @@ else
   CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 endif
 
-
 ifeq ($(USE_CLANG), true)
   # Clang has precompiled headers support by default, but the user can switch
   # it off by using 'USE_PRECOMPILED_HEADER=0'.
@@ -104,7 +103,7 @@ ifeq ($(USE_CLANG), true)
     # But Clang doesn't support a precompiled header which was compiled with -O3
     # to be used in a compilation unit which uses '-O0'. We could also prepare an
     # extra '-O0' PCH file for the opt build and use it here, but it's probably
-    # not worth the effoert as long as only two files need this special handling.
+    # not worth the effort as long as only two files need this special handling.
     PCH_FLAG/loopTransform.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrig.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrans.o = $(PCH_FLAG/NO_PCH)
@@ -226,19 +225,28 @@ ifeq ($(USE_CLANG),)
 endif
 
 CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)
-# Special cases
-CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@)) 
 
-# The flags to use for an Optimized g++ build
+# Special cases
+CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
+
+# optimization control flags (Used by fastdebug and release variants)
+OPT_CFLAGS/NOOPT=-O0
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  OPT_CFLAGS/DEBUG=-Og
+else
+  # Allow no optimizations.
+  OPT_CFLAGS/DEBUG=-O0
+endif
 OPT_CFLAGS/SIZE=-Os
 OPT_CFLAGS/SPEED=-O3
+
+OPT_CFLAGS_DEFAULT ?= SPEED
 
 # Hotspot uses very unstrict aliasing turn this optimization off
 # This option is added to CFLAGS rather than OPT_CFLAGS
 # so that OPT_CFLAGS overrides get this option too.
-CFLAGS += -fno-strict-aliasing 
-
-OPT_CFLAGS_DEFAULT ?= SPEED
+CFLAGS += -fno-strict-aliasing
 
 ifdef OPT_CFLAGS
   ifneq ("$(origin OPT_CFLAGS)", "command line")
@@ -248,13 +256,11 @@ endif
 
 OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 
-# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp 
+# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp
 # if we use expensive-optimizations
 ifeq ($(BUILDARCH), ia64)
 OPT_CFLAGS += -fno-expensive-optimizations
 endif
-
-OPT_CFLAGS/NOOPT=-O0
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
@@ -271,7 +277,7 @@ endif
 # Flags for generating make dependency flags.
 DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
 ifeq ($(USE_CLANG),)
-  ifneq ("${CC_VER_MAJOR}", "2")
+  ifneq ($(CC_VER_MAJOR), 2)
     DEPFLAGS += -fpch-deps
   endif
 endif
@@ -282,21 +288,26 @@ endif
 # statically link libstdc++.so, work with gcc but ignored by g++
 STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
 
+# Enable linker optimization
+LFLAGS += -Xlinker -O1
+
 ifeq ($(USE_CLANG),)
-  # statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.
-  ifneq ("${CC_VER_MAJOR}", "2")
-    STATIC_LIBGCC += -static-libgcc
+  STATIC_LIBGCC += -static-libgcc
+
+  ifneq (, findstring(debug,$(BUILD_FLAVOR)))
+    # for relocations read-only
+    LFLAGS += -Xlinker -z -Xlinker relro
+
+    ifeq ($(BUILD_FLAVOR), debug)
+      # disable incremental relocations linking
+      LFLAGS += -Xlinker -z -Xlinker now
+    endif
   endif
 
   ifeq ($(BUILDARCH), ia64)
     LFLAGS += -Wl,-relax
   endif
-endif
 
-# Enable linker optimization
-LFLAGS += -Xlinker -O1
-
-ifeq ($(USE_CLANG),)
   # If this is a --hash-style=gnu system, use --hash-style=both
   #   The gnu .hash section won't work on some Linux systems like SuSE 10.
   _HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | grep -- '--hash-style=gnu')
@@ -333,6 +344,14 @@ ifeq ($(USE_CLANG), true)
   CFLAGS += -flimit-debug-info
 endif
 
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  DEBUG_CFLAGS=-Og
+else
+  # Allow no optimizations.
+  DEBUG_CFLAGS=-O0
+endif
+
 # DEBUG_BINARIES uses full -g debug information for all configs
 ifeq ($(DEBUG_BINARIES), true)
   CFLAGS += -g
@@ -352,6 +371,18 @@ else
     ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
       OPT_CFLAGS += -g
     endif
+  endif
+endif
+
+ifeq ($(USE_CLANG),)
+  # Enable bounds checking.
+  # _FORTIFY_SOURCE appears in GCC 4.0+
+  ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) )" "1"
+    # compile time size bounds checks
+    FASTDEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+
+    # and runtime size bounds checks and paranoid stack smashing checks.
+    DEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1
   endif
 endif
 

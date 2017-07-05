@@ -1119,10 +1119,10 @@ void GenCollectedHeap::print_on_error(outputStream* st) const {
 }
 
 void GenCollectedHeap::print_tracing_info() const {
-  if (TraceGen0Time) {
+  if (TraceYoungGenTime) {
     get_gen(0)->print_summary_info();
   }
-  if (TraceGen1Time) {
+  if (TraceOldGenTime) {
     get_gen(1)->print_summary_info();
   }
 }

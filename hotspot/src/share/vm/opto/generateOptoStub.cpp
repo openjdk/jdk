@@ -50,7 +50,7 @@ void GraphKit::gen_stub(address C_function,
   const TypeTuple *jrange  = C->tf()->range();
 
   // The procedure start
-  StartNode* start = new (C) StartNode(root(), jdomain);
+  StartNode* start = new StartNode(root(), jdomain);
   _gvn.set_type_bottom(start);
 
   // Make a map, with JVM state
@@ -64,7 +64,7 @@ void GraphKit::gen_stub(address C_function,
   jvms->set_scloff(max_map);
   jvms->set_endoff(max_map);
   {
-    SafePointNode *map = new (C) SafePointNode( max_map, jvms );
+    SafePointNode *map = new SafePointNode( max_map, jvms );
     jvms->set_map(map);
     set_jvms(jvms);
     assert(map == this->map(), "kit.map is set");
@@ -73,7 +73,7 @@ void GraphKit::gen_stub(address C_function,
   // Make up the parameters
   uint i;
   for( i = 0; i < parm_cnt; i++ )
-    map()->init_req(i, _gvn.transform(new (C) ParmNode(start, i)));
+    map()->init_req(i, _gvn.transform(new ParmNode(start, i)));
   for( ; i<map()->req(); i++ )
     map()->init_req(i, top());      // For nicer debugging
 
@@ -81,7 +81,7 @@ void GraphKit::gen_stub(address C_function,
   set_all_memory(map()->memory());
 
   // Get base of thread-local storage area
-  Node* thread = _gvn.transform( new (C) ThreadLocalNode() );
+  Node* thread = _gvn.transform( new ThreadLocalNode() );
 
   const int NoAlias = Compile::AliasIdxBot;
 
@@ -166,8 +166,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node
-  CallRuntimeNode *call = new (C)
-    CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM);
+  CallRuntimeNode *call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM);
   //-----------------------------
 
   // Fix-up the debug info for the call
@@ -184,7 +183,7 @@ void GraphKit::gen_stub(address C_function,
   for (; i < parm_cnt; i++) { // Regular input arguments
     // Convert ints to longs if required.
     if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(i)->isa_int()) {
-      Node* int_as_long = _gvn.transform(new (C) ConvI2LNode(map()->in(i)));
+      Node* int_as_long = _gvn.transform(new ConvI2LNode(map()->in(i)));
       call->init_req(cnt++, int_as_long); // long
       call->init_req(cnt++, top());       // half
     } else {
@@ -200,23 +199,23 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Now set up the return results
-  set_control( _gvn.transform( new (C) ProjNode(call,TypeFunc::Control)) );
-  set_i_o(     _gvn.transform( new (C) ProjNode(call,TypeFunc::I_O    )) );
+  set_control( _gvn.transform( new ProjNode(call,TypeFunc::Control)) );
+  set_i_o(     _gvn.transform( new ProjNode(call,TypeFunc::I_O    )) );
   set_all_memory_call(call);
   if (range->cnt() > TypeFunc::Parms) {
-    Node* retnode = _gvn.transform( new (C) ProjNode(call,TypeFunc::Parms) );
+    Node* retnode = _gvn.transform( new ProjNode(call,TypeFunc::Parms) );
     // C-land is allowed to return sub-word values.  Convert to integer type.
     assert( retval != Type::TOP, "" );
     if (retval == TypeInt::BOOL) {
-      retnode = _gvn.transform( new (C) AndINode(retnode, intcon(0xFF)) );
+      retnode = _gvn.transform( new AndINode(retnode, intcon(0xFF)) );
     } else if (retval == TypeInt::CHAR) {
-      retnode = _gvn.transform( new (C) AndINode(retnode, intcon(0xFFFF)) );
+      retnode = _gvn.transform( new AndINode(retnode, intcon(0xFFFF)) );
     } else if (retval == TypeInt::BYTE) {
-      retnode = _gvn.transform( new (C) LShiftINode(retnode, intcon(24)) );
-      retnode = _gvn.transform( new (C) RShiftINode(retnode, intcon(24)) );
+      retnode = _gvn.transform( new LShiftINode(retnode, intcon(24)) );
+      retnode = _gvn.transform( new RShiftINode(retnode, intcon(24)) );
     } else if (retval == TypeInt::SHORT) {
-      retnode = _gvn.transform( new (C) LShiftINode(retnode, intcon(16)) );
-      retnode = _gvn.transform( new (C) RShiftINode(retnode, intcon(16)) );
+      retnode = _gvn.transform( new LShiftINode(retnode, intcon(16)) );
+      retnode = _gvn.transform( new RShiftINode(retnode, intcon(16)) );
     }
     map()->set_req( TypeFunc::Parms, retnode );
   }
@@ -253,21 +252,21 @@ void GraphKit::gen_stub(address C_function,
 
   Node* exit_memory = reset_memory();
 
-  Node* cmp = _gvn.transform( new (C) CmpPNode(pending, null()) );
-  Node* bo  = _gvn.transform( new (C) BoolNode(cmp, BoolTest::ne) );
+  Node* cmp = _gvn.transform( new CmpPNode(pending, null()) );
+  Node* bo  = _gvn.transform( new BoolNode(cmp, BoolTest::ne) );
   IfNode   *iff = create_and_map_if(control(), bo, PROB_MIN, COUNT_UNKNOWN);
 
-  Node* if_null     = _gvn.transform( new (C) IfFalseNode(iff) );
-  Node* if_not_null = _gvn.transform( new (C) IfTrueNode(iff)  );
+  Node* if_null     = _gvn.transform( new IfFalseNode(iff) );
+  Node* if_not_null = _gvn.transform( new IfTrueNode(iff)  );
 
   assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
   Node *exc_target = makecon(TypeRawPtr::make( StubRoutines::forward_exception_entry() ));
-  Node *to_exc = new (C) TailCallNode(if_not_null,
-                                      i_o(),
-                                      exit_memory,
-                                      frameptr(),
-                                      returnadr(),
-                                      exc_target, null());
+  Node *to_exc = new TailCallNode(if_not_null,
+                                  i_o(),
+                                  exit_memory,
+                                  frameptr(),
+                                  returnadr(),
+                                  exc_target, null());
   root()->add_req(_gvn.transform(to_exc));  // bind to root to keep live
   C->init_start(start);
 
@@ -277,27 +276,27 @@ void GraphKit::gen_stub(address C_function,
   switch( is_fancy_jump ) {
   case 0:                       // Make a return instruction
     // Return to caller, free any space for return address
-    ret = new (C) ReturnNode(TypeFunc::Parms, if_null,
-                             i_o(),
-                             exit_memory,
-                             frameptr(),
-                             returnadr());
+    ret = new ReturnNode(TypeFunc::Parms, if_null,
+                         i_o(),
+                         exit_memory,
+                         frameptr(),
+                         returnadr());
     if (C->tf()->range()->cnt() > TypeFunc::Parms)
       ret->add_req( map()->in(TypeFunc::Parms) );
     break;
   case 1:    // This is a fancy tail-call jump.  Jump to computed address.
     // Jump to new callee; leave old return address alone.
-    ret = new (C) TailCallNode(if_null,
-                               i_o(),
-                               exit_memory,
-                               frameptr(),
-                               returnadr(),
-                               target, map()->in(TypeFunc::Parms));
+    ret = new TailCallNode(if_null,
+                           i_o(),
+                           exit_memory,
+                           frameptr(),
+                           returnadr(),
+                           target, map()->in(TypeFunc::Parms));
     break;
   case 2:                       // Pop return address & jump
     // Throw away old return address; jump to new computed address
     //assert(C_function == CAST_FROM_FN_PTR(address, OptoRuntime::rethrow_C), "fancy_jump==2 only for rethrow");
-    ret = new (C) TailJumpNode(if_null,
+    ret = new TailJumpNode(if_null,
                                i_o(),
                                exit_memory,
                                frameptr(),

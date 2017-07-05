@@ -45,17 +45,17 @@ uint ConNode::hash() const {
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
   switch( t->basic_type() ) {
-  case T_INT:         return new (C) ConINode( t->is_int() );
-  case T_LONG:        return new (C) ConLNode( t->is_long() );
-  case T_FLOAT:       return new (C) ConFNode( t->is_float_constant() );
-  case T_DOUBLE:      return new (C) ConDNode( t->is_double_constant() );
-  case T_VOID:        return new (C) ConNode ( Type::TOP );
-  case T_OBJECT:      return new (C) ConPNode( t->is_ptr() );
-  case T_ARRAY:       return new (C) ConPNode( t->is_aryptr() );
-  case T_ADDRESS:     return new (C) ConPNode( t->is_ptr() );
-  case T_NARROWOOP:   return new (C) ConNNode( t->is_narrowoop() );
-  case T_NARROWKLASS: return new (C) ConNKlassNode( t->is_narrowklass() );
-  case T_METADATA:    return new (C) ConPNode( t->is_ptr() );
+  case T_INT:         return new ConINode( t->is_int() );
+  case T_LONG:        return new ConLNode( t->is_long() );
+  case T_FLOAT:       return new ConFNode( t->is_float_constant() );
+  case T_DOUBLE:      return new ConDNode( t->is_double_constant() );
+  case T_VOID:        return new ConNode ( Type::TOP );
+  case T_OBJECT:      return new ConPNode( t->is_ptr() );
+  case T_ARRAY:       return new ConPNode( t->is_aryptr() );
+  case T_ADDRESS:     return new ConPNode( t->is_ptr() );
+  case T_NARROWOOP:   return new ConNNode( t->is_narrowoop() );
+  case T_NARROWKLASS: return new ConNKlassNode( t->is_narrowklass() );
+  case T_METADATA:    return new ConPNode( t->is_ptr() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
