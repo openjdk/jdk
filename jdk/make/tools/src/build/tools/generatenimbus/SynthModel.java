@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package build.tools.generatenimbus;
 
-import java.awt.Font;
 import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.*;
 
 
@@ -76,141 +74,5 @@ public class SynthModel {
             c.write(defBuffer, styleBuffer, c, prefix, packageName);
             defBuffer.append('\n');
         }
-    }
-}
-
-class Typeface {
-    public enum DeriveStyle {
-        Default, Off, On;
-
-        @Override public String toString() {
-            switch (this) {
-                default:  return "null";
-                case On:  return "true";
-                case Off: return "false";
-            }
-        }
-    }
-
-    @XmlAttribute private String uiDefaultParentName;
-    @XmlAttribute(name="family") private String name;
-    @XmlAttribute private int size;
-    @XmlAttribute private DeriveStyle bold = DeriveStyle.Default;
-    @XmlAttribute private DeriveStyle italic = DeriveStyle.Default;
-    @XmlAttribute private float sizeOffset = 1f;
-
-    public boolean isAbsolute() {
-        return uiDefaultParentName == null;
-    }
-
-    public String write() {
-        if (isAbsolute()) {
-            int style = Font.PLAIN;
-            if (bold == DeriveStyle.On) {
-                style = style | Font.BOLD;
-            }
-            if (italic == DeriveStyle.On) {
-                style = style | Font.ITALIC;
-            }
-
-            return String.format(
-                    "new javax.swing.plaf.FontUIResource(\"%s\", %d, %d)",
-                    name, style, size);
-        } else {
-            return String.format(
-                    "new DerivedFont(\"%s\", %sf, %s, %s)",
-                    uiDefaultParentName, String.valueOf(sizeOffset), bold, italic);
-        }
-    }
-}
-
-class Border {
-    enum BorderType {
-        @XmlEnumValue("empty") EMPTY,
-        @XmlEnumValue("painter") PAINTER
-    }
-    @XmlAttribute private BorderType type;
-    @XmlAttribute private String painter;
-    @XmlAttribute private int top;
-    @XmlAttribute private int left;
-    @XmlAttribute private int bottom;
-    @XmlAttribute private int right;
-
-    public String write() {
-        switch (type) {
-            case PAINTER:
-                return String.format("new PainterBorder(\"%s\", new Insets(%d, %d, %d, %d))",
-                                     painter, top, left, bottom, right);
-            case EMPTY:
-                return String.format("BorderFactory.createEmptyBorder(%d, %d, %d, %d)",
-                                     top, left, bottom, right);
-            default:
-                return "### Look, here's an unknown border! $$$";
-        }
-    }
-}
-
-class Insets {
-    @XmlAttribute int top;
-    @XmlAttribute int left;
-    @XmlAttribute int bottom;
-    @XmlAttribute int right;
-
-    public Insets() {
-        this(0, 0, 0, 0);
-    }
-
-    public Insets(int top, int left, int bottom, int right) {
-        this.top = top;
-        this.left = left;
-        this.bottom = bottom;
-        this.right = right;
-    }
-
-    public String write(boolean uiResource) {
-        String uiSuffix = (uiResource ? "UIResource" : "");
-        return String.format("new Insets%s(%d, %d, %d, %d)",
-                             uiSuffix, top, left, bottom, right);
-    }
-}
-
-class Dimension {
-    @XmlAttribute int width;
-    @XmlAttribute int height;
-
-    public String write(boolean uiResource) {
-        String uiSuffix = (uiResource ? "UIResource" : "");
-        return String.format("new Dimension%s(%d, %d)", uiSuffix, width, height);
-    }
-}
-
-class Canvas {
-    @XmlElement private Dimension size;
-    public Dimension getSize() { return size; }
-
-    @XmlElement(name="layer") private List<Layer> layers;
-    public List<Layer> getLayers() { return layers; }
-
-    @XmlElement private Insets stretchingInsets = null;
-    public Insets getStretchingInsets() { return stretchingInsets; }
-
-    public boolean isBlank() {
-        return layers.size() == 0 || (layers.size() == 1 && layers.get(0).isEmpty());
-    }
-}
-
-class Layer {
-    /** List of shapes in this layer, first shape is painted on top */
-    @XmlElements({
-        @XmlElement(name = "ellipse", type = Ellipse.class),
-        @XmlElement(name = "path", type = Path.class),
-        @XmlElement(name = "rectangle", type = Rectangle.class)
-    })
-    @XmlElementWrapper(name="shapes")
-    private List<Shape> shapes = new ArrayList<Shape>();
-    public List<Shape> getShapes() { return shapes; }
-
-    public boolean isEmpty() {
-        return shapes.isEmpty();
     }
 }

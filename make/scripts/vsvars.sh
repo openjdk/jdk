@@ -183,6 +183,16 @@ else
   fi
 fi
 
+# VS2012 (VC11)
+if [ "${VS110COMNTOOLS}" = "" ] ; then
+  VS110COMNTOOLS="${progfiles32}/Microsoft Visual Studio 11.0/Common7/Tools/"
+  export VS110COMNTOOLS
+fi
+vc11Bin32Dir=`envpath "${VS110COMNTOOLS}"`/../../VC/Bin
+vc11Bin64Dir="${vc11Bin32Dir}"
+vc11vars32Bat="vcvars32.bat"
+vc11vars64Bat="vcvars64.bat"
+
 # VS2010 (VC10)
 if [ "${VS100COMNTOOLS}" = "" ] ; then
   VS100COMNTOOLS="${progfiles32}/Microsoft Visual Studio 10.0/Common7/Tools/"
@@ -227,7 +237,7 @@ vc7vars64Bat="SetEnv.cmd /X64"
 vcSelection=""
 
 # Parse options
-usage="Usage: $0 [-help] [-debug] [-v] [-c] [-s] [-p] [-v10] [-v9] [-v8] [-v7] [-32] [-64]"
+usage="Usage: $0 [-help] [-debug] [-v] [-c] [-s] [-p] [-v11] [-v10] [-v9] [-v8] [-v7] [-32] [-64]"
 while [ $# -gt 0 ] ; do
   if [ "$1" = "-help" ] ; then
     msg "${usage}"
@@ -237,6 +247,7 @@ while [ $# -gt 0 ] ; do
     msg "  -c       Print out csh style output"
     msg "  -s       Print out sh style output"
     msg "  -p       Print out properties style output"
+    msg "  -v11     Use Visual Studio 11 VS2012"
     msg "  -v10     Use Visual Studio 10 VS2010"
     msg "  -v9      Use Visual Studio 9 VS2008"
     msg "  -v8      Use Visual Studio 8 VS2005"
@@ -258,6 +269,13 @@ while [ $# -gt 0 ] ; do
     shift
   elif [ "$1" = "-p" ] ; then
     shellStyle="props"
+    shift
+  elif [ "$1" = "-v11" ] ; then
+    vcBin32Dir="${vc11Bin32Dir}"
+    vcBin64Dir="${vc11Bin64Dir}"
+    vcvars32Bat="${vc11vars32Bat}"
+    vcvars64Bat="${vc11vars64Bat}"
+    vcSelection="11"
     shift
   elif [ "$1" = "-v10" ] ; then
     vcBin32Dir="${vc10Bin32Dir}"
@@ -438,6 +456,8 @@ echo VS_VS90COMNTOOLS="%VS90COMNTOOLS%"
 echo export VS_VS90COMNTOOLS
 echo VS_VS100COMNTOOLS="%VS100COMNTOOLS%"
 echo export VS_VS100COMNTOOLS
+echo VS_VS110COMNTOOLS="%VS110COMNTOOLS%"
+echo export VS_VS110COMNTOOLS
 echo VS_VCINSTALLDIR="%VCINSTALLDIR%"
 echo export VS_VCINSTALLDIR
 echo VS_VSINSTALLDIR="%VSINSTALLDIR%"
@@ -570,7 +590,9 @@ printEnv MSSDK         mssdk         VS_MSSDK         "${VS_MSSDK}"
 printEnv MSTOOLS       mstools       VS_MSTOOLS       "${VS_MSTOOLS}"
 printEnv DEVENVDIR     devenvdir     VS_DEVENVDIR     "${VS_DEVENVDIR}"
 printEnv WINDOWSSDKDIR windowssdkdir VS_WINDOWSSDKDIR "${VS_WINDOWSSDKDIR}"
-if [ "${vcSelection}" = "10" ] ; then
+if [ "${vcSelection}" = "11" ] ; then
+  printEnv VS110COMNTOOLS vs110comntools VS_VS110COMNTOOLS "${VS_VS110COMNTOOLS}"
+elif [ "${vcSelection}" = "10" ] ; then
   printEnv VS100COMNTOOLS vs100comntools VS_VS100COMNTOOLS "${VS_VS100COMNTOOLS}"
 elif [ "${vcSelection}" = "9" ] ; then
   printEnv VS90COMNTOOLS vs90comntools VS_VS90COMNTOOLS "${VS_VS90COMNTOOLS}"

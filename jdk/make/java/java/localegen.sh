@@ -35,11 +35,11 @@
 # A list of resource base name list;
 RESOURCE_NAMES=$1
 
-# A list of European resources;
-EURO_FILES_LIST=$2
+# A list of US resources;
+US_FILES_LIST=$2
 
-# A list of non-European resources;
-NONEURO_FILES_LIST=$3
+# A list of non-US resources;
+NONUS_FILES_LIST=$3
 
 INPUT_FILE=$4
 OUTPUT_FILE=$5
@@ -53,23 +53,23 @@ getlocalelist() {
 sed_script="$SED -e \"s@^#warn .*@// -- This file was mechanically generated: Do not edit! -- //@\" "
 
 # ja-JP-JP and th-TH-TH need to be manually added, as they don't have any resource files.
-noneuroall=" ja-JP-JP th-TH-TH "
+nonusall=" ja-JP-JP th-TH-TH "
 
 for FILE in $RESOURCE_NAMES
 do
-    getlocalelist $FILE $EURO_FILES_LIST
-    sed_script=$sed_script"-e \"s@#"$FILE"_EuroLocales#@$localelist@g\" "
-    euroall=$euroall" "$localelist
-    getlocalelist $FILE $NONEURO_FILES_LIST
-    sed_script=$sed_script"-e \"s@#"$FILE"_NonEuroLocales#@$localelist@g\" "
-    noneuroall=$noneuroall" "$localelist
+    getlocalelist $FILE $US_FILES_LIST
+    sed_script=$sed_script"-e \"s@#"$FILE"_USLocales#@$localelist@g\" "
+    usall=$usall" "$localelist
+    getlocalelist $FILE $NONUS_FILES_LIST
+    sed_script=$sed_script"-e \"s@#"$FILE"_NonUSLocales#@$localelist@g\" "
+    nonusall=$nonusall" "$localelist
 done
 
-euroall=`(for LOC in $euroall; do echo $LOC;done) |$SORT -u`
-noneuroall=`(for LOC in $noneuroall; do echo $LOC;done) |$SORT -u`
+usall=`(for LOC in $usall; do echo $LOC;done) |$SORT -u`
+nonusall=`(for LOC in $nonusall; do echo $LOC;done) |$SORT -u`
 
-sed_script=$sed_script"-e \"s@#AvailableLocales_EuroLocales#@$euroall@g\" "
-sed_script=$sed_script"-e \"s@#AvailableLocales_NonEuroLocales#@$noneuroall@g\" "
+sed_script=$sed_script"-e \"s@#AvailableLocales_USLocales#@$usall@g\" "
+sed_script=$sed_script"-e \"s@#AvailableLocales_NonUSLocales#@$nonusall@g\" "
 
 sed_script=$sed_script"$INPUT_FILE > $OUTPUT_FILE"
 eval $sed_script

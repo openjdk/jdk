@@ -282,6 +282,14 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/i386/libunpack.so
 ./jre/lib/i386/libverify.so
 ./jre/lib/i386/libzip.so
+./jre/lib/i386/libdeploy.so
+./jre/lib/i386/libjavaplugin.so
+./jre/lib/i386/libjavaplugin_jni.so
+./jre/lib/i386/libjavaplugin_nscp.so
+./jre/lib/i386/libjavaplugin_oji.so
+./jre/lib/i386/libnpjp2.so
+./jre/plugin/i386/ns4/libjavaplugin.so
+./jre/plugin/i386/ns7/libjavaplugin_oji.so
 ./jre/lib/i386/server/libjvm.so
 ./bin/appletviewer
 ./bin/extcheck
@@ -293,6 +301,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/javaws
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
@@ -322,6 +331,8 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/wsimport
 ./bin/xjc
 ./jre/bin/java
+./jre/bin/java_vm
+./jre/bin/javaws
 ./jre/bin/keytool
 ./jre/bin/orbd
 ./jre/bin/pack200
@@ -561,6 +572,14 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/sparc/libunpack.so
 ./jre/lib/sparc/libverify.so
 ./jre/lib/sparc/libzip.so
+./jre/lib/sparc/libdeploy.so
+./jre/lib/sparc/libjavaplugin.so
+./jre/lib/sparc/libjavaplugin_jni.so
+./jre/lib/sparc/libjavaplugin_nscp.so
+./jre/lib/sparc/libjavaplugin_oji.so
+./jre/lib/sparc/libnpjp2.so
+./jre/plugin/sparc/ns4/libjavaplugin.so
+./jre/plugin/sparc/ns7/libjavaplugin_oji.so
 ./jre/lib/sparc/server/libjvm.so
 ./bin/appletviewer
 ./bin/extcheck
@@ -572,6 +591,7 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/javadoc
 ./bin/javah
 ./bin/javap
+./bin/javaws
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
@@ -601,6 +621,8 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/wsimport
 ./bin/xjc
 ./jre/bin/java
+./jre/bin/java_vm
+./jre/bin/javaws
 ./jre/bin/keytool
 ./jre/bin/orbd
 ./jre/bin/pack200
