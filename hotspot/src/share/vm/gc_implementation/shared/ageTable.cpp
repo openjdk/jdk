@@ -67,6 +67,12 @@ void ageTable::merge(ageTable* subTable) {
   }
 }
 
+void ageTable::merge_par(ageTable* subTable) {
+  for (int i = 0; i < table_size; i++) {
+    Atomic::add_ptr(subTable->sizes[i], &sizes[i]);
+  }
+}
+
 int ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
   size_t total = 0;
