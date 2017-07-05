@@ -39,33 +39,22 @@ import javax.management.NotificationListener;
 import java.util.Map;
 public class ConnectionListenerNullTest {
 
-    static final boolean optionalFlag;
-    static {
-        Class genericClass = null;
+    static boolean isPresent(String cn) {
         try {
-            genericClass =
-            Class.forName("javax.management.remote.generic.GenericConnector");
+            Class.forName(cn);
+            return true;
         } catch (ClassNotFoundException x) {
-            // NO optional package
+            return false;
         }
-        optionalFlag = (genericClass != null);
     }
 
-    final static String[] mandatoryList = {
-        "service:jmx:rmi://", "service:jmx:iiop://"
-    };
-
-    final static String[] optionalList = {
-        "service:jmx:jmxmp://"
-    };
-
-    public static int test(String[] urls) {
+    public static int test(String... urls) {
         int errCount = 0;
         for (int i=0;i<urls.length;i++) {
             try {
                 final JMXServiceURL url = new JMXServiceURL(urls[i]);
                 final JMXConnector c =
-                    JMXConnectorFactory.newJMXConnector(url,(Map)null);
+                    JMXConnectorFactory.newJMXConnector(url,(Map<String,String>)null);
                 final NotificationListener nl = null;
                 final NotificationFilter   nf = null;
                 final Object               h  = null;
@@ -121,12 +110,19 @@ public class ConnectionListenerNullTest {
 
     public static void main(String args[]) {
         int errCount = 0;
-        errCount += test(mandatoryList);
-        if (optionalFlag) errCount += test(optionalList);
+
+        // mandatory
+        errCount += test("service:jmx:rmi://");
+
+        // optional
+        if (isPresent("javax.management.remote.rmi._RMIConnectionImpl_Tie"))
+            errCount += test("service:jmx:iiop://");
+        if (isPresent("javax.management.remote.generic.GenericConnector"))
+            errCount += test("service:jmx:jmxmp://");
+
         if (errCount > 0) {
-            System.err.println("ConnectionListenerNullTest failed: " +
-                               errCount + " error(s) reported.");
-            System.exit(1);
+            throw new RuntimeException("ConnectionListenerNullTest failed: " +
+                errCount + " error(s) reported.");
         }
         System.out.println("ConnectionListenerNullTest passed.");
     }

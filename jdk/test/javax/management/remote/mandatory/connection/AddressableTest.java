@@ -45,19 +45,36 @@ public class AddressableTest {
 
     private static final MBeanServer mbs = MBeanServerFactory.createMBeanServer();
 
+    private static boolean isProtocolSupported(String protocol) {
+        if (protocol.equals("rmi"))
+            return true;
+        if (protocol.equals("iiop")) {
+            try {
+                Class.forName("javax.management.remote.rmi._RMIConnectionImpl_Tie");
+                return true;
+            } catch (ClassNotFoundException x) { }
+        }
+        return false;
+    }
+
     public static void main(String[] args) throws Exception {
         System.out.println(">>> test the new interface Addressable.");
         boolean ok = true;
 
         for (int i = 0; i < protocols.length; i++) {
-            try {
-                test(protocols[i], prefixes[i]);
-
-                System.out.println(">>> Test successed for "+protocols[i]);
-            } catch (Exception e) {
-                System.out.println(">>> Test failed for "+protocols[i]);
-                e.printStackTrace(System.out);
-                ok = false;
+            String protocol = protocols[i];
+            if (isProtocolSupported(protocol)) {
+                try {
+                    test(protocol, prefixes[i]);
+                    System.out.println(">>> Test successed for "+protocols[i]);
+                } catch (Exception e) {
+                    System.out.println(">>> Test failed for "+protocols[i]);
+                    e.printStackTrace(System.out);
+                    ok = false;
+                }
+            } else {
+                System.out.format(">>> Test skipped for %s, protocol not supported%n",
+                    protocol);
             }
         }
 
@@ -65,7 +82,7 @@ public class AddressableTest {
             System.out.println(">>> All Test passed.");
         } else {
             System.out.println(">>> Some TESTs FAILED");
-            System.exit(1);
+            throw new RuntimeException("See log for details");
         }
     }
 

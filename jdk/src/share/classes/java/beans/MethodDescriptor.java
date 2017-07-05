@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,9 @@ public class MethodDescriptor extends FeatureDescriptor {
                 ParameterDescriptor parameterDescriptors[]) {
         setName(method.getName());
         setMethod(method);
-        this.parameterDescriptors = parameterDescriptors;
+        this.parameterDescriptors = (parameterDescriptors != null)
+                ? parameterDescriptors.clone()
+                : null;
     }
 
     /**
@@ -161,7 +163,9 @@ public class MethodDescriptor extends FeatureDescriptor {
      *          a null array if the parameter names aren't known.
      */
     public ParameterDescriptor[] getParameterDescriptors() {
-        return parameterDescriptors;
+        return (this.parameterDescriptors != null)
+                ? this.parameterDescriptors.clone()
+                : null;
     }
 
     /*

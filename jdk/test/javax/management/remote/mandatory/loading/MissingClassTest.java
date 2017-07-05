@@ -70,7 +70,6 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
-import org.omg.CORBA.MARSHAL;
 
 public class MissingClassTest {
     private static final int NNOTIFS = 50;
@@ -83,6 +82,15 @@ public class MissingClassTest {
     private static final String[] NO_STRINGS = new String[0];
 
     private static final Object unserializableObject = Thread.currentThread();
+
+    private static boolean isInstance(Object o, String cn) {
+        try {
+            Class<?> c = Class.forName(cn);
+            return c.isInstance(o);
+        } catch (ClassNotFoundException x) {
+            return false;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test that the client or server end of a " +
@@ -118,8 +126,7 @@ public class MissingClassTest {
         if (ok)
             System.out.println("Test passed");
         else {
-            System.out.println("TEST FAILED");
-            System.exit(1);
+            throw new RuntimeException("TEST FAILED");
         }
     }
 
@@ -133,7 +140,7 @@ public class MissingClassTest {
 
         JMXConnectorServer cs;
         JMXServiceURL url = new JMXServiceURL(proto, null, 0);
-        Map serverMap = new HashMap();
+        Map<String,Object> serverMap = new HashMap<>();
         serverMap.put(JMXConnectorServerFactory.DEFAULT_CLASS_LOADER,
                       serverLoader);
 
@@ -151,7 +158,7 @@ public class MissingClassTest {
         }
         cs.start();
         JMXServiceURL addr = cs.getAddress();
-        Map clientMap = new HashMap();
+        Map<String,Object> clientMap = new HashMap<>();
         clientMap.put(JMXConnectorFactory.DEFAULT_CLASS_LOADER,
                       clientLoader);
 
@@ -174,7 +181,7 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof MARSHAL)  // see CR 4935098
+            if (isInstance(cause, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
                 cause = cause.getCause();
             if (cause instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
@@ -188,7 +195,7 @@ public class MissingClassTest {
         }
 
         System.out.println("Doing queryNames to ensure connection alive");
-        Set names = mbsc.queryNames(null, null);
+        Set<ObjectName> names = mbsc.queryNames(null, null);
         System.out.println("queryNames returned " + names);
 
         System.out.println("Provoke exception of unknown class");
@@ -198,7 +205,7 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable wrapped = e.getCause();
-            if (wrapped instanceof MARSHAL)  // see CR 4935098
+            if (isInstance(wrapped, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
                 wrapped = wrapped.getCause();
             if (wrapped instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
@@ -251,7 +258,7 @@ public class MissingClassTest {
                 ok = false;
             } catch (IOException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof MARSHAL)  // see CR 4935098
+                if (isInstance(cause, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
                     cause = cause.getCause();
                 if (cause instanceof ClassNotFoundException) {
                     System.out.println("Success: got an IOException " +
@@ -584,15 +591,13 @@ public class MissingClassTest {
             try {
                 new ObjectOutputStream(new ByteArrayOutputStream())
                     .writeObject(tricky);
-                System.out.println("TEST INCORRECT: tricky notif is " +
-                                   "serializable");
-                System.exit(1);
+                throw new RuntimeException("TEST INCORRECT: tricky notif is " +
+                                           "serializable");
             } catch (NotSerializableException e) {
                 // OK: tricky notif is not serializable
             } catch (IOException e) {
-                System.out.println("TEST INCORRECT: tricky notif " +
-                                   "serialization check failed");
-                System.exit(1);
+                throw new RuntimeException("TEST INCORRECT: tricky notif " +
+                                            "serialization check failed");
             }
 
             /* Now shuffle an imaginary deck of cards where K, U, T, and
@@ -629,12 +634,11 @@ public class MissingClassTest {
             }
             if (knownCount != 0 || unknownCount != 0
                 || trickyCount != 0 || boringCount != 0) {
-                System.out.println("TEST INCORRECT: Shuffle failed: " +
+                throw new RuntimeException("TEST INCORRECT: Shuffle failed: " +
                                    "known=" + knownCount +" unknown=" +
                                    unknownCount + " tricky=" + trickyCount +
                                    " boring=" + boringCount +
                                    " deal=" + notifList);
-                System.exit(1);
             }
             String notifs = notifList.toString();
             System.out.println("Shuffle: " + notifs);
@@ -646,10 +650,8 @@ public class MissingClassTest {
                 case 't': n = tricky; break;
                 case 'b': n = boring; break;
                 default:
-                    System.out.println("TEST INCORRECT: Bad shuffle char: " +
-                                       notifs.charAt(i));
-                    System.exit(1);
-                    throw new Error();
+                    throw new RuntimeException("TEST INCORRECT: Bad shuffle char: " +
+                                               notifs.charAt(i));
                 }
                 sendNotification(n);
             }
