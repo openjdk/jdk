@@ -1253,11 +1253,11 @@ public class ScheduledThreadPoolExecutor
          * Snapshot iterator that works off copy of underlying q array.
          */
         private class Itr implements Iterator<Runnable> {
-            final RunnableScheduledFuture[] array;
+            final RunnableScheduledFuture<?>[] array;
             int cursor = 0;     // index of next element to return
             int lastRet = -1;   // index of last element, or -1 if no such
 
-            Itr(RunnableScheduledFuture[] array) {
+            Itr(RunnableScheduledFuture<?>[] array) {
                 this.array = array;
             }
 

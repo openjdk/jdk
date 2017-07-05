@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @author Luis-Miguel Alventosa
  * @run clean LibraryLoaderTest
  * @run build LibraryLoaderTest
- * @run main LibraryLoaderTest
+ * @run main/othervm LibraryLoaderTest
  */
 
 import java.io.File;
@@ -48,7 +48,7 @@ public class LibraryLoaderTest {
         {"testDomain:type=MLet,index=1", "UseNativeLib1.html"}
     };
 
-    public static void main (String args[]) {
+    public static void main(String args[]) throws Exception {
 
         String osName = System.getProperty("os.name");
         System.out.println("os.name=" + osName);
@@ -83,83 +83,73 @@ public class LibraryLoaderTest {
                 "file:/" + testSrc.replace(File.separatorChar, '/') + "/";
         }
 
-        try {
-            // Create MBeanServer
+        // Create MBeanServer
+        //
+        MBeanServer server = MBeanServerFactory.newMBeanServer();
+
+        // Create MLet instances and call getRandom on the loaded MBeans
+        //
+        for (int i = 0; i < mletInfo.length; i++) {
+            // Create ObjectName for MLet
             //
-            MBeanServer server = MBeanServerFactory.newMBeanServer();
+            ObjectName mlet = new ObjectName(mletInfo[i][0]);
+            server.createMBean("javax.management.loading.MLet", mlet);
+            System.out.println("MLet = " + mlet);
 
-            // Create MLet instances and call getRandom on the loaded MBeans
+            // Display old library directory and set it to test.classes
             //
-            for (int i = 0; i < mletInfo.length; i++) {
-                // Create ObjectName for MLet
-                //
-                ObjectName mlet = new ObjectName(mletInfo[i][0]);
-                server.createMBean("javax.management.loading.MLet", mlet);
-                System.out.println("MLet = " + mlet);
+            String libraryDirectory =
+                (String) server.getAttribute(mlet, "LibraryDirectory");
+            System.out.println("Old Library Directory = " +
+                               libraryDirectory);
+            Attribute attribute =
+                new Attribute("LibraryDirectory", workingDir);
+            server.setAttribute(mlet, attribute);
+            libraryDirectory =
+                (String) server.getAttribute(mlet, "LibraryDirectory");
+            System.out.println("New Library Directory = " +
+                               libraryDirectory);
 
-                // Display old library directory and set it to test.classes
-                //
-                String libraryDirectory =
-                    (String) server.getAttribute(mlet, "LibraryDirectory");
-                System.out.println("Old Library Directory = " +
-                                   libraryDirectory);
-                Attribute attribute =
-                    new Attribute("LibraryDirectory", workingDir);
-                server.setAttribute(mlet, attribute);
-                libraryDirectory =
-                    (String) server.getAttribute(mlet, "LibraryDirectory");
-                System.out.println("New Library Directory = " +
-                                   libraryDirectory);
+            // Get MBeans from URL
+            //
+            String mletURL = urlCodebase + mletInfo[i][1];
+            System.out.println("MLet URL = " + mletURL);
+            Object[] params = new Object[] { mletURL };
+            String[] signature = new String[] {"java.lang.String"};
+            Object res[] = ((Set<?>) server.invoke(mlet,
+                                                   "getMBeansFromURL",
+                                                   params,
+                                                   signature)).toArray();
 
-                // Get MBeans from URL
+            // Iterate through all the loaded MBeans
+            //
+            for (int j = 0; j < res.length; j++) {
+                // Now ensure none of the returned objects is a Throwable
                 //
-                String mletURL = urlCodebase + mletInfo[i][1];
-                System.out.println("MLet URL = " + mletURL);
-                Object[] params = new Object[] { mletURL };
-                String[] signature = new String[] {"java.lang.String"};
-                Object res[] = ((Set) server.invoke(mlet,
-                                                    "getMBeansFromURL",
-                                                    params,
-                                                    signature)).toArray();
+                if (res[j] instanceof Throwable) {
+                    ((Throwable) res[j]).printStackTrace(System.out);
+                    throw new Exception("Failed to load the MBean #" + j
+                        ,(Throwable)res[j]);
+                }
 
-                // Iterate through all the loaded MBeans
+                // On each of the loaded MBeans, try to invoke their
+                // native operation
                 //
-                for (int j = 0; j < res.length; j++) {
-                    // Now ensure none of the returned objects is a Throwable
-                    //
-                    if (res[j] instanceof Throwable) {
-                        ((Throwable) res[j]).printStackTrace(System.out);
-                        System.out.println("Failed to load the MBean #" + j +
-                                           ". The shown Throwable was caught.");
-                        System.exit(1);
-                    }
-
-                    // On each of the loaded MBeans, try to invoke their
-                    // native operation
-                    //
-                    Object result = null;
-                    try {
-                        ObjectName mbean =
-                            ((ObjectInstance) res[j]).getObjectName();
-                        result = server.getAttribute(mbean, "Random");
-                        System.out.println("MBean #" + j + " = " + mbean);
-                        System.out.println("Random number = " + result);
-                    } catch (ReflectionException e) {
-                        e.getTargetException().printStackTrace(System.out);
-                        System.out.println("A ReflectionException, wrapping " +
-                                           "the shown exception, occured when" +
-                                           " attempting to invoke a native " +
-                                           "library based operation.");
-                        System.exit(1);
-                    }
+                Object result = null;
+                try {
+                    ObjectName mbean =
+                        ((ObjectInstance) res[j]).getObjectName();
+                    result = server.getAttribute(mbean, "Random");
+                    System.out.println("MBean #" + j + " = " + mbean);
+                    System.out.println("Random number = " + result);
+                } catch (ReflectionException e) {
+                    e.getTargetException().printStackTrace(System.out);
+                    throw new Exception ("A ReflectionException "
+                            + "occured when attempting to invoke "
+                            + "a native library based operation.",
+                            e.getTargetException());
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
-            System.out.println(e.getMessage());
-            System.out.println("Unexpected error");
-            System.exit(1);
         }
-        System.out.println("Bye! Bye!");
     }
 }

@@ -263,8 +263,8 @@ fatal_error(CrwClassImage *ci, const char *message, const char *file, int line)
         /* Normal operation should NEVER reach here */
         /* NO CRW FATAL ERROR HANDLER! */
         (void)fprintf(stderr, "CRW: %s [%s:%d]\n", message, file, line);
-        abort();
     }
+    abort();
 }
 
 #if defined(DEBUG) || !defined(NDEBUG)
