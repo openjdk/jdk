@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = sound
 PACKAGE = javax.sound
 LIBRARY = jsound
 PRODUCT = sun

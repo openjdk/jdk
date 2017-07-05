@@ -22,7 +22,6 @@
 # questions.
 
 BUILDDIR = ../../..
-MODULE  = servicetag
 PACKAGE = com.sun.servicetag
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

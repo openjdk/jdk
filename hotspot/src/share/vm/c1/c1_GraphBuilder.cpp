@@ -3308,22 +3308,23 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
   Value exception = append_with_bci(new ExceptionObject(), SynchronizationEntryBCI);
   assert(exception->is_pinned(), "must be");
 
+  int bci = SynchronizationEntryBCI;
   if (compilation()->env()->dtrace_method_probes()) {
-    // Report exit from inline methods
+    // Report exit from inline methods.  We don't have a stream here
+    // so pass an explicit bci of SynchronizationEntryBCI.
     Values* args = new Values(1);
-    args->push(append(new Constant(new ObjectConstant(method()))));
-    append(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args));
+    args->push(append_with_bci(new Constant(new ObjectConstant(method())), bci));
+    append_with_bci(new RuntimeCall(voidType, "dtrace_method_exit", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), args), bci);
   }
 
-  int bci = SynchronizationEntryBCI;
   if (lock) {
     assert(state()->locks_size() > 0 && state()->lock_at(state()->locks_size() - 1) == lock, "lock is missing");
     if (!lock->is_linked()) {
-      lock = append_with_bci(lock, -1);
+      lock = append_with_bci(lock, bci);
     }
 
     // exit the monitor in the context of the synchronized method
-    monitorexit(lock, SynchronizationEntryBCI);
+    monitorexit(lock, bci);
 
     // exit the context of the synchronized method
     if (!default_handler) {

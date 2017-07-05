@@ -174,6 +174,8 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         if(!wasIcon(f)) {
             Rectangle r = getBoundsForIconOf(f);
             desktopIcon.setBounds(r.x, r.y, r.width, r.height);
+            // we must validate the hierarchy to not break the hw/lw mixing
+            desktopIcon.revalidate();
             setWasIcon(f, Boolean.TRUE);
         }
 
@@ -453,11 +455,9 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
 
     /** This moves the <code>JComponent</code> and repaints the damaged areas. */
     public void setBoundsForFrame(JComponent f, int newX, int newY, int newWidth, int newHeight) {
-        boolean didResize = (f.getWidth() != newWidth || f.getHeight() != newHeight);
         f.setBounds(newX, newY, newWidth, newHeight);
-        if(didResize) {
-            f.validate();
-        }
+        // we must validate the hierarchy to not break the hw/lw mixing
+        f.revalidate();
     }
 
     /** Convenience method to remove the desktopIcon of <b>f</b> is necessary. */

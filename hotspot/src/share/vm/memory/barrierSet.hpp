@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ public:
     Uninit
   };
 
+  enum Flags {
+    None                = 0,
+    TargetUninitialized = 1
+  };
 protected:
   int _max_covered_regions;
   Name _kind;
@@ -128,8 +132,10 @@ public:
   virtual void read_prim_array(MemRegion mr) = 0;
 
   // Below length is the # array elements being written
-  virtual void write_ref_array_pre(      oop* dst, int length) {}
-  virtual void write_ref_array_pre(narrowOop* dst, int length) {}
+  virtual void write_ref_array_pre(oop* dst, int length,
+                                   bool dest_uninitialized = false) {}
+  virtual void write_ref_array_pre(narrowOop* dst, int length,
+                                   bool dest_uninitialized = false) {}
   // Below count is the # array elements being written, starting
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);

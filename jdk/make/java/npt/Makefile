@@ -26,7 +26,6 @@
 BUILDDIR = ../..
 
 # It's currently used by jpda and hprof.  Put it in base module for now.
-MODULE  = base
 LIBRARY = npt
 PRODUCT = sun
 LIBRARY_OUTPUT = npt

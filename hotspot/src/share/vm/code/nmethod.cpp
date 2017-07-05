@@ -190,13 +190,8 @@ struct nmethod_stats_struct {
 } nmethod_stats;
 #endif //PRODUCT
 
+
 //---------------------------------------------------------------------------------
-
-
-// The _unwind_handler is a special marker address, which says that
-// for given exception oop and address, the frame should be removed
-// as the tuple cannot be caught in the nmethod
-address ExceptionCache::_unwind_handler = (address) -1;
 
 
 ExceptionCache::ExceptionCache(Handle exception, address pc, address handler) {
