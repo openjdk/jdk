@@ -28,11 +28,7 @@ import java.io.IOException;
  * @library /lib/testlibrary
  * @bug 6557093
  * @summary Check SSL config file permission for out-of-the-box management
- * @build jdk.testlibrary.Utils
- * @build jdk.testlibrary.ProcessTools
- * @build jdk.testlibrary.OutputAnalyzer
- * @build AbstractFilePermissionTest
- * @build Dummy
+ * @build jdk.testlibrary.* AbstractFilePermissionTest Dummy
  * @run main/timeout=300 PasswordFilePermissionTest
  *
  * @author Taras Ledkov

@@ -618,6 +618,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     /**
      * Notifies all listeners that are registered for
      * tree selection events on this object.
+     *
+     * @param e the event that characterizes the change
+     *
      * @see #addTreeSelectionListener
      * @see EventListenerList
      */
@@ -920,6 +923,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     /**
      * Returns true if the paths are contiguous,
      * or this object has no RowMapper.
+     *
+     * @param paths array of paths to check
+     * @return      whether the paths are contiguous, or this object has no RowMapper
      */
     protected boolean arePathsContiguous(TreePath[] paths) {
         if(rowMapper == null || paths.length < 2)
@@ -968,6 +974,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * or the selection mode is <code>DISCONTIGUOUS_TREE_SELECTION</code>, or
      * adding the paths to the current selection still results in a
      * contiguous set of <code>TreePath</code>s.
+     *
+     * @param paths array of {@code TreePaths} to check
+     * @return      whether the particular set of {@code TreePaths} can be added
      */
     protected boolean canPathsBeAdded(TreePath[] paths) {
         if(paths == null || paths.length == 0 || rowMapper == null ||
@@ -1019,6 +1028,10 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * Returns true if the paths can be removed without breaking the
      * continuity of the model.
      * This is rather expensive.
+     *
+     * @param paths array of {@code TreePath} to check
+     * @return      whether the paths can be removed without breaking the
+     *              continuity of the model
      */
     protected boolean canPathsBeRemoved(TreePath[] paths) {
         if(rowMapper == null || selection == null ||
@@ -1072,6 +1085,9 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * instances of PathPlaceHolder.
      *
      * @deprecated As of JDK version 1.7
+     *
+     * @param changedPaths      the vector of the changed paths
+     * @param oldLeadSelection  the old selection path
      */
     @Deprecated
     protected void notifyPathChange(Vector<?> changedPaths,

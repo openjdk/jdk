@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ void ImmutableSpace::print_short() const {
 
 void ImmutableSpace::print() const {
   print_short();
-  tty->print_cr(" [%#-6lx,%#-6lx)", bottom(), end());
+  tty->print_cr(" [" INTPTR_FORMAT_W(#-6) "," INTPTR_FORMAT_W(#-6) ")", p2i(bottom()), p2i(end()));
 }
 
 #endif

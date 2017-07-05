@@ -1468,9 +1468,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case deoptimize_id:
       {
         StubFrame f(sasm, "deoptimize", dont_gc_arguments);
-        const int num_rt_args = 1;  // thread
+        const int num_rt_args = 2;  // thread, trap_request
         OopMap* oop_map = save_live_registers(sasm, num_rt_args);
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize));
+        f.load_argument(0, rax);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize), rax);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, oop_map);
         restore_live_registers(sasm);

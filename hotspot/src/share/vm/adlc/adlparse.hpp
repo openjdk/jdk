@@ -64,8 +64,6 @@ class PeepMatch;
 class PeepConstraint;
 class PeepReplace;
 
-// class ostream; // ostream is a typedef in some systems
-
 extern char *toUpper(const char *str);
 
 //---------------------------ADLParser-----------------------------------------

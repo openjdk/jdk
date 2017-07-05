@@ -198,7 +198,7 @@ public final class UlawCodec extends SunCodec {
     /*  public AudioFormat[] getOutputFormats(AudioFormat inputFormat) { */
     private AudioFormat[] getOutputFormats(AudioFormat inputFormat) {
 
-        Vector formats = new Vector();
+        Vector<AudioFormat> formats = new Vector<>();
         AudioFormat format;
 
         if ((inputFormat.getSampleSizeInBits() == 16)
@@ -235,7 +235,7 @@ public final class UlawCodec extends SunCodec {
 
         AudioFormat[] formatArray = new AudioFormat[formats.size()];
         for (int i = 0; i < formatArray.length; i++) {
-            formatArray[i] = (AudioFormat)(formats.elementAt(i));
+            formatArray[i] = formats.elementAt(i);
         }
         return formatArray;
     }

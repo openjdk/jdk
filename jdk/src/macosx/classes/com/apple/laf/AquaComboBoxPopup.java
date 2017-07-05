@@ -121,6 +121,10 @@ class AquaComboBoxPopup extends BasicComboPopup {
     public void show() {
         final int startItemCount = comboBox.getItemCount();
 
+        if (startItemCount == 0) {
+            return;
+        }
+
         final Rectangle popupBounds = adjustPopupAndGetBounds();
         if (popupBounds == null) return; // null means don't show
 

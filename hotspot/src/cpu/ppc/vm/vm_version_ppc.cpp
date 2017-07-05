@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -149,7 +149,7 @@ void VM_Version::initialize() {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s cache_line_size = %d", cpu_features(), get_cache_line_size());
+  tty->print_cr("Version: %s cache_line_size = %d", cpu_features(), (int) get_cache_line_size());
 }
 
 #ifdef COMPILER2

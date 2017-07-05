@@ -67,7 +67,7 @@ public class MFontConfiguration extends FontConfiguration {
      * the fontconfig files.
      */
     protected void initReorderMap() {
-        reorderMap = new HashMap();
+        reorderMap = new HashMap<>();
         if (osName == null) {  /* null means SunOS */
             initReorderMapForSolaris();
         } else {
@@ -240,7 +240,7 @@ public class MFontConfiguration extends FontConfiguration {
                 return "sun.awt.Symbol";
             }
         }
-        String encoding = (String) encodingMap.get(xlfdEncoding);
+        String encoding = encodingMap.get(xlfdEncoding);
         if (encoding == null) {
             encoding = "default";
         }
@@ -288,7 +288,7 @@ public class MFontConfiguration extends FontConfiguration {
 
     /* methods for table setup ***********************************************/
 
-    private static HashMap encodingMap = new HashMap();
+    private static HashMap<String, String> encodingMap = new HashMap<>();
 
     private void initTables() {
         // encodingMap maps XLFD encoding component to

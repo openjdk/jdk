@@ -35,7 +35,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import sun.awt.AppContext;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 public class CreatedFontTracker {
 

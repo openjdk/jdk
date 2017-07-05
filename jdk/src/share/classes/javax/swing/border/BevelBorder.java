@@ -134,7 +134,9 @@ public class BevelBorder extends AbstractBorder
      * when rendered on the specified component.  If no highlight
      * color was specified at instantiation, the highlight color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the highlight may be derived
+     * @return the outer highlight {@code Color}
      * @since 1.3
      */
     public Color getHighlightOuterColor(Component c)   {
@@ -148,7 +150,9 @@ public class BevelBorder extends AbstractBorder
      * when rendered on the specified component.  If no highlight
      * color was specified at instantiation, the highlight color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the highlight may be derived
+     * @return the inner highlight {@code Color}
      * @since 1.3
      */
     public Color getHighlightInnerColor(Component c)   {
@@ -162,7 +166,9 @@ public class BevelBorder extends AbstractBorder
      * when rendered on the specified component.  If no shadow
      * color was specified at instantiation, the shadow color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the shadow may be derived
+     * @return the inner shadow {@code Color}
      * @since 1.3
      */
     public Color getShadowInnerColor(Component c)      {
@@ -176,7 +182,9 @@ public class BevelBorder extends AbstractBorder
      * when rendered on the specified component.  If no shadow
      * color was specified at instantiation, the shadow color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the shadow may be derived
+     * @return the outer shadow {@code Color}
      * @since 1.3
      */
     public Color getShadowOuterColor(Component c)      {
@@ -189,6 +197,9 @@ public class BevelBorder extends AbstractBorder
      * Returns the outer highlight color of the bevel border.
      * Will return null if no highlight color was specified
      * at instantiation.
+     *
+     * @return the outer highlight {@code Color} or {@code null} if no highlight
+     *         color was specified
      * @since 1.3
      */
     public Color getHighlightOuterColor()   {
@@ -199,6 +210,9 @@ public class BevelBorder extends AbstractBorder
      * Returns the inner highlight color of the bevel border.
      * Will return null if no highlight color was specified
      * at instantiation.
+     *
+     * @return the inner highlight {@code Color} or {@code null} if no highlight
+     *         color was specified
      * @since 1.3
      */
     public Color getHighlightInnerColor()   {
@@ -209,6 +223,9 @@ public class BevelBorder extends AbstractBorder
      * Returns the inner shadow color of the bevel border.
      * Will return null if no shadow color was specified
      * at instantiation.
+     *
+     * @return the inner shadow {@code Color} or {@code null} if no shadow color
+     *         was specified
      * @since 1.3
      */
     public Color getShadowInnerColor()      {
@@ -219,6 +236,9 @@ public class BevelBorder extends AbstractBorder
      * Returns the outer shadow color of the bevel border.
      * Will return null if no shadow color was specified
      * at instantiation.
+     *
+     * @return the outer shadow {@code Color} or {@code null} if no shadow color
+     *         was specified
      * @since 1.3
      */
     public Color getShadowOuterColor()      {
@@ -227,13 +247,18 @@ public class BevelBorder extends AbstractBorder
 
     /**
      * Returns the type of the bevel border.
+     *
+     * @return the bevel border type, either {@code RAISED} or {@code LOWERED}
      */
     public int getBevelType()       {
         return bevelType;
     }
 
     /**
-     * Returns whether or not the border is opaque.
+     * Returns whether or not the border is opaque. This implementation
+     * returns {@code true}.
+     *
+     * @return true
      */
     public boolean isBorderOpaque() { return true; }
 

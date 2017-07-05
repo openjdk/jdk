@@ -33,30 +33,52 @@
  * @run main/othervm -XX:MinHeapFreeRatio=51 -XX:MaxHeapFreeRatio=52 TestDynMinHeapFreeRatio
  * @run main/othervm -XX:MinHeapFreeRatio=75 -XX:MaxHeapFreeRatio=100 TestDynMinHeapFreeRatio
  */
-import com.oracle.java.testlibrary.TestDynamicVMOption;
-import com.oracle.java.testlibrary.DynamicVMOptionChecker;
+import static com.oracle.java.testlibrary.Asserts.assertEQ;
+import static com.oracle.java.testlibrary.Asserts.assertFalse;
+import static com.oracle.java.testlibrary.Asserts.assertTrue;
+import com.oracle.java.testlibrary.DynamicVMOption;
 
-public class TestDynMinHeapFreeRatio extends TestDynamicVMOption {
-
-    public static final String MinFreeRatioFlagName = "MinHeapFreeRatio";
-    public static final String MaxFreeRatioFlagName = "MaxHeapFreeRatio";
-
-    public TestDynMinHeapFreeRatio() {
-        super(MinFreeRatioFlagName);
-    }
-
-    public void test() {
-        int maxHeapFreeValue = DynamicVMOptionChecker.getIntValue(MaxFreeRatioFlagName);
-        System.out.println(MaxFreeRatioFlagName + " = " + maxHeapFreeValue);
-
-        testPercentageValues();
-
-        checkInvalidValue(Integer.toString(maxHeapFreeValue + 1));
-        checkValidValue(Integer.toString(maxHeapFreeValue));
-        checkValidValue("0");
-    }
+public class TestDynMinHeapFreeRatio {
 
     public static void main(String args[]) throws Exception {
-        new TestDynMinHeapFreeRatio().test();
+
+        // high boundary value
+        int maxValue = DynamicVMOption.getInt("MaxHeapFreeRatio");
+        System.out.println("MaxHeapFreeRatio= " + maxValue);
+
+        String badValues[] = {
+            null,
+            "",
+            "not a number",
+            "8.5", "-0.01",
+            Integer.toString(Integer.MIN_VALUE),
+            Integer.toString(Integer.MAX_VALUE),
+            Integer.toString(maxValue + 1),
+            "-1024", "-1", "101", "1997"
+        };
+
+        String goodValues[] = {
+            Integer.toString(maxValue),
+            Integer.toString(maxValue - 1),
+            Integer.toString(maxValue / 2),
+            "0", "1"
+        };
+
+        // option under test
+        DynamicVMOption option = new DynamicVMOption("MinHeapFreeRatio");
+
+        assertTrue(option.isWriteable(), "Option " + option.name
+                + " is expected to be writable");
+
+        for (String v : badValues) {
+            assertFalse(option.isValidValue(v),
+                    "'" + v + "' is expected to be illegal for flag " + option.name);
+        }
+
+        for (String v : goodValues) {
+            option.setValue(v);
+            String newValue = option.getValue();
+            assertEQ(v, newValue);
+        }
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4252164
+ * @bug 4252164 8041917
  * @summary Tests rounded LineBorder for components
  * @author Sergey Malenkov
  * @run applet/manual=yesno Test4252164.html

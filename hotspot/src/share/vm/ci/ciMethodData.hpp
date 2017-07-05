@@ -45,7 +45,7 @@ class ciArgInfoData;
 class ciCallTypeData;
 class ciVirtualCallTypeData;
 class ciParametersTypeData;
-class ciSpeculativeTrapData;;
+class ciSpeculativeTrapData;
 
 typedef ProfileData ciProfileData;
 
@@ -175,7 +175,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -202,7 +202,7 @@ public:
   }
   void translate_receiver_data_from(const ProfileData* data);
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
   void print_receiver_data_on(outputStream* st) const;
 #endif
 };
@@ -227,7 +227,7 @@ public:
     rtd_super()->translate_receiver_data_from(data);
   }
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -289,7 +289,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -338,7 +338,7 @@ public:
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -349,15 +349,15 @@ public:
   virtual void translate_from(const ProfileData* data);
 
   ciMethod* method() const {
-    return (ciMethod*)intptr_at(method_offset);
+    return (ciMethod*)intptr_at(speculative_trap_method);
   }
 
   void set_method(ciMethod* m) {
-    set_intptr_at(method_offset, (intptr_t)m);
+    set_intptr_at(speculative_trap_method, (intptr_t)m);
   }
 
 #ifndef PRODUCT
-  void print_data_on(outputStream* st, const char* extra) const;
+  void print_data_on(outputStream* st, const char* extra = NULL) const;
 #endif
 };
 
@@ -406,8 +406,8 @@ private:
   // Coherent snapshot of original header.
   MethodData _orig;
 
-  // Dedicated area dedicated to parameters. Null if no parameter
-  // profiling for this method.
+  // Area dedicated to parameters. NULL if no parameter profiling for
+  // this method.
   DataLayout* _parameters;
 
   ciMethodData(MethodData* md);
@@ -466,6 +466,11 @@ private:
 
   void load_extra_data();
   ciProfileData* bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots);
+
+  void dump_replay_data_type_helper(outputStream* out, int round, int& count, ProfileData* pdata, ByteSize offset, ciKlass* k);
+  template<class T> void dump_replay_data_call_type_helper(outputStream* out, int round, int& count, T* call_type_data);
+  template<class T> void dump_replay_data_receiver_type_helper(outputStream* out, int round, int& count, T* call_type_data);
+  void dump_replay_data_extra_data_helper(outputStream* out, int round, int& count);
 
 public:
   bool is_method_data() const { return true; }

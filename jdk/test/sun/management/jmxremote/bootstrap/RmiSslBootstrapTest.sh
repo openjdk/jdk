@@ -27,10 +27,7 @@
 # @summary Test RMI Bootstrap with SSL
 #
 # @library /lib/testlibrary
-# @build jdk.testlibrary.Utils
-# @build TestLogger
-# @build Utils
-# @build RmiBootstrapTest
+# @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiSslBootstrapTest.sh
 
 # Define the Java class test name
