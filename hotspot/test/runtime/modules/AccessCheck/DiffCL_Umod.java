@@ -80,7 +80,7 @@ public class DiffCL_Umod {
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
      ModuleDescriptor descriptor_m1 =
-             new ModuleDescriptor.Builder("m1")
+             ModuleDescriptor.module("m1")
                      .requires("java.base")
                      .exports("p1")
                      .build();
@@ -129,7 +129,7 @@ public class DiffCL_Umod {
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
      ModuleDescriptor descriptor_m1 =
-             new ModuleDescriptor.Builder("m1")
+             ModuleDescriptor.module("m1")
                      .requires("java.base")
                      .exports("p1")
                      .build();
@@ -178,7 +178,7 @@ public class DiffCL_Umod {
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
      ModuleDescriptor descriptor_m1 =
-             new ModuleDescriptor.Builder("m1")
+             ModuleDescriptor.module("m1")
                      .requires("java.base")
                      .exports("p1")
                      .build();

@@ -26,7 +26,7 @@
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -ea -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

@@ -26,6 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -2383,18 +2384,17 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 
 // Only boot and platform class loaders can define classes in "java/" packages.
 void InstanceKlass::check_prohibited_package(Symbol* class_name,
-                                                Handle class_loader,
-                                                TRAPS) {
-  const char* javapkg = "java/";
+                                             Handle class_loader,
+                                             TRAPS) {
   ResourceMark rm(THREAD);
   if (!class_loader.is_null() &&
       !SystemDictionary::is_platform_class_loader(class_loader) &&
       class_name != NULL &&
-      strncmp(class_name->as_C_string(), javapkg, strlen(javapkg)) == 0) {
+      strncmp(class_name->as_C_string(), JAVAPKG, JAVAPKG_LEN) == 0) {
     TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
     assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
     char* name = pkg_name->as_C_string();
-    const char* class_loader_name = InstanceKlass::cast(class_loader()->klass())->name()->as_C_string();
+    const char* class_loader_name = SystemDictionary::loader_name(class_loader());
     StringUtils::replace_no_expand(name, "/", ".");
     const char* msg_text1 = "Class loader (instance of): ";
     const char* msg_text2 = " tried to load prohibited package name: ";
