@@ -71,6 +71,7 @@ gcUtil.cpp                              gcUtil.hpp
 gcUtil.hpp                              allocation.hpp
 gcUtil.hpp                              debug.hpp
 gcUtil.hpp                              globalDefinitions.hpp
+gcUtil.hpp                              ostream.hpp
 gcUtil.hpp				timer.hpp
 
 generationCounters.cpp                  generationCounters.hpp

@@ -973,7 +973,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name, bool
     return;
   }
 
-  KlassHandle group(this, SystemDictionary::threadGroup_klass());
+  KlassHandle group(this, SystemDictionary::ThreadGroup_klass());
   Handle threadObj(this, this->threadObj());
 
   JavaCalls::call_special(&result,
@@ -1468,7 +1468,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
         // so call ThreadGroup.uncaughtException()
         KlassHandle recvrKlass(THREAD, threadObj->klass());
         CallInfo callinfo;
-        KlassHandle thread_klass(THREAD, SystemDictionary::thread_klass());
+        KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
         LinkResolver::resolve_virtual_call(callinfo, threadObj, recvrKlass, thread_klass,
                                            vmSymbolHandles::dispatchUncaughtException_name(),
                                            vmSymbolHandles::throwable_void_signature(),
@@ -1484,7 +1484,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
                                   uncaught_exception,
                                   THREAD);
         } else {
-          KlassHandle thread_group(THREAD, SystemDictionary::threadGroup_klass());
+          KlassHandle thread_group(THREAD, SystemDictionary::ThreadGroup_klass());
           JavaValue result(T_VOID);
           JavaCalls::call_virtual(&result,
                                   group, thread_group,
@@ -1505,7 +1505,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       while (java_lang_Thread::threadGroup(threadObj()) != NULL && (count-- > 0)) {
         EXCEPTION_MARK;
         JavaValue result(T_VOID);
-        KlassHandle thread_klass(THREAD, SystemDictionary::thread_klass());
+        KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
         JavaCalls::call_virtual(&result,
                               threadObj, thread_klass,
                               vmSymbolHandles::exit_method_name(),
@@ -1743,7 +1743,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
   // Check for pending async. exception
   if (_pending_async_exception != NULL) {
     // Only overwrite an already pending exception, if it is not a threadDeath.
-    if (!has_pending_exception() || !pending_exception()->is_a(SystemDictionary::threaddeath_klass())) {
+    if (!has_pending_exception() || !pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())) {
 
       // We cannot call Exceptions::_throw(...) here because we cannot block
       set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
@@ -1852,14 +1852,14 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   if (is_Compiler_thread()) return;
 
   // This is a change from JDK 1.1, but JDK 1.2 will also do it:
-  if (java_throwable->is_a(SystemDictionary::threaddeath_klass())) {
+  if (java_throwable->is_a(SystemDictionary::ThreadDeath_klass())) {
     java_lang_Thread::set_stillborn(threadObj());
   }
 
   {
     // Actually throw the Throwable against the target Thread - however
     // only if there is no thread death exception installed already.
-    if (_pending_async_exception == NULL || !_pending_async_exception->is_a(SystemDictionary::threaddeath_klass())) {
+    if (_pending_async_exception == NULL || !_pending_async_exception->is_a(SystemDictionary::ThreadDeath_klass())) {
       // If the topmost frame is a runtime stub, then we are calling into
       // OptoRuntime from compiled code. Some runtime stubs (new, monitor_exit..)
       // must deoptimize the caller before continuing, as the compiled  exception handler table
@@ -3094,6 +3094,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArrayStoreException has not been initialized");
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
+    }
+
+    if (EnableInvokeDynamic) {
+      // JSR 292: An intialized java.dyn.InvokeDynamic is required in
+      // the compiler.
+      initialize_class(vmSymbolHandles::java_dyn_InvokeDynamic(), CHECK_0);
     }
   }
 

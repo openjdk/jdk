@@ -371,7 +371,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* regmap) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(symbolHandle signature, bool is_static, const RegisterMap* reg_map, OopClosure* f);
+  void oops_compiled_arguments_do(symbolHandle signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
   void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:
@@ -379,9 +379,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
                                  int max_locals,
                                  InterpreterOopMap *mask);
   void oops_interpreted_expressions_do(OopClosure *f, symbolHandle signature,
-                                 bool is_static, int max_stack, int max_locals,
+                                 bool has_receiver, int max_stack, int max_locals,
                                  InterpreterOopMap *mask);
-  void oops_interpreted_arguments_do(symbolHandle signature, bool is_static, OopClosure* f);
+  void oops_interpreted_arguments_do(symbolHandle signature, bool has_receiver, OopClosure* f);
 
   // Iteration of oops
   void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache);

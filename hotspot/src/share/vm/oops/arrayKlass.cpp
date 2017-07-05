@@ -43,7 +43,7 @@ klassOop arrayKlass::java_super() const {
   if (super() == NULL)  return NULL;  // bootstrap case
   // Array klasses have primary supertypes which are not reported to Java.
   // Example super chain:  String[][] -> Object[][] -> Object[] -> Object
-  return SystemDictionary::object_klass();
+  return SystemDictionary::Object_klass();
 }
 
 
@@ -82,7 +82,7 @@ const Klass_vtbl& cplusplus_vtbl, int header_size, KlassHandle klass, TRAPS) {
   k = arrayKlassHandle(THREAD, base_klass());
 
   assert(!k()->is_parsable(), "not expecting parsability yet.");
-  k->set_super(Universe::is_bootstrapping() ? (klassOop)NULL : SystemDictionary::object_klass());
+  k->set_super(Universe::is_bootstrapping() ? (klassOop)NULL : SystemDictionary::Object_klass());
   k->set_layout_helper(Klass::_lh_neutral_value);
   k->set_dimension(1);
   k->set_higher_dimension(NULL);
@@ -117,9 +117,9 @@ objArrayOop arrayKlass::compute_secondary_supers(int num_extra_slots, TRAPS) {
 
 bool arrayKlass::compute_is_subtype_of(klassOop k) {
   // An array is a subtype of Serializable, Clonable, and Object
-  return    k == SystemDictionary::object_klass()
-         || k == SystemDictionary::cloneable_klass()
-         || k == SystemDictionary::serializable_klass();
+  return    k == SystemDictionary::Object_klass()
+         || k == SystemDictionary::Cloneable_klass()
+         || k == SystemDictionary::Serializable_klass();
 }
 
 

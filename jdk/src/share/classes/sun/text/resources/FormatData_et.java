@@ -50,35 +50,35 @@ public class FormatData_et extends ListResourceBundle {
         return new Object[][] {
             { "MonthNames",
                 new String[] {
-                    "Jaanuar", // january
-                    "Veebruar", // february
-                    "M\u00e4rts", // march
-                    "Aprill", // april
-                    "Mai", // may
-                    "Juuni", // june
-                    "Juuli", // july
-                    "August", // august
-                    "September", // september
-                    "Oktoober", // october
-                    "November", // november
-                    "Detsember", // december
+                    "jaanuar", // january
+                    "veebruar", // february
+                    "m\u00e4rts", // march
+                    "aprill", // april
+                    "mai", // may
+                    "juuni", // june
+                    "juuli", // july
+                    "august", // august
+                    "september", // september
+                    "oktoober", // october
+                    "november", // november
+                    "detsember", // december
                     "" // month 13 if applicable
                 }
             },
             { "MonthAbbreviations",
                 new String[] {
-                    "Jaan", // abb january
-                    "Veebr", // abb february
-                    "M\u00e4rts", // abb march
-                    "Apr", // abb april
-                    "Mai", // abb may
-                    "Juuni", // abb june
-                    "Juuli", // abb july
-                    "Aug", // abb august
-                    "Sept", // abb september
-                    "Okt", // abb october
-                    "Nov", // abb november
-                    "Dets", // abb december
+                    "jaan", // abb january
+                    "veebr", // abb february
+                    "m\u00e4rts", // abb march
+                    "apr", // abb april
+                    "mai", // abb may
+                    "juuni", // abb june
+                    "juuli", // abb july
+                    "aug", // abb august
+                    "sept", // abb september
+                    "okt", // abb october
+                    "nov", // abb november
+                    "dets", // abb december
                     "" // abb month 13 if applicable
                 }
             },

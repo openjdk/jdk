@@ -225,11 +225,12 @@ inline methodOop* frame::interpreter_frame_method_addr() const {
 // top of expression stack
 inline intptr_t* frame::interpreter_frame_tos_address() const {
   intptr_t* last_sp = interpreter_frame_last_sp();
-  if (last_sp == NULL ) {
+  if (last_sp == NULL) {
     return sp();
   } else {
-    // sp() may have been extended by an adapter
-    assert(last_sp < fp() && last_sp >= sp(), "bad tos");
+    // sp() may have been extended or shrunk by an adapter.  At least
+    // check that we don't fall behind the legal region.
+    assert(last_sp < (intptr_t*) interpreter_frame_monitor_begin(), "bad tos");
     return last_sp;
   }
 }

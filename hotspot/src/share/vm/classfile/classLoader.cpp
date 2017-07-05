@@ -819,7 +819,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
     _package_hash_table->copy_pkgnames(packages);
   }
   // Allocate objArray and fill with java.lang.String
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::string_klass(),
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
                                            nof_entries, CHECK_0);
   objArrayHandle result(THREAD, r);
   for (int i = 0; i < nof_entries; i++) {

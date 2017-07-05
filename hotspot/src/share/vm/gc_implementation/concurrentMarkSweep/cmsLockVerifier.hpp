@@ -29,8 +29,11 @@
 // the parallel threads.
 class CMSLockVerifier: AllStatic {
  public:
-  static void assert_locked(const Mutex* lock, const Mutex* p_lock)
+  static void assert_locked(const Mutex* lock, const Mutex* p_lock1, const Mutex* p_lock2)
     PRODUCT_RETURN;
+  static void assert_locked(const Mutex* lock, const Mutex* p_lock) {
+    assert_locked(lock, p_lock, NULL);
+  }
   static void assert_locked(const Mutex* lock) {
     assert_locked(lock, NULL);
   }

@@ -491,7 +491,7 @@ JVM_ENTRY(jobjectArray, jmm_GetInputArgumentArray(JNIEnv *env))
   int num_flags = Arguments::num_jvm_flags();
   int num_args = Arguments::num_jvm_args();
 
-  instanceKlassHandle ik (THREAD, SystemDictionary::string_klass());
+  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
   objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
   objArrayHandle result_h(THREAD, r);
 
@@ -1321,7 +1321,7 @@ JVM_ENTRY(jobjectArray, jmm_GetLoadedClasses(JNIEnv *env))
   LoadedClassesEnumerator lce(THREAD);  // Pass current Thread as parameter
 
   int num_classes = lce.num_loaded_classes();
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::class_klass(), num_classes, CHECK_0);
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(), num_classes, CHECK_0);
   objArrayHandle classes_ah(THREAD, r);
 
   for (int i = 0; i < num_classes; i++) {
@@ -1481,7 +1481,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   // last flag entry is always NULL, so subtract 1
   int nFlags = (int) Flag::numFlags - 1;
   // allocate a temp array
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::string_klass(),
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
                                            nFlags, CHECK_0);
   objArrayHandle flags_ah(THREAD, r);
   int num_entries = 0;
@@ -1497,7 +1497,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
 
   if (num_entries < nFlags) {
     // Return array of right length
-    objArrayOop res = oopFactory::new_objArray(SystemDictionary::string_klass(), num_entries, CHECK_0);
+    objArrayOop res = oopFactory::new_objArray(SystemDictionary::String_klass(), num_entries, CHECK_0);
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
@@ -1593,7 +1593,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     objArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
     klassOop element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
-    if (element_klass != SystemDictionary::string_klass()) {
+    if (element_klass != SystemDictionary::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
     }
@@ -1747,7 +1747,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
 
   // Make sure we have a String array
   klassOop element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
-  if (element_klass != SystemDictionary::string_klass()) {
+  if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class", 0);
   }
@@ -1782,7 +1782,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
     num_threads += cycle->num_threads();
   }
 
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::thread_klass(), num_threads, CHECK_NH);
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Thread_klass(), num_threads, CHECK_NH);
   objArrayHandle threads_ah(THREAD, r);
 
   int index = 0;
