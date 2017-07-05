@@ -285,6 +285,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
+  bool inline_multiplyToLen();
 };
 
 
@@ -293,8 +294,12 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsics::ID id = m->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
-  if (DisableIntrinsic[0] != '\0'
-      && strstr(DisableIntrinsic, vmIntrinsics::name_at(id)) != NULL) {
+  ccstr disable_intr = NULL;
+
+  if ((DisableIntrinsic[0] != '\0'
+       && strstr(DisableIntrinsic, vmIntrinsics::name_at(id)) != NULL) ||
+      (method_has_option_value("DisableIntrinsic", disable_intr)
+       && strstr(disable_intr, vmIntrinsics::name_at(id)) != NULL)) {
     // disabled by a user request on the command line:
     // example: -XX:DisableIntrinsic=_hashCode,_getClass
     return NULL;
@@ -475,6 +480,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_aescrypt_encryptBlock:
   case vmIntrinsics::_aescrypt_decryptBlock:
     if (!UseAESIntrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_multiplyToLen:
+    if (!UseMultiplyToLenIntrinsic) return NULL;
     break;
 
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
@@ -836,7 +845,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getComponentType:
   case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
 
   case vmIntrinsics::_floatToRawIntBits:
@@ -875,6 +883,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB(predicate);
+
+  case vmIntrinsics::_multiplyToLen:
+    return inline_multiplyToLen();
 
   case vmIntrinsics::_encodeISOArray:
     return inline_encodeISOArray();
@@ -3400,10 +3411,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = null();
     return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
     break;
-  case vmIntrinsics::_getComponentType:
-    prim_return_value = null();
-    return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
-    break;
   case vmIntrinsics::_getClassAccessFlags:
     prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
     return_type = TypeInt::INT;  // not bool!  6297094
@@ -3518,17 +3525,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (!stopped()) {
       query_value = load_mirror_from_klass(kls);
     }
-    break;
-
-  case vmIntrinsics::_getComponentType:
-    if (generate_array_guard(kls, region) != NULL) {
-      // Be sure to pin the oop load to the guard edge just created:
-      Node* is_array_ctrl = region->in(region->req()-1);
-      Node* cma = basic_plus_adr(kls, in_bytes(ArrayKlass::component_mirror_offset()));
-      Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
-      phi->add_req(cmo);
-    }
-    query_value = null();  // non-array case is null
     break;
 
   case vmIntrinsics::_getClassAccessFlags:
@@ -3859,7 +3855,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-      newcopy = new_array(klass_node, length, 0);  // no argments to push
+      newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -3869,7 +3865,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
       Node* alloc = tightly_coupled_allocation(newcopy, NULL);
 
-      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL);
+      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL,
+                                              load_object_klass(original), klass_node);
       if (!is_copyOfRange) {
         ac->set_copyof();
       } else {
@@ -4792,8 +4789,8 @@ bool LibraryCallKit::inline_arraycopy() {
                                           // Create LoadRange and LoadKlass nodes for use during macro expansion here
                                           // so the compiler has a chance to eliminate them: during macro expansion,
                                           // we have to set their control (CastPP nodes are eliminated).
-                                          load_array_length(src), load_array_length(dest),
-                                          load_object_klass(src), load_object_klass(dest));
+                                          load_object_klass(src), load_object_klass(dest),
+                                          load_array_length(src), load_array_length(dest));
 
   if (notest) {
     ac->set_arraycopy_notest();
@@ -4923,6 +4920,106 @@ bool LibraryCallKit::inline_encodeISOArray() {
   set_result(enc);
   return true;
 }
+
+//-------------inline_multiplyToLen-----------------------------------
+bool LibraryCallKit::inline_multiplyToLen() {
+  assert(UseMultiplyToLenIntrinsic, "not implementated on this platform");
+
+  address stubAddr = StubRoutines::multiplyToLen();
+  if (stubAddr == NULL) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  const char* stubName = "multiplyToLen";
+
+  assert(callee()->signature()->size() == 5, "multiplyToLen has 5 parameters");
+
+  Node* x    = argument(1);
+  Node* xlen = argument(2);
+  Node* y    = argument(3);
+  Node* ylen = argument(4);
+  Node* z    = argument(5);
+
+  const Type* x_type = x->Value(&_gvn);
+  const Type* y_type = y->Value(&_gvn);
+  const TypeAryPtr* top_x = x_type->isa_aryptr();
+  const TypeAryPtr* top_y = y_type->isa_aryptr();
+  if (top_x  == NULL || top_x->klass()  == NULL ||
+      top_y == NULL || top_y->klass() == NULL) {
+    // failed array check
+    return false;
+  }
+
+  BasicType x_elem = x_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType y_elem = y_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (x_elem != T_INT || y_elem != T_INT) {
+    return false;
+  }
+
+  // Set the original stack and the reexecute bit for the interpreter to reexecute
+  // the bytecode that invokes BigInteger.multiplyToLen() if deoptimization happens
+  // on the return from z array allocation in runtime.
+  { PreserveReexecuteState preexecs(this);
+    jvms()->set_should_reexecute(true);
+
+    Node* x_start = array_element_address(x, intcon(0), x_elem);
+    Node* y_start = array_element_address(y, intcon(0), y_elem);
+    // 'x_start' points to x array + scaled xlen
+    // 'y_start' points to y array + scaled ylen
+
+    // Allocate the result array
+    Node* zlen = _gvn.transform(new AddINode(xlen, ylen));
+    Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
+
+    IdealKit ideal(this);
+
+#define __ ideal.
+     Node* one = __ ConI(1);
+     Node* zero = __ ConI(0);
+     IdealVariable need_alloc(ideal), z_alloc(ideal);  __ declarations_done();
+     __ set(need_alloc, zero);
+     __ set(z_alloc, z);
+     __ if_then(z, BoolTest::eq, null()); {
+       __ increment (need_alloc, one);
+     } __ else_(); {
+       // Update graphKit memory and control from IdealKit.
+       sync_kit(ideal);
+       Node* zlen_arg = load_array_length(z);
+       // Update IdealKit memory and control from graphKit.
+       __ sync_kit(this);
+       __ if_then(zlen_arg, BoolTest::lt, zlen); {
+         __ increment (need_alloc, one);
+       } __ end_if();
+     } __ end_if();
+
+     __ if_then(__ value(need_alloc), BoolTest::ne, zero); {
+       // Update graphKit memory and control from IdealKit.
+       sync_kit(ideal);
+       Node * narr = new_array(klass_node, zlen, 1);
+       // Update IdealKit memory and control from graphKit.
+       __ sync_kit(this);
+       __ set(z_alloc, narr);
+     } __ end_if();
+
+     sync_kit(ideal);
+     z = __ value(z_alloc);
+     _gvn.set_type(z, TypeAryPtr::INTS);
+     // Final sync IdealKit and GraphKit.
+     final_sync(ideal);
+#undef __
+
+    Node* z_start = array_element_address(z, intcon(0), T_INT);
+
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                   OptoRuntime::multiplyToLen_Type(),
+                                   stubAddr, stubName, TypePtr::BOTTOM,
+                                   x_start, xlen, y_start, ylen, z_start, zlen);
+  } // original reexecute is set back here
+
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+  set_result(z);
+  return true;
+}
+
 
 /**
  * Calculate CRC32 for byte.

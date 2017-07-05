@@ -57,9 +57,9 @@ import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 @ScriptClass("Number")
 public final class NativeNumber extends ScriptObject {
 
-    // Method handle to create an object wrapper for a primitive number
-    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeNumber.class, Object.class));
-    // Method handle to retrieve the Number prototype object
+    /** Method handle to create an object wrapper for a primitive number. */
+    static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeNumber.class, Object.class));
+    /** Method handle to retrieve the Number prototype object. */
     private static final MethodHandle PROTOFILTER = findOwnMH("protoFilter", MH.type(Object.class, Object.class));
 
     /** ECMA 15.7.3.2 largest positive finite value */

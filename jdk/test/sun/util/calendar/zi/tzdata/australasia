@@ -21,7 +21,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -36,13 +35,13 @@
 # Please see the notes below for the controversy about "EST" versus "AEST" etc.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	-
-Rule	Aus	1917	only	-	Mar	25	2:00	0	-
-Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	-
-Rule	Aus	1942	only	-	Mar	29	2:00	0	-
-Rule	Aus	1942	only	-	Sep	27	2:00	1:00	-
-Rule	Aus	1943	1944	-	Mar	lastSun	2:00	0	-
-Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	-
+Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	D
+Rule	Aus	1917	only	-	Mar	25	2:00	0	S
+Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	D
+Rule	Aus	1942	only	-	Mar	29	2:00	0	S
+Rule	Aus	1942	only	-	Sep	27	2:00	1:00	D
+Rule	Aus	1943	1944	-	Mar	lastSun	2:00	0	S
+Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	D
 # Go with Whitman and the Australian National Standards Commission, which
 # says W Australia didn't use DST in 1943/1944.  Ignore Whitman's claim that
 # 1944/1945 was just like 1943/1944.
@@ -50,26 +49,26 @@ Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # Northern Territory
 Zone Australia/Darwin	 8:43:20 -	LMT	1895 Feb
-			 9:00	-	CST	1899 May
-			 9:30	Aus	CST
+			 9:00	-	ACST	1899 May
+			 9:30	Aus	AC%sT
 # Western Australia
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AW	1974	only	-	Oct	lastSun	2:00s	1:00	-
-Rule	AW	1975	only	-	Mar	Sun>=1	2:00s	0	-
-Rule	AW	1983	only	-	Oct	lastSun	2:00s	1:00	-
-Rule	AW	1984	only	-	Mar	Sun>=1	2:00s	0	-
-Rule	AW	1991	only	-	Nov	17	2:00s	1:00	-
-Rule	AW	1992	only	-	Mar	Sun>=1	2:00s	0	-
-Rule	AW	2006	only	-	Dec	 3	2:00s	1:00	-
-Rule	AW	2007	2009	-	Mar	lastSun	2:00s	0	-
-Rule	AW	2007	2008	-	Oct	lastSun	2:00s	1:00	-
+Rule	AW	1974	only	-	Oct	lastSun	2:00s	1:00	D
+Rule	AW	1975	only	-	Mar	Sun>=1	2:00s	0	S
+Rule	AW	1983	only	-	Oct	lastSun	2:00s	1:00	D
+Rule	AW	1984	only	-	Mar	Sun>=1	2:00s	0	S
+Rule	AW	1991	only	-	Nov	17	2:00s	1:00	D
+Rule	AW	1992	only	-	Mar	Sun>=1	2:00s	0	S
+Rule	AW	2006	only	-	Dec	 3	2:00s	1:00	D
+Rule	AW	2007	2009	-	Mar	lastSun	2:00s	0	S
+Rule	AW	2007	2008	-	Oct	lastSun	2:00s	1:00	D
 Zone Australia/Perth	 7:43:24 -	LMT	1895 Dec
-			 8:00	Aus	WST	1943 Jul
-			 8:00	AW	WST
+			 8:00	Aus	AW%sT	1943 Jul
+			 8:00	AW	AW%sT
 Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
-			 8:45	Aus	CWST	1943 Jul
-			 8:45	AW	CWST
+			 8:45	Aus	ACW%sT	1943 Jul
+			 8:45	AW	ACW%sT
 
 # Queensland
 #
@@ -85,150 +84,150 @@ Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
 # so use Lindeman.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AQ	1971	only	-	Oct	lastSun	2:00s	1:00	-
-Rule	AQ	1972	only	-	Feb	lastSun	2:00s	0	-
-Rule	AQ	1989	1991	-	Oct	lastSun	2:00s	1:00	-
-Rule	AQ	1990	1992	-	Mar	Sun>=1	2:00s	0	-
-Rule	Holiday	1992	1993	-	Oct	lastSun	2:00s	1:00	-
-Rule	Holiday	1993	1994	-	Mar	Sun>=1	2:00s	0	-
+Rule	AQ	1971	only	-	Oct	lastSun	2:00s	1:00	D
+Rule	AQ	1972	only	-	Feb	lastSun	2:00s	0	S
+Rule	AQ	1989	1991	-	Oct	lastSun	2:00s	1:00	D
+Rule	AQ	1990	1992	-	Mar	Sun>=1	2:00s	0	S
+Rule	Holiday	1992	1993	-	Oct	lastSun	2:00s	1:00	D
+Rule	Holiday	1993	1994	-	Mar	Sun>=1	2:00s	0	S
 Zone Australia/Brisbane	10:12:08 -	LMT	1895
-			10:00	Aus	EST	1971
-			10:00	AQ	EST
+			10:00	Aus	AE%sT	1971
+			10:00	AQ	AE%sT
 Zone Australia/Lindeman  9:55:56 -	LMT	1895
-			10:00	Aus	EST	1971
-			10:00	AQ	EST	1992 Jul
-			10:00	Holiday	EST
+			10:00	Aus	AE%sT	1971
+			10:00	AQ	AE%sT	1992 Jul
+			10:00	Holiday	AE%sT
 
 # South Australia
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AS	1971	1985	-	Oct	lastSun	2:00s	1:00	-
-Rule	AS	1986	only	-	Oct	19	2:00s	1:00	-
-Rule	AS	1987	2007	-	Oct	lastSun	2:00s	1:00	-
-Rule	AS	1972	only	-	Feb	27	2:00s	0	-
-Rule	AS	1973	1985	-	Mar	Sun>=1	2:00s	0	-
-Rule	AS	1986	1990	-	Mar	Sun>=15	2:00s	0	-
-Rule	AS	1991	only	-	Mar	3	2:00s	0	-
-Rule	AS	1992	only	-	Mar	22	2:00s	0	-
-Rule	AS	1993	only	-	Mar	7	2:00s	0	-
-Rule	AS	1994	only	-	Mar	20	2:00s	0	-
-Rule	AS	1995	2005	-	Mar	lastSun	2:00s	0	-
-Rule	AS	2006	only	-	Apr	2	2:00s	0	-
-Rule	AS	2007	only	-	Mar	lastSun	2:00s	0	-
-Rule	AS	2008	max	-	Apr	Sun>=1	2:00s	0	-
-Rule	AS	2008	max	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	AS	1971	1985	-	Oct	lastSun	2:00s	1:00	D
+Rule	AS	1986	only	-	Oct	19	2:00s	1:00	D
+Rule	AS	1987	2007	-	Oct	lastSun	2:00s	1:00	D
+Rule	AS	1972	only	-	Feb	27	2:00s	0	S
+Rule	AS	1973	1985	-	Mar	Sun>=1	2:00s	0	S
+Rule	AS	1986	1990	-	Mar	Sun>=15	2:00s	0	S
+Rule	AS	1991	only	-	Mar	3	2:00s	0	S
+Rule	AS	1992	only	-	Mar	22	2:00s	0	S
+Rule	AS	1993	only	-	Mar	7	2:00s	0	S
+Rule	AS	1994	only	-	Mar	20	2:00s	0	S
+Rule	AS	1995	2005	-	Mar	lastSun	2:00s	0	S
+Rule	AS	2006	only	-	Apr	2	2:00s	0	S
+Rule	AS	2007	only	-	Mar	lastSun	2:00s	0	S
+Rule	AS	2008	max	-	Apr	Sun>=1	2:00s	0	S
+Rule	AS	2008	max	-	Oct	Sun>=1	2:00s	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Adelaide	9:14:20 -	LMT	1895 Feb
-			9:00	-	CST	1899 May
-			9:30	Aus	CST	1971
-			9:30	AS	CST
+			9:00	-	ACST	1899 May
+			9:30	Aus	AC%sT	1971
+			9:30	AS	AC%sT
 
 # Tasmania
 #
 # From Paul Eggert (2005-08-16):
-# <http://www.bom.gov.au/climate/averages/tables/dst_times.shtml>
+# http://www.bom.gov.au/climate/averages/tables/dst_times.shtml
 # says King Island didn't observe DST from WWII until late 1971.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	-
-Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	-
-Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	-
-Rule	AT	1969	1971	-	Mar	Sun>=8	2:00s	0	-
-Rule	AT	1972	only	-	Feb	lastSun	2:00s	0	-
-Rule	AT	1973	1981	-	Mar	Sun>=1	2:00s	0	-
-Rule	AT	1982	1983	-	Mar	lastSun	2:00s	0	-
-Rule	AT	1984	1986	-	Mar	Sun>=1	2:00s	0	-
-Rule	AT	1986	only	-	Oct	Sun>=15	2:00s	1:00	-
-Rule	AT	1987	1990	-	Mar	Sun>=15	2:00s	0	-
-Rule	AT	1987	only	-	Oct	Sun>=22	2:00s	1:00	-
-Rule	AT	1988	1990	-	Oct	lastSun	2:00s	1:00	-
-Rule	AT	1991	1999	-	Oct	Sun>=1	2:00s	1:00	-
-Rule	AT	1991	2005	-	Mar	lastSun	2:00s	0	-
-Rule	AT	2000	only	-	Aug	lastSun	2:00s	1:00	-
-Rule	AT	2001	max	-	Oct	Sun>=1	2:00s	1:00	-
-Rule	AT	2006	only	-	Apr	Sun>=1	2:00s	0	-
-Rule	AT	2007	only	-	Mar	lastSun	2:00s	0	-
-Rule	AT	2008	max	-	Apr	Sun>=1	2:00s	0	-
+Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	D
+Rule	AT	1969	1971	-	Mar	Sun>=8	2:00s	0	S
+Rule	AT	1972	only	-	Feb	lastSun	2:00s	0	S
+Rule	AT	1973	1981	-	Mar	Sun>=1	2:00s	0	S
+Rule	AT	1982	1983	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1984	1986	-	Mar	Sun>=1	2:00s	0	S
+Rule	AT	1986	only	-	Oct	Sun>=15	2:00s	1:00	D
+Rule	AT	1987	1990	-	Mar	Sun>=15	2:00s	0	S
+Rule	AT	1987	only	-	Oct	Sun>=22	2:00s	1:00	D
+Rule	AT	1988	1990	-	Oct	lastSun	2:00s	1:00	D
+Rule	AT	1991	1999	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	1991	2005	-	Mar	lastSun	2:00s	0	S
+Rule	AT	2000	only	-	Aug	lastSun	2:00s	1:00	D
+Rule	AT	2001	max	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	2006	only	-	Apr	Sun>=1	2:00s	0	S
+Rule	AT	2007	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	2008	max	-	Apr	Sun>=1	2:00s	0	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Hobart	9:49:16	-	LMT	1895 Sep
-			10:00	-	EST	1916 Oct 1 2:00
-			10:00	1:00	EST	1917 Feb
-			10:00	Aus	EST	1967
-			10:00	AT	EST
+			10:00	-	AEST	1916 Oct  1  2:00
+			10:00	1:00	AEDT	1917 Feb
+			10:00	Aus	AE%sT	1967
+			10:00	AT	AE%sT
 Zone Australia/Currie	9:35:28	-	LMT	1895 Sep
-			10:00	-	EST	1916 Oct 1 2:00
-			10:00	1:00	EST	1917 Feb
-			10:00	Aus	EST	1971 Jul
-			10:00	AT	EST
+			10:00	-	AEST	1916 Oct  1  2:00
+			10:00	1:00	AEDT	1917 Feb
+			10:00	Aus	AE%sT	1971 Jul
+			10:00	AT	AE%sT
 
 # Victoria
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AV	1971	1985	-	Oct	lastSun	2:00s	1:00	-
-Rule	AV	1972	only	-	Feb	lastSun	2:00s	0	-
-Rule	AV	1973	1985	-	Mar	Sun>=1	2:00s	0	-
-Rule	AV	1986	1990	-	Mar	Sun>=15	2:00s	0	-
-Rule	AV	1986	1987	-	Oct	Sun>=15	2:00s	1:00	-
-Rule	AV	1988	1999	-	Oct	lastSun	2:00s	1:00	-
-Rule	AV	1991	1994	-	Mar	Sun>=1	2:00s	0	-
-Rule	AV	1995	2005	-	Mar	lastSun	2:00s	0	-
-Rule	AV	2000	only	-	Aug	lastSun	2:00s	1:00	-
-Rule	AV	2001	2007	-	Oct	lastSun	2:00s	1:00	-
-Rule	AV	2006	only	-	Apr	Sun>=1	2:00s	0	-
-Rule	AV	2007	only	-	Mar	lastSun	2:00s	0	-
-Rule	AV	2008	max	-	Apr	Sun>=1	2:00s	0	-
-Rule	AV	2008	max	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	AV	1971	1985	-	Oct	lastSun	2:00s	1:00	D
+Rule	AV	1972	only	-	Feb	lastSun	2:00s	0	S
+Rule	AV	1973	1985	-	Mar	Sun>=1	2:00s	0	S
+Rule	AV	1986	1990	-	Mar	Sun>=15	2:00s	0	S
+Rule	AV	1986	1987	-	Oct	Sun>=15	2:00s	1:00	D
+Rule	AV	1988	1999	-	Oct	lastSun	2:00s	1:00	D
+Rule	AV	1991	1994	-	Mar	Sun>=1	2:00s	0	S
+Rule	AV	1995	2005	-	Mar	lastSun	2:00s	0	S
+Rule	AV	2000	only	-	Aug	lastSun	2:00s	1:00	D
+Rule	AV	2001	2007	-	Oct	lastSun	2:00s	1:00	D
+Rule	AV	2006	only	-	Apr	Sun>=1	2:00s	0	S
+Rule	AV	2007	only	-	Mar	lastSun	2:00s	0	S
+Rule	AV	2008	max	-	Apr	Sun>=1	2:00s	0	S
+Rule	AV	2008	max	-	Oct	Sun>=1	2:00s	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Melbourne 9:39:52 -	LMT	1895 Feb
-			10:00	Aus	EST	1971
-			10:00	AV	EST
+			10:00	Aus	AE%sT	1971
+			10:00	AV	AE%sT
 
 # New South Wales
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	AN	1971	1985	-	Oct	lastSun	2:00s	1:00	-
-Rule	AN	1972	only	-	Feb	27	2:00s	0	-
-Rule	AN	1973	1981	-	Mar	Sun>=1	2:00s	0	-
-Rule	AN	1982	only	-	Apr	Sun>=1	2:00s	0	-
-Rule	AN	1983	1985	-	Mar	Sun>=1	2:00s	0	-
-Rule	AN	1986	1989	-	Mar	Sun>=15	2:00s	0	-
-Rule	AN	1986	only	-	Oct	19	2:00s	1:00	-
-Rule	AN	1987	1999	-	Oct	lastSun	2:00s	1:00	-
-Rule	AN	1990	1995	-	Mar	Sun>=1	2:00s	0	-
-Rule	AN	1996	2005	-	Mar	lastSun	2:00s	0	-
-Rule	AN	2000	only	-	Aug	lastSun	2:00s	1:00	-
-Rule	AN	2001	2007	-	Oct	lastSun	2:00s	1:00	-
-Rule	AN	2006	only	-	Apr	Sun>=1	2:00s	0	-
-Rule	AN	2007	only	-	Mar	lastSun	2:00s	0	-
-Rule	AN	2008	max	-	Apr	Sun>=1	2:00s	0	-
-Rule	AN	2008	max	-	Oct	Sun>=1	2:00s	1:00	-
+Rule	AN	1971	1985	-	Oct	lastSun	2:00s	1:00	D
+Rule	AN	1972	only	-	Feb	27	2:00s	0	S
+Rule	AN	1973	1981	-	Mar	Sun>=1	2:00s	0	S
+Rule	AN	1982	only	-	Apr	Sun>=1	2:00s	0	S
+Rule	AN	1983	1985	-	Mar	Sun>=1	2:00s	0	S
+Rule	AN	1986	1989	-	Mar	Sun>=15	2:00s	0	S
+Rule	AN	1986	only	-	Oct	19	2:00s	1:00	D
+Rule	AN	1987	1999	-	Oct	lastSun	2:00s	1:00	D
+Rule	AN	1990	1995	-	Mar	Sun>=1	2:00s	0	S
+Rule	AN	1996	2005	-	Mar	lastSun	2:00s	0	S
+Rule	AN	2000	only	-	Aug	lastSun	2:00s	1:00	D
+Rule	AN	2001	2007	-	Oct	lastSun	2:00s	1:00	D
+Rule	AN	2006	only	-	Apr	Sun>=1	2:00s	0	S
+Rule	AN	2007	only	-	Mar	lastSun	2:00s	0	S
+Rule	AN	2008	max	-	Apr	Sun>=1	2:00s	0	S
+Rule	AN	2008	max	-	Oct	Sun>=1	2:00s	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Sydney	10:04:52 -	LMT	1895 Feb
-			10:00	Aus	EST	1971
-			10:00	AN	EST
+			10:00	Aus	AE%sT	1971
+			10:00	AN	AE%sT
 Zone Australia/Broken_Hill 9:25:48 -	LMT	1895 Feb
-			10:00	-	EST	1896 Aug 23
-			9:00	-	CST	1899 May
-			9:30	Aus	CST	1971
-			9:30	AN	CST	2000
-			9:30	AS	CST
+			10:00	-	AEST	1896 Aug 23
+			9:00	-	ACST	1899 May
+			9:30	Aus	AC%sT	1971
+			9:30	AN	AC%sT	2000
+			9:30	AS	AC%sT
 
 # Lord Howe Island
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	-
-Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	-
-Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	-
-Rule	LH	1986	1989	-	Mar	Sun>=15	2:00	0	-
-Rule	LH	1986	only	-	Oct	19	2:00	0:30	-
-Rule	LH	1987	1999	-	Oct	lastSun	2:00	0:30	-
-Rule	LH	1990	1995	-	Mar	Sun>=1	2:00	0	-
-Rule	LH	1996	2005	-	Mar	lastSun	2:00	0	-
-Rule	LH	2000	only	-	Aug	lastSun	2:00	0:30	-
-Rule	LH	2001	2007	-	Oct	lastSun	2:00	0:30	-
-Rule	LH	2006	only	-	Apr	Sun>=1	2:00	0	-
-Rule	LH	2007	only	-	Mar	lastSun	2:00	0	-
-Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	-
-Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	-
+Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	D
+Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	S
+Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	D
+Rule	LH	1986	1989	-	Mar	Sun>=15	2:00	0	S
+Rule	LH	1986	only	-	Oct	19	2:00	0:30	D
+Rule	LH	1987	1999	-	Oct	lastSun	2:00	0:30	D
+Rule	LH	1990	1995	-	Mar	Sun>=1	2:00	0	S
+Rule	LH	1996	2005	-	Mar	lastSun	2:00	0	S
+Rule	LH	2000	only	-	Aug	lastSun	2:00	0:30	D
+Rule	LH	2001	2007	-	Oct	lastSun	2:00	0:30	D
+Rule	LH	2006	only	-	Apr	Sun>=1	2:00	0	S
+Rule	LH	2007	only	-	Mar	lastSun	2:00	0	S
+Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	S
+Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	D
 Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
-			10:00	-	EST	1981 Mar
-			10:30	LH	LHST
+			10:00	-	AEST	1981 Mar
+			10:30	LH	LH%sT
 
 # Australian miscellany
 #
@@ -244,8 +243,8 @@ Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 # Permanent occupation (scientific station) 1911-1915 and since 25 March 1948;
 # sealing and penguin oil station operated Nov 1899 to Apr 1919.  See the
 # Tasmania Parks & Wildlife Service history of sealing at Macquarie Island
-# <http://www.parks.tas.gov.au/index.aspx?base=1828>
-# <http://www.parks.tas.gov.au/index.aspx?base=1831>.
+# http://www.parks.tas.gov.au/index.aspx?base=1828
+# http://www.parks.tas.gov.au/index.aspx?base=1831
 # Guess that it was like Australia/Hobart while inhabited before 2010.
 #
 # From Steffen Thorsen (2010-03-10):
@@ -256,16 +255,16 @@ Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 #
 # From Arthur David Olson (2013-05-23):
 # The 1919 transition is overspecified below so pre-2013 zics
-# will produce a binary file with an EST-type as the first 32-bit type;
+# will produce a binary file with an [A]EST-type as the first 32-bit type;
 # this is required for correct handling of times before 1916 by
 # pre-2013 versions of localtime.
 Zone Antarctica/Macquarie 0	-	zzz	1899 Nov
-			10:00	-	EST	1916 Oct 1 2:00
-			10:00	1:00	EST	1917 Feb
-			10:00	Aus	EST	1919 Apr 1 0:00s
+			10:00	-	AEST	1916 Oct  1  2:00
+			10:00	1:00	AEDT	1917 Feb
+			10:00	Aus	AE%sT	1919 Apr  1  0:00s
 			0	-	zzz	1948 Mar 25
-			10:00	Aus	EST	1967
-			10:00	AT	EST	2010 Apr 4 3:00
+			10:00	Aus	AE%sT	1967
+			10:00	AT	AE%sT	2010 Apr  4  3:00
 			11:00	-	MIST	# Macquarie I Standard Time
 
 # Christmas
@@ -273,23 +272,13 @@ Zone Antarctica/Macquarie 0	-	zzz	1899 Nov
 Zone Indian/Christmas	7:02:52 -	LMT	1895 Feb
 			7:00	-	CXT	# Christmas Island Time
 
-# Cook Is
-# From Shanks & Pottenger:
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Cook	1978	only	-	Nov	12	0:00	0:30	HS
-Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
-Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	HS
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901		# Avarua
-			-10:30	-	CKT	1978 Nov 12	# Cook Is Time
-			-10:00	Cook	CK%sT
-
-# Cocos
+# Cocos (Keeling) Is
 # These islands were ruled by the Ross family from about 1830 to 1978.
 # We don't know when standard time was introduced; for now, we guess 1900.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Cocos	6:27:40	-	LMT	1900
 			6:30	-	CCT	# Cocos Islands Time
+
 
 # Fiji
 
@@ -300,20 +289,13 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # from November 29th 2009  to April 25th 2010.
 #
 # "Daylight savings to commence this month"
-# <a href="http://www.radiofiji.com.fj/fullstory.php?id=23719">
 # http://www.radiofiji.com.fj/fullstory.php?id=23719
-# </a>
-# or
-# <a href="http://www.worldtimezone.com/dst_news/dst_news_fiji01.html">
 # http://www.worldtimezone.com/dst_news/dst_news_fiji01.html
-# </a>
 
 # From Steffen Thorsen (2009-11-10):
 # The Fiji Government has posted some more details about the approved
 # amendments:
-# <a href="http://www.fiji.gov.fj/publish/page_16198.shtml">
 # http://www.fiji.gov.fj/publish/page_16198.shtml
-# </a>
 
 # From Steffen Thorsen (2010-03-03):
 # The Cabinet in Fiji has decided to end DST about a month early, on
@@ -322,35 +304,24 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # 2011 (last Sunday a good guess?).
 #
 # Official source:
-# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=1096:3310-cabinet-approves-change-in-daylight-savings-dates&catid=49:cabinet-releases&Itemid=166">
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=1096:3310-cabinet-approves-change-in-daylight-savings-dates&catid=49:cabinet-releases&Itemid=166
-# </a>
 #
 # A bit more background info here:
-# <a href="http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html">
 # http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html
-# </a>
 
 # From Alexander Krivenyshev (2010-10-24):
 # According to Radio Fiji and Fiji Times online, Fiji will end DST 3
 # weeks earlier than expected - on March 6, 2011, not March 27, 2011...
 # Here is confirmation from Government of the Republic of the Fiji Islands,
 # Ministry of Information (fiji.gov.fj) web site:
-# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155">
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155
-# </a>
-# or
-# <a href="http://www.worldtimezone.com/dst_news/dst_news_fiji04.html">
 # http://www.worldtimezone.com/dst_news/dst_news_fiji04.html
-# </a>
 
 # From Steffen Thorsen (2011-10-03):
 # Now the dates have been confirmed, and at least our start date
 # assumption was correct (end date was one week wrong).
 #
-# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155">
-# www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155
-# </a>
+# http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155
 # which says
 # Members of the public are reminded to change their time to one hour in
 # advance at 2am to 3am on October 23, 2011 and one hour back at 3am to
@@ -360,9 +331,7 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # Another change to the Fiji DST end date. In the TZ database the end date for
 # Fiji DST 2012, is currently Feb 26. This has been changed to Jan 22.
 #
-# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=5017:amendments-to-daylight-savings&catid=71:press-releases&Itemid=155">
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=5017:amendments-to-daylight-savings&catid=71:press-releases&Itemid=155
-# </a>
 # states:
 #
 # The end of daylight saving scheduled initially for the 26th of February 2012
@@ -400,16 +369,16 @@ Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	max	-	Jan	Sun>=18	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26	# Suva
+Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
 
 # French Polynesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct	# Rikitea
+Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct # Rikitea
 			 -9:00	-	GAMT	# Gambier Time
 Zone	Pacific/Marquesas -9:18:00 -	LMT	1912 Oct
 			 -9:30	-	MART	# Marquesas Time
-Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct	# Papeete
+Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
 			-10:00	-	TAHT	# Tahiti Time
 # Clipperton (near North America) is administered from French Polynesia;
 # it is uninhabited.
@@ -417,14 +386,14 @@ Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct	# Papeete
 # Guam
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
-			 9:39:00 -	LMT	1901		# Agana
-			10:00	-	GST	2000 Dec 23	# Guam
+			 9:39:00 -	LMT	1901        # Agana
+			10:00	-	GST	2000 Dec 23 # Guam
 			10:00	-	ChST	# Chamorro Standard Time
 
 # Kiribati
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Tarawa	 11:32:04 -	LMT	1901		# Bairiki
-			 12:00	-	GILT		 # Gilbert Is Time
+Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
+			 12:00	-	GILT	# Gilbert Is Time
 Zone Pacific/Enderbury	-11:24:20 -	LMT	1901
 			-12:00	-	PHOT	1979 Oct # Phoenix Is Time
 			-11:00	-	PHOT	1995
@@ -438,7 +407,7 @@ Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Saipan	-14:17:00 -	LMT	1844 Dec 31
 			 9:43:00 -	LMT	1901
-			 9:00	-	MPT	1969 Oct # N Mariana Is Time
+			 9:00	-	MPT	1969 Oct    # N Mariana Is Time
 			10:00	-	MPT	2000 Dec 23
 			10:00	-	ChST	# Chamorro Standard Time
 
@@ -449,24 +418,24 @@ Zone Pacific/Majuro	11:24:48 -	LMT	1901
 			12:00	-	MHT
 Zone Pacific/Kwajalein	11:09:20 -	LMT	1901
 			11:00	-	MHT	1969 Oct
-			-12:00	-	KWAT	1993 Aug 20	# Kwajalein Time
+			-12:00	-	KWAT	1993 Aug 20 # Kwajalein Time
 			12:00	-	MHT
 
 # Micronesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Chuuk	10:07:08 -	LMT	1901
-			10:00	-	CHUT			# Chuuk Time
-Zone Pacific/Pohnpei	10:32:52 -	LMT	1901		# Kolonia
-			11:00	-	PONT			# Pohnpei Time
+			10:00	-	CHUT	# Chuuk Time
+Zone Pacific/Pohnpei	10:32:52 -	LMT	1901 # Kolonia
+			11:00	-	PONT	# Pohnpei Time
 Zone Pacific/Kosrae	10:51:56 -	LMT	1901
-			11:00	-	KOST	1969 Oct	# Kosrae Time
+			11:00	-	KOST	1969 Oct # Kosrae Time
 			12:00	-	KOST	1999
 			11:00	-	KOST
 
 # Nauru
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15	# Uaobe
-			11:30	-	NRT	1942 Mar 15	# Nauru Time
+Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
+			11:30	-	NRT	1942 Mar 15 # Nauru Time
 			9:00	-	JST	1944 Aug 15
 			11:30	-	NRT	1979 May
 			12:00	-	NRT
@@ -479,7 +448,7 @@ Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	S
 # Shanks & Pottenger say the following was at 2:00; go with IATA.
 Rule	NC	1997	only	-	Mar	 2	2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13
+Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
 			11:00	NC	NC%sT
 
 
@@ -496,7 +465,8 @@ Rule	NZ	1934	1940	-	Apr	lastSun	2:00	0	M
 Rule	NZ	1934	1940	-	Sep	lastSun	2:00	0:30	S
 Rule	NZ	1946	only	-	Jan	 1	0:00	0	S
 # Since 1957 Chatham has been 45 minutes ahead of NZ, but there's no
-# convenient notation for this so we must duplicate the Rule lines.
+# convenient single notation for the date and time of this transition
+# so we must duplicate the Rule lines.
 Rule	NZ	1974	only	-	Nov	Sun>=1	2:00s	1:00	D
 Rule	Chatham	1974	only	-	Nov	Sun>=1	2:45s	1:00	D
 Rule	NZ	1975	only	-	Feb	lastSun	2:00s	0	S
@@ -519,13 +489,14 @@ Rule	Chatham	2008	max	-	Apr	Sun>=1	2:45s	0	S
 Zone Pacific/Auckland	11:39:04 -	LMT	1868 Nov  2
 			11:30	NZ	NZ%sT	1946 Jan  1
 			12:00	NZ	NZ%sT
-Zone Pacific/Chatham	12:13:48 -	LMT	1957 Jan  1
+Zone Pacific/Chatham	12:13:48 -	LMT	1868 Nov  2
+			12:15	-	CHAST	1946 Jan  1
 			12:45	Chatham	CHA%sT
 
 Link Pacific/Auckland Antarctica/McMurdo
 
 # Auckland Is
-# uninhabited; Maori and Moriori, colonial settlers, pastoralists, sealers,
+# uninhabited; Māori and Moriori, colonial settlers, pastoralists, sealers,
 # and scientific personnel have wintered
 
 # Campbell I
@@ -534,48 +505,58 @@ Link Pacific/Auckland Antarctica/McMurdo
 # previously whalers, sealers, pastoralists, and scientific personnel wintered
 # was probably like Pacific/Auckland
 
+# Cook Is
+# From Shanks & Pottenger:
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Cook	1978	only	-	Nov	12	0:00	0:30	HS
+Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
+Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	HS
+# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
+			-10:30	-	CKT	1978 Nov 12 # Cook Is Time
+			-10:00	Cook	CK%sT
+
 ###############################################################################
 
 
 # Niue
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Niue	-11:19:40 -	LMT	1901		# Alofi
-			-11:20	-	NUT	1951	# Niue Time
-			-11:30	-	NUT	1978 Oct 1
+Zone	Pacific/Niue	-11:19:40 -	LMT	1901        # Alofi
+			-11:20	-	NUT	1951        # Niue Time
+			-11:30	-	NUT	1978 Oct  1
 			-11:00	-	NUT
 
 # Norfolk
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Norfolk	11:11:52 -	LMT	1901		# Kingston
-			11:12	-	NMT	1951	# Norfolk Mean Time
-			11:30	-	NFT		# Norfolk Time
+Zone	Pacific/Norfolk	11:11:52 -	LMT	1901 # Kingston
+			11:12	-	NMT	1951 # Norfolk Mean Time
+			11:30	-	NFT	# Norfolk Time
 
 # Palau (Belau)
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Palau	8:57:56 -	LMT	1901		# Koror
+Zone Pacific/Palau	8:57:56 -	LMT	1901 # Koror
 			9:00	-	PWT	# Palau Time
 
 # Papua New Guinea
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
-			9:48:32	-	PMMT	1895	# Port Moresby Mean Time
-			10:00	-	PGT		# Papua New Guinea Time
+			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
+			10:00	-	PGT	# Papua New Guinea Time
 
 # Pitcairn
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901		# Adamstown
-			-8:30	-	PNT	1998 Apr 27 00:00
+Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
+			-8:30	-	PNT	1998 Apr 27  0:00
 			-8:00	-	PST	# Pitcairn Standard Time
 
 # American Samoa
 Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 			-11:22:48 -	LMT	1911
-			-11:30	-	SAMT	1950		# Samoa Time
-			-11:00	-	NST	1967 Apr	# N=Nome
-			-11:00	-	BST	1983 Nov 30	# B=Bering
-			-11:00	-	SST			# S=Samoa
+			-11:00	-	NST	1967 Apr    # N=Nome
+			-11:00	-	BST	1983 Nov 30 # B=Bering
+			-11:00	-	SST	            # S=Samoa
 
-# Samoa
+# Samoa (formerly and also known as Western Samoa)
 
 # From Steffen Thorsen (2009-10-16):
 # We have been in contact with the government of Samoa again, and received
@@ -586,141 +567,80 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # Sunday of April 2011."
 #
 # Background info:
-# <a href="http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html">
 # http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html
-# </a>
 #
 # Samoa's Daylight Saving Time Act 2009 is available here, but does not
 # contain any dates:
-# <a href="http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf">
 # http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf
-# </a>
 
 # From Laupue Raymond Hughes (2010-10-07):
 # Please see
-# <a href="http://www.mcil.gov.ws">
 # http://www.mcil.gov.ws
-# </a>,
 # the Ministry of Commerce, Industry and Labour (sideframe) "Last Sunday
 # September 2010 (26/09/10) - adjust clocks forward from 12:00 midnight
 # to 01:00am and First Sunday April 2011 (03/04/11) - adjust clocks
 # backwards from 1:00am to 12:00am"
 
 # From Laupue Raymond Hughes (2011-03-07):
-# I believe this will be posted shortly on the website
-# <a href="http://www.mcil.gov.ws">
-# www.mcil.gov.ws
-# </a>
+# [http://www.mcil.gov.ws/ftcd/daylight_saving_2011.pdf]
 #
-# PUBLIC NOTICE ON DAYLIGHT SAVING TIME
-#
-# Pursuant to the Daylight Saving Act 2009 and Cabinets decision,
-# businesses and the general public are hereby advised that daylight
-# saving time is on the first Saturday of April 2011 (02/04/11).
-#
-# The public is therefore advised that when the standard time strikes
-# the hour of four oclock (4.00am or 0400 Hours) on the 2nd April 2011,
-# then all instruments used to measure standard time are to be
-# adjusted/changed to three oclock (3:00am or 0300Hrs).
-#
-# Margaret Fruean ACTING CHIEF EXECUTIVE OFFICER MINISTRY OF COMMERCE,
-# INDUSTRY AND LABOUR 28th February 2011
+# ... when the standard time strikes the hour of four o'clock (4.00am
+# or 0400 Hours) on the 2nd April 2011, then all instruments used to
+# measure standard time are to be adjusted/changed to three o'clock
+# (3:00am or 0300Hrs).
 
-# From David Zuelke (2011-05-09):
+# From David Zülke (2011-05-09):
 # Subject: Samoa to move timezone from east to west of international date line
 #
-# <a href="http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963">
 # http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963
-# </a>
 
-# From Mark Sim-Smith (2011-08-17):
-# I have been in contact with Leilani Tuala Warren from the Samoa Law
-# Reform Commission, and she has sent me a copy of the Bill that she
-# confirmed has been passed...Most of the sections are about maps rather
-# than the time zone change, but I'll paste the relevant bits below. But
-# the essence is that at midnight 29 Dec (UTC-11 I suppose), Samoa
-# changes from UTC-11 to UTC+13:
-#
-# International Date Line Bill 2011
-#
-# AN ACT to provide for the change to standard time in Samoa and to make
-# consequential amendments to the position of the International Date
-# Line, and for related purposes.
-#
-# BE IT ENACTED by the Legislative Assembly of Samoa in Parliament
-# assembled as follows:
-#
-# 1. Short title and commencement-(1) This Act may be cited as the
-# International Date Line Act 2011. (2) Except for section 5(3) this Act
-# commences at 12 o'clock midnight, on Thursday 29th December 2011. (3)
-# Section 5(3) commences on the date of assent by the Head of State.
-#
-# [snip]
-#
-# 3. Interpretation - [snip] "Samoa standard time" in this Act and any
-# other statute of Samoa which refers to 'Samoa standard time' means the
-# time 13 hours in advance of Co-ordinated Universal Time.
-#
-# 4. Samoa standard time - (1) Upon the commencement of this Act, Samoa
-# standard time shall be set at 13 hours in advance of Co-ordinated
-# Universal Time for the whole of Samoa. (2) All references to Samoa's
-# time zone and to Samoa standard time in Samoa in all legislation and
-# instruments after the commencement of this Act shall be references to
-# Samoa standard time as provided for in this Act. (3) Nothing in this
-# Act affects the provisions of the Daylight Saving Act 2009, except that
-# it defines Samoa standard time....
+# From Paul Eggert (2014-06-27):
+# The International Date Line Act 2011
+# http://www.parliament.gov.ws/images/ACTS/International_Date_Line_Act__2011_-_Eng.pdf
+# changed Samoa from UTC-11 to UTC+13, effective "12 o'clock midnight, on
+# Thursday 29th December 2011".  The International Date Line was adjusted
+# accordingly.
 
 # From Laupue Raymond Hughes (2011-09-02):
-# <a href="http://www.mcil.gov.ws/mcil_publications.html">
 # http://www.mcil.gov.ws/mcil_publications.html
-# </a>
 #
 # here is the official website publication for Samoa DST and dateline change
 #
 # DST
-# Year	End	Time	Start	Time
-# 2011	- - -	- - -	24 September	3:00am to 4:00am
-# 2012	01 April	4:00am to 3:00am	- - -	- - -
+# Year  End      Time              Start        Time
+# 2011  - - -    - - -             24 September 3:00am to 4:00am
+# 2012  01 April 4:00am to 3:00am  - - -        - - -
 #
 # Dateline Change skip Friday 30th Dec 2011
 # Thursday 29th December 2011	23:59:59 Hours
 # Saturday 31st December 2011	00:00:00 Hours
 #
-# Clarification by Tim Parenti (2012-01-03):
-# Although Samoa has used Daylight Saving Time in the 2010-2011 and 2011-2012
-# seasons, there is not yet any indication that this trend will continue on
-# a regular basis. For now, we have explicitly listed the transitions below.
-#
-# From Nicky (2012-09-10):
+# From Nicholas Pereira (2012-09-10):
 # Daylight Saving Time commences on Sunday 30th September 2012 and
-# ends on Sunday 7th of April 2013.
-#
-# Please find link below for more information.
+# ends on Sunday 7th of April 2013....
 # http://www.mcil.gov.ws/mcil_publications.html
 #
-# That publication also includes dates for Summer of 2013/4 as well
-# which give the impression of a pattern in selecting dates for the
-# future, so for now, we will guess this will continue.
+# From Paul Eggert (2014-07-08):
+# That web page currently lists transitions for 2012/3 and 2013/4.
+# Assume the pattern instituted in 2012 will continue indefinitely.
 
-# Western Samoa
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	WS	2010	only	-	Sep	lastSun	0:00	1	D
+Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	S
+Rule	WS	2011	only	-	Sep	lastSat	3:00	1	D
+Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	S
 Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
-Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
-			-11:30	-	SAMT	1950		# Samoa Time
-			-11:00	-	WST	2010 Sep 26
-			-11:00	1:00	WSDT	2011 Apr 2 4:00
-			-11:00	-	WST	2011 Sep 24 3:00
-			-11:00	1:00	WSDT	2011 Dec 30
-			 13:00	1:00	WSDT	2012 Apr Sun>=1 4:00
+			-11:30	-	WSST	1950
+			-11:00	WS	S%sT	2011 Dec 29 24:00 # S=Samoa
 			 13:00	WS	WS%sT
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct	# Honiara
+Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
 			11:00	-	SBT	# Solomon Is Time
 
 # Tokelau Is
@@ -744,7 +664,7 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct	# Honiara
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
-			-11:00	-	TKT 2011 Dec 30	# Tokelau Time
+			-11:00	-	TKT	2011 Dec 30 # Tokelau Time
 			13:00	-	TKT
 
 # Tonga
@@ -804,8 +724,8 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # time from Operation Newsreel (Hardtack I/Teak shot, 1958-08-01) to the last
 # Operation Fishbowl shot (Tightrope, 1962-11-04).... [See] Herman Hoerlin,
 # "The United States High-Altitude Test Experience: A Review Emphasizing the
-# Impact on the Environment", Los Alamos LA-6405, Oct 1976
-# <http://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf>.
+# Impact on the Environment", Los Alamos LA-6405, Oct 1976.
+# http://www.fas.org/sgp/othergov/doe/lanl/docs1/00322994.pdf
 # See the table on page 4 where he lists GMT and local times for the tests; a
 # footnote for the JI tests reads that local time is "JI time = Hawaii Time
 # Minus One Hour".
@@ -820,7 +740,7 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # From Mark Brader (2005-01-23):
 # [Fallacies and Fantasies of Air Transport History, by R.E.G. Davies,
 # published 1994 by Paladwr Press, McLean, VA, USA; ISBN 0-9626483-5-3]
-# reproduced a Pan American Airways timeables from 1936, for their weekly
+# reproduced a Pan American Airways timetable from 1936, for their weekly
 # "Orient Express" flights between San Francisco and Manila, and connecting
 # flights to Chicago and the US East Coast.  As it uses some time zone
 # designations that I've never seen before:....
@@ -830,9 +750,9 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 Zone Pacific/Midway	-11:49:28 -	LMT	1901
 			-11:00	-	NST	1956 Jun  3
 			-11:00	1:00	NDT	1956 Sep  2
-			-11:00	-	NST	1967 Apr	# N=Nome
-			-11:00	-	BST	1983 Nov 30	# B=Bering
-			-11:00	-	SST			# S=Samoa
+			-11:00	-	NST	1967 Apr    # N=Nome
+			-11:00	-	BST	1983 Nov 30 # B=Bering
+			-11:00	-	SST	            # S=Samoa
 
 # Palmyra
 # uninhabited since World War II; was probably like Pacific/Kiritimati
@@ -852,7 +772,7 @@ Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	S
 Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
 Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13		# Vila
+Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	VU%sT	# Vanuatu Time
 
 # Wallis and Futuna
@@ -864,9 +784,10 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # NOTES
 
-# This data is by no means authoritative; if you think you know better,
+# This file is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).
+# tz@iana.org for general use in the future).  For more, please see
+# the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2013-02-21):
 # A good source for time zone historical data outside the U.S. is
@@ -887,165 +808,188 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # I found in the UCLA library.
 #
 # For data circa 1899, a common source is:
-# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
-# <http://www.jstor.org/stable/1774359>.
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
+# http://www.jstor.org/stable/1774359
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
 #
-# I invented the abbreviations marked `*' in the following table;
+# I invented the abbreviations marked '*' in the following table;
 # the rest are from earlier versions of this file, or from other sources.
 # Corrections are welcome!
-#		std dst
-#		LMT	Local Mean Time
-#	  8:00	WST WST	Western Australia
-#	  8:45	CWST CWST Central Western Australia*
-#	  9:00	JST	Japan
-#	  9:30	CST CST	Central Australia
-#	 10:00	EST EST	Eastern Australia
-#	 10:00	ChST	Chamorro
-#	 10:30	LHST LHST Lord Howe*
-#	 11:30	NZMT NZST New Zealand through 1945
-#	 12:00	NZST NZDT New Zealand 1946-present
-#	 12:45	CHAST CHADT Chatham*
-#	-11:00	SST	Samoa
-#	-10:00	HST	Hawaii
-#	- 8:00	PST	Pitcairn*
+#		std	dst
+#		LMT		Local Mean Time
+#	  8:00	AWST	AWDT	Western Australia
+#	  8:45	ACWST	ACWDT	Central Western Australia*
+#	  9:00	JST		Japan
+#	  9:30	ACST	ACDT	Central Australia
+#	 10:00	AEST	AEDT	Eastern Australia
+#	 10:00	ChST		Chamorro
+#	 10:30	LHST	LHDT	Lord Howe*
+#	 11:30	NZMT	NZST	New Zealand through 1945
+#	 12:00	NZST	NZDT	New Zealand 1946-present
+#	 12:15	CHAST		Chatham through 1945*
+#	 12:45	CHAST	CHADT	Chatham 1946-present*
+#	 13:00	WSST	WSDT	(western) Samoa 2011-present*
+#	-11:30	WSST		Western Samoa through 1950*
+#	-11:00	SST		Samoa
+#	-10:00	HST		Hawaii
+#	- 8:00	PST		Pitcairn*
 #
-# See the `northamerica' file for Hawaii.
-# See the `southamerica' file for Easter I and the Galapagos Is.
+# See the 'northamerica' file for Hawaii.
+# See the 'southamerica' file for Easter I and the Galápagos Is.
 
 ###############################################################################
 
 # Australia
 
+# From Paul Eggert (2014-06-30):
+# Daylight saving time has long been controversial in Australia, pitting
+# region against region, rural against urban, and local against global.
+# For example, in her review of Graeme Davison's _The Unforgiving
+# Minute: how Australians learned to tell the time_ (1993), Perth native
+# Phillipa J Martyr wrote, "The section entitled 'Saving Daylight' was
+# very informative, but was (as can, sadly, only be expected from a
+# Melbourne-based study) replete with the usual chuckleheaded
+# Queenslanders and straw-chewing yokels from the West prattling fables
+# about fading curtains and crazed farm animals."
+# Electronic Journal of Australian and New Zealand History (1997-03-03)
+# http://www.jcu.edu.au/aff/history/reviews/davison.htm
+
 # From Paul Eggert (2005-12-08):
-# <a href="http://www.bom.gov.au/climate/averages/tables/dst_times.shtml">
 # Implementation Dates of Daylight Saving Time within Australia
-# </a> summarizes daylight saving issues in Australia.
+# http://www.bom.gov.au/climate/averages/tables/dst_times.shtml
+# summarizes daylight saving issues in Australia.
 
 # From Arthur David Olson (2005-12-12):
-# <a href="http://www.lawlink.nsw.gov.au/lawlink/Corporate/ll_agdinfo.nsf/pages/community_relations_daylight_saving">
 # Lawlink NSW:Daylight Saving in New South Wales
-# </a> covers New South Wales in particular.
+# http://www.lawlink.nsw.gov.au/lawlink/Corporate/ll_agdinfo.nsf/pages/community_relations_daylight_saving
+# covers New South Wales in particular.
 
 # From John Mackin (1991-03-06):
-# We in Australia have _never_ referred to DST as `daylight' time.
-# It is called `summer' time.  Now by a happy coincidence, `summer'
-# and `standard' happen to start with the same letter; hence, the
+# We in Australia have _never_ referred to DST as 'daylight' time.
+# It is called 'summer' time.  Now by a happy coincidence, 'summer'
+# and 'standard' happen to start with the same letter; hence, the
 # abbreviation does _not_ change...
 # The legislation does not actually define abbreviations, at least
 # in this State, but the abbreviation is just commonly taken to be the
 # initials of the phrase, and the legislation here uniformly uses
-# the phrase `summer time' and does not use the phrase `daylight
+# the phrase 'summer time' and does not use the phrase 'daylight
 # time'.
 # Announcers on the Commonwealth radio network, the ABC (for Australian
-# Broadcasting Commission), use the phrases `Eastern Standard Time'
-# or `Eastern Summer Time'.  (Note, though, that as I say in the
+# Broadcasting Commission), use the phrases 'Eastern Standard Time'
+# or 'Eastern Summer Time'.  (Note, though, that as I say in the
 # current australasia file, there is really no such thing.)  Announcers
 # on its overseas service, Radio Australia, use the same phrases
-# prefixed by the word `Australian' when referring to local times;
+# prefixed by the word 'Australian' when referring to local times;
 # time announcements on that service, naturally enough, are made in UTC.
 
-# From Arthur David Olson (1992-03-08):
-# Given the above, what's chosen for year-round use is:
-#	CST	for any place operating at a GMTOFF of 9:30
-#	WST	for any place operating at a GMTOFF of 8:00
-#	EST	for any place operating at a GMTOFF of 10:00
-
-# From Chuck Soper (2006-06-01):
-# I recently found this Australian government web page on time zones:
-# <http://www.australia.gov.au/about-australia-13time>
-# And this government web page lists time zone names and abbreviations:
-# <http://www.bom.gov.au/climate/averages/tables/daysavtm.shtml>
-
-# From Paul Eggert (2001-04-05), summarizing a long discussion about "EST"
-# versus "AEST" etc.:
+# From Paul Eggert (2014-06-30):
 #
-# I see the following points of dispute:
+# Inspired by Mackin's remarks quoted above, earlier versions of this
+# file used "EST" for both Eastern Standard Time and Eastern Summer
+# Time in Australia, and similarly for "CST", "CWST", and "WST".
+# However, these abbreviations were confusing and were not common
+# practice among Australians, and there were justifiable complaints
+# about them, so I attempted to survey current Australian usage.
+# For the tz database, the full English phrase is not that important;
+# what matters is the abbreviation.  It's difficult to survey the web
+# directly for abbreviation usage, as there are so many false hits for
+# strings like "EST" and "EDT", so I looked for pages that defined an
+# abbreviation for eastern or central DST in Australia, and got the
+# following numbers of unique hits for the listed Google queries:
 #
-# * How important are unique time zone abbreviations?
+#   10 "Eastern Daylight Time AEST" site:au [some are false hits]
+#   10 "Eastern Summer Time AEST" site:au
+#   10 "Summer Time AEDT" site:au
+#   13 "EDST Eastern Daylight Saving Time" site:au
+#   18 "Summer Time ESST" site:au
+#   28 "Eastern Daylight Saving Time EDST" site:au
+#   39 "EDT Eastern Daylight Time" site:au [some are false hits]
+#   53 "Eastern Daylight Time EDT" site:au [some are false hits]
+#   54 "AEDT Australian Eastern Daylight Time" site:au
+#  182 "Eastern Daylight Time AEDT" site:au
 #
-#   Here I tend to agree with the point (most recently made by Chris
-#   Newman) that unique abbreviations should not be essential for proper
-#   operation of software.  We have other instances of ambiguity
-#   (e.g. "IST" denoting both "Israel Standard Time" and "Indian
-#   Standard Time"), and they are not likely to go away any time soon.
-#   In the old days, some software mistakenly relied on unique
-#   abbreviations, but this is becoming less true with time, and I don't
-#   think it's that important to cater to such software these days.
+#   17 "Central Daylight Time CDT" site:au [some are false hits]
+#   46 "Central Daylight Time ACDT" site:au
 #
-#   On the other hand, there is another motivation for unambiguous
-#   abbreviations: it cuts down on human confusion.  This is
-#   particularly true for Australia, where "EST" can mean one thing for
-#   time T and a different thing for time T plus 1 second.
+# I tried several other variants (e.g., "Eastern Summer Time EST") but
+# they all returned fewer than 10 unique hits.  I also looked for pages
+# mentioning both "western standard time" and an abbreviation, since
+# there is no WST in the US to generate false hits, and found:
 #
-# * Does the relevant legislation indicate which abbreviations should be used?
+#  156 "western standard time" AWST site:au
+#  226 "western standard time" WST site:au
 #
-#   Here I tend to think that things are a mess, just as they are in
-#   many other countries.  We Americans are currently disagreeing about
-#   which abbreviation to use for the newly legislated Chamorro Standard
-#   Time, for example.
+# I then surveyed the top ten newspapers in Australia by circulation as
+# listed in Wikipedia, using Google queries like "AEDT site:heraldsun.com.au"
+# and obtaining estimated counts from the initial page of search results.
+# All ten papers greatly preferred "AEDT" to "EDT".  The papers
+# surveyed were the Herald Sun, The Daily Telegraph, The Courier-Mail,
+# The Sydney Morning Herald, The West Australian, The Age, The Advertiser,
+# The Australian, The Financial Review, and The Herald (Newcastle).
 #
-#   Personally, I would prefer to use common practice; I would like to
-#   refer to legislation only for examples of common practice, or as a
-#   tiebreaker.
+# I also searched for historical usage, to see whether abbreviations
+# like "AEDT" are new.  A Trove search <http://trove.nla.gov.au/>
+# found only one newspaper (The Canberra Times) with a house style
+# dating back to the 1970s, I expect because other newspapers weren't
+# fully indexed.  The Canberra Times strongly preferred abbreviations
+# like "AEDT".  The first occurrence of "AEDT" was a World Weather
+# column (1971-11-17, page 24), and of "ACDT" was a Scoreboard column
+# (1993-01-24, p 16).  The style was the typical usage but was not
+# strictly enforced; for example, "Welcome to the twilight zones ..."
+# (1994-10-29, p 1) uses the abbreviations AEST/AEDT, CST/CDT, and
+# WST, and goes on to say, "The confusion and frustration some feel
+# about the lack of uniformity among Australia's six states and two
+# territories has prompted one group to form its very own political
+# party -- the Sydney-based Daylight Saving Extension Party."
 #
-# * Do Australians more often use "Eastern Daylight Time" or "Eastern
-#   Summer Time"?  Do they typically prefix the time zone names with
-#   the word "Australian"?
+# I also surveyed federal government sources.  They did not agree:
 #
-#   My own impression is that both "Daylight Time" and "Summer Time" are
-#   common and are widely understood, but that "Summer Time" is more
-#   popular; and that the leading "A" is also common but is omitted more
-#   often than not.  I just used AltaVista advanced search and got the
-#   following count of page hits:
+#   The Australian Government (2014-03-26)
+#   http://australia.gov.au/about-australia/our-country/time
+#   (This document was produced by the Department of Finance.)
+#   AEST ACST AWST AEDT ACDT
 #
-#     1,103 "Eastern Summer Time" AND domain:au
-#       971 "Australian Eastern Summer Time" AND domain:au
-#       613 "Eastern Daylight Time" AND domain:au
-#       127 "Australian Eastern Daylight Time" AND domain:au
+#   Bureau of Meteorology (2012-11-08)
+#   http://www.bom.gov.au/climate/averages/tables/daysavtm.shtml
+#   EST CST WST EDT CDT
 #
-#   Here "Summer" seems quite a bit more popular than "Daylight",
-#   particularly when we know the time zone is Australian and not US,
-#   say.  The "Australian" prefix seems to be popular for Eastern Summer
-#   Time, but unpopular for Eastern Daylight Time.
+#   Civil Aviation Safety Authority (undated)
+#   http://services.casa.gov.au/outnback/inc/pages/episode3/episode-3_time_zones.shtml
+#   EST CST WST (no abbreviations given for DST)
 #
-#   For abbreviations, tools like AltaVista are less useful because of
-#   ambiguity.  Many hits are not really time zones, unfortunately, and
-#   many hits denote US time zones and not Australian ones.  But here
-#   are the hit counts anyway:
+#   Geoscience Australia (2011-11-24)
+#   http://www.ga.gov.au/geodesy/astro/sunrise.jsp
+#   AEST ACST AWST AEDT ACDT
 #
-#     161,304 "EST" and domain:au
-#      25,156 "EDT" and domain:au
-#      18,263 "AEST" and domain:au
-#      10,416 "AEDT" and domain:au
+#   Parliamentary Library (2008-11-10)
+#   http://www.aph.gov.au/binaries/library/pubs/rp/2008-09/09rp14.pdf
+#   EST CST WST preferred for standard time; AEST AEDT ACST ACDT also used
 #
-#      14,538 "CST" and domain:au
-#       5,728 "CDT" and domain:au
-#         176 "ACST" and domain:au
-#          29 "ACDT" and domain:au
+#   The Transport Safety Bureau has an extensive series of accident reports,
+#   and investigators seem to use whatever abbreviation they like.
+#   Googling site:atsb.gov.au found the following number of unique hits:
+#   311 "ESuT", 195 "EDT", 26 "AEDT", 83 "CSuT", 46 "CDT".
+#   "_SuT" tended to appear in older reports, and "A_DT" tended to
+#   appear in reports of events with international implications.
 #
-#       7,539 "WST" and domain:au
-#          68 "AWST" and domain:au
-#
-#   This data suggest that Australians tend to omit the "A" prefix in
-#   practice.  The situation for "ST" versus "DT" is less clear, given
-#   the ambiguities involved.
-#
-# * How do Australians feel about the abbreviations in the tz database?
-#
-#   If you just count Australians on this list, I count 2 in favor and 3
-#   against.  One of the "against" votes (David Keegel) counseled delay,
-#   saying that both AEST/AEDT and EST/EST are widely used and
-#   understood in Australia.
+# From the above it appears that there is a working consensus in
+# Australia to use trailing "DT" for daylight saving time; although
+# some sources use trailing "SST" or "ST" or "SuT" they are by far in
+# the minority.  The case for leading "A" is weaker, but since it
+# seems to be preferred in the overall web and is preferred in all
+# the leading newspaper websites and in many government departments,
+# it has a stronger case than omitting the leading "A".  The current
+# version of the database therefore uses abbreviations like "AEST" and
+# "AEDT" for Australian time zones.
 
 # From Paul Eggert (1995-12-19):
 # Shanks & Pottenger report 2:00 for all autumn changes in Australia and NZ.
 # Mark Prior writes that his newspaper
 # reports that NSW's fall 1995 change will occur at 2:00,
 # but Robert Elz says it's been 3:00 in Victoria since 1970
-# and perhaps the newspaper's `2:00' is referring to standard time.
+# and perhaps the newspaper's '2:00' is referring to standard time.
 # For now we'll continue to assume 2:00s for changes since 1960.
 
 # From Eric Ulevik (1998-01-05):
@@ -1055,17 +999,14 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # relevant entries in this database.
 #
 # NSW (including LHI and Broken Hill):
-# <a href="http://www.austlii.edu.au/au/legis/nsw/consol_act/sta1987137/index.html">
 # Standard Time Act 1987 (updated 1995-04-04)
-# </a>
+# http://www.austlii.edu.au/au/legis/nsw/consol_act/sta1987137/index.html
 # ACT
-# <a href="http://www.austlii.edu.au/au/legis/act/consol_act/stasta1972279/index.html">
 # Standard Time and Summer Time Act 1972
-# </a>
+# http://www.austlii.edu.au/au/legis/act/consol_act/stasta1972279/index.html
 # SA
-# <a href="http://www.austlii.edu.au/au/legis/sa/consol_act/sta1898137/index.html">
 # Standard Time Act, 1898
-# </a>
+# http://www.austlii.edu.au/au/legis/sa/consol_act/sta1898137/index.html
 
 # From David Grosz (2005-06-13):
 # It was announced last week that Daylight Saving would be extended by
@@ -1083,7 +1024,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Victoria: I wasn't able to find anything separate, but the other articles
 # allude to it.
 # But not Queensland
-# http://www.news.com.au/story/0,10117,15564030-1248,00.html.
+# http://www.news.com.au/story/0,10117,15564030-1248,00.html
 
 # Northern Territory
 
@@ -1130,9 +1071,9 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # The 1992 ending date used in the rules is a best guess;
 # it matches what was used in the past.
 
-# <a href="http://www.bom.gov.au/faq/faqgen.htm">
 # The Australian Bureau of Meteorology FAQ
-# </a> (1999-09-27) writes that Giles Meteorological Station uses
+# http://www.bom.gov.au/faq/faqgen.htm
+# (1999-09-27) writes that Giles Meteorological Station uses
 # South Australian time even though it's located in Western Australia.
 
 # Queensland
@@ -1173,9 +1114,9 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # The chosen rules the union of the 1971/1972 change and the 1989-1992 changes.
 
 # From Christopher Hunt (2006-11-21), after an advance warning
-# from Jesper Norgaard Welen (2006-11-01):
+# from Jesper Nørgaard Welen (2006-11-01):
 # WA are trialing DST for three years.
-# <http://www.parliament.wa.gov.au/parliament/bills.nsf/9A1B183144403DA54825721200088DF1/$File/Bill175-1B.pdf>
+# http://www.parliament.wa.gov.au/parliament/bills.nsf/9A1B183144403DA54825721200088DF1/$File/Bill175-1B.pdf
 
 # From Rives McDow (2002-04-09):
 # The most interesting region I have found consists of three towns on the
@@ -1189,7 +1130,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # From Paul Eggert (2002-04-09):
 # This is confirmed by the section entitled
 # "What's the deal with time zones???" in
-# <http://www.earthsci.unimelb.edu.au/~awatkins/null.html>.
+# http://www.earthsci.unimelb.edu.au/~awatkins/null.html
 #
 # From Alex Livingston (2006-12-07):
 # ... it was just on four years ago that I drove along the Eyre Highway,
@@ -1337,7 +1278,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Based on law library research by John Mackin,
 # who notes:
 #	In Australia, time is not legislated federally, but rather by the
-#	individual states.  Thus, while such terms as ``Eastern Standard Time''
+#	individual states.  Thus, while such terms as "Eastern Standard Time"
 #	[I mean, of course, Australian EST, not any other kind] are in common
 #	use, _they have NO REAL MEANING_, as they are not defined in the
 #	legislation.  This is very important to understand.
@@ -1345,48 +1286,42 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # From Eric Ulevik (1999-05-26):
 # DST will start in NSW on the last Sunday of August, rather than the usual
-# October in 2000.  [See: Matthew Moore,
-# <a href="http://www.smh.com.au/news/9905/26/pageone/pageone4.html">
-# Two months more daylight saving
-# </a>
-# Sydney Morning Herald (1999-05-26).]
+# October in 2000.  See: Matthew Moore,
+# Two months more daylight saving, Sydney Morning Herald (1999-05-26).
+# http://www.smh.com.au/news/9905/26/pageone/pageone4.html
 
 # From Paul Eggert (1999-09-27):
 # See the following official NSW source:
-# <a href="http://dir.gis.nsw.gov.au/cgi-bin/genobject/document/other/daylightsaving/tigGmZ">
 # Daylight Saving in New South Wales.
-# </a>
+# http://dir.gis.nsw.gov.au/cgi-bin/genobject/document/other/daylightsaving/tigGmZ
 #
 # Narrabri Shire (NSW) council has announced it will ignore the extension of
 # daylight saving next year.  See:
-# <a href="http://abc.net.au/news/regionals/neweng/monthly/regeng-22jul1999-1.htm">
 # Narrabri Council to ignore daylight saving
-# </a> (1999-07-22).  For now, we'll wait to see if this really happens.
+# http://abc.net.au/news/regionals/neweng/monthly/regeng-22jul1999-1.htm
+# (1999-07-22).  For now, we'll wait to see if this really happens.
 #
 # Victoria will following NSW.  See:
-# <a href="http://abc.net.au/local/news/olympics/1999/07/item19990728112314_1.htm">
-# Vic to extend daylight saving
-# </a> (1999-07-28).
+# Vic to extend daylight saving (1999-07-28)
+# http://abc.net.au/local/news/olympics/1999/07/item19990728112314_1.htm
 #
 # However, South Australia rejected the DST request.  See:
-# <a href="http://abc.net.au/news/olympics/1999/07/item19990719151754_1.htm">
-# South Australia rejects Olympics daylight savings request
-# </a> (1999-07-19).
+# South Australia rejects Olympics daylight savings request (1999-07-19)
+# http://abc.net.au/news/olympics/1999/07/item19990719151754_1.htm
 #
 # Queensland also will not observe DST for the Olympics.  See:
-# <a href="http://abc.net.au/news/olympics/1999/06/item19990601114608_1.htm">
 # Qld says no to daylight savings for Olympics
-# </a> (1999-06-01), which quotes Queensland Premier Peter Beattie as saying
-# ``Look you've got to remember in my family when this came up last time
+# http://abc.net.au/news/olympics/1999/06/item19990601114608_1.htm
+# (1999-06-01), which quotes Queensland Premier Peter Beattie as saying
+# "Look you've got to remember in my family when this came up last time
 # I voted for it, my wife voted against it and she said to me it's all very
 # well for you, you don't have to worry about getting the children out of
 # bed, getting them to school, getting them to sleep at night.
-# I've been through all this argument domestically...my wife rules.''
+# I've been through all this argument domestically...my wife rules."
 #
 # Broken Hill will stick with South Australian time in 2000.  See:
-# <a href="http://abc.net.au/news/regionals/brokenh/monthly/regbrok-21jul1999-6.htm">
-# Broken Hill to be behind the times
-# </a> (1999-07-21).
+# Broken Hill to be behind the times (1999-07-21)
+# http://abc.net.au/news/regionals/brokenh/monthly/regbrok-21jul1999-6.htm
 
 # IATA SSIM (1998-09) says that the spring 2000 change for Australian
 # Capital Territory, New South Wales except Lord Howe Island and Broken
@@ -1402,7 +1337,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Yancowinna
 
 # From John Mackin (1989-01-04):
-# `Broken Hill' means the County of Yancowinna.
+# 'Broken Hill' means the County of Yancowinna.
 
 # From George Shepherd via Simon Woodhead via Robert Elz (1991-03-06):
 # # YANCOWINNA..  [ Confirmation courtesy of Broken Hill Postmaster ]
@@ -1459,9 +1394,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # summer (southern hemisphere).
 #
 # From
-# <a href="http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf">
 # http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf
-# </a>
 # The extended daylight saving period that South Australia has been trialling
 # for over the last year is now set to be ongoing.
 # Daylight saving will continue to start on the first Sunday in October each
@@ -1471,9 +1404,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # the ACT for all 52 weeks of the year...
 #
 # We have a wrap-up here:
-# <a href="http://www.timeanddate.com/news/time/south-australia-extends-dst.html">
 # http://www.timeanddate.com/news/time/south-australia-extends-dst.html
-# </a>
 ###############################################################################
 
 # New Zealand
@@ -1482,7 +1413,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # the 1989/90 year was a trial of an extended "daylight saving" period.
 # This trial was deemed successful and the extended period adopted for
 # subsequent years (with the addition of a further week at the start).
-# source -- phone call to Ministry of Internal Affairs Head Office.
+# source - phone call to Ministry of Internal Affairs Head Office.
 
 # From George Shepherd via Simon Woodhead via Robert Elz (1991-03-06):
 # # The Country of New Zealand   (Australia's east island -) Gee they hate that!
@@ -1524,6 +1455,19 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # that DST will begin on 2007-09-30 2008-04-06.
 # http://www.dia.govt.nz/diawebsite.nsf/wpg_URL/Services-Daylight-Saving-Daylight-saving-to-be-extended
 
+# From Paul Eggert (2014-07-14):
+# Chatham Island time was formally standardized on 1957-01-01 by
+# New Zealand's Standard Time Amendment Act 1956 (1956-10-26).
+# http://www.austlii.edu.au/nz/legis/hist_act/staa19561956n100244.pdf
+# According to Google Books snippet view, a speaker in the New Zealand
+# parliamentary debates in 1956 said "Clause 78 makes provision for standard
+# time in the Chatham Islands.  The time there is 45 minutes in advance of New
+# Zealand time.  I understand that is the time they keep locally, anyhow."
+# For now, assume this practice goes back to the introduction of standard time
+# in New Zealand, as this would make Chatham Islands time almost exactly match
+# LMT back when New Zealand was at UTC+11:30; also, assume Chatham Islands did
+# not observe New Zealand's prewar DST.
+
 ###############################################################################
 
 
@@ -1543,7 +1487,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # From the BBC World Service in
 # http://news.bbc.co.uk/2/hi/asia-pacific/205226.stm (1998-10-31 16:03 UTC):
-# The Fijiian government says the main reasons for the time change is to
+# The Fijian government says the main reasons for the time change is to
 # improve productivity and reduce road accidents.... [T]he move is also
 # intended to boost Fiji's ability to attract tourists to witness the dawning
 # of the new millennium.
@@ -1551,16 +1495,12 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # http://www.fiji.gov.fj/press/2000_09/2000_09_13-05.shtml (2000-09-13)
 # reports that Fiji has discontinued DST.
 
-# Johnston
-
-# Johnston data is from usno1995.
-
 
 # Kiribati
 
 # From Paul Eggert (1996-01-22):
 # Today's _Wall Street Journal_ (page 1) reports that Kiribati
-# ``declared it the same day [throughout] the country as of Jan. 1, 1995''
+# "declared it the same day [throughout] the country as of Jan. 1, 1995"
 # as part of the competition to be first into the 21st century.
 
 
@@ -1575,8 +1515,8 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # N Mariana Is, Guam
 
-# Howse writes (p 153) ``The Spaniards, on the other hand, reached the
-# Philippines and the Ladrones from America,'' and implies that the Ladrones
+# Howse writes (p 153) "The Spaniards, on the other hand, reached the
+# Philippines and the Ladrones from America," and implies that the Ladrones
 # (now called the Marianas) kept American date for quite some time.
 # For now, we assume the Ladrones switched at the same time as the Philippines;
 # see Asia/Manila.
@@ -1590,17 +1530,16 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Micronesia
 
 # Alan Eugene Davis writes (1996-03-16),
-# ``I am certain, having lived there for the past decade, that "Truk"
-# (now properly known as Chuuk) ... is in the time zone GMT+10.''
+# "I am certain, having lived there for the past decade, that 'Truk'
+# (now properly known as Chuuk) ... is in the time zone GMT+10."
 #
 # Shanks & Pottenger write that Truk switched from UTC+10 to UTC+11
 # on 1978-10-01; ignore this for now.
 
 # From Paul Eggert (1999-10-29):
 # The Federated States of Micronesia Visitors Board writes in
-# <a href="http://www.fsmgov.org/info/clocks.html">
-# The Federated States of Micronesia - Visitor Information
-# </a> (1999-01-26)
+# The Federated States of Micronesia - Visitor Information (1999-01-26)
+# http://www.fsmgov.org/info/clocks.html
 # that Truk and Yap are UTC+10, and Ponape and Kosrae are UTC+11.
 # We don't know when Kosrae switched from UTC+12; assume January 1 for now.
 
@@ -1646,27 +1585,34 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Sacramento but it was changed a couple of years ago.
 
 
-# Samoa
+# (Western) Samoa and American Samoa
 
 # Howse writes (p 153, citing p 10 of the 1883-11-18 New York Herald)
 # that in 1879 the King of Samoa decided to change
-# ``the date in his kingdom from the Antipodean to the American system,
-# ordaining -- by a masterpiece of diplomatic flattery -- that
-# the Fourth of July should be celebrated twice in that year.''
+# "the date in his kingdom from the Antipodean to the American system,
+# ordaining - by a masterpiece of diplomatic flattery - that
+# the Fourth of July should be celebrated twice in that year."
 
+# Although Shanks & Pottenger says they both switched to UTC-11:30
+# in 1911, and to UTC-11 in 1950. many earlier sources give UTC-11
+# for American Samoa, e.g., the US National Bureau of Standards
+# circular "Standard Time Throughout the World", 1932.
+# Assume American Samoa switched to UTC-11 in 1911, not 1950,
+# and that after 1950 they agreed until (western) Samoa skipped a
+# day in 2011.  Assume also that the Samoas follow the US and New
+# Zealand's "ST"/"DT" style of daylight-saving abbreviations.
 
 # Tonga
 
 # From Paul Eggert (1996-01-22):
-# Today's _Wall Street Journal_ (p 1) reports that ``Tonga has been plotting
-# to sneak ahead of [New Zealanders] by introducing daylight-saving time.''
+# Today's _Wall Street Journal_ (p 1) reports that "Tonga has been plotting
+# to sneak ahead of [New Zealanders] by introducing daylight-saving time."
 # Since Kiribati has moved the Date Line it's not clear what Tonga will do.
 
 # Don Mundell writes in the 1997-02-20 Tonga Chronicle
-# <a href="http://www.tongatapu.net.to/tonga/homeland/timebegins.htm">
-# How Tonga became `The Land where Time Begins'
-# </a>:
-
+# How Tonga became 'The Land where Time Begins':
+# http://www.tongatapu.net.to/tonga/homeland/timebegins.htm
+#
 # Until 1941 Tonga maintained a standard time 50 minutes ahead of NZST
 # 12 hours and 20 minutes ahead of GMT.  When New Zealand adjusted its
 # standard time in 1940s, Tonga had the choice of subtracting from its
@@ -1674,8 +1620,8 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # advancing its time to maintain the differential of 13 degrees
 # (approximately 50 minutes ahead of New Zealand time).
 #
-# Because His Majesty King Taufa'ahau Tupou IV, then Crown Prince
-# Tungi, preferred to ensure Tonga's title as the land where time
+# Because His Majesty King Tāufaʻāhau Tupou IV, then Crown Prince
+# Tungī, preferred to ensure Tonga's title as the land where time
 # begins, the Legislative Assembly approved the latter change.
 #
 # But some of the older, more conservative members from the outer
@@ -1701,9 +1647,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # * Tonga will introduce DST in November
 #
 # I was given this link by John Letts:
-# <a href="http://news.bbc.co.uk/hi/english/world/asia-pacific/newsid_424000/424764.stm">
 # http://news.bbc.co.uk/hi/english/world/asia-pacific/newsid_424000/424764.stm
-# </a>
 #
 # I have not been able to find exact dates for the transition in November
 # yet. By reading this article it seems like Fiji will be 14 hours ahead
@@ -1711,9 +1655,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # (12 + 1 hour DST).
 
 # From Arthur David Olson (1999-09-20):
-# According to <a href="http://www.tongaonline.com/news/sept1799.html">
-# http://www.tongaonline.com/news/sept1799.html
-# </a>:
+# According to <http://www.tongaonline.com/news/sept1799.html>:
 # "Daylight Savings Time will take effect on Oct. 2 through April 15, 2000
 # and annually thereafter from the first Saturday in October through the
 # third Saturday of April.  Under the system approved by Privy Council on
@@ -1731,7 +1673,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # instead of the original reported date April 16. Unfortunately, the article
 # is no longer available on the site, and I did not make a copy of the
 # text, and I have forgotten to report it here.
-# (Original URL was: http://www.tongaonline.com/news/march162000.htm )
+# (Original URL was <http://www.tongaonline.com/news/march162000.htm>)
 
 # From Rives McDow (2000-12-01):
 # Tonga is observing DST as of 2000-11-04 and will stop on 2001-01-27.
@@ -1751,7 +1693,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # From Vernice Anderson, Personal Secretary to Philip Jessup,
 # US Ambassador At Large (oral history interview, 1971-02-02):
 #
-# Saturday, the 14th [of October, 1950] -- ...  The time was all the
+# Saturday, the 14th [of October, 1950] - ...  The time was all the
 # more confusing at that point, because we had crossed the
 # International Date Line, thus getting two Sundays.  Furthermore, we
 # discovered that Wake Island had two hours of daylight saving time
@@ -1796,7 +1738,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # on the high seas.  Whenever a ship was within the territorial waters of any
 # nation it would use that nation's standard time.  The captain was permitted
 # to change his ship's clocks at a time of his choice following his ship's
-# entry into another zone time--he often chose midnight.  These zones were
+# entry into another zone time - he often chose midnight.  These zones were
 # adopted by all major fleets between 1920 and 1925 but not by many
 # independent merchant ships until World War II.
 
@@ -1804,6 +1746,6 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # (2005-03-20):
 #
 # The American Practical Navigator (2002)
-# <http://pollux.nss.nima.mil/pubs/pubs_j_apn_sections.html?rid=187>
+# http://pollux.nss.nima.mil/pubs/pubs_j_apn_sections.html?rid=187
 # talks only about the 180-degree meridian with respect to ships in
 # international waters; it ignores the international date line.

@@ -194,7 +194,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      */
     public static UUID fromString(String name) {
-        if (name.length() > 36) {
+        int len = name.length();
+        if (len > 36) {
             throw new IllegalArgumentException("UUID string too large");
         }
 
@@ -214,15 +215,14 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             throw new IllegalArgumentException("Invalid UUID string: " + name);
         }
 
-        long mostSigBits = Long.parseLong(name, 16, 0, dash1) & 0xffffffffL;
+        long mostSigBits = Long.parseLong(name, 0, dash1, 16) & 0xffffffffL;
         mostSigBits <<= 16;
-        mostSigBits |= Long.parseLong(name, 16, dash1 + 1, dash2) & 0xffffL;
+        mostSigBits |= Long.parseLong(name, dash1 + 1, dash2, 16) & 0xffffL;
         mostSigBits <<= 16;
-        mostSigBits |= Long.parseLong(name, 16, dash2 + 1, dash3) & 0xffffL;
-
-        long leastSigBits = Long.parseLong(name, 16, dash3 + 1, dash4) & 0xffffL;
+        mostSigBits |= Long.parseLong(name, dash2 + 1, dash3, 16) & 0xffffL;
+        long leastSigBits = Long.parseLong(name, dash3 + 1, dash4, 16) & 0xffffL;
         leastSigBits <<= 48;
-        leastSigBits |= Long.parseLong(name, 16, dash4 + 1) & 0xffffffffffffL;
+        leastSigBits |= Long.parseLong(name, dash4 + 1, len, 16) & 0xffffffffffffL;
 
         return new UUID(mostSigBits, leastSigBits);
     }

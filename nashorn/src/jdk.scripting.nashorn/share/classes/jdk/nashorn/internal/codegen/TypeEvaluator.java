@@ -55,6 +55,19 @@ final class TypeEvaluator {
         this.runtimeScope = runtimeScope;
     }
 
+    /**
+     * Returns true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property names retrieved through
+     * {@link ScriptRuntime#toPropertyIterator(Object)}. It is used to avoid optimistic assumptions about its
+     * property name types.
+     * @param expr the expression to test
+     * @return true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property iterators.
+     */
+    boolean hasStringPropertyIterator(final Expression expr) {
+        return evaluateSafely(expr) instanceof ScriptObject;
+    }
+
     Type getOptimisticType(final Optimistic node) {
         assert compiler.useOptimisticTypes();
 

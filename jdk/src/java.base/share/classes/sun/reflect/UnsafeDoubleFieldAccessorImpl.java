@@ -33,7 +33,7 @@ class UnsafeDoubleFieldAccessorImpl extends UnsafeFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Double(getDouble(obj));
+        return Double.valueOf(getDouble(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

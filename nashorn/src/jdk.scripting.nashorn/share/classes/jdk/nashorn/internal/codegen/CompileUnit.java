@@ -42,6 +42,10 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     private Class<?> clazz;
 
+    private boolean isUsed;
+
+    private static int emittedUnitCount;
+
     CompileUnit(final String className, final ClassEmitter classEmitter, final long initialWeight) {
         this.className    = className;
         this.weight       = initialWeight;
@@ -50,6 +54,33 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     static Set<CompileUnit> createCompileUnitSet() {
         return new TreeSet<>();
+    }
+
+    static void increaseEmitCount() {
+        emittedUnitCount++;
+    }
+
+    public static int getEmittedUnitCount() {
+        return emittedUnitCount;
+    }
+
+    /**
+     * Check if this compile unit is used
+     * @return true if tagged as in use - i.e active code that needs to be generated
+     */
+    public boolean isUsed() {
+        return isUsed;
+    }
+
+    public boolean hasCode() {
+        return (classEmitter.getMethodCount() - classEmitter.getInitCount() - classEmitter.getClinitCount()) > 0;
+    }
+
+    /**
+     * Tag this compile unit as used
+     */
+    public void setUsed() {
+        this.isUsed = true;
     }
 
     /**
@@ -121,7 +152,8 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     @Override
     public String toString() {
-        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+        final String methods = classEmitter != null ? classEmitter.getMethodNames().toString() : "<anon>";
+        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + " hasCode=" + methods + ']';
     }
 
     @Override

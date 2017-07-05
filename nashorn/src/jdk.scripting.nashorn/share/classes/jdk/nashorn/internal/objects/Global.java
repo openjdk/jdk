@@ -631,6 +631,24 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
+     * Returns a method handle that creates a wrapper object for a JS primitive value.
+     *
+     * @param self receiver object
+     * @return method handle to create wrapper objects for primitive receiver
+     */
+    public static MethodHandle getPrimitiveWrapFilter(final Object self) {
+        if (self instanceof String || self instanceof ConsString) {
+            return NativeString.WRAPFILTER;
+        } else if (self instanceof Number) {
+            return NativeNumber.WRAPFILTER;
+        } else if (self instanceof Boolean) {
+            return NativeBoolean.WRAPFILTER;
+        }
+        throw new IllegalArgumentException("Unsupported primitive: " + self);
+    }
+
+
+    /**
      * Create a new empty script object
      *
      * @return the new ScriptObject

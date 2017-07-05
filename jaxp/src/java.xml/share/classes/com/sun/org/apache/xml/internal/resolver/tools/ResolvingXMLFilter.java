@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// ResolvingXMLFilter.java - An XMLFilter that performs catalog resolution
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -61,7 +55,7 @@ public class ResolvingXMLFilter extends XMLFilterImpl {
    *
    * @see #parse(InputSource)
    */
-  public static boolean suppressExplanation = false;
+  private static boolean suppressExplanation = false;
 
   /** The manager for the underlying resolver. */
   CatalogManager catalogManager = CatalogManager.getStaticManager();
@@ -74,9 +68,6 @@ public class ResolvingXMLFilter extends XMLFilterImpl {
 
   /** Are we in the prolog? Is an oasis-xml-catalog PI valid now? */
   private boolean allowXMLCatalogPI = false;
-
-  /** Has an oasis-xml-catalog PI been seen? */
-  private boolean oasisXMLCatalogPI = false;
 
   /** The base URI of the input document, if known. */
   private URL baseURL = null;
@@ -202,7 +193,10 @@ public class ResolvingXMLFilter extends XMLFilterImpl {
 
         return iSource;
       } catch (Exception e) {
-        catalogManager.debug.message(1, "Failed to create InputSource", resolved);
+        catalogManager.debug.message(1,
+                                     "Failed to create InputSource ("
+                                     + e.toString()
+                                     + ")", resolved);
         return null;
       }
     } else {
@@ -289,7 +283,6 @@ public class ResolvingXMLFilter extends XMLFilterImpl {
           if (catalog != null) {
             try {
               catalogManager.debug.message(4,"oasis-xml-catalog", catalog.toString());
-              oasisXMLCatalogPI = true;
 
               if (piCatalogResolver == null) {
                 piCatalogResolver = new CatalogResolver(true);

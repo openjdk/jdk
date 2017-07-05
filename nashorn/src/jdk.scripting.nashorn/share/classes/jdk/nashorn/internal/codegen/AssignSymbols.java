@@ -194,12 +194,12 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
      */
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
         // This visitor will assign symbol to all declared variables, except "var" declarations in for loop initializers.
-        //
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
-            public boolean enterFunctionNode(final FunctionNode nestedFn) {
-                // Don't descend into nested functions
-                return false;
+            protected boolean enterDefault(final Node node) {
+                // Don't bother visiting expressions; var is a statement, it can't be inside an expression.
+                // This will also prevent visiting nested functions (as FunctionNode is an expression).
+                return !(node instanceof Expression);
             }
 
             @Override
@@ -443,10 +443,25 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
         if (lc.isFunctionBody()) {
             block.clearSymbols();
+            final FunctionNode fn = lc.getCurrentFunction();
+            if (isUnparsedFunction(fn)) {
+                // It's a skipped nested function. Just mark the symbols being used by it as being in use.
+                for(final String name: compiler.getScriptFunctionData(fn.getId()).getExternalSymbolNames()) {
+                    nameIsUsed(name, null);
+                }
+                // Don't bother descending into it, it must be empty anyway.
+                assert block.getStatements().isEmpty();
+                return false;
+            }
+
             enterFunctionBody();
         }
 
         return true;
+    }
+
+    private boolean isUnparsedFunction(final FunctionNode fn) {
+        return compiler.isOnDemandCompilation() && fn != lc.getOutermostFunction();
     }
 
     @Override
@@ -492,24 +507,24 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
-        // TODO: once we have information on symbols used by nested functions, we can stop descending into nested
-        // functions with on-demand compilation, e.g. add
-        // if(!thisProperties.isEmpty() && env.isOnDemandCompilation()) {
-        //    return false;
-        // }
         start(functionNode, false);
 
         thisProperties.push(new HashSet<String>());
 
-        //an outermost function in our lexical context that is not a program
-        //is possible - it is a function being compiled lazily
         if (functionNode.isDeclared()) {
+            // Can't use lc.getCurrentBlock() as we can have an outermost function in our lexical context that
+            // is not a program - it is a function being compiled on-demand.
             final Iterator<Block> blocks = lc.getBlocks();
             if (blocks.hasNext()) {
                 final IdentNode ident = functionNode.getIdent();
                 defineSymbol(blocks.next(), ident.getName(), ident, IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
             }
         }
+
+        // Every function has a body, even the ones skipped on reparse (they have an empty one). We're
+        // asserting this as even for those, enterBlock() must be invoked to correctly process symbols that
+        // are used in them.
+        assert functionNode.getBody() != null;
 
         return true;
     }
@@ -533,7 +548,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     /**
      * This has to run before fix assignment types, store any type specializations for
-     * paramters, then turn then to objects for the generic version of this method
+     * parameters, then turn them into objects for the generic version of this method.
      *
      * @param functionNode functionNode
      */
@@ -733,14 +748,20 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public Node leaveBlock(final Block block) {
-        // It's not necessary to guard the marking of symbols as locals with this "if"condition for correctness, it's
-        // just an optimization -- runtime type calculation is not used when the compilation is not an on-demand
-        // optimistic compilation, so we can skip locals marking then.
+        // It's not necessary to guard the marking of symbols as locals with this "if" condition for
+        // correctness, it's just an optimization -- runtime type calculation is not used when the compilation
+        // is not an on-demand optimistic compilation, so we can skip locals marking then.
         if (compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
-            for (final Symbol symbol: block.getSymbols()) {
-                if (!symbol.isScope()) {
-                    assert symbol.isVar() || symbol.isParam();
-                    compiler.declareLocalSymbol(symbol.getName());
+            // OTOH, we must not declare symbols from nested functions to be locals. As we're doing on-demand
+            // compilation, and we're skipping parsing the function bodies for nested functions, this
+            // basically only means their parameters. It'd be enough to mistakenly declare to be a local a
+            // symbol in the outer function named the same as one of the parameters, though.
+            if (lc.getFunction(block) == lc.getOutermostFunction()) {
+                for (final Symbol symbol: block.getSymbols()) {
+                    if (!symbol.isScope()) {
+                        assert symbol.isVar() || symbol.isParam();
+                        compiler.declareLocalSymbol(symbol.getName());
+                    }
                 }
             }
         }
@@ -811,24 +832,45 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-
-        return markProgramBlock(
+        final FunctionNode finalizedFunction;
+        if (isUnparsedFunction(functionNode)) {
+            finalizedFunction = functionNode;
+        } else {
+            finalizedFunction =
+               markProgramBlock(
                removeUnusedSlots(
                createSyntheticInitializers(
                finalizeParameters(
                        lc.applyTopFlags(functionNode))))
-                       .setThisProperties(lc, thisProperties.pop().size())
-                       .setState(lc, CompilationState.SYMBOLS_ASSIGNED));
+                       .setThisProperties(lc, thisProperties.pop().size()));
+        }
+        return finalizedFunction.setState(lc, CompilationState.SYMBOLS_ASSIGNED);
     }
 
     @Override
     public Node leaveIdentNode(final IdentNode identNode) {
-        final String name = identNode.getName();
-
         if (identNode.isPropertyName()) {
             return identNode;
         }
 
+        final Symbol symbol = nameIsUsed(identNode.getName(), identNode);
+
+        if (!identNode.isInitializedHere()) {
+            symbol.increaseUseCount();
+        }
+
+        IdentNode newIdentNode = identNode.setSymbol(symbol);
+
+        // If a block-scoped var is used before its declaration mark it as dead.
+        // We can only statically detect this for local vars, cross-function symbols require runtime checks.
+        if (symbol.isBlockScoped() && !symbol.hasBeenDeclared() && !identNode.isDeclaredHere() && isLocal(lc.getCurrentFunction(), symbol)) {
+            newIdentNode = newIdentNode.markDead();
+        }
+
+        return end(newIdentNode);
+    }
+
+    private Symbol nameIsUsed(final String name, final IdentNode origin) {
         final Block block = lc.getCurrentBlock();
 
         Symbol symbol = findSymbol(block, name);
@@ -847,24 +889,11 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
             maybeForceScope(symbol);
         } else {
             log.info("No symbol exists. Declare as global: ", name);
-            symbol = defineSymbol(block, name, identNode, IS_GLOBAL | IS_SCOPE);
+            symbol = defineSymbol(block, name, origin, IS_GLOBAL | IS_SCOPE);
         }
 
         functionUsesSymbol(symbol);
-
-        if (!identNode.isInitializedHere()) {
-            symbol.increaseUseCount();
-        }
-
-        IdentNode newIdentNode = identNode.setSymbol(symbol);
-
-        // If a block-scoped var is used before its declaration mark it as dead.
-        // We can only statically detect this for local vars, cross-function symbols require runtime checks.
-        if (symbol.isBlockScoped() && !symbol.hasBeenDeclared() && !identNode.isDeclaredHere() && isLocal(lc.getCurrentFunction(), symbol)) {
-            newIdentNode = newIdentNode.markDead();
-        }
-
-        return end(newIdentNode);
+        return symbol;
     }
 
     @Override
@@ -912,7 +941,6 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
             return functionNode;
         }
 
-        assert functionNode.getId() == 1;
         return functionNode.setBody(lc, functionNode.getBody().setFlag(lc, Block.IS_GLOBAL_SCOPE));
     }
 

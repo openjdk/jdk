@@ -21,19 +21,16 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
 # From Paul Eggert (1999-11-15):
 # To keep things manageable, we list only locations occupied year-round; see
-# <a href="http://www.comnap.aq/comnap/comnap.nsf/P/Stations/">
 # COMNAP - Stations and Bases
-# </a>
+# http://www.comnap.aq/comnap/comnap.nsf/P/Stations/
 # and
-# <a href="http://www.spri.cam.ac.uk/bob/periant.htm">
 # Summary of the Peri-Antarctic Islands (1998-07-23)
-# </a>
+# http://www.spri.cam.ac.uk/bob/periant.htm
 # for information.
 # Unless otherwise specified, we have no time zone information.
 #
@@ -78,19 +75,19 @@ Rule	ChileAQ	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
 
 # Argentina - year-round bases
 # Belgrano II, Confin Coast, -770227-0343737, since 1972-02-05
-# Esperanza, San Martin Land, -6323-05659, since 1952-12-17
-# Jubany, Potter Peninsula, King George Island, -6414-0602320, since 1982-01
-# Marambio, Seymour I, -6414-05637, since 1969-10-29
+# Carlini, Potter Cove, King George Island, -6414-0602320, since 1982-01
+# Esperanza, Hope Bay, -6323-05659, since 1952-12-17
+# Marambio, -6414-05637, since 1969-10-29
 # Orcadas, Laurie I, -6016-04444, since 1904-02-22
-# San Martin, Debenham I, -6807-06708, since 1951-03-21
+# San Martín, Barry I, -6808-06706, since 1951-03-21
 #	(except 1960-03 / 1976-03-21)
 
 # Australia - territories
 # Heard Island, McDonald Islands (uninhabited)
 #	previously sealers and scientific personnel wintered
-#	<a href="http://web.archive.org/web/20021204222245/http://www.dstc.qut.edu.au/DST/marg/daylight.html">
 #	Margaret Turner reports
-#	</a> (1999-09-30) that they're UTC+5, with no DST;
+#	http://web.archive.org/web/20021204222245/http://www.dstc.qut.edu.au/DST/marg/daylight.html
+#	(1999-09-30) that they're UTC+5, with no DST;
 #	presumably this is when they have visitors.
 #
 # year-round bases
@@ -107,14 +104,10 @@ Rule	ChileAQ	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
 # The changes occurred on 2009-10-18 at 02:00 (local times).
 #
 # Government source: (Australian Antarctic Division)
-# <a href="http://www.aad.gov.au/default.asp?casid=37079">
 # http://www.aad.gov.au/default.asp?casid=37079
-# </a>
 #
 # We have more background information here:
-# <a href="http://www.timeanddate.com/news/time/antarctica-new-times.html">
 # http://www.timeanddate.com/news/time/antarctica-new-times.html
-# </a>
 
 # From Steffen Thorsen (2010-03-10):
 # We got these changes from the Australian Antarctic Division: ...
@@ -129,50 +122,49 @@ Rule	ChileAQ	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
 # - Mawson station stays on UTC+5.
 #
 # Background:
-# <a href="http://www.timeanddate.com/news/time/antartica-time-changes-2010.html">
 # http://www.timeanddate.com/news/time/antartica-time-changes-2010.html
-# </a>
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Casey	0	-	zzz	1969
-			8:00	-	WST	2009 Oct 18 2:00
-						# Western (Aus) Standard Time
-			11:00	-	CAST	2010 Mar 5 2:00
-						# Casey Time
-			8:00	-	WST	2011 Oct 28 2:00
+			8:00	-	AWST	2009 Oct 18  2:00
+						# Australian Western Std Time
+			11:00	-	CAST	2010 Mar  5  2:00  # Casey Time
+			8:00	-	AWST	2011 Oct 28  2:00
 			11:00	-	CAST	2012 Feb 21 17:00u
-			8:00	-	WST
+			8:00	-	AWST
 Zone Antarctica/Davis	0	-	zzz	1957 Jan 13
-			7:00	-	DAVT	1964 Nov # Davis Time
+			7:00	-	DAVT	1964 Nov    # Davis Time
 			0	-	zzz	1969 Feb
-			7:00	-	DAVT	2009 Oct 18 2:00
+			7:00	-	DAVT	2009 Oct 18  2:00
 			5:00	-	DAVT	2010 Mar 10 20:00u
-			7:00	-	DAVT	2011 Oct 28 2:00
+			7:00	-	DAVT	2011 Oct 28  2:00
 			5:00	-	DAVT	2012 Feb 21 20:00u
 			7:00	-	DAVT
 Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
-			6:00	-	MAWT	2009 Oct 18 2:00
-						# Mawson Time
+			6:00	-	MAWT	2009 Oct 18  2:00 # Mawson Time
 			5:00	-	MAWT
 # References:
-# <a href="http://www.antdiv.gov.au/aad/exop/sfo/casey/casey_aws.html">
 # Casey Weather (1998-02-26)
-# </a>
-# <a href="http://www.antdiv.gov.au/aad/exop/sfo/davis/video.html">
+# http://www.antdiv.gov.au/aad/exop/sfo/casey/casey_aws.html
 # Davis Station, Antarctica (1998-02-26)
-# </a>
-# <a href="http://www.antdiv.gov.au/aad/exop/sfo/mawson/video.html">
+# http://www.antdiv.gov.au/aad/exop/sfo/davis/video.html
 # Mawson Station, Antarctica (1998-02-25)
-# </a>
+# http://www.antdiv.gov.au/aad/exop/sfo/mawson/video.html
+
+# Belgium - year-round base
+# Princess Elisabeth, Queen Maud Land, -713412+0231200, since 2007
 
 # Brazil - year-round base
-# Comandante Ferraz, King George Island, -6205+05824, since 1983/4
+# Ferraz, King George Island, -6205+05824, since 1983/4
+
+# Bulgaria - year-round base
+# St. Kliment Ohridski, Livingston Island, -623829-0602153, since 1988
 
 # Chile - year-round bases and towns
 # Escudero, South Shetland Is, -621157-0585735, since 1994
-# Presidente Eduadro Frei, King George Island, -6214-05848, since 1969-03-07
-# General Bernardo O'Higgins, Antarctic Peninsula, -6319-05704, since 1948-02
-# Capitan Arturo Prat, -6230-05941
+# Frei Montalva, King George Island, -6214-05848, since 1969-03-07
+# O'Higgins, Antarctic Peninsula, -6319-05704, since 1948-02
+# Prat, -6230-05941
 # Villa Las Estrellas (a town), around the Frei base, since 1984-04-09
 # These locations have always used Santiago time; use TZ='America/Santiago'.
 
@@ -180,31 +172,35 @@ Zone Antarctica/Mawson	0	-	zzz	1954 Feb 13
 # Great Wall, King George Island, -6213-05858, since 1985-02-20
 # Zhongshan, Larsemann Hills, Prydz Bay, -6922+07623, since 1989-02-26
 
-# France - year-round bases
+# France - year-round bases (also see "France & Italy")
 #
 # From Antoine Leca (1997-01-20):
-# Time data are from Nicole Pailleau at the IFRTP
+# Time data entries are from Nicole Pailleau at the IFRTP
 # (French Institute for Polar Research and Technology).
-# She confirms that French Southern Territories and Terre Adelie bases
-# don't observe daylight saving time, even if Terre Adelie supplies came
+# She confirms that French Southern Territories and Terre Adélie bases
+# don't observe daylight saving time, even if Terre Adélie supplies came
 # from Tasmania.
 #
 # French Southern Territories with year-round inhabitants
 #
-# Martin-de-Vivies Base, Amsterdam Island, -374105+0773155, since 1950
-# Alfred-Faure Base, Crozet Islands, -462551+0515152, since 1964
-# Port-aux-Francais, Kerguelen Islands, -492110+0701303, since 1951;
+# Alfred Faure, Possession Island, Crozet Islands, -462551+0515152, since 1964;
+#	sealing & whaling stations operated variously 1802/1911+;
+#	see Indian/Reunion.
+#
+# Martin-de-Viviès, Amsterdam Island, -374105+0773155, since 1950
+# Port-aux-Français, Kerguelen Islands, -492110+0701303, since 1951;
 #	whaling & sealing station operated 1908/1914, 1920/1929, and 1951/1956
 #
 # St Paul Island - near Amsterdam, uninhabited
 #	fishing stations operated variously 1819/1931
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Indian/Kerguelen	0	-	zzz	1950	# Port-aux-Francais
+Zone Indian/Kerguelen	0	-	zzz	1950 # Port-aux-Français
 			5:00	-	TFT	# ISO code TF Time
 #
 # year-round base in the main continent
-# Dumont-d'Urville, Ile des Petrels, -6640+14001, since 1956-11
+# Dumont d'Urville, Île des Pétrels, -6640+14001, since 1956-11
+# <http://en.wikipedia.org/wiki/Dumont_d'Urville_Station> (2005-12-05)
 #
 # Another base at Port-Martin, 50km east, began operation in 1947.
 # It was destroyed by fire on 1952-01-14.
@@ -214,20 +210,22 @@ Zone Antarctica/DumontDUrville 0 -	zzz	1947
 			10:00	-	PMT	1952 Jan 14 # Port-Martin Time
 			0	-	zzz	1956 Nov
 			10:00	-	DDUT	# Dumont-d'Urville Time
-# Reference:
-# <a href="http://en.wikipedia.org/wiki/Dumont_d'Urville_Station">
-# Dumont d'Urville Station (2005-12-05)
-# </a>
+
+# France & Italy - year-round base
+# Concordia, -750600+1232000, since 2005
 
 # Germany - year-round base
-# Georg von Neumayer, -7039-00815
+# Neumayer III, -704080-0081602, since 2009
 
-# India - year-round base
-# Dakshin Gangotri, -7005+01200
+# India - year-round bases
+# Bharati, -692428+0761114, since 2012
+# Maitri, -704558+0114356, since 1989
+
+# Italy - year-round base (also see "France & Italy")
+# Zuchelli, Terra Nova Bay, -744140+1640647, since 1986
 
 # Japan - year-round bases
-# Dome Fuji, -7719+03942
-# Syowa, -690022+0393524
+# Syowa (also known as Showa), -690022+0393524, since 1957
 #
 # From Hideyuki Suzuki (1999-02-06):
 # In all Japanese stations, +0300 is used as the standard time.
@@ -239,11 +237,11 @@ Zone Antarctica/DumontDUrville 0 -	zzz	1947
 Zone Antarctica/Syowa	0	-	zzz	1957 Jan 29
 			3:00	-	SYOT	# Syowa Time
 # See:
-# <a href="http://www.nipr.ac.jp/english/ara01.html">
 # NIPR Antarctic Research Activities (1999-08-17)
-# </a>
+# http://www.nipr.ac.jp/english/ara01.html
 
 # S Korea - year-round base
+# Jang Bogo, Terra Nova Bay, -743700+1641205 since 2014
 # King Sejong, King George Island, -6213-05847, since 1988
 
 # New Zealand - claims
@@ -287,10 +285,13 @@ Rule	Troll	2005	max	-	Mar	lastSun	1:00u	2:00	CEST
 Rule	Troll	2004	max	-	Oct	lastSun	1:00u	0:00	UTC
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
-     			0:00	Troll	%s
+			0:00	Troll	%s
 
 # Poland - year-round base
 # Arctowski, King George Island, -620945-0582745, since 1977
+
+# Romania - year-bound base
+# Law-Racoviță, Larsemann Hills, -692319+0762251, since 1986
 
 # Russia - year-round bases
 # Bellingshausen, King George Island, -621159-0585337, since 1968-02-22
@@ -301,8 +302,8 @@ Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
 #	year-round from 1960/61 to 1992
 
 # Vostok, since 1957-12-16, temporarily closed 1994-02/1994-11
-# <a href="http://quest.arc.nasa.gov/antarctica/QA/computers/Directions,Time,ZIP">
-# From Craig Mundell (1994-12-15)</a>:
+# From Craig Mundell (1994-12-15):
+# http://quest.arc.nasa.gov/antarctica/QA/computers/Directions,Time,ZIP
 # Vostok, which is one of the Russian stations, is set on the same
 # time as Moscow, Russia.
 #
@@ -317,7 +318,7 @@ Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
 #
 # From Paul Eggert (2001-05-04):
 # This seems to be hopelessly confusing, so I asked Lee Hotz about it
-# in person.  He said that some Antartic locations set their local
+# in person.  He said that some Antarctic locations set their local
 # time so that noon is the warmest part of the day, and that this
 # changes during the year and does not necessarily correspond to mean
 # solar noon.  So the Vostok time might have been whatever the clocks
@@ -329,9 +330,12 @@ Zone Antarctica/Vostok	0	-	zzz	1957 Dec 16
 
 # S Africa - year-round bases
 # Marion Island, -4653+03752
-# Sanae, -7141-00250
+# SANAE IV, Vesleskarvet, Queen Maud Land, -714022-0025026, since 1997
 
-# UK
+# Ukraine - year-round base
+# Vernadsky (formerly Faraday), Galindez Island, -651445-0641526, since 1954
+
+# United Kingdom
 #
 # British Antarctic Territories (BAT) claims
 # South Orkney Islands
@@ -387,7 +391,7 @@ Zone Antarctica/Palmer	0	-	zzz	1965
 # but that he found it more convenient to keep GMT+12
 # as supplies for the station were coming from McMurdo Sound,
 # which was on GMT+12 because New Zealand was on GMT+12 all year
-# at that time (1957).  (Source: Siple's book 90 degrees SOUTH.)
+# at that time (1957).  (Source: Siple's book 90 Degrees South.)
 #
 # From Susan Smith
 # http://www.cybertours.com/whs/pole10.html

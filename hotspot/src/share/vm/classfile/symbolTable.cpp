@@ -201,7 +201,7 @@ Symbol* SymbolTable::lookup(int index, const char* name,
     }
   }
   // If the bucket size is too deep check if this hash code is insufficient.
-  if (count >= BasicHashtable<mtSymbol>::rehash_count && !needs_rehashing()) {
+  if (count >= rehash_count && !needs_rehashing()) {
     _needs_rehashing = check_rehash_table(count);
   }
   return NULL;

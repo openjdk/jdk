@@ -21,7 +21,7 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# Allowance for leapseconds added to each timezone file.
+# Allowance for leap seconds added to each time zone file.
 
 # This file is in the public domain.
 
@@ -31,7 +31,7 @@
 # you should be able to pick up leap-seconds.list from a secondary NIST server.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
-# <http://www.eecis.udel.edu/~mills/leap.html>.
+# http://www.eecis.udel.edu/~mills/leap.html
 
 # The International Earth Rotation Service periodically uses leap seconds
 # to keep UTC to within 0.9 s of UT1

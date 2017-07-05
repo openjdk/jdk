@@ -35,6 +35,7 @@ import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.Enumeration;
 
 /**
  * JdpBroadcaster is responsible for sending pre-built JDP packet across a Net
@@ -79,13 +80,49 @@ public final class JdpBroadcaster {
         if (srcAddress != null) {
             // User requests particular interface to bind to
             NetworkInterface interf = NetworkInterface.getByInetAddress(srcAddress);
+
+            if (interf == null) {
+                throw new JdpException("Unable to get network interface for " + srcAddress.toString());
+            }
+
+            if (!interf.isUp()) {
+                throw new JdpException(interf.getName() + " is not up.");
+            }
+
+            if (!interf.supportsMulticast()) {
+                throw new JdpException(interf.getName() + " does not support multicast.");
+            }
+
             try {
                 channel.bind(new InetSocketAddress(srcAddress, 0));
             } catch (UnsupportedAddressTypeException ex) {
                 throw new JdpException("Unable to bind to source address");
             }
             channel.setOption(StandardSocketOptions.IP_MULTICAST_IF, interf);
+        } else {
+            Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+            boolean succeed = false;
+
+            while (nics.hasMoreElements()) {
+                NetworkInterface nic = nics.nextElement();
+
+                if (nic.isUp() && nic.supportsMulticast()) {
+                    try {
+                        channel.setOption(StandardSocketOptions.IP_MULTICAST_IF, nic);
+                        succeed = true;
+                    } catch (IOException ex) {
+                        // pass
+                    }
+                }
+
+            }
+
+            if (!succeed) {
+                throw new JdpException("Unable to bind to any interfaces.");
+            }
+
         }
+
     }
 
     /**
