@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.x509;
+package sun.security.tools;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -32,7 +32,19 @@ import java.security.cert.CertificateEncodingException;
 import java.security.*;
 import java.util.Date;
 
-import sun.security.pkcs.PKCS10;
+import sun.security.pkcs10.PKCS10;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.CertificateAlgorithmId;
+import sun.security.x509.CertificateIssuerName;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateSubjectName;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateVersion;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
+import sun.security.x509.X509Key;
 
 
 /**

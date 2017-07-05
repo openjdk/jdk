@@ -103,6 +103,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                      "\u6771\u65b9\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "EDT"};
         String EST_NSW[] = new String[] {"\u6771\u65b9\u6a19\u6e96\u6642\u9593 (\u65b0\u5357\u5a01\u723e\u65af)", "EST",
                                          "\u6771\u65b9\u590f\u4ee4\u6642\u9593 (\u65b0\u5357\u5a01\u723e\u65af)", "EST"};
+        String FET[] = new String[] {"Further-eastern European Time", "FET",
+                                     "Further-eastern European Summer Time", "FEST"};
         String GHMT[] = new String[] {"\u8fe6\u7d0d\u5e73\u5747\u6642\u9593", "GMT",
                                       "\u8fe6\u7d0d\u590f\u4ee4\u6642\u9593", "GHST"};
         String GAMBIER[] =  new String[] {"\u7518\u6bd4\u723e\u6642\u9593", "GAMT",
@@ -186,7 +188,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"\u85a9\u6469\u4e9e\u6a19\u6e96\u6642\u9593", "SST",
                                        "\u85a9\u6469\u4e9e\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "SDT"};
         String WST_SAMOA[] = new String[] {"\u897f\u85a9\u6469\u4e9e\u6642\u9593", "WST",
-                                           "\u897f\u85a9\u6469\u4e9e\u590f\u4ee4\u6642\u9593", "WSST"};
+                                           "\u897f\u85a9\u6469\u4e9e\u590f\u4ee4\u6642\u9593", "WSDT"};
         String ChST[] = new String[] {"\u67e5\u83ab\u6d1b\u6a19\u6e96\u6642\u9593", "ChST",
                                      "\u67e5\u83ab\u6d1b\u65e5\u5149\u7bc0\u7d04\u6642\u9593", "ChDT"};
         String VICTORIA[] = new String[] {"\u6771\u90e8\u6a19\u6e96\u6642\u9593 (\u7dad\u591a\u5229\u4e9e\u90a6)", "EST",
@@ -511,6 +513,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                             "\u5854\u5409\u514b\u590f\u4ee4\u6642\u9593", "TJST"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
+            {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"\u4faf\u5fb7 (Hovd) \u6642\u9593", "HOVT",
@@ -675,9 +678,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Europe/Isle_of_Man", GMTBST},
             {"Europe/Istanbul", EET},
             {"Europe/Jersey", GMTBST},
-            {"Europe/Kaliningrad", new String[] {"Kaliningrad Time", "KALT",
-                                                 "Kaliningrad Summer Time", "KALST"}},
-            {"Europe/Kiev", EET},
+            {"Europe/Kaliningrad", FET},
+            {"Europe/Kiev", FET},
             {"Europe/Lisbon", WET},
             {"Europe/Ljubljana", CET},
             {"Europe/London", GMTBST},
@@ -685,7 +687,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
             {"Europe/Madrid", CET},
             {"Europe/Malta", CET},
             {"Europe/Mariehamn", EET},
-            {"Europe/Minsk", EET},
+            {"Europe/Minsk", FET},
             {"Europe/Monaco", CET},
             {"Europe/Moscow", MSK},
             {"Europe/Nicosia", EET},
@@ -698,14 +700,14 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                             "\u6c99\u99ac\u62c9\u590f\u4ee4\u6642\u9593", "SAMST"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
-            {"Europe/Simferopol", EET},
+            {"Europe/Simferopol", FET},
             {"Europe/Skopje", CET},
             {"Europe/Sofia", EET},
             {"Europe/Stockholm", CET},
             {"Europe/Tallinn", EET},
             {"Europe/Tirane", CET},
             {"Europe/Tiraspol", EET},
-            {"Europe/Uzhgorod", EET},
+            {"Europe/Uzhgorod", FET},
             {"Europe/Vaduz", CET},
             {"Europe/Vatican", CET},
             {"Europe/Vienna", CET},
@@ -714,7 +716,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                                "\u4f0f\u723e\u52a0\u683c\u52d2\u590f\u4ee4\u6642\u9593", "VOLST"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
-            {"Europe/Zaporozhye", EET},
+            {"Europe/Zaporozhye", FET},
             {"Europe/Zurich", CET},
             {"GB", GMTBST},
             {"GB-Eire", GMTBST},
