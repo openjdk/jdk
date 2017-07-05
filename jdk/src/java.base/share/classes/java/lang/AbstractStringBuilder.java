@@ -177,7 +177,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             return;
         }
         byte[] buf = StringUTF16.newBytesFor(value.length);
-        StringLatin1.inflateSB(value, buf, 0, count);
+        StringLatin1.inflate(value, 0, buf, 0, count);
         this.value = buf;
         this.coder = UTF16;
     }
@@ -414,9 +414,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         int n = srcEnd - srcBegin;
         checkRange(dstBegin, dstBegin + n, dst.length);
         if (isLatin1()) {
-            StringLatin1.getCharsSB(value, srcBegin, srcEnd, dst, dstBegin);
+            StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         } else {
-            StringUTF16.getCharsSB(value, srcBegin, srcEnd, dst, dstBegin);
+            StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         }
     }
 
@@ -980,7 +980,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (isLatin1()) {
             return StringLatin1.newString(value, start, end - start);
         }
-        return StringUTF16.newStringSB(value, start, end - start);
+        return StringUTF16.newString(value, start, end - start);
     }
 
     private void shift(int offset, int n) {
@@ -1576,7 +1576,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (this.coder == coder) {
             System.arraycopy(value, 0, dst, dstBegin << coder, count << coder);
         } else {        // this.coder == LATIN && coder == UTF16
-            StringLatin1.inflateSB(value, dst, dstBegin, count);
+            StringLatin1.inflate(value, 0, dst, dstBegin, count);
         }
     }
 
@@ -1641,10 +1641,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (getCoder() != str.coder()) {
             inflate();
         }
-        byte[] val = this.value;
-        byte coder = this.coder;
-        checkOffset(index + str.length(), val.length >> coder);
-        str.getBytes(val, index, coder);
+        str.getBytes(value, index, coder);
     }
 
     private final void appendChars(char[] s, int off, int end) {
