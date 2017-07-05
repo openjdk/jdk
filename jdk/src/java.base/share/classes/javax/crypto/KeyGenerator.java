@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.spec.*;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.util.Debug;
 
 /**
  * This class provides the functionality of a secret (symmetric) key generator.
@@ -108,6 +109,11 @@ import sun.security.jca.GetInstance.Instance;
 
 public class KeyGenerator {
 
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("keygenerator");
+
     // see java.security.KeyPairGenerator for failover notes
 
     private final static int I_NONE   = 1;
@@ -145,6 +151,11 @@ public class KeyGenerator {
         this.spi = keyGenSpi;
         this.provider = provider;
         this.algorithm = algorithm;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyGenerator." + algorithm + " algorithm from: " +
+                this.provider.getName());
+        }
     }
 
     private KeyGenerator(String algorithm) throws NoSuchAlgorithmException {
@@ -157,6 +168,11 @@ public class KeyGenerator {
         if (nextSpi(null, false) == null) {
             throw new NoSuchAlgorithmException
                 (algorithm + " KeyGenerator not available");
+        }
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyGenerator." + algorithm + " algorithm from: " +
+                this.provider.getName());
         }
     }
 

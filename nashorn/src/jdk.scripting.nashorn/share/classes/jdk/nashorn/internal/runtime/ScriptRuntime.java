@@ -32,9 +32,9 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Iterator;
@@ -46,6 +46,7 @@ import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
@@ -111,6 +112,11 @@ public final class ScriptRuntime {
      * Throws a reference error for an undefined variable.
      */
     public static final Call THROW_REFERENCE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwReferenceError", void.class, String.class);
+
+    /**
+     * Used to invalidate builtin names, e.g "Function" mapping to all properties in Function.prototype and Function.prototype itself.
+     */
+    public static final Call INVALIDATE_RESERVED_BUILTIN_NAME = staticCallNoLookup(ScriptRuntime.class, "invalidateReservedBuiltinName", void.class, String.class);
 
     /**
      * Converts a switch tag value to a simple integer. deflt value if it can't.
@@ -290,7 +296,7 @@ public final class ScriptRuntime {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("remove");
         }
     }
 
@@ -328,7 +334,7 @@ public final class ScriptRuntime {
 
                 @Override
                 public void remove() {
-                    throw new UnsupportedOperationException();
+                    throw new UnsupportedOperationException("remove");
                 }
             };
         }
@@ -998,4 +1004,19 @@ public final class ScriptRuntime {
         return nx < ny;
     }
 
+    /**
+     * Tag a reserved name as invalidated - used when someone writes
+     * to a property with this name - overly conservative, but link time
+     * is too late to apply e.g. apply-&gt;call specialization
+     * @param name property name
+     */
+    public static void invalidateReservedBuiltinName(final String name) {
+        final Context context = Context.getContextTrusted();
+        final SwitchPoint sp = context.getBuiltinSwitchPoint(name);
+        assert sp != null;
+        if (sp != null) {
+            context.getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
+            SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
+        }
+    }
 }

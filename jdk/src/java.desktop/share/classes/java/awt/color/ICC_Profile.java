@@ -700,7 +700,7 @@ public class ICC_Profile implements Serializable {
 
 
     /**
-     * ICC Profile Constant: tag type signaturE.
+     * ICC Profile Constant: tag type signature.
      */
     public static final int icTagType          = 0;    /* tag type signature */
 
@@ -1874,7 +1874,7 @@ public class ICC_Profile implements Serializable {
             return canonicalFileName.startsWith(canonicalDirName);
         } catch (IOException e) {
             /* we do not expect the IOException here, because invocation
-             * of this function is always preceeded by isFile() call.
+             * of this function is always preceded by isFile() call.
              */
             return false;
         }
@@ -1903,7 +1903,7 @@ public class ICC_Profile implements Serializable {
      * resolve the bogus deserialized profile object with one obtained
      * with getInstance as well.
      *
-     * There're two primary factory methods for construction of ICC
+     * There are two primary factory methods for construction of ICC
      * profiles: getInstance(int cspace) and getInstance(byte[] data).
      * This implementation of ICC_Profile uses the former to return a
      * cached singleton profile object, other implementations will

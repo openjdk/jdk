@@ -167,7 +167,7 @@ import sun.util.logging.PlatformLogger;
  *    }
  * </pre>
  * <p>
- * <b>Note</b>: For more information on the paint mechanisms utilitized
+ * <b>Note</b>: For more information on the paint mechanisms utilized
  * by AWT and Swing, including information on how to write the most
  * efficient painting code, see
  * <a href="http://www.oracle.com/technetwork/java/painting-140037.html">Painting in AWT and Swing</a>.
@@ -355,7 +355,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * True when the object is valid. An invalid object needs to
-     * be layed out. This flag is set to false when the object
+     * be laid out. This flag is set to false when the object
      * size is changed.
      *
      * @serial
@@ -418,7 +418,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private static final int FOCUS_TRAVERSABLE_SET = 2;
 
     /**
-     * Tracks whether this Component is relying on default focus travesability.
+     * Tracks whether this Component is relying on default focus traversability.
      *
      * @serial
      * @since 1.4
@@ -661,7 +661,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * can lead to a deadlock if client code also uses synchronization
      * by a component object. For every such situation revealed we should
      * consider possibility of replacing "this" with the package private
-     * objectLock object introduced below. So far there're 3 issues known:
+     * objectLock object introduced below. So far there are 3 issues known:
      * - CR 6708322 (the getName/setName methods);
      * - CR 6608764 (the PropertyChangeListener machinery);
      * - CR 7108598 (the Container.paint/KeyboardFocusManager.clearMostRecentFocusOwner methods).
@@ -783,7 +783,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /*
-     * The shape set with the applyCompoundShape() method. It uncludes the result
+     * The shape set with the applyCompoundShape() method. It includes the result
      * of the HW/LW mixing related shape computation. It may also include
      * the user-specified shape of the component.
      * The 'null' value means the component has normal shape (or has no shape at all)
@@ -808,7 +808,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Should only be used in subclass getBounds to check that part of bounds
-     * is actualy changing
+     * is actually changing
      */
     int getBoundsOp() {
         assert Thread.holdsLock(getTreeLock());
@@ -1691,7 +1691,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /*
-     * Delete references from LightweithDispatcher of a heavyweight parent
+     * Delete references from LightweightDispatcher of a heavyweight parent
      */
     void clearLightweightDispatcherOnRemove(Component removedComponent) {
         if (parent != null) {
@@ -2337,10 +2337,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 boolean needNotify = true;
                 mixOnReshaping();
                 if (peer != null) {
-                    // LightwightPeer is an empty stub so can skip peer.reshape
+                    // LightweightPeer is an empty stub so can skip peer.reshape
                     if (!(peer instanceof LightweightPeer)) {
                         reshapeNativePeer(x, y, width, height, getBoundsOp());
-                        // Check peer actualy changed coordinates
+                        // Check peer actually changed coordinates
                         resized = (oldWidth != this.width) || (oldHeight != this.height);
                         moved = (oldX != this.x) || (oldY != this.y);
                         // fix for 5025858: do not send ComponentEvents for toplevel
@@ -5106,7 +5106,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // ancestor, there is no need trying to find descendant
                 // lightweights to dispatch event to.
                 // If we dispatch the event to toplevel ancestor,
-                // this could encolse the loop: 6480024.
+                // this could enclose the loop: 6480024.
                 anc.dispatchEventToSelf(newMWE);
                 if (newMWE.isConsumed()) {
                     e.consume();
@@ -6203,7 +6203,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Indicates whether this class overrides coalesceEvents.
      * It is assumed that all classes that are loaded from the bootstrap
      *   do not.
-     * The boostrap class loader is assumed to be represented by null.
+     * The bootstrap class loader is assumed to be represented by null.
      * We do not check that the method really overrides
      *   (it might be static, private or package private).
      */
@@ -6251,7 +6251,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Class<?> superclass = clazz.getSuperclass();
         if (superclass == null) {
             // Only occurs on implementations that
-            //   do not use null to represent the bootsrap class loader.
+            //   do not use null to represent the bootstrap class loader.
             return false;
         }
         if (superclass.getClassLoader() != null) {
@@ -7761,7 +7761,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         while ( (window != null) && !(window instanceof Window)) {
             if (!window.isVisible()) {
                 if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
-                    focusLog.finest("component is recurively invisible");
+                    focusLog.finest("component is recursively invisible");
                 }
                 return false;
             }
@@ -7865,7 +7865,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // in activation.  We do request focus on component which
             // has got temporary focus lost and then on component which is
             // most recent focus owner.  But most recent focus owner can be
-            // changed by requestFocsuXXX() call only, so this transfer has
+            // changed by requestFocusXXX() call only, so this transfer has
             // been already approved.
             if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
                 focusLog.finest("cause is activation");
@@ -8692,7 +8692,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Package swingPackage = Package.getPackage("javax.swing");
         // For Swing serialization to correctly work Swing needs to
         // be notified before Component does it's serialization.  This
-        // hack accomodates this.
+        // hack accommodates this.
         //
         // Swing classes MUST be loaded by the bootstrap class loader,
         // otherwise we don't consider them.
@@ -9040,7 +9040,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Checks that this component meets the prerequesites to be focus owner:
+     * Checks that this component meets the prerequisites to be focus owner:
      * - it is enabled, visible, focusable
      * - it's parents are all enabled and showing
      * - top-level window is focusable
@@ -9649,7 +9649,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * Returns the size of this object in the form of a
          * <code>Dimension</code> object. The height field of the
-         * <code>Dimension</code> object contains this objects's
+         * <code>Dimension</code> object contains this object's
          * height, and the width field of the <code>Dimension</code>
          * object contains this object's width.
          *
@@ -9833,7 +9833,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Check whether we can trust the current bounds of the component.
      * The return value of false indicates that the container of the
-     * component is invalid, and therefore needs to be layed out, which would
+     * component is invalid, and therefore needs to be laid out, which would
      * probably mean changing the bounds of its children.
      * Null-layout of the container or absence of the container mean
      * the bounds of the component are final and can be trusted.

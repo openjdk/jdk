@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,19 +56,22 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
 
     private PropertyChangeListener propertyChangeHandler;
 
+    @Override
     protected void installListeners(JScrollPane scrollPane) {
         super.installListeners(scrollPane);
         propertyChangeHandler = createPropertyChangeHandler();
         scrollPane.addPropertyChangeListener(propertyChangeHandler);
     }
 
-    protected void uninstallListeners(JScrollPane scrollPane) {
+    @Override
+    protected void uninstallListeners(JComponent scrollPane) {
         super.uninstallListeners(scrollPane);
         scrollPane.removePropertyChangeListener(propertyChangeHandler);
     }
 
     private PropertyChangeListener createPropertyChangeHandler() {
         return new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent e) {
                   String propertyName = e.getPropertyName();
 
@@ -92,6 +95,7 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
         }};
     }
 
+    @Override
     protected void installDefaults(JScrollPane scrollpane) {
         super.installDefaults(scrollpane);
 
@@ -115,7 +119,7 @@ public class MotifScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-
+    @Override
     protected void uninstallDefaults(JScrollPane c) {
         super.uninstallDefaults(c);
 

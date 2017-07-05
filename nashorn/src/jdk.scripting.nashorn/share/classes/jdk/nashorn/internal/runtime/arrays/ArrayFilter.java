@@ -201,7 +201,7 @@ abstract class ArrayFilter extends ArrayData {
     }
 
     @Override
-    protected ArrayData convert(final Class<?> type) {
+    public ArrayData convert(final Class<?> type) {
         underlying = underlying.convert(type);
         setLength(underlying.length());
         return this;

@@ -716,7 +716,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * scroll bar, generally through a mouse or keyboard gesture
      * that the scroll bar receives as an adjustment event.
      * The unit increment must be greater than zero.
-     * Attepts to set the unit increment to a value lower than 1
+     * Attempts to set the unit increment to a value lower than 1
      * will result in a value of 1 being set.
      * <p>
      * In some operating systems, this property
@@ -794,7 +794,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * scroll bar, generally through a mouse or keyboard gesture
      * that the scroll bar receives as an adjustment event.
      * The block increment must be greater than zero.
-     * Attepts to set the block increment to a value lower than 1
+     * Attempts to set the block increment to a value lower than 1
      * will result in a value of 1 being set.
      *
      * @param        v  the amount by which to increment or decrement

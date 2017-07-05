@@ -163,7 +163,7 @@ class MimeTypeParameterList implements Cloneable {
                                     lastIndex = currentIndex;
 
                                     if(currentIndex < length) {
-                                        //    find the next unescqped quote
+                                        //    find the next unescaped quote
                                         foundit = false;
                                         while((currentIndex < length) && !foundit) {
                                             currentChar = rawdata.charAt(currentIndex);
@@ -171,7 +171,7 @@ class MimeTypeParameterList implements Cloneable {
                                                 //    found an escape sequence so pass this and the next character
                                                 currentIndex += 2;
                                             } else if(currentChar == '"') {
-                                                //    foundit!
+                                                //    found it!
                                                 foundit = true;
                                             } else {
                                                 ++currentIndex;

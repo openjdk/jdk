@@ -714,7 +714,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         return returnValue;
     }
 
-    private static final String [] htmlDocumntTypes =
+    private static final String [] htmlDocumentTypes =
             new String [] {"all", "selection", "fragment"};
 
     private static LinkedHashSet<String> handleHtmlMimeTypes(String baseType,
@@ -723,7 +723,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         LinkedHashSet<String> returnValues = new LinkedHashSet<>();
 
         if (HTML_TEXT_BASE_TYPE.equals(baseType)) {
-            for (String documentType : htmlDocumntTypes) {
+            for (String documentType : htmlDocumentTypes) {
                 returnValues.add(mimeType + ";document=" + documentType);
             }
         } else {

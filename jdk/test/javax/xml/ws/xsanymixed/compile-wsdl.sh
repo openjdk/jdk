@@ -1,12 +1,12 @@
+#! /bin/sh
+
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,12 +23,14 @@
 # questions.
 #
 
-include GensrcCommon.gmk
+#
 
-include GensrcProviders.gmk
+if [ "x$TESTJAVA" = x ]; then
+  TESTJAVA=$1; shift
+  TESTCLASSES=.
+fi
 
-jdk.attach: $(GENSRC_JDK_ATTACH)
+echo "compiling [test-service.wsdl] wsdl ..."
+$TESTJAVA/bin/wsimport -keep  -d ${TESTCLASSES} ${TESTSRC}/service.wsdl
 
-all: jdk.attach
-
-.PHONY: all jdk.attach
+echo "WSDL compiled. Main test class Test.java can be compiled now."

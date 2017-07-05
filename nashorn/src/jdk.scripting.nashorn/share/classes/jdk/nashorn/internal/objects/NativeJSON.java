@@ -191,7 +191,7 @@ public final class NativeJSON extends ScriptObject {
         state.gap = gap;
 
         final ScriptObject wrapper = Global.newEmptyInstance();
-        wrapper.set("", value, false);
+        wrapper.set("", value, 0);
 
         return str("", wrapper, state);
     }
