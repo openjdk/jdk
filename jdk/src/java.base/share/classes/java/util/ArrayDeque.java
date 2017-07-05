@@ -81,8 +81,8 @@ import java.util.function.Consumer;
  * Java Collections Framework</a>.
  *
  * @author  Josh Bloch and Doug Lea
- * @since   1.6
  * @param <E> the type of elements held in this deque
+ * @since   1.6
  */
 public class ArrayDeque<E> extends AbstractCollection<E>
                            implements Deque<E>, Cloneable, Serializable
