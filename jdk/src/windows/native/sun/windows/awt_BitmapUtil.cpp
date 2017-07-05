@@ -246,7 +246,7 @@ HRGN BitmapUtil::BitmapToRgn(HBITMAP hBitmap)
     UINT height = abs(bi.bmiHeader.biHeight);
 
     BYTE * buf = (BYTE*)safe_Malloc(bi.bmiHeader.biSizeImage);
-    bi.bmiHeader.biHeight = -height;
+    bi.bmiHeader.biHeight = -(INT)height;
     ::GetDIBits(hdc, hBitmap, 0, height, buf,
             reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
 
@@ -305,7 +305,7 @@ HBITMAP BitmapUtil::BlendCopy(HBITMAP hSrcBitmap, COLORREF blendColor,
     UINT height = abs(bi.bmiHeader.biHeight);
 
     BYTE * buf = (BYTE*)safe_Malloc(bi.bmiHeader.biSizeImage);
-    bi.bmiHeader.biHeight = -height;
+    bi.bmiHeader.biHeight = -(INT)height;
     ::GetDIBits(hdc, hSrcBitmap, 0, height, buf,
             reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
 

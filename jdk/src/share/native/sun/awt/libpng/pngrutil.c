@@ -209,7 +209,7 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
                               png_charp chunkdata, png_size_t chunklength,
                               png_size_t prefix_size, png_size_t *newlength)
 {
-   const static char msg[] = "Error decoding compressed text";
+   static PNG_CONST char msg[] = "Error decoding compressed text";
    png_charp text;
    png_size_t text_size;
 

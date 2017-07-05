@@ -109,7 +109,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
   #error "ERROR: No override of JAVA_SPECIFICATION_VENDOR is allowed"
 #else
   #define JAVA_SPECIFICATION_VENDOR "Oracle Corporation"
-#endif
+#endif
 
 static int fmtdefault; // boolean value
 jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,

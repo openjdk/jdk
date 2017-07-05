@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ import java.util.StringTokenizer;
  */
 
 public final class LinkagePermission extends BasicPermission {
+    private static final long serialVersionUID = 292L;
+
     /**
      * Create a new LinkagePermission with the given name.
      * The name is the symbolic name of the LinkagePermission, such as

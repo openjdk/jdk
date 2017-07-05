@@ -27,6 +27,8 @@ package sun.misc;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLStreamHandlerFactory;
+import sun.misc.URLClassPath;
 
 /**
  * BootClassLoaderHook defines an interface for a hook to inject
@@ -94,20 +96,6 @@ public abstract class BootClassLoaderHook {
         }
     }
 
-    private static final File[] EMPTY_FILE_ARRAY = new File[0];
-
-    /**
-     * Returns bootstrap class paths added by the hook.
-     */
-    public static File[] getBootstrapPaths() {
-        BootClassLoaderHook hook = getHook();
-        if (hook != null) {
-            return hook.getAdditionalBootstrapPaths();
-        } else {
-            return EMPTY_FILE_ARRAY;
-        }
-    }
-
     /**
      * Returns a pathname of a JAR or class that the hook loads
      * per this loadClass request; or null.
@@ -133,10 +121,13 @@ public abstract class BootClassLoaderHook {
     public abstract boolean loadLibrary(String libname);
 
     /**
-     * Returns additional boot class paths added by the hook that
-     * should be searched by the boot class loader.
+     * Returns a bootstrap class path constructed by the hook.
+     *
+     * @param bcp VM's bootstrap class path
+     * @param factory Launcher's URL stream handler
      */
-    public abstract File[] getAdditionalBootstrapPaths();
+    public abstract URLClassPath getBootstrapClassPath(URLClassPath bcp,
+            URLStreamHandlerFactory factory);
 
     /**
      * Returns true if the current thread is in the process of doing
